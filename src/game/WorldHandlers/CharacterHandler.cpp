@@ -910,6 +910,10 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     /* Sync player's in-game time with server time */
     pCurrChar->SetInGameTime(GameTime::GetGameTimeMS());
 
+    /* Used for movement: the client's movement clock restarts with the session, so the
+     * offset latched for the previous character on this connection means nothing now. */
+    ResetClientTimeDelay();
+
     /** Send logon notification to player's group
      * This is sent after player is added to the world so that player receives it too */
     if (Group* group = pCurrChar->GetGroup())

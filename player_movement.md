@@ -54,10 +54,11 @@ WorldSession (STATUS_LOGGEDIN, PROCESS_THREADSAFE → Map::Update)
   ├─ plMover = _player->GetMover()  (self sau unit possessat)
   ├─ dacă IsBeingTeleported() → discard pachet (rpos=wpos)
   ├─ MovementInfo::Read(recv_data)
+  ├─ AdjustMovementInfoTime  // client clock + offset fix pe sesiune + MovementPacketDelay
   ├─ VerifyMovementInfo(movementInfo)  // fără guid pe path-ul normal
+  │     └─ pe eșec: ResyncMover() (rate-limit 1s, no-op la bord)
   ├─ dacă FALL_LAND → HandleFall (damage)
   ├─ HandleMoverRelocation(movementInfo)
-  │     ├─ time += GetLatency()
   │     ├─ m_movementInfo = movementInfo  (înainte de embark)
   │     ├─ ONTRANSPORT embark / leave disembark
   │     ├─ SetInWater toggle
@@ -388,15 +389,53 @@ poartă în `Unit.h` comentariul `// used for flight paths`, exact același come
 vrăji și rutele de taxi. `Creature::SetRoot` din 00 folosește bitul ca root, dar e aceeași sursă
 — nu o confirmare independentă. Se seed-ează după o captură sau o referință 1.12.
 
+#### 7.0.3 Modelul de ceas (7.5 / 7.23) — portat pe jumătate, și jumătatea lipsă e o limită de client
+
+`HandleMoverRelocation` făcea `movementInfo.UpdateTime(GetTime() + GetLatency())`, cu comentariul
+„carry the client's own clock forward by the round trip; do not translate it into a server time
+base". Jumătatea a doua a comentariului merită păstrată, prima e defectul: **`GetLatency()` e
+revizuit de fiecare PING**, deci două pachete consecutive pot fi împinse cu valori diferite și pot
+ajunge **în ordine inversă** în timeline-ul observatorului, care repoziționează unitatea înapoi.
+
+**Ce s-a portat din 01:**
+
+| Piesă | Unde |
+|-------|------|
+| `m_clientTimeDelay` + `AdjustMovementInfoTime()` — offset **fix pe sesiune**, latch-uit din primul pachet de mișcare | `WorldSession.{h,cpp}` |
+| `MovementPacketDelay` (default 500 ms) — playout buffer | `World.h`, `WorldConfig.cpp`, `mangosd.conf.dist.in` |
+| `MovementStreamTime()` — aceeași ștampilă pentru heartbeat **și** create block | `Unit.{h,cpp}`, `ObjectUpdate.cpp` |
+| `ResetClientTimeDelay()` la login (nu la ping — un reset pe ping ar re-latch-ui și ar da salt) | `CharacterHandler.cpp` |
+| Apel în cele 3 locuri care citesc un pachet de pe fir: mișcare, knockback ACK, `ApplyStateAck` | `MovementHandler.cpp` |
+
+Re-bazarea printr-un offset constant **păstrează exact delta-urile clientului** — deci respectă
+ce voia comentariul vechi — și nu le poate inversa.
+
+**Ce NU se poate porta: TIME_SYNC. Nu e o alegere, e o limită de client.**
+
+`SMSG_TIME_SYNC_REQ` / `CMSG_TIME_SYNC_RESP` (0x390/0x391 pe 2.4.3 și 3.3.5) **nu există pe
+1.12**. Trei surse: lipsesc din `src/proto/Opcodes.h` al acestui arbore; lipsesc din tabela
+1.12.1 a lui VMaNGOS (core specializat pe vanilla), unde opcode-urile vecine se potrivesc exact
+cu ale noastre (`CMSG_MOVE_TIME_SKIPPED = 718` = 0x2CE, `MSG_MOVE_TIME_SKIPPED = 793` = 0x319);
+și apar pentru prima dată în 01/02. wowdev.wiki a dat 403 și nu a fost folosit.
+
+Consecința: pe 00 offset-ul e **latch-uit o dată și nerevizuit niciodată**. Pe 01 filtrul RTT +
+dead-band îl rafinează continuu. Asta e o divergență corectă, nu o restanță — **`PushTimeSyncSample`
+și filtrul lui nu au ce rafina pe 1.12 și nu trebuie adăugate.** Drift-ul de ceas pe durata unei
+sesiuni deplasează toate pachetele egal, iar clientul îl absoarbe (urmărește skew per mover).
+
+**Efect secundar reparat pe drum:** `BuildMovementUpdate` din 00 **nu ștampila deloc** timpul în
+create block — ducea ce rămăsese în `m_movementInfo` de la ultimul pachet relay-at, sau zero
+pentru orice nu se mișcase vreodată. 01 îl ștampila. Acum ambele folosesc `MovementStreamTime()`.
+
+**De verificat în joc, e zona care a rupt mișcarea o dată:** `MovementPacketDelay = 0` vs `500`
+trebuie să difere doar ca netezime, niciodată ca poziție finală; `wire` nu trebuie să meargă
+înapoi pentru același mover (`LogFilter_PlayerMoves = 0`).
+
 #### 7.0.2 Ce NU s-a atins, și de ce
 
 - **7.1 / 7.2 anti-cheat și root gate (S0/S1).** Subsistem lipsă, nu defect în cod existent. Un
   check de viteză pe jumătate dă kick la fiecare mount, blink și knockback. Merită PR propriu cu
   model de toleranță — exact cum spune §11.2.
-- **7.5 / 7.23 modelul de ceas.** 00 folosește `time + GetLatency()` în `HandleMoverRelocation`;
-  01 are TIME_SYNC + `MovementPacketDelay` + `MovementStreamTime()`. **Asta e o divergență reală
-  de design, nu un defect de portat mecanic** — și e exact zona unde ștergerea lui `+500` a rupt
-  mișcarea o dată deja. Portarea modelului din 01 e o schimbare separată, măsurată pe lag real.
 - **7.3 root/unroot/feather ACK.** Corpul lor există doar ca ghicitură comentată, identică în
   toate cele patru core-uri și verificată de nimeni. Un layout greșit aruncă
   `ByteBufferException` și pică sesiunea — mai rău decât a ignora pachetul.

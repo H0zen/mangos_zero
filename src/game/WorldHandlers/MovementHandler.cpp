@@ -365,6 +365,8 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recv_data)
     movementInfo.Read(recv_data);
     /*----------------*/
 
+    AdjustMovementInfoTime(movementInfo);
+
     if (!VerifyMovementInfo(movementInfo))
     {
         // Dropping it silently is what left the two sides disagreeing for good: his client
@@ -568,6 +570,8 @@ void WorldSession::HandleMoveKnockBackAck(WorldPacket& recv_data)
     recv_data >> Unused<uint32>(); // Always set to zero?
     recv_data >> movementInfo;
 
+    AdjustMovementInfoTime(movementInfo);
+
     /* Make sure input is valid */
     if (!VerifyMovementInfo(movementInfo, guid))
     {
@@ -646,6 +650,8 @@ void WorldSession::ApplyStateAck(MovementInfo& movementInfo)
     {
         return;
     }
+
+    AdjustMovementInfoTime(movementInfo);
 
     if (VerifyMovementInfo(movementInfo))
     {
@@ -831,10 +837,15 @@ bool WorldSession::VerifyMovementInfo(MovementInfo const& movementInfo) const
  */
 void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
 {
-    // The only place a movement timestamp is ever rewritten. Carry the client's own clock
-    // forward by the round trip it just made; do not translate it into a server time base.
-    movementInfo.UpdateTime(movementInfo.GetTime() + GetLatency());
-
+    // The timestamp rewrite that used to sit here -- `GetTime() + GetLatency()` -- has moved
+    // to AdjustMovementInfoTime, called by the handlers that read a packet off the wire.
+    //
+    // The comment it replaces was half right and worth keeping the true half of: the client's
+    // own clock must stay the thing that drives the deltas, and it does. What it got wrong is
+    // the term. GetLatency() is revised by every PING, so two consecutive packets could be
+    // carried forward by different amounts and land OUT OF ORDER in the observer's timeline,
+    // which repositions the unit backwards. Re-basing by a session-fixed offset keeps the
+    // client's deltas exactly and cannot invert them.
     Unit* mover = _player->GetMover();
 
     if (Player* plMover = mover->GetTypeId() == TYPEID_PLAYER ? (Player*)mover : NULL)

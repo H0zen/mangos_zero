@@ -501,6 +501,14 @@ class WorldSession
         {
             m_latency = latency;
         }
+
+        /// Forget the session's client-clock offset, so the next movement packet re-seeds it.
+        void ResetClientTimeDelay();
+
+        /// Rewrite a client movement timestamp into the timeline observers interpolate on:
+        /// the client's own clock re-based onto ours by a session-FIXED offset, then pushed
+        /// into the near future by MovementPacketDelay.
+        void AdjustMovementInfoTime(MovementInfo& mi);
         uint32 getDialogStatus(Player* pPlayer, Object* questgiver, uint32 defstatus);
 
         // Misc
@@ -635,9 +643,8 @@ class WorldSession
         void HandleMoveNotActiveMoverOpcode(WorldPacket& recv_data);
         void HandleMoveTimeSkippedOpcode(WorldPacket& recv_data);
 
-        /// Shared tail of the forced-state ACKs (water walk, hover): verify and relocate from
-        /// the pose the client says it applied the state at. HandleMoverRelocation does the
-        /// time rewrite itself on this core, so there is no separate time step here.
+        /// Shared tail of the forced-state ACKs (water walk, hover): time-adjust, verify and
+        /// relocate from the pose the client says it applied the state at.
         void ApplyStateAck(MovementInfo& movementInfo);
 
         /// Snap the mover's client back onto the last pose the server accepted, after a
@@ -945,6 +952,8 @@ class WorldSession
         uint32 m_latency;
         uint32 m_Tutorials[8];
         TutorialDataState m_tutorialState;
+        int64 m_clientTimeDelay;                            ///< client clock -> ours, fixed per session
+        bool m_clientTimeDelayKnown;
         uint32 m_lastMoverResync;                           ///< rate limit on ResyncMover()
         ObjectGuid m_npcWatchLastGuid;
         SessionPingTracker m_pingTracker;
