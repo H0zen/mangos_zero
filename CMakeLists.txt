@@ -66,8 +66,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(BUILD_MANGOSD         "Build the main server"                         ON)
 option(BUILD_REALMD          "Build the login server"                        ON)
 option(BUILD_TOOLS           "Build the client-data extractor"               ON)
-option(BUILD_CONFEDITOR      "Build the Win32 mangosd.conf editor (Windows)" ON)
-option(BUILD_CONFEDITOR_WEB  "Build the HTML/WebView2 conf editor (Windows)" ON)
 option(BUILD_AH_SERVICE      "Build the out-of-process auction-house service" ON)
 option(SCRIPT_LIB_ELUNA      "Compile with support for Eluna scripts"        ON)
 option(SCRIPT_LIB_SD3        "Compile with support for ScriptDev3 scripts"   ON)
@@ -91,8 +89,6 @@ message(
     BUILD_MANGOSD           Build the main server
     BUILD_REALMD            Build the login server
     BUILD_TOOLS             Build the client-data extractor
-    BUILD_CONFEDITOR        Win32 mangosd.conf dialog editor (Windows only)
-    BUILD_CONFEDITOR_WEB    HTML/WebView2 conf editor (Windows; needs WebView2 SDK)
     BUILD_AH_SERVICE        Out-of-process auction-house service
     SCRIPT_LIB_ELUNA        Compile with support for Eluna scripts
     SCRIPT_LIB_SD3          Compile with support for ScriptDev3 scripts
