@@ -800,7 +800,9 @@ void InitializeOpcodes()
     OPCODE(SMSG_INSTANCE_SAVE_CREATED,                     STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide);
     OPCODE(SMSG_RAID_INSTANCE_INFO,                        STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide);
     OPCODE(CMSG_REQUEST_RAID_INFO,                         STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleRequestRaidInfoOpcode);
-    OPCODE(CMSG_MOVE_TIME_SKIPPED,                         STATUS_LOGGEDIN, PROCESS_INPLACE,      &WorldSession::HandleMoveTimeSkippedOpcode);
+    // THREADSAFE, not INPLACE: the handler now writes the mover's m_movementInfo and
+    // broadcasts to its set, which is map state, as every other move opcode does.
+    OPCODE(CMSG_MOVE_TIME_SKIPPED,                         STATUS_LOGGEDIN, PROCESS_THREADSAFE,   &WorldSession::HandleMoveTimeSkippedOpcode);
     OPCODE(CMSG_MOVE_FEATHER_FALL_ACK,                     STATUS_LOGGEDIN, PROCESS_THREADSAFE,   &WorldSession::HandleFeatherFallAck);
     OPCODE(CMSG_MOVE_WATER_WALK_ACK,                       STATUS_LOGGEDIN, PROCESS_THREADSAFE,   &WorldSession::HandleMoveWaterWalkAck);
     OPCODE(CMSG_MOVE_NOT_ACTIVE_MOVER,                     STATUS_LOGGEDIN, PROCESS_THREADSAFE,   &WorldSession::HandleMoveNotActiveMoverOpcode);

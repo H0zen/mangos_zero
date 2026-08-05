@@ -501,7 +501,6 @@ class WorldSession
         {
             m_latency = latency;
         }
-        void SetClientTimeDelay(uint32 delay) { m_clientTimeDelay = delay; }
         uint32 getDialogStatus(Player* pPlayer, Object* questgiver, uint32 defstatus);
 
         // Misc
@@ -635,6 +634,15 @@ class WorldSession
         void HandleSetActiveMoverOpcode(WorldPacket& recv_data);
         void HandleMoveNotActiveMoverOpcode(WorldPacket& recv_data);
         void HandleMoveTimeSkippedOpcode(WorldPacket& recv_data);
+
+        /// Shared tail of the forced-state ACKs (water walk, hover): verify and relocate from
+        /// the pose the client says it applied the state at. HandleMoverRelocation does the
+        /// time rewrite itself on this core, so there is no separate time step here.
+        void ApplyStateAck(MovementInfo& movementInfo);
+
+        /// Snap the mover's client back onto the last pose the server accepted, after a
+        /// movement packet was rejected. Rate limited, and a no-op for a boarded mover.
+        void ResyncMover();
 
         void HandleRequestRaidInfoOpcode(WorldPacket& recv_data);
 
@@ -937,7 +945,7 @@ class WorldSession
         uint32 m_latency;
         uint32 m_Tutorials[8];
         TutorialDataState m_tutorialState;
-        uint32 m_clientTimeDelay;
+        uint32 m_lastMoverResync;                           ///< rate limit on ResyncMover()
         ObjectGuid m_npcWatchLastGuid;
         SessionPingTracker m_pingTracker;
 };

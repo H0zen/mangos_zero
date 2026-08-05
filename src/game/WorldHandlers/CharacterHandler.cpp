@@ -1035,9 +1035,6 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     }
 #endif /* ENABLE_ELUNA */
 
-    /* Used for movement */
-    m_clientTimeDelay = 0;
-
     /* Used for looting */
     pCurrChar->lastTimeLooted = time(NULL);
 

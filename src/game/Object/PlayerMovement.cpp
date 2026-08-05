@@ -79,6 +79,18 @@
 #include "playerbot.h"
 #endif /* ENABLE_PLAYERBOTS */
 
+// The setters below seed m_movementInfo before sending, as the Creature equivalents in
+// CreatureMovement.cpp already do -- that struct is what WriteMovementInfo puts in create
+// blocks and heartbeats.
+//
+// SetRoot is deliberately NOT one of them, and that is a divergence from 01. On 1.12 the bit
+// named MOVEFLAG_ROOT is 0x08000000 -- a different bit from 2.4.3's 0x00000800 -- and it
+// carries the comment "used for flight paths", the same comment sitting on SPLINE_ELEVATION
+// above it. That reads like a copy-paste left behind when SPLINE_ENABLED moved to 0x00400000,
+// but "reads like" is not evidence, wowdev.wiki would not answer, and MOVEFLAG_ROOT is in
+// movementFlagsMask, so guessing wrong here silently changes spell casting and taxi flights.
+// Seed it once a capture or a 1.12 reference confirms the bit.
+
 /**
  * @brief Forces or clears rooted movement for the player.
  *
@@ -99,10 +111,22 @@ void Player::SetRoot(bool enable)
  */
 void Player::SetWaterWalk(bool enable)
 {
+    if (enable)
+    {
+        m_movementInfo.AddMovementFlag(MOVEFLAG_WATERWALKING);
+    }
+    else
+    {
+        m_movementInfo.RemoveMovementFlag(MOVEFLAG_WATERWALKING);
+    }
+
+    // To the SET, like its siblings here and like Creature::SetWaterWalk. This was the one
+    // force packet in the file addressed to the owning session alone, so the caster walked
+    // on the water and everybody else watched him swim through it.
     WorldPacket data(enable ? SMSG_MOVE_WATER_WALK : SMSG_MOVE_LAND_WALK, GetPackGUID().size() + 4);
     data << GetPackGUID();
     data << uint32(0);
-    GetSession()->SendPacket(&data);
+    SendMessageToSet(&data, true);
 }
 
 /**
@@ -159,10 +183,12 @@ void Player::SetFeatherFall(bool enable)
     WorldPacket data;
     if (enable)
     {
+        m_movementInfo.AddMovementFlag(MOVEFLAG_SAFE_FALL);
         data.Initialize(SMSG_MOVE_FEATHER_FALL, 8 + 4);
     }
     else
     {
+        m_movementInfo.RemoveMovementFlag(MOVEFLAG_SAFE_FALL);
         data.Initialize(SMSG_MOVE_NORMAL_FALL, 8 + 4);
     }
 
@@ -187,10 +213,12 @@ void Player::SetHover(bool enable)
     WorldPacket data;
     if (enable)
     {
+        m_movementInfo.AddMovementFlag(MOVEFLAG_HOVER);
         data.Initialize(SMSG_MOVE_SET_HOVER, 8 + 4);
     }
     else
     {
+        m_movementInfo.RemoveMovementFlag(MOVEFLAG_HOVER);
         data.Initialize(SMSG_MOVE_UNSET_HOVER, 8 + 4);
     }
 
