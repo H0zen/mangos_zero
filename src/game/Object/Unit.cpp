@@ -554,9 +554,17 @@ void Unit::WriteMovementInfo(ByteBuffer& out) const
     onDeck.Write(out);
 }
 
+uint32 MovementStreamTime()
+{
+    // Live getMSTime(), not the tick-quantised GameTime this used to read: the session offset
+    // in AdjustMovementInfoTime is seeded from the live clock, so a stamp taken from a
+    // snapshot up to one world tick old is a different clock by up to 50 ms.
+    return getMSTime() + sWorld.getConfig(CONFIG_UINT32_MOVEMENT_PACKET_DELAY);
+}
+
 void Unit::SendHeartBeat()
 {
-    m_movementInfo.UpdateTime(GameTime::GetGameTimeMS());
+    m_movementInfo.UpdateTime(MovementStreamTime());
     WorldPacket data(MSG_MOVE_HEARTBEAT, 31);
     data << GetPackGUID();
     WriteMovementInfo(data);

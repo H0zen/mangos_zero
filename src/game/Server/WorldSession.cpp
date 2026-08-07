@@ -60,6 +60,7 @@
 #include <memory>
 #include "Database/DatabaseEnv.h"
 #include "Log.h"
+#include "Timer.h"
 #include "OpcodeTable.h"
 #include "SessionMailbox.h"
 #include "WorldPacket.h"
@@ -165,7 +166,8 @@ WorldSession::WorldSession(uint32 id, std::shared_ptr<proto::IClientLink> link,
     _security(sec), _accountId(id), _warden(NULL), _build(0), _logoutTime(0),
     m_inQueue(false), m_playerLoading(false), m_playerLogout(false), m_playerRecentlyLogout(false), m_playerSave(false),
     m_sessionDbcLocale(sWorld.GetAvailableDbcLocale(locale)), m_sessionDbLocaleIndex(sObjectMgr.GetIndexForLocale(locale)),
-    m_latency(0), m_clientTimeDelay(0), m_tutorialState(TUTORIALDATA_UNCHANGED), m_npcWatchLastGuid(),
+    m_latency(0), m_tutorialState(TUTORIALDATA_UNCHANGED), m_clientTimeDelay(0),
+    m_clientTimeDelayKnown(false), m_lastMoverResync(0), m_npcWatchLastGuid(),
     m_pingTracker()
 {
     if (m_link)
@@ -794,7 +796,6 @@ void WorldSession::HandlePingOpcode(WorldPacket& recvPacket)
     }
 
     SetLatency(latency);
-    SetClientTimeDelay(0);
 
     WorldPacket response(SMSG_PONG, 4);
     response << ping;
@@ -1130,4 +1131,32 @@ void WorldSession::InitWarden(uint16 build, BigNumber* k, std::string const& os)
         _warden = new WardenMac();
         _warden->Init(this, k);
     }
+}
+
+void WorldSession::ResetClientTimeDelay()
+{
+    m_clientTimeDelay = 0;
+    m_clientTimeDelayKnown = false;
+}
+
+void WorldSession::AdjustMovementInfoTime(MovementInfo& mi)
+{
+    // ONE SAMPLE, TAKEN ONCE, AND NEVER REVISED -- and that is the whole point, not a
+    // shortfall. 2.4.3 refines this offset from SMSG_TIME_SYNC_REQ/CMSG_TIME_SYNC_RESP;
+    // 1.12 has no such opcode pair (absent from this tree AND from VMaNGOS's 1.12.1 table,
+    // where every neighbouring opcode value matches ours), so there is nothing to refine it
+    // with. A latched offset is still strictly better than what stood here, because what
+    // matters to an observer is that the sequence never goes backwards, and a constant
+    // cannot. Clock drift over a session shifts every packet equally and the client absorbs
+    // it, tracking skew per mover.
+    if (!m_clientTimeDelayKnown)
+    {
+        m_clientTimeDelay = int64(getMSTime()) - int64(mi.GetTime());
+        m_clientTimeDelayKnown = true;
+    }
+
+    // Truncation is the point: the low 32 bits are the client's movement clock on the wire.
+    const int64 wire = int64(mi.GetTime()) + m_clientTimeDelay
+                     + int64(sWorld.getConfig(CONFIG_UINT32_MOVEMENT_PACKET_DELAY));
+    mi.UpdateTime(uint32(wire));
 }

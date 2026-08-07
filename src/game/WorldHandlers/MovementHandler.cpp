@@ -55,6 +55,7 @@
 
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"
+#include "Timer.h"
 #include <ctime>
 #include "WorldPacket.h"
 #include "WorldSession.h"
@@ -70,7 +71,9 @@
 #include "MapPersistentStateMgr.h"
 #include "ObjectMgr.h"
 
-#define MOVEMENT_PACKET_TIME_DELAY 300
+// A rejected packet arrives in bursts -- the client keeps predicting and keeps sending -- so
+// the correction has to be rarer than the thing it corrects, or it becomes the desync.
+static const uint32 MOVER_RESYNC_INTERVAL_MS = 1000;
 
 /**
  * @brief Handles the packet-based worldport acknowledgement.
@@ -362,8 +365,14 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recv_data)
     movementInfo.Read(recv_data);
     /*----------------*/
 
+    AdjustMovementInfoTime(movementInfo);
+
     if (!VerifyMovementInfo(movementInfo))
     {
+        // Dropping it silently is what left the two sides disagreeing for good: his client
+        // goes on predicting from a pose the server refused, and nothing afterwards tells
+        // either of them. Combat and range then answer from the last pose we did accept.
+        ResyncMover();
         return;
     }
 
@@ -510,7 +519,14 @@ void WorldSession::HandleMoveNotActiveMoverOpcode(WorldPacket& recv_data)
         return;
     }
 
-    _player->m_movementInfo = mi;
+    // The body describes the unit he STOPPED driving, and reaching this line is proof it is
+    // not him: the branch above returned for that case. Writing it onto the player -- which
+    // is what used to happen here -- handed him his pet's pose and flags for a frame, so an
+    // uncharm could leave him marked ONTRANSPORT or falling while standing on the ground.
+    if (Unit* old_mover = _player->GetMap()->GetUnit(old_mover_guid))
+    {
+        old_mover->m_movementInfo = mi;
+    }
 }
 
 /**
@@ -553,6 +569,8 @@ void WorldSession::HandleMoveKnockBackAck(WorldPacket& recv_data)
     recv_data >> guid;
     recv_data >> Unused<uint32>(); // Always set to zero?
     recv_data >> movementInfo;
+
+    AdjustMovementInfoTime(movementInfo);
 
     /* Make sure input is valid */
     if (!VerifyMovementInfo(movementInfo, guid))
@@ -609,6 +627,71 @@ void WorldSession::HandleMoveHoverAck(WorldPacket& recv_data)
     recv_data >> Unused<uint32>();                          // unk
     recv_data >> movementInfo;
     recv_data >> Unused<uint32>();                          // unk2
+
+    ApplyStateAck(movementInfo);
+}
+
+/**
+ * @brief Applies a forced-state acknowledgement to the current mover.
+ *
+ * @param movementInfo The movement state carried by the acknowledgement.
+ */
+void WorldSession::ApplyStateAck(MovementInfo& movementInfo)
+{
+    // The client has APPLIED the state and is reporting the pose it applied it at. Knockback
+    // was the only ACK on this core that ever believed it; the rest parsed the struct and
+    // dropped it, so between the force packet and the next heartbeat the server described a
+    // state it had itself commanded. It is the mover's own report, so it takes the same
+    // verify as any move packet.
+    Unit* mover = _player ? _player->GetMover() : NULL;
+    Player* plMover = (mover && mover->GetTypeId() == TYPEID_PLAYER) ? (Player*)mover : NULL;
+
+    if (!mover || (plMover && plMover->IsBeingTeleported()))
+    {
+        return;
+    }
+
+    AdjustMovementInfoTime(movementInfo);
+
+    if (VerifyMovementInfo(movementInfo))
+    {
+        HandleMoverRelocation(movementInfo);
+    }
+}
+
+/**
+ * @brief Snaps a rejected mover's client back onto the last accepted server pose.
+ */
+void WorldSession::ResyncMover()
+{
+    Unit* mover = _player ? _player->GetMover() : NULL;
+    Player* plMover = (mover && mover->GetTypeId() == TYPEID_PLAYER) ? (Player*)mover : NULL;
+
+    if (!plMover || plMover->IsBeingTeleported())
+    {
+        return;
+    }
+
+    // Aboard there is no world point to send him to: Where() is a place on the deck map and
+    // GetMapId() names a map his client has never been told exists. The vessel's own coarse
+    // pose is the only world answer available and it is worse than the disagreement.
+    if (!plMover->GetMap() || plMover->GetMap()->AsTransport())
+    {
+        return;
+    }
+
+    const uint32 now = getMSTime();
+    if (getMSTimeDiff(m_lastMoverResync, now) < MOVER_RESYNC_INTERVAL_MS)
+    {
+        return;
+    }
+
+    m_lastMoverResync = now;
+
+    plMover->TeleportTo(plMover->GetMapId(), plMover->Where().X(), plMover->Where().Y(),
+                        plMover->Where().Z(), plMover->Where().Facing(),
+                        TELE_TO_NOT_LEAVE_TRANSPORT | TELE_TO_NOT_LEAVE_COMBAT |
+                        TELE_TO_NOT_UNSUMMON_PET);
 }
 
 /**
@@ -626,6 +709,8 @@ void WorldSession::HandleMoveWaterWalkAck(WorldPacket& recv_data)
     recv_data.read_skip<uint32>();                          // unk
     recv_data >> movementInfo;
     recv_data >> Unused<uint32>();                          // unk2
+
+    ApplyStateAck(movementInfo);
 }
 
 /**
@@ -658,6 +743,24 @@ void WorldSession::HandleMoveTimeSkippedOpcode(WorldPacket& recv_data)
     recv_data >> guid;
     recv_data >> time_skipped;
     DEBUG_LOG("WORLD: Received opcode CMSG_MOVE_TIME_SKIPPED for %s, time_skipped: %u", guid.GetString().c_str(), time_skipped);
+
+    // The client names its MOVER, which is not the player while he drives something else.
+    Unit* mover = _player ? _player->GetMover() : NULL;
+    if (!mover || guid != mover->GetObjectGuid())
+    {
+        return;
+    }
+
+    // Logging it and stopping was the whole handler. The skip is the client telling us its
+    // movement clock jumped; without advancing our copy, every later packet from him is
+    // measured against a base that is now wrong, and without the relay below the observers
+    // never learn it at all and keep interpolating him through the gap.
+    mover->m_movementInfo.UpdateTime(mover->m_movementInfo.GetTime() + time_skipped);
+
+    WorldPacket data(MSG_MOVE_TIME_SKIPPED, 16);
+    data << mover->GetPackGUID();
+    data << time_skipped;
+    mover->SendMessageToSetExcept(&data, _player);
 }
 
 /**
@@ -693,15 +796,32 @@ bool WorldSession::VerifyMovementInfo(MovementInfo const& movementInfo) const
 
     if (movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
     {
-        // transports size limited
-        // (also received at zeppelin/lift leave by some reason with t_* as absolute in continent coordinates, can be safely skipped)
-        if (movementInfo.GetTransportPos()->x > 50 || movementInfo.GetTransportPos()->y > 50 || movementInfo.GetTransportPos()->z > 100)
+        // WHERE HE STANDS ON THE DECK MAP. The wire spells this field t_x/t_y/t_z and the
+        // protocol calls it an offset, but the moment it is ours it is a position on the
+        // vessel's own map -- nothing is composed with it, ever.
+        //
+        // So the test is whether it names a place on that map, and a map's bounds are the
+        // hull's. The old one compared 50 yards against the POSITIVE side alone and threw
+        // the whole packet away otherwise, which froze the stored position at the last one
+        // accepted: even a common transport ship reaches x[-59, +45], so anyone forward of
+        // the mast stopped moving at 50.
+        //
+        // The guard it replaces is still needed: a leaving zeppelin sometimes reports these
+        // as absolute continent coordinates, and those are thousands.
+        const Position* onDeck = movementInfo.GetTransportPos();
+
+        float extent = MAX_DECK_EXTENT;
+        if (Transport* vessel = _player
+                                    ? Transport::GetTransport(_player->GetMap(),
+                                                              movementInfo.GetTransportGuid())
+                                    : NULL)
         {
-            return false;
+            extent = vessel->AsMap() ? vessel->AsMap()->HullRadius() + DECK_EDGE_MARGIN
+                                     : MAX_DECK_EXTENT;
         }
 
-        if (!MaNGOS::IsValidMapCoord(movementInfo.GetPos()->x + movementInfo.GetTransportPos()->x, movementInfo.GetPos()->y + movementInfo.GetTransportPos()->y,
-            movementInfo.GetPos()->z + movementInfo.GetTransportPos()->z, movementInfo.GetPos()->o + movementInfo.GetTransportPos()->o))
+        if (std::fabs(onDeck->x) > extent || std::fabs(onDeck->y) > extent ||
+            std::fabs(onDeck->z) > extent)
         {
             return false;
         }
@@ -717,13 +837,15 @@ bool WorldSession::VerifyMovementInfo(MovementInfo const& movementInfo) const
  */
 void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
 {
-    //uint32 mstime = GameTime::GetGameTimeMS();
-    //if (m_clientTimeDelay == 0)
-    //    m_clientTimeDelay = mstime - movementInfo.GetTime();
-
-    //movementInfo.UpdateTime(movementInfo.GetTime() + m_clientTimeDelay + MOVEMENT_PACKET_TIME_DELAY);
-    movementInfo.UpdateTime(movementInfo.GetTime() + GetLatency());
-
+    // The timestamp rewrite that used to sit here -- `GetTime() + GetLatency()` -- has moved
+    // to AdjustMovementInfoTime, called by the handlers that read a packet off the wire.
+    //
+    // The comment it replaces was half right and worth keeping the true half of: the client's
+    // own clock must stay the thing that drives the deltas, and it does. What it got wrong is
+    // the term. GetLatency() is revised by every PING, so two consecutive packets could be
+    // carried forward by different amounts and land OUT OF ORDER in the observer's timeline,
+    // which repositions the unit backwards. Re-basing by a session-fixed offset keeps the
+    // client's deltas exactly and cannot invert them.
     Unit* mover = _player->GetMover();
 
     if (Player* plMover = mover->GetTypeId() == TYPEID_PLAYER ? (Player*)mover : NULL)
@@ -868,7 +990,17 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
     {
         if (mover->IsInWorld())
         {
-            mover->GetMap()->CreatureRelocation((Creature*)mover, movementInfo.GetPos()->x, movementInfo.GetPos()->y, movementInfo.GetPos()->z, movementInfo.GetPos()->o);
+            // Same rule as the player branch above, for the same reason: if the thing he is
+            // driving stands on a vessel, the deck offset is where it stands.
+            const Position* at = (mover->GetMap()->AsTransport() &&
+                                  movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
+                               ? movementInfo.GetTransportPos() : movementInfo.GetPos();
+
+            mover->GetMap()->CreatureRelocation((Creature*)mover, at->x, at->y, at->z, at->o);
+
+            // And record it. Without this the driven creature's create block and heartbeat
+            // are written from whatever m_movementInfo held before the charm began.
+            mover->m_movementInfo = movementInfo;
         }
     }
 }

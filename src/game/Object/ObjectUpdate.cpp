@@ -301,6 +301,11 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const
                 }
             }
 
+            // Stamp the create block on the same timeline the relayed stream runs on. It was
+            // not stamped at all before, so it carried whatever the last relayed packet left
+            // in the struct -- or zero, for anything that had never moved.
+            const_cast<Unit*>(unit)->m_movementInfo.UpdateTime(MovementStreamTime());
+
             moveflags = unit->m_movementInfo.GetMovementFlags();
             break;
 
