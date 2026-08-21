@@ -36,6 +36,7 @@ class GridRefManager : public RefManager<GridRefManager<OBJECT>, OBJECT>
     public:
 
         typedef LinkedListHead::Iterator< GridReference<OBJECT> > iterator;
+        typedef LinkedListHead::ReverseIterator< GridReference<OBJECT> > reverse_iterator;
 
         GridReference<OBJECT>* getFirst()
         {
@@ -49,7 +50,7 @@ class GridRefManager : public RefManager<GridRefManager<OBJECT>, OBJECT>
 
         iterator begin() { return iterator(getFirst()); }
         iterator end() { return iterator(nullptr); }
-        iterator rbegin() { return iterator(getLast()); }
-        iterator rend() { return iterator(nullptr); }
+        reverse_iterator rbegin() { return reverse_iterator(getLast()); }
+        reverse_iterator rend() { return reverse_iterator(nullptr); }
 };
 #endif

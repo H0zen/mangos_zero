@@ -255,6 +255,16 @@ class LootValidatorRef :  public Reference<Loot, LootValidatorRef>
         LootValidatorRef() {}
         void targetObjectDestroyLink() override {}
         void sourceObjectDestroyLink() override {}
+
+        LootValidatorRef* next()
+        {
+            return (LootValidatorRef*)Reference<Loot, LootValidatorRef>::next();
+        }
+
+        LootValidatorRef* prev()
+        {
+            return (LootValidatorRef*)Reference<Loot, LootValidatorRef>::prev();
+        }
 };
 
 //=====================================================
@@ -263,6 +273,7 @@ class LootValidatorRefManager : public RefManager<Loot, LootValidatorRef>
 {
     public:
         typedef LinkedListHead::Iterator< LootValidatorRef > iterator;
+        typedef LinkedListHead::ReverseIterator< LootValidatorRef > reverse_iterator;
 
         LootValidatorRef* getFirst()
         {
@@ -284,14 +295,14 @@ class LootValidatorRefManager : public RefManager<Loot, LootValidatorRef>
             return iterator(NULL);
         }
 
-        iterator rbegin()
+        reverse_iterator rbegin()
         {
-            return iterator(getLast());
+            return reverse_iterator(getLast());
         }
 
-        iterator rend()
+        reverse_iterator rend()
         {
-            return iterator(NULL);
+            return reverse_iterator(NULL);
         }
 };
 

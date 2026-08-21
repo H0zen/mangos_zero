@@ -40,6 +40,7 @@ class MapRefManager : public RefManager<Map, Player>
     public:
         typedef LinkedListHead::Iterator<MapReference> iterator;
         typedef LinkedListHead::Iterator<MapReference const> const_iterator;
+        typedef LinkedListHead::ReverseIterator<MapReference> reverse_iterator;
 
         /**
          * @brief Get first map reference
@@ -93,18 +94,18 @@ class MapRefManager : public RefManager<Map, Player>
          * @brief Get reverse iterator to beginning
          * @return Reverse iterator to beginning
          */
-        iterator rbegin()
+        reverse_iterator rbegin()
         {
-            return iterator(getLast());
+            return reverse_iterator(getLast());
         }
 
         /**
          * @brief Get reverse iterator to end
          * @return Reverse iterator to end
          */
-        iterator rend()
+        reverse_iterator rend()
         {
-            return iterator(NULL);
+            return reverse_iterator(NULL);
         }
 
         /**

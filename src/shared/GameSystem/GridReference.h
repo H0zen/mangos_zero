@@ -72,6 +72,13 @@ class GridReference : public Reference<GridRefManager<OBJECT>, OBJECT>
         {
             return (GridReference*)Reference<GridRefManager<OBJECT>, OBJECT>::next();
         }
+
+        /// The counterpart of next(). Without it the base returns a
+        /// Reference<...>*, so a reverse walk over this list will not compile.
+        GridReference* prev()
+        {
+            return (GridReference*)Reference<GridRefManager<OBJECT>, OBJECT>::prev();
+        }
 };
 
 #endif

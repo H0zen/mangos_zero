@@ -101,6 +101,21 @@ class MapReference : public Reference<Map, Player>
         MapReference const* next() const { return (MapReference const*)Reference<Map, Player>::next(); }
 
         /**
+         * @brief Get previous reference
+         * @return Previous map reference
+         */
+        MapReference* prev()
+        {
+            return (MapReference*)Reference<Map, Player>::prev();
+        }
+
+        /**
+         * @brief Get previous reference (const)
+         * @return Previous map reference (const)
+         */
+        MapReference const* prev() const { return (MapReference const*)Reference<Map, Player>::prev(); }
+
+        /**
          * @brief Get previous reference (no check)
          * @return Previous map reference
          */

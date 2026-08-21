@@ -51,6 +51,12 @@ class RefManager : public LinkedListHead
          * @brief
          *
          */
+        typedef LinkedListHead::ReverseIterator<Reference<TO, FROM> > reverse_iterator;
+
+        /**
+         * @brief
+         *
+         */
         RefManager() {}
 
         /**
@@ -113,21 +119,21 @@ class RefManager : public LinkedListHead
         /**
          * @brief
          *
-         * @return iterator
+         * @return reverse_iterator
          */
-        iterator rbegin()
+        reverse_iterator rbegin()
         {
-            return iterator(getLast());
+            return reverse_iterator(getLast());
         }
 
         /**
          * @brief
          *
-         * @return iterator
+         * @return reverse_iterator
          */
-        iterator rend()
+        reverse_iterator rend()
         {
-            return iterator(NULL);
+            return reverse_iterator(NULL);
         }
 
         /**

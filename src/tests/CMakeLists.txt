@@ -40,6 +40,8 @@ set(SRC_GRP_TESTS
     ConfigTest.cpp
     ByteBufferTest.cpp
     EventProcessorHostileTest.cpp
+    ContainersHostileTest.cpp
+    GridSystemHostileTest.cpp
     SessionMailboxTest.cpp
     SessionProtocolPolicyTest.cpp
     WorldGatewayAccountTest.cpp

@@ -99,6 +99,16 @@ class Reference : public LinkedListElement
          */
         void unlink()
         {
+            // The hook reaches back through getTarget(), which the previous
+            // unlink already set to NULL -- so without this guard a second
+            // unlink, or an unlink of a reference that was never linked, calls
+            // the subclass hook on a null target. GroupReference,
+            // FollowerReference and HostileReference all dereference it there.
+            if (!isValid())
+            {
+                return;
+            }
+
             targetObjectDestroyLink();
             delink();
             iRefTo = NULL;
@@ -114,6 +124,12 @@ class Reference : public LinkedListElement
          */
         void invalidate()                                   // the iRefFrom MUST remain!!
         {
+            // Same guard as unlink(), for the same reason.
+            if (!isValid())
+            {
+                return;
+            }
+
             sourceObjectDestroyLink();
             delink();
             iRefTo = NULL;

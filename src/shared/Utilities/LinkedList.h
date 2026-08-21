@@ -576,10 +576,63 @@ class LinkedListHead
         };
 
         /**
+         * @brief A walk from the last element to the first.
+         *
+         * Separate from Iterator rather than a flag on it, because the only way
+         * to walk backwards with Iterator is `--`, and `rbegin()` returning
+         * something a caller then has to remember to decrement is a trap: the
+         * ordinary `++` loop compiles, runs, and visits exactly one element.
+         * Here `++` moves towards the front, so the usual loop is the correct
+         * loop.
+         */
+        template<class _Ty>
+        class ReverseIterator : public Iterator<_Ty>
+        {
+            public:
+
+                typedef typename Iterator<_Ty>::pointer pointer;
+
+                ReverseIterator() : Iterator<_Ty>() {}
+                ReverseIterator(pointer _Pnode) : Iterator<_Ty>(_Pnode) {}
+
+                ReverseIterator& operator++()
+                {
+                    this->_Ptr = this->_Ptr->prev();
+                    return (*this);
+                }
+
+                ReverseIterator operator++(int)
+                {
+                    ReverseIterator _Tmp = *this;
+                    ++*this;
+                    return (_Tmp);
+                }
+
+                ReverseIterator& operator--()
+                {
+                    this->_Ptr = this->_Ptr->next();
+                    return (*this);
+                }
+
+                ReverseIterator operator--(int)
+                {
+                    ReverseIterator _Tmp = *this;
+                    --*this;
+                    return (_Tmp);
+                }
+        };
+
+        /**
          * @brief
          *
          */
         typedef Iterator<LinkedListElement> iterator;
+
+        /**
+         * @brief
+         *
+         */
+        typedef ReverseIterator<LinkedListElement> reverse_iterator;
 };
 
 //============================================
