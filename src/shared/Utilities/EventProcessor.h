@@ -28,121 +28,185 @@
 
 #include "Platform/Define.h"
 #include <map>
+#include <memory>
 
 /**
- * @brief Note. All times are in milliseconds here.
+ * @brief Something to happen later. All times are milliseconds.
  *
+ * Subclass it, hand it to an EventProcessor, and the processor owns it from that
+ * moment until one of two things happens:
+ *
+ *   Execute returns TRUE   the event is finished and the processor destroys it.
+ *
+ *   Execute returns FALSE  the event has RE-QUEUED ITSELF, in this processor or
+ *                          another one, and this processor gives up ownership
+ *                          without destroying it.
+ *
+ * The second is not hypothetical: a spell in flight re-queues itself on every
+ * update until it lands. It is also the sharp edge -- an Execute that returns
+ * false without re-queueing leaks the event, silently, and nothing here can
+ * detect it, because the event may legitimately have gone to a processor this
+ * one has never heard of.
  */
 class BasicEvent
 {
     public:
-        /**
-         * @brief Construct a new Basic Event object
-         * Initializes member variables to_Abort, m_addTime, and m_execTime.
-         */
+
         BasicEvent()
-            : to_Abort(false), m_addTime(0), m_execTime(0) // Initialize member variables
+            : m_abortRequested(false), m_aborted(false),
+              m_addTime(0), m_execTime(0), m_queuedPass(0)
         {
         }
 
-        /**
-         * @brief Destroy the Basic Event object
-         * Override destructor to perform some actions on event removal.
-         */
-        virtual ~BasicEvent()
-        {
-        };
+        virtual ~BasicEvent() {}
+
+        // Events are owned through pointers and identified by address; copying
+        // one would produce a second object the processor knows nothing about.
+        BasicEvent(BasicEvent const&) = delete;
+        BasicEvent& operator=(BasicEvent const&) = delete;
 
         /**
-         * @brief This method executes when the event is triggered
-         *
-         * @param e_time Execution time
-         * @param p_time Update interval
-         * @return bool Return false if event does not want to be deleted
+         * @param e_time The processor's clock at the moment of execution.
+         * @param p_time Milliseconds since the previous update.
+         * @return true to be destroyed, false if the event has re-queued itself.
          */
         virtual bool Execute(uint64 /*e_time*/, uint32 /*p_time*/) { return true; }
 
-        /**
-         * @brief This event can be safely deleted
-         *
-         * @return bool
-         */
+        /// False to survive a non-forced KillAllEvents.
         virtual bool IsDeletable() const { return true; }
 
-        /**
-         * @brief This method executes when the event is aborted
-         *
-         * @param e_time Execution time
-         */
+        /// Called instead of Execute when the event is cancelled. Exactly once.
         virtual void Abort(uint64 /*e_time*/) {}
 
-        bool to_Abort; /**< Set by externals when the event is aborted, aborted events don't execute and get Abort call when deleted */
+        /**
+         * @brief Ask for this event to be cancelled rather than executed.
+         *
+         * A request from outside, so it is writable from outside -- but paired
+         * with a separate flag the processor owns, so "someone asked" and "the
+         * abort has been delivered" stay distinct.
+         */
+        void RequestAbort() { m_abortRequested = true; }
+        bool IsAbortRequested() const { return m_abortRequested; }
 
-        // These can be used for time offset control
-        uint64 m_addTime; /**< Time when the event was added to queue, filled by event handler */
-        uint64 m_execTime; /**< Planned time of next execution, filled by event handler */
+        /// When the event was queued, and when it is due.
+        uint64 AddedAt() const { return m_addTime; }
+        uint64 ScheduledFor() const { return m_execTime; }
+
+    private:
+
+        friend class EventProcessor;
+
+        bool m_abortRequested;
+
+        /**
+         * @brief Whether Abort() has already been delivered.
+         *
+         * A non-forced KillAllEvents aborts every event but leaves the ones that
+         * are not yet deletable in the queue; a later Update finds them and
+         * destroys them. Without this flag it would abort them a SECOND time --
+         * and an Abort that releases a resource, refunds a cost or notifies a
+         * player would do it twice, with nothing in the event's own code to
+         * suggest that could happen.
+         */
+        bool m_aborted;
+
+        uint64 m_addTime;
+        uint64 m_execTime;
+
+        /**
+         * @brief Which Update pass queued this event.
+         *
+         * An event that re-queues itself for a time that has already arrived
+         * would otherwise run again inside the same Update, and again, without
+         * the clock ever advancing.
+         */
+        uint64 m_queuedPass;
 };
 
 /**
- * @brief Typedef for a multimap of events
+ * @brief A time-ordered queue of events, driven by the owner's update tick.
  *
- */
-typedef std::multimap<uint64, BasicEvent*> EventList;
-
-/**
- * @brief Event Processor class
- *
+ * One of these lives on every Unit. It is not thread-safe and does not need to
+ * be: it is driven from the thread that updates its owner.
  */
 class EventProcessor
 {
     public:
-        /**
-         * @brief Construct a new Event Processor object
-         * Initializes member variables m_time and m_aborting.
-         */
-        EventProcessor();
 
-        /**
-         * @brief Destroy the Event Processor object
-         * Calls KillAllEvents with force set to true.
-         */
+        EventProcessor() : m_time(0), m_pass(0), m_aborting(false) {}
         ~EventProcessor();
 
-        /**
-         * @brief Updates the event processor with the given time
-         *
-         * @param p_time Time to update the event processor with
-         */
+        EventProcessor(EventProcessor const&) = delete;
+        EventProcessor& operator=(EventProcessor const&) = delete;
+
+        /// Advance the clock and run everything now due.
         void Update(uint32 p_time);
 
         /**
-         * @brief Kills all events in the event processor
+         * @brief Cancel everything.
          *
-         * @param force If true, forces the deletion of all events
+         * @param force true destroys every event regardless of IsDeletable().
+         *              false leaves undeletable events queued -- they will be
+         *              destroyed by a later Update, without a second Abort.
          */
         void KillAllEvents(bool force);
 
         /**
-         * @brief Adds an event to the event processor
+         * @brief Queue an event, taking ownership.
          *
-         * @param Event Pointer to the event to add
-         * @param e_time Execution time of the event
-         * @param set_addtime If true, sets the add time of the event
+         * @return false if the processor is tearing down, in which case the
+         *         event has been ABORTED AND DESTROYED rather than queued.
+         *
+         * Read that return value. The event is gone when it is false, so a
+         * caller holding a pointer to it -- or to anything the event owns, which
+         * for a SpellEvent means the Spell itself -- is holding a dangling one
+         * from that instant. `Spell::prepare` is the case that matters and it
+         * returns immediately without touching itself again.
+         *
+         * An Abort handler is exactly where a dying object queues its cleanup,
+         * so insertion during teardown is a real path and must be refused --
+         * anything accepted then would be dropped by the teardown already in
+         * progress.
          */
-        void AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime = true);
+        bool AddEvent(std::unique_ptr<BasicEvent> event, uint64 e_time, bool set_addtime = true);
 
         /**
-         * @brief Calculates the time with the given offset
+         * @brief Re-queue an event that is executing right now.
          *
-         * @param t_offset Time offset to add
-         * @return uint64 Calculated time
+         * ONLY legal from inside that event's own Execute, which must then
+         * return false. That pair is the contract: Execute says "I did not
+         * finish", and this says where the still-living event went.
+         *
+         * Takes a raw pointer BECAUSE the event is mid-Execute and cannot hand
+         * over a unique_ptr to itself. Update released ownership before calling
+         * Execute, so exactly one owner exists at every moment.
+         *
+         * @return false if the target processor is tearing down; the event is
+         *         then NOT adopted and the caller still owns it -- and since the
+         *         caller is the event, returning false from Execute after this
+         *         leaks it. Callers must destroy themselves instead.
          */
-        uint64 CalculateTime(uint64 t_offset) const;
+        bool Reschedule(BasicEvent* event, uint64 e_time, bool set_addtime = false);
+
+        /// The processor's clock plus an offset -- how callers name a due time.
+        uint64 CalculateTime(uint64 t_offset) const { return m_time + t_offset; }
+
+        uint64 Now() const { return m_time; }
+
+        bool IsEmpty() const { return m_events.empty(); }
 
     protected:
-        uint64 m_time; /**< Current time in milliseconds */
-        EventList m_events; /**< List of events */
-        bool m_aborting; /**< Flag indicating if the event processor is aborting */
+
+        /// Deliver Abort exactly once. Returns false if it had already been sent.
+        static bool DeliverAbort(BasicEvent& event, uint64 time);
+
+        typedef std::multimap<uint64, std::unique_ptr<BasicEvent> > EventList;
+
+        EventList m_events;
+
+        uint64 m_time;
+        uint64 m_pass;
+        bool m_aborting;
 };
 
 #endif

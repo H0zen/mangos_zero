@@ -281,7 +281,22 @@ enum SpellTargets
 
 typedef std::multimap<uint64, uint64> SpellTargetTimeMap;
 
-class Spell
+/**
+ * @brief One cast, from the client's request to the last effect landing.
+ *
+ * A Spell IS the queued event that drives it. There used to be a separate
+ * SpellEvent holding a Spell* -- two objects with one lifetime, two allocations,
+ * and an ownership rule spread across both: the event's destructor decided
+ * whether the spell could be deleted, and when it decided no, it logged an error
+ * and leaked it, because it was the only owner.
+ *
+ * Now the processor owns the Spell through a unique_ptr and the question does
+ * not arise. IsDeletable() still exists and still guards the one case it was
+ * written for -- a spell must not be destroyed while its own cast() frame is on
+ * the stack -- but it is now an instruction to the queue rather than a decision
+ * made at deletion time.
+ */
+class Spell : public BasicEvent
 {
     friend struct MaNGOS::SpellNotifierPlayer;
     friend struct MaNGOS::SpellNotifierCreatureAndPlayer;
@@ -384,7 +399,15 @@ class Spell
         void EffectPlayMusic(SpellEffectIndex eff_idx);
 
         Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid originalCasterGUID = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
-        ~Spell();
+        ~Spell() override;
+
+        // BasicEvent. The cast's state machine is driven from Execute; Abort is
+        // the queue telling us the caster is going away.
+        bool Execute(uint64 e_time, uint32 p_time) override;
+        void Abort(uint64 e_time) override;
+
+        /// Re-queue from inside our own Execute. False means the queue refused.
+        bool Requeue(uint64 e_time);
 
         SpellCastResult prepare(SpellCastTargets const* targets, Aura* triggeredByAura = NULL, uint32 chance = 0);
 
@@ -481,7 +504,7 @@ class Spell
         bool IsMeleeAttackResetSpell() const { return !m_IsTriggeredSpell && (m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_AUTOATTACK);  }
         bool IsRangedAttackResetSpell() const { return !m_IsTriggeredSpell && IsRangedSpell() && (m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_AUTOATTACK); }
 
-        bool IsDeletable() const { return !m_referencedFromCurrentSpell && !m_executedCurrently; }
+        bool IsDeletable() const override { return !m_referencedFromCurrentSpell && !m_executedCurrently; }
         void SetReferencedFromCurrent(bool yes) { m_referencedFromCurrentSpell = yes; }
         void SetExecutedCurrently(bool yes) { m_executedCurrently = yes; }
         uint64 GetDelayStart() const { return m_delayStart; }
@@ -956,16 +979,4 @@ namespace MaNGOS
 
 typedef void(Spell::*pEffect)(SpellEffectIndex eff_idx);
 
-class SpellEvent : public BasicEvent
-{
-    public:
-        SpellEvent(Spell* spell);
-        virtual ~SpellEvent();
-
-        bool Execute(uint64 e_time, uint32 p_time) override;
-        void Abort(uint64 e_time) override;
-        bool IsDeletable() const override;
-    protected:
-        Spell* m_Spell;
-};
 #endif

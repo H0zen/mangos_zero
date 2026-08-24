@@ -503,6 +503,22 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
 
 Spell::~Spell()
 {
+    // Was ~SpellEvent. A spell that is destroyed without having finished has to
+    // undo itself -- release the global cooldown, tell the client, drop the
+    // auras it put on its targets -- and this is the last moment it can.
+    //
+    // cancel() early-returns on SPELL_STATE_FINISHED, so this is idempotent with
+    // the Abort() the queue may already have delivered.
+    if (m_spellState != SPELL_STATE_FINISHED)
+    {
+        cancel();
+    }
+
+    // The old code decided HERE whether it was allowed to delete the spell, and
+    // when the answer was no it logged "causes memory leak" and leaked it, being
+    // the only owner. The queue owns the object now, and IsDeletable() is
+    // consulted before it is destroyed rather than after.
+
 #ifdef ALLOC_METRICS
     // The whole cost of one cast, on one line. +1 is the Spell object itself,
     // allocated by the caller just before the constructor ran.
@@ -613,9 +629,22 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, Aura* triggeredB
         m_triggeredByAuraSpell = triggeredByAura->GetSpellProto();
     }
 
-    // create and add update event for this spell
-    SpellEvent* Event = new SpellEvent(this);
-    m_caster->m_Events.AddEvent(Event, m_caster->m_Events.CalculateTime(1));
+    // Hand ourselves to the caster's event queue, which owns us from here on.
+    //
+    // ===== NOTHING BELOW MAY RUN IF THIS IS REFUSED =====
+    //
+    // AddEvent refuses while the processor is tearing down, and a refusal
+    // DESTROYS what it was handed -- which is this Spell. Every statement after
+    // that point would be on freed memory, so the refusal returns immediately
+    // and touches no member, not even to set a state.
+    //
+    // The path is real: Unit::CleanupsBeforeDelete kills the queue and then
+    // removes every aura, and aura removal handlers cast.
+    // ====================================================
+    if (!m_caster->m_Events.AddEvent(std::unique_ptr<BasicEvent>(this), m_caster->m_Events.CalculateTime(1)))
+    {
+        return SPELL_FAILED_DONT_REPORT;
+    }
 
     // Prevent casting at cast another spell (ServerSide check)
     if (!m_IsTriggeredSpell && m_caster->IsNonMeleeSpellCasted(false, true, true))
@@ -966,147 +995,125 @@ bool Spell::HaveTargetsForEffect(SpellEffectIndex effect) const
     return false;
 }
 
-SpellEvent::SpellEvent(Spell* spell) : BasicEvent()
-{
-    m_Spell = spell;
-}
-
-SpellEvent::~SpellEvent()
-{
-    if (m_Spell->getState() != SPELL_STATE_FINISHED)
-    {
-        m_Spell->cancel();
-    }
-
-    if (m_Spell->IsDeletable())
-    {
-        delete m_Spell;
-    }
-    else
-    {
-        sLog.outError("~SpellEvent: %s %u tried to delete non-deletable spell %u. Was not deleted, causes memory leak.",
-            (m_Spell->GetCaster()->GetTypeId() == TYPEID_PLAYER ? "Player" : "Creature"), m_Spell->GetCaster()->GetGUIDLow(), m_Spell->m_spellInfo->ID);
-    }
-}
-
 /**
- * @brief Advances spell execution within the event queue.
+ * @brief Advances spell execution. Called once per owner update while the cast
+ *        is alive.
  *
  * @param e_time The event execution time.
  * @param p_time The elapsed update time in milliseconds.
- * @return True when the event is complete and can be removed; otherwise, false.
+ * @return True when the cast is complete and the queue may destroy it.
  */
-bool SpellEvent::Execute(uint64 e_time, uint32 p_time)
+bool Spell::Execute(uint64 e_time, uint32 p_time)
 {
     // update spell if it is not finished
-    if (m_Spell->getState() != SPELL_STATE_FINISHED)
+    if (m_spellState != SPELL_STATE_FINISHED)
     {
-        m_Spell->update(p_time);
+        update(p_time);
     }
 
     // check spell state to process
-    switch (m_Spell->getState())
+    switch (m_spellState)
     {
         case SPELL_STATE_FINISHED:
         {
             // spell was finished, check deletable state
-            if (m_Spell->IsDeletable())
+            if (IsDeletable())
             {
                 // check, if we do have unfinished triggered spells
                 return true;                                // spell is deletable, finish event
             }
-            // event will be re-added automatically at the end of routine)
+            // requeued at the end of the routine
             break;
         }
         case SPELL_STATE_CASTING:
         {
             // this spell is in channeled state, process it on the next update
-            // event will be re-added automatically at the end of routine)
             break;
         }
         case SPELL_STATE_DELAYED:
         {
             // first, check, if we have just started
-            if (m_Spell->GetDelayStart() != 0)
+            if (GetDelayStart() != 0)
             {
                 // no, we aren't, do the typical update
                 // check, if we have channeled spell on our hands
-                if (IsChanneledSpell(m_Spell->m_spellInfo))
+                if (IsChanneledSpell(m_spellInfo))
                 {
                     // evented channeled spell is processed separately, casted once after delay, and not destroyed till finish
                     // check, if we have casting anything else except this channeled spell and autorepeat
-                    if (m_Spell->GetCaster()->IsNonMeleeSpellCasted(false, true, true))
+                    if (m_caster->IsNonMeleeSpellCasted(false, true, true))
                     {
                         // another non-melee non-delayed spell is casted now, abort
-                        m_Spell->cancel();
+                        cancel();
                     }
                     else
                     {
                         // do the action (pass spell to channeling state)
-                        m_Spell->handle_immediate();
+                        handle_immediate();
                     }
-                    // event will be re-added automatically at the end of routine)
                 }
                 else
                 {
                     // run the spell handler and think about what we can do next
-                    uint64 t_offset = e_time - m_Spell->GetDelayStart();
-                    uint64 n_offset = m_Spell->handle_delayed(t_offset);
+                    uint64 t_offset = e_time - GetDelayStart();
+                    uint64 n_offset = handle_delayed(t_offset);
                     if (n_offset)
                     {
-                        // re-add us to the queue
-                        m_Spell->GetCaster()->m_Events.AddEvent(this, m_Spell->GetDelayStart() + n_offset, false);
-                        return false;                       // event not complete
+                        // The impact is still in the future: one scheduled entry
+                        // for the whole remaining flight, not one per tick.
+                        return !Requeue(GetDelayStart() + n_offset);
                     }
-                    // event complete
-                    // finish update event will be re-added automatically at the end of routine)
+                    // all targets hit; fall through to the finish check
                 }
             }
             else
             {
                 // delaying had just started, record the moment
-                m_Spell->SetDelayStart(e_time);
-                // re-plan the event for the delay moment
-                m_Spell->GetCaster()->m_Events.AddEvent(this, e_time + m_Spell->GetDelayMoment(), false);
-                return false;                               // event not complete
+                SetDelayStart(e_time);
+                return !Requeue(e_time + GetDelayMoment());
             }
             break;
         }
         default:
         {
             // all other states
-            // event will be re-added automatically at the end of routine)
             break;
         }
     }
 
-    // spell processing not complete, plan event on the next update interval
-    m_Spell->GetCaster()->m_Events.AddEvent(this, e_time + 1, false);
-    return false;                                           // event not complete
+    // Not finished: run again on the owner's next update.
+    return !Requeue(e_time + 1);
 }
 
 /**
- * @brief Aborts the queued spell event and cancels the spell if needed.
+ * @brief Re-queues this cast, from inside its own Execute.
+ *
+ * The queue released ownership before calling Execute, which is the only reason
+ * handing back a raw `this` is legal here. A refusal means the caster's queue is
+ * tearing down and will adopt nothing more; Execute then has to report
+ * completion so the queue destroys us, because returning "I re-queued myself"
+ * when nobody took us is how an event -- and the Spell it is -- leaks.
+ *
+ * @param e_time Absolute due time on the caster's clock.
+ * @return True if the queue adopted us.
+ */
+bool Spell::Requeue(uint64 e_time)
+{
+    return m_caster->m_Events.Reschedule(this, e_time, false);
+}
+
+/**
+ * @brief The queue is cancelling this cast -- the caster is going away.
  *
  * @param e_time Unused event time.
  */
-void SpellEvent::Abort(uint64 /*e_time*/)
+void Spell::Abort(uint64 /*e_time*/)
 {
     // oops, the spell we try to do is aborted
-    if (m_Spell->getState() != SPELL_STATE_FINISHED)
+    if (m_spellState != SPELL_STATE_FINISHED)
     {
-        m_Spell->cancel();
+        cancel();
     }
-}
-
-/**
- * @brief Checks whether the underlying spell can be deleted.
- *
- * @return True if the spell is deletable; otherwise, false.
- */
-bool SpellEvent::IsDeletable() const
-{
-    return m_Spell->IsDeletable();
 }
 
 /**

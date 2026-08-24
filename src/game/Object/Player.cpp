@@ -111,10 +111,17 @@ namespace
 
                 if (*phase == LoginEffectPhase::Start)
                 {
-                    m_player.m_Events.AddEvent(this,
-                        eTime + LoginEffectDelayBefore(LoginEffectPhase::Go),
-                        false);
-                    return false;
+                    // Mid-Execute re-queue: the processor released ownership
+                    // before calling us, so handing back a raw `this` is legal
+                    // here and nowhere else. A refusal means the processor is
+                    // tearing down -- return true so it destroys us, rather than
+                    // false, which would claim someone else took ownership.
+                    if (m_player.m_Events.Reschedule(this,
+                            eTime + LoginEffectDelayBefore(LoginEffectPhase::Go),
+                            false))
+                    {
+                        return false;
+                    }
                 }
                 return true;
             }
@@ -5332,7 +5339,7 @@ void Player::SendLoginTimeSpeed()
 /** Queues the visible START/GO half after the initial object batch is sent. */
 void Player::ScheduleLoginEffect()
 {
-    m_Events.AddEvent(new LoginEffectEvent(*this),
+    m_Events.AddEvent(std::unique_ptr<BasicEvent>(new LoginEffectEvent(*this)),
         m_Events.CalculateTime(
             LoginEffectDelayBefore(LoginEffectPhase::Start)));
 }
@@ -5346,7 +5353,7 @@ void Player::BeginLoginCinematicRoot()
 
     // Normal cinematic completion releases first; this timer is the bounded
     // failsafe for clients that never send completion.
-    m_Events.AddEvent(new LoginCinematicRootTimeoutEvent(*this),
+    m_Events.AddEvent(std::unique_ptr<BasicEvent>(new LoginCinematicRootTimeoutEvent(*this)),
         m_Events.CalculateTime(LOGIN_CINEMATIC_ROOT_TIMEOUT_MS));
     SetRoot(true);
 }
