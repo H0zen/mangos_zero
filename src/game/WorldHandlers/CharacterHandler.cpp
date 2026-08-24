@@ -76,11 +76,6 @@
 #ifdef ENABLE_ELUNA
 #include "LuaEngine.h"
 #endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#include "PlayerbotAIConfig.h"
-#include "PlayerRegistry.h"
-#endif
 
 // config option SkipCinematics supported values
 enum CinematicsSkipMode
@@ -102,26 +97,6 @@ class LoginQueryHolder : public SqlQueryHolder
         uint32 GetAccountId() const { return m_accountId; }
         bool Initialize();
 };
-
-#ifdef ENABLE_PLAYERBOTS
-class PlayerbotLoginQueryHolder : public LoginQueryHolder
-{
-    private:
-        uint32 masterAccountId;
-        PlayerbotHolder* playerbotHolder;
-
-    public:
-        PlayerbotLoginQueryHolder(PlayerbotHolder* playerbotHolder, uint32 masterAccount, uint32 accountId, ObjectGuid guid)
-            : LoginQueryHolder(accountId, guid), masterAccountId(masterAccount), playerbotHolder(playerbotHolder) {}
-
-    public:
-        uint32 GetMasterAccountId() const { return masterAccountId; }
-        PlayerbotHolder* GetPlayerbotHolder()
-        {
-            return playerbotHolder;
-        }
-};
-#endif
 
 /**
  * @brief Builds the set of delayed login queries required for a character load.
@@ -193,165 +168,9 @@ class CharacterHandler
                 delete holder;
                 return;
             }
-#ifdef ENABLE_PLAYERBOTS
-            ObjectGuid guid = ((LoginQueryHolder*)holder)->GetGuid();
-#endif
             session->HandlePlayerLogin((LoginQueryHolder*)holder);
-#ifdef ENABLE_PLAYERBOTS
-            Player* player = sObjectMgr.GetPlayer(guid, true);
-            if (player && !player->GetPlayerbotAI())
-            {
-                player->SetPlayerbotMgr(new PlayerbotMgr(player));
-                sRandomPlayerbotMgr.OnPlayerLogin(player);
-            }
-#endif
         }
-#ifdef ENABLE_PLAYERBOTS
-
-        void HandlePlayerBotLoginCallback(QueryResult * dummy, SqlQueryHolder * holder)
-        {
-            if (!holder)
-            {
-                return;
-            }
-
-            PlayerbotLoginQueryHolder* lqh = (PlayerbotLoginQueryHolder*)holder;
-            if (sObjectMgr.GetPlayer(lqh->GetGuid()))
-            {
-                delete holder;
-                return;
-            }
-
-            PlayerbotHolder* playerbotHolder = lqh->GetPlayerbotHolder();
-            uint32 masterAccount = lqh->GetMasterAccountId();
-            WorldSession* masterSession = masterAccount ? sWorld.FindSession(masterAccount) : NULL;
-
-            // The bot's WorldSession is owned by the bot's Player object. It is deleted by
-            // PlayerbotMgr::LogoutPlayerBot for a bot that reached playerBots, and directly
-            // below for one that logged in but was never authorised.
-            uint32 botAccountId = lqh->GetAccountId();
-            WorldSession *botSession = new WorldSession(
-                botAccountId, nullptr, nullptr, SEC_PLAYER, 0, LOCALE_enUS);
-            botSession->m_Address = "bot";
-            botSession->HandlePlayerLogin(lqh); // will delete lqh
-            Player* bot = botSession->GetPlayer();
-            if (!bot)
-            {
-                // HandlePlayerLogin failed to produce a Player (LoadFromDB failure), so
-                // nothing owns this session and nothing will ever come back for it. Without
-                // this the session leaks on every failed bot login.
-                delete botSession;
-                return;
-            }
-
-            bool allowed = false;
-            if (botAccountId == masterAccount)
-            {
-                allowed = true;
-            }
-            else if (masterSession && sPlayerbotAIConfig.allowGuildBots && bot->GetGuildId() == masterSession->GetPlayer()->GetGuildId())
-            {
-                allowed = true;
-            }
-            else if (sPlayerbotAIConfig.IsInRandomAccountList(botAccountId))
-            {
-                allowed = true;
-            }
-
-            if (allowed)
-            {
-                playerbotHolder->OnBotLogin(bot);
-            }
-            else
-            {
-                // HandlePlayerLogin above has already put this character into the world.
-                // Logging it out is therefore not optional: skipping it -- as this did
-                // whenever there was no master session, which is every masterless random
-                // bot -- leaves a Player in the world with no PlayerbotAI attached and no
-                // session owner. It cannot move, fight, answer a whisper or accept an
-                // invite, yet it is saved, visible and attackable, and its WorldSession is
-                // never freed. Only the notification to the master is conditional.
-                if (masterSession)
-                {
-                    ChatHandler ch(masterSession);
-                    ch.PSendSysMessage("You are not allowed to control bot %s...", bot->GetName());
-                }
-                else
-                {
-                    sLog.outError("Bot %s (account %u) logged in but is not authorised; logging it out. "
-                                  "A masterless bot must belong to the random bot account list.",
-                                  bot->GetName(), botAccountId);
-                }
-
-                // NOT LogoutPlayerBot. That resolves the bot through playerBots, and the
-                // only thing that ever writes to playerBots is OnBotLogin -- which is the
-                // branch we did not take. It would find nothing, skip its whole body, and
-                // leave the Player in the world with its WorldSession leaked, while looking
-                // like cleanup. The session is right here; log it out through that instead.
-                // Nothing may touch `bot` after this: LogoutPlayer destroys the Player.
-                botSession->LogoutPlayer(true);
-                delete botSession;
-            }
-        }
-#endif
 } chrHandler;
-
-#ifdef ENABLE_PLAYERBOTS
-
-/**
- * @brief Queues asynchronous login loading for a playerbot character.
- *
- * @param playerGuid The bot player guid.
- * @param masterAccountId The controlling master account id.
- */
-bool PlayerbotHolder::AddPlayerBot(uint64 playerGuid, uint32 masterAccountId)
-{
-    // has bot already been added?
-    if (sObjectMgr.GetPlayer(ObjectGuid(playerGuid)))
-    {
-        return true;
-    }
-
-    uint32 accountId = sObjectMgr.GetPlayerAccountIdByGUID(ObjectGuid(playerGuid));
-    if (accountId == 0)
-    {
-        return false;
-    }
-
-    // Refuse before the character is loaded, not after. A masterless bot is a random bot,
-    // and the only thing that can authorise one is membership of the random account list.
-    // The login callback re-tests that below, but by then HandlePlayerLogin has already put
-    // the character into the world -- so failing it there leaves a live Player with no AI.
-    // Lowering RandomBotAccountCount after a stress test is enough to reach this: the
-    // 'add' events persist in ai_playerbot_random_bots for accounts that are no longer in
-    // the list, and every one of them logs in and is abandoned.
-    // An empty list is a configuration or login-database failure, not a verdict on any
-    // individual bot. Refusing on it would retire the whole roster on a single bad boot,
-    // which is far worse than the problem being solved -- so treat it as "cannot judge"
-    // and let the callback decide, as GetFreeBots already does for admissions.
-    if (!masterAccountId && !sPlayerbotAIConfig.randomBotAccounts.empty() &&
-        !sPlayerbotAIConfig.IsInRandomAccountList(accountId))
-    {
-        sLog.outError("Refusing to log in bot %u: account %u is not one of the %u accounts loaded "
-                      "from RandomBotAccountCount. Its roster entry will be retired.",
-                      ObjectGuid(playerGuid).GetCounter(), accountId,
-                      uint32(sPlayerbotAIConfig.randomBotAccounts.size()));
-        return false;
-    }
-
-    PlayerbotLoginQueryHolder *holder = new PlayerbotLoginQueryHolder(this, masterAccountId, accountId, ObjectGuid(playerGuid));
-    if (!holder->Initialize())
-    {
-        delete holder;                                      // delete all unprocessed queries
-        return false;
-    }
-    CharacterDatabase.DelayQueryHolder([](QueryResult* result, SqlQueryHolder* h)
-                                       {
-                                           chrHandler.HandlePlayerBotLoginCallback(result, h);
-                                       }, holder);
-    return true;
-}
-#endif
 
 /**
  * @brief Builds and sends the character enumeration list for the session account.
@@ -1029,15 +848,8 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     SqlStatement stmt = CharacterDatabase.CreateStatement(updChars, "UPDATE `characters` SET `online` = 1 WHERE `guid` = ?");
     stmt.PExecute(pCurrChar->GetGUIDLow());
 
-#ifdef ENABLE_PLAYERBOTS
-    if (pCurrChar->GetSession()->GetRemoteAddress() != "bot")
-    {
-#endif
-        stmt = LoginDatabase.CreateStatement(updAccount, "UPDATE `account` SET `active_realm_id` = ? WHERE `id` = ?");
-        stmt.PExecute(realmID, GetAccountId());
-#ifdef ENABLE_PLAYERBOTS
-    }
-#endif
+    stmt = LoginDatabase.CreateStatement(updAccount, "UPDATE `account` SET `active_realm_id` = ? WHERE `id` = ?");
+    stmt.PExecute(realmID, GetAccountId());
 
     /* Sync player's in-game time with server time */
     pCurrChar->SetInGameTime(GameTime::GetGameTimeMS());

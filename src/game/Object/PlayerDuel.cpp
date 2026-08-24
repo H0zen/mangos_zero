@@ -76,9 +76,6 @@
 #ifdef ENABLE_ELUNA
 #include "LuaEngine.h"
 #endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 // If players are too far way of duel flag... then player loose the duel
 void Player::CheckDuelDistance(time_t currTime)

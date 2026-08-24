@@ -111,11 +111,6 @@ struct AreaTrigger;
 
 #include "CinematicFlyover.h"
 
-#ifdef ENABLE_PLAYERBOTS
-class PlayerbotAI;
-class PlayerbotMgr;
-#endif
-
 typedef std::deque<Mail*> PlayerMails;
 
 #define PLAYER_MAX_SKILLS           127
@@ -2055,10 +2050,6 @@ class Player : public Unit
 
         // Load the player from the database
         bool LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder);
-#ifdef ENABLE_PLAYERBOTS
-        // Minimal load of the player from the database
-        bool MinimalLoadFromDB(QueryResult *result, uint32 guid);
-#endif
 
         // Get the zone ID from the database
         static uint32 GetZoneIdFromDB(ObjectGuid guid);
@@ -3724,32 +3715,6 @@ class Player : public Unit
 
         bool canSeeSpellClickOn(Creature const* creature) const;
 
-#ifdef ENABLE_PLAYERBOTS
-        // Set the player bot AI
-        void SetPlayerbotAI(PlayerbotAI* ai) { assert(!m_playerbotAI && !m_playerbotMgr); m_playerbotAI = ai; }
-
-        // Get the player bot AI
-        PlayerbotAI* GetPlayerbotAI()
-        {
-            return m_playerbotAI;
-        }
-
-        // Set the player bot manager
-        void SetPlayerbotMgr(PlayerbotMgr* mgr) { assert(!m_playerbotAI && !m_playerbotMgr); m_playerbotMgr = mgr; }
-
-        // Get the player bot manager
-        PlayerbotMgr* GetPlayerbotMgr()
-        {
-            return m_playerbotMgr;
-        }
-
-        // Set the bot death timer
-        void SetBotDeathTimer()
-        {
-            m_deathTimer = 0;
-        }
-
-#endif
         void SaveMail();
     protected:
 
@@ -4080,14 +4045,6 @@ class Player : public Unit
 
         // Map reference for the player
         MapReference m_mapRef;
-
-#ifdef ENABLE_PLAYERBOTS
-        // Player bot AI
-        PlayerbotAI* m_playerbotAI;
-
-        // Player bot manager
-        PlayerbotMgr* m_playerbotMgr;
-#endif
 
         // Homebind coordinates
         uint32 m_homebindMapId; // Map ID of the homebind location

@@ -83,10 +83,6 @@
 #include "LuaEngine.h"
 #endif /* ENABLE_ELUNA */
 
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#endif
-
 #include <cmath>
 
 namespace
@@ -473,11 +469,6 @@ UpdateMask Player::updateVisualBits;
  */
 Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
 {
-#ifdef ENABLE_PLAYERBOTS
-    m_playerbotAI = 0;
-    m_playerbotMgr = 0;
-#endif
-
     m_transport = 0;
 
     m_speakTime = 0;
@@ -684,13 +675,6 @@ Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(this), m_
     m_lastFallTime = 0;
     // Initialize last fall Z coordinate to 0
     m_lastFallZ = 0;
-#ifdef ENABLE_PLAYERBOTS
-    // Initialize player bot AI to NULL
-    m_playerbotAI = NULL;
-    // Initialize player bot manager to NULL
-    m_playerbotMgr = NULL;
-#endif
-
 }
 
 /**
@@ -733,20 +717,6 @@ Player::~Player()
     {
         delete ItemSetEff[x];
     }
-
-#ifdef ENABLE_PLAYERBOTS
-    // Delete player bot AI and manager if they exist
-    if (m_playerbotAI)
-    {
-        delete m_playerbotAI;
-        m_playerbotAI = 0;
-    }
-    if (m_playerbotMgr)
-    {
-        delete m_playerbotMgr;
-        m_playerbotMgr = 0;
-    }
-#endif
 
     // clean up player-instance binds, may unload some instance saves
     for (BoundInstancesMap::iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end(); ++itr)
@@ -1422,19 +1392,6 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     {
         TeleportTo(m_teleport_dest, m_teleport_options);
     }
-
-#ifdef ENABLE_PLAYERBOTS
-    // Update player bot AI
-    if (m_playerbotAI)
-    {
-        m_playerbotAI->UpdateAI(p_time);
-    }
-    if (m_playerbotMgr)
-    {
-        m_playerbotMgr->UpdateAI(p_time);
-    }
-#endif
-
 }
 
 /**
@@ -3835,7 +3792,6 @@ void Player::SendPvPCredit(ObjectGuid guid, uint32 rank, uint32 points)
  */
 bool Player::AddHonorCP(float honor, uint8 type, uint32 victim, uint8 victimType)
 {
-
     if (!honor)
     {
         return false;

@@ -63,14 +63,6 @@ set(SRC_GRP_TESTS
     NavBinningTest.cpp
     DynamicCollisionTest.cpp
     PlacementTest.cpp
-    PlayerbotOutOfRangeMoverTest.cpp
-    RandomBotClassPolicyTest.cpp
-    PlayerbotMountPolicyTest.cpp
-    PlayerbotSecurityPolicyTest.cpp
-    PlayerbotLogPolicyTest.cpp
-    PlayerbotEventQueueTest.cpp
-    PlayerbotPacketPolicyTest.cpp
-    PlayerbotPerformanceMonitorTest.cpp
     # These pure packet builders are linked directly so the wire-layout tests
     # do not pull the complete game library and its mangosd-only globals.
     LoginSequenceTest.cpp
@@ -156,11 +148,6 @@ add_test(NAME movement_state_seed
     COMMAND ${CMAKE_COMMAND}
         -DSOURCE_ROOT=${CMAKE_SOURCE_DIR}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/CheckMovementStateSeed.cmake)
-
-add_test(NAME bot_relocation_notifies
-    COMMAND ${CMAKE_COMMAND}
-        -DSOURCE_ROOT=${CMAKE_SOURCE_DIR}
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/CheckBotRelocationNotifies.cmake)
 
 # Put the runtime DLLs beside the test binary so it can be run from the build tree.
 # A convenience, never a gate: the search is derived from the library that was actually

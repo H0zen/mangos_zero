@@ -109,14 +109,6 @@
 #include "ElunaLoader.h"
 #endif /* ENABLE_ELUNA */
 
-#ifdef ENABLE_PLAYERBOTS
-
-#include "PlayerbotAIConfig.h"
-#include "PlayerbotMgr.h"
-#include "PlayerbotPerformanceMonitor.h"
-#include "RandomPlayerbotMgr.h"
-#endif
-
 // AH subprocess supervisor (Task 5+)
 #include "WorkerSupervisor.h"
 #include "IpcMessage.h"
@@ -977,11 +969,6 @@ void World::SetInitialWorldSettings()
     }
 #endif
 
-#ifdef ENABLE_PLAYERBOTS
-    sPlayerbotAIConfig.Initialize();
-#endif
-
-
     uint32 startupDuration = GetMSTimeDiffToNow(startupBegin);
 
     // The completion panel says this in a nicer way, but the line is a long-lived
@@ -1037,16 +1024,6 @@ void World::showFooter(uint32 startupMs)
 #endif
 
     // The rest are compiled in but mangosd.conf still decides whether they run.
-#ifdef ENABLE_PLAYERBOTS
-    if (sConfig.GetBoolDefault("PlayerbotAI.DisableBots", true))
-    {
-        disabled.push_back("PlayerBots");
-    }
-    else
-    {
-        enabled.push_back("PlayerBots");
-    }
-#endif
 
     if (sConfig.GetBoolDefault("Ra.Enable", false))
     {
@@ -1432,15 +1409,6 @@ void World::Update(uint32 diff)
             }
         }
     }
-
-#ifdef ENABLE_PLAYERBOTS
-    sRandomPlayerbotMgr.UpdateAI(diff);
-    sRandomPlayerbotMgr.UpdateSessions(diff);
-    if (sPlayerbotAIConfig.performanceMetricsInterval)
-    {
-        ai::ReportPlayerbotPerformanceIfDue(sPlayerbotAIConfig.performanceMetricsInterval);
-    }
-#endif
 
     /// <li> Handle session updates
     UpdateSessions(diff);
@@ -1918,52 +1886,6 @@ void World::SendDefenseMessage(uint32 zoneId, int32 textId)
 /// Kick (and save) all players
 void World::KickAll()
 {
-#ifdef ENABLE_PLAYERBOTS
-    // Bots are players too, and this runs while their maps are still loaded. Bot sessions
-    // are created by the playerbot module and never registered in m_sessions -- see the
-    // note in CharacterHandler's bot login callback -- so the loop below cannot see them.
-    // Without this they survived until ~PlayerbotHolder ran during static destruction, by
-    // which point Master::ShutdownWorld had already called sMapMgr.UnloadAll().
-    // LogoutPlayerBot then reached Player::SaveToDB -> Map::GetEluna with a null map and
-    // took the process down: an access violation on every shutdown, with the save it was
-    // in the middle of abandoned, which is why bot state never persisted.
-    //
-    // ShutdownServ also logs them out on the .server shutdown path; LogoutAllBots is
-    // idempotent, so covering the whole of ShutdownWorld here is the belt to that brace.
-    sRandomPlayerbotMgr.LogoutAllBots();
-
-    // The random singleton is not the only bot holder. Every real player who ran ".bot add"
-    // owns a PlayerbotMgr, and ~PlayerbotHolder deliberately refuses to log out once the
-    // world has stopped -- that refusal is what stops the singleton saving into unloaded
-    // maps at static destruction. By the time ShutdownWorld runs, IsStopped() is already
-    // true, so a player's manager took the same refusal when its session was drained and
-    // its bots were never logged out and never saved.
-    //
-    // Doing it here rather than relaxing the destructor guard, because here is the one
-    // moment that is provably safe: ShutdownWorld drains sessions and only then unloads
-    // maps, so the maps these bots save against are still alive. LogoutAllBots is
-    // idempotent, so a manager destroyed normally while the world runs is unaffected.
-    for (SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
-    {
-        WorldSession* session = itr->second;
-        if (!session)
-        {
-            continue;
-        }
-
-        Player* player = session->GetPlayer();
-        if (!player)
-        {
-            continue;
-        }
-
-        if (PlayerbotMgr* botMgr = player->GetPlayerbotMgr())
-        {
-            botMgr->LogoutAllBots();
-        }
-    }
-#endif
-
     m_QueuedSessions.clear();                               // prevent send queue update packet and login queued sessions
 
     // session not removed at kick and will removed in next update tick
@@ -2154,17 +2076,6 @@ void World::ShutdownServ(uint32 time, uint32 options, uint8 exitcode)
         if (!(options & SHUTDOWN_MASK_IDLE) || GetActiveAndQueuedSessionCount() == 0)
         {
             sPlayerRegistry.SaveAll();        // save all players.
-
-#ifdef ENABLE_PLAYERBOTS
-            // Only once the shutdown is actually going through. This used to sit below,
-            // outside the branch, so ".server shutdown 3600" emptied the world of bots the
-            // moment it was typed and left the real players alone with an hour still on
-            // the countdown. The same applied to an idle shutdown that then declined to
-            // stop because sessions were still connected: the bots were gone and did not
-            // come back. LogoutAllBots is idempotent and ShutdownWorld calls it again, so
-            // deferring it costs nothing.
-            sRandomPlayerbotMgr.LogoutAllBots();
-#endif
 
             m_stopEvent = true;                                // exist code already set
         }

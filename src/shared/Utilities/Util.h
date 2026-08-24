@@ -969,9 +969,4 @@ int return_iCoreNumber();
 * @brief Display the startup banner
 */
 void print_banner();
-
-/**
- * Performs a case-insensitive substring search and returns a pointer to the first match.
- */
-char* strstri(const std::string& str1, const std::string& str2);
 #endif

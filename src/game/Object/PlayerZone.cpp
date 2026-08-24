@@ -77,9 +77,6 @@
 #ifdef ENABLE_ELUNA
 #include "LuaEngine.h"
 #endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 #define ZONE_UPDATE_INTERVAL (1*IN_MILLISECONDS)
 
@@ -273,10 +270,6 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea, bool sendInitialWorldSta
         // handle outdoor pvp zones
         sOutdoorPvPMgr.HandlePlayerLeaveZone(this, m_zoneUpdateId);
         sOutdoorPvPMgr.HandlePlayerEnterZone(this, newZone);
-
-#ifdef ENABLE_PLAYERBOTS
-        sRandomPlayerbotMgr.OnPlayerZoneChange(this, newZone);
-#endif
 
         if (sendInitialWorldStates)
         {

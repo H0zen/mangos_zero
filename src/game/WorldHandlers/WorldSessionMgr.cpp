@@ -114,12 +114,6 @@
 #ifdef ENABLE_ELUNA
 #include "ElunaLoader.h"
 #endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "PlayerbotAIConfig.h"
-#endif /* ENABLE_PLAYERBOTS */
-#ifdef ENABLE_PLAYERBOTS
-#include "RandomPlayerbotMgr.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 /// Find a session by its id
 WorldSession* World::FindSession(uint32 id) const

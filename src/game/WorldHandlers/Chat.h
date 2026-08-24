@@ -718,12 +718,6 @@ class ChatHandler
         bool HandleFreezePlayerCommand(char* args);
         bool HandleUnfreezePlayerCommand(char* args);
 
-#ifdef ENABLE_PLAYERBOTS
-        bool HandlePlayerbotCommand(char* args);
-        bool HandlePlayerbotConsoleCommand(char* args);
-        bool HandleAhBotCommand(char* args);
-#endif
-
         //! LivingWorld grid occupancy diagnostic (read-only, GM-only, in-game only)
         bool HandleGridInfoCommand(char* args);
         bool HandleGridAnchorsCommand(char* args);

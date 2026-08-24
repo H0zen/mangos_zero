@@ -71,12 +71,6 @@
 #ifdef ENABLE_ELUNA
 #include "LuaEngine.h"
 #endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#endif /* ENABLE_PLAYERBOTS */
-#ifdef ENABLE_PLAYERBOTS
-#include "PlayerbotAIConfig.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 /**
  * @brief Validates and starts the asynchronous character rename flow.

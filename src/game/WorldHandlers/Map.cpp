@@ -1229,14 +1229,7 @@ void Map::Remove(Player* player, bool remove)
     SendRemoveTransports(player);
     UpdateObjectVisibility(player, cell, p);
 
-#ifdef ENABLE_PLAYERBOTS
-    if (!player->GetPlayerbotAI())
-    {
-        player->ResetMap();
-    }
-#else
     player->ResetMap();
-#endif
     if (remove)
     {
         DeleteFromWorld(player);
@@ -3234,13 +3227,6 @@ void Map::SendObjectUpdates()
     WorldPacket packet;                                     // here we allocate a std::vector with a size of 0x10000
     for (UpdateDataMapType::iterator iter = update_players.begin(); iter != update_players.end(); ++iter)
     {
-#ifdef ENABLE_PLAYERBOTS
-        // Don't waste CPU building packets for bots - they have no network client
-        if (iter->first->GetPlayerbotAI())
-        {
-            continue;
-        }
-#endif
         iter->second.BuildPacket(&packet);
         iter->first->GetSession()->SendPacket(&packet);
         packet.clear();                                     // clean the string
