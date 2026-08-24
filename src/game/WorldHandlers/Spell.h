@@ -408,6 +408,7 @@ class Spell : public BasicEvent
 
         /// Re-queue from inside our own Execute. False means the queue refused.
         bool Requeue(uint64 e_time);
+        bool RequeueNextTick();
 
         SpellCastResult prepare(SpellCastTargets const* targets, Aura* triggeredByAura = NULL, uint32 chance = 0);
 

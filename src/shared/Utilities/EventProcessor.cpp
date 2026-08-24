@@ -45,6 +45,41 @@ bool EventProcessor::DeliverAbort(BasicEvent& event, uint64 time)
 }
 
 /**
+ * @brief Run one event and report whether it re-queued itself.
+ *
+ * Ownership is taken by value on purpose: the caller's container must have let
+ * go before the event runs. While Execute is on the stack nothing else holds a
+ * pointer to it, so anything Execute triggers -- another Update, a
+ * KillAllEvents, the owner's destruction -- cannot destroy it a second time.
+ *
+ * @return True if the event re-queued itself and must NOT be destroyed here.
+ */
+bool EventProcessor::Dispatch(std::unique_ptr<BasicEvent> event, uint32 p_time)
+{
+    if (!event)
+    {
+        return false;
+    }
+
+    if (event->IsAbortRequested())
+    {
+        DeliverAbort(*event, m_time);
+        return false;                                   // the unique_ptr destroys it
+    }
+
+    if (event->Execute(m_time, p_time))
+    {
+        return false;                                   // finished; destroyed here
+    }
+
+    // The event re-queued itself, here or elsewhere, and that insertion is now
+    // its owner. Releasing is what stops this unique_ptr from destroying an
+    // object the queue is holding.
+    event.release();
+    return true;
+}
+
+/**
  * @brief Advance the clock and run everything now due.
  */
 void EventProcessor::Update(uint32 p_time)
@@ -75,32 +110,34 @@ void EventProcessor::Update(uint32 p_time)
             break;
         }
 
-        // Ownership moves OUT of the map before the event runs. That ordering is
-        // what makes re-entrancy safe: while Execute is running, the map holds
-        // no pointer to this event, so anything Execute triggers -- another
-        // Update, a KillAllEvents, the owner's destruction -- cannot reach it
-        // and cannot destroy it twice.
+        // Ownership moves OUT of the map before the event runs -- see Dispatch.
         std::unique_ptr<BasicEvent> event = std::move(it->second);
         m_events.erase(it);
 
-        if (!event)
+        Dispatch(std::move(event), p_time);
+    }
+
+    // ===== THE PER-TICK LANE =====
+    //
+    // Everything here is due right now, by definition, so there is no ordering
+    // to maintain and nothing to allocate. Swapped out before it is walked, for
+    // the same reason the map entry is moved out before Execute: an event that
+    // re-registers during its own Execute lands in the now-empty m_ticking and
+    // runs on the NEXT update, instead of spinning inside this one.
+    //
+    // m_tickingRun keeps its buffer between updates, so in steady state this
+    // whole lane costs no allocation at all.
+    // =============================
+    if (!m_ticking.empty())
+    {
+        m_tickingRun.swap(m_ticking);
+
+        for (size_t i = 0; i < m_tickingRun.size(); ++i)
         {
-            continue;
+            Dispatch(std::move(m_tickingRun[i]), p_time);
         }
 
-        if (event->IsAbortRequested())
-        {
-            DeliverAbort(*event, m_time);
-            continue;                                   // the unique_ptr destroys it
-        }
-
-        if (!event->Execute(m_time, p_time))
-        {
-            // The event re-queued itself, here or elsewhere, and that insertion
-            // is now its owner. Releasing is what stops this unique_ptr from
-            // destroying an object the queue is holding.
-            event.release();
-        }
+        m_tickingRun.clear();
     }
 }
 
@@ -134,7 +171,11 @@ void EventProcessor::KillAllEvents(bool force)
     EventList pending;
     pending.swap(m_events);
 
+    TickList pendingTicks;
+    pendingTicks.swap(m_ticking);
+
     EventList survivors;
+    TickList survivingTicks;
 
     for (EventList::iterator itr = pending.begin(); itr != pending.end(); ++itr)
     {
@@ -154,6 +195,22 @@ void EventProcessor::KillAllEvents(bool force)
         }
     }
 
+    for (size_t i = 0; i < pendingTicks.size(); ++i)
+    {
+        if (!pendingTicks[i])
+        {
+            continue;
+        }
+
+        pendingTicks[i]->RequestAbort();
+        DeliverAbort(*pendingTicks[i], m_time);
+
+        if (!force && !pendingTicks[i]->IsDeletable())
+        {
+            survivingTicks.push_back(std::move(pendingTicks[i]));
+        }
+    }
+
     // ===== DESTROYED BEFORE THE GUARD COMES BACK DOWN =====
     //
     // Everything still held by `pending` dies here, and ~BasicEvent is virtual:
@@ -167,12 +224,18 @@ void EventProcessor::KillAllEvents(bool force)
     // flag put back.
     // ======================================================
     pending.clear();
+    pendingTicks.clear();
 
     // Whatever a handler queued in the meantime keeps its place; the survivors
     // are merged back in rather than overwriting it.
     for (EventList::iterator itr = survivors.begin(); itr != survivors.end(); ++itr)
     {
         m_events.insert(EventList::value_type(itr->first, std::move(itr->second)));
+    }
+
+    for (size_t i = 0; i < survivingTicks.size(); ++i)
+    {
+        m_ticking.push_back(std::move(survivingTicks[i]));
     }
 
     m_aborting = wasAborting;
@@ -244,6 +307,14 @@ bool EventProcessor::Reschedule(BasicEvent* event, uint64 e_time, bool set_addti
         }
     }
 
+    for (size_t i = 0; i < m_ticking.size(); ++i)
+    {
+        if (m_ticking[i].get() == event)
+        {
+            return false;
+        }
+    }
+
     if (set_addtime)
     {
         event->m_addTime = m_time;
@@ -253,5 +324,34 @@ bool EventProcessor::Reschedule(BasicEvent* event, uint64 e_time, bool set_addti
 
     AllocMetrics::Count(AllocMetrics::SITE_EVENT_QUEUE);
     m_events.insert(EventList::value_type(e_time, std::unique_ptr<BasicEvent>(event)));
+    return true;
+}
+
+/**
+ * @brief Re-queue an event to run again on the very next Update.
+ *
+ * @return False if the processor is tearing down; the event is NOT adopted.
+ */
+bool EventProcessor::RescheduleNextTick(BasicEvent* event)
+{
+    if (!event)
+    {
+        return false;
+    }
+
+    if (m_aborting)
+    {
+        return false;
+    }
+
+    // Due every tick, so m_queuedPass is not consulted for this lane -- the swap
+    // in Update is what keeps an event that re-registers from running twice in
+    // one pass. It is still stamped, so an event moving between the two lanes
+    // carries a truthful value.
+    event->m_execTime = m_time;
+    event->m_queuedPass = m_pass;
+
+    AllocMetrics::Count(AllocMetrics::SITE_EVENT_TICK);
+    m_ticking.push_back(std::unique_ptr<BasicEvent>(event));
     return true;
 }

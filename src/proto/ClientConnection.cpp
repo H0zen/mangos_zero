@@ -38,6 +38,13 @@
 
 namespace proto
 {
+namespace
+{
+    /// Above this, the reusable send frame is handed back rather than kept. Well
+    /// clear of any ordinary packet, so the steady state never reallocates.
+    const std::size_t MAX_RETAINED_FRAME = 64 * 1024;
+}
+
 std::atomic<uint32> ClientConnection::s_openConnections{0};
 
 ClientConnection::ClientConnection(IWorldGateway& gateway)
@@ -156,12 +163,36 @@ void ClientConnection::SendPacket(WorldPacket const& packet)
         }
 
         m_gateway.TracePacket(m_traceSession.load(std::memory_order_relaxed), packet, false);
-        std::vector<uint8> const frame = PacketCodec::Encode(packet,
+
+        // ===== ONE BUFFER PER SENDING THREAD, NOT ONE PER PACKET =====
+        //
+        // The frame's entire life is the memcpy that SendQueue::append does a
+        // line below, so building it in a fresh vector every time bought
+        // nothing: a broadcast to forty players was forty allocations of
+        // identical bytes, forty frees, and the same forty memcpys either way.
+        //
+        // thread_local rather than a member because SendPacket is called from
+        // any thread under m_sendOrderLock, and a per-connection buffer would
+        // then be shared state guarded by that lock for no reason. Nothing in
+        // this function re-enters it, so the buffer cannot be in use twice on
+        // one thread.
+        // =============================================================
+        static thread_local std::vector<uint8> frame;
+
+        PacketCodec::EncodeInto(frame, packet,
             [this](uint8* header, std::size_t len)
             {
                 m_crypt.EncryptSend(header, len);
             });
         m_sender(frame.data(), frame.size());
+
+        // A single oversized packet -- a full character list, a big update batch
+        // -- would otherwise pin its capacity on this thread for the life of the
+        // process. Give it back once it stops being a reasonable working size.
+        if (frame.capacity() > MAX_RETAINED_FRAME)
+        {
+            std::vector<uint8>().swap(frame);
+        }
     }
     catch (...)
     {

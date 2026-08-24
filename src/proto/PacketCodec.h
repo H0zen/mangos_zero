@@ -113,6 +113,34 @@ namespace proto
             static std::vector<uint8> Encode(const WorldPacket& packet,
                                              const HeaderEncryptor& encryptor);
 
+            /**
+             * @brief Serialise into a caller-owned buffer instead of a new one.
+             *
+             * ===== WHY THIS OVERLOAD EXISTS =====
+             *
+             * Encode() returns a fresh vector, and on the send path the entire
+             * life of that vector is one memcpy into the connection's outbound
+             * queue. That is one heap allocation per packet PER RECIPIENT: a
+             * spell cast broadcast to forty players spent a hundred and twenty
+             * allocations building a hundred and twenty copies of the same bytes
+             * and freeing them microseconds later.
+             *
+             * Only the four-byte header differs between recipients -- it is the
+             * header, and only the header, that the per-connection cipher
+             * touches. Handing in a buffer that the caller reuses removes the
+             * allocation without changing a single byte on the wire.
+             * ====================================================
+             *
+             * @param out       Cleared and refilled. Keeps its capacity, which
+             *                  is the point: reuse it across calls.
+             * @param packet    Packet to serialise.
+             * @param encryptor Header encryption hook; may be empty before the
+             *                  session key is known.
+             */
+            static void EncodeInto(std::vector<uint8>& out,
+                                   const WorldPacket& packet,
+                                   const HeaderEncryptor& encryptor);
+
             /// Install the header decryptor, once the session key has been agreed.
             void SetHeaderDecryptor(HeaderDecryptor decryptor)
             {

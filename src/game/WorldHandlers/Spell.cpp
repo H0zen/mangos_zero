@@ -1081,8 +1081,10 @@ bool Spell::Execute(uint64 e_time, uint32 p_time)
         }
     }
 
-    // Not finished: run again on the owner's next update.
-    return !Requeue(e_time + 1);
+    // Not finished: run again on the owner's next update. This is the common
+    // exit -- a cast bar filling, a channel running, auto shot armed -- and it
+    // used to cost a queue node every world tick. See RescheduleNextTick.
+    return !RequeueNextTick();
 }
 
 /**
@@ -1100,6 +1102,16 @@ bool Spell::Execute(uint64 e_time, uint32 p_time)
 bool Spell::Requeue(uint64 e_time)
 {
     return m_caster->m_Events.Reschedule(this, e_time, false);
+}
+
+/**
+ * @brief Re-queues this cast for the caster's next update.
+ *
+ * @return True if the queue adopted us.
+ */
+bool Spell::RequeueNextTick()
+{
+    return m_caster->m_Events.RescheduleNextTick(this);
 }
 
 /**

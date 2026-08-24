@@ -29,6 +29,7 @@
 #include "Platform/Define.h"
 #include <map>
 #include <memory>
+#include <vector>
 
 /**
  * @brief Something to happen later. All times are milliseconds.
@@ -188,21 +189,62 @@ class EventProcessor
          */
         bool Reschedule(BasicEvent* event, uint64 e_time, bool set_addtime = false);
 
+        /**
+         * @brief Re-queue an event to run again on the very next Update.
+         *
+         * Same contract as Reschedule -- only from inside your own Execute,
+         * which must then return false -- but for the case that turned out to be
+         * almost all of them: "nothing to decide yet, ask me again next tick".
+         *
+         * ===== WHY THIS IS NOT JUST Reschedule(now + 1) =====
+         *
+         * It was exactly that, and it was the single largest source of heap
+         * traffic in the spell system. A spell that is merely waiting -- cast bar
+         * filling, channel running, auto shot armed -- came back through here on
+         * every world tick, and every trip erased a std::multimap node and
+         * allocated an identical one. Twenty times a second, per live spell,
+         * carrying no information beyond "call me again": sixty allocations for a
+         * three second cast, a hundred and sixty for an eight second channel, and
+         * twenty per second per attacking player, forever, for auto repeat.
+         *
+         * These events are not scheduled in any meaningful sense -- they are due
+         * every tick -- so they do not belong in a time-ordered map. The lane is
+         * a vector that is swapped once per Update, so this costs an amortised
+         * push_back and nothing else.
+         * ====================================================
+         *
+         * @return False if the processor is tearing down; the event is NOT
+         *         adopted and Execute must return true so it is destroyed.
+         */
+        bool RescheduleNextTick(BasicEvent* event);
+
         /// The processor's clock plus an offset -- how callers name a due time.
         uint64 CalculateTime(uint64 t_offset) const { return m_time + t_offset; }
 
         uint64 Now() const { return m_time; }
 
-        bool IsEmpty() const { return m_events.empty(); }
+        bool IsEmpty() const { return m_events.empty() && m_ticking.empty(); }
 
     protected:
 
         /// Deliver Abort exactly once. Returns false if it had already been sent.
         static bool DeliverAbort(BasicEvent& event, uint64 time);
 
-        typedef std::multimap<uint64, std::unique_ptr<BasicEvent> > EventList;
+        /// Run one event and say whether it re-queued itself. Takes ownership.
+        bool Dispatch(std::unique_ptr<BasicEvent> event, uint32 p_time);
 
+        typedef std::multimap<uint64, std::unique_ptr<BasicEvent> > EventList;
+        typedef std::vector<std::unique_ptr<BasicEvent> > TickList;
+
+        /// Scheduled for a particular moment. Ordered, one node per entry.
         EventList m_events;
+
+        /// Due every update. No ordering to maintain, so no nodes to allocate.
+        TickList m_ticking;
+
+        /// Swapped with m_ticking each Update and reused, so the vector's buffer
+        /// is allocated once and never again -- which is the entire point.
+        TickList m_tickingRun;
 
         uint64 m_time;
         uint64 m_pass;

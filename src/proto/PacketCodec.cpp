@@ -138,8 +138,9 @@ namespace proto
         return DecodeStatus::Ok;
     }
 
-    std::vector<uint8> PacketCodec::Encode(const WorldPacket& packet,
-                                           const HeaderEncryptor& encryptor)
+    void PacketCodec::EncodeInto(std::vector<uint8>& out,
+                                 const WorldPacket& packet,
+                                 const HeaderEncryptor& encryptor)
     {
         // The size field counts the two opcode bytes along with the payload.
         const uint32 size = uint32(packet.size()) + 2;
@@ -169,24 +170,38 @@ namespace proto
         header[headerLen++] = uint8(opcode & 0xFF);
         header[headerLen++] = uint8((opcode >> 8) & 0xFF);
 
+        // The ONLY per-recipient part of the frame. Everything after it is the
+        // same bytes for every viewer of the same broadcast.
         if (encryptor)
         {
             encryptor(header, headerLen);
         }
 
-        std::vector<uint8> wire;
-        AllocMetrics::Count(AllocMetrics::SITE_PACKET_ENCODE);
-        wire.reserve(headerLen + packet.size());
-        wire.insert(wire.end(), header, header + headerLen);
+        // clear() keeps the capacity; a reused buffer reaches steady state after
+        // the first packet of its size and never allocates again.
+        out.clear();
+        if (out.capacity() < headerLen + packet.size())
+        {
+            AllocMetrics::Count(AllocMetrics::SITE_PACKET_ENCODE);
+            out.reserve(headerLen + packet.size());
+        }
+
+        out.insert(out.end(), header, header + headerLen);
 
         // contents() is only safe on a non-empty buffer; many packets are pure
         // opcodes with no payload at all.
         if (!packet.empty())
         {
-            wire.insert(wire.end(), packet.contents(),
-                        packet.contents() + packet.size());
+            out.insert(out.end(), packet.contents(),
+                       packet.contents() + packet.size());
         }
+    }
 
+    std::vector<uint8> PacketCodec::Encode(const WorldPacket& packet,
+                                           const HeaderEncryptor& encryptor)
+    {
+        std::vector<uint8> wire;
+        EncodeInto(wire, packet, encryptor);
         return wire;
     }
 }
