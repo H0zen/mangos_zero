@@ -69,9 +69,6 @@
 #include "Mail.h"
 #include "SQLStorages.h"
 #include "DisableMgr.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Checks whether the player can carry more copies of a limited item.
@@ -1787,17 +1784,6 @@ InventoryResult Player::CanUseItem(ItemPrototype const* pProto, bool direct_acti
         {
             return MapAhUseResult(ur);
         }
-
-#ifdef ENABLE_ELUNA
-        if (Eluna* e = GetEluna())
-        {
-            InventoryResult eres = e->OnCanUseItem(this, pProto->ItemId);
-            if (eres != EQUIP_ERR_OK)
-            {
-                return eres;
-            }
-        }
-#endif
 
         return EQUIP_ERR_OK;
     }

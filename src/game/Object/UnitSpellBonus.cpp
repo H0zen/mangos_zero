@@ -58,15 +58,6 @@
 #include "movement/MoveSpline.h"
 #include "CreatureLinkingMgr.h"
 #include "GameTime.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_ELUNA
-#include "ElunaConfig.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_ELUNA
-#include "ElunaEventMgr.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * \fn int32 Unit::SpellBonusWithCoeffs(Unit* pCaster, SpellEntry const* spellProto, int32 total, int32 benefit, int32 ap_benefit,  DamageEffectType damagetype, bool donePart, Spell const* spell)

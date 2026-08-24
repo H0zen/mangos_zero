@@ -29,7 +29,6 @@
 #include "AntiFreezeService.h"
 #include "CliService.h"
 #include "RASession.h"
-#include "AhService.h"
 
 #include "Config/Config.h"
 #include "Console/ConsoleUI.h"
@@ -230,12 +229,6 @@ void Master::StartServices()
         sLog.outError("SOAP is enabled in the configuration but was not compiled in; ignoring.");
     }
 #endif
-
-    // The out-of-process auction house. mangos_zero only, default-off.
-    if (sConfig.GetBoolDefault("AH.Service.Enabled", false))
-    {
-        m_services.push_back(std::unique_ptr<IService>(new AhServiceService()));
-    }
 
     // Watchdog. Disabled unless MaxCoreStuckTime is set.
     m_services.push_back(std::unique_ptr<IService>(new AntiFreezeService(

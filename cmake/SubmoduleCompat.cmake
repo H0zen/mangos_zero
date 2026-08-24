@@ -21,7 +21,7 @@
 # =============================================================================
 # Compatibility glue for the submodules.
 #
-# The submodules (Eluna, SD3, realmd) are shared with other
+# The submodules (SD3, realmd) are shared with other
 # cores and MUST NOT be modified: this fork cannot carry local commits in them,
 # because a clone would then reference objects that exist on no remote. So every
 # adaptation they need in order to build here lives in this tree instead, under
@@ -85,36 +85,4 @@ function(mangos_submodule_compat target compat_dir)
                 "$<$<COMPILE_LANGUAGE:CXX>:-include${_prelude}>")
         endif()
     endif()
-endfunction()
-
-# The same thing, scoped to a list of sources instead of a target.
-#
-# Eluna has no target of its own: this fork globs its sources straight into
-# `game`. Applying the compat layer to that target would force-include the shim
-# into all ~700 core sources -- which is precisely the tree-wide Common.h that
-# was deleted, reinstated through the back door. So the shim is attached to the
-# Eluna sources alone, and the rest of `game` never sees it.
-function(mangos_submodule_compat_sources sources compat_dir)
-    if(NOT IS_DIRECTORY "${compat_dir}")
-        message(FATAL_ERROR
-            "mangos_submodule_compat_sources: '${compat_dir}' does not exist.")
-    endif()
-
-    if(NOT sources)
-        message(FATAL_ERROR
-            "mangos_submodule_compat_sources: empty source list for "
-            "'${compat_dir}'. The submodule glob matched nothing, so the compat "
-            "layer would apply to no file at all.")
-    endif()
-
-    set(_prelude "${compat_dir}/Common.h")
-    if(MSVC)
-        set(_flag "/FI${_prelude}")
-    else()
-        set(_flag "-include${_prelude}")
-    endif()
-
-    set_source_files_properties(${sources} PROPERTIES
-        INCLUDE_DIRECTORIES "${compat_dir}"
-        COMPILE_OPTIONS     "${_flag}")
 endfunction()

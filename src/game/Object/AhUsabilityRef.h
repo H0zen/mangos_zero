@@ -62,8 +62,8 @@ struct AhRefItem
 namespace AhUsabilityRef
 {
     /// The production usability predicate (the prototype-level CanUseItem
-    /// branches + the Item* proficiency/reputation extras), minus the Eluna
-    /// hook. Player::CanUseItem delegates here so the test and production share
+    /// branches + the Item* proficiency/reputation extras).
+    /// Player::CanUseItem delegates here so the test and production share
     /// one source. Returns the per-branch AhUseResult (mapped 1:1 to the exact
     /// InventoryResult in Player.cpp, D1) so callers that forward a specific code
     /// keep their behavior; the honor branch is gated on directAction (D2).

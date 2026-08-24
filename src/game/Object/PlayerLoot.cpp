@@ -74,9 +74,6 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 #include "Corpse.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Converts the player's battleground corpse into lootable bones after insignia removal.

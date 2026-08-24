@@ -72,9 +72,6 @@
 #include "DisableMgr.h"
 #include "CinematicFlyover.h"
 #include <cmath>
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Awards rage generated from dealing or receiving damage.

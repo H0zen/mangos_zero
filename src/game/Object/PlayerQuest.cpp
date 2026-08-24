@@ -75,9 +75,6 @@
 #include "SQLStorages.h"
 #include "LFGMgr.h"
 #include "DisableMgr.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Builds the current quest menu for a creature or game object.

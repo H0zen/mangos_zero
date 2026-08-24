@@ -79,9 +79,6 @@
 #include "DBCStores.h"
 #include "SQLStorages.h"
 #include "DisableMgr.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 #include <cmath>
 
@@ -1312,13 +1309,6 @@ void Player::Update(uint32 update_diff, uint32 p_time)
         if (update_diff >= m_nextSave)
         {
             // m_nextSave reset in SaveToDB call
-            // Used by Eluna
-#ifdef ENABLE_ELUNA
-            if (Eluna* e = GetEluna())
-            {
-                e->OnSave(this);
-            }
-#endif /* ENABLE_ELUNA */
             SaveToDB();
             DETAIL_LOG("Player '%s' (GUID: %u) saved", GetName(), GetGUIDLow());
         }
@@ -2415,14 +2405,6 @@ void Player::GiveXP(uint32 xp, Unit* victim)
 
     uint32 level = getLevel();
 
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnGiveXP(this, xp, victim);
-    }
-#endif /* ENABLE_ELUNA */
-
     // XP to money conversion processed in Player::RewardQuest
     if (level >= sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
     {
@@ -2538,14 +2520,6 @@ void Player::GiveLevel(uint32 level)
         pet->SynchronizeLevelWithOwner();
     }
 
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnLevelChanged(this, oldLevel);
-    }
-#endif /* ENABLE_ELUNA */
-
 }
 
 /**
@@ -2555,14 +2529,6 @@ void Player::GiveLevel(uint32 level)
  */
 void Player::SetFreeTalentPoints(uint32 points)
 {
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnFreeTalentPointsChanged(this, points);
-    }
-#endif /* ENABLE_ELUNA */
-
     SetUInt32Value(PLAYER_CHARACTER_POINTS1, points);
 }
 
@@ -4246,47 +4212,6 @@ bool Player::HasItemWithIdEquipped(uint32 item, uint32 count, uint8 except_slot)
 
     return false;
 }
-
-/// Runs ONLY the Eluna OnCanUseItem veto (D5). Returns EQUIP_ERR_OK when Eluna
-/// is compiled out or there is no veto. Used by the deferred-Eluna browse pass,
-/// which has already had every non-Eluna sub-filter enforced worker-side.
-InventoryResult Player::CanUseItemEluna(uint32 itemEntry) const
-{
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        return e->OnCanUseItem(this, itemEntry);
-    }
-#else
-    (void)itemEntry;
-#endif
-    return EQUIP_ERR_OK;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * @brief Sends the main container open packet to the client.
@@ -6836,14 +6761,6 @@ void Player::HandleFall(MovementInfo const& movementInfo)
  */
 void Player::ModifyMoney(int32 d)
 {
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnMoneyChanged(this, d);
-    }
-#endif /* ENABLE_ELUNA */
-
     if (d < 0)
     {
         SetMoney(GetMoney() > uint32(-d) ? GetMoney() + d : 0);
@@ -6852,7 +6769,6 @@ void Player::ModifyMoney(int32 d)
     {
         SetMoney(GetMoney() < uint32(MAX_MONEY_AMOUNT - d) ? GetMoney() + d : MAX_MONEY_AMOUNT);
     }
-
 }
 
 /**

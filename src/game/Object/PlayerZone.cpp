@@ -74,9 +74,6 @@
 #include "DisableMgr.h"
 #include "CinematicFlyover.h"
 #include <cmath>
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 #define ZONE_UPDATE_INTERVAL (1*IN_MILLISECONDS)
 
@@ -282,14 +279,6 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea, bool sendInitialWorldSta
             wth->SendWeatherUpdateToPlayer(this);
         }
     }
-
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnUpdateZone(this, newZone, newArea);
-    }
-#endif /* ENABLE_ELUNA */
 
     m_zoneUpdateId    = newZone;
     m_zoneUpdateTimer = ZONE_UPDATE_INTERVAL;

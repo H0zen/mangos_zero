@@ -1553,13 +1553,6 @@ class Player : public Unit
         bool HasItemTotemCategory(uint32 TotemCategory) const;
         InventoryResult CanUseItem(ItemPrototype const* pItem, bool direct_action = true) const;
         InventoryResult CanUseAmmo(uint32 item) const;
-
-        /// Runs ONLY the Eluna OnCanUseItem veto (D5). Returns EQUIP_ERR_OK when
-        /// Eluna is compiled out or there is no veto. Used by the deferred-Eluna
-        /// browse pass, which has already had every non-Eluna sub-filter enforced
-        /// worker-side.
-        InventoryResult CanUseItemEluna(uint32 itemEntry) const;
-
         // Store a new item
         Item* StoreNewItem(ItemPosCountVec const& pos, uint32 item, bool update, int32 randomPropertyId = 0);
 

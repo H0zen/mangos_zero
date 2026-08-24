@@ -275,18 +275,6 @@ class Log : public MaNGOS::Singleton<Log>
         /**
          * @brief any log level
          *
-         * @param str...
-         */
-        void outErrorEluna();
-        /**
-         * @brief any log level
-         *
-         * @param str...
-         */
-        void outErrorEluna(const char* str, ...)        ATTR_PRINTF(2, 3);
-        /**
-         * @brief any log level
-         *
          */
         void outErrorEventAI();
         /**
@@ -549,9 +537,6 @@ class Log : public MaNGOS::Singleton<Log>
         FILE* gmLogfile; /**< TODO */
         FILE* charLogfile; /**< TODO */
         FILE* dberLogfile; /**< TODO */
-#ifdef ENABLE_ELUNA
-        FILE* elunaErrLogfile; /**< TODO */
-#endif /* ENABLE_ELUNA */
 
         FILE* eventAiErLogfile; /**< TODO */
         FILE* scriptErrLogFile; /**< TODO */

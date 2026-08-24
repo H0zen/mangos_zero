@@ -72,9 +72,6 @@
 #include "SQLStorages.h"
 #include "DisableMgr.h"
 #include <sstream>
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Loads the known taxi-node bitmask from a serialized string.

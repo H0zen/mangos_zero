@@ -61,15 +61,6 @@
 #include "GameTime.h"
 #include <math.h>
 #include <stdarg.h>
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_ELUNA
-#include "ElunaConfig.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_ELUNA
-#include "ElunaEventMgr.h"
-#endif /* ENABLE_ELUNA */
 
 bool Unit::CanHaveThreatList(bool ignoreAliveState/*=false*/) const
 {

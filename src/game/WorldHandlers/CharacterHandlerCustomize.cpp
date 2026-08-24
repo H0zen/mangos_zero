@@ -68,9 +68,6 @@
 #include "Timer.h"
 #include "Chat.h"
 #include "Config/Config.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Validates and starts the asynchronous character rename flow.

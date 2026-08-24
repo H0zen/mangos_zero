@@ -65,12 +65,6 @@
 #include "Chat.h"
 #include "GameTime.h"
 
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#include "ElunaConfig.h"
-#include "ElunaEventMgr.h"
-#endif /* ENABLE_ELUNA */
-
 /**
  * @brief Construct a new Object
  *
@@ -280,9 +274,6 @@ void Object::ForceValuesUpdateAtIndex(uint16 index)
  * Initializes a new WorldObject with default values.
  */
 WorldObject::WorldObject() :
-#ifdef ENABLE_ELUNA
-elunaEvents(nullptr),
-#endif /* ENABLE_ELUNA */
     m_currMap(NULL),
     m_mapId(0), m_InstanceId(0),
     m_isActiveObject(false),
@@ -292,15 +283,9 @@ elunaEvents(nullptr),
 
 /**
  * @brief WorldObject destructor
- *
- * Cleans up Eluna events if enabled.
  */
 WorldObject::~WorldObject()
 {
-#ifdef ENABLE_ELUNA
-    delete elunaEvents;
-    elunaEvents = nullptr;
-#endif /* ENABLE_ELUNA */
 }
 
 
@@ -487,19 +472,3 @@ WorldObject::~WorldObject()
  * Calculates a point at the specified distance and angle
  * from this object, accounting for collision detection.
  */
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifdef ENABLE_ELUNA
-
-#endif /* ENABLE_ELUNA */

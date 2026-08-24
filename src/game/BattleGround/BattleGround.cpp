@@ -56,10 +56,6 @@
 #include "GridNotifiersImpl.h"
 #include "Chat.h"
 #include "PlayerRegistry.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#include <cstdarg>
-#endif /* ENABLE_ELUNA */
 
 namespace MaNGOS
 {
@@ -305,10 +301,6 @@ BattleGround::BattleGround()
  */
 BattleGround::~BattleGround()
 {
-#ifdef ENABLE_ELUNA
-    // sEluna->OnBGDestroy(this, GetTypeID(), GetInstanceID());
-#endif /* ENABLE_ELUNA */
-
     // remove objects and creatures
     // (this is done automatically in mapmanager update, when the instance is reset after the reset time)
     sBattleGroundMgr.RemoveBattleGround(GetInstanceID(), GetTypeID());
@@ -482,13 +474,6 @@ void BattleGround::Update(uint32 diff)
         else if (GetStartDelayTime() <= 0 && !(m_Events & BG_STARTING_EVENT_4))
         {
             m_Events |= BG_STARTING_EVENT_4;
-
-#ifdef ENABLE_ELUNA
-            if (Eluna* e = this->GetBgMap()->GetEluna())
-            {
-                e->OnBGCreate(this, GetTypeID(), GetInstanceID());
-            }
-#endif /* ENABLE_ELUNA */
 
             StartingEventOpenDoors();
 
@@ -888,13 +873,6 @@ void BattleGround::StartBattleGround()
     // This must be done here, because we need to have already invited some players when first BG::Update() method is executed
     // and it doesn't matter if we call StartBattleGround() more times, because m_BattleGrounds is a map and instance id never changes
     sBattleGroundMgr.AddBattleGround(GetInstanceID(), GetTypeID(), this);
-
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetBgMap()->GetEluna())
-    {
-        e->OnBGCreate(this, GetTypeID(), GetInstanceID());
-    }
-#endif /* ENABLE_ELUNA */
 }
 
 /**

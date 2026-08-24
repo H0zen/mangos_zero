@@ -1807,14 +1807,7 @@ void ObjectMgr::SetHighestGuids()
     CharacterDatabase.BeginTransaction();
     CharacterDatabase.PExecute("DELETE FROM `character_inventory` WHERE `item` >= '%u'", m_ItemGuids.GetNextAfterMaxUsed());
     CharacterDatabase.PExecute("DELETE FROM `mail_items` WHERE `item_guid` >= '%u'", m_ItemGuids.GetNextAfterMaxUsed());
-    // [SP-2 spec 5.7] Under WriteAuthority the worker owns the `auction` book;
-    // the orphan-row DELETE is its responsibility (its own LoadFromDb repair).
-    // mangosd must not also delete auction rows (double-writer). The two item
-    // tables above stay mangosd's.
-    if (!sWorld.IsAhWriteAuthority())
-    {
-        CharacterDatabase.PExecute("DELETE FROM `auction` WHERE `itemguid` >= '%u'", m_ItemGuids.GetNextAfterMaxUsed());
-    }
+    CharacterDatabase.PExecute("DELETE FROM `auction` WHERE `itemguid` >= '%u'", m_ItemGuids.GetNextAfterMaxUsed());
     CharacterDatabase.CommitTransaction();
 
     result = WorldDatabase.Query("SELECT MAX(`guid`) FROM `gameobject`");
@@ -1824,30 +1817,11 @@ void ObjectMgr::SetHighestGuids()
         delete result;
     }
 
-    // Seed the auction-id generator from the higher of the two live high-water
-    // marks: MAX(id) in the auction table, and MAX(auction_id) in the
-    // custody_ledger table.  Custody rows can outlive their auction row (the
-    // TTL sweep prunes them asynchronously), so a freshly reused auction id
-    // would collide the "item:<id>"/"dep:<id>" idempotency keys of any
-    // not-yet-pruned terminal custody rows for the old auction.
+    result = CharacterDatabase.Query("SELECT MAX(`id`) FROM `auction`");
+    if (result)
     {
-        uint32 auctionMax = 0;
-        result = CharacterDatabase.Query("SELECT MAX(`id`) FROM `auction`");
-        if (result)
-        {
-            auctionMax = (*result)[0].GetUInt32();
-            delete result;
-        }
-
-        uint32 custodyMax = 0;
-        result = CharacterDatabase.Query("SELECT MAX(`auction_id`) FROM `custody_ledger`");
-        if (result)
-        {
-            custodyMax = (*result)[0].GetUInt32();
-            delete result;
-        }
-
-        m_AuctionIds.Set(std::max(auctionMax, custodyMax) + 1);
+        m_AuctionIds.Set((*result)[0].GetUInt32() + 1);
+        delete result;
     }
 
     result = CharacterDatabase.Query("SELECT MAX(`id`) FROM `mail`");

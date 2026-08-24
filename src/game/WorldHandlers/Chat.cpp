@@ -68,10 +68,6 @@
 #include "CommandMgr.h"
 #include "ObjectLookup.h"
 
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-
 // Supported shift-links (client generated and server side)
 // |color|Harea:area_id|h[name]|h|r
 // |color|Hareatrigger:id|h[name]|h|r
@@ -160,20 +156,6 @@ ChatCommand* ChatHandler::getCommandTable()
         { "reload",         SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleAHBotReloadCommand,         "", NULL },
         { "status",         SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleAHBotStatusCommand,         "", NULL },
         { NULL,             0,                  true,  NULL,                                           "", NULL }
-    };
-
-    static ChatCommand ahConsoleCommandTable[] =
-    {
-        { "show",           SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleAhServiceConsoleShowCommand, "", NULL },
-        { "hide",           SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleAhServiceConsoleHideCommand, "", NULL },
-        { NULL,             0,                  true,  NULL,                                            "", NULL }
-    };
-
-    static ChatCommand ahCommandTable[] =
-    {
-        { "console",        SEC_ADMINISTRATOR,  true,  NULL,                                            "", ahConsoleCommandTable },
-        { "repair",         SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleAhRepairCommand,             "", NULL },
-        { NULL,             0,                  true,  NULL,                                            "", NULL }
     };
 
     static ChatCommand auctionCommandTable[] =
@@ -777,7 +759,6 @@ ChatCommand* ChatHandler::getCommandTable()
     static ChatCommand commandTable[] =
     {
         { "account",        SEC_PLAYER,         true,  NULL,                                           "", accountCommandTable  },
-        { "ah",             SEC_ADMINISTRATOR,  true,  NULL,                                           "", ahCommandTable       },
         { "auction",        SEC_ADMINISTRATOR,  false, NULL,                                           "", auctionCommandTable  },
         { "ahbot",          SEC_ADMINISTRATOR,  true,  NULL,                                           "", ahbotCommandTable    },
         { "cast",           SEC_ADMINISTRATOR,  true,  NULL,                                           "", castCommandTable     },
@@ -1388,15 +1369,6 @@ void ChatHandler::ExecuteCommand(const char* text)
         }
         case CHAT_COMMAND_UNKNOWN_SUBCOMMAND:
         {
-#ifdef ENABLE_ELUNA
-            if (Eluna* e = sWorld.GetEluna())
-            {
-                if (!e->OnCommand(m_session ? m_session->GetPlayer() : NULL, fullcmd.c_str()))
-                {
-                    return;
-                }
-            }
-#endif /* ENABLE_ELUNA */
             SendSysMessage(LANG_NO_SUBCMD);
             ShowHelpForCommand(command->ChildCommands, text);
             SetSentErrorMessage(true);
@@ -1404,15 +1376,6 @@ void ChatHandler::ExecuteCommand(const char* text)
         }
         case CHAT_COMMAND_UNKNOWN:
         {
-#ifdef ENABLE_ELUNA
-            if (Eluna* e = sWorld.GetEluna())
-            {
-                if (!e->OnCommand(m_session ? m_session->GetPlayer() : NULL, fullcmd.c_str()))
-                {
-                    return;
-                }
-            }
-#endif /* ENABLE_ELUNA */
             SendSysMessage(LANG_NO_CMD);
             SetSentErrorMessage(true);
             break;

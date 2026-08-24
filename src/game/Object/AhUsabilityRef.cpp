@@ -128,7 +128,6 @@ namespace AhUsabilityRef
         {
             return AHUSE_CANT_EQUIP_REPUTATION;
         }
-        // Eluna OnCanUseItem is NOT here (Player::CanUseItem runs it after).
         return AHUSE_OK;
     }
 }

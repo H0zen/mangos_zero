@@ -78,9 +78,6 @@
 #include "SocialMgr.h"
 #include "DBCEnums.h"
 #include <zlib.h>
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Starts an asynchronous add-friend lookup.

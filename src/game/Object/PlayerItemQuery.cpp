@@ -70,9 +70,6 @@
 #include "DBCStores.h"
 #include "SQLStorages.h"
 #include "DisableMgr.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Updates a visible virtual weapon slot and consumes temporary enchant charges when needed.

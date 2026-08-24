@@ -54,11 +54,6 @@
 #include "PlayerRegistry.h"
 #include "ObjectLookup.h"
 
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-
-
 /**
  * @brief Creates a game object instance with default runtime state.
  */
@@ -108,9 +103,6 @@ GameObject::~GameObject()
  */
 void GameObject::AddToWorld()
 {
-#ifdef ENABLE_ELUNA
-    bool inWorld = IsInWorld();
-#endif /* ENABLE_ELUNA */
 
     ///- Register the gameobject for guid lookup
     if (!IsInWorld())
@@ -127,17 +119,6 @@ void GameObject::AddToWorld()
 
     // After Object::AddToWorld so that for initial state the GO is added to the world (and hence handled correctly)
     UpdateCollisionState();
-
-#ifdef ENABLE_ELUNA
-    if (!inWorld)
-    {
-        if (Eluna* e = GetEluna())
-        {
-            e->OnAddToWorld(this);
-        }
-    }
-#endif /* ENABLE_ELUNA */
-
 }
 
 /**
@@ -148,12 +129,6 @@ void GameObject::RemoveFromWorld()
     ///- Remove the gameobject from the accessor
     if (IsInWorld())
     {
-#ifdef ENABLE_ELUNA
-        if (Eluna* e = GetEluna())
-        {
-            e->OnRemoveFromWorld(this);
-        }
-#endif /* ENABLE_ELUNA */
 
         // Notify the outdoor pvp script
         if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(GetTerrain()->GetZoneId(Where().X(), Where().Y(), Where().Z())))
@@ -282,14 +257,6 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map,float x, float 
         default:
             break;
     }
-
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnSpawn(this);
-    }
-#endif /* ENABLE_ELUNA */
 
     // Notify the battleground or outdoor pvp script
     if (map->IsBattleGround())
@@ -671,7 +638,6 @@ bool GameObject::IsVisibleForInState(Player const* u, WorldObject const* viewPoi
 
                 if (!owner || u->IsHostileTo(owner))
                 {
-
                     visibleDistance = 10.5f;
                     //2^3=8 and 300 - from spell 2836, EFFECT_INDEX_1 - SPELL_AURA_MOD_INVISIBILITY_DETECTION; TODO check 200 and improve
                     if (u->GetMaxPositiveAuraModifierByMiscValue(SPELL_AURA_MOD_INVISIBILITY_DETECTION, 8) < 200)
@@ -1365,12 +1331,6 @@ uint32 GameObject::RollMineralVein(uint32 entry)      //Maybe incedicite bloodst
 void GameObject::SetLootState(LootState state)
 {
     m_lootState = state;
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnLootStateChanged(this, state);
-    }
-#endif /* ENABLE_ELUNA */
     UpdateCollisionState();
 }
 
@@ -1382,12 +1342,6 @@ void GameObject::SetLootState(LootState state)
 void GameObject::SetGoState(GOState state)
 {
     SetByteValue(GAMEOBJECT_STATE, 0, state);
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnGameObjectStateChanged(this, state);
-    }
-#endif /* ENABLE_ELUNA */
     UpdateCollisionState();
 }
 
@@ -1735,7 +1689,6 @@ void GameObject::SendGameObjectReset()
  */
 bool  GameObject::AIM_Initialize()
 {
-
     // make sure nothing can change the AI during AI update
     if (m_AI_locked)
     {

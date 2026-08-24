@@ -71,9 +71,6 @@
 #include "SQLStorages.h"
 #include "DisableMgr.h"
 #include "CinematicFlyover.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Checks whether a bag and slot refer to normal inventory storage.

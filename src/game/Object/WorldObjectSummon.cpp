@@ -73,15 +73,6 @@
 #include "Chat.h"
 #include "GameTime.h"
 #include "Corpse.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_ELUNA
-#include "ElunaConfig.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_ELUNA
-#include "ElunaEventMgr.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Assigns the current map context to the world object.
@@ -177,16 +168,6 @@ Creature* WorldObject::SummonCreature(uint32 id, float x, float y, float z, floa
     {
         ((Creature*)this)->AI()->JustSummoned(pCreature);
     }
-
-#ifdef ENABLE_ELUNA
-    if (Unit* summoner = ToUnit())
-    {
-        if (Eluna* e = GetEluna())
-        {
-            e->OnSummoned(pCreature, summoner);
-        }
-    }
-#endif /* ENABLE_ELUNA */
 
     // Creature Linking, Initial load is handled like respawn
     if (pCreature->IsLinkingEventTrigger())
@@ -748,23 +729,3 @@ void WorldObject::SetActiveObjectState(bool active)
     m_isActiveObject = active;
 }
 
-#ifdef ENABLE_ELUNA
-/**
- * @brief Get Eluna instance
- * @return Eluna instance pointer or nullptr
- *
- * Returns the Eluna scripting engine instance for this object's map.
- *
- * Guarded to match the declaration in Object.h. Unguarded, a -DSCRIPT_LIB_ELUNA=0
- * build fails here on an undeclared Eluna and a Map that has no GetEluna().
- */
-Eluna* WorldObject::GetEluna() const
-{
-    if (IsInWorld())
-    {
-        return GetMap()->GetEluna();
-    }
-
-    return nullptr;
-}
-#endif /* ENABLE_ELUNA */

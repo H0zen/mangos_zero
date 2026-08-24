@@ -74,9 +74,6 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 #include "Corpse.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Checks whether this player should be visible to another player in grid range.

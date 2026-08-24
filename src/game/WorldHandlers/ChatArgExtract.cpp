@@ -68,9 +68,6 @@
 #include "GameEventMgr.h"
 #include "AuctionHouseBot/AuctionHouseBot.h"
 #include "CommandMgr.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * Function skip all whitespaces in args string

@@ -67,9 +67,6 @@
 #include "GameEventMgr.h"
 #include "AuctionHouseBot/AuctionHouseBot.h"
 #include "CommandMgr.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Validates chat text and embedded shift-links against configured strictness rules.

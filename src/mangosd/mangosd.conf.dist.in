@@ -400,10 +400,6 @@ Warden.IncidentWindow        = 900
 #        Log file of DB errors detected at server run
 #        Default: "DBErrors.log"
 #
-#    ElunaErrorLogFile
-#        Log file of Eluna errors detected at server run
-#        Default: "ElunaErrors.log"
-#
 #    EventAIErrorLogFile
 #        Log file of EventAI errors detected at server run
 #        Default: "EventAIErrors.log"
@@ -487,7 +483,6 @@ WorldLogFile                 = "world-packets.log"
 PacketLoggingEnabled         = 0
 WorldLogTimestamp            = 0
 DBErrorLogFile               = "world-database.log"
-ElunaErrorLogFile            = "ElunaErrors.log"
 EventAIErrorLogFile          = "world-eventai.log"
 CharLogFile                  = "world-characters.log"
 CharLogTimestamp             = 0
@@ -1862,87 +1857,6 @@ SOAP.Enabled   = 0
 SOAP.IP        = 127.0.0.1
 SOAP.Port      = 7878
 
-###############################################################################
-#    AH.Service.Enabled
-#        Run the auction house bot as a separate supervised child process.
-#        When enabled, mangosd spawns the ah-service executable, maintains a
-#        loopback IPC channel, and restarts the child on unexpected exit.
-#        Default: 0 (disabled; in-process AH bot is used instead)
-#
-#    AH.Service.Path
-#        Path to the ah-service executable, relative to the mangosd working
-#        directory (or absolute).
-#        Default: service-workers/ah-service/ah-service
-#
-#    AH.Service.Port
-#        Loopback TCP port for the mangosd ↔ ah-service IPC channel.
-#        Default: 5760
-#
-#    AH.Service.Secret
-#        Shared secret for IPC handshake authentication.
-#        Change this to a random string in production configurations.
-#        mangosd passes this to the child OUT-OF-BAND via the
-#        AH_SERVICE_SECRET environment variable (NOT on the child command
-#        line), so it is not exposed in the process list.
-#        Default: changeme
-#
-#    AH.Service.Config
-#        Path to the ah-service configuration file, passed as --config to the
-#        child process so it can locate its own settings.
-#        Default: ah-service.conf
-#
-#    AH.Service.IntentTtlSec
-#        How long (in seconds) the executor retains UUID records for
-#        deduplication of intents submitted by the child process.
-#        Increase if the child can re-emit the same intent after a reconnect
-#        within a window longer than the default.
-#        Default: 900
-#
-#    AH.Service.Custody
-#        Route player auction gold/items through the in-process custody escrow
-#        ledger.  Default 0 = today's direct path.
-#        Default: 0
-#
-#    AH.Service.CustodyCrashAt
-#        TEST ONLY.  Inject _exit(3) at a custody seam transition:
-#        empty = off, pre-commit, pre-deferred, and the SP-2 write-path seams
-#        post-reserve-pre-forward, resolving-pre-apply.
-#        NEVER set on a live realm.
-#        Default: "" (off)
-#
-#    AH.Service.CustodyFailCommitAt
-#        TEST ONLY.  Force a finalize checked-commit to roll back and report
-#        failure ONCE (one-shot per process) to exercise the redrive path:
-#        empty = off, finalize-fail.
-#        NEVER set on a live realm.
-#        Default: "" (off)
-#
-#    AH.Service.WriteAuthority
-#        [SP-2] Grant the out-of-process AH worker WRITE-AUTHORITY over the
-#        auction book: the worker inserts/updates/deletes `auction` rows and
-#        runs the expiry/win tick, while every residual mangosd-side auction
-#        writer (boot repair, orphan cleanup, the in-process expiry sweep, and
-#        the in-process AH bot) stands down so there is a single book writer.
-#        BOOT-LATCHED: read once at startup, ignored by `.reload config`.
-#        HARD REQUIREMENT: AH.Service.Custody = 1 (the write path rides the
-#        custody escrow ledger). Enabling this with Custody = 0 is unsupported.
-#        The worker's DB account additionally needs INSERT/UPDATE/DELETE on the
-#        `auction` and `ah_worker_journal` tables (see extra/doc/AuctionHouseBot.md);
-#        the ah_worker_journal migration MUST be applied first.
-#        Default: 0 (disabled; mangosd owns the book, as today)
-###############################################################################
-
-AH.Service.Enabled        = 0
-AH.Service.Path           = service-workers/ah-service/ah-service
-AH.Service.Port           = 5760
-AH.Service.Secret         = changeme
-AH.Service.Config         = ah-service.conf
-AH.Service.IntentTtlSec   = 900
-AH.Service.Custody        = 0
-AH.Service.CustodyCrashAt = ""
-AH.Service.CustodyFailCommitAt = ""
-AH.Service.WriteAuthority = 0
-
 ################################################################################
 #    CharDelete.Method
 #        Character deletion behavior
@@ -2001,41 +1915,3 @@ QuestTracker.Enable= 0
 Realm.RecommendedOrNew.Enabled = 0
 Realm.RecommendedOrNew = 0
 
-###################################################################################################
-#  ELUNA SETTINGS
-#
-#   Eluna.Enabled
-#       Description: Enable or disable Eluna LuaEngine
-#       Default:     true  - (enabled)
-#                    false - (disabled)
-#
-#   Eluna.CompatibilityMode
-#       Description: Toggles Eluna between compatibility mode (single-threaded) or multistate mode.
-#                    Compatibility mode limits the core to a single map update thread.
-#       Default:     true  - (enabled)
-#                    false - (disabled)
-#
-#   Eluna.OnlyOnMaps
-#       Description: When Eluna is enabled, a state will only be created for a list of specified maps
-#                    This only works for multistate mode.
-#       Default:     ""  - (enabled on all maps)
-#                    "0,1,2,..." - (enabled on specific maps only)
-#
-#   Eluna.TraceBack
-#       Description: Sets whether to use debug.traceback function on a lua error or not.
-#                    Notice that you can redefine the function.
-#       Default:     false - (use default error output)
-#                    true  - (use debug.traceback function)
-#
-#   Eluna.ScriptPath
-#       Description: Sets the location of the script folder to load scripts from
-#                    The path can be relative or absolute.
-#       Default:     "lua_scripts"
-#
-###################################################################################################
-
-Eluna.Enabled = true
-Eluna.CompatibilityMode = false
-Eluna.OnlyOnMaps = ""
-Eluna.TraceBack = false
-Eluna.ScriptPath = "lua_scripts"

@@ -60,9 +60,6 @@
 #include "DisableMgr.h"
 #include "MovementGenerator.h"
 #include "Policies/Singleton.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Stores an absolute cooldown end time for a creature spell.

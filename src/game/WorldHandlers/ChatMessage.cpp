@@ -66,10 +66,6 @@
 #include "GameEventMgr.h"
 #include "AuctionHouseBot/AuctionHouseBot.h"
 #include "CommandMgr.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#include <cstdarg>
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Sends a system message to the current session, splitting multiline text.

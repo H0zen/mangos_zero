@@ -76,28 +76,6 @@ source_group("Warden" FILES ${SRC_GRP_WARDEN})
 file(GLOB SRC_GRP_WORLD_HANDLERS WorldHandlers/*.cpp WorldHandlers/*.h)
 source_group("World\\Handlers" FILES ${SRC_GRP_WORLD_HANDLERS})
 
-# Build the Eluna library if enabled
-if(SCRIPT_LIB_ELUNA)
-    file(GLOB SRC_GRP_ELUNA
-        ${CMAKE_SOURCE_DIR}/src/modules/Eluna/*.cpp
-        ${CMAKE_SOURCE_DIR}/src/modules/Eluna/*.h
-        ${CMAKE_SOURCE_DIR}/src/modules/Eluna/hooks/*.cpp
-        ${CMAKE_SOURCE_DIR}/src/modules/Eluna/hooks/*.h
-        ${CMAKE_SOURCE_DIR}/src/modules/Eluna/methods/*.cpp
-        ${CMAKE_SOURCE_DIR}/src/modules/Eluna/methods/*.h
-        ${CMAKE_SOURCE_DIR}/src/modules/Eluna/methods/Mangos/*.cpp
-        ${CMAKE_SOURCE_DIR}/src/modules/Eluna/methods/Mangos/*.h
-    )
-    source_group("Eluna" FILES ${SRC_GRP_ELUNA})
-
-    # Eluna is an untouched submodule; see cmake/SubmoduleCompat.cmake. The forced
-    # include goes to Eluna's own sources only; the include DIRECTORY has to be
-    # visible to all of `game`, because core files include Eluna headers and those
-    # open with #include "Common.h".
-    mangos_submodule_compat_sources("${SRC_GRP_ELUNA}"
-        "${CMAKE_SOURCE_DIR}/src/shared/Compat/eluna")
-endif()
-
 configure_file(AuctionHouseBot/ahbot.conf.dist.in ${CMAKE_CURRENT_BINARY_DIR}/AuctionHouseBot/ahbot.conf.dist)
 
 add_library(game STATIC
@@ -115,15 +93,7 @@ add_library(game STATIC
     ${SRC_GRP_TOOL}
     ${SRC_GRP_WARDEN}
     ${SRC_GRP_WORLD_HANDLERS}
-    $<$<BOOL:${SCRIPT_LIB_ELUNA}>:${SRC_GRP_ELUNA}>
 )
-
-# Eluna headers are included by core files and open with #include "Common.h";
-# see the note above. Passive -- nothing in the core names that header.
-if(SCRIPT_LIB_ELUNA)
-    target_include_directories(game
-        PRIVATE "${CMAKE_SOURCE_DIR}/src/shared/Compat/eluna")
-endif()
 
 target_include_directories(game
     PUBLIC
@@ -141,21 +111,12 @@ target_include_directories(game
         Tools
         Warden
         WorldHandlers
-        $<$<BOOL:${SCRIPT_LIB_ELUNA}>:
-            ${CMAKE_SOURCE_DIR}/src/modules/Eluna
-            ${CMAKE_SOURCE_DIR}/src/modules/Eluna/hooks
-            ${CMAKE_SOURCE_DIR}/src/modules/Eluna/methods/Mangos
-        >
 )
 
 target_compile_definitions(game
     PUBLIC
         $<$<BOOL:${SOAP}>:ENABLE_SOAP>
-        # The old coordinate-owning spatial API. SD3 no longer needs it -- it calls
-        # Where()/Place() -- so this is Eluna's alone. See Object/ScriptApiCompat.inl.
-        $<$<BOOL:${SCRIPT_LIB_ELUNA}>:MANGOS_SCRIPT_COMPAT>
         $<$<BOOL:${SCRIPT_LIB_SD3}>:ENABLE_SD3>
-        $<$<BOOL:${SCRIPT_LIB_ELUNA}>:ENABLE_ELUNA ELUNA_EXPANSION=0 ELUNA_MANGOS>
 )
 
 target_link_libraries(game
@@ -166,11 +127,9 @@ target_link_libraries(game
         geometry
         proto
         shared
-        ah_ipc
         RecastNavigation::Detour
         ZLIB::ZLIB
         $<$<BOOL:${SCRIPT_LIB_SD3}>:mangosscript>
-        $<$<BOOL:${SCRIPT_LIB_ELUNA}>:lualib>
     PRIVATE
         mangos_openssl_strict
 )
@@ -184,10 +143,3 @@ install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/AuctionHouseBot/ahbot.conf.dist
     DESTINATION ${CONF_INSTALL_DIR}
 )
-
-if(SCRIPT_LIB_ELUNA)
-install(
-    DIRECTORY ${CMAKE_SOURCE_DIR}/src/modules/Eluna/extensions
-    DESTINATION ${BIN_DIR}/lua_scripts
-)
-endif()

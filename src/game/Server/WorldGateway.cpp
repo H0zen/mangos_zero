@@ -41,10 +41,6 @@
 #include "WorldGatewayAccount.h"
 #include "WardenProtocol.h"
 
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif
-
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -79,12 +75,6 @@ proto::AuthLookup Rejected(proto::AuthStatus status)
 
 bool WorldGateway::FilterAuthPacket(WorldPacket& packet)
 {
-#ifdef ENABLE_ELUNA
-    if (Eluna* eluna = sWorld.GetEluna())
-    {
-        return eluna->OnPacketReceive(nullptr, packet);
-    }
-#endif
     return true;
 }
 

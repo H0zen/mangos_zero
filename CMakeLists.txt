@@ -65,14 +65,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(BUILD_MANGOSD        "Build the main server"                         ON)
 option(BUILD_REALMD         "Build the login server"                        ON)
 option(BUILD_TOOLS          "Build the client-data extractor"               ON)
-option(SCRIPT_LIB_ELUNA     "Compile with support for Eluna scripts"        ON)
 option(SCRIPT_LIB_SD3       "Compile with support for ScriptDev3 scripts"   ON)
 option(SOAP                 "Enable remote access via SOAP"                 OFF)
 option(PCH                  "Enable precompiled headers"                    ON)
 option(WITH_IO_URING        "Use the io_uring network backend (Linux, needs liburing)" OFF)
 option(DEBUG                "Enable debug build (only on non IDEs)"         OFF)
 option(WITHOUT_GIT          "Disable Git revision detection"                OFF)
-option(BUILD_AH_SERVICE     "Build the out-of-process auction-house service" ON)
 option(WITH_TESTS           "Build the unit tests"                          OFF)
 option(WITH_NET_TESTS       "Build the socket tests (slow; never in CI)"    OFF)
 #==================================================================================
@@ -94,7 +92,6 @@ message(
     DEBUG                   Debug build, only for systems without IDE (Linux, *BSD)
     WITHOUT_GIT             Disable Git revision detection
    Scripting engines:
-    SCRIPT_LIB_ELUNA        Compile with support for Eluna scripts
     SCRIPT_LIB_SD3          Compile with support for ScriptDev3 scripts
 
   To set an option simply type -D<OPTION>=<VALUE> after 'cmake <srcs>'.
@@ -218,17 +215,6 @@ endif()
 
 find_package(ZLIB QUIET)
 find_package(BZip2 QUIET)
-
-# dep/lualib (the Lua build used by Eluna) links against readline by its bare
-# library name and is not itself touched here; find_package(Readline) below
-# declares a GLOBAL IMPORTED target literally named `readline` (see
-# cmake/FindReadline.cmake) before that subdirectory is added, so its
-# existing bare-name references resolve to a properly-detected library
-# instead of an unqualified linker search. Readline has no Windows build and
-# is only needed when Eluna is being built.
-if(NOT WIN32 AND SCRIPT_LIB_ELUNA)
-  find_package(Readline REQUIRED)
-endif()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenRevision.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/EnsureVersion.cmake)

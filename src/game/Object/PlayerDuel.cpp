@@ -73,9 +73,6 @@
 #include "DisableMgr.h"
 #include "CinematicFlyover.h"
 #include <cmath>
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 // If players are too far way of duel flag... then player loose the duel
 void Player::CheckDuelDistance(time_t currTime)
@@ -173,14 +170,6 @@ void Player::DuelComplete(DuelCompleteType type)
         default:
             break;
     }
-
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnDuelEnd(duel->opponent, this, type);
-    }
-#endif /* ENABLE_ELUNA */
 
     // Remove Duel Flag object
     GameObject* obj = GetMap()->GetGameObject(GetUInt64Value(PLAYER_DUEL_ARBITER));

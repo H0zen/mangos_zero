@@ -68,7 +68,6 @@ add_custom_command(
     COMMAND "${CMAKE_COMMAND}"
             -DBUILDDIR=${CMAKE_BINARY_DIR}
             -DCMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}
-            -DSCRIPT_LIB_ELUNA=${SCRIPT_LIB_ELUNA}
             -DSCRIPT_LIB_SD3=${SCRIPT_LIB_SD3}
             -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
             -P "${CMAKE_SOURCE_DIR}/cmake/GenRevision.cmake"

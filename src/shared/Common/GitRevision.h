@@ -40,9 +40,6 @@ namespace GitRevision
     char const* GetHash();
     char const* GetDate();
     char const* GetBranch();
-    char const* GetDepElunaHash();
-    char const* GetDepElunaDate();
-    char const* GetDepElunaBranch();
     char const* GetDepSD3Hash();
     char const* GetDepSD3Date();
     char const* GetDepSD3Branch();
@@ -71,8 +68,6 @@ namespace GitRevision
 
     // application data
     char const* GetFullRevision();
-    char const* GetDepElunaFullRevisionStr();
-    char const* GetDepElunaFullRevision();
     char const* GetDepSD3FullRevisionStr();
     char const* GetDepSD3FullRevision();
     char const* GetCompanyNameStr();
