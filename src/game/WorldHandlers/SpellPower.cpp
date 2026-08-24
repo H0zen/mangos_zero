@@ -181,7 +181,7 @@ void Spell::TakePower()
             {
                 if (powerType == POWER_ENERGY || powerType == POWER_RAGE)
                 {
-                    for (std::list<TargetInfo>::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+                    for (TargetList::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
                     {
                         if (ihit->missCondition != SPELL_MISS_NONE)
                         {
