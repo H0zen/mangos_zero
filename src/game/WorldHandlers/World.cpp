@@ -669,6 +669,11 @@ void World::SetInitialWorldSettings()
     sLog.outString("Modifying in-memory dbc spell attributes...");
     sSpellMgr.ModDBCSpellAttributes();
 
+    // Strictly after the patch above: the computation reads the attributes it
+    // changes.
+    sLog.outString("Precomputing spell positive-effect table...");
+    BuildSpellPositiveCache();
+
     sLog.outString("Loading ReservedNames...");
     sObjectMgr.LoadReservedPlayersNames();
 

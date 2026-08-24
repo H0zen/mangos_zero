@@ -26,6 +26,7 @@
 #include "Utilities/Errors.h"
 #include <string>
 #include <list>
+#include <vector>
 #include "SpellMgr.h"
 #include "ObjectMgr.h"
 #include "SpellAuraDefines.h"
@@ -948,13 +949,27 @@ bool IsExplicitNegativeTarget(uint32 targetA)
 }
 
 /**
- * @brief Determines whether a spell effect should be treated as positive.
+ * @brief Works out whether a spell effect should be treated as positive.
+ *
+ * ===== DO NOT CALL THIS FROM THE HOT PATH =====
+ *
+ * Two hundred and forty-five lines of nested switches over a seven-hundred-byte
+ * struct, and it is a pure function of DBC data that cannot change after load.
+ * It used to be evaluated live, every time anyone asked -- including once per
+ * Aura constructed, which for a forty-target area spell with three aura effects
+ * is a hundred and twenty runs of this for one cast.
+ *
+ * IsPositiveEffect() below answers from a table built once at startup. This is
+ * what fills that table. It is also still the implementation during the build
+ * itself, because it recurses through triggered spells into entries that have
+ * not been computed yet.
+ * ==============================================
  *
  * @param spellproto The spell entry.
  * @param effIndex The effect index to evaluate.
  * @return true if the effect is positive; otherwise false.
  */
-bool IsPositiveEffect(SpellEntry const* spellproto, SpellEffectIndex effIndex)
+static bool ComputeIsPositiveEffect(SpellEntry const* spellproto, SpellEffectIndex effIndex)
 {
     //fast returns in some special cases
     switch (spellproto->ID)
@@ -1199,6 +1214,96 @@ bool IsPositiveEffect(SpellEntry const* spellproto, SpellEffectIndex effIndex)
 
     // ok, positive
     return true;
+}
+
+namespace
+{
+    /**
+     * @brief Memo of ComputeIsPositiveEffect, one byte per spell.
+     *
+     * Low three bits: the answer, per effect index. High three bits: whether
+     * that answer has been worked out. Both are needed -- "negative" and "not
+     * asked yet" are different states and a single bit cannot hold them.
+     *
+     * Filled once at startup and read-only afterwards, which is what makes it
+     * safe without a lock while maps update in parallel. A lazy cache would have
+     * needed one, for a function whose inputs stop changing before the first
+     * player connects.
+     */
+    std::vector<uint8> s_positiveEffect;
+    bool s_positiveEffectReady = false;
+
+    inline uint8 KnownBit(SpellEffectIndex i)    { return uint8(1 << (3 + i)); }
+    inline uint8 PositiveBit(SpellEffectIndex i) { return uint8(1 << i); }
+}
+
+/**
+ * @brief Builds the positive-effect table. Call once, after the DBC stores are
+ *        loaded and after ModDBCSpellAttributes has patched them.
+ *
+ * The order matters: ComputeIsPositiveEffect reads spell attributes, and
+ * ModDBCSpellAttributes changes two of them. Building before that would bake in
+ * the unpatched answer.
+ */
+void BuildSpellPositiveCache()
+{
+    uint32 const rows = sSpellStore.GetNumRows();
+
+    s_positiveEffect.assign(rows, 0);
+    s_positiveEffectReady = false;               // recursion below must compute
+
+    uint32 computed = 0;
+
+    for (uint32 id = 0; id < rows; ++id)
+    {
+        SpellEntry const* proto = sSpellStore.LookupEntry(id);
+        if (!proto)
+        {
+            continue;
+        }
+
+        uint8 bits = 0;
+        for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
+        {
+            SpellEffectIndex const idx = SpellEffectIndex(i);
+            bits |= KnownBit(idx);
+            if (ComputeIsPositiveEffect(proto, idx))
+            {
+                bits |= PositiveBit(idx);
+            }
+        }
+
+        s_positiveEffect[id] = bits;
+        ++computed;
+    }
+
+    s_positiveEffectReady = true;
+
+    sLog.outString(">> Positive-effect table built for %u spells", computed);
+    sLog.outString();
+}
+
+/**
+ * @brief Determines whether a spell effect should be treated as positive.
+ *
+ * @param spellproto The spell entry.
+ * @param effIndex The effect index to evaluate.
+ * @return true if the effect is positive; otherwise false.
+ */
+bool IsPositiveEffect(SpellEntry const* spellproto, SpellEffectIndex effIndex)
+{
+    if (s_positiveEffectReady && spellproto->ID < s_positiveEffect.size())
+    {
+        uint8 const bits = s_positiveEffect[spellproto->ID];
+        if (bits & KnownBit(effIndex))
+        {
+            return (bits & PositiveBit(effIndex)) != 0;
+        }
+    }
+
+    // Before the table exists -- during its own construction, and for anything
+    // that asks earlier than that -- fall through to the real work.
+    return ComputeIsPositiveEffect(spellproto, effIndex);
 }
 
 /**

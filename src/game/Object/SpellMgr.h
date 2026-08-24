@@ -318,6 +318,15 @@ bool IsPositiveSpell(SpellEntry const* spellproto);
 bool IsPositiveEffect(SpellEntry const* spellInfo, SpellEffectIndex effIndex);
 
 /**
+ * @brief Precomputes the answers IsPositiveEffect used to work out on every call.
+ *
+ * Must run after the DBC stores are loaded AND after
+ * SpellMgr::ModDBCSpellAttributes has patched them, because the computation
+ * reads spell attributes.
+ */
+void BuildSpellPositiveCache();
+
+/**
  * Checks whether the target descriptors represent a positive target selection.
  */
 bool IsPositiveTarget(uint32 targetA, uint32 targetB);
