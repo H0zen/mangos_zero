@@ -335,6 +335,13 @@ void Spell::cast(bool skipCheck)
         TakeCastItem();
 
         // fill initial spell damage from caster for delayed casted spells
+        //
+        // The Walk guard is here because the loop hands the ADDRESS of a target
+        // entry to code that runs spell effects. The list is contiguous now, so
+        // anything that appended a target mid-walk would move the buffer and
+        // leave the callee holding a dangling pointer. Nothing does today; the
+        // guard is what makes that a hard failure rather than a silent one.
+        TargetList::Walk walkTargets(m_UniqueTargetInfo);
         for (TargetList::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
         {
             HandleDelayedSpellLaunch(&(*ihit));
@@ -370,14 +377,21 @@ void Spell::handle_immediate()
         SendChannelStart(m_duration);
     }
 
-    for (TargetList::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
     {
-        DoAllEffectOnTarget(&(*ihit));
+        // Element addresses handed to effect code -- see the note in cast().
+        TargetList::Walk walkTargets(m_UniqueTargetInfo);
+        for (TargetList::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+        {
+            DoAllEffectOnTarget(&(*ihit));
+        }
     }
 
-    for (GOTargetList::iterator ihit = m_UniqueGOTargetInfo.begin(); ihit != m_UniqueGOTargetInfo.end(); ++ihit)
     {
-        DoAllEffectOnTarget(&(*ihit));
+        GOTargetList::Walk walkGOs(m_UniqueGOTargetInfo);
+        for (GOTargetList::iterator ihit = m_UniqueGOTargetInfo.begin(); ihit != m_UniqueGOTargetInfo.end(); ++ihit)
+        {
+            DoAllEffectOnTarget(&(*ihit));
+        }
     }
 
     // spell is finished, perform some last features of the spell here
@@ -409,33 +423,40 @@ uint64 Spell::handle_delayed(uint64 t_offset)
     }
 
     // now recheck units targeting correctness (need before any effects apply to prevent adding immunity at first effect not allow apply second spell effect and similar cases)
-    for (TargetList::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
     {
-        if (!ihit->processed)
+        // Element addresses handed to effect code -- see the note in cast().
+        TargetList::Walk walkTargets(m_UniqueTargetInfo);
+        for (TargetList::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
         {
-            if (ihit->timeDelay <= t_offset)
+            if (!ihit->processed)
             {
-                DoAllEffectOnTarget(&(*ihit));
-            }
-            else if (next_time == 0 || ihit->timeDelay < next_time)
-            {
-                next_time = ihit->timeDelay;
+                if (ihit->timeDelay <= t_offset)
+                {
+                    DoAllEffectOnTarget(&(*ihit));
+                }
+                else if (next_time == 0 || ihit->timeDelay < next_time)
+                {
+                    next_time = ihit->timeDelay;
+                }
             }
         }
     }
 
     // now recheck gameobject targeting correctness
-    for (GOTargetList::iterator ighit = m_UniqueGOTargetInfo.begin(); ighit != m_UniqueGOTargetInfo.end(); ++ighit)
     {
-        if (!ighit->processed)
+        GOTargetList::Walk walkGOs(m_UniqueGOTargetInfo);
+        for (GOTargetList::iterator ighit = m_UniqueGOTargetInfo.begin(); ighit != m_UniqueGOTargetInfo.end(); ++ighit)
         {
-            if (ighit->timeDelay <= t_offset)
+            if (!ighit->processed)
             {
-                DoAllEffectOnTarget(&(*ighit));
-            }
-            else if (next_time == 0 || ighit->timeDelay < next_time)
-            {
-                next_time = ighit->timeDelay;
+                if (ighit->timeDelay <= t_offset)
+                {
+                    DoAllEffectOnTarget(&(*ighit));
+                }
+                else if (next_time == 0 || ighit->timeDelay < next_time)
+                {
+                    next_time = ighit->timeDelay;
+                }
             }
         }
     }
@@ -492,9 +513,12 @@ void Spell::_handle_immediate_phase()
     m_diminishGroup = DIMINISHING_NONE;
 
     // process items
-    for (ItemTargetList::iterator ihit = m_UniqueItemInfo.begin(); ihit != m_UniqueItemInfo.end(); ++ihit)
     {
-        DoAllEffectOnTarget(&(*ihit));
+        ItemTargetList::Walk walkItems(m_UniqueItemInfo);
+        for (ItemTargetList::iterator ihit = m_UniqueItemInfo.begin(); ihit != m_UniqueItemInfo.end(); ++ihit)
+        {
+            DoAllEffectOnTarget(&(*ihit));
+        }
     }
 
     // process ground

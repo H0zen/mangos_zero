@@ -536,7 +536,17 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
     // This is new target calculate data for him
 
     // Get spell hit result on target
-    TargetInfo target;
+    //
+    // ===== ZERO-INITIALISED, DELIBERATELY =====
+    //
+    // `damage` and `HitInfo` are filled only by HandleDelayedSpellLaunch, which
+    // runs only for spells with a travel time. Two of the three readers check
+    // the speed first; SpellHit.cpp's reflect branch does not, and read whatever
+    // was on the stack -- straight into LowerPlayerDamageReq, which gates loot
+    // and experience. Bit-fields rule out default member initialisers here in
+    // C++17, so the zeroing happens at the one place the struct is created.
+    // ==========================================
+    TargetInfo target = {};
     target.targetGUID = targetGUID;                         // Store target GUID
     target.effectMask = immuned ? 0 : (1 << effIndex);      // Store index of effect if not immuned
     target.processed  = false;                              // Effects not applied on target
@@ -650,7 +660,7 @@ void Spell::AddGOTarget(GameObject* pVictim, SpellEffectIndex effIndex)
 
     // This is new target calculate data for him
 
-    GOTargetInfo target;
+    GOTargetInfo target = {};
     target.targetGUID = targetGUID;
     target.effectMask = (1 << effIndex);
     target.processed  = false;                              // Effects not apply on target
@@ -722,7 +732,7 @@ void Spell::AddItemTarget(Item* pitem, SpellEffectIndex effIndex)
 
     // This is new target add data
 
-    ItemTargetInfo target;
+    ItemTargetInfo target = {};
     target.item       = pitem;
     target.effectMask = (1 << effIndex);
     m_UniqueItemInfo.push_back(target);

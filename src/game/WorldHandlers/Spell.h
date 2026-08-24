@@ -52,6 +52,7 @@
 #include "Platform/Define.h"
 #include "Utilities/AllocMetrics.h"
 #include "Utilities/MathDefines.h"
+#include "Utilities/SmallVector.h"
 #include <ctime>
 #include <string>
 #include <vector>
@@ -667,9 +668,14 @@ class Spell : public BasicEvent
             uint8 effectMask;
         };
 
-        typedef std::list<TargetInfo>     TargetList;
-        typedef std::list<GOTargetInfo>   GOTargetList;
-        typedef std::list<ItemTargetInfo> ItemTargetList;
+        // Inline capacity covers the overwhelming majority of casts -- one unit
+        // target, no gameobject, no item -- so the usual cast now touches the
+        // allocator for its target lists not at all, and an area spell pays one
+        // growth instead of one node per target. The walks are also contiguous,
+        // and a cast walks its target list four to six times.
+        typedef SmallVector<TargetInfo, 4>     TargetList;
+        typedef SmallVector<GOTargetInfo, 2>   GOTargetList;
+        typedef SmallVector<ItemTargetInfo, 2> ItemTargetList;
 
         TargetList     m_UniqueTargetInfo;
         GOTargetList   m_UniqueGOTargetInfo;
