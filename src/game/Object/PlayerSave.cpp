@@ -1507,6 +1507,22 @@ void Player::AddSpellMod(SpellModifier* mod, bool apply)
     }
 }
 
+void Player::RemoveSpellModSilently(SpellModifier* mod)
+{
+    if (!mod || mod->op >= MAX_SPELLMOD)
+    {
+        return;
+    }
+
+    if (mod->charges == -1)
+    {
+        --m_SpellModRemoveCount;
+    }
+
+    m_spellMods[mod->op].remove(mod);
+    delete mod;
+}
+
 // send Proficiency
 void Player::SendProficiency(ItemClass itemClass, uint32 itemSubclassMask)
 {

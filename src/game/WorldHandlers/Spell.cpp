@@ -393,6 +393,72 @@ void SpellCastTargets::write(ByteBuffer& data) const
     }
 }
 
+namespace
+{
+    /**
+     * @brief Per-thread freelist of Spell-sized blocks.
+     *
+     * Intrusive: a free block's first bytes hold the next pointer, so the list
+     * costs nothing beyond the blocks themselves.
+     *
+     * Thread-local and therefore lock-free. A Spell built on one map's update
+     * thread and destroyed on another simply moves the block between lists --
+     * both came from the same global allocator, so either thread may hand it
+     * back for real at any time.
+     */
+    thread_local void*  t_spellPool      = NULL;
+    thread_local size_t t_spellPoolCount = 0;
+
+    /// Blocks kept per thread. Enough for the deepest triggered chain plus the
+    /// casts in flight on one map tick; past that, memory goes back.
+    const size_t SPELL_POOL_MAX = 64;
+}
+
+void* Spell::operator new(size_t size)
+{
+    // A derived class would be a different size and must not come off this list.
+    // Nothing derives from Spell today; this is what keeps that true if one does.
+    if (size != sizeof(Spell))
+    {
+        return ::operator new(size);
+    }
+
+    if (t_spellPool)
+    {
+        void* block = t_spellPool;
+        t_spellPool = *reinterpret_cast<void**>(block);
+        --t_spellPoolCount;
+        return block;
+    }
+
+    return ::operator new(size);
+}
+
+void Spell::operator delete(void* block, size_t size)
+{
+    if (!block)
+    {
+        return;
+    }
+
+    if (size != sizeof(Spell) || t_spellPoolCount >= SPELL_POOL_MAX)
+    {
+        ::operator delete(block);
+        return;
+    }
+
+    *reinterpret_cast<void**>(block) = t_spellPool;
+    t_spellPool = block;
+    ++t_spellPoolCount;
+}
+
+void Spell::operator delete(void* block)
+{
+    // The sized form is what the compiler emits for a delete through a Spell* or
+    // through the virtual destructor; this is here so the pair is complete.
+    Spell::operator delete(block, sizeof(Spell));
+}
+
 Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid originalCasterGUID, SpellEntry const* triggeredBy)
 {
     // Baseline for this cast's heap traffic. Taken first so it covers everything
@@ -524,6 +590,20 @@ Spell::~Spell()
     // when the answer was no it logged "causes memory leak" and leaked it, being
     // the only owner. The queue owns the object now, and IsDeletable() is
     // consulted before it is destroyed rather than after.
+
+    // Upstream's last-ditch guard, restored: if the unit still lists this spell
+    // as its current cast, that slot is about to become a dangling pointer. The
+    // flag discipline should make this unreachable -- every site that clears
+    // m_referencedFromCurrentSpell also nulls the slot -- which is exactly the
+    // kind of invariant a defence like this is meant to outlive. The member was
+    // being written and read nowhere at all.
+    if (m_selfContainer && *m_selfContainer == this)
+    {
+        sLog.outError("Spell: destroying spell %u while %s %u still lists it as current.",
+            m_spellInfo->ID,
+            (m_caster->GetTypeId() == TYPEID_PLAYER ? "player" : "creature"), m_caster->GetGUIDLow());
+        *m_selfContainer = NULL;
+    }
 
 #ifdef ALLOC_METRICS
     // The whole cost of one cast, on one line. +1 is the Spell object itself,

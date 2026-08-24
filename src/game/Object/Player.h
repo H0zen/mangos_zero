@@ -2370,6 +2370,15 @@ class Player : public Unit
         // Add a spell modifier to the player
         void AddSpellMod(SpellModifier* mod, bool apply);
 
+        /**
+         * @brief Unregisters and frees a spell modifier without telling the client.
+         *
+         * For the teardown path only. AURA_REMOVE_BY_DELETE skips the unapply
+         * that would normally take a modifier back off this list, so ~Aura has
+         * to, and by then there may be no session left to send a packet to.
+         */
+        void RemoveSpellModSilently(SpellModifier* mod);
+
         // Check if the player is affected by a spell modifier
         bool IsAffectedBySpellmod(SpellEntry const* spellInfo, SpellModifier* mod, Spell const* spell = NULL);
 

@@ -118,5 +118,13 @@ void Aura::HandleAddModifier(bool apply, bool Real)
 
     ((Player*)GetTarget())->AddSpellMod(m_spellmod, apply);
 
+    // AddSpellMod(mod, false) deletes it. Leaving the member pointing at freed
+    // memory made a second unapply a double free, and made ~Aura unable to tell
+    // "already released" from "never released".
+    if (!apply)
+    {
+        m_spellmod = NULL;
+    }
+
     ReapplyAffectedPassiveAuras();
 }

@@ -421,6 +421,28 @@ class Spell : public BasicEvent
         Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid originalCasterGUID = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
         ~Spell() override;
 
+        /**
+         * @brief Recycled through a per-thread freelist rather than the allocator.
+         *
+         * A Spell is fixed-size and built once per cast, once per auto-shot, and
+         * once per triggered chain link -- the most frequently constructed
+         * non-trivial object in the server.
+         *
+         * ===== WHY THIS IS THE LAST CHANGE AND NOT THE FIRST =====
+         *
+         * A pool turns a lifetime bug from a crash into silent corruption: the
+         * block is still readable, still the right size, and now belongs to a
+         * different cast. It is safe here only because ownership became a
+         * unique_ptr held by the event queue, and because the three raw pointers
+         * the pipeline used to keep across a cast -- the cast item, the item
+         * target, the aura holder -- are guid-resolved or nulled now. Reordering
+         * this before those is how you get a bug nobody can reproduce.
+         * =========================================================
+         */
+        static void* operator new(size_t size);
+        static void  operator delete(void* block);
+        static void  operator delete(void* block, size_t size);
+
         // BasicEvent. The cast's state machine is driven from Execute; Abort is
         // the queue telling us the caster is going away.
         bool Execute(uint64 e_time, uint32 p_time) override;

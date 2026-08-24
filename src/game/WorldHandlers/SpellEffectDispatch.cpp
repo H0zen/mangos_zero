@@ -93,7 +93,11 @@ void Spell::HandleEffects(Unit* pUnitTarget, Item* pItemTarget, GameObject* pGOT
     itemTarget = pItemTarget;
     gameObjTarget = pGOTarget;
 
-    uint8 eff = m_spellInfo->Effect[i];
+    // Effect is a uint32 in the DBC. Narrowing it before the bound check meant a
+    // value of 256 + n passed the check as n and dispatched the wrong handler
+    // through SpellEffects[]. 1.12 data never reaches 256, which was the only
+    // thing making that safe.
+    uint32 eff = m_spellInfo->Effect[i];
 
     damage = int32(CalculateDamage(i, unitTarget) * DamageMultiplier);
 

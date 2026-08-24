@@ -774,11 +774,35 @@ void Spell::finish(bool ok)
         return;
     }
 
-    // handle SPELL_AURA_ADD_TARGET_TRIGGER auras
-    Unit::AuraList const& targetTriggers = m_caster->GetAurasByType(SPELL_AURA_ADD_TARGET_TRIGGER);
-    for (Unit::AuraList::const_iterator i = targetTriggers.begin(); i != targetTriggers.end(); ++i)
+    // ===== SNAPSHOT, BECAUSE THE LOOP BODY EDITS THE LIST =====
+    //
+    // GetAurasByType returns a reference to the live m_modAuras list, and the
+    // CastSpell below can remove the very aura being iterated -- charges being
+    // consumed, a dispel, the caster dying. Unit::RemoveAura calls
+    // std::list::remove, which frees the node, and the next ++i walked it.
+    //
+    // The proc system in Unit.cpp already does this correctly: snapshot first,
+    // pin each holder with SetInUse. Same shape here. SetInUse keeps a holder
+    // whose removal is triggered mid-loop on the deferred-deletion list instead
+    // of freeing it under us.
+    // ==========================================================
+    std::vector<Aura*> targetTriggers;
     {
-        if (!(*i)->isAffectedOnSpell(m_spellInfo))
+        Unit::AuraList const& live = m_caster->GetAurasByType(SPELL_AURA_ADD_TARGET_TRIGGER);
+        targetTriggers.reserve(live.size());
+        for (Unit::AuraList::const_iterator i = live.begin(); i != live.end(); ++i)
+        {
+            if ((*i)->isAffectedOnSpell(m_spellInfo))
+            {
+                (*i)->GetHolder()->SetInUse(true);
+                targetTriggers.push_back(*i);
+            }
+        }
+    }
+
+    for (std::vector<Aura*>::const_iterator i = targetTriggers.begin(); i != targetTriggers.end(); ++i)
+    {
+        if ((*i)->GetHolder()->IsDeleted())
         {
             continue;
         }
@@ -799,9 +823,23 @@ void Spell::finish(bool ok)
                     {
                         m_caster->CastSpell(unit, auraSpellInfo->EffectTriggerSpell[auraSpellIdx], true, NULL, (*i));
                     }
+
+                    // The cast above can have removed this very aura. Its holder
+                    // is pinned so the memory is still ours, but it is finished.
+                    if ((*i)->GetHolder()->IsDeleted())
+                    {
+                        break;
+                    }
                 }
             }
         }
+    }
+
+    // Release the pins taken for the snapshot. Anything removed while pinned is
+    // on the unit's deferred list and dies at the next CleanupDeletedAuras.
+    for (std::vector<Aura*>::const_iterator i = targetTriggers.begin(); i != targetTriggers.end(); ++i)
+    {
+        (*i)->GetHolder()->SetInUse(false);
     }
 
     // Heal caster for all health leech from all targets

@@ -326,6 +326,33 @@ Aura::Aura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* currentBas
 
 Aura::~Aura()
 {
+    // ===== THE MODIFIER OUTLIVED ITS AURA, EVERY LOGOUT =====
+    //
+    // Unit::RemoveAura skips ApplyModifier(false) entirely when the mode is
+    // AURA_REMOVE_BY_DELETE -- which is what CleanupsBeforeDelete uses -- so
+    // HandleAddModifier(false) never ran, so Player::AddSpellMod(mod, false),
+    // the only `delete mod` in the tree, never ran either. This destructor was
+    // empty and ~Player never touches m_spellMods, so every modifier a player
+    // had active leaked at logout, and the list kept a pointer into freed aura
+    // memory on the way out.
+    //
+    // Silently, because by this point there may be no session to send a
+    // modifier update to.
+    // ========================================================
+    if (m_spellmod)
+    {
+        Unit* target = m_spellAuraHolder ? m_spellAuraHolder->GetTarget() : NULL;
+        if (target && target->GetTypeId() == TYPEID_PLAYER)
+        {
+            ((Player*)target)->RemoveSpellModSilently(m_spellmod);
+        }
+        else
+        {
+            delete m_spellmod;
+        }
+
+        m_spellmod = NULL;
+    }
 }
 
 AreaAura::AreaAura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* currentBasePoints, SpellAuraHolder* holder, Unit* target,
@@ -2264,7 +2291,11 @@ SpellAuraHolder::SpellAuraHolder(SpellEntry const* spellproto, Unit* target, Wor
             break;
     }
 
-    m_isHeartbeatSubject = (m_spellProto->Attributes & SPELL_ATTR_HEARTBEAT_RESIST_CHECK) && caster != target &&
+    // `caster` is nullable and this constructor says so fifty lines up, where it
+    // falls back to the target's guid. A null one passes `caster != target` and
+    // used to be dereferenced right here -- so a fear or a polymorph landing
+    // after its original caster left the map took the world down.
+    m_isHeartbeatSubject = (m_spellProto->Attributes & SPELL_ATTR_HEARTBEAT_RESIST_CHECK) && caster && caster != target &&
         caster->GetTypeId() == TYPEID_PLAYER && target->GetTypeId() == TYPEID_PLAYER && !IsChanneledSpell(m_spellProto);
 
     for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
