@@ -70,7 +70,17 @@ option(PCH                  "Enable precompiled headers"                    ON)
 option(WITH_IO_URING        "Use the io_uring network backend (Linux, needs liburing)" OFF)
 option(DEBUG                "Enable debug build (only on non IDEs)"         OFF)
 option(WITHOUT_GIT          "Disable Git revision detection"                OFF)
+option(ALLOC_METRICS        "Count heap traffic (replaces global operator new)" OFF)
 #==================================================================================
+
+# Heap-traffic instrumentation. OFF by default and it must stay that way: it
+# replaces the global operator new/delete for the whole binary. It exists so a
+# claim like "one spell cast costs N allocations" can be reproduced instead of
+# argued about. See src/shared/Utilities/AllocMetrics.h.
+if(ALLOC_METRICS)
+    add_definitions(-DALLOC_METRICS)
+    message(STATUS "ALLOC_METRICS: ON -- global operator new is replaced by a counting one")
+endif()
 message("")
 message(
   "This script builds the MaNGOS server.

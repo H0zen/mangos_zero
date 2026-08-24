@@ -26,6 +26,7 @@
 
 #Main Files
 set(SRC_GRP_MAIN
+  AllocMetricsHooks.cpp
   AntiFreezeService.cpp
   AntiFreezeService.h
   CliService.cpp

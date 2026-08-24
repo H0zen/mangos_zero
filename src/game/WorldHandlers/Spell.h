@@ -50,6 +50,7 @@
 
 #include "Utilities/Errors.h"
 #include "Platform/Define.h"
+#include "Utilities/AllocMetrics.h"
 #include "Utilities/MathDefines.h"
 #include <ctime>
 #include <string>
@@ -686,6 +687,10 @@ class Spell
         // we can't store original aura link to prevent access to deleted auras
         // and in same time need aura data and after aura deleting.
         SpellEntry const* m_triggeredByAuraSpell;
+
+        // Heap traffic for this one cast, from construction to destruction. An
+        // empty struct and a no-op unless the build has ALLOC_METRICS on.
+        AllocMetrics::Snapshot m_allocSnapshot;
 };
 
 enum ReplenishType

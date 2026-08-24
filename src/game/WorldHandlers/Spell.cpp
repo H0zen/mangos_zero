@@ -395,6 +395,12 @@ void SpellCastTargets::write(ByteBuffer& data) const
 
 Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid originalCasterGUID, SpellEntry const* triggeredBy)
 {
+    // Baseline for this cast's heap traffic. Taken first so it covers everything
+    // the cast does; the Spell object's own allocation happened one instruction
+    // earlier, in the caller's `new`, and is added back when the total is logged.
+    m_allocSnapshot.Take();
+    AllocMetrics::Count(AllocMetrics::SITE_SPELL);
+
     MANGOS_ASSERT(caster != NULL && info != NULL);
     MANGOS_ASSERT(info == sSpellStore.LookupEntry(info->ID));   // `info` must be pointer to sSpellStore element
 
@@ -497,6 +503,18 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
 
 Spell::~Spell()
 {
+#ifdef ALLOC_METRICS
+    // The whole cost of one cast, on one line. +1 is the Spell object itself,
+    // allocated by the caller just before the constructor ran.
+    sLog.outString("ALLOC spell %-6u total=%-5llu frees=%-5llu | queue=%-4llu tick=%-4llu packet=%-4llu targets=%-3llu",
+        m_spellInfo->ID,
+        (unsigned long long)(m_allocSnapshot.AllocationsSince() + 1),
+        (unsigned long long)m_allocSnapshot.FreesSince(),
+        (unsigned long long)m_allocSnapshot.SiteSince(AllocMetrics::SITE_EVENT_QUEUE),
+        (unsigned long long)m_allocSnapshot.SiteSince(AllocMetrics::SITE_EVENT_TICK),
+        (unsigned long long)m_allocSnapshot.SiteSince(AllocMetrics::SITE_PACKET_ENCODE),
+        (unsigned long long)m_allocSnapshot.SiteSince(AllocMetrics::SITE_TARGET_LIST));
+#endif
 }
 
 /**

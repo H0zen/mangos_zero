@@ -25,6 +25,7 @@
 
 #include <utility>
 #include "EventProcessor.h"
+#include "Utilities/AllocMetrics.h"
 
 /**
  * @brief Construct a new Event Processor::Event Processor object
@@ -130,6 +131,7 @@ void EventProcessor::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime
     }
 
     Event->m_execTime = e_time;
+    AllocMetrics::Count(AllocMetrics::SITE_EVENT_QUEUE);
     m_events.insert(std::pair<uint64, BasicEvent*>(e_time, Event));
 }
 

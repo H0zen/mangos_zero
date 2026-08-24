@@ -185,6 +185,7 @@ endif()
 source_group("Services" FILES ${SRC_GRP_SVC})
 
 set(SRC_GRP_UTILITIES
+  Utilities/AllocMetrics.h
   Utilities/ByteBuffer.cpp
   Utilities/ByteBuffer.h
   Utilities/Errors.h

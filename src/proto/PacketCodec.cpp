@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 #include "PacketCodec.h"
+#include "Utilities/AllocMetrics.h"
 
 #include <algorithm>
 #include <cstring>
@@ -174,6 +175,7 @@ namespace proto
         }
 
         std::vector<uint8> wire;
+        AllocMetrics::Count(AllocMetrics::SITE_PACKET_ENCODE);
         wire.reserve(headerLen + packet.size());
         wire.insert(wire.end(), header, header + headerLen);
 
