@@ -91,6 +91,7 @@ bool ChatHandler::HandleAHBotReloadCommand(char* /*args*/)
         SendSysMessage(LANG_AHBOT_RELOAD_FAIL);
         SetSentErrorMessage(true);
         return false;
+    }
 }
 
 /**

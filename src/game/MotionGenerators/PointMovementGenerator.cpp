@@ -87,7 +87,8 @@ Motion::MoveIntent RoutedPointMovementGenerator::Intent(Unit& owner, Motion::Mov
 {
     // Arrival is latched here rather than refusal, and the proximity test rejects a mover that
     // was frozen partway rather than actually arriving. See the header for both reasons.
-    if (status.arrived && owner.GetDistance(m_dest.x, m_dest.y, m_dest.z) < 10.0f)
+    if (status.arrived &&
+        owner.Where().DistanceTo(Geometry::Vector3(m_dest.x, m_dest.y, m_dest.z)) < 10.0f)
     {
         m_arrived = true;
     }
