@@ -19,13 +19,13 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 # =============================================================================
-# Compatibility glue for the submodules.
+# Compatibility glue for the vendored trees.
 #
-# The submodules (SD3, realmd) are shared with other
-# cores and MUST NOT be modified: this fork cannot carry local commits in them,
-# because a clone would then reference objects that exist on no remote. So every
-# adaptation they need in order to build here lives in this tree instead, under
-# src/shared/Compat/<name>/, and is attached to their targets from the outside.
+# SD3 and realmd are vendored here as ordinary directories, but their sources
+# are kept byte-identical to upstream so a newer upstream drop can be copied in
+# without a merge. Every adaptation they need in order to build against this
+# fork therefore lives outside them, under src/shared/Compat/<name>/, and is
+# attached to their targets from the outside.
 #
 # Two things are needed, and the second is the reason this file exists.
 #
@@ -33,39 +33,27 @@
 #      so an unmodified `#include "Common.h"` still resolves. A plain
 #      target_include_directories is enough for that.
 #
-#   2. Declarations that used to arrive *transitively*. Most submodule sources
+#   2. Declarations that used to arrive *transitively*. Most of those sources
 #      never included Common.h themselves -- they got its contents through some
 #      core header that included it. Nothing in their include chain names the
-#      shim, so no include directory can reach them, and adding an include to
-#      the submodule is exactly what is forbidden. The only lever left from
-#      outside a translation unit is a forced include, so the shim is injected
-#      at the top of every source in the target.
+#      shim, so no include directory can reach them, and editing them is what
+#      this layer exists to avoid. The only lever left from outside a
+#      translation unit is a forced include, so the shim is injected at the top
+#      of every source in the target.
 #
-# Restricted to C++: some of these targets also compile vendored C (Lua), which
-# must not see a C++ header.
+# Restricted to C++: these targets can also compile vendored C, which must not
+# see a C++ header.
 #
-# WHY THIS IS A SHIM AND NOT A PATCH
-#
-# The submodule repositories will be updated properly when that becomes
-# possible -- the changes are already written and are queued as upstream pull
-# requests. Until they land, this fork must build against untouched upstream
-# checkouts, and the alternative (applying patches to the submodule worktrees at
-# build time) was rejected deliberately: it leaves the submodules dirty, is not
-# idempotent across re-runs, and breaks silently whenever upstream moves.
-#
-# So this layer is scaffolding with a known end date. When a submodule's pull
-# request merges, bump the submodule and delete its directory under
-# src/shared/Compat/ together with the call below -- nothing else in the tree
-# refers to it. Do not extend a shim to cover new divergence; that is a sign the
-# fix belongs upstream instead.
+# Do not extend a shim to cover new divergence: that is a sign the fix belongs
+# in the vendored tree (and upstream) instead.
 # =============================================================================
 
 function(mangos_submodule_compat target compat_dir)
     if(NOT TARGET ${target})
         message(FATAL_ERROR
-            "mangos_submodule_compat: no such target '${target}'. The submodule's "
-            "CMakeLists likely renamed it; the compat layer would silently do "
-            "nothing, so this is fatal rather than skipped.")
+            "mangos_submodule_compat: no such target '${target}'. The vendored "
+            "tree's CMakeLists likely renamed it; the compat layer would "
+            "silently do nothing, so this is fatal rather than skipped.")
     endif()
 
     if(NOT IS_DIRECTORY "${compat_dir}")

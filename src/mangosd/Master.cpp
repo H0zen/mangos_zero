@@ -42,11 +42,6 @@
 #include "World.h"
 #include "Server/WardenCheckCatalogLoader.h"
 
-#ifdef ENABLE_SOAP
-#include "SOAP/SoapService.h"
-#include <thread>
-#endif
-
 #ifdef _WIN32
 #include "ServiceWin32.h"
 extern int m_ServiceStatus;
@@ -215,20 +210,6 @@ void Master::StartServices()
             uint16(sConfig.GetIntDefault("Ra.Port", 3443)),
             sConfig.GetStringDefault("Ra.IP", "0.0.0.0"))));
     }
-
-#ifdef ENABLE_SOAP
-    if (sConfig.GetBoolDefault("SOAP.Enabled", false))
-    {
-        m_services.push_back(std::unique_ptr<IService>(new SoapService(
-            sConfig.GetStringDefault("SOAP.IP", "127.0.0.1"),
-            uint16(sConfig.GetIntDefault("SOAP.Port", 7878)))));
-    }
-#else
-    if (sConfig.GetBoolDefault("SOAP.Enabled", false))
-    {
-        sLog.outError("SOAP is enabled in the configuration but was not compiled in; ignoring.");
-    }
-#endif
 
     // Watchdog. Disabled unless MaxCoreStuckTime is set.
     m_services.push_back(std::unique_ptr<IService>(new AntiFreezeService(

@@ -21,8 +21,7 @@ alt="GitHub last commit" border=0 valign="top"/>][61]
 ===
 
 **Mangos** is an open source project written in [C++][7]. It's fast, runs on multiple
-platforms and stores game data in [MySQL][40] or [MariaDB][41]. It also has
-optional support for SOAP.
+platforms and stores game data in [MySQL][40] or [MariaDB][41].
 
 If you liked the original incarnation of [World of Warcraft][2] and still want to play it,
 this is the branch for you. We provide an authentication server where you can manage your users,

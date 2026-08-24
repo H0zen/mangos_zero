@@ -51,11 +51,10 @@ endif()
 if(BUILD_REALMD)
     add_subdirectory(realmd)
 
-    # realmd is a SUBMODULE and is never edited here. Its own test executables
-    # compile Auth/PatchArtifact.cpp, which includes Auth/Md5.h -- a header this
-    # core owns, under src/shared. The realmd library reaches it by linking
-    # `shared`; the test targets link neither, so the path is attached from the
-    # outside, which is the only place a submodule may be adapted from.
+    # realmd is vendored unmodified. Its own test executables compile
+    # Auth/PatchArtifact.cpp, which includes Auth/Md5.h -- a header this core
+    # owns, under src/shared. The realmd library reaches it by linking `shared`;
+    # the test targets link neither, so the path is attached from the outside.
     foreach(realmd_test IN ITEMS
             realmd_patch_safety_tests
             realmd_auth_protocol_tests

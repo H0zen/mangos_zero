@@ -115,7 +115,6 @@ target_include_directories(game
 
 target_compile_definitions(game
     PUBLIC
-        $<$<BOOL:${SOAP}>:ENABLE_SOAP>
         $<$<BOOL:${SCRIPT_LIB_SD3}>:ENABLE_SD3>
 )
 

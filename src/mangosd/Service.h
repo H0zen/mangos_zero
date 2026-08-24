@@ -32,7 +32,7 @@
 /**
  * @brief A background activity that runs alongside the world loop.
  *
- * The console reader, remote administration, SOAP and the freeze watchdog were
+ * The console reader, remote administration and the freeze watchdog were
  * four separate classes with four different shapes -- one ACE_Task_Base, one
  * reactor handler, one raw std::thread, and one more ACE task -- each started
  * and stopped by hand from main(), in an order that had to be remembered rather

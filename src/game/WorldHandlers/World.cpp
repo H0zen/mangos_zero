@@ -887,7 +887,7 @@ void World::SetInitialWorldSettings()
 
 namespace
 {
-    /// "ScriptDev3, SOAP" -- or "none" for an empty list.
+    /// "ScriptDev3, Remote Access" -- or "none" for an empty list.
     std::string JoinList(const std::vector<std::string>& items)
     {
         std::string joined;
@@ -930,18 +930,6 @@ void World::showFooter(uint32 startupMs)
     {
         disabled.push_back("Remote Access");
     }
-
-#ifdef ENABLE_SOAP
-    if (sConfig.GetBoolDefault("SOAP.Enabled", false))
-    {
-        enabled.push_back("SOAP");
-    }
-    else
-    {
-        disabled.push_back("SOAP");
-    }
-#endif
-
     char database[128];
     snprintf(database, sizeof(database), "Rel%s.%s.%s", GitRevision::GetWorldDBVersion(),
              GitRevision::GetWorldDBStructure(), GitRevision::GetWorldDBContent());

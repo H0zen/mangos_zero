@@ -21,28 +21,20 @@
 # =============================================================================
 # Which vendored dependencies this fork builds.
 #
-# `dep` is a submodule and is never modified here, so the choice cannot live in
-# its own CMakeLists. Adding the subdirectories from the outside is how the
-# selection is attached without touching the submodule -- the same mechanism as
-# cmake/SubmoduleCompat.cmake.
+# The selection lives here rather than in dep/, so one file states what is
+# configured and what is not. Anything left out is simply never configured, so a
+# library the fork has dropped costs no build time and cannot be linked back in
+# by accident.
 #
-# It is also what decides the GATING. The submodule builds StormLib only when
-# BUILD_TOOLS is on, which was true when the extractor was an optional extra; it
-# is not, because the extractor is what produces the tiles the server reads. A
-# core without this file inherits the submodule's answer and fails to compile the
-# MPQ reader.
-#
-# Add a dependency here rather than in dep/CMakeLists.txt. Anything left out is
-# simply never configured, so a library the fork has dropped costs no build time
-# and cannot be linked back in by accident.
+# This is also what decides the GATING: StormLib builds unconditionally, because
+# the extractor is what produces the tiles the server reads -- it is not an
+# optional extra.
 # =============================================================================
 
 set(MANGOS_DEP_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep")
 
 if(NOT EXISTS "${MANGOS_DEP_DIR}")
-    message(FATAL_ERROR
-        "The 'dep' submodule is missing. Clone recursively, or run "
-        "'git submodule update --init --recursive'.")
+    message(FATAL_ERROR "The vendored 'dep' directory is missing.")
 endif()
 
 if(NOT TARGET "ZLIB::ZLIB")
@@ -54,12 +46,6 @@ if(NOT TARGET "BZip2::BZip2")
 endif()
 
 add_subdirectory(${MANGOS_DEP_DIR}/utf8cpp dep/utf8cpp)
-
-if(BUILD_MANGOSD)
-    if(SOAP)
-        add_subdirectory(${MANGOS_DEP_DIR}/gsoap dep/gsoap)
-    endif()
-endif()
 
 # Recast and Detour are needed by the server's pathfinder AND by the baker's navmesh
 # stage, and the baker always builds, so this is not gated either.

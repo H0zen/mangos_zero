@@ -40,12 +40,6 @@ else()
     message("Build login server    : No")
 endif()
 
-if(SOAP)
-    message("Support for SOAP      : Yes")
-else()
-    message("Support for SOAP      : No (default)")
-endif()
-
 if(BUILD_TOOLS)
     message("Build tools           : Yes (default)")
 else()

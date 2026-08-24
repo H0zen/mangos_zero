@@ -33,7 +33,7 @@
  * - Service/daemon mode initialization
  * - Database connections (World, Character, Login)
  * - Server subsystem initialization
- * - Multiple thread management (World, CLI, Auto-freeze, SOAP)
+ * - Multiple thread management (World, CLI, Auto-freeze)
  * - Main event loop and shutdown
  *
  * The world server is responsible for running the game simulation,

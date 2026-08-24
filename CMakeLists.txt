@@ -66,7 +66,6 @@ option(BUILD_MANGOSD        "Build the main server"                         ON)
 option(BUILD_REALMD         "Build the login server"                        ON)
 option(BUILD_TOOLS          "Build the client-data extractor"               ON)
 option(SCRIPT_LIB_SD3       "Compile with support for ScriptDev3 scripts"   ON)
-option(SOAP                 "Enable remote access via SOAP"                 OFF)
 option(PCH                  "Enable precompiled headers"                    ON)
 option(WITH_IO_URING        "Use the io_uring network backend (Linux, needs liburing)" OFF)
 option(DEBUG                "Enable debug build (only on non IDEs)"         OFF)
@@ -83,7 +82,6 @@ message(
     BUILD_MANGOSD           Build the main server
     BUILD_REALMD            Build the login server
     BUILD_TOOLS             Build the client-data extractor
-    SOAP                    Enable remote access via SOAP
     PCH                     Enable use of precompiled headers
     WITH_TESTS              Build the unit tests (target: mangos_tests)
     WITH_NET_TESTS          Build the socket tests as well. Disjoint from WITH_TESTS,
@@ -233,8 +231,8 @@ if(WITH_TESTS OR WITH_NET_TESTS)
     enable_testing()
 endif()
 
-# Not add_subdirectory(dep): that would build what the submodule's own CMakeLists
-# lists, with the submodule's gating. See cmake/Dependencies.cmake.
+# The vendored dependencies are added one by one, not as a whole tree; the
+# selection and the gating both live in cmake/Dependencies.cmake.
 include(SubmoduleCompat)
 include(Dependencies)
 

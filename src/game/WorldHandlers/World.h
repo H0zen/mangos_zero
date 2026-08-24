@@ -420,7 +420,7 @@ struct CliCommandHolder
     typedef void Print(void*, const char*);
     typedef void CommandFinished(void*, bool success);
 
-    uint32 m_cliAccountId;                                  // 0 for console and real account id for RA/soap
+    uint32 m_cliAccountId;                                  // 0 for console and real account id for RA
     AccountTypes m_cliAccessLevel;
     void* m_callbackArg;
     char* m_command;
