@@ -1613,6 +1613,151 @@ SpellLinkedSet SpellMgr::GetSpellLinked(uint32 spell_id, SpellLinkedType type) c
     return result;
 }
 
+/**
+ * @brief Works out a spell's fixed precast/triggered lists.
+ *
+ * ===== THIS IS THE SWITCH THAT USED TO RUN ON EVERY CAST =====
+ *
+ * It lived in Spell::cast, as a switch over SpellClassSet with per-family
+ * sub-switches, and almost every spell in the game matched nothing in it. Right
+ * after it, two spell_linked lookups walked a multimap for the same answer,
+ * also on every cast.
+ *
+ * None of it depends on anything but the spell. So it runs once per spell, here,
+ * and the cast reads the result.
+ *
+ * What is NOT here is the part that genuinely cannot be tabulated: the rogue
+ * stealth exit tests the caster's auras, and spell 12042 performs an action
+ * rather than declaring a list. Those stayed in Spell::cast, which is the point
+ * of separating them -- what is left there is exactly what has to be there.
+ * ============================================================
+ *
+ * @param proto The spell entry.
+ * @param plan  Filled with the spells to precast and to trigger.
+ */
+static void ComputeStaticCastPlan(SpellEntry const* proto, SpellCastPlan& plan)
+{
+    switch (proto->SpellClassSet)
+    {
+        case SPELLFAMILY_GENERIC:
+        {
+            // Bandages
+            if (proto->Mechanic == MECHANIC_BANDAGE)
+            {
+                plan.precast.push_back(SPELL_ID_RECENTLY_BANDAGED);
+            }
+            // Divine Shield, Divine Protection (Blessing of Protection in paladin case)
+            else if (proto->Mechanic == MECHANIC_INVULNERABILITY)
+            {
+                plan.precast.push_back(25771);              // Forbearance
+            }
+            break;
+        }
+        case SPELLFAMILY_PRIEST:
+        {
+            // Power Word: Shield
+            if (proto->SpellClassMask & UI64LIT(0x0000000000000001))
+            {
+                plan.precast.push_back(6788);               // Weakened Soul
+            }
+
+            switch (proto->ID)
+            {
+                case 15237: plan.triggered.push_back(23455); break;// Holy Nova, rank 1
+                case 15430: plan.triggered.push_back(23458); break;// Holy Nova, rank 2
+                case 15431: plan.triggered.push_back(23459); break;// Holy Nova, rank 3
+                case 27799: plan.triggered.push_back(27803); break;// Holy Nova, rank 4
+                case 27800: plan.triggered.push_back(27804); break;// Holy Nova, rank 5
+                case 27801: plan.triggered.push_back(27805); break;// Holy Nova, rank 6
+                case 25331: plan.triggered.push_back(25329); break;// Holy Nova, rank 7
+                default: break;
+            }
+            break;
+        }
+        case SPELLFAMILY_PALADIN:
+        {
+            // Blessing of Protection (Divine Shield, Divine Protection in generic case)
+            if (proto->Mechanic == MECHANIC_INVULNERABILITY && proto->ID != 25771)
+            {
+                plan.precast.push_back(25771);              // Forbearance
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+/**
+ * @brief Builds every spell's cast plan. Call after LoadSpellLinked and after
+ *        ModDBCSpellAttributes.
+ *
+ * Both orderings are load-bearing: the linked-spell rows are folded into the
+ * plan here so the cast does not have to look them up, and the family switch
+ * reads attributes that ModDBCSpellAttributes patches.
+ */
+void SpellMgr::BuildSpellCastPlans()
+{
+    m_spellCastPlans.clear();
+
+    uint32 const rows = sSpellStore.GetNumRows();
+    m_spellHasCastPlan.assign(rows, 0);
+
+    uint32 planned = 0;
+
+    for (uint32 id = 0; id < rows; ++id)
+    {
+        SpellEntry const* proto = sSpellStore.LookupEntry(id);
+        if (!proto)
+        {
+            continue;
+        }
+
+        SpellCastPlan plan;
+        ComputeStaticCastPlan(proto, plan);
+
+        // The spell_linked rows, resolved now rather than per cast.
+        SpellLinkedSet const precastLinked = GetSpellLinked(id, SPELL_LINKED_TYPE_PRECAST);
+        for (SpellLinkedSet::const_iterator itr = precastLinked.begin(); itr != precastLinked.end(); ++itr)
+        {
+            plan.precast.push_back(*itr);
+        }
+
+        SpellLinkedSet const triggeredLinked = GetSpellLinked(id, SPELL_LINKED_TYPE_TRIGGERED);
+        for (SpellLinkedSet::const_iterator itr = triggeredLinked.begin(); itr != triggeredLinked.end(); ++itr)
+        {
+            plan.triggered.push_back(*itr);
+        }
+
+        if (plan.precast.empty() && plan.triggered.empty())
+        {
+            continue;                                       // the overwhelming majority
+        }
+
+        m_spellHasCastPlan[id] = 1;
+        m_spellCastPlans[id] = plan;
+        ++planned;
+    }
+
+    sLog.outString(">> Cast plans built for %u spells", planned);
+    sLog.outString();
+}
+
+/**
+ * @brief The precast/triggered lists for a spell, or NULL if it has none.
+ */
+SpellCastPlan const* SpellMgr::GetCastPlan(uint32 spellId) const
+{
+    // One byte read for the common answer, which is "no".
+    if (spellId >= m_spellHasCastPlan.size() || !m_spellHasCastPlan[spellId])
+    {
+        return NULL;
+    }
+
+    SpellCastPlanMap::const_iterator itr = m_spellCastPlans.find(spellId);
+    return itr != m_spellCastPlans.end() ? &itr->second : NULL;
+}
+
 
 
 

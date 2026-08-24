@@ -674,6 +674,11 @@ void World::SetInitialWorldSettings()
     sLog.outString("Precomputing spell positive-effect table...");
     BuildSpellPositiveCache();
 
+    // Same ordering requirement, plus it folds in the spell_linked rows loaded
+    // earlier, so it has to run after both.
+    sLog.outString("Precomputing spell cast plans...");
+    sSpellMgr.BuildSpellCastPlans();
+
     sLog.outString("Loading ReservedNames...");
     sObjectMgr.LoadReservedPlayersNames();
 

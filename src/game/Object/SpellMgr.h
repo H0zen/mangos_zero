@@ -31,6 +31,7 @@
 
 #include <unordered_map>
 #include <utility>
+#include <vector>
 #include "Utilities/Errors.h"
 #include "Platform/Define.h"
 #include <cstring>
@@ -1042,6 +1043,22 @@ typedef std::multimap<uint32, SpellLinkedEntry>  SpellLinkedMap;
 typedef std::pair<SpellLinkedMap::const_iterator, SpellLinkedMap::const_iterator> SpellLinkedMapBounds;
 typedef std::set<uint32>  SpellLinkedSet;
 
+/**
+ * @brief The spells a cast pulls in, worked out once instead of every time.
+ *
+ * Spell::cast used to derive these on every single cast: a switch over
+ * SpellClassSet with per-family sub-switches, which almost no spell matched,
+ * followed by two spell_linked lookups that walked a multimap for the rest.
+ * Neither depends on anything but the spell, so neither belongs in the cast.
+ */
+struct SpellCastPlan
+{
+    std::vector<uint32> precast;        ///< cast on each target before effects
+    std::vector<uint32> triggered;      ///< cast on success, after the spell finishes
+};
+
+typedef std::unordered_map<uint32, SpellCastPlan> SpellCastPlanMap;
+
 // Spell pet auras
 class PetAura
 {
@@ -1509,6 +1526,10 @@ class SpellMgr
 
         SpellLinkedSet GetSpellLinked(uint32 spell_id, SpellLinkedType type) const;
 
+        /// The precast/triggered lists for a spell, or NULL when it has none --
+        /// which is the answer for almost every spell, and costs one byte read.
+        SpellCastPlan const* GetCastPlan(uint32 spell_id) const;
+
         // Modifiers
     public:
         static SpellMgr& Instance();
@@ -1537,6 +1558,9 @@ class SpellMgr
         // Edit DBC data spells at startup
         void ModDBCSpellAttributes();
 
+        /// After LoadSpellLinked and after ModDBCSpellAttributes: both feed it.
+        void BuildSpellCastPlans();
+
     private:
         SpellChainMap      mSpellChains;
         SpellChainMapNext  mSpellChainsNext;
@@ -1557,6 +1581,11 @@ class SpellMgr
         SpellAreaForAuraMap  mSpellAreaForAuraMap;
         SpellAreaForAreaMap  mSpellAreaForAreaMap;
         SpellFacingFlagMap  mSpellFacingFlagMap;
+
+        /// One byte per spell id: does this spell have a cast plan at all. Read
+        /// on every cast, so it is a flat array rather than a map lookup.
+        std::vector<uint8> m_spellHasCastPlan;
+        SpellCastPlanMap   m_spellCastPlans;
 };
 
 #define sSpellMgr SpellMgr::Instance()

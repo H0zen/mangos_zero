@@ -210,94 +210,51 @@ void Spell::cast(bool skipCheck)
         }
     }
 
-    // different triggered (for caster) and pre-cast (casted before apply effect to each target) cases
-    switch (m_spellInfo->SpellClassSet)
+    // ===== RESOLVED AT LOAD, NOT HERE =====
+    //
+    // What stood here was a switch over SpellClassSet with per-family
+    // sub-switches -- which almost no spell in the game matched -- followed by
+    // two spell_linked lookups that walked a multimap for the rest. All of it
+    // depends on the spell and nothing else, so all of it now happens once, in
+    // SpellMgr::BuildSpellCastPlans, and the common cast reads one byte and
+    // finds there is nothing to do.
+    // ======================================
+    if (SpellCastPlan const* plan = sSpellMgr.GetCastPlan(m_spellInfo->ID))
     {
-        case SPELLFAMILY_GENERIC:
-        {
-            // Bandages
-            if (m_spellInfo->Mechanic == MECHANIC_BANDAGE)
-            {
-                AddPrecastSpell(SPELL_ID_RECENTLY_BANDAGED);
-            }
-            // Divine Shield, Divine Protection (Blessing of Protection in paladin switch case)
-            else if (m_spellInfo->Mechanic == MECHANIC_INVULNERABILITY)
-            {
-                AddPrecastSpell(25771);                      // Forbearance
-            }
-            break;
-        }
-        case SPELLFAMILY_ROGUE:
-        {
-            // exit stealth on sap when improved sap is not skilled
-            if (m_spellInfo->SpellClassMask & UI64LIT(0x00000080) && m_caster->GetTypeId() == TYPEID_PLAYER && (!m_caster->GetAura(14076, SpellEffectIndex(0)) && !m_caster->GetAura(14094, SpellEffectIndex(0)) && !m_caster->GetAura(14095, SpellEffectIndex(0))))
-            {
-                m_caster->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
-            }
-            break;
-        }
-        case SPELLFAMILY_WARRIOR:
-        {
-            break;
-        }
-        case SPELLFAMILY_PRIEST:
-        {
-            // Power Word: Shield
-            if (m_spellInfo->SpellClassSet == SPELLFAMILY_PRIEST && m_spellInfo->SpellClassMask & UI64LIT(0x0000000000000001))
-            {
-                AddPrecastSpell(6788);                      // Weakened Soul
-            }
-
-            switch (m_spellInfo->ID)
-            {
-                case 15237: AddTriggeredSpell(23455); break;// Holy Nova, rank 1
-                case 15430: AddTriggeredSpell(23458); break;// Holy Nova, rank 2
-                case 15431: AddTriggeredSpell(23459); break;// Holy Nova, rank 3
-                case 27799: AddTriggeredSpell(27803); break;// Holy Nova, rank 4
-                case 27800: AddTriggeredSpell(27804); break;// Holy Nova, rank 5
-                case 27801: AddTriggeredSpell(27805); break;// Holy Nova, rank 6
-                case 25331: AddTriggeredSpell(25329); break;// Holy Nova, rank 7
-                default: break;
-            }
-            break;
-        }
-        case SPELLFAMILY_PALADIN:
-        {
-            // Blessing of Protection (Divine Shield, Divine Protection in generic switch case)
-            if (m_spellInfo->Mechanic == MECHANIC_INVULNERABILITY && m_spellInfo->ID != 25771)
-            {
-                AddPrecastSpell(25771);                      // Forbearance
-            }
-            break;
-        }
-        default:
-            break;
-    }
-
-    // As of patch 1.10.0, Arcane Power will replace Power Infusion
-    if (m_spellInfo->ID == 12042)
-    {
-        m_targets.getUnitTarget()->RemoveAurasDueToSpell(10060);
-    }
-
-    // Linked spells (precast chain)
-    SpellLinkedSet linkedSet = sSpellMgr.GetSpellLinked(m_spellInfo->ID, SPELL_LINKED_TYPE_PRECAST);
-    if (linkedSet.size() > 0)
-    {
-        for (SpellLinkedSet::const_iterator itr = linkedSet.begin(); itr != linkedSet.end(); ++itr)
+        for (std::vector<uint32>::const_iterator itr = plan->precast.begin(); itr != plan->precast.end(); ++itr)
         {
             AddPrecastSpell(*itr);
         }
-    }
 
-    // Linked spells (triggered chain)
-    linkedSet.clear();
-    linkedSet = sSpellMgr.GetSpellLinked(m_spellInfo->ID, SPELL_LINKED_TYPE_TRIGGERED);
-    if (linkedSet.size() > 0)
-    {
-        for (SpellLinkedSet::const_iterator itr = linkedSet.begin(); itr != linkedSet.end(); ++itr)
+        for (std::vector<uint32>::const_iterator itr = plan->triggered.begin(); itr != plan->triggered.end(); ++itr)
         {
             AddTriggeredSpell(*itr);
+        }
+    }
+
+    // ===== WHAT COULD NOT GO IN THE PLAN =====
+    //
+    // These two read state the plan cannot know: the caster's current auras, and
+    // the target. Everything else that used to be in this stretch could be
+    // decided from the SpellEntry alone, and now is.
+    // =========================================
+
+    // exit stealth on sap when improved sap is not skilled
+    if (m_spellInfo->SpellClassSet == SPELLFAMILY_ROGUE &&
+        (m_spellInfo->SpellClassMask & UI64LIT(0x00000080)) && m_caster->GetTypeId() == TYPEID_PLAYER &&
+        !m_caster->GetAura(14076, SpellEffectIndex(0)) && !m_caster->GetAura(14094, SpellEffectIndex(0)) && !m_caster->GetAura(14095, SpellEffectIndex(0)))
+    {
+        m_caster->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+    }
+
+    // As of patch 1.10.0, Arcane Power will replace Power Infusion.
+    // Guarded: 12042 is self-targeted from the client, but any script or DB
+    // trigger casting it with empty targets used to take the world down here.
+    if (m_spellInfo->ID == 12042)
+    {
+        if (Unit* arcanePowerTarget = m_targets.getUnitTarget())
+        {
+            arcanePowerTarget->RemoveAurasDueToSpell(10060);
         }
     }
 
