@@ -44,8 +44,6 @@
  * @see SpellMgr for spell management
  */
 
-
-
 #include <algorithm>
 #include <iterator>
 #include <list>

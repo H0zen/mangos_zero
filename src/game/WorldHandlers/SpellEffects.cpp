@@ -221,30 +221,6 @@ void Spell::EffectUnused(SpellEffectIndex /*eff_idx*/)
     // NOT USED BY ANY SPELL OR USELESS OR IMPLEMENTED IN DIFFERENT WAY IN MANGOS
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @brief Summons a controllable pet or guardian creature for the caster.
  *
@@ -360,13 +336,6 @@ void Spell::EffectSummon(SpellEffectIndex eff_idx)
         ((Creature*)m_originalCaster)->AI()->JustSummoned((Creature*)spawnCreature);
     }
 }
-
-
-
-
-
-
-
 
 /**
  * @brief Summons a temporary wild creature defined by the spell effect.
@@ -599,8 +568,6 @@ void Spell::EffectSummonGuardian(SpellEffectIndex eff_idx)
     }
 }
 
-
-
 /**
  * @brief Awards a fixed amount of honor to a player target.
  *
@@ -618,26 +585,6 @@ void Spell::EffectAddHonor(SpellEffectIndex /*eff_idx*/)
     ((Player*)unitTarget)->AddHonorCP(float(damage), HONORABLE, 0, 0);
     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "SpellEffect::AddHonor (spell_id %u) rewards %u honor points (non scale) for player: %u", m_spellInfo->ID, damage, ((Player*)unitTarget)->GetGUIDLow());
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * @brief Summons a totem into the appropriate totem slot.
@@ -782,22 +729,6 @@ void Spell::EffectSummonPossessed(SpellEffectIndex eff_idx)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @brief Summons or toggles the caster's vanity critter companion.
  *
@@ -893,17 +824,6 @@ void Spell::EffectSummonCritter(SpellEffectIndex eff_idx)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @brief Summons a demon creature at the destination point and applies special inferno behavior.
  *
@@ -935,9 +855,6 @@ void Spell::EffectSummonDemon(SpellEffectIndex eff_idx)
         Charmed->CastSpell(Charmed, 22703, true, 0);
     }
 }
-
-
-
 
 /**
  * @brief Sends a battleground player target to its graveyard.

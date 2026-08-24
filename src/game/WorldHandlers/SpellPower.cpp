@@ -44,8 +44,6 @@
  * @see SpellMgr for spell management
  */
 
-
-
 #include <list>
 #include "Spell.h"
 #include "Database/DatabaseEnv.h"

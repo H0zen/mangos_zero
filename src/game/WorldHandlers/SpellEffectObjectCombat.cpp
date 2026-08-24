@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <cmath>
 #include <random>
 #include "Platform/Define.h"

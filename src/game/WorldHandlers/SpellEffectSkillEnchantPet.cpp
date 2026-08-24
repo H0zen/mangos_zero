@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <iterator>
 #include <random>
 #include <utility>

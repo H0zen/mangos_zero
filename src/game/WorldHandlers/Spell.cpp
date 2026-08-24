@@ -168,6 +168,14 @@ void SpellCastTargets::setSource(float x, float y, float z)
  */
 void SpellCastTargets::setGOTarget(GameObject* target)
 {
+    // Guarded like setUnitTarget and setItemTarget beside it. Of the four
+    // setters, two checked and two dereferenced immediately -- and the
+    // inconsistency was the trap, not either behaviour on its own.
+    if (!target)
+    {
+        return;
+    }
+
     m_GOTarget = target;
     m_GOTargetGUID = target->GetObjectGuid();
     //    m_targetMask |= TARGET_FLAG_OBJECT;
@@ -212,6 +220,11 @@ void SpellCastTargets::setTradeItemTarget(Player* caster)
  */
 void SpellCastTargets::setCorpseTarget(Corpse* corpse)
 {
+    if (!corpse)
+    {
+        return;
+    }
+
     m_CorpseTargetGUID = corpse->GetObjectGuid();
 }
 
@@ -641,21 +654,6 @@ SpellEntry const* Spell::GetSpellBonusLevelPenaltySpell(SpellEntry const* spellP
     return spellProto;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @brief Checks whether required alive targets are present in the current target list.
  *
@@ -688,10 +686,6 @@ bool Spell::IsAliveUnitPresentInTargetList()
     // is all effects from m_needAliveTargetMask have alive targets
     return needAliveTargetMask == 0;
 }
-
-
-
-
 
 /**
  * @brief Prepares the spell cast, validates conditions, and starts cast processing.
@@ -821,36 +815,6 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, Aura* triggeredB
     return SPELL_CAST_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @brief Gets the first queued unit target guid for an effect, falling back to the explicit target guid.
  *
@@ -869,15 +833,6 @@ ObjectGuid Spell::GetPrefilledOrUnitTargetGuid(SpellEffectIndex effIndex) const
 
     return m_targets.getUnitTargetGuid();
 }
-
-
-
-
-
-
-
-
-
 
 /**
  * @brief Applies spell pushback delay to a currently casting player spell.
@@ -1039,9 +994,6 @@ void Spell::SetCastItem(Item* item)
     m_CastItem = item;
     m_CastItemGuid = item ? item->GetObjectGuid() : ObjectGuid();
 }
-
-
-
 
 /**
  * @brief Checks whether this spell cast should produce client-visible packets.
@@ -1338,8 +1290,6 @@ SpellCastResult Spell::CanOpenLock(SpellEffectIndex effIndex, uint32 lockId, Ski
     return SPELL_CAST_OK;
 }
 
-
-
 /**
  * @brief Gets the world object that should be used as the effective spell origin.
  *
@@ -1397,9 +1347,6 @@ void Spell::ClearCastItem()
 
     SetCastItem(NULL);
 }
-
-
-
 
 /**
  * @brief Resolves effective radius, chain target count, and target cap modifiers for an effect.

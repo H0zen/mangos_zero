@@ -43,8 +43,6 @@
  * @see Spell for spell casting
  */
 
-
-
 #include <cmath>
 #include "SpellAuras.h"
 #include "Platform/Define.h"

@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <iterator>
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"

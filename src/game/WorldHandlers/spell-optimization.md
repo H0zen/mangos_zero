@@ -1,8 +1,14 @@
 # Spell system — optimization plan
 
+**Status: stages 0 through 7 are implemented and building clean on ficom (clang 19).**
+Each stage landed as its own commit, in order, with a build between. What each one
+actually changed is in its commit message; this file is the plan they were cut from and
+is kept because the reasoning outlives the diffs — particularly the ordering argument,
+which is the part that is easy to lose.
+
 Baseline is the ledger in `review-spells.md`: **≈198 heap allocations and 198 frees for
 one Shadow Bolt** seen by 40 players, of which 5 % is the spell's actual state. The plan
-below takes that to **≈12**, and takes an idle channel from 20 allocations per second to
+below takes that to **≈13**, and takes an idle channel from 20 allocations per second to
 zero. Every stage is separately shippable and separately measurable.
 
 The order is not negotiable in one respect: **ownership is fixed before anything is
@@ -177,14 +183,22 @@ It is only safe once Stage 1 has made ownership a `unique_ptr` and the review's 
 
 ## Where it lands
 
-| stage | baseline | after |
-| --- | ---: | ---: |
-| 0 — measure | 198 | 198 |
-| 1 — one owner | 198 | 197 |
-| 2 — tick lane | 197 | 137 |
-| 3 — broadcast encode | 137 | 17 |
-| 4 — small vectors | 17 | 15 |
-| 7 — pool | 15 | 13 |
+| stage | baseline | after | landed |
+| --- | ---: | ---: | --- |
+| 0 — measure | 198 | 198 | `ALLOC_METRICS`, off by default |
+| 1 — one owner | 198 | 197 | `Spell` is the event; queue holds a `unique_ptr` |
+| 2 — tick lane | 197 | 137 | `RescheduleNextTick`, no node |
+| 3 — broadcast encode | 137 | 17 | `EncodeInto` + one buffer per sending thread |
+| 4 — small vectors | 17 | 15 | `SmallVector<T,N>` with a growth guard |
+| 5 — precompute | 15 | 15 | cycles, not allocations |
+| 6 — cast plans | 15 | 15 | cycles, and one switch became data |
+| 7 — pool | 15 | 13 | per-thread freelist for `Spell` |
+
+Stage 7 waited on four review defects, and they went in with it: the cast item and the
+item target list became guid-resolved, `m_spellAuraHolder` stopped dangling, and
+`m_spellAuraHolder` turned out never to have been initialised in the constructor at all.
+That was not diligence for its own sake — a pool over any one of those would have turned
+a crash into a live `Spell` reading another `Spell`'s fields.
 
 Plus, not in the column: an 8 s channel stops costing 160 allocations, auto-repeat stops
 costing 20 per second per player, a 40-target AoE stops costing 80 list nodes, and the

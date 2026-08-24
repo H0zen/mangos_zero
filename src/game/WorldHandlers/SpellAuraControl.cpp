@@ -43,8 +43,6 @@
  * @see Spell for spell casting
  */
 
-
-
 #include "SpellAuras.h"
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"

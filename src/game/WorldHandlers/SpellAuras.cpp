@@ -1323,23 +1323,6 @@ void Aura::TriggerSpell()
 /***                  AURA EFFECTS                     ***/
 /*********************************************************/
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @brief Handles special-case aggro range detection modifiers.
  *
@@ -1373,54 +1356,13 @@ void Aura::HandleModDetectRange(bool apply, bool Real)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*********************************************************/
 /***                     IMMUNITY                      ***/
 /*********************************************************/
 
-
-
-
-
-
-
-
-
-
 /*********************************************************/
 /***                   PERIODIC                        ***/
 /*********************************************************/
-
-
-
-
-
-
-
-
-
-
 
 /*********************************************************/
 /***                  MODIFY STATS                     ***/
@@ -1429,9 +1371,6 @@ void Aura::HandleModDetectRange(bool apply, bool Real)
 /********************************/
 /***        RESISTANCE        ***/
 /********************************/
-
-
-
 
 /**
  * @brief Applies or removes the visible-auras unit flag.
@@ -1444,33 +1383,13 @@ void Aura::HandleAurasVisible(bool apply, bool /*Real*/)
     GetTarget()->ApplyModFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_AURAS_VISIBLE, apply);
 }
 
-
-
 /********************************/
 /***           STAT           ***/
 /********************************/
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /********************************/
 /***          FIGHT           ***/
 /********************************/
-
-
 
 /**
  * @brief Refreshes player block percentage after aura changes.
@@ -1489,47 +1408,21 @@ void Aura::HandleAuraModBlockPercent(bool /*apply*/, bool /*Real*/)
     // sLog.outError("BONUS BLOCK CHANCE: + %f", float(m_modifier.m_amount));
 }
 
-
-
-
-
-
-
 /********************************/
 /***         ATTACK SPEED     ***/
 /********************************/
-
-
-
-
-
 
 /********************************/
 /***        ATTACK POWER      ***/
 /********************************/
 
-
-
-
-
-
-
-
 /********************************/
 /***        POWER COST        ***/
 /********************************/
 
-
-
 /*********************************************************/
 /***                    OTHERS                         ***/
 /*********************************************************/
-
-
-
-
-
-
 
 /**
  * @brief Applies or removes shield block value modifiers.
@@ -1550,10 +1443,6 @@ void Aura::HandleShieldBlockValue(bool apply, bool /*Real*/)
         ((Player*)GetTarget())->HandleBaseModValue(SHIELD_BLOCK_VALUE, modType, float(m_modifier.m_amount), apply);
     }
 }
-
-
-
-
 
 /**
  * @brief Executes one periodic tick for the active aura effect.
@@ -2188,8 +2077,6 @@ void Aura::PeriodicDummyTick()
         }
     }
 }
-
-
 
 /**
  * @brief Checks whether this aura is the last remaining effect on its holder.

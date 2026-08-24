@@ -44,8 +44,6 @@
  * @see SpellMgr for spell management
  */
 
-
-
 #include "Spell.h"
 #include "Database/DatabaseEnv.h"
 #include "WorldPacket.h"
