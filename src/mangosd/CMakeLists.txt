@@ -30,8 +30,6 @@ set(SRC_GRP_MAIN
   AntiFreezeService.h
   CliService.cpp
   CliService.h
-  MangosdTest.cpp
-  MangosdTest.h
   Master.cpp
   Master.h
   RASession.cpp

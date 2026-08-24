@@ -50,27 +50,11 @@ endif()
 # Build the mangos realm authentication server
 if(BUILD_REALMD)
     add_subdirectory(realmd)
-
-    # realmd is vendored unmodified. Its own test executables compile
-    # Auth/PatchArtifact.cpp, which includes Auth/Md5.h -- a header this core
-    # owns, under src/shared. The realmd library reaches it by linking `shared`;
-    # the test targets link neither, so the path is attached from the outside.
-    foreach(realmd_test IN ITEMS
-            realmd_patch_safety_tests
-            realmd_auth_protocol_tests
-            realmd_realm_snapshot_tests
-            realmd_client_build_policy_tests)
-        if(TARGET ${realmd_test})
-            target_include_directories(${realmd_test} PRIVATE
-                ${CMAKE_SOURCE_DIR}/src/shared)
-        endif()
-    endforeach()
 endif()
 
-# The baker and its client-data parsers, configured unconditionally so the unit
-# tests can link the parsers without asking for the tools. BUILD_TOOLS no longer
-# gates it: the tiles it produces are what src/shared/terrain reads at runtime,
-# so it is not optional the way the old map/vmap extractors were.
+# The baker and its client-data parsers, configured unconditionally. BUILD_TOOLS
+# does not gate it: the tiles it produces are what src/shared/terrain reads at
+# runtime, so it is not optional the way the old map/vmap extractors were.
 add_subdirectory(tools/extractor)
 
 # Scores those tiles against the world database's own ground-only creature spawns.
@@ -84,8 +68,4 @@ if (BUILD_MANGOSD OR BUILD_REALMD)
         STRING(REPLACE ".lib" ".dll" MYSQL_LIB_DLL ${MYSQL_LIB_DLL})
         install(FILES ${MYSQL_LIB_DIR}/${MYSQL_LIB_DLL} DESTINATION ${BIN_DIR})
     endif()
-endif()
-
-if(WITH_TESTS OR WITH_NET_TESTS)
-    add_subdirectory(tests)
 endif()

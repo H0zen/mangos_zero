@@ -46,12 +46,6 @@ else()
     message("Build tools           : No")
 endif()
 
-if(WITH_TESTS OR WITH_NET_TESTS)
-    message("Build tests           : Yes (target: mangos_tests)")
-else()
-    message("Build tests           : No (default)")
-endif()
-
 if(WITHOUT_GIT)
     message("Use GIT revision hash : No")
     message("")

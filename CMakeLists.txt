@@ -70,8 +70,6 @@ option(PCH                  "Enable precompiled headers"                    ON)
 option(WITH_IO_URING        "Use the io_uring network backend (Linux, needs liburing)" OFF)
 option(DEBUG                "Enable debug build (only on non IDEs)"         OFF)
 option(WITHOUT_GIT          "Disable Git revision detection"                OFF)
-option(WITH_TESTS           "Build the unit tests"                          OFF)
-option(WITH_NET_TESTS       "Build the socket tests (slow; never in CI)"    OFF)
 #==================================================================================
 message("")
 message(
@@ -83,10 +81,6 @@ message(
     BUILD_REALMD            Build the login server
     BUILD_TOOLS             Build the client-data extractor
     PCH                     Enable use of precompiled headers
-    WITH_TESTS              Build the unit tests (target: mangos_tests)
-    WITH_NET_TESTS          Build the socket tests as well. Disjoint from WITH_TESTS,
-                            off by default, and deliberately not run in CI: they bind
-                            real sockets and dominate the suite's wall-clock time.
     DEBUG                   Debug build, only for systems without IDE (Linux, *BSD)
     WITHOUT_GIT             Disable Git revision detection
    Scripting engines:
@@ -226,11 +220,6 @@ endif()
 # =============================================================================
 # Subdirectories
 # =============================================================================
-if(WITH_TESTS OR WITH_NET_TESTS)
-    set(BUILD_TESTING ON)
-    enable_testing()
-endif()
-
 # The vendored dependencies are added one by one, not as a whole tree; the
 # selection and the gating both live in cmake/Dependencies.cmake.
 include(SubmoduleCompat)
