@@ -257,14 +257,16 @@ void Spell::TakeReagents()
                     }
                 }
 
-                m_CastItem = NULL;
+                // The cast item is being consumed as one of its own reagents;
+                // forget it before DestroyItemCount below frees it.
+                SetCastItem(NULL);
             }
         }
 
         // if getItemTarget is also spell reagent
         if (m_targets.getItemTargetEntry() == itemid)
         {
-            m_targets.setItemTarget(NULL);
+            m_targets.clearItemTarget();
         }
 
         p_caster->DestroyItemCount(itemid, itemcount, true);

@@ -543,6 +543,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
                 if (duration == 0)
                 {
                     delete m_spellAuraHolder;
+                    m_spellAuraHolder = NULL;
                     return;
                 }
             }
@@ -553,11 +554,24 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
                 m_spellAuraHolder->SetAuraDuration(duration);
             }
 
+            // ===== THE HOLDER MAY NOT SURVIVE THIS CALL =====
+            //
+            // AddSpellAuraHolder deletes what it is given on four of its paths
+            // -- target dead, wrong target, stacked onto an existing holder,
+            // blocked by a higher rank -- and reports that with its return
+            // value, which was discarded here. The member was then a dangling
+            // pointer until the next target overwrote it.
+            //
+            // Nothing read it stale today, but only because of how the call
+            // graph happens to run. Null it and the question stops being one.
+            // ================================================
             unit->AddSpellAuraHolder(m_spellAuraHolder);
+            m_spellAuraHolder = NULL;
         }
         else
         {
             delete m_spellAuraHolder;
+            m_spellAuraHolder = NULL;
         }
     }
 }
@@ -614,7 +628,17 @@ void Spell::DoAllEffectOnTarget(GOTargetInfo* target)
 void Spell::DoAllEffectOnTarget(ItemTargetInfo* target)
 {
     uint32 effectMask = target->effectMask;
-    if (!target->item || !effectMask)
+    if (!effectMask)
+    {
+        return;
+    }
+
+    // Resolved here rather than remembered from targeting time. UpdatePointers
+    // refreshed m_targets a moment ago, and it is the thing that knows about
+    // trade slots; the identity check is what makes sure the slot still holds
+    // the item this entry was created for.
+    Item* item = m_targets.getItemTarget();
+    if (!item || item->GetObjectGuid() != target->itemGuid)
     {
         return;
     }
@@ -623,7 +647,7 @@ void Spell::DoAllEffectOnTarget(ItemTargetInfo* target)
     {
         if (effectMask & (1 << effectNumber))
         {
-            HandleEffects(NULL, target->item, NULL, SpellEffectIndex(effectNumber));
+            HandleEffects(NULL, item, NULL, SpellEffectIndex(effectNumber));
         }
     }
 }

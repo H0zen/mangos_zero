@@ -720,10 +720,17 @@ void Spell::AddItemTarget(Item* pitem, SpellEffectIndex effIndex)
         return;
     }
 
+    if (!pitem)
+    {
+        return;
+    }
+
+    ObjectGuid const itemGuid = pitem->GetObjectGuid();
+
     // Lookup target in already in list
     for (ItemTargetList::iterator ihit = m_UniqueItemInfo.begin(); ihit != m_UniqueItemInfo.end(); ++ihit)
     {
-        if (pitem == ihit->item)                            // Found in list
+        if (itemGuid == ihit->itemGuid)                     // Found in list
         {
             ihit->effectMask |= (1 << effIndex);            // Add only effect mask
             return;
@@ -733,7 +740,7 @@ void Spell::AddItemTarget(Item* pitem, SpellEffectIndex effIndex)
     // This is new target add data
 
     ItemTargetInfo target = {};
-    target.item       = pitem;
+    target.itemGuid   = itemGuid;
     target.effectMask = (1 << effIndex);
     m_UniqueItemInfo.push_back(target);
 }

@@ -306,6 +306,14 @@ void Spell::EffectApplyAreaAura(SpellEffectIndex eff_idx)
         return;
     }
 
+    // See EffectApplyAura: no holder here means IsSpellAppliesAura and the
+    // effect dispatch disagree about this spell.
+    if (!m_spellAuraHolder)
+    {
+        sLog.outError("Spell::EffectApplyAreaAura: spell %u effect %u has no aura holder", m_spellInfo->ID, eff_idx);
+        return;
+    }
+
     AreaAura* Aur = new AreaAura(m_spellInfo, eff_idx, &m_currentBasePoints[eff_idx], m_spellAuraHolder, unitTarget, m_caster, m_CastItem);
     m_spellAuraHolder->AddAura(Aur, eff_idx);
 }

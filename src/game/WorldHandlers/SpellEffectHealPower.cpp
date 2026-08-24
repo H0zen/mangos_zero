@@ -108,6 +108,16 @@ void Spell::EffectApplyAura(SpellEffectIndex eff_idx)
 
     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell: Aura is: %u", m_spellInfo->EffectAura[eff_idx]);
 
+    // DoSpellHitOnUnit creates the holder only when IsSpellAppliesAura agrees
+    // that one of the masked effects applies an aura, so reaching here without
+    // one means those two disagree. That is a data or dispatch fault, not
+    // something to dereference our way through.
+    if (!m_spellAuraHolder)
+    {
+        sLog.outError("Spell::EffectApplyAura: spell %u effect %u has no aura holder", m_spellInfo->ID, eff_idx);
+        return;
+    }
+
     Aura* aur = CreateAura(m_spellInfo, eff_idx, &m_currentBasePoints[eff_idx], m_spellAuraHolder, unitTarget, caster, m_CastItem);
     m_spellAuraHolder->AddAura(aur, eff_idx);
 }

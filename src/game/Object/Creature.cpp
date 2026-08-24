@@ -3558,6 +3558,6 @@ SpellCastResult Creature::TryToCast(Unit* pTarget, const SpellEntry* pSpellInfo,
         }
     }
 
-    spell->m_CastItem = NULL;
+    spell->SetCastItem(NULL);
     return spell->prepare(&targets, NULL, uiChance);
 }

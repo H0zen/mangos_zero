@@ -449,6 +449,12 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
     m_IsTriggeredSpell = triggered;
     // m_AreaAura = false;
     m_CastItem = NULL;
+    m_CastItemGuid = ObjectGuid();
+
+    // Was never initialised. DoSpellHitOnUnit assigns it before every use today,
+    // so nothing read the indeterminate value -- but the null checks that now
+    // guard the two aura effect handlers would have been reading garbage.
+    m_spellAuraHolder = NULL;
 
     unitTarget = NULL;
     itemTarget = NULL;
@@ -931,7 +937,27 @@ void Spell::UpdatePointers()
 {
     UpdateOriginalCasterPointer();
 
+    // The cast item, on the same footing as the caster and the targets: resolved
+    // from a guid every time rather than captured once. See Spell::m_CastItem.
+    if (m_CastItemGuid)
+    {
+        m_CastItem = m_caster->GetTypeId() == TYPEID_PLAYER
+            ? ((Player*)m_caster)->GetItemByGuid(m_CastItemGuid)
+            : NULL;
+    }
+
     m_targets.Update(m_caster);
+}
+
+/**
+ * @brief Sets the cast item, and the guid it will be re-resolved from.
+ *
+ * @param item The item the cast comes from; NULL clears both.
+ */
+void Spell::SetCastItem(Item* item)
+{
+    m_CastItem = item;
+    m_CastItemGuid = item ? item->GetObjectGuid() : ObjectGuid();
 }
 
 
@@ -1286,10 +1312,10 @@ void Spell::ClearCastItem()
 {
     if (m_CastItem == m_targets.getItemTarget())
     {
-        m_targets.setItemTarget(NULL);
+        m_targets.clearItemTarget();
     }
 
-    m_CastItem = NULL;
+    SetCastItem(NULL);
 }
 
 

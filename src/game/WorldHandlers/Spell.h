@@ -207,6 +207,25 @@ class SpellCastTargets
         ObjectGuid getCorpseTargetGuid() const { return m_CorpseTargetGUID; }
 
         void setItemTarget(Item* item);
+
+        /**
+         * @brief Forgets the item target entirely.
+         *
+         * setItemTarget(NULL) does NOT do this -- it returns immediately on a
+         * null argument, which meant the two callers that passed exactly NULL to
+         * break a dangling link (Spell::ClearCastItem and Spell::TakeReagents,
+         * the latter under a comment reading "prevent crash at access to deleted
+         * m_targets.getItemTarget") cleared nothing at all. The guard they were
+         * relying on was a no-op.
+         */
+        void clearItemTarget()
+        {
+            m_itemTarget = NULL;
+            m_itemTargetGUID = ObjectGuid();
+            m_itemTargetEntry = 0;
+            m_targetMask &= ~(TARGET_FLAG_ITEM | TARGET_FLAG_TRADE_ITEM);
+        }
+
         ObjectGuid getItemTargetGuid() const { return m_itemTargetGUID; }
         Item* getItemTarget() const { return m_itemTarget; }
         uint32 getItemTargetEntry() const { return m_itemTargetEntry; }
@@ -477,7 +496,33 @@ class Spell : public BasicEvent
         SpellEntry const* m_spellInfo;
         SpellEntry const* m_triggeredBySpellInfo;
         int32 m_currentBasePoints[MAX_EFFECT_INDEX];        // cache SpellEntry::CalculateSimpleValue and use for set custom base points
+
+        /**
+         * @brief The item this cast came from. READ IT, DO NOT ASSIGN IT.
+         *
+         * Re-resolved from m_CastItemGuid by UpdatePointers on every tick, for
+         * the same reason the unit and gameobject targets are: the object can go
+         * away mid-cast and this used to be a raw pointer that nothing refreshed.
+         *
+         * Item::SetState frees an ITEM_NEW item on the spot -- anything looted,
+         * crafted or conjured since the last inventory save -- so destroying,
+         * selling or trading the item during a cast left this dangling
+         * immediately, not at the next save. RemoveItemDependentAurasAndCasts
+         * does not help: it interrupts a cast only when the spell's equipment
+         * requirements stop holding, never because the destroyed item is the one
+         * doing the casting, and it skips delayed spells outright.
+         *
+         * Assign through SetCastItem so the guid stays in step. A direct write
+         * leaves the guid empty and UpdatePointers will clear the pointer on the
+         * next tick -- loudly wrong rather than quietly dangling, which is the
+         * intended failure mode.
+         */
         Item* m_CastItem;
+        ObjectGuid m_CastItemGuid;
+
+        /// Sets the cast item and the guid it is re-resolved from.
+        void SetCastItem(Item* item);
+
         SpellCastTargets m_targets;
 
         bool IsTriggered() const {return m_IsTriggeredSpell;}
@@ -662,9 +707,24 @@ class Spell : public BasicEvent
             bool   processed: 1;
         };
 
+        /**
+         * @brief An item this cast will act on.
+         *
+         * Guid, not a pointer -- for the same reason TargetInfo and GOTargetInfo
+         * next door hold guids. This one held a raw Item* that nothing
+         * refreshed, and the order inside cast() made the collision routine:
+         * TakeReagents destroys reagents, and _handle_immediate_phase then walks
+         * this list and hands each stored pointer to the effect handlers. If the
+         * reagent was also the item target and had not been saved yet,
+         * Item::SetState had already freed it.
+         *
+         * The item is resolved through m_targets at use, which UpdatePointers
+         * has just refreshed and which knows about trade slots. All three
+         * AddItemTarget callers pass m_targets.getItemTarget() anyway.
+         */
         struct ItemTargetInfo
         {
-            Item*  item;
+            ObjectGuid itemGuid;
             uint8 effectMask;
         };
 

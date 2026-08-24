@@ -1457,7 +1457,7 @@ void Unit::CastSpell(Unit* Victim, SpellEntry const* spellInfo, bool triggered, 
         }
     }
 
-    spell->m_CastItem = castItem;
+    spell->SetCastItem(castItem);
     spell->prepare(&targets, triggeredByAura);
 
     // Linked spells (RemoveOnCast chain)
@@ -1568,7 +1568,7 @@ void Unit::CastCustomSpell(Unit* Victim, SpellEntry const* spellInfo, int32 cons
 
     SpellCastTargets targets;
     targets.setUnitTarget(Victim);
-    spell->m_CastItem = castItem;
+    spell->SetCastItem(castItem);
 
     if (spellInfo->Targets & TARGET_FLAG_DEST_LOCATION)
     {
@@ -1657,7 +1657,7 @@ void Unit::CastSpell(float x, float y, float z, SpellEntry const* spellInfo, boo
         targets.setDestination(x, y, z);
     }
 
-    spell->m_CastItem = castItem;
+    spell->SetCastItem(castItem);
     spell->prepare(&targets, triggeredByAura);
 }
 
