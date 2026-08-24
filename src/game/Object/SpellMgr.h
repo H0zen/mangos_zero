@@ -1059,6 +1059,37 @@ struct SpellCastPlan
 
 typedef std::unordered_map<uint32, SpellCastPlan> SpellCastPlanMap;
 
+/**
+ * @brief What an aura pulls in when it goes on, and lets go of when it comes off.
+ *
+ * SpellAuraHolder::HandleSpellSpecificBoosts derived this on EVERY aura
+ * application and EVERY removal -- three spell_linked lookups, each walking a
+ * multimap by equal_range, followed by two nested switches that between them
+ * name six spell ids in the whole game. Aura applications are considerably more
+ * frequent than casts.
+ */
+struct SpellBoostPlan
+{
+    /// Cast on the target when the aura is applied, removed when it comes off.
+    std::vector<uint32> symmetric;
+    /// Removed when the aura comes off; nothing happens on apply.
+    std::vector<uint32> removeOnRemove;
+    /// Cast when the aura comes off.
+    std::vector<uint32> castOnRemove;
+    /// Frost Warding / Frost Ward: drop the reflection spell modifier that
+    /// EffectDummy installed. Not a spell id, so it cannot live in a list.
+    bool frostWardingMod;
+
+    SpellBoostPlan() : frostWardingMod(false) {}
+
+    bool Empty() const
+    {
+        return symmetric.empty() && removeOnRemove.empty() && castOnRemove.empty() && !frostWardingMod;
+    }
+};
+
+typedef std::unordered_map<uint32, SpellBoostPlan> SpellBoostPlanMap;
+
 // Spell pet auras
 class PetAura
 {
@@ -1530,6 +1561,9 @@ class SpellMgr
         /// which is the answer for almost every spell, and costs one byte read.
         SpellCastPlan const* GetCastPlan(uint32 spell_id) const;
 
+        /// What this spell's aura pulls in and lets go of, or NULL for none.
+        SpellBoostPlan const* GetBoostPlan(uint32 spell_id) const;
+
         // Modifiers
     public:
         static SpellMgr& Instance();
@@ -1559,7 +1593,7 @@ class SpellMgr
         void ModDBCSpellAttributes();
 
         /// After LoadSpellLinked and after ModDBCSpellAttributes: both feed it.
-        void BuildSpellCastPlans();
+        void BuildSpellPlans();
 
     private:
         SpellChainMap      mSpellChains;
@@ -1586,6 +1620,9 @@ class SpellMgr
         /// on every cast, so it is a flat array rather than a map lookup.
         std::vector<uint8> m_spellHasCastPlan;
         SpellCastPlanMap   m_spellCastPlans;
+
+        std::vector<uint8> m_spellHasBoostPlan;
+        SpellBoostPlanMap  m_spellBoostPlans;
 };
 
 #define sSpellMgr SpellMgr::Instance()

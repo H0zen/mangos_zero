@@ -1329,31 +1329,41 @@ void Aura::TriggerSpell()
  * @param apply True to apply the modifier; false to remove it.
  * @param Real True when processing the real aura state change.
  */
-void Aura::HandleModDetectRange(bool apply, bool Real)
+void Aura::HandleModDetectRange(bool /*apply*/, bool /*Real*/)
 {
-    switch (GetId())
-    {
-        //Soothe animal
-        case 9901:
-        case 8955:
-        case 2908:
-        {
-            if (apply)
-            {
-                Aura* A = CreateAura(GetSpellProto(), EFFECT_INDEX_1, 0, m_spellAuraHolder, GetTarget(), GetCaster());
-                m_spellAuraHolder->AddAura(A, EFFECT_INDEX_1);
-                A->m_modifier.m_miscvalue = SPELL_SCHOOL_MASK_NATURE;
-                A->m_modifier.periodictime = 0;
-                A->m_modifier.m_auraname = SPELL_AURA_MOD_DETECT_RANGE;
-                //Reduce aggro range by 10 yards
-                A->m_modifier.m_amount = -10;
-                //Should this aura be removed when apply is false?
-            }
-        }
-        break;
-        default:
-            break;
-    }
+    // ===== NOTHING TO DO, AND THAT IS THE FIX =====
+    //
+    // SPELL_AURA_MOD_DETECT_RANGE has exactly one consumer:
+    // Creature::GetAttackDistance adds GetTotalAuraModifier(...), which reads
+    // Unit::m_modAuras. Auras get into that list from Unit::AddSpellAuraHolder,
+    // in a loop that runs BEFORE ApplyAuraModifiers. So this aura's own effect,
+    // the one the DBC declares, is already registered and already doing the work
+    // before this handler is ever called; there is nothing left for it to do.
+    //
+    // What stood here was a Soothe Animal hack that built a SECOND aura at a
+    // hardcoded EFFECT_INDEX_1, from inside the apply of effect 0, and set its
+    // amount to -10. Three things were wrong with it, and the first is the one
+    // that matters:
+    //
+    //   It was INERT. That second aura was created after the AddAuraToModList
+    //   loop had already run, so it never reached m_modAuras and the only reader
+    //   of MOD_DETECT_RANGE could never see it. Removing it changes no observed
+    //   behaviour, because it never produced any.
+    //
+    //   It LEAKED, once per application. ApplyAuraModifiers walks the effect
+    //   indices; having written index 1 during index 0, the loop then reached
+    //   index 1, found that aura, and called ApplyModifier on it -- arriving
+    //   back here, with the same spell id, and creating a THIRD aura that
+    //   overwrote the second. The overwritten one had no owner left: the holder
+    //   destructor frees what is in the slot, and the slot no longer held it.
+    //
+    //   It overwrote an aura that was mid-ApplyModifier, from inside that very
+    //   call.
+    //
+    // The comment it carried -- "Should this aura be removed when apply is
+    // false?" -- was asking the wrong question. The answer to the right one is
+    // that it should never have been added.
+    // ==============================================
 }
 
 /*********************************************************/
@@ -2199,6 +2209,22 @@ SpellAuraHolder::SpellAuraHolder(SpellEntry const* spellproto, Unit* target, Wor
  */
 void SpellAuraHolder::AddAura(Aura* aura, SpellEffectIndex index)
 {
+    // ===== A SLOT IS WRITTEN ONCE =====
+    //
+    // This was a bare assignment. Overwriting an occupied slot leaks the aura
+    // that was there and, if it had already been registered by
+    // AddAuraToModList, leaves Unit::m_modAuras holding a pointer to it with
+    // nothing left to free it -- a leak that becomes a dangling read the moment
+    // anything does free it.
+    //
+    // Exactly one caller ever did this: Aura::HandleModDetectRange's Soothe
+    // Animal hack, which created a second aura at a hardcoded EFFECT_INDEX_1
+    // from inside the apply of effect 0, and then hit itself when the apply loop
+    // reached index 1. That is gone, so nothing can reach this now -- which is
+    // the point of saying so here rather than in a comment somewhere else.
+    // ==================================
+    MANGOS_ASSERT(!m_auras[index] || m_auras[index] == aura);
+
     m_auras[index] = aura;
 }
 
@@ -2660,171 +2686,70 @@ bool SpellAuraHolder::IsNeedVisibleSlot(Unit const* caster) const
  */
 void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
 {
-    uint32 spellId1 = 0;
-    uint32 spellId2 = 0;
-    uint32 spellId3 = 0;
-    uint32 spellId4 = 0;
-
-    // Linked spells (boost chain)
-    SpellLinkedSet linkedSet = sSpellMgr.GetSpellLinked(GetId(), SPELL_LINKED_TYPE_BOOST);
-    if (linkedSet.size() > 0)
+    // ===== RESOLVED AT LOAD, NOT HERE =====
+    //
+    // This function used to open with three spell_linked lookups -- each an
+    // equal_range walk over a multimap -- and then two nested switches that
+    // between them name six spell ids in the entire game. Every other spell in
+    // the game fell into a `default: return`, having paid for all of it first,
+    // on EVERY aura application and EVERY removal.
+    //
+    // SpellMgr::BuildSpellPlans does it once per spell. Almost every aura now
+    // reads one byte and leaves.
+    // ======================================
+    SpellBoostPlan const* plan = sSpellMgr.GetBoostPlan(GetId());
+    if (!plan)
     {
-        for (SpellLinkedSet::const_iterator itr = linkedSet.begin(); itr != linkedSet.end(); ++itr)
+        return;
+    }
+
+    // Frost Warding: drop the reflection modifier EffectDummy installed. Not a
+    // spell id, so it never fitted in a list.
+    if (plan->frostWardingMod && !apply && m_target->GetTypeId() == TYPEID_PLAYER)
+    {
+        if (SpellModifier* mod = ((Player*)m_target)->GetSpellMod(SPELLMOD_RESIST_MISS_CHANCE, GetId()))
         {
-            apply ?
-            m_target->CastSpell(m_target, *itr, true, NULL, NULL, GetCasterGuid()) :
-            m_target->RemoveAurasByCasterSpell(*itr, GetCasterGuid());
+            ((Player*)m_target)->AddSpellMod(mod, false);
         }
     }
 
-    if (!apply)
-    {
-        // Linked spells (CastOnRemove chain)
-        linkedSet = sSpellMgr.GetSpellLinked(GetId(), SPELL_LINKED_TYPE_CASTONREMOVE);
-        if (linkedSet.size() > 0)
-        {
-            for (SpellLinkedSet::const_iterator itr = linkedSet.begin(); itr != linkedSet.end(); ++itr)
-            {
-                m_target->CastSpell(m_target, *itr, true, NULL, NULL, GetCasterGuid());
-            }
-        }
-
-        // Linked spells (RemoveOnRemove chain)
-        linkedSet = sSpellMgr.GetSpellLinked(GetId(), SPELL_LINKED_TYPE_REMOVEONREMOVE);
-        if (linkedSet.size() > 0)
-        {
-            for (SpellLinkedSet::const_iterator itr = linkedSet.begin(); itr != linkedSet.end(); ++itr)
-            {
-                m_target->RemoveAurasByCasterSpell(*itr, GetCasterGuid());
-            }
-        }
-    }
-
-    switch (GetSpellProto()->SpellClassSet)
-    {
-        case SPELLFAMILY_GENERIC:
-        {
-            switch (GetId())
-            {
-                case 20594:                                 // Stoneform (dwarven racial)
-                {
-                    spellId1 = 20612;
-                    break;
-                }
-                default:
-                {
-                    return;
-                }
-            }
-            break;
-        }
-        case SPELLFAMILY_MAGE:
-        {
-            switch (GetId())
-            {
-                case 11129:                                 // Combustion (remove triggered aura stack)
-                {
-                    if (!apply)
-                    {
-                        spellId1 = 28682;
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    break;
-                }
-                case 28682:                                 // Combustion (remove main aura)
-                {
-                    if (!apply)
-                    {
-                        spellId1 = 11129;
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    break;
-                }
-                case 11189:                                 // Frost Warding
-                case 28332:
-                {
-                    if (m_target->GetTypeId() == TYPEID_PLAYER && !apply)
-                    {
-                        // reflection chance (effect 1) of Frost Ward, applied in dummy effect
-                        if (SpellModifier* mod = ((Player*)m_target)->GetSpellMod(SPELLMOD_RESIST_MISS_CHANCE, GetId()))
-                        {
-                            ((Player*)m_target)->AddSpellMod(mod, false);
-                        }
-                    }
-                    return;
-                }
-                default:
-                    return;
-            }
-            break;
-        }
-        case SPELLFAMILY_HUNTER:
-        {
-            switch (GetId())
-            {
-                // The Beast Within and Bestial Wrath - immunity
-                case 19574:
-                {
-                    spellId1 = 24395;
-                    spellId2 = 24396;
-                    spellId3 = 24397;
-                    spellId4 = 26592;
-                    break;
-                }
-                default:
-                    return;
-            }
-            break;
-        }
-        default:
-            return;
-    }
-
-    // prevent aura deletion, specially in multi-boost case
+    // ===== IN USE FOR THE WHOLE THING, NOT PART OF IT =====
+    //
+    // The old code took this only around the switch's own ids; the linked-spell
+    // loops above it cast and removed auras with the holder unpinned, and with
+    // no IsDeleted check between one cast and the next. A boost that removed the
+    // holder -- a dispel, a stack replacement, the target dying -- left the
+    // remaining iterations running against a holder already on the deferred
+    // deletion list. Now everything this function does is covered.
+    // ======================================================
     SetInUse(true);
 
     if (apply)
     {
-        if (spellId1)
+        for (std::vector<uint32>::const_iterator itr = plan->symmetric.begin(); itr != plan->symmetric.end(); ++itr)
         {
-            m_target->CastSpell(m_target, spellId1, true, NULL, NULL, GetCasterGuid());
-        }
-        if (spellId2 && !IsDeleted())
-        {
-            m_target->CastSpell(m_target, spellId2, true, NULL, NULL, GetCasterGuid());
-        }
-        if (spellId3 && !IsDeleted())
-        {
-            m_target->CastSpell(m_target, spellId3, true, NULL, NULL, GetCasterGuid());
-        }
-        if (spellId4 && !IsDeleted())
-        {
-            m_target->CastSpell(m_target, spellId4, true, NULL, NULL, GetCasterGuid());
+            if (IsDeleted())
+            {
+                break;
+            }
+            m_target->CastSpell(m_target, *itr, true, NULL, NULL, GetCasterGuid());
         }
     }
     else
     {
-        if (spellId1)
+        for (std::vector<uint32>::const_iterator itr = plan->symmetric.begin(); itr != plan->symmetric.end(); ++itr)
         {
-            m_target->RemoveAurasByCasterSpell(spellId1, GetCasterGuid());
+            m_target->RemoveAurasByCasterSpell(*itr, GetCasterGuid());
         }
-        if (spellId2)
+
+        for (std::vector<uint32>::const_iterator itr = plan->castOnRemove.begin(); itr != plan->castOnRemove.end(); ++itr)
         {
-            m_target->RemoveAurasByCasterSpell(spellId2, GetCasterGuid());
+            m_target->CastSpell(m_target, *itr, true, NULL, NULL, GetCasterGuid());
         }
-        if (spellId3)
+
+        for (std::vector<uint32>::const_iterator itr = plan->removeOnRemove.begin(); itr != plan->removeOnRemove.end(); ++itr)
         {
-            m_target->RemoveAurasByCasterSpell(spellId3, GetCasterGuid());
-        }
-        if (spellId4)
-        {
-            m_target->RemoveAurasByCasterSpell(spellId4, GetCasterGuid());
+            m_target->RemoveAurasByCasterSpell(*itr, GetCasterGuid());
         }
     }
 

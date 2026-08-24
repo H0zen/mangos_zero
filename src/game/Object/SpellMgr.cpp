@@ -1689,21 +1689,100 @@ static void ComputeStaticCastPlan(SpellEntry const* proto, SpellCastPlan& plan)
 }
 
 /**
- * @brief Builds every spell's cast plan. Call after LoadSpellLinked and after
- *        ModDBCSpellAttributes.
+ * @brief Works out what a spell's aura pulls in when applied and lets go when removed.
+ *
+ * ===== THIS RAN ON EVERY AURA APPLICATION AND EVERY REMOVAL =====
+ *
+ * It lived in SpellAuraHolder::HandleSpellSpecificBoosts as three spell_linked
+ * lookups -- each an equal_range walk over a multimap -- followed by two nested
+ * switches that between them name six spell ids in the entire game. Every other
+ * spell fell into a `default: return`, having paid for all of it first.
+ *
+ * Aura applications are considerably more frequent than casts, so this is the
+ * hotter of the two plans.
+ *
+ * The one thing that could not become a list stayed a flag: Frost Warding drops
+ * a SpellModifier that EffectDummy installed, which is not a spell id.
+ * ================================================================
+ *
+ * @param proto The spell entry.
+ * @param plan  Filled with the spells to cast and to remove.
+ */
+static void ComputeStaticBoostPlan(SpellEntry const* proto, SpellBoostPlan& plan)
+{
+    switch (proto->SpellClassSet)
+    {
+        case SPELLFAMILY_GENERIC:
+        {
+            switch (proto->ID)
+            {
+                case 20594:                                 // Stoneform (dwarven racial)
+                    plan.symmetric.push_back(20612);
+                    break;
+                default:
+                    break;
+            }
+            break;
+        }
+        case SPELLFAMILY_MAGE:
+        {
+            switch (proto->ID)
+            {
+                case 11129:                                 // Combustion (remove triggered aura stack)
+                    plan.removeOnRemove.push_back(28682);
+                    break;
+                case 28682:                                 // Combustion (remove main aura)
+                    plan.removeOnRemove.push_back(11129);
+                    break;
+                case 11189:                                 // Frost Warding
+                case 28332:
+                    plan.frostWardingMod = true;
+                    break;
+                default:
+                    break;
+            }
+            break;
+        }
+        case SPELLFAMILY_HUNTER:
+        {
+            switch (proto->ID)
+            {
+                // The Beast Within and Bestial Wrath - immunity
+                case 19574:
+                    plan.symmetric.push_back(24395);
+                    plan.symmetric.push_back(24396);
+                    plan.symmetric.push_back(24397);
+                    plan.symmetric.push_back(26592);
+                    break;
+                default:
+                    break;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+/**
+ * @brief Builds every spell's cast and boost plans. Call after LoadSpellLinked
+ *        and after ModDBCSpellAttributes.
  *
  * Both orderings are load-bearing: the linked-spell rows are folded into the
- * plan here so the cast does not have to look them up, and the family switch
- * reads attributes that ModDBCSpellAttributes patches.
+ * plans here so no cast and no aura application has to look them up, and the
+ * family switches read attributes that ModDBCSpellAttributes patches.
  */
-void SpellMgr::BuildSpellCastPlans()
+void SpellMgr::BuildSpellPlans()
 {
     m_spellCastPlans.clear();
+    m_spellBoostPlans.clear();
 
     uint32 const rows = sSpellStore.GetNumRows();
     m_spellHasCastPlan.assign(rows, 0);
+    m_spellHasBoostPlan.assign(rows, 0);
 
-    uint32 planned = 0;
+    uint32 castPlanned = 0;
+    uint32 boostPlanned = 0;
 
     for (uint32 id = 0; id < rows; ++id)
     {
@@ -1713,33 +1792,66 @@ void SpellMgr::BuildSpellCastPlans()
             continue;
         }
 
-        SpellCastPlan plan;
-        ComputeStaticCastPlan(proto, plan);
+        // ---- cast plan ----------------------------------------------------
+        SpellCastPlan cast;
+        ComputeStaticCastPlan(proto, cast);
 
         // The spell_linked rows, resolved now rather than per cast.
         SpellLinkedSet const precastLinked = GetSpellLinked(id, SPELL_LINKED_TYPE_PRECAST);
         for (SpellLinkedSet::const_iterator itr = precastLinked.begin(); itr != precastLinked.end(); ++itr)
         {
-            plan.precast.push_back(*itr);
+            cast.precast.push_back(*itr);
         }
 
         SpellLinkedSet const triggeredLinked = GetSpellLinked(id, SPELL_LINKED_TYPE_TRIGGERED);
         for (SpellLinkedSet::const_iterator itr = triggeredLinked.begin(); itr != triggeredLinked.end(); ++itr)
         {
-            plan.triggered.push_back(*itr);
+            cast.triggered.push_back(*itr);
         }
 
-        if (plan.precast.empty() && plan.triggered.empty())
+        if (!cast.precast.empty() || !cast.triggered.empty())
         {
-            continue;                                       // the overwhelming majority
+            m_spellHasCastPlan[id] = 1;
+            m_spellCastPlans[id] = cast;
+            ++castPlanned;
         }
 
-        m_spellHasCastPlan[id] = 1;
-        m_spellCastPlans[id] = plan;
-        ++planned;
+        // ---- boost plan ---------------------------------------------------
+        //
+        // Linked rows first, then the switch's own ids, because that is the
+        // order HandleSpellSpecificBoosts used to act in and casting order is
+        // observable -- a boost that dispels or replaces another one cares.
+        SpellBoostPlan boost;
+
+        SpellLinkedSet const boostLinked = GetSpellLinked(id, SPELL_LINKED_TYPE_BOOST);
+        for (SpellLinkedSet::const_iterator itr = boostLinked.begin(); itr != boostLinked.end(); ++itr)
+        {
+            boost.symmetric.push_back(*itr);
+        }
+
+        SpellLinkedSet const castOnRemove = GetSpellLinked(id, SPELL_LINKED_TYPE_CASTONREMOVE);
+        for (SpellLinkedSet::const_iterator itr = castOnRemove.begin(); itr != castOnRemove.end(); ++itr)
+        {
+            boost.castOnRemove.push_back(*itr);
+        }
+
+        SpellLinkedSet const removeOnRemove = GetSpellLinked(id, SPELL_LINKED_TYPE_REMOVEONREMOVE);
+        for (SpellLinkedSet::const_iterator itr = removeOnRemove.begin(); itr != removeOnRemove.end(); ++itr)
+        {
+            boost.removeOnRemove.push_back(*itr);
+        }
+
+        ComputeStaticBoostPlan(proto, boost);
+
+        if (!boost.Empty())
+        {
+            m_spellHasBoostPlan[id] = 1;
+            m_spellBoostPlans[id] = boost;
+            ++boostPlanned;
+        }
     }
 
-    sLog.outString(">> Cast plans built for %u spells", planned);
+    sLog.outString(">> Cast plans built for %u spells, boost plans for %u", castPlanned, boostPlanned);
     sLog.outString();
 }
 
@@ -1756,6 +1868,20 @@ SpellCastPlan const* SpellMgr::GetCastPlan(uint32 spellId) const
 
     SpellCastPlanMap::const_iterator itr = m_spellCastPlans.find(spellId);
     return itr != m_spellCastPlans.end() ? &itr->second : NULL;
+}
+
+/**
+ * @brief What this spell's aura pulls in and lets go of, or NULL if nothing.
+ */
+SpellBoostPlan const* SpellMgr::GetBoostPlan(uint32 spellId) const
+{
+    if (spellId >= m_spellHasBoostPlan.size() || !m_spellHasBoostPlan[spellId])
+    {
+        return NULL;
+    }
+
+    SpellBoostPlanMap::const_iterator itr = m_spellBoostPlans.find(spellId);
+    return itr != m_spellBoostPlans.end() ? &itr->second : NULL;
 }
 
 
