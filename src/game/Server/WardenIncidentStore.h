@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_WARDEN_INCIDENT_STORE_H
-#define MANGOS_WARDEN_INCIDENT_STORE_H
+#pragma once
 
 #include "WardenConfiguration.h"
 #include "WardenEvidence.h"
@@ -219,5 +218,3 @@ public:
         WardenConfiguration const& configuration) const;
 };
 }
-
-#endif

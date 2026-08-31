@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_ERRORS_H
-#define MANGOSSERVER_ERRORS_H
+#pragma once
 
 #include <cassert>
 #include "Platform/Define.h"
@@ -68,5 +67,3 @@ do                                                                           \
 } while (0)
 
 #define MANGOS_ASSERT WPError // Fatal in release too -- see above.
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef WORLD_PVP_SI
-#define WORLD_PVP_SI
+#pragma once
 
 #include "Platform/Define.h"
 #include "OutdoorPvP.h"
@@ -137,5 +136,3 @@ class OutdoorPvPSI : public OutdoorPvP
         uint8 m_resourcesHorde; ///< Horde silithyst resources gathered
         Team m_zoneOwner; ///< Current zone owner team
 };
-
-#endif

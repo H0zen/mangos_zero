@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_EVENTPROCESSOR
-#define MANGOS_H_EVENTPROCESSOR
+#pragma once
 
 #include "Platform/Define.h"
 #include <map>
@@ -144,5 +143,3 @@ class EventProcessor
         EventList m_events; /**< List of events */
         bool m_aborting; /**< Flag indicating if the event processor is aborting */
 };
-
-#endif

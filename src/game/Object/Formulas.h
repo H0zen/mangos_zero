@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_FORMULAS_H
-#define MANGOS_FORMULAS_H
+#pragma once
 
 #include <cmath>
 #include "World.h"
@@ -443,4 +442,3 @@ namespace MaNGOS
         }
     }
 }
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_WAYPOINTMANAGER_H
-#define MANGOS_WAYPOINTMANAGER_H
+#pragma once
 
 #include <unordered_map>
 #include "Platform/Define.h"
@@ -222,5 +221,3 @@ class WaypointManager
 
 /// Accessor for Scripting library
 bool AddWaypointFromExternal(uint32 entry, int32 pathId, uint32 pointId, float x, float y, float z, float o, uint32 waittime);
-
-#endif

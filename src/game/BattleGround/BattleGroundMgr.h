@@ -51,8 +51,7 @@
  * @see Specific battleground classes for extensions
  */
 
-#ifndef MANGOS_H_BATTLEGROUNDMGR
-#define MANGOS_H_BATTLEGROUNDMGR
+#pragma once
 
 #include <unordered_map>
 #include "Platform/Define.h"
@@ -770,5 +769,3 @@ class BattleGroundMgr
 };
 
 #define sBattleGroundMgr MaNGOS::Singleton<BattleGroundMgr>::Instance()
-
-#endif

@@ -77,9 +77,6 @@
 #include "SQLStorages.h"
 #include "DisableMgr.h"
 #include "Corpse.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Sends the cast result for this spell to the appropriate receiver.

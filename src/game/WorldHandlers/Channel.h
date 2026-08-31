@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_CHANNEL
-#define MANGOS_H_CHANNEL
+#pragma once
 
 #include "Platform/Define.h"
 #include <list>
@@ -341,4 +340,3 @@ class Channel
         PlayerList  m_players;
         GuidSet m_banned;
 };
-#endif

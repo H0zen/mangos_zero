@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_MOVEMENTGENERATOR_H
-#define MANGOS_MOVEMENTGENERATOR_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "Dynamic/FactoryHolder.h"
@@ -137,5 +136,3 @@ struct MovementGeneratorFactory : public SelectableMovement
 typedef FactoryHolder<MovementGenerator, MovementGeneratorType> MovementGeneratorCreator;
 typedef FactoryHolder<MovementGenerator, MovementGeneratorType>::FactoryHolderRegistry MovementGeneratorRegistry;
 typedef FactoryHolder<MovementGenerator, MovementGeneratorType>::FactoryHolderRepository MovementGeneratorRepository;
-
-#endif // MANGOS_MOVEMENTGENERATOR_H

@@ -34,9 +34,6 @@
 #include "CreatureAI.h"
 #include "InstanceData.h"
 #include "ObjectLookup.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Initializes a totem creature instance.
@@ -148,12 +145,6 @@ void Totem::Summon(Unit* owner)
     {
         ((Creature*)owner)->AI()->JustSummoned((Creature*)this);
     }
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = this->GetEluna())
-    {
-        e->OnSummoned(this, owner);
-    }
-#endif /* ENABLE_ELUNA */
 
     // there are some totems, which exist just for their visual appeareance
     if (!GetSpell())

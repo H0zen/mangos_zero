@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef _AUTH_SHA1_H
-#define _AUTH_SHA1_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "Utilities/Errors.h"
@@ -108,4 +107,3 @@ class Sha1Hash
         EVP_MD_CTX* mC; /**< OpenSSL SHA-1 context */
         uint8 mDigest[SHA_DIGEST_LENGTH]{ 0 }; /**< Computed hash digest */
 };
-#endif

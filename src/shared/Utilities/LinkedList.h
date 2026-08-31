@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef _LINKEDLIST
-#define _LINKEDLIST
+#pragma once
 
 #include <iterator>
 #include "Platform/Define.h"
@@ -583,5 +582,3 @@ class LinkedListHead
 };
 
 //============================================
-
-#endif

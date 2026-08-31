@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef DBC_FILE_LOADER_H
-#define DBC_FILE_LOADER_H
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -221,4 +220,3 @@ class DBCFileLoader
         unsigned char* data; /**< Raw record data */
         unsigned char* stringTable; /**< String table data */
 };
-#endif

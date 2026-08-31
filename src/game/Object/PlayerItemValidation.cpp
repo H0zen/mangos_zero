@@ -62,19 +62,12 @@
 #include "BattleGround/BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Chat.h"
-#include "revision_data.h"
 #include "Spell.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
 #include "Mail.h"
 #include "SQLStorages.h"
 #include "DisableMgr.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 /**
  * @brief Checks whether the player can carry more copies of a limited item.
@@ -1708,41 +1701,53 @@ InventoryResult Player::CanUseItem(Item* pItem, bool direct_action) const
     return EQUIP_ERR_ITEM_NOT_FOUND;
 }
 
-// D1: map the header-free AhUseResult back to the EXACT InventoryResult. The
-// switch is exhaustive so every per-branch code is preserved (CanUseAmmo /
-// SpellHandler forward these to the client); the static_assert pins AHUSE_OK.
-static InventoryResult MapAhUseResult(AhUseResult r)
+namespace
 {
-    static_assert(int(AHUSE_OK) == int(EQUIP_ERR_OK),
-                  "AHUSE_OK must equal EQUIP_ERR_OK");
-    switch (r)
+    /// Classic mount item ids whose level requirement comes from the
+    /// MinTrainMountLevel / MinTrainEpicMountLevel configuration entries rather
+    /// than from the prototype's own RequiredLevel. Frozen 1.12 tables.
+    bool IsRegularMount(uint32 id)
     {
-        case AHUSE_OK:                    return EQUIP_ERR_OK;
-        case AHUSE_NEVER_USE:             return EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM;
-        case AHUSE_NO_PROFICIENCY:        return EQUIP_ERR_NO_REQUIRED_PROFICIENCY;
-        case AHUSE_CANT_EQUIP_SKILL:      return EQUIP_ERR_CANT_EQUIP_SKILL;
-        case AHUSE_CANT_EQUIP_RANK:       return EQUIP_ERR_CANT_EQUIP_RANK;
-        case AHUSE_CANT_EQUIP_LEVEL:      return EQUIP_ERR_CANT_EQUIP_LEVEL_I;
-        case AHUSE_CANT_EQUIP_REPUTATION: return EQUIP_ERR_CANT_EQUIP_REPUTATION;
+        switch (id)
+        {
+            case 1132: case 2411: case 2414: case 5655: case 5656: case 5665:
+            case 5668: case 5864: case 5872: case 5873: case 8563: case 8588:
+            case 8591: case 8592: case 8595: case 8629: case 8631: case 8632:
+            case 12325: case 12326: case 12327: case 13321: case 13322:
+            case 13331: case 13332: case 13333: case 15277: case 15290:
+            case 18241: case 18242: case 18243: case 18244: case 18245:
+            case 18246: case 18247: case 18248:
+                return true;
+            default:
+                return false;
+        }
     }
-    return EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM;   // unreachable
-}
 
-uint16 Player::ThunkSkillRank(void* c, uint32 s)
-{
-    return reinterpret_cast<AhEvalCtx*>(c)->self->GetSkillValue(s);
-}
-bool Player::ThunkHasSpell(void* c, uint32 s)
-{
-    return reinterpret_cast<AhEvalCtx*>(c)->self->HasSpell(s);
-}
-uint8 Player::ThunkRepRank(void* c, uint32 f)
-{
-    return uint8(reinterpret_cast<AhEvalCtx*>(c)->self->GetReputationRank(f));
+    bool IsEpicMount(uint32 id)
+    {
+        switch (id)
+        {
+            case 12302: case 12303: case 12330: case 12351: case 12353:
+            case 12354: case 13086: case 13326: case 13327: case 13328:
+            case 13329: case 13334: case 13335: case 18766: case 18767:
+            case 18768: case 18772: case 18773: case 18774: case 18776:
+            case 18777: case 18778: case 18785: case 18786: case 18787:
+            case 18788: case 18789: case 18790: case 18791: case 18793:
+            case 18794: case 18795: case 18796: case 18797: case 18798:
+            case 18902:
+                return true;
+            default:
+                return false;
+        }
+    }
 }
 
 /**
  * @brief Checks whether an item prototype is usable by the player.
+ *
+ * The prototype form deliberately checks neither weapon proficiency nor
+ * reputation; both live in the Item* overload, because only a concrete item
+ * carries them.
  *
  * @param pProto The item prototype to validate.
  * @param direct_action True if the check is for an immediate player action.
@@ -1752,59 +1757,59 @@ InventoryResult Player::CanUseItem(ItemPrototype const* pProto, bool direct_acti
 {
     // Used by group, function NeedBeforeGreed, to know if a prototype can be used by a player
 
-    if (pProto)
+    if (!pProto)
     {
-        // NOTE: the prototype overload historically did NOT check reputation or
-        // proficiency (those are in the Item* overload). Pass 0 for
-        // rep/proficiency so Evaluate skips them here; the Item* overload passes
-        // the real values. The null-pProto case returns EQUIP_ERR_ITEM_NOT_FOUND
-        // below, outside Evaluate (the AhUseResult enum has no such value).
-        AhRefItem it;
-        it.itemClass            = pProto->Class;
-        it.allowableClass       = pProto->AllowableClass;
-        it.allowableRace        = pProto->AllowableRace;
-        it.requiredLevel        = pProto->RequiredLevel;
-        it.itemId               = pProto->ItemId;
-        it.requiredSkill        = pProto->RequiredSkill;
-        it.requiredSkillRank    = pProto->RequiredSkillRank;
-        it.requiredSpell        = pProto->RequiredSpell;
-        it.requiredHonorRank    = pProto->RequiredHonorRank;
-        it.requiredRepFaction   = 0u;
-        it.requiredRepRank      = 0u;
-        it.itemProficiencySkill = 0u;
-
-        // D1: Evaluate returns the per-branch AhUseResult; MapAhUseResult maps
-        // it 1:1 to the EXACT InventoryResult (no collapse) so callers that
-        // forward specific codes keep their client error messages.
-        // D2: direct_action gates the honor branch.
-        AhEvalCtx evalCtx = { this };
-        const AhUseResult ur = AhUsabilityRef::Evaluate(
-            getClassMask(), getRaceMask(), getLevel(),
-            uint32(GetHonorHighestRankInfo().rank), direct_action,
-            sWorld.getConfig(CONFIG_UINT32_MIN_TRAIN_MOUNT_LEVEL),
-            sWorld.getConfig(CONFIG_UINT32_MIN_TRAIN_EPIC_MOUNT_LEVEL),
-            it,
-            &Player::ThunkSkillRank, &Player::ThunkHasSpell, &Player::ThunkRepRank,
-            &evalCtx);
-        if (ur != AHUSE_OK)
-        {
-            return MapAhUseResult(ur);
-        }
-
-#ifdef ENABLE_ELUNA
-        if (Eluna* e = GetEluna())
-        {
-            InventoryResult eres = e->OnCanUseItem(this, pProto->ItemId);
-            if (eres != EQUIP_ERR_OK)
-            {
-                return eres;
-            }
-        }
-#endif
-
-        return EQUIP_ERR_OK;
+        return EQUIP_ERR_ITEM_NOT_FOUND;
     }
-    return EQUIP_ERR_ITEM_NOT_FOUND;
+
+    if ((pProto->AllowableClass & getClassMask()) == 0 ||
+        (pProto->AllowableRace & getRaceMask()) == 0)
+    {
+        return EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM;
+    }
+
+    if (pProto->RequiredSkill != 0)
+    {
+        const uint16 have = GetSkillValue(pProto->RequiredSkill);
+        if (have == 0)
+        {
+            return EQUIP_ERR_NO_REQUIRED_PROFICIENCY;
+        }
+        if (have < pProto->RequiredSkillRank)
+        {
+            return EQUIP_ERR_CANT_EQUIP_SKILL;
+        }
+    }
+
+    if (pProto->RequiredSpell != 0 && !HasSpell(pProto->RequiredSpell))
+    {
+        return EQUIP_ERR_NO_REQUIRED_PROFICIENCY;
+    }
+
+    // The honor requirement gates a deliberate player action only, not the
+    // loot-roll usability probe this overload also serves.
+    if (direct_action && pProto->RequiredHonorRank != 0 &&
+        uint32(GetHonorHighestRankInfo().rank) < pProto->RequiredHonorRank)
+    {
+        return EQUIP_ERR_CANT_EQUIP_RANK;
+    }
+
+    uint32 requiredLevel = pProto->RequiredLevel;
+    if (IsRegularMount(pProto->ItemId))
+    {
+        requiredLevel = sWorld.getConfig(CONFIG_UINT32_MIN_TRAIN_MOUNT_LEVEL);
+    }
+    else if (IsEpicMount(pProto->ItemId))
+    {
+        requiredLevel = sWorld.getConfig(CONFIG_UINT32_MIN_TRAIN_EPIC_MOUNT_LEVEL);
+    }
+
+    if (getLevel() < requiredLevel)
+    {
+        return EQUIP_ERR_CANT_EQUIP_LEVEL_I;
+    }
+
+    return EQUIP_ERR_OK;
 }
 
 /**

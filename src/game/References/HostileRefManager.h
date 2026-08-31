@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef _HOSTILEREFMANAGER
-#define _HOSTILEREFMANAGER
+#pragma once
 
 #include "Platform/Define.h"
 #if !defined(CLASSIC)
@@ -156,4 +155,3 @@ class HostileRefManager : public RefManager<Unit, ThreatManager>
 #endif
 };
 //=================================================
-#endif

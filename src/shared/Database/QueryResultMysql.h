@@ -23,10 +23,10 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#pragma once
+
 #ifndef DO_POSTGRESQL
 
-#if !defined(QUERYRESULTMYSQL_H)
-#define QUERYRESULTMYSQL_H
 
 #include "QueryResult.h"
 #include "Platform/Define.h"
@@ -84,6 +84,5 @@ class QueryResultMysql : public QueryResult
 
         MYSQL_RES* mResult; /**< TODO */
 };
-#endif
 
 #endif

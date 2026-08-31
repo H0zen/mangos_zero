@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_NPCHANDLER
-#define MANGOS_H_NPCHANDLER
+#pragma once
 
 #include <string>
 #include <vector>
@@ -87,5 +86,3 @@ struct GossipText
 {
     GossipTextOption Options[MAX_GOSSIP_TEXT_OPTIONS];
 };
-
-#endif

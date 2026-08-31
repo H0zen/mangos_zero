@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef TRANSPORTS_H
-#define TRANSPORTS_H
+#pragma once
 
 #include "GameObject.h"
 
@@ -177,4 +176,3 @@ class Transport : public GameObject
         void TeleportTransport(uint32 newMapid, float x, float y, float z);
         void MoveToNextWayPoint();                          // move m_next/m_cur to next points
 };
-#endif

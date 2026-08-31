@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_OBJECT
-#define MANGOS_H_OBJECT
+#pragma once
 
 #include <unordered_map>
 #include "Utilities/Errors.h"
@@ -41,9 +40,6 @@
 #include "Camera.h"
 #include "GameTime.h"
 #include "Geometry/Placement.h"
-#ifdef ENABLE_ELUNA
-#include "LuaValue.h"
-#endif /* ENABLE_ELUNA */
 
 #include <set>
 
@@ -100,11 +96,6 @@ class Map;
 class UpdateMask;
 class InstanceData;
 class TerrainInfo;
-#ifdef ENABLE_ELUNA
-class Eluna;
-class ElunaEventProcessor;
-class LuaVal;
-#endif /* ENABLE_ELUNA */
 struct MangosStringLocale;
 
 typedef std::unordered_map<Player*, UpdateData> UpdateDataMapType;
@@ -893,17 +884,7 @@ class WorldObject : public Object
 
         virtual void StartGroupLoot(Group* /*group*/, uint32 /*timer*/) {}
 
-#ifdef ENABLE_ELUNA
-        ElunaEventProcessor* elunaEvents;
 
-        Eluna* GetEluna() const;
-
-        LuaVal lua_data = LuaVal({});
-#endif /* ENABLE_ELUNA */
-
-#ifdef MANGOS_SCRIPT_COMPAT
-#include "ScriptApiCompat.inl"
-#endif
 
     protected:
         explicit WorldObject();
@@ -1026,5 +1007,3 @@ inline Player const* ToPlayer(Object const* object)
 {
     return object && object->GetTypeId() == TYPEID_PLAYER ? reinterpret_cast<Player const*>(object) : nullptr;
 }
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_CELL_H
-#define MANGOS_CELL_H
+#pragma once
 
 #include "GameSystem/TypeContainerVisitor.h"
 #include "GridDefines.h"
@@ -266,5 +265,3 @@ struct Cell
     private:
         template<class T, class CONTAINER> void VisitCircle(TypeContainerVisitor<T, CONTAINER> &, Map&, const CellPair& , const CellPair&) const;
 };
-
-#endif

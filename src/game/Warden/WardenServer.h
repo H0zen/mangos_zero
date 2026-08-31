@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_WARDEN_SERVER_H
-#define MANGOS_WARDEN_SERVER_H
+#pragma once
 
 #include "WardenCheckPlanner.h"
 #include "WardenCryptoContext.h"
@@ -118,5 +117,3 @@ private:
     bool m_transitionedSinceUpdate = false;
 };
 }
-
-#endif

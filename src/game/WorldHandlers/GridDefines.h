@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_GRIDDEFINES_H
-#define MANGOS_GRIDDEFINES_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"
@@ -287,5 +286,3 @@ namespace MaNGOS
         return IsValidMapCoord(x, y, z) && std::isfinite(o);
     }
 }
-#endif
-

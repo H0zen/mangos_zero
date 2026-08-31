@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_WARDEN_CHECK_CATALOG_LOADER_H
-#define MANGOS_WARDEN_CHECK_CATALOG_LOADER_H
+#pragma once
 
 #include "WardenCheckCatalog.h"
 #include "WardenModuleCatalog.h"
@@ -76,5 +75,3 @@ public:
     bool LoadAndPublish() const;
 };
 }
-
-#endif

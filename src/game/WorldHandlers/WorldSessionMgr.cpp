@@ -82,7 +82,6 @@
 #include "WaypointManager.h"
 #include "GMTicketMgr.h"
 #include "Util.h"
-#include "AuctionHouseBot/AuctionHouseBot.h"
 #include "CharacterDatabaseCleaner.h"
 #include "CreatureLinkingMgr.h"
 #include "Weather.h"
@@ -90,36 +89,10 @@
 #include "DisableMgr.h"
 #include "Language.h"
 #include "CommandMgr.h"
-#include "GitRevision.h"
 #include "UpdateTime.h"
 #include "GameTime.h"
-#include "SystemConfig.h"
-#include "AuctionHouseBot/AuctionIntentExecutor.h"
-#include "AuctionHouseBot/CustodyLedger.h"
-#include "AuctionHouseBot/CustodyService.h"
 #include "ScheduledExit.h"
-#include "WorkerSupervisor.h"
-#include "IpcMessage.h"
-#include "IpcOpcodes.h"
-#include "AuctionIntents.h"
-#include "BrowseMessages.h"
-#include "AuctionHouseBot/BrowsePending.h"
 #include <iostream>
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_ELUNA
-#include "ElunaConfig.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_ELUNA
-#include "ElunaLoader.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "PlayerbotAIConfig.h"
-#endif /* ENABLE_PLAYERBOTS */
-#ifdef ENABLE_PLAYERBOTS
-#include "RandomPlayerbotMgr.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 /// Find a session by its id
 WorldSession* World::FindSession(uint32 id) const

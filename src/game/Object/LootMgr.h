@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_LOOTMGR_H
-#define MANGOS_LOOTMGR_H
+#pragma once
 
 #include <unordered_map>
 #include <cmath>
@@ -486,5 +485,3 @@ inline void LoadLootTables()
 
     LoadLootTemplates_Reference();
 }
-
-#endif

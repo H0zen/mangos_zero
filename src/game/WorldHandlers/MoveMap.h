@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_MOVE_MAP
-#define MANGOS_H_MOVE_MAP
+#pragma once
 
 #include <unordered_map>
 #include "../../dep/recastnavigation/Detour/Include/DetourAlloc.h"
@@ -119,5 +118,3 @@ namespace MMAP
             static bool IsPathfindingForceDisabled(const Unit* unit);
     };
 }
-
-#endif  // _MOVE_MAP_H

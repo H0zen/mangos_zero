@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef CREATUREAIIMPL_H
-#define CREATUREAIIMPL_H
+#pragma once
 
 #include "CreatureAI.h"
 
@@ -35,4 +34,3 @@ template<class REAL_AI>
     Creature* creature = reinterpret_cast<Creature*>(data);
     return (new REAL_AI(creature));
 }
-#endif

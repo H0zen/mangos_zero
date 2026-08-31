@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_INSTANCE_DATA_H
-#define MANGOS_INSTANCE_DATA_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "LootMgr.h"
@@ -127,5 +126,3 @@ class InstanceData
         // See ObjectMgr.h enum ConditionSource for possible values of conditionSourceType
         virtual bool CheckConditionCriteriaMeet(Player const* source, uint32 instance_condition_id, WorldObject const* conditionSource, uint32 conditionSourceType) const;
 };
-
-#endif

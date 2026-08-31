@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_NGRID_H
-#define MANGOS_NGRID_H
+#pragma once
 
 #include "GameSystem/Grid.h"
 #include "GameSystem/GridReference.h"
@@ -261,5 +260,3 @@ class NGrid
         uint16 i_playerCount = 0;
         TimeTracker i_downgradeTimer;
 };
-
-#endif

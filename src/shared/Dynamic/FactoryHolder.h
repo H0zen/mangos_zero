@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_FACTORY_HOLDER
-#define MANGOS_FACTORY_HOLDER
+#pragma once
 
 #include <string>
 #include "Platform/Define.h"
@@ -116,4 +115,3 @@ class Permissible
          */
         virtual int Permit(const T*) const = 0;
 };
-#endif

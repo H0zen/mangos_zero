@@ -62,7 +62,6 @@
 #include "BattleGround/BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Chat.h"
-#include "revision_data.h"
 #include "Spell.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
@@ -74,12 +73,6 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 #include "Corpse.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 /**
  * @brief Checks whether this player should be visible to another player in grid range.

@@ -60,9 +60,6 @@
 #include "DisableMgr.h"
 #include "MovementGenerator.h"
 #include "Policies/Singleton.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Selects the creature level and recalculates level-dependent stats.

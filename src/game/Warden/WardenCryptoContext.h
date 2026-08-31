@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_WARDEN_CRYPTO_CONTEXT_H
-#define MANGOS_WARDEN_CRYPTO_CONTEXT_H
+#pragma once
 
 #include "WardenProtocol.h"
 
@@ -76,5 +75,3 @@ private:
     Rc4State m_serverToClient;
 };
 }
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_WORLDNETWORK
-#define MANGOS_H_WORLDNETWORK
+#pragma once
 
 #include "Listener.h"
 #include "Policies/Singleton.h"
@@ -51,5 +50,3 @@ private:
 };
 
 #define sWorldNetwork MaNGOS::Singleton<WorldNetwork>::Instance()
-
-#endif

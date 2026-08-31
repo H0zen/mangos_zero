@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_REACTORAI_H
-#define MANGOS_REACTORAI_H
+#pragma once
 
 #include "CreatureAI.h"
 #include "ObjectGuid.h"
@@ -48,4 +47,3 @@ class ReactorAI : public CreatureAI
     private:
         ObjectGuid i_victimGuid;
 };
-#endif

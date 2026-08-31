@@ -1,15 +1,5 @@
-#[==[
-Provides the following variables:
-
-  * `MySQL_INCLUDE_DIRS`: Include directories necessary to use MySQL.
-  * `MySQL_LIBRARIES`: Libraries necessary to use MySQL.
-  * A `MySQL::MySQL` imported target.
-#]==]
-
 set(MySQL_FOUND 0)
 
-# An install outside the default locations is pointed at with -DMYSQL_ROOT= or a
-# MYSQL_ROOT / MARIADB_ROOT environment variable, and wins over every other path.
 set(MYSQL_ROOT "$ENV{MYSQL_ROOT}" CACHE PATH "Root of a MySQL or MariaDB installation")
 set(_MySQL_hints)
 foreach (_MySQL_root IN ITEMS "${MYSQL_ROOT}" "$ENV{MARIADB_ROOT}")
@@ -20,7 +10,6 @@ foreach (_MySQL_root IN ITEMS "${MYSQL_ROOT}" "$ENV{MARIADB_ROOT}")
 endforeach ()
 unset(_MySQL_root)
 
-# No .pc files are shipped with MySQL on Windows.
 set(_MYSQL_USE_PKGCONFIG 0)
 if (NOT WIN32 AND NOT _MySQL_hints)
   find_package(PkgConfig)
@@ -43,8 +32,7 @@ if (_MYSQL_USE_PKGCONFIG)
       get_property(_include_dirs
         TARGET    "PkgConfig::_mariadb"
         PROPERTY  "INTERFACE_INCLUDE_DIRECTORIES")
-      # Remove "${prefix}/mariadb/.." from the interface since it breaks other
-      # projects.
+
       list(FILTER _include_dirs EXCLUDE REGEX "\\.\\.")
       set_property(TARGET "PkgConfig::_mariadb"
         PROPERTY
@@ -67,12 +55,6 @@ if(NOT MySQL_FOUND)
   set(_MySQL_versions 5.4 5.5 5.6 5.7 8.0)
   set(_MySQL_paths)
 
-  # MariaDB ships a new minor/major version regularly, and its registry key
-  # and default install directory both embed the version number (e.g.
-  # "MariaDB 10.11"), so hardcoding every version ever released requires
-  # updating this file on every release. Instead, glob the default install
-  # directories for any "MariaDB *" folder, which finds whatever is actually
-  # installed regardless of version.
   file(GLOB _MySQL_mariadb_install_dirs
     "C:/Program Files/MariaDB */"
     "C:/Program Files (x86)/MariaDB */")
@@ -128,4 +110,3 @@ if(NOT MySQL_FOUND)
 endif ()
 unset(_MySQL_hints)
 unset(_MYSQL_USE_PKGCONFIG)
-

@@ -1,39 +1,24 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
-#
-# MaNGOS is a full featured server for World of Warcraft, supporting
-# the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
-#
-# Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-# SD3 and Eluna link the `game` library, which only exists when BUILD_MANGOSD.
-# Guard on BOTH the script-lib option AND BUILD_MANGOSD so a worker-only
-# configure (BUILD_MANGOSD=OFF, BUILD_AH_SERVICE=ON) does not try to build them.
 if(BUILD_MANGOSD AND SCRIPT_LIB_SD3)
     add_subdirectory(SD3)
-    mangos_submodule_compat(mangosscript
-        "${CMAKE_SOURCE_DIR}/src/shared/Compat/sd3")
-endif()
 
-if(BUILD_MANGOSD AND SCRIPT_LIB_ELUNA)
-    add_subdirectory(Eluna)
-endif()
+    set(SD3_COMPAT_DIR "${CMAKE_SOURCE_DIR}/src/shared/Compat/sd3")
+    set(SD3_COMPAT_PRELUDE "${SD3_COMPAT_DIR}/Common.h")
 
-# The out-of-process auction-house worker. Self-contained: links only the IPC
-# wire contract (ah_ipc) + shared; never the mangosd game library. Gated by the
-# existing BUILD_AH_SERVICE option.
-if(BUILD_AH_SERVICE)
-    add_subdirectory(AhWorker)
+    if(NOT TARGET mangosscript)
+        message(FATAL_ERROR "SD3 did not define the 'mangosscript' target.")
+    endif()
+
+    if(NOT EXISTS "${SD3_COMPAT_PRELUDE}")
+        message(FATAL_ERROR "Missing ${SD3_COMPAT_PRELUDE}.")
+    endif()
+
+    target_include_directories(mangosscript PRIVATE "${SD3_COMPAT_DIR}")
+
+    if(MSVC)
+        target_compile_options(mangosscript PRIVATE
+            "$<$<COMPILE_LANGUAGE:CXX>:/FI${SD3_COMPAT_PRELUDE}>")
+    else()
+        target_compile_options(mangosscript PRIVATE
+            "$<$<COMPILE_LANGUAGE:CXX>:-include${SD3_COMPAT_PRELUDE}>")
+    endif()
 endif()

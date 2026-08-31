@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_PETMGR
-#define MANGOS_H_PETMGR
+#pragma once
 
 #include "Platform/Define.h"
 #include "Pet.h"  // PetSaveMode enum + MAX_PET_STABLES constant
@@ -93,5 +92,3 @@ class PetMgr
         uint32  m_stableSlots;
         uint32  m_temporaryUnsummonedPetNumber;
 };
-
-#endif // MANGOS_H_PETMGR

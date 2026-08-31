@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_SQLOPERATIONS
-#define MANGOS_H_SQLOPERATIONS
+#pragma once
 
 #include <utility>
 #include "Platform/Define.h"
@@ -368,4 +367,3 @@ class SqlQueryHolderEx : public SqlOperation
          */
         bool ExecuteLocked(SqlConnection* conn) override;
 };
-#endif                                                      //__SQLOPERATIONS_H

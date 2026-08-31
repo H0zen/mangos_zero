@@ -34,8 +34,7 @@
 #include <set>
 #include <vector>
 
-#ifndef MANGOSSERVER_LFGMGR_H
-#define MANGOSSERVER_LFGMGR_H
+#pragma once
 
 enum ClassRoles
 {
@@ -142,5 +141,3 @@ class LFGQueue
 };
 
 #define sLFGMgr MaNGOS::Singleton<LFGQueue>::Instance()
-
-#endif

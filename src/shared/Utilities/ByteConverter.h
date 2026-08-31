@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_BYTECONVERTER_H
-#define MANGOS_BYTECONVERTER_H
+#pragma once
 
 /**
  * @file ByteConverter.h
@@ -113,5 +112,3 @@ inline void EndianConvertReverse(uint8&) { }
  * @brief No-op for int8 (single byte)
  */
 inline void EndianConvertReverse(int8&) { }
-
-#endif

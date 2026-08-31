@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_PLAYERREGISTRY_H
-#define MANGOS_H_PLAYERREGISTRY_H
+#pragma once
 
 #include <utility>
 #include "ObjectGuid.h"
@@ -90,5 +89,3 @@ class PlayerRegistry : public MaNGOS::Singleton<PlayerRegistry>
 };
 
 #define sPlayerRegistry MaNGOS::Singleton<PlayerRegistry>::Instance()
-
-#endif

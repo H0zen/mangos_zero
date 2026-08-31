@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef SQLPREPAREDSTATEMENTS_H
-#define SQLPREPAREDSTATEMENTS_H
+#pragma once
 
 #include "Platform/Define.h"
 #include <string>
@@ -678,5 +677,3 @@ class SqlPlainPreparedStatement : public SqlPreparedStatement
 
         std::string m_szPlainRequest; /**< The plain SQL request string */
 };
-
-#endif

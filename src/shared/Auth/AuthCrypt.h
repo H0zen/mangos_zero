@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_AUTHCRYPT
-#define MANGOS_H_AUTHCRYPT
+#pragma once
 
 #include "Platform/Define.h"
 #include <vector>
@@ -98,4 +97,3 @@ class AuthCrypt
         uint8 _send_i, _send_j, _recv_i, _recv_j; /**< ARC4 state variables for send/recv */
         bool _initialized; /**< Initialization status */
 };
-#endif

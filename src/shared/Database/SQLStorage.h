@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef SQLSTORAGE_H
-#define SQLSTORAGE_H
+#pragma once
 
 #include <unordered_map>
 #include <utility>
@@ -783,5 +782,3 @@ class SQLMultiStorageLoader : public SQLStorageLoaderBase<SQLMultiStorageLoader,
 };
 
 #include "SQLStorageImpl.h"
-
-#endif

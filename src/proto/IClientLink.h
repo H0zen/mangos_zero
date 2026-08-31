@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_PROTO_ICLIENTLINK_H
-#define MANGOS_PROTO_ICLIENTLINK_H
+#pragma once
 
 #include "WorldPacket.h"
 
@@ -73,5 +72,3 @@ namespace proto
             virtual bool IsClosed() const = 0;
     };
 }
-
-#endif

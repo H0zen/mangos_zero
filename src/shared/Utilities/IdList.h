@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_IDLIST
-#define MANGOS_H_IDLIST
+#pragma once
 
 // Parsing a comma-separated id list out of a config value. This lived as a pair of
 // statics on the vmap library's factory, which had nothing to do with either config
@@ -71,5 +70,3 @@ namespace MaNGOS
 }
 
 using MaNGOS::ParseIdList;
-
-#endif

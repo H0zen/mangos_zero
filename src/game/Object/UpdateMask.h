@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_UPDATEMASK
-#define MANGOS_H_UPDATEMASK
+#pragma once
 
 #include "Utilities/Errors.h"
 #include "Errors.h"
@@ -142,4 +141,3 @@ class UpdateMask
         uint32 _blockCount;
         uint8* _bits;
 };
-#endif

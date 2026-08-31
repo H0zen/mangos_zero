@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_PROTO_IWORLDGATEWAY_H
-#define MANGOS_PROTO_IWORLDGATEWAY_H
+#pragma once
 
 #include "Auth/BigNumber.h"
 #include "Platform/Define.h"
@@ -108,5 +107,3 @@ public:
     virtual void Detach(SessionId session) = 0;
 };
 }
-
-#endif

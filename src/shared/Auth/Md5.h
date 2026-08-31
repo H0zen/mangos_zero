@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef _AUTH_MD5_H
-#define _AUTH_MD5_H
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -98,5 +97,3 @@ class Md5Hash
         EVP_MD_CTX* m_ctx;
         uint8       m_digest[MD5_DIGEST_LENGTH]{};
 };
-
-#endif

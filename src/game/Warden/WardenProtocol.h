@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_WARDEN_PROTOCOL_H
-#define MANGOS_WARDEN_PROTOCOL_H
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -130,5 +129,3 @@ struct AdmissionData
 char const* ToString(WardenState state);
 char const* ToString(WardenFailure failure);
 }
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_TIMER_H
-#define MANGOS_TIMER_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "Duration.h"
@@ -228,5 +227,3 @@ struct PeriodicTimer
         int32 i_period;
         int32 i_expireTime;
 };
-
-#endif

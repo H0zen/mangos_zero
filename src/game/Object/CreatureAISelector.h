@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_CREATUREAISELECTOR_H
-#define MANGOS_CREATUREAISELECTOR_H
+#pragma once
 
 class CreatureAI;
 class Creature;
@@ -35,4 +34,3 @@ namespace FactorySelector
     CreatureAI* selectAI(Creature*);
     MovementGenerator* selectMovementGenerator(Creature*);
 }
-#endif

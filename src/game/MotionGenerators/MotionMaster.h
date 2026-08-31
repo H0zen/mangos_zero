@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_MOTIONMASTER_H
-#define MANGOS_MOTIONMASTER_H
+#pragma once
 
 #include "Platform/Define.h"
 #include <stack>
@@ -343,5 +342,3 @@ class MotionMaster : private std::stack<MovementGenerator*>
         ExpireList* m_expList; ///< List of expired movement generators.
         uint8       m_cleanFlag; ///< Flag for cleaning the movement generators.
 };
-
-#endif // MANGOS_MOTIONMASTER_H

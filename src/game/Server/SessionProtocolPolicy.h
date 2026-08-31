@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_SESSIONPROTOCOLPOLICY
-#define MANGOS_H_SESSIONPROTOCOLPOLICY
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -63,5 +62,3 @@ class SessionPingTracker
         bool m_hadPing = false;
         uint32 m_fastRun = 0;
 };
-
-#endif

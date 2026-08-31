@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_SPLINE_H
-#define MANGOSSERVER_SPLINE_H
+#pragma once
 
 #include "Utilities/Errors.h"
 #include <string>
@@ -488,5 +487,3 @@ namespace Movement
 }
 
 #include "spline.impl.h"
-
-#endif // MANGOSSERVER_SPLINE_H

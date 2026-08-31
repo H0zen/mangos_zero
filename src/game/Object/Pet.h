@@ -50,8 +50,7 @@
  * @see Unit for combat mechanics
  */
 
-#ifndef MANGOSSERVER_PET_H
-#define MANGOSSERVER_PET_H
+#pragma once
 
 #include <unordered_map>
 #include "Utilities/Errors.h"
@@ -387,4 +386,3 @@ class Pet : public Creature
             MANGOS_ASSERT(false);
         }
 };
-#endif

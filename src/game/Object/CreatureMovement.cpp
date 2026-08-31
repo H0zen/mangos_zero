@@ -59,9 +59,6 @@
 #include "DisableMgr.h"
 #include "MovementGenerator.h"
 #include "Policies/Singleton.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Enables or disables walk mode for the creature.

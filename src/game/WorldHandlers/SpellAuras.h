@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_SPELLAURAS_H
-#define MANGOS_SPELLAURAS_H
+#pragma once
 
 #include "SpellAuraDefines.h"
 #include "ObjectMgr.h"
@@ -579,4 +578,3 @@ Aura* CreateAura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* curr
  * Creates the aura holder that owns aura effects for a spell application.
  */
 SpellAuraHolder* CreateSpellAuraHolder(SpellEntry const* spellproto, Unit* target, WorldObject* caster, Item* castItem = NULL);
-#endif

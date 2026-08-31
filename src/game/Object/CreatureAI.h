@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_CREATUREAI_H
-#define MANGOS_CREATUREAI_H
+#pragma once
 
 #include <vector>
 #include "Platform/Define.h"
@@ -438,5 +437,3 @@ enum Permitions
 typedef FactoryHolder<CreatureAI> CreatureAICreator;
 typedef FactoryHolder<CreatureAI>::FactoryHolderRegistry CreatureAIRegistry;
 typedef FactoryHolder<CreatureAI>::FactoryHolderRepository CreatureAIRepository;
-
-#endif

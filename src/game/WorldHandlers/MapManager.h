@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_MAPMANAGER_H
-#define MANGOS_MAPMANAGER_H
+#pragma once
 
 #include <cmath>
 #include <functional>
@@ -227,5 +226,3 @@ template<typename Do>
 }
 
 #define sMapMgr MapManager::Instance()
-
-#endif

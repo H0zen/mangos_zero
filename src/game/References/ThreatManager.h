@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef _THREATMANAGER
-#define _THREATMANAGER
+#pragma once
 
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"
@@ -523,4 +522,3 @@ class ThreatManager
 };
 
 //=================================================
-#endif

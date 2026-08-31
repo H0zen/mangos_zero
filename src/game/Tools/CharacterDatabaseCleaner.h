@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef CHARACTERDATABASECLEANER_H
-#define CHARACTERDATABASECLEANER_H
+#pragma once
 
 namespace CharacterDatabaseCleaner
 {
@@ -77,5 +76,3 @@ namespace CharacterDatabaseCleaner
      */
     void CleanCharacterSpell();
 }
-
-#endif

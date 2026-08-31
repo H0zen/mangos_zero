@@ -22,8 +22,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_CHAT_H
-#define MANGOSSERVER_CHAT_H
+#pragma once
 
 #include "Common/ServerDefines.h"
 #include "Platform/Define.h"
@@ -249,20 +248,6 @@ class ChatHandler
         bool HandleAccountSetAddonCommand(char* args);
         bool HandleAccountSetGmLevelCommand(char* args);
         bool HandleAccountSetPasswordCommand(char* args);
-
-        bool HandleAHBotItemsAmountCommand(char* args);
-        template <int Q>
-            bool HandleAHBotItemsAmountQualityCommand(char* args);
-        bool HandleAHBotItemsRatioCommand(char* args);
-        template <int H>
-            bool HandleAHBotItemsRatioHouseCommand(char* args);
-        bool HandleAHBotRebuildCommand(char* args);
-        bool HandleAHBotReloadCommand(char* args);
-        bool HandleAHBotStatusCommand(char* args);
-
-        bool HandleAhServiceConsoleShowCommand(char* args);
-        bool HandleAhServiceConsoleHideCommand(char* args);
-        bool HandleAhRepairCommand(char* args);
 
         bool HandleAuctionAllianceCommand(char* args);
         bool HandleAuctionGoblinCommand(char* args);
@@ -718,11 +703,6 @@ class ChatHandler
         bool HandleFreezePlayerCommand(char* args);
         bool HandleUnfreezePlayerCommand(char* args);
 
-#ifdef ENABLE_PLAYERBOTS
-        bool HandlePlayerbotCommand(char* args);
-        bool HandlePlayerbotConsoleCommand(char* args);
-        bool HandleAhBotCommand(char* args);
-#endif
 
         //! LivingWorld grid occupancy diagnostic (read-only, GM-only, in-game only)
         bool HandleGridInfoCommand(char* args);
@@ -868,5 +848,3 @@ class CliHandler : public ChatHandler
  * Applies an aura spell directly to the target using the provided caster context.
  */
 bool AddAuraToPlayer(const SpellEntry* spellInfo, Unit* target, WorldObject* caster);
-
-#endif

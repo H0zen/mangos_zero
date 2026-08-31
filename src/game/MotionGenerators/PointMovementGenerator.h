@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_POINTMOVEMENTGENERATOR_H
-#define MANGOS_POINTMOVEMENTGENERATOR_H
+#pragma once
 
 #include "IntentMovementGenerator.h"
 
@@ -195,5 +194,3 @@ class EffectMovementGenerator final : public IntentMovementGenerator
     private:
         uint32 m_id; ///< Echoed to the AI when the effect's spline ends.
 };
-
-#endif // MANGOS_POINTMOVEMENTGENERATOR_H

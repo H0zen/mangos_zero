@@ -58,12 +58,10 @@
 #include <string>
 #include "Database/DatabaseEnv.h"
 #include "Config/Config.h"
-#include "GitRevision.h"
+#include "Version.h"
 #include "ProgressBar.h"
 #include "Console/ConsoleUI.h"
 #include "Log.h"
-#include "SystemConfig.h"
-#include "AuctionHouseBot.h"
 #include "Master.h"
 #include "World.h"
 #include "Util.h"
@@ -158,18 +156,17 @@ static void unhook_signals()
 static void usage(const char* prog)
 {
     sLog.outString("Usage: \n %s [<options>]\n"
-        "    -v, --version              print version and exist\n\r"
-        "    -c <config_file>           use config_file as configuration file\n\r"
-        "    -a, --ahbot <config_file>  use config_file as ahbot configuration file\n\r"
+        "    -v, --version              print version and exit\n"
+        "    -c <config_file>           use config_file as configuration file\n"
 #ifdef WIN32
-        "    Running as service functions:\n\r"
-        "    -s run                     run as service\n\r"
-        "    -s install                 install service\n\r"
-        "    -s uninstall               uninstall service\n\r"
+        "    Running as service functions:\n"
+        "    -s run                     run as service\n"
+        "    -s install                 install service\n"
+        "    -s uninstall               uninstall service\n"
 #else
-        "    Running as daemon functions:\n\r"
-        "    -s run                     run as daemon\n\r"
-        "    -s stop                    stop daemon\n\r"
+        "    Running as daemon functions:\n"
+        "    -s run                     run as daemon\n"
+        "    -s stop                    stop daemon\n"
 #endif
     , prog);
 }
@@ -201,7 +198,7 @@ int main(int argc, char** argv)
 #endif
 
     ///- Command line parsing
-    char const* cfg_file = MANGOSD_CONFIG_LOCATION;
+    char const* cfg_file = MangosVersion::MangosdConfigLocation();
 
     char serviceDaemonMode = '\0';
 
@@ -214,16 +211,12 @@ int main(int argc, char** argv)
 
         if (arg == "-v" || arg == "--version")
         {
-            printf("%s\n", GitRevision::GetProjectRevision());
+            printf("%s\n", MangosVersion::ProductRevision());
             return 0;
         }
         else if ((arg == "-c") && hasValue)
         {
             cfg_file = argv[++i];
-        }
-        else if ((arg == "-a" || arg == "--ahbot") && hasValue)
-        {
-            sAuctionBotConfig.SetConfigFileName(argv[++i]);
         }
         else if (arg == "-s" && hasValue)
         {
@@ -274,14 +267,14 @@ int main(int argc, char** argv)
 #endif
     if (!sConfig.SetSource(cfg_file))
     {
-        // Try current folder as fallback if SYSCONFDIR path fails
-        if (!sConfig.SetSource(MANGOSD_CONFIG_NAME))
+        // Try current folder as fallback if MangosVersion::SysConfDir() path fails
+        if (!sConfig.SetSource(MangosVersion::MangosdConfigName()))
         {
             sLog.outError("Could not find configuration file %s.", cfg_file);
             Log::WaitBeforeContinueIfNeed();
             return 1;
         }
-        cfg_file = MANGOSD_CONFIG_NAME;
+        cfg_file = MangosVersion::MangosdConfigName();
     }
 
 #ifndef _WIN32
@@ -296,10 +289,8 @@ int main(int argc, char** argv)
     }
 #endif
 
-    sLog.outString("%s [world-daemon]", GitRevision::GetProjectRevision());
-    sLog.outString("%s", GitRevision::GetFullRevision());
-    sLog.outString("%s", GitRevision::GetDepElunaFullRevisionStr());
-    sLog.outString("%s", GitRevision::GetDepSD3FullRevisionStr());
+    sLog.outString("%s [world-daemon]", MangosVersion::ProductRevision());
+    sLog.outString("%s", MangosVersion::FullRevision());
     print_banner();
     sLog.outString("Using configuration file %s.", cfg_file);
 

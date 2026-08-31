@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_REFERENCE
-#define MANGOS_H_REFERENCE
+#pragma once
 
 #include <cassert>
 #include "Utilities/LinkedList.h"
@@ -141,5 +140,3 @@ class Reference : public LinkedListElement
 };
 
 //=====================================================
-
-#endif

@@ -39,8 +39,7 @@
  *
  */
 
-#ifndef CREATURE_LINKING_MGR_H
-#define CREATURE_LINKING_MGR_H
+#pragma once
 
 #include <unordered_set>
 #include <utility>
@@ -218,5 +217,4 @@ class CreatureLinkingHolder
 
 #define sCreatureLinkingMgr MaNGOS::Singleton<CreatureLinkingMgr>::Instance()
 
-#endif
 /*! @} */

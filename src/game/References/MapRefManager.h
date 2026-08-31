@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef _MAPREFMANAGER
-#define _MAPREFMANAGER
+#pragma once
 
 #include "Utilities/LinkedReference/RefManager.h"
 
@@ -122,4 +121,3 @@ class MapRefManager : public RefManager<Map, Player>
             return const_iterator(NULL);
         }
 };
-#endif

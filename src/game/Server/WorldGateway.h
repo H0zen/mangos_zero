@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_WORLDGATEWAY
-#define MANGOS_H_WORLDGATEWAY
+#pragma once
 
 #include "IWorldGateway.h"
 
@@ -51,5 +50,3 @@ private:
     proto::SessionId m_nextSessionId = proto::INVALID_SESSION_ID;
     std::unordered_map<proto::SessionId, std::shared_ptr<SessionMailbox>> m_routes;
 };
-
-#endif

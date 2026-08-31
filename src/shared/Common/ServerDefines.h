@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_SERVERDEFINES_H
-#define MANGOSSERVER_SERVERDEFINES_H
+#pragma once
 
 /**
  * @brief
@@ -55,6 +54,3 @@ enum RealmFlags
     REALM_FLAG_RECOMMENDED  = 0x40,
     REALM_FLAG_FULL         = 0x80
 };
-
-
-#endif

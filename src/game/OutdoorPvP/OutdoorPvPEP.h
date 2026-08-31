@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef WORLD_PVP_EP
-#define WORLD_PVP_EP
+#pragma once
 
 #include "Platform/Define.h"
 #include <list>
@@ -375,5 +374,3 @@ class OutdoorPvPEP : public OutdoorPvP
 
         GuidList m_towerBanners[MAX_EP_TOWERS]; ///< List of banner GUIDs for each tower
 };
-
-#endif

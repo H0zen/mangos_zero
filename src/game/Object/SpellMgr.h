@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_SPELLMGR
-#define MANGOS_H_SPELLMGR
+#pragma once
 
 // For static or at-server-startup loaded spell data
 // For more high level function for sSpellStore data
@@ -1557,4 +1556,3 @@ class SpellMgr
 };
 
 #define sSpellMgr SpellMgr::Instance()
-#endif

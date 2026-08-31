@@ -63,7 +63,6 @@
 #include "BattleGround/BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Chat.h"
-#include "revision_data.h"
 #include "Spell.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
@@ -74,12 +73,6 @@
 #include "LFGMgr.h"
 #include "DisableMgr.h"
 #include <cmath>
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 #define PLAYER_SKILL_INDEX(x)       (PLAYER_SKILL_INFO_1_1 + ((x)*3))
 

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_GRIDMAP_H
-#define MANGOS_GRIDMAP_H
+#pragma once
 
 #include <unordered_map>
 #include <mutex>
@@ -306,5 +305,3 @@ class TerrainManager : public MaNGOS::Singleton<TerrainManager>
 };
 
 #define sTerrainMgr TerrainManager::Instance()
-
-#endif

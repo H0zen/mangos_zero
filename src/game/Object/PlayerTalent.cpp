@@ -61,7 +61,6 @@
 #include "BattleGround/BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Chat.h"
-#include "revision_data.h"
 #include "Spell.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
@@ -72,12 +71,6 @@
 #include "DisableMgr.h"
 #include "CinematicFlyover.h"
 #include <cmath>
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 /**
  * @brief Learns a specific talent rank if all requirements are satisfied.
@@ -225,12 +218,6 @@ void Player::LearnTalent(uint32 talentId, uint32 talentRank)
     // learn! (other talent ranks will unlearned at learning)
     learnSpell(spellid, false);
     DETAIL_LOG("TalentID: %u Rank: %u Spell: %u\n", talentId, talentRank, spellid);
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnLearnTalents(this, talentId, talentRank, spellid);
-    }
-#endif /*ENABLE_ELUNA*/
 
 }
 

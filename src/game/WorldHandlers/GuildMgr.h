@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_GUILDMGR
-#define MANGOS_H_GUILDMGR
+#pragma once
 
 #include <unordered_map>
 #include "Platform/Define.h"
@@ -56,5 +55,3 @@ class GuildMgr
 };
 
 #define sGuildMgr MaNGOS::Singleton<GuildMgr>::Instance()
-
-#endif // _GUILDMGR_H

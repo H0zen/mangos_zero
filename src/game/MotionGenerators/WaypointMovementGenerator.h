@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_WAYPOINTMOVEMENTGENERATOR_H
-#define MANGOS_WAYPOINTMOVEMENTGENERATOR_H
+#pragma once
 
 #include "DBCStructure.h"
 #include "IntentMovementGenerator.h"
@@ -188,5 +187,3 @@ class FlightPathMovementGenerator final : public MovementGenerator
         TaxiPathNodeList const* m_path;
         uint32 m_currentNode;
 };
-
-#endif // MANGOS_WAYPOINTMOVEMENTGENERATOR_H

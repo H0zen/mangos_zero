@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_PACKET_BUILDER_H
-#define MANGOSSERVER_PACKET_BUILDER_H
+#pragma once
 
 class ByteBuffer;
 class WorldPacket;
@@ -62,4 +61,3 @@ namespace Movement
             static void WriteCreate(const MoveSpline& mov, ByteBuffer& data);
     };
 }
-#endif // MANGOSSERVER_PACKET_BUILDER_H

@@ -51,8 +51,7 @@
  * @see Bag for container-specific item implementation
  */
 
-#ifndef MANGOSSERVER_ITEM_H
-#define MANGOSSERVER_ITEM_H
+#pragma once
 
 #include "Platform/Define.h"
 #include <string>
@@ -410,5 +409,3 @@ class Item : public Object
         bool mb_in_trade;                                   // true if item is currently in trade-window
         ItemLootUpdateState m_lootState;
 };
-
-#endif

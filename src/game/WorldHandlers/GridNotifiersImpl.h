@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_GRIDNOTIFIERSIMPL_H
-#define MANGOS_GRIDNOTIFIERSIMPL_H
+#pragma once
 
 #include "GridNotifiers.h"
 #include "WorldPacket.h"
@@ -746,5 +745,3 @@ template<class Builder>
         p->SendDirectMessage((*data_list)[i]);
     }
 }
-
-#endif                                                      // MANGOS_GRIDNOTIFIERSIMPL_H

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_DBCSFRM_H
-#define MANGOS_DBCSFRM_H
+#pragma once
 
 const char AreaTableEntryfmt[] = "niiiixxxxxissssssssxixxxi";
 const char AreaTriggerEntryfmt[] = "niffffffff";
@@ -78,5 +77,3 @@ const char TaxiPathNodeEntryfmt[] = "diiifffii";
 const char WMOAreaTableEntryfmt[] = "niiixxxxxiixxxxxxxxx";
 const char WorldMapAreaEntryfmt[] = "xinxffff";
 const char WorldSafeLocsEntryfmt[] = "nifffxxxxxxxxx";
-
-#endif

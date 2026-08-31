@@ -86,7 +86,6 @@
 #include "WaypointManager.h"
 #include "GMTicketMgr.h"
 #include "Util.h"
-#include "AuctionHouseBot/AuctionHouseBot.h"
 #include "CharacterDatabaseCleaner.h"
 #include "CreatureLinkingMgr.h"
 #include "Weather.h"
@@ -95,38 +94,13 @@
 #include "DisableMgr.h"
 #include "Language.h"
 #include "CommandMgr.h"
-#include "GitRevision.h"
+#include "Version.h"
 #include "UpdateTime.h"
 #include "GameTime.h"
-#include "SystemConfig.h"
-#include "AuctionHouseBot/AuctionIntentExecutor.h"
-#include "AuctionHouseBot/CustodyLedger.h"
-#include "AuctionHouseBot/CustodyService.h"
 #include "ScheduledExit.h"
-#include "WorkerSupervisor.h"
-#include "IpcMessage.h"
-#include "IpcOpcodes.h"
-#include "AuctionIntents.h"
-#include "BrowseMessages.h"
-#include "AuctionHouseBot/BrowsePending.h"
 #include <iostream>
 #include <sstream>
 #include "Corpse.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_ELUNA
-#include "ElunaConfig.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_ELUNA
-#include "ElunaLoader.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "PlayerbotAIConfig.h"
-#endif /* ENABLE_PLAYERBOTS */
-#ifdef ENABLE_PLAYERBOTS
-#include "RandomPlayerbotMgr.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 /// Initialize config values
 void World::LoadConfigSettings(bool reload)
@@ -152,7 +126,7 @@ void World::LoadConfigSettings(bool reload)
     }
     else
     {
-        if (confVersion < MANGOSD_CONFIG_VERSION)
+        if (confVersion < MangosVersion::MangosdConfigVersion())
         {
             sLog.outError("*****************************************************************************");
             sLog.outError(" WARNING: Your mangosd.conf version indicates your conf file is out of date!");
@@ -615,80 +589,10 @@ void World::LoadConfigSettings(bool reload)
 
     setConfig(CONFIG_BOOL_ENABLE_QUEST_TRACKER,        "QuestTracker.Enable", 0);
 
-#ifdef ENABLE_PLAYERBOTS
-    setConfig(CONFIG_BOOL_PLAYERBOT_DISABLE, "PlayerbotAI.DisableBots", true);
-    setConfig(CONFIG_BOOL_PLAYERBOT_DEBUGWHISPER, "PlayerbotAI.DebugWhisper", false);
-    setConfigMinMax(CONFIG_UINT32_PLAYERBOT_MAXBOTS, "PlayerbotAI.MaxNumBots", 3, 1, 9);
-    setConfigMinMax(CONFIG_UINT32_PLAYERBOT_RESTRICTLEVEL, "PlayerbotAI.RestrictBotLevel", getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL), 1, getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL));
-    setConfigMinMax(CONFIG_UINT32_PLAYERBOT_MINBOTLEVEL, "PlayerbotAI.MinBotLevel", 1, 1, getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL));
-    setConfig(CONFIG_FLOAT_PLAYERBOT_MINDISTANCE, "PlayerbotAI.FollowDistanceMin", 0.5f);
-    setConfig(CONFIG_FLOAT_PLAYERBOT_MAXDISTANCE, "PlayerbotAI.FollowDistanceMax", 1.0f);
-
-    setConfig(CONFIG_BOOL_PLAYERBOT_ALLOW_SUMMON_OPPOSITE_FACTION, "PlayerbotAI.AllowSummonOppositeFaction", false);
-    setConfig(CONFIG_BOOL_PLAYERBOT_COLLECT_COMBAT, "PlayerbotAI.Collect.Combat", true);
-    setConfig(CONFIG_BOOL_PLAYERBOT_COLLECT_QUESTS, "PlayerbotAI.Collect.Quest", true);
-    setConfig(CONFIG_BOOL_PLAYERBOT_COLLECT_PROFESSION, "PlayerbotAI.Collect.Profession", true);
-    setConfig(CONFIG_BOOL_PLAYERBOT_COLLECT_LOOT, "PlayerbotAI.Collect.Loot", true);
-    setConfig(CONFIG_BOOL_PLAYERBOT_COLLECT_SKIN, "PlayerbotAI.Collect.Skin", true);
-    setConfig(CONFIG_BOOL_PLAYERBOT_COLLECT_OBJECTS, "PlayerbotAI.Collect.Objects", true);
-    setConfig(CONFIG_BOOL_PLAYERBOT_SELL_TRASH, "PlayerbotAI.SellGarbage", true);
-
-    setConfig(CONFIG_BOOL_PLAYERBOT_SHAREDBOTS, "PlayerbotAI.SharedBots", true);
-#endif
 
     // Recommended Or New Flag
     setConfig(CONFIG_BOOL_REALM_RECOMMENDED_OR_NEW_ENABLED, "Realm.RecommendedOrNew.Enabled", false);
     setConfig(CONFIG_BOOL_REALM_RECOMMENDED_OR_NEW, "Realm.RecommendedOrNew", false);
-
-    // AH Service custody escrow ledger
-    setConfig(CONFIG_BOOL_AH_CUSTODY, "AH.Service.Custody", false);
-
-    // AH Service worker write-authority (SP-2). BOOT-LATCHED (spec decision 7):
-    // configNoReload returns true only when !reload; on `.reload config` it
-    // logs and keeps the boot value, so the flag is immutable for the run.
-    if (configNoReload(reload, CONFIG_BOOL_AH_WRITE_AUTHORITY, "AH.Service.WriteAuthority", false))
-    {
-        setConfig(CONFIG_BOOL_AH_WRITE_AUTHORITY, "AH.Service.WriteAuthority", false);
-
-        // Startup invariant (spec I2): WriteAuthority hard-requires the custody
-        // ledger -- every WriteAuthority mutation is reservation-anchored.
-        if (getConfig(CONFIG_BOOL_AH_WRITE_AUTHORITY) && !getConfig(CONFIG_BOOL_AH_CUSTODY))
-        {
-            sLog.outError("AH.Service.WriteAuthority = 1 requires AH.Service.Custody = 1; forcing WriteAuthority OFF.");
-            setConfig(CONFIG_BOOL_AH_WRITE_AUTHORITY, false);
-        }
-
-        // [FIX C.1] Boot preflight: WriteAuthority hard-requires the
-        // `ah_worker_journal` migration. reconcile-on-reconnect reads that table
-        // to decide finalize-forward vs release; a missing table makes the read
-        // return "row absent" for a mutation the worker actually committed, so a
-        // committed bid gets refunded while the worker still shows the bidder ->
-        // double-credit. Refuse to run write-authority without the journal table.
-        if (getConfig(CONFIG_BOOL_AH_WRITE_AUTHORITY))
-        {
-            QueryResult* jrnCheck = CharacterDatabase.Query("SHOW TABLES LIKE 'ah_worker_journal'");
-            if (!jrnCheck)
-            {
-                sLog.outError("AH.Service.WriteAuthority = 1 but the "
-                    "`ah_worker_journal` table is missing; apply the SP-2 "
-                    "migration first. Forcing WriteAuthority OFF.");
-                setConfig(CONFIG_BOOL_AH_WRITE_AUTHORITY, false);
-            }
-            else
-            {
-                delete jrnCheck;
-            }
-        }
-
-        // Advisory only: with no worker configured, every AH mutation will
-        // report unavailable (spec 5.5: no in-process fallback).
-        if (getConfig(CONFIG_BOOL_AH_WRITE_AUTHORITY) && !sConfig.GetBoolDefault("AH.Service.Enabled", false))
-        {
-            sLog.outError("AH.Service.WriteAuthority = 1 but "
-                "AH.Service.Enabled = 0: no worker will start; all AH "
-                "mutations will be unavailable.");
-        }
-    }
 
     m_relocation_ai_notify_delay = sConfig.GetIntDefault("Visibility.AIRelocationNotifyDelay", 1000u);
     m_relocation_lower_limit_sq  = pow(sConfig.GetFloatDefault("Visibility.RelocationLowerLimit", 10), 2);
@@ -810,15 +714,6 @@ void World::LoadConfigSettings(bool reload)
     MMAP::MMapFactory::preventPathfindingOnMaps(ignoreMapIds.c_str());
     sLog.outString("WORLD: MMap pathfinding %sabled", getConfig(CONFIG_BOOL_MMAP_ENABLED) ? "en" : "dis");
 
-#ifdef ENABLE_ELUNA
-    if (reload)
-    {
-        if (Eluna* e = GetEluna())
-        {
-            e->OnConfigLoad(reload);
-        }
-    }
-#endif /* ENABLE_ELUNA */
     sLog.outString();
 }
 

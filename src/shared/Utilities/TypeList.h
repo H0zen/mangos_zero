@@ -23,9 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_TYPELIST_H
-#define MANGOS_TYPELIST_H
+#pragma once
 
 // marked for deletion
-
-#endif

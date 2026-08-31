@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef GAME_PCH_H
-#define GAME_PCH_H
+#pragma once
 
 #include "Map.h"
 #include "Log.h"
@@ -37,5 +36,3 @@
 
 #include <map>
 #include <vector>
-
-#endif

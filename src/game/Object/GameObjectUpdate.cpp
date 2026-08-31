@@ -53,9 +53,6 @@
 #include "SQLStorages.h"
 #include "GameObjectAI.h"
 #include "Geometry/Quat.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 enum
 {
@@ -77,13 +74,6 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
         return;
     }
 
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->UpdateAI(this, update_diff);
-    }
-#endif /* ENABLE_ELUNA */
 
     switch (m_lootState)
     {

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_CLISERVICE
-#define MANGOS_H_CLISERVICE
+#pragma once
 
 #include "Service.h"
 
@@ -66,5 +65,3 @@ class CliService : public IService
         std::thread       m_thread;
         std::atomic<bool> m_stop;
 };
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_GRIDREFERENCE
-#define MANGOS_H_GRIDREFERENCE
+#pragma once
 
 #include "Utilities/LinkedReference/Reference.h"
 
@@ -73,5 +72,3 @@ class GridReference : public Reference<GridRefManager<OBJECT>, OBJECT>
             return (GridReference*)Reference<GridRefManager<OBJECT>, OBJECT>::next();
         }
 };
-
-#endif

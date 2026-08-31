@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_CONSOLE_CONSOLEUI
-#define MANGOS_H_CONSOLE_CONSOLEUI
+#pragma once
 
 #include <atomic>
 #include <deque>
@@ -205,5 +204,3 @@ namespace Console
     };
 }
 }
-
-#endif

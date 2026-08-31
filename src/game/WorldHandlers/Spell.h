@@ -45,8 +45,7 @@
  * @see SpellEntry for spell database structures
  */
 
-#ifndef MANGOS_H_SPELL
-#define MANGOS_H_SPELL
+#pragma once
 
 #include "Utilities/Errors.h"
 #include "Platform/Define.h"
@@ -963,4 +962,3 @@ class SpellEvent : public BasicEvent
     protected:
         Spell* m_Spell;
 };
-#endif

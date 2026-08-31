@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_TYPEDEFS_H
-#define MANGOSSERVER_TYPEDEFS_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "Geometry/Vector2.h"
@@ -120,5 +119,3 @@ namespace Movement
      */
     typedef counter<uint32, 0xFFFFFFFF> UInt32Counter;
 }
-
-#endif // MANGOSSERVER_TYPEDEFS_H

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_GAMEOBJECTMODEL_H
-#define MANGOSSERVER_GAMEOBJECTMODEL_H
+#pragma once
 
 // One game object's collidable body: a shared model, a placement, and the world box it
 // occupies. The geometry itself is held once per display id by GoModelStore -- a keep's
@@ -104,5 +103,3 @@ class GameObjectModel
         std::vector<uint32_t> m_cells;
         mutable uint32_t m_epoch = 0;
 };
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_GRID_H
-#define MANGOS_GRID_H
+#pragma once
 
 #include <unordered_set>
 #include "Platform/Define.h"
@@ -127,5 +126,3 @@ class Grid
         WORLD_CONTAINER i_worldContainer;
         std::unordered_set<const void*> m_activeGridObjects;
 };
-
-#endif

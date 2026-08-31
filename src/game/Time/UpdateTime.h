@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef UPDATETIME_H
-#define UPDATETIME_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "Timer.h"
@@ -154,5 +153,3 @@ class WorldUpdateTime : public UpdateTime
  * @brief Global WorldUpdateTime instance
  */
 extern WorldUpdateTime sWorldUpdateTime;
-
-#endif

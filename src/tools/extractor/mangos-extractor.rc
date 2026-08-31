@@ -24,7 +24,7 @@
  */
 
 #include <windows.h>
-#include "revision_data.h"
+#include "VersionData.h"
 
 IDI_APPICON ICON DISCARDABLE "mangos-extractor.ico"
 

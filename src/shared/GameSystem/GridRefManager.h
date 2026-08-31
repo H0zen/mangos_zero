@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef _GRIDREFMANAGER
-#define _GRIDREFMANAGER
+#pragma once
 
 #include "Utilities/LinkedReference/RefManager.h"
 
@@ -52,4 +51,3 @@ class GridRefManager : public RefManager<GridRefManager<OBJECT>, OBJECT>
         iterator rbegin() { return iterator(getLast()); }
         iterator rend() { return iterator(nullptr); }
 };
-#endif

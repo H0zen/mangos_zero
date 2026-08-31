@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef QUERYRESULT_H
-#define QUERYRESULT_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "Utilities/Errors.h"
@@ -179,5 +178,3 @@ class QueryNamedResult
         QueryResult* mQuery; /**< Wrapped QueryResult (owned) */
         QueryFieldNames mFieldNames; /**< Field name to index mapping */
 };
-
-#endif

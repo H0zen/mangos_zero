@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_TOTEM_H
-#define MANGOSSERVER_TOTEM_H
+#pragma once
 
 #include "Creature.h"
 
@@ -67,4 +66,3 @@ class Totem : public Creature
         TotemType m_type;
         uint32 m_duration;
 };
-#endif

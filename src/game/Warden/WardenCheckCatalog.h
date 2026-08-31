@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_WARDEN_CHECK_CATALOG_H
-#define MANGOS_WARDEN_CHECK_CATALOG_H
+#pragma once
 
 #include "WardenProtocol.h"
 
@@ -222,5 +221,3 @@ private:
 
 char const* ToString(CheckCatalogValidation validation);
 }
-
-#endif

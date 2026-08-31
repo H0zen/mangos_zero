@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_CALLBACK_H
-#define MANGOS_CALLBACK_H
+#pragma once
 
 #include <functional>
 #include <utility>
@@ -100,5 +99,3 @@ namespace MaNGOS
             QueryResult* m_result;
     };
 }
-
-#endif

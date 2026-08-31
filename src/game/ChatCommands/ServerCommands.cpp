@@ -39,10 +39,8 @@
 #include "ObjectMgr.h"
 #include "World.h"
 #include "Config.h"
-#include "GitRevision.h"
-#include "SystemConfig.h"
+#include "Version.h"
 #include "UpdateTime.h"
-#include "revision_data.h"
 #include "CorpseManager.h"
 
 /**
@@ -61,7 +59,7 @@ bool ChatHandler::HandleServerInfoCommand(char* /*args*/)
     uint32 updateTime = sWorldUpdateTime.GetLastUpdateTime();
 
     char const* full;
-    full = GitRevision::GetProjectRevision();
+    full = MangosVersion::ProductRevision();
     SendSysMessage(full);
 
     if (sScriptMgr.IsScriptLibraryLoaded())
@@ -81,10 +79,8 @@ bool ChatHandler::HandleServerInfoCommand(char* /*args*/)
         SendSysMessage(LANG_USING_SCRIPT_LIB_NONE);
     }
 
-    PSendSysMessage("%s", GitRevision::GetFullRevision());
-    PSendSysMessage("%s", GitRevision::GetDepElunaFullRevisionStr());
-    PSendSysMessage("%s", GitRevision::GetDepSD3FullRevisionStr());
-    PSendSysMessage("%s", GitRevision::GetRunningSystem());
+    PSendSysMessage("%s", MangosVersion::FullRevision());
+    PSendSysMessage("%s", MangosVersion::RunningSystem());
 
     PSendSysMessage(LANG_USING_WORLD_DB, sWorld.GetDBVersion());
     PSendSysMessage(LANG_CONNECTED_USERS, activeClientsNum, maxActiveClientsNum, queuedClientsNum, maxQueuedClientsNum);

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_DEFINE_H
-#define MANGOS_DEFINE_H
+#pragma once
 
 #include <sys/types.h>
 
@@ -138,5 +137,3 @@ constexpr std::size_t countof(T const (&)[N]) noexcept
 #else
 #  define strnicmp strncasecmp
 #endif
-
-#endif // MANGOS_DEFINE_H

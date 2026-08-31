@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_GUARDAI_H
-#define MANGOS_GUARDAI_H
+#pragma once
 
 #include "CreatureAI.h"
 #include "ObjectGuid.h"
@@ -58,4 +57,3 @@ class GuardAI : public CreatureAI
         GuardState i_state;
         TimeTracker i_tracker;
 };
-#endif

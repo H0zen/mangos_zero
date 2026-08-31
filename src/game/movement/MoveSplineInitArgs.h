@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_MOVESPLINEINIT_ARGS_H
-#define MANGOSSERVER_MOVESPLINEINIT_ARGS_H
+#pragma once
 
 #include <vector>
 #include "MoveSplineFlag.h"
@@ -110,5 +109,3 @@ namespace Movement
             bool _checkPathBounds() const;
     };
 }
-
-#endif // MANGOSSERVER_MOVESPLINEINIT_ARGS_H

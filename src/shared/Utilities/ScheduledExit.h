@@ -12,8 +12,7 @@
  * (at your option) any later version.
  */
 
-#ifndef MANGOS_SCHEDULED_EXIT_H
-#define MANGOS_SCHEDULED_EXIT_H
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -75,5 +74,3 @@ namespace MaNGOS
         ScheduledExitSchedule const& schedule, std::tm const& localTime,
         ScheduledExitState& state);
 }
-
-#endif

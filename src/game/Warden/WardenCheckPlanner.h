@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_WARDEN_CHECK_PLANNER_H
-#define MANGOS_WARDEN_CHECK_PLANNER_H
+#pragma once
 
 #include "WardenCheckPlan.h"
 #include "WardenConfiguration.h"
@@ -89,5 +88,3 @@ private:
 std::vector<CheckPlan> BuildWardenPreflightPlans(
     WardenCheckProfile const& profile);
 }
-
-#endif

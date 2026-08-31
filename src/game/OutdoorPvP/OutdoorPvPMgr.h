@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef WORLD_PVP_MGR_H
-#define WORLD_PVP_MGR_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"
@@ -181,5 +180,3 @@ class OutdoorPvPMgr
  * @brief Global outdoor PvP manager instance
  */
 #define sOutdoorPvPMgr MaNGOS::Singleton<OutdoorPvPMgr>::Instance()
-
-#endif

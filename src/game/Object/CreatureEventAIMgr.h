@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_CREATURE_EAI_MGR_H
-#define MANGOS_CREATURE_EAI_MGR_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "CreatureEventAI.h"
@@ -53,4 +52,3 @@ class CreatureEventAIMgr
 };
 
 #define sEventAIMgr MaNGOS::Singleton<CreatureEventAIMgr>::Instance()
-#endif

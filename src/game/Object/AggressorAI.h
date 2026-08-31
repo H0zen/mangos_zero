@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_AGGRESSORAI_H
-#define MANGOS_AGGRESSORAI_H
+#pragma once
 
 #include "CreatureAI.h"
 #include "Timer.h"
@@ -57,5 +56,3 @@ class AggressorAI : public CreatureAI
         AggressorState i_state;
         TimeTracker i_tracker;
 };
-
-#endif

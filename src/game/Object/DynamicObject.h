@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_DYNAMICOBJECT_H
-#define MANGOSSERVER_DYNAMICOBJECT_H
+#pragma once
 
 #include "Object.h"
 #include "DBCEnums.h"
@@ -119,4 +118,3 @@ class DynamicObject : public WorldObject
     private:
         GridReference<DynamicObject> m_gridRef;
 };
-#endif

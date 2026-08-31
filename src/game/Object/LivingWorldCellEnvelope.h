@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_LIVING_WORLD_CELL_ENVELOPE_H
-#define MANGOS_LIVING_WORLD_CELL_ENVELOPE_H
+#pragma once
 
 #include "GridDefines.h" // MAX_NUMBER_OF_CELLS, TOTAL_NUMBER_OF_CELLS_PER_MAP
 
@@ -68,5 +67,3 @@ static_assert(LwGlobalCellToGrid(17) == 1 && LwGlobalCellToLocal(17) == 1,
     "global cell 17 is grid 1 local 1 (envelope spilling across a grid boundary)");
 static_assert(LwGridLocalToGlobalCell(1, 1) == 17,
     "grid/local round-trips back to the global cell");
-
-#endif

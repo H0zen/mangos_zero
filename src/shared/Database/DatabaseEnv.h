@@ -23,8 +23,8 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#if !defined(DATABASEENV_H)
-#define DATABASEENV_H
+
+#pragma once
 
 #include "Log/Log.h"
 #include "Utilities/Errors.h"
@@ -48,4 +48,3 @@ extern DatabaseType WorldDatabase; /**< TODO */
 extern DatabaseType CharacterDatabase; /**< TODO */
 extern DatabaseType LoginDatabase; /**< TODO */
 
-#endif

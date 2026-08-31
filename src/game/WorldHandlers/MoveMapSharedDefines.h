@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_MOVE_MAP_SHARED_DEFINES
-#define MANGOS_H_MOVE_MAP_SHARED_DEFINES
+#pragma once
 
 #include "DetourNavMesh.h"
 #include "Platform/Define.h"
@@ -57,5 +56,3 @@ enum NavTerrain
     NAV_UNUSED4 = 0x80
     // we only have 8 bits
 };
-
-#endif  // _MOVE_MAP_SHARED_DEFINES_H

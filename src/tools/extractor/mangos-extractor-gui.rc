@@ -24,7 +24,7 @@
  */
 
 #include <windows.h>
-#include "revision_data.h"
+#include "VersionData.h"
 
 /* Numeric 1, not a named resource: the shell shows the LOWEST-numbered icon, and a
    string name sorts after every number. This is the one Explorer draws. */

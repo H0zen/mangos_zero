@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_SCRIPTMGR
-#define MANGOS_H_SCRIPTMGR
+#pragma once
 
 #include <unordered_map>
 #include "Platform/Define.h"
@@ -777,5 +776,3 @@ void SetExternalWaypointTable(char const* tableName);
  * Adds a waypoint definition from the external waypoint source.
  */
 bool AddWaypointFromExternal(uint32 entry, int32 pathId, uint32 pointId, float x, float y, float z, float o, uint32 waittime);
-
-#endif

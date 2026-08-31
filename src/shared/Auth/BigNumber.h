@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_AUTH_BIGNUMBER
-#define MANGOS_H_AUTH_BIGNUMBER
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -240,4 +239,3 @@ class BigNumber
         struct bignum_st* _bn; /**< OpenSSL BIGNUM structure */
         uint8* _array; /**< Cached byte array representation */
 };
-#endif

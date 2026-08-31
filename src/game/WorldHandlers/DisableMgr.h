@@ -19,8 +19,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TRINITY_DISABLEMGR_H
-#define TRINITY_DISABLEMGR_H
+#pragma once
 
 
 class Unit;
@@ -80,5 +79,3 @@ namespace DisableMgr
     bool IsVMAPDisabledFor(uint32 entry, uint8 flags);
     bool IsPathfindingEnabled(uint32 mapId);
 }
-
-#endif //TRINITY_DISABLEMGR_H

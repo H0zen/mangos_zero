@@ -38,8 +38,7 @@
  *
  */
 
-#ifndef MANGOS_MASS_MAIL_MGR_H
-#define MANGOS_MASS_MAIL_MGR_H
+#pragma once
 
 #include <unordered_set>
 #include <memory>
@@ -135,5 +134,4 @@ class MassMailMgr
 
 #define sMassMailMgr MaNGOS::Singleton<MassMailMgr>::Instance()
 
-#endif
 /*! @} */

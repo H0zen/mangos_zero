@@ -63,7 +63,6 @@
 #include "BattleGround/BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Chat.h"
-#include "revision_data.h"
 #include "Spell.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
@@ -74,12 +73,6 @@
 #include "DisableMgr.h"
 #include "CinematicFlyover.h"
 #include <cmath>
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 #define ZONE_UPDATE_INTERVAL (1*IN_MILLISECONDS)
 
@@ -274,9 +267,6 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea, bool sendInitialWorldSta
         sOutdoorPvPMgr.HandlePlayerLeaveZone(this, m_zoneUpdateId);
         sOutdoorPvPMgr.HandlePlayerEnterZone(this, newZone);
 
-#ifdef ENABLE_PLAYERBOTS
-        sRandomPlayerbotMgr.OnPlayerZoneChange(this, newZone);
-#endif
 
         if (sendInitialWorldStates)
         {
@@ -290,13 +280,6 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea, bool sendInitialWorldSta
         }
     }
 
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnUpdateZone(this, newZone, newArea);
-    }
-#endif /* ENABLE_ELUNA */
 
     m_zoneUpdateId    = newZone;
     m_zoneUpdateTimer = ZONE_UPDATE_INTERVAL;

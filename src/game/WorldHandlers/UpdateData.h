@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_UPDATEDATA
-#define MANGOS_H_UPDATEDATA
+#pragma once
 
 #include "ByteBuffer.h"
 #include "ObjectGuid.h"
@@ -127,4 +126,3 @@ class InitialWorldUpdateBatch
         bool m_flushAttempted;
         bool m_sent;
 };
-#endif

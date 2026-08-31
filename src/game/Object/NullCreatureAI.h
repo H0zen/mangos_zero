@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_NULLCREATUREAI_H
-#define MANGOS_NULLCREATUREAI_H
+#pragma once
 
 #include "CreatureAI.h"
 
@@ -45,4 +44,3 @@ class NullCreatureAI : public CreatureAI
         void UpdateAI(const uint32) override {}
         static int Permissible(const Creature*) { return PERMIT_BASE_IDLE;  }
 };
-#endif

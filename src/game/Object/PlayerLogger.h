@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_PLAYERLOGGER
-#define MANGOS_H_PLAYERLOGGER
+#pragma once
 
 #include "Platform/Define.h"
 #include <vector>
@@ -202,5 +201,3 @@ class PlayerLogger
         std::vector<PlayerLogBase>* data[MAX_PLAYER_LOG_ENTITIES];
         uint8 logActiveMask;
 };
-
-#endif

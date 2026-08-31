@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_OBJECTLOOKUP_H
-#define MANGOS_H_OBJECTLOOKUP_H
+#pragma once
 
 #include "ObjectGuid.h"
 
@@ -66,5 +65,3 @@ namespace ObjectLookup
     /// Find a game object on the reference object's map.
     GameObject* GetGameObject(WorldObject const& obj, ObjectGuid guid);
 }
-
-#endif

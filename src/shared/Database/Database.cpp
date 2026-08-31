@@ -34,7 +34,7 @@
 #include "DatabaseEnv.h"
 #include "Config/Config.h"
 #include "Database/SqlOperations.h"
-#include "GitRevision.h"
+#include "Version.h"
 #include "Utilities/Util.h"
 #include <ctime>
 #include <iostream>
@@ -54,9 +54,9 @@ struct DBVersion
 };
 
 const DBVersion databaseVersions[COUNT_DATABASES] = {
-    { "World", GitRevision::GetWorldDBVersion(), GitRevision::GetWorldDBStructure(), GitRevision::GetWorldDBContent(), GitRevision::GetWorldDBUpdateDescription() }, // DATABASE_WORLD
-    { "Realmd", GitRevision::GetRealmDBVersion(), GitRevision::GetRealmDBStructure(), GitRevision::GetRealmDBContent(), GitRevision::GetRealmDBUpdateDescription() }, // DATABASE_REALMD
-    { "Character", GitRevision::GetCharDBVersion(), GitRevision::GetCharDBStructure(), GitRevision::GetCharDBContent(), GitRevision::GetCharDBUpdateDescription() }, // DATABASE_CHARACTER
+    { "World", MangosVersion::WorldDbVersion(), MangosVersion::WorldDbStructure(), MangosVersion::WorldDbContent(), MangosVersion::WorldDbDescription() }, // DATABASE_WORLD
+    { "Realmd", MangosVersion::RealmdDbVersion(), MangosVersion::RealmdDbStructure(), MangosVersion::RealmdDbContent(), MangosVersion::RealmdDbDescription() }, // DATABASE_REALMD
+    { "Character", MangosVersion::CharDbVersion(), MangosVersion::CharDbStructure(), MangosVersion::CharDbContent(), MangosVersion::CharDbDescription() }, // DATABASE_CHARACTER
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -715,9 +715,9 @@ bool Database::CheckDatabaseVersion(DatabaseTypes database)
     // DB is not up to date, but structure is correct.
     // The 'content' version in the 'db_version' table can be < from the one required by the core
     // See  enum values for :
-    //  WORLD_DB_CONTENT_NR
-    //  CHAR_DB_CONTENT_NR
-    //  REALMD_DB_CONTENT_NR
+    //  MangosVersion::WorldDbContent()
+    //  MangosVersion::CharDbContent()
+    //  MangosVersion::RealmdDbContent()
     // for more information.
     if (current_db_content < core_db_requirements.minimal_expected_content)
     {

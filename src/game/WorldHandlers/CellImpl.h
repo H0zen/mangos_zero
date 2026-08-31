@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_CELLIMPL_H
-#define MANGOS_CELLIMPL_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "Cell.h"
@@ -260,5 +259,3 @@ template<class T>
     cell.Visit(p, gnotifier, *map, x, y, radius);
     cell.Visit(p, wnotifier, *map, x, y, radius);
 }
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_CREATURE_EAI_H
-#define MANGOS_CREATURE_EAI_H
+#pragma once
 
 #include <unordered_map>
 #include "Platform/Define.h"
@@ -714,5 +713,3 @@ class CreatureEventAI : public CreatureAI
         // Steps 0..2 correspond to AI_EVENT_LOST_SOME_HEALTH(90%), AI_EVENT_LOST_HEALTH(50%), AI_EVENT_CRITICAL_HEALTH(10%)
         uint32 m_throwAIEventStep;                          // Used for damage taken/ received heal
 };
-
-#endif

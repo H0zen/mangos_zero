@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_MANGOS_LANGUAGE
-#define MANGOS_H_MANGOS_LANGUAGE
+#pragma once
 
 enum MangosStrings
 {
@@ -747,27 +746,6 @@ enum MangosStrings
     LANG_SCRIPTS_WRONG_API                                    = 1167,    /* Scripting library has wrong list functions (outdated?). */
     LANG_SCRIPTS_RELOADED_OK                                  = 1168,    /* Scripting library reloaded. */
     LANG_SCRIPTS_OUTDATED                                     = 1169,    /* Scripting library build for different mangosd revision. */
-    LANG_AHBOT_RELOAD_OK                                      = 1171,    /* All config are reloaded from ahbot configuration file. */
-    LANG_AHBOT_RELOAD_FAIL                                    = 1172,    /* Error while trying to reload ahbot config. */
-    LANG_AHBOT_STATUS_BAR_CONSOLE                             = 1173,    /* ========================================================== */
-    LANG_AHBOT_STATUS_MIDBAR_CONSOLE                          = 1174,    /* |--------------------------------------------------------| */
-    LANG_AHBOT_STATUS_TITLE1_CONSOLE                          = 1175,    /* |            | Alliance |  Horde   | Neutral  |  Total   | */
-    LANG_AHBOT_STATUS_TITLE1_CHAT                             = 1176,    /*           Alliance/Horde/Neutral/Total */
-    LANG_AHBOT_STATUS_FORMAT_CONSOLE                          = 1177,    /* | %-10s | %8u | %8u | %8u | %8u | */
-    LANG_AHBOT_STATUS_FORMAT_CHAT                             = 1178,    /* %-10s = %6u / %6u / %6u / %6u */
-    LANG_AHBOT_STATUS_ITEM_COUNT                              = 1179,    /* Count */
-    LANG_AHBOT_STATUS_ITEM_RATIO                              = 1180,    /* Item Ratio */
-    LANG_AHBOT_STATUS_TITLE2_CONSOLE                          = 1181,    /* |            | Alliance |   Horde  | Neutral  |  Amount  | */
-    LANG_AHBOT_STATUS_TITLE2_CHAT                             = 1182,    /*           Alliance/Horde/Neutral/Amount */
-    LANG_AHBOT_QUALITY_GREY                                   = 1183,    /* Grey */
-    LANG_AHBOT_QUALITY_WHITE                                  = 1184,    /* White */
-    LANG_AHBOT_QUALITY_GREEN                                  = 1185,    /* Green */
-    LANG_AHBOT_QUALITY_BLUE                                   = 1186,    /* Blue */
-    LANG_AHBOT_QUALITY_PURPLE                                 = 1187,    /* Purple */
-    LANG_AHBOT_QUALITY_ORANGE                                 = 1188,    /* Orange */
-    LANG_AHBOT_QUALITY_YELLOW                                 = 1189,    /* Yellow */
-    LANG_AHBOT_ITEMS_AMOUNT                                   = 1190,    /* Amount of %s items is set to %u. */
-    LANG_AHBOT_ITEMS_RATIO                                    = 1191,    /* Items ratio for %s is set to %u. */
     LANG_MOVEGENS_EFFECT                                      = 1192,    /* Effect movement */
     LANG_COMMAND_GO_STATUS                                    = 1194,    /* Current State Information: GOState %u, LootState %u. Collision %s */
     LANG_COMMAND_GO_STATUS_DOOR                               = 1195,    /* Current State Information: GOState %u, LootState %u. Collision %s, (door %s by default) */
@@ -899,4 +877,3 @@ enum MangosStrings
     // `db_script_string` table index     2000000000-2000999999 (MIN_DB_SCRIPT_STRING_ID-MAX_DB_SCRIPT_STRING_ID)
     // For other tables maybe             2001000000-2147483647 (max index)
 };
-#endif

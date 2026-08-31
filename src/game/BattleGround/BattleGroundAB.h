@@ -67,8 +67,7 @@
  * @see BattleGround for base class
  */
 
-#ifndef MANGOS_H_BATTLEGROUNDAB
-#define MANGOS_H_BATTLEGROUNDAB
+#pragma once
 
 #include "Platform/Define.h"
 #include "BattleGround.h"
@@ -403,5 +402,3 @@ class BattleGroundAB : public BattleGround
         uint32              m_honorTicks; /**< Honor ticks */
         uint32              m_ReputationTics; /**< Reputation ticks */
 };
-
-#endif

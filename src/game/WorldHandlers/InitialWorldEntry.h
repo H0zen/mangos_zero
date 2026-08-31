@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_INITIAL_WORLD_ENTRY_H
-#define MANGOS_INITIAL_WORLD_ENTRY_H
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -182,5 +181,3 @@ class InitialWorldEntryHook
 
 // Failsafe for clients that never report cinematic completion.
 constexpr uint32 LOGIN_CINEMATIC_ROOT_TIMEOUT_MS = 120000;
-
-#endif

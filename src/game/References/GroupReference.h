@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_GROUPREFERENCE
-#define MANGOS_H_GROUPREFERENCE
+#pragma once
 
 #include "Utilities/LinkedReference/Reference.h"
 
@@ -97,4 +96,3 @@ class GroupReference : public Reference<Group, Player>
          */
         void setSubGroup(uint8 pSubGroup) { iSubGroup = pSubGroup; }
 };
-#endif

@@ -44,8 +44,7 @@
  * @see BattleGround for base class
  */
 
-#ifndef MANGOS_H_BATTLEGROUNDWS
-#define MANGOS_H_BATTLEGROUNDWS
+#pragma once
 
 #include "BattleGround.h"
 
@@ -397,4 +396,3 @@ class BattleGroundWS : public BattleGround
         uint32 m_HonorWinKills; /**< Honor for winning kills. */
         uint32 m_HonorEndKills; /**< Honor for end kills. */
 };
-#endif

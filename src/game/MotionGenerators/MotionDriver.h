@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_MOTIONDRIVER_H
-#define MANGOS_MOTIONDRIVER_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "MotionFrame.h"
@@ -110,5 +109,3 @@ class MotionDriver
         bool m_speedChanged = false; ///< A speed change invalidated the running leg.
         bool m_wasTraveling = false; ///< Previous tick had a live leg (arrival edge).
 };
-
-#endif // MANGOS_MOTIONDRIVER_H

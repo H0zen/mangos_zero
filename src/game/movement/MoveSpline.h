@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_MOVEPLINE_H
-#define MANGOSSERVER_MOVEPLINE_H
+#pragma once
 
 #include "Utilities/Errors.h"
 #include <string>
@@ -297,4 +296,3 @@ namespace Movement
             std::string ToString() const;
     };
 }
-#endif // MANGOSSERVER_MOVEPLINE_H

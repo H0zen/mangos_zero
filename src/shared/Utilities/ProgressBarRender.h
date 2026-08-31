@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_PROGRESSBARRENDER_H
-#define MANGOSSERVER_PROGRESSBARRENDER_H
+#pragma once
 
 /**
  * @file ProgressBarRender.h
@@ -121,5 +120,3 @@ namespace ProgressBarRender
         return std::string("\n");
     }
 }
-
-#endif

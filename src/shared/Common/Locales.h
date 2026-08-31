@@ -12,8 +12,7 @@
  * (at your option) any later version.
  */
 
-#ifndef MANGOS_LOCALES_H
-#define MANGOS_LOCALES_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -57,5 +56,3 @@ LocaleConstant GetLocaleByName(const std::string& name);
 char const* GetExactLocaleName(const std::string& name);
 
 typedef std::vector<std::string> StringVector;
-
-#endif

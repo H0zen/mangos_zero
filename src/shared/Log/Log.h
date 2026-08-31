@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_LOG_H
-#define MANGOSSERVER_LOG_H
+#pragma once
 
 #include "Threading/Threading.h"
 #include "Platform/Define.h"
@@ -77,8 +76,6 @@ enum LogFilters
     LOG_FILTER_COMBAT             = 0x000800,               // 11 attack states/roll attack results/etc
     LOG_FILTER_SPELL_CAST         = 0x001000,               // 12 spell cast/aura apply/spell proc events
     LOG_FILTER_DB_STRICTED_CHECK  = 0x002000,               // 13 stricted DB data checks output (with possible false reports) for DB devs
-    LOG_FILTER_AHBOT_SELLER       = 0x004000,               // 14 Auction House Bot seller part
-    LOG_FILTER_AHBOT_BUYER        = 0x008000,               // 15 Auction House Bot buyer part
     LOG_FILTER_PATHFINDING        = 0x010000,               // 16 Pathfinding
     LOG_FILTER_MAP_LOADING        = 0x020000,               // 17 Map loading/unloading (MAP, VMAPS, MMAP)
     LOG_FILTER_EVENT_AI_DEV       = 0x040000,               // 18 Event AI actions
@@ -272,18 +269,6 @@ class Log : public MaNGOS::Singleton<Log>
          * @param str...
          */
         void outChar(const char* str, ...)        ATTR_PRINTF(2, 3);
-        /**
-         * @brief any log level
-         *
-         * @param str...
-         */
-        void outErrorEluna();
-        /**
-         * @brief any log level
-         *
-         * @param str...
-         */
-        void outErrorEluna(const char* str, ...)        ATTR_PRINTF(2, 3);
         /**
          * @brief any log level
          *
@@ -549,9 +534,6 @@ class Log : public MaNGOS::Singleton<Log>
         FILE* gmLogfile; /**< TODO */
         FILE* charLogfile; /**< TODO */
         FILE* dberLogfile; /**< TODO */
-#ifdef ENABLE_ELUNA
-        FILE* elunaErrLogfile; /**< TODO */
-#endif /* ENABLE_ELUNA */
 
         FILE* eventAiErLogfile; /**< TODO */
         FILE* scriptErrLogFile; /**< TODO */
@@ -700,5 +682,3 @@ void  setScriptLibraryErrorFile(char const* fname, char const* libName);
  * @param str...
  */
 void  script_error_log(const char* str, ...) ATTR_PRINTF(1, 2);
-
-#endif

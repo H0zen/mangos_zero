@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_MOTIONFRAME_H
-#define MANGOS_MOTIONFRAME_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "Utilities/MathDefines.h"
@@ -181,5 +180,3 @@ namespace Motion
      */
     IMotionFrame const& FrameFor(Unit const& mover);
 }
-
-#endif // MANGOS_MOTIONFRAME_H

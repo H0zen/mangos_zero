@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef GAMETIME_H
-#define GAMETIME_H
+#pragma once
 
 #include "Define.h"
 
@@ -88,5 +87,3 @@ namespace GameTime
      */
     void UpdateGameTimers();
 }
-
-#endif

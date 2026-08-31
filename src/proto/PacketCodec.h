@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_PROTO_PACKETCODEC_H
-#define MANGOS_PROTO_PACKETCODEC_H
+#pragma once
 
 #include <utility>
 #include "Platform/Define.h"
@@ -133,5 +132,3 @@ namespace proto
             std::vector<uint8> m_payload; ///< payload accumulated so far
     };
 }
-
-#endif

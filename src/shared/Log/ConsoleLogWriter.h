@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_CONSOLELOGWRITER
-#define MANGOS_H_CONSOLELOGWRITER
+#pragma once
 
 #include <atomic>
 
@@ -97,5 +96,3 @@ class ConsoleLogWriter : public MaNGOS::Runnable
         std::atomic<bool> m_running; /**< Cooperative stop flag (cross-thread: set by Stop(), read by run()) */
         static const long MAX_CONSOLE_QUEUE = 16384; /**< Overflow threshold */
 };
-
-#endif

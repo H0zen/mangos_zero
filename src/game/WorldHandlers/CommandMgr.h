@@ -18,8 +18,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef COMMANDMGR_H
-#define COMMANDMGR_H
+#pragma once
 
 #include <unordered_map>
 #include <string>
@@ -46,5 +45,3 @@ class CommandMgr
 };
 
 #define sCommandMgr MaNGOS::Singleton<CommandMgr>::Instance()
-
-#endif

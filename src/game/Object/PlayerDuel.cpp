@@ -62,7 +62,6 @@
 #include "BattleGround/BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Chat.h"
-#include "revision_data.h"
 #include "Spell.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
@@ -73,12 +72,6 @@
 #include "DisableMgr.h"
 #include "CinematicFlyover.h"
 #include <cmath>
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 // If players are too far way of duel flag... then player loose the duel
 void Player::CheckDuelDistance(time_t currTime)
@@ -177,13 +170,6 @@ void Player::DuelComplete(DuelCompleteType type)
             break;
     }
 
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnDuelEnd(duel->opponent, this, type);
-    }
-#endif /* ENABLE_ELUNA */
 
     // Remove Duel Flag object
     GameObject* obj = GetMap()->GetGameObject(GetUInt64Value(PLAYER_DUEL_ARBITER));

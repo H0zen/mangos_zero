@@ -44,8 +44,7 @@
  * @see Specific battleground classes for extensions
  */
 
-#ifndef MANGOS_H_BATTLEGROUND
-#define MANGOS_H_BATTLEGROUND
+#pragma once
 
 #include <deque>
 #include <queue>
@@ -1701,5 +1700,3 @@ inline void FillInitialWorldState(ByteBuffer& data, uint32& count, WorldStatePai
         ++count;
     }
 }
-
-#endif

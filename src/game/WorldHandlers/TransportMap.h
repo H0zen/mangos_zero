@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_TRANSPORT_MAP_H
-#define MANGOS_TRANSPORT_MAP_H
+#pragma once
 
 #include "Map.h"
 
@@ -275,5 +274,3 @@ class TransportMap : public Map
         /// blocks in the right order.
         std::vector<Creature*> m_crew;
 };
-
-#endif

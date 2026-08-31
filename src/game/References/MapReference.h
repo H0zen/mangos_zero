@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_MAPREFERENCE
-#define MANGOS_H_MAPREFERENCE
+#pragma once
 
 #include "Utilities/LinkedReference/Reference.h"
 #include "Map.h"
@@ -115,4 +114,3 @@ class MapReference : public Reference<Map, Player>
          */
         MapReference const* nocheck_prev() const { return (MapReference const*)Reference<Map, Player>::nocheck_prev(); }
 };
-#endif

@@ -46,8 +46,7 @@
  * @see BattleGround for base class
  */
 
-#ifndef MANGOS_H_BATTLEGROUNDAV
-#define MANGOS_H_BATTLEGROUNDAV
+#pragma once
 
 #include "Platform/Define.h"
 #include "BattleGround.h"
@@ -696,5 +695,3 @@ class BattleGroundAV : public BattleGround
         uint32 m_RepSurviveCaptain; /**< The reputation for surviving a captain. */
         uint32 m_RepSurviveTower; /**< The reputation for surviving a tower. */
 };
-
-#endif

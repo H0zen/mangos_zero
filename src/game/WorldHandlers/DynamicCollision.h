@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_DYNAMICCOLLISION
-#define MANGOS_H_DYNAMICCOLLISION
+#pragma once
 
 // Game-object collision for one Map. Replaces DynamicMapTree, a BIH that was rebuilt
 // periodically through balance() and update().
@@ -107,5 +106,3 @@ class DynamicCollision : public world::terrain::ILiveGeometry
 
         mutable uint32_t m_epoch = 0;
 };
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_SESSIONMAILBOX
-#define MANGOS_H_SESSIONMAILBOX
+#pragma once
 
 #include "LockedQueue/LockedQueue.h"
 #include "WorldPacket.h"
@@ -58,5 +57,3 @@ class SessionMailbox
         bool m_closed = false;
         MaNGOS::LockedQueue<WorldPacket*> m_packets;
 };
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_SERVICE
-#define MANGOS_H_SERVICE
+#pragma once
 
 #include <thread>
 #include <string>
@@ -67,5 +66,3 @@ class IService
         /// Wait for the service to finish. May block; called after RequestStop().
         virtual void Join() = 0;
 };
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_REFMANAGER
-#define MANGOS_H_REFMANAGER
+#pragma once
 
 //=====================================================
 
@@ -146,5 +145,3 @@ class RefManager : public LinkedListHead
 };
 
 //=====================================================
-
-#endif

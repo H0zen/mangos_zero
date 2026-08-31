@@ -56,9 +56,6 @@
 #include "ScriptMgr.h"
 #include "Geometry/Vector3.h"
 #include "Corpse.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 pEffect SpellEffects[TOTAL_SPELL_EFFECTS] =
 {
@@ -362,25 +359,6 @@ void Spell::EffectSummon(SpellEffectIndex eff_idx)
     {
         ((Creature*)m_originalCaster)->AI()->JustSummoned((Creature*)spawnCreature);
     }
-#ifdef ENABLE_ELUNA
-    if (Unit* summoner = m_caster->ToUnit())
-    {
-        if (Eluna* e = summoner->GetEluna())
-        {
-            e->OnSummoned(spawnCreature, summoner);
-        }
-    }
-    else if (m_originalCaster)
-    {
-        if (Unit* summoner = m_originalCaster->ToUnit())
-        {
-            if (Eluna* e = summoner->GetEluna())
-            {
-                e->OnSummoned(spawnCreature, summoner);
-            }
-        }
-    }
-#endif /* ENABLE_ELUNA */
 }
 
 
@@ -483,18 +461,6 @@ void Spell::EffectSummonWild(SpellEffectIndex eff_idx)
             {
                 ((Creature*)m_originalCaster)->AI()->JustSummoned(summon);
             }
-#ifdef ENABLE_ELUNA
-            if (m_originalCaster)
-            {
-                if (Unit* summoner = m_originalCaster->ToUnit())
-                {
-                    if (Eluna* e = summoner->GetEluna())
-                    {
-                        e->OnSummoned(summon, summoner);
-                    }
-                }
-            }
-#endif /* ENABLE_ELUNA */
         }
     }
 }
@@ -630,26 +596,6 @@ void Spell::EffectSummonGuardian(SpellEffectIndex eff_idx)
         {
             ((Creature*)m_originalCaster)->AI()->JustSummoned(spawnCreature);
         }
-#ifdef ENABLE_ELUNA
-        if (Unit* summoner = m_caster->ToUnit())
-        {
-            if (Eluna* e = summoner->GetEluna())
-            {
-                e->OnSummoned(spawnCreature, summoner);
-            }
-        }
-
-        if (m_originalCaster)
-        {
-            if (Unit* summoner = m_originalCaster->ToUnit())
-            {
-                if (Eluna* e = summoner->GetEluna())
-                {
-                    e->OnSummoned(spawnCreature, summoner);
-                }
-            }
-        }
-#endif /* ENABLE_ELUNA */
     }
 }
 
@@ -834,15 +780,6 @@ void Spell::EffectSummonPossessed(SpellEffectIndex eff_idx)
     {
         ((Creature*)m_originalCaster)->AI()->JustSummoned(spawnCreature);
     }
-#ifdef ENABLE_ELUNA
-    if (Unit* summoner = m_originalCaster->ToUnit())
-    {
-        if (Eluna* e = summoner->GetEluna())
-        {
-            e->OnSummoned(spawnCreature, summoner);
-        }
-    }
-#endif /* ENABLE_ELUNA */
 }
 
 
@@ -954,25 +891,6 @@ void Spell::EffectSummonCritter(SpellEffectIndex eff_idx)
     {
         ((Creature*)m_originalCaster)->AI()->JustSummoned(critter);
     }
-#ifdef ENABLE_ELUNA
-    if (Unit* summoner = m_caster->ToUnit())
-    {
-        if (Eluna* e = summoner->GetEluna())
-        {
-            e->OnSummoned(critter, summoner);
-        }
-    }
-    if (m_originalCaster)
-    {
-        if (Unit* summoner = m_originalCaster->ToUnit())
-        {
-            if (Eluna* e = summoner->GetEluna())
-            {
-                e->OnSummoned(critter, summoner);
-            }
-        }
-    }
-#endif /* ENABLE_ELUNA */
 }
 
 

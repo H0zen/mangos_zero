@@ -55,8 +55,7 @@
  * @see Pet for summoned pet implementation
  */
 
-#ifndef MANGOS_H_UNIT
-#define MANGOS_H_UNIT
+#pragma once
 
 #include <unordered_map>
 #include <utility>
@@ -4319,4 +4318,3 @@ template<typename Func>
     return false;
 }
 /** @} */
-#endif

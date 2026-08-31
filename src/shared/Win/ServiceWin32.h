@@ -23,9 +23,9 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#pragma once
+
 #ifdef WIN32
-#ifndef _WIN32_SERVICE_
-#define _WIN32_SERVICE_
 
 /**
  * Installs the MaNGOS service in the Windows service manager.
@@ -42,6 +42,5 @@ bool WinServiceUninstall();
  */
 bool WinServiceRun();
 
-#endif                                                      // _WIN32_SERVICE_
 
 #endif                                                      // WIN32

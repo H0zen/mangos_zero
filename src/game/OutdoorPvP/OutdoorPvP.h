@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef OUTDOOR_PVP_H
-#define OUTDOOR_PVP_H
+#pragma once
 
 #include "Platform/Define.h"
 #include <map>
@@ -253,5 +252,3 @@ class OutdoorPvP
 
         GuidZoneMap m_zonePlayers; ///< Map of players inside the area
 };
-
-#endif

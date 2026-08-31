@@ -29,7 +29,6 @@
 #include "AntiFreezeService.h"
 #include "CliService.h"
 #include "RASession.h"
-#include "AhService.h"
 
 #include "Config/Config.h"
 #include "Console/ConsoleUI.h"
@@ -38,15 +37,11 @@
 #include "Log.h"
 #include "MapManager.h"
 #include "Server/WorldNetwork.h"
-#include "SystemConfig.h"
+#include "Version.h"
 #include "Timer.h"
 #include "World.h"
 #include "Server/WardenCheckCatalogLoader.h"
 
-#ifdef ENABLE_SOAP
-#include "SOAP/SoapService.h"
-#include <thread>
-#endif
 
 #ifdef _WIN32
 #include "ServiceWin32.h"
@@ -119,7 +114,7 @@ namespace
 
         char title[128];
         snprintf(title, sizeof(title), "%s (%u Players - %u Connections)",
-                 MANGOS_PACKAGENAME, players, connections);
+                 MangosVersion::PackageName(), players, connections);
 
         std::string newTitle(title);
         if (s_lastTitle != newTitle)
@@ -215,26 +210,6 @@ void Master::StartServices()
         m_services.push_back(std::unique_ptr<IService>(new RaService(
             uint16(sConfig.GetIntDefault("Ra.Port", 3443)),
             sConfig.GetStringDefault("Ra.IP", "0.0.0.0"))));
-    }
-
-#ifdef ENABLE_SOAP
-    if (sConfig.GetBoolDefault("SOAP.Enabled", false))
-    {
-        m_services.push_back(std::unique_ptr<IService>(new SoapService(
-            sConfig.GetStringDefault("SOAP.IP", "127.0.0.1"),
-            uint16(sConfig.GetIntDefault("SOAP.Port", 7878)))));
-    }
-#else
-    if (sConfig.GetBoolDefault("SOAP.Enabled", false))
-    {
-        sLog.outError("SOAP is enabled in the configuration but was not compiled in; ignoring.");
-    }
-#endif
-
-    // The out-of-process auction house. mangos_zero only, default-off.
-    if (sConfig.GetBoolDefault("AH.Service.Enabled", false))
-    {
-        m_services.push_back(std::unique_ptr<IService>(new AhServiceService()));
     }
 
     // Watchdog. Disabled unless MaxCoreStuckTime is set.

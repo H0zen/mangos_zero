@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_SQLDELAYTHREAD
-#define MANGOS_H_SQLDELAYTHREAD
+#pragma once
 
 #include "LockedQueue/LockedQueue.h"
 #include "Threading/Threading.h"
@@ -99,4 +98,3 @@ class SqlDelayThread : public MaNGOS::Runnable
          */
         virtual void run();
 };
-#endif                                                      //__SQLDELAYTHREAD_H

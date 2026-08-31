@@ -46,8 +46,7 @@
  * @see ObjectAccessor for corpse registry
  */
 
-#ifndef MANGOSSERVER_CORPSE_H
-#define MANGOSSERVER_CORPSE_H
+#pragma once
 
 #include "Platform/Define.h"
 #include <ctime>
@@ -142,4 +141,3 @@ class Corpse : public WorldObject
         time_t m_time;
         GridPair m_grid;                                    // gride for corpse position for fast search
 };
-#endif

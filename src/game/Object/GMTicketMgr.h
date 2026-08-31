@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_GMTICKETMGR
-#define MANGOS_H_GMTICKETMGR
+#pragma once
 
 #include <iterator>
 #include <string>
@@ -345,4 +344,3 @@ class GMTicketMgr
 #define sTicketMgr MaNGOS::Singleton<GMTicketMgr>::Instance()
 
 /** @} */
-#endif

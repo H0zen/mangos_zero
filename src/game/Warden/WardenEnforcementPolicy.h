@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_WARDEN_ENFORCEMENT_POLICY_H
-#define MANGOS_WARDEN_ENFORCEMENT_POLICY_H
+#pragma once
 
 #include "WardenConfiguration.h"
 #include "WardenEvidence.h"
@@ -84,5 +83,3 @@ private:
     std::unordered_set<uint64> m_confirmedAudits;
 };
 }
-
-#endif

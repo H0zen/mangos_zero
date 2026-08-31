@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_H_WORLDGATEWAY_ACCOUNT
-#define MANGOS_H_WORLDGATEWAY_ACCOUNT
+#pragma once
 
 #include <string>
 
@@ -38,5 +37,3 @@ AccountRestriction EvaluateAccountRestriction(
     Field const* fields, std::string const& peerAddress);
 std::string ReadWardenPlatformHint(Field const* fields);
 std::string ReadWardenClientLocale(Field const* fields);
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_MANGOS_SOCIALMGR
-#define MANGOS_H_MANGOS_SOCIALMGR
+#pragma once
 
 #include <string>
 #include <map>
@@ -159,4 +158,3 @@ class SocialMgr
 };
 
 #define sSocialMgr MaNGOS::Singleton<SocialMgr>::Instance()
-#endif

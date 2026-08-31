@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef DURATION_H
-#define DURATION_H
+#pragma once
 
 #include <chrono>
 
@@ -61,5 +60,3 @@ constexpr std::chrono::hours operator "" _days(unsigned long long days)
 {
     return std::chrono::hours(days * Hours(24));
 }
-
-#endif

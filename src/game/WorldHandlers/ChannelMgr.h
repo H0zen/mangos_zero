@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_CHANNELMGR_H
-#define MANGOSSERVER_CHANNELMGR_H
+#pragma once
 
 #include "Platform/Define.h"
 #include <mutex>
@@ -54,5 +53,3 @@ class HordeChannelMgr    : public ChannelMgr {};
  * Returns the channel manager instance for the specified faction team.
  */
 ChannelMgr* channelMgr(Team team);
-
-#endif

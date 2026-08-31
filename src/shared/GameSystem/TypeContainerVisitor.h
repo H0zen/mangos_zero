@@ -24,8 +24,7 @@
  */
 
 
-#ifndef MANGOS_TYPECONTAINERVISITOR_H
-#define MANGOS_TYPECONTAINERVISITOR_H
+#pragma once
 
 /*
  * @class TypeContainerVisitor is implemented as a visitor pattern.  It is
@@ -52,5 +51,3 @@ class TypeContainerVisitor
     private:
         VISITOR& i_visitor;
 };
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_MANGOS_REPUTATION_MGR
-#define MANGOS_H_MANGOS_REPUTATION_MGR
+#pragma once
 
 #include <utility>
 #include "Platform/Define.h"
@@ -139,5 +138,3 @@ class ReputationMgr
         FactionStateList m_factions;
         ForcedReactions m_forcedReactions;
 };
-
-#endif

@@ -71,7 +71,6 @@
 #include "BattleGround/BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Chat.h"
-#include "revision_data.h"
 #include "Spell.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
@@ -79,13 +78,7 @@
 #include "DBCStores.h"
 #include "SQLStorages.h"
 #include "DisableMgr.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#endif
 
 #include <cmath>
 
@@ -473,10 +466,6 @@ UpdateMask Player::updateVisualBits;
  */
 Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
 {
-#ifdef ENABLE_PLAYERBOTS
-    m_playerbotAI = 0;
-    m_playerbotMgr = 0;
-#endif
 
     m_transport = 0;
 
@@ -684,12 +673,6 @@ Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(this), m_
     m_lastFallTime = 0;
     // Initialize last fall Z coordinate to 0
     m_lastFallZ = 0;
-#ifdef ENABLE_PLAYERBOTS
-    // Initialize player bot AI to NULL
-    m_playerbotAI = NULL;
-    // Initialize player bot manager to NULL
-    m_playerbotMgr = NULL;
-#endif
 
 }
 
@@ -734,19 +717,6 @@ Player::~Player()
         delete ItemSetEff[x];
     }
 
-#ifdef ENABLE_PLAYERBOTS
-    // Delete player bot AI and manager if they exist
-    if (m_playerbotAI)
-    {
-        delete m_playerbotAI;
-        m_playerbotAI = 0;
-    }
-    if (m_playerbotMgr)
-    {
-        delete m_playerbotMgr;
-        m_playerbotMgr = 0;
-    }
-#endif
 
     // clean up player-instance binds, may unload some instance saves
     for (BoundInstancesMap::iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end(); ++itr)
@@ -1342,13 +1312,6 @@ void Player::Update(uint32 update_diff, uint32 p_time)
         if (update_diff >= m_nextSave)
         {
             // m_nextSave reset in SaveToDB call
-            // Used by Eluna
-#ifdef ENABLE_ELUNA
-            if (Eluna* e = GetEluna())
-            {
-                e->OnSave(this);
-            }
-#endif /* ENABLE_ELUNA */
             SaveToDB();
             DETAIL_LOG("Player '%s' (GUID: %u) saved", GetName(), GetGUIDLow());
         }
@@ -1423,17 +1386,6 @@ void Player::Update(uint32 update_diff, uint32 p_time)
         TeleportTo(m_teleport_dest, m_teleport_options);
     }
 
-#ifdef ENABLE_PLAYERBOTS
-    // Update player bot AI
-    if (m_playerbotAI)
-    {
-        m_playerbotAI->UpdateAI(p_time);
-    }
-    if (m_playerbotMgr)
-    {
-        m_playerbotMgr->UpdateAI(p_time);
-    }
-#endif
 
 }
 
@@ -2458,13 +2410,6 @@ void Player::GiveXP(uint32 xp, Unit* victim)
 
     uint32 level = getLevel();
 
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnGiveXP(this, xp, victim);
-    }
-#endif /* ENABLE_ELUNA */
 
     // XP to money conversion processed in Player::RewardQuest
     if (level >= sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
@@ -2581,13 +2526,6 @@ void Player::GiveLevel(uint32 level)
         pet->SynchronizeLevelWithOwner();
     }
 
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnLevelChanged(this, oldLevel);
-    }
-#endif /* ENABLE_ELUNA */
 
 }
 
@@ -2598,13 +2536,6 @@ void Player::GiveLevel(uint32 level)
  */
 void Player::SetFreeTalentPoints(uint32 points)
 {
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnFreeTalentPointsChanged(this, points);
-    }
-#endif /* ENABLE_ELUNA */
 
     SetUInt32Value(PLAYER_CHARACTER_POINTS1, points);
 }
@@ -4296,14 +4227,7 @@ bool Player::HasItemWithIdEquipped(uint32 item, uint32 count, uint8 except_slot)
 /// which has already had every non-Eluna sub-filter enforced worker-side.
 InventoryResult Player::CanUseItemEluna(uint32 itemEntry) const
 {
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        return e->OnCanUseItem(this, itemEntry);
-    }
-#else
     (void)itemEntry;
-#endif
     return EQUIP_ERR_OK;
 }
 
@@ -6880,13 +6804,6 @@ void Player::HandleFall(MovementInfo const& movementInfo)
  */
 void Player::ModifyMoney(int32 d)
 {
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnMoneyChanged(this, d);
-    }
-#endif /* ENABLE_ELUNA */
 
     if (d < 0)
     {

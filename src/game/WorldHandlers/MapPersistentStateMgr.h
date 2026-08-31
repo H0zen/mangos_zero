@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef __InstanceSaveMgr_H
-#define __InstanceSaveMgr_H
+#pragma once
 
 #include <unordered_map>
 #include "Utilities/PackedValues.h"
@@ -439,4 +438,3 @@ template<typename Do>
 }
 
 #define sMapPersistentStateMgr MaNGOS::Singleton<MapPersistentStateManager>::Instance()
-#endif

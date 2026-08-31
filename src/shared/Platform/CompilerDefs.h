@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_COMPILERDEFS_H
-#define MANGOS_COMPILERDEFS_H
+#pragma once
 
 #define PLATFORM_WINDOWS 0
 #define PLATFORM_UNIX    1
@@ -60,6 +59,4 @@
 #  define COMPILER COMPILER_GNU
 #else
 #  pragma error "FATAL ERROR: Unknown compiler."
-#endif
-
 #endif

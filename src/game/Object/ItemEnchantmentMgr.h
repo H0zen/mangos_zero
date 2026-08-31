@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_ITEM_ENCHANTMENT_MGR
-#define MANGOS_H_ITEM_ENCHANTMENT_MGR
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -37,4 +36,3 @@ void LoadRandomEnchantmentsTable();
  * Returns the random enchantment modifier value for the specified entry.
  */
 uint32 GetItemEnchantMod(uint32 entry);
-#endif

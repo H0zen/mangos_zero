@@ -24,8 +24,7 @@
  */
 
 
-#ifndef MANGOS_H_UPDATEFIELDS_AUTO
-#define MANGOS_H_UPDATEFIELDS_AUTO
+#pragma once
 
 enum EObjectFields
 {
@@ -329,4 +328,3 @@ enum ECorpseFields
     CORPSE_FIELD_PAD                           = OBJECT_END + 0x1F,
     CORPSE_END                                 = OBJECT_END + 0x20,
 };
-#endif

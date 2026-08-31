@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef _UNITEVENTS
-#define _UNITEVENTS
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -271,5 +270,3 @@ class ThreatManagerEvent : public ThreatRefStatusChangeEvent
          */
         ThreatContainer* getThreatContainer() const { return iThreatContainer; }
 };
-
-#endif

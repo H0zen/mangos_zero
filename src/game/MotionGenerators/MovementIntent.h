@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_MOVEMENTINTENT_H
-#define MANGOS_MOVEMENTINTENT_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "ObjectGuid.h"
@@ -225,5 +224,3 @@ namespace Motion
         Vector3 legGoal;           ///< The goal of the leg the driver actually LAID.
     };
 }
-
-#endif // MANGOS_MOVEMENTINTENT_H

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_PROTO_LISTENER_H
-#define MANGOS_PROTO_LISTENER_H
+#pragma once
 
 #include "IWorldGateway.h"
 
@@ -77,5 +76,3 @@ namespace proto
             bool           m_running;
     };
 }
-
-#endif

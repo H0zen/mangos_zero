@@ -64,7 +64,6 @@
 #include "BattleGround/BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Chat.h"
-#include "revision_data.h"
 #include "Spell.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
@@ -76,12 +75,6 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 #include "Corpse.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 // corpse reclaim times
 #define DEATH_EXPIRE_STEP (5*MINUTE)
@@ -198,12 +191,6 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
     // update visibility of player for nearby cameras
     UpdateObjectVisibility();
 
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnResurrect(this);
-    }
-#endif /* ENABLE_ELUNA */
 
     if (!applySickness)
     {

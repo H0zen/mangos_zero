@@ -64,9 +64,6 @@
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 #include "Geometry/Vector3.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Creates and attaches an aura effect to the current unit target.

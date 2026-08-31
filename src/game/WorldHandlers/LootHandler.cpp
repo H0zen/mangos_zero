@@ -56,9 +56,6 @@
 #include "World.h"
 #include "Corpse.h"
 
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
 {
@@ -238,12 +235,6 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
 
         player->SendNewItem(newitem, uint32(item->count), false, false, true);
 
-#ifdef ENABLE_ELUNA
-        if (Eluna* e = player->GetEluna())
-        {
-            e->OnLootItem(player, newitem, item->count, lguid);
-        }
-#endif /* ENABLE_ELUNA */
     }
     else
     {
@@ -296,13 +287,6 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
                 pLoot->NotifyMoneyRemoved();
                 player->ModifyMoney(pLoot->gold);
 
-                // Used by Eluna
-#ifdef ENABLE_ELUNA
-                if (Eluna* e = player->GetEluna())
-                {
-                    e->OnLootMoney(player, pLoot->gold);
-                }
-#endif /* ENABLE_ELUNA */
 
                 pLoot->gold = 0;
                 return;
@@ -384,13 +368,6 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
             player->ModifyMoney(pLoot->gold);
         }
 
-        // Used by Eluna
-#ifdef ENABLE_ELUNA
-        if (Eluna* e = player->GetEluna())
-        {
-            e->OnLootMoney(player, pLoot->gold);
-        }
-#endif /* ENABLE_ELUNA */
 
         pLoot->gold = 0;
 
@@ -771,13 +748,6 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recv_data)
     Item* newitem = target->StoreNewItem(dest, item.itemid, true, item.randomPropertyId);
     target->SendNewItem(newitem, uint32(item.count), false, false, true);
 
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = target->GetEluna())
-    {
-        e->OnLootItem(target, newitem, item.count, lootguid);
-    }
-#endif /* ENABLE_ELUNA */
 
     // mark as looted
     item.count = 0;

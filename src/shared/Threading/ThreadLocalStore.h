@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_THREADLOCALSTORE_H
-#define MANGOS_THREADLOCALSTORE_H
+#pragma once
 
 #include <map>
 #include <thread>
@@ -52,5 +51,3 @@ namespace MaNGOS
             T* operator->() { return &get(); }
     };
 }
-
-#endif

@@ -1,69 +1,20 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
-#
-#/**
-# * MaNGOS is a full featured server for World of Warcraft, supporting
-# * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
-# *
-# * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
-# *
-# * This program is free software; you can redistribute it and/or modify
-# * it under the terms of the GNU General Public License as published by
-# * the Free Software Foundation; either version 2 of the License, or
-# * (at your option) any later version.
-# *
-# * This program is distributed in the hope that it will be useful,
-# * but WITHOUT ANY WARRANTY; without even the implied warranty of
-# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# * GNU General Public License for more details.
-# *
-# * You should have received a copy of the GNU General Public License
-# * along with this program; if not, write to the Free Software
-# * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-# *
-# * World of Warcraft, and all World of Warcraft or Warcraft art, images,
-# * and lore are copyrighted by Blizzard Entertainment, Inc.
-# */
-
-#Main Files
 set(SRC_GRP_MAIN
   AntiFreezeService.cpp
   AntiFreezeService.h
   CliService.cpp
   CliService.h
-  MangosdTest.cpp
-  MangosdTest.h
   Master.cpp
   Master.h
   RASession.cpp
   RASession.h
   Service.h
-  AhService.h
   mangosd.cpp
 )
 source_group("Main" FILES ${SRC_GRP_MAIN})
 
-set(SRC_GRP_SOAP
-  SOAP/SoapThread.cpp
-  SOAP/SoapThread.h
-  SOAP/SoapService.h
-)
-source_group("SOAP" FILES ${SRC_GRP_SOAP})
-
-if(WIN32)
-    set(PRODUCT_NAME "mangosd.exe")
-    set(PRODUCT_ICON ${CMAKE_CURRENT_SOURCE_DIR}/mangosd.ico)
-    set(PRODUCT_DESCRIPTION "${MANGOS_PKG} World Server")
-    configure_file(${CMAKE_SOURCE_DIR}/cmake/win/VersionInfo.h.in ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.h)
-endif()
-
-
 add_executable(mangosd
     ${SRC_GRP_MAIN}
-    $<$<BOOL:${SOAP}>:${SRC_GRP_SOAP}>
-    $<$<BOOL:${WIN32}>:
-        ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.h
-        ${CMAKE_SOURCE_DIR}/cmake/win/VersionInfo.rc
-    >
+    $<$<BOOL:${WIN32}>:${CMAKE_SOURCE_DIR}/cmake/win/VersionInfo.rc>
 )
 
 target_include_directories(mangosd
@@ -72,17 +23,10 @@ target_include_directories(mangosd
         ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-target_compile_definitions(mangosd
-    PRIVATE
-        $<$<BOOL:${SCRIPT_LIB_ELUNA}>:ENABLE_ELUNA ELUNA_EXPANSION=0 ELUNA_MANGOS>
-)
-
 target_link_libraries(mangosd
     PRIVATE
         game
         proto
-        ah_ipc
-        $<$<BOOL:${SOAP}>:gsoap>
         Threads::Threads
         mangos_openssl
         mangos_openssl_strict

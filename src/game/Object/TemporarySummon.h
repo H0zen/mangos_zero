@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_TEMPSUMMON_H
-#define MANGOSSERVER_TEMPSUMMON_H
+#pragma once
 
 #include "Creature.h"
 #include "ObjectLookup.h"
@@ -63,5 +62,3 @@ class TemporarySummonWaypoint : public TemporarySummon
         int32 m_path_id;
         uint32 m_pathOrigin;
 };
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_TOTEMAI_H
-#define MANGOS_TOTEMAI_H
+#pragma once
 
 #include "CreatureAI.h"
 #include "ObjectGuid.h"
@@ -51,4 +50,3 @@ class TotemAI : public CreatureAI
     private:
         ObjectGuid i_victimGuid;
 };
-#endif

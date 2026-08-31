@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_MOVESPLINEINIT_H
-#define MANGOSSERVER_MOVESPLINEINIT_H
+#pragma once
 
 #include "MoveSplineInitArgs.h"
 #include "PathFinder.h"
@@ -263,5 +262,3 @@ namespace Movement
         args.flags.EnableFacingPoint();
     }
 }
-
-#endif // MANGOSSERVER_MOVESPLINEINIT_H

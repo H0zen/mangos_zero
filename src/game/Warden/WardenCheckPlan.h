@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_WARDEN_CHECK_PLAN_H
-#define MANGOS_WARDEN_CHECK_PLAN_H
+#pragma once
 
 #include "WardenCheckCatalog.h"
 
@@ -46,5 +45,3 @@ struct CheckPlan
     std::vector<WardenCheckDefinition> checks;
 };
 }
-
-#endif

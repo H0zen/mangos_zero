@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_LFGHANDLER_H
-#define MANGOSSERVER_LFGHANDLER_H
+#pragma once
 
 enum MeetingstoneQueueStatus
 {
@@ -44,5 +43,3 @@ enum MeetingstoneFailedStatus
     MEETINGSTONE_FAIL_RAID_GROUP                            = 3,
     //MEETINGSTONE_FAIL_NONE_UNK                              = 4 [-ZERO]
 };
-
-#endif

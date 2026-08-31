@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_TYPECONTAINER_H
-#define MANGOS_TYPECONTAINER_H
+#pragma once
 
 /*
  * Here, you'll find a series of containers that allow you to hold multiple
@@ -186,5 +185,3 @@ class TypeMapContainer
     private:
       Container i_container;
 };
-
-#endif

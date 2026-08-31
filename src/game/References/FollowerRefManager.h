@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef _FOLLOWERREFMANAGER
-#define _FOLLOWERREFMANAGER
+#pragma once
 
 #include "Utilities/LinkedReference/RefManager.h"
 
@@ -39,4 +38,3 @@ class TargetedMovementGeneratorBase;
 class FollowerRefManager : public RefManager<Unit, TargetedMovementGeneratorBase>
 {
 };
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_PLAYER_DUMP
-#define MANGOS_H_PLAYER_DUMP
+#pragma once
 
 #include <string>
 #include <set>
@@ -167,5 +166,3 @@ class PlayerDumpReader : public PlayerDump
          */
         DumpReturn LoadDump(const std::string& file, uint32 account, std::string name, uint32 guid);
 };
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_OPCODETABLE
-#define MANGOS_H_OPCODETABLE
+#pragma once
 
 #include "Opcodes.h"
 #include "WorldSession.h"
@@ -67,5 +66,3 @@ inline const char* LookupOpcodeName(uint16 id)
 
     return opcodeTable[id].name ? opcodeTable[id].name : "UNKNOWN";
 }
-
-#endif

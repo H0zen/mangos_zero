@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef CONFIG_H
-#define CONFIG_H
+#pragma once
 
 #include <Policies/Singleton.h>
 #include "Platform/Define.h"
@@ -197,5 +196,3 @@ class Config
 };
 
 #define sConfig MaNGOS::Singleton<Config>::Instance()
-
-#endif

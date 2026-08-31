@@ -27,8 +27,7 @@
 /// @{
 /// \file
 
-#ifndef MANGOS_H_RASESSION
-#define MANGOS_H_RASESSION
+#pragma once
 
 #include "Platform/Define.h"
 #include "Common/ServerDefines.h"
@@ -170,5 +169,4 @@ class RaService : public IService
         std::string m_bindIp;
 };
 
-#endif
 /// @}

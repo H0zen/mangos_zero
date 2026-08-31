@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_PACKEDVALUES_H
-#define MANGOS_PACKEDVALUES_H
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -42,5 +41,3 @@
 #define MAKE_PAIR32(l, h)  uint32(uint16(l) | (uint32(h) << 16))
 #define PAIR32_HIPART(x)   uint16((uint32(x) >> 16) & 0x0000FFFF)
 #define PAIR32_LOPART(x)   uint16(uint32(x)         & 0x0000FFFF)
-
-#endif

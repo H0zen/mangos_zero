@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_PATH_H
-#define MANGOSSERVER_PATH_H
+#pragma once
 
 #include <cmath>
 #include <queue>
@@ -108,5 +107,3 @@ template < typename PathElem, typename PathNode = PathElem >
 };
 
 typedef Path<PathNode> PointPath;
-
-#endif

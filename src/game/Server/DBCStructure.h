@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_DBCSTRUCTURE_H
-#define MANGOS_DBCSTRUCTURE_H
+#pragma once
 
 #include "DBCEnums.h"
 #include "Path.h"
@@ -1467,4 +1466,3 @@ typedef std::vector<TaxiPathNodeList> TaxiPathNodesByPath;
 
 #define TaxiMaskSize 8
 typedef uint32 TaxiMask[TaxiMaskSize];
-#endif

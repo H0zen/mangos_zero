@@ -45,8 +45,7 @@
  * @see CreatureInfo for creature template data
  */
 
-#ifndef MANGOSSERVER_CREATURE_H
-#define MANGOSSERVER_CREATURE_H
+#pragma once
 
 #include <unordered_map>
 #include "Platform/Define.h"
@@ -989,9 +988,6 @@ class Creature : public Unit
     private:
         GridReference<Creature> m_gridRef;
         CreatureInfo const* m_creatureInfo;                 // in difficulty mode > 0 can different from ObjMgr::GetCreatureTemplate(GetEntry())
-#ifdef MANGOS_SCRIPT_COMPAT
-#include "Object/ScriptApiCompatCreature.inl"
-#endif
 };
 
 class ForcedDespawnDelayEvent : public BasicEvent
@@ -1003,5 +999,3 @@ class ForcedDespawnDelayEvent : public BasicEvent
     private:
         Creature& m_owner;
 };
-
-#endif

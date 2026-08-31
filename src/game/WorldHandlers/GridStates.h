@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_GRIDSTATES_H
-#define MANGOS_GRIDSTATES_H
+#pragma once
 
 #include "Map.h"
 
@@ -63,5 +62,3 @@ class RemovalState : public GridState
 
         void Update(Map&, NGridType&, GridInfo&, const uint32& x, const uint32& y, const uint32& t_diff) const override;
 };
-
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef FIELD_H
-#define FIELD_H
+#pragma once
 
 #include "Platform/Define.h"
 #include <cstdlib>
@@ -201,4 +200,3 @@ class Field
         const char* mValue; /**< Pointer to field value string */
         enum_field_types mType; /**< MySQL field type */
 };
-#endif

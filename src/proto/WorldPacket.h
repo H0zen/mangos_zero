@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_WORLDPACKET_H
-#define MANGOSSERVER_WORLDPACKET_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "ByteBuffer.h"
@@ -95,4 +94,3 @@ class WorldPacket : public ByteBuffer
     protected:
         uint16 m_opcode; /**< TODO */
 };
-#endif

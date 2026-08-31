@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_CORPSEMANAGER_H
-#define MANGOS_H_CORPSEMANAGER_H
+#pragma once
 
 #include "GridDefines.h"
 #include "ObjectGuid.h"
@@ -105,5 +104,3 @@ class CorpseManager : public MaNGOS::Singleton<CorpseManager>
 };
 
 #define sCorpseManager MaNGOS::Singleton<CorpseManager>::Instance()
-
-#endif

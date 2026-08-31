@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_OBJECTMGR
-#define MANGOS_H_OBJECTMGR
+#pragma once
 
 #include <unordered_map>
 #include <utility>
@@ -1444,5 +1443,3 @@ bool LoadMangosStrings(DatabaseType& db, char const* table, int32 start_value = 
 CreatureInfo const* GetCreatureTemplateStore(uint32 entry);
 Quest const* GetQuestTemplateStore(uint32 entry);
 MangosStringLocale const* GetMangosStringData(int32 entry);
-
-#endif

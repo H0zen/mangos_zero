@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_PROTO_CLIENTCONNECTION_H
-#define MANGOS_PROTO_CLIENTCONNECTION_H
+#pragma once
 
 #include <vector>
 #include "Auth/AuthCrypt.h"
@@ -92,5 +91,3 @@ private:
     static std::atomic<uint32> s_openConnections;
 };
 }
-
-#endif

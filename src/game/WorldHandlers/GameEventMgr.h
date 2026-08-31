@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_GAMEEVENT_MGR_H
-#define MANGOS_GAMEEVENT_MGR_H
+#pragma once
 
 #include <utility>
 #include <ctime>
@@ -146,5 +145,3 @@ class GameEventMgr
 #define sGameEventMgr MaNGOS::Singleton<GameEventMgr>::Instance()
 
 bool IsHolidayActive(HolidayIds id);
-
-#endif

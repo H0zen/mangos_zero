@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef SQLSTORAGE_IMPL_H
-#define SQLSTORAGE_IMPL_H
+#pragma once
 
 #include <cstring>
 #include <cassert>
@@ -416,5 +415,3 @@ void SQLStorageLoaderBase<DerivedLoader, StorageClass>::Load(StorageClass& store
 
     delete result;
 }
-
-#endif

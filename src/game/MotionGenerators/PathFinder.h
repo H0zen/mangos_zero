@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_PATH_FINDER_H
-#define MANGOS_PATH_FINDER_H
+#pragma once
 
 #include <algorithm>
 #include "DetourNavMesh.h"
@@ -348,5 +347,3 @@ class PathFinder
             const dtPolyRef* polyPath, uint32 polyPathSize,
             float* smoothPath, int* smoothPathSize, uint32 smoothPathMaxSize);
 };
-
-#endif // MANGOS_PATH_FINDER_H

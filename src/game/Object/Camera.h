@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_CAMERA_H
-#define MANGOSSERVER_CAMERA_H
+#pragma once
 
 #include <set>
 #include <list>
@@ -165,5 +164,3 @@ class ViewPoint
             CameraCall(&Camera::UpdateVisibilityForOwner);
         }
 };
-
-#endif

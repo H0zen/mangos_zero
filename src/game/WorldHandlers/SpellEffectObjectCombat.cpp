@@ -66,9 +66,6 @@
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 #include "Geometry/Vector3.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Adds flat threat from the caster to the unit target.
@@ -380,13 +377,6 @@ void Spell::EffectDuel(SpellEffectIndex eff_idx)
     caster->SetGuidValue(PLAYER_DUEL_ARBITER, pGameObj->GetObjectGuid());
     target->SetGuidValue(PLAYER_DUEL_ARBITER, pGameObj->GetObjectGuid());
 
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = caster->GetEluna())
-    {
-        e->OnDuelRequest(target, caster);
-    }
-#endif /* ENABLE_ELUNA */
 }
 
 /**

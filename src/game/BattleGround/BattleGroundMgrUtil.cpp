@@ -59,9 +59,6 @@
 #include "GameTime.h"
 #include "Policies/Singleton.h"
 #include "Language.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Converts a battleground type ID to a queue type ID.

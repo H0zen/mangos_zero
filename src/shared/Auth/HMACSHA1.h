@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef _AUTH_HMACSHA1_H
-#define _AUTH_HMACSHA1_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "Utilities/Errors.h"
@@ -115,4 +114,3 @@ class HMACSHA1
         EVP_MAC_CTX* m_ctx; /**< OpenSSL HMAC context */
         uint8 m_digest[SHA_DIGEST_LENGTH]; /**< Computed hash digest */
 };
-#endif

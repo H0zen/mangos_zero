@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_CONFUSEDMOVEMENTGENERATOR_H
-#define MANGOS_CONFUSEDMOVEMENTGENERATOR_H
+#pragma once
 
 #include "IntentMovementGenerator.h"
 
@@ -58,5 +57,3 @@ class ConfusedMovementGenerator final : public IntentMovementGenerator
         Motion::Vector3 m_lurch;      ///< Where the current lurch is heading.
         bool m_haveLurch = false;     ///< False before the first point has been picked.
 };
-
-#endif // MANGOS_CONFUSEDMOVEMENTGENERATOR_H

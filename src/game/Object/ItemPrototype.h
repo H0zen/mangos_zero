@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_ITEMPROTOTYPE
-#define MANGOS_H_ITEMPROTOTYPE
+#pragma once
 
 #include "Platform/Define.h"
 #include <string>
@@ -525,5 +524,3 @@ struct ItemLocale
     std::vector<std::string> Name;
     std::vector<std::string> Description;
 };
-
-#endif

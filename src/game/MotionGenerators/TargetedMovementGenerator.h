@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_TARGETEDMOVEMENTGENERATOR_H
-#define MANGOS_TARGETEDMOVEMENTGENERATOR_H
+#pragma once
 
 #include "FollowerReference.h"
 #include "IntentMovementGenerator.h"
@@ -170,5 +169,3 @@ class FollowMovementGenerator final : public TargetedMovementGenerator
         /// A pet mirrors its master's speed, so it can actually keep up.
         void SyncSpeedWithMaster(Unit& owner) const;
 };
-
-#endif // MANGOS_TARGETEDMOVEMENTGENERATOR_H

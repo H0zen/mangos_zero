@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef DEF_GAMEOBJECT_AI_H
-#define DEF_GAMEOBJECT_AI_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "CreatureAI.h"
@@ -85,5 +84,3 @@ class GameObjectAI
     protected:
         GameObject* m_go;
 };
-
-#endif

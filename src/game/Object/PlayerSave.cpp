@@ -70,7 +70,6 @@
 #include "BattleGround/BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Chat.h"
-#include "revision_data.h"
 #include "Spell.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
@@ -80,12 +79,6 @@
 #include "SQLStorages.h"
 #include "LFGMgr.h"
 #include "DisableMgr.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 #define PLAYER_SKILL_INDEX(x)       (PLAYER_SKILL_INFO_1_1 + ((x)*3))
 
@@ -125,16 +118,6 @@ void Player::SaveToDB()
 
     UpdateHonor();
 
-#ifdef ENABLE_ELUNA
-    // Hack to check that this is not on create save
-    if (Eluna* e = GetEluna())
-    {
-        if (!HasAtLoginFlag(AT_LOGIN_FIRST))
-        {
-            e->OnSave(this);
-        }
-    }
-#endif /* ENABLE_ELUNA */
 
     static SqlStatementID delChar ;
     static SqlStatementID insChar ;
@@ -1147,13 +1130,6 @@ void Player::UpdateDuelFlag(time_t currTime)
         return;
     }
 
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnDuelStart(this, duel->opponent);
-    }
-#endif /* ENABLE_ELUNA */
 
     SetUInt32Value(PLAYER_DUEL_TEAM, 1);
     duel->opponent->SetUInt32Value(PLAYER_DUEL_TEAM, 2);

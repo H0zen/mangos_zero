@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_GRIDNOTIFIERS_H
-#define MANGOS_GRIDNOTIFIERS_H
+#pragma once
 
 #include <vector>
 #include <set>
@@ -1366,4 +1365,3 @@ namespace MaNGOS
     template<> inline void DynamicObjectUpdater::Visit<Player>(PlayerMapType&);
 #endif
 }
-#endif

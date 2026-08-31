@@ -71,7 +71,6 @@
 #include "BattleGround/BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Chat.h"
-#include "revision_data.h"
 #include "Spell.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
@@ -82,12 +81,6 @@
 #include "LFGMgr.h"
 #include "DisableMgr.h"
 #include "Corpse.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
-#ifdef ENABLE_PLAYERBOTS
-#include "playerbot.h"
-#endif /* ENABLE_PLAYERBOTS */
 
 // corpse reclaim times
 #define DEATH_EXPIRE_STEP (5*MINUTE)
@@ -1834,13 +1827,6 @@ InstancePlayerBind* Player::BindToInstance(DungeonPersistentState* state, bool p
             DEBUG_LOG("Player::BindToInstance: %s(%d) is now bound to map %d, instance %d",
                 GetName(), GetGUIDLow(), state->GetMapId(), state->GetInstanceId());
         }
-        // Used by Eluna
-#ifdef ENABLE_ELUNA
-        if (Eluna* e = GetEluna())
-        {
-            e->OnBindToInstance(this, (Difficulty)0, state->GetMapId(), permanent);
-        }
-#endif /* ENABLE_ELUNA */
 
         return &bind;
     }

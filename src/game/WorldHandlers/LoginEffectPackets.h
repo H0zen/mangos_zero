@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_LOGIN_EFFECT_PACKETS_H
-#define MANGOS_LOGIN_EFFECT_PACKETS_H
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -43,5 +42,3 @@ namespace LoginEffectPackets
     WorldPacket BuildStart(uint64 casterGuid);
     WorldPacket BuildGo(uint64 casterGuid);
 }
-
-#endif

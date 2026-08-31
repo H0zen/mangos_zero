@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOSSERVER_CINEMATIC_FLYOVER_H
-#define MANGOSSERVER_CINEMATIC_FLYOVER_H
+#pragma once
 
 #include "CinematicFlyoverRoute.h"
 #include "ObjectGuid.h"
@@ -73,5 +72,3 @@ private:
     bool m_begun;       // Begin() has run (guards repeated CMSG_NEXT_CINEMATIC_CAMERA)
     bool m_active;      // body summoned and camera bound
 };
-
-#endif // MANGOSSERVER_CINEMATIC_FLYOVER_H

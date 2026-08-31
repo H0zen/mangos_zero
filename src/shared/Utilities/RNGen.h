@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_RNG_H
-#define MANGOS_RNG_H
+#pragma once
 
 #include <random>
 
@@ -90,5 +89,3 @@ class RNG
             return &generator;
         }
 };
-
-#endif

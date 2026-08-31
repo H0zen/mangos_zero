@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_SQLSTORAGES_H
-#define MANGOS_SQLSTORAGES_H
+#pragma once
 
 #include "Database/SQLStorage.h"
 
@@ -44,5 +43,3 @@ extern SQLHashStorage sGOStorage;
 extern SQLHashStorage sCreatureTemplateSpellsStorage;
 
 extern SQLMultiStorage sSpellScriptTargetStorage;
-
-#endif

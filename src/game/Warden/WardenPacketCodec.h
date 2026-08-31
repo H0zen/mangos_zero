@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_WARDEN_PACKET_CODEC_H
-#define MANGOS_WARDEN_PACKET_CODEC_H
+#pragma once
 
 #include "WardenCheckPlan.h"
 #include "WardenModuleCatalog.h"
@@ -157,5 +156,3 @@ DecodeStatus DecodeCheckResult(ByteView body, CheckPlan const& plan,
 // trailing bytes are malformed rather than silently ignored.
 DecodeStatus DecodeClient(ByteView body, ClientMessage& message);
 }
-
-#endif

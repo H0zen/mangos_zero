@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_WARDEN_MODULE_CATALOG_H
-#define MANGOS_WARDEN_MODULE_CATALOG_H
+#pragma once
 
 #include "WardenProtocol.h"
 
@@ -105,5 +104,3 @@ public:
     ModuleValidation Validate(ModuleProfile const& profile) const;
 };
 }
-
-#endif

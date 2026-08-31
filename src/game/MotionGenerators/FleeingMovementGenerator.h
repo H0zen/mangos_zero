@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_FLEEINGMOVEMENTGENERATOR_H
-#define MANGOS_FLEEINGMOVEMENTGENERATOR_H
+#pragma once
 
 #include "IntentMovementGenerator.h"
 #include "ObjectGuid.h"
@@ -87,5 +86,3 @@ class TimedFleeingMovementGenerator final : public FleeingMovementGenerator
     private:
         TimeTracker m_totalFleeTime; ///< How long the panic lasts.
 };
-
-#endif // MANGOS_FLEEINGMOVEMENTGENERATOR_H

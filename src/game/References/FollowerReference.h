@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_FOLLOWERREFERENCE
-#define MANGOS_H_FOLLOWERREFERENCE
+#pragma once
 
 #include "Utilities/LinkedReference/Reference.h"
 
@@ -54,4 +53,3 @@ class FollowerReference : public Reference<Unit, TargetedMovementGeneratorBase>
          */
         void sourceObjectDestroyLink() override;
 };
-#endif

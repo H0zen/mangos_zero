@@ -22,8 +22,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_COMPAT_EXTRACTORS_AUTH_MD5_H
-#define MANGOS_COMPAT_EXTRACTORS_AUTH_MD5_H
+#pragma once
 
 /**
  * @file
@@ -99,5 +98,3 @@ inline void md5_finish(md5_state_t* pms, md5_byte_t digest[16])
 
     std::memcpy(digest, full, length < 16u ? length : 16u);
 }
-
-#endif // MANGOS_COMPAT_EXTRACTORS_AUTH_MD5_H

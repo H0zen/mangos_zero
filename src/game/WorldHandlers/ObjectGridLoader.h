@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_OBJECTGRIDLOADER_H
-#define MANGOS_OBJECTGRIDLOADER_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "GridDefines.h"
@@ -108,5 +107,3 @@ class ObjectGridStoper
     private:
         NGridType& i_grid;
 };
-
-#endif

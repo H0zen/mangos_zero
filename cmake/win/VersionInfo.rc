@@ -1,13 +1,30 @@
 #include "winres.h"
-#include "VersionInfo.h"
+#include "VersionData.h"
 
-IDI_ICON1               ICON                    PRODUCT_ICON
+/*
+ * Shared by mangosd and realmd. The per-target strings are selected here rather
+ * than through a generated header, so VersionData.h stays the only file that
+ * carries version data. The owning target defines MANGOS_RC_REALMD; the icon is
+ * resolved off that target's own source directory, which is on the resource
+ * compiler's include path.
+ */
+#ifdef MANGOS_RC_REALMD
+#define PRODUCT_ICON_FILE  "realmd.ico"
+#define PRODUCT_NAME_STR   "realmd.exe\0"
+#define PRODUCT_DESC_STR   "MaNGOS Authentication Daemon\0"
+#else
+#define PRODUCT_ICON_FILE  "mangosd.ico"
+#define PRODUCT_NAME_STR   "mangosd.exe\0"
+#define PRODUCT_DESC_STR   MANGOS_PACKAGENAME " World Server\0"
+#endif
+
+IDI_ICON1               ICON                    PRODUCT_ICON_FILE
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 VS_VERSION_INFO VERSIONINFO
-    FILEVERSION FILE_VERSION_RESOURCE
-    PRODUCTVERSION PRODUCT_VERSION_RESOURCE
+    FILEVERSION VER_FILEVERSION
+    PRODUCTVERSION VER_PRODUCTVERSION
     FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
     FILEFLAGS 0x1L
@@ -22,10 +39,12 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "ProductName", PRODUCT_BUNDLE
-            VALUE "ProductVersion", PRODUCT_VERSION_RESOURCE_STR
-            VALUE "FileDescription", PRODUCT_FILE_DESCRIPTION
-            VALUE "LegalCopyright", "Copyright (C) 2005-2026 MaNGOS"
+            VALUE "CompanyName",      VER_COMPANY_NAME_STR
+            VALUE "ProductName",      PRODUCT_NAME_STR
+            VALUE "ProductVersion",   VER_PRODUCTVERSION_STR
+            VALUE "FileVersion",      VER_FILEVERSION_STR
+            VALUE "FileDescription",  PRODUCT_DESC_STR
+            VALUE "LegalCopyright",   VER_LEGALCOPYRIGHT_STR
         END
     END
     BLOCK "VarFileInfo"

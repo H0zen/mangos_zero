@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef _GROUPREFMANAGER
-#define _GROUPREFMANAGER
+#pragma once
 
 #include "Utilities/LinkedReference/RefManager.h"
 
@@ -55,4 +54,3 @@ class GroupRefManager : public RefManager<Group, Player>
          */
         GroupReference const* getFirst() const { return ((GroupReference const*) RefManager<Group, Player>::getFirst()); }
 };
-#endif

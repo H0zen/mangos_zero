@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_MATHDEFINES_H
-#define MANGOS_MATHDEFINES_H
+#pragma once
 
 #include <cmath>
 
@@ -51,5 +50,3 @@ inline float finiteAlways(float f)
 {
     return std::isfinite(f) ? f : 0.0f;
 }
-
-#endif

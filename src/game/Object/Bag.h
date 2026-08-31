@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_BAG_H
-#define MANGOS_BAG_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "ItemPrototype.h"
@@ -82,5 +81,3 @@ inline Item* NewItemOrBag(ItemPrototype const* proto)
 
     return new Item;
 }
-
-#endif

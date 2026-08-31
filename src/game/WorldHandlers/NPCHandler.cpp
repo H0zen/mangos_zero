@@ -73,9 +73,6 @@
 #include "World.h"
 #include "Item.h"
 #include "Corpse.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 enum StableResultCode
 {
@@ -590,13 +587,6 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recv_data)
             return;
         }
 
-        // Used by Eluna
-#ifdef ENABLE_ELUNA
-        if (Eluna* e = GetPlayer()->GetEluna())
-        {
-            e->HandleGossipSelectOption(GetPlayer(), item, GetPlayer()->PlayerTalkClass->GossipOptionSender(gossipListId), GetPlayer()->PlayerTalkClass->GossipOptionAction(gossipListId), code);
-        }
-#endif /* ENABLE_ELUNA */
     }
     else if (guid.IsPlayer())
     {
@@ -606,13 +596,6 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recv_data)
             return;
         }
 
-        // Used by Eluna
-#ifdef ENABLE_ELUNA
-        if (Eluna* e = GetPlayer()->GetEluna())
-        {
-            e->HandleGossipSelectOption(GetPlayer(), GetPlayer()->PlayerTalkClass->GetGossipMenu().GetMenuId(), GetPlayer()->PlayerTalkClass->GossipOptionSender(gossipListId), GetPlayer()->PlayerTalkClass->GossipOptionAction(gossipListId), code);
-        }
-#endif /* ENABLE_ELUNA */
     }
 }
 

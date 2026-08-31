@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_GUILD_H
-#define MANGOSSERVER_GUILD_H
+#pragma once
 
 #include <unordered_map>
 #include "Platform/Define.h"
@@ -354,4 +353,3 @@ class Guild
         }
 
 };
-#endif

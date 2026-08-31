@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_DBCSTORES_H
-#define MANGOS_DBCSTORES_H
+#pragma once
 
 #include "Platform/Define.h"
 #include <string>
@@ -208,4 +207,3 @@ DBCStorage <FactionEntry>               const* GetFactionStore();
 DBCStorage <CreatureDisplayInfoEntry>   const* GetCreatureDisplayStore();
 DBCStorage <EmotesEntry>                const* GetEmotesStore();
 DBCStorage <EmotesTextEntry>            const* GetEmotesTextStore();
-#endif

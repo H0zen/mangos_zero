@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_OBJECTREGISTRY_H
-#define MANGOS_OBJECTREGISTRY_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "Policies/Singleton.h"
@@ -163,4 +162,3 @@ class ObjectRegistry
             i_registeredObjects.clear();
         }
 };
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_RANDOMMOTIONGENERATOR_H
-#define MANGOS_RANDOMMOTIONGENERATOR_H
+#pragma once
 
 #include "IntentMovementGenerator.h"
 
@@ -66,5 +65,3 @@ class RandomMovementGenerator final : public IntentMovementGenerator
         Motion::Vector3 m_hop;       ///< Where the current hop is heading.
         bool m_haveHop = false;      ///< False before the first point has been picked.
 };
-
-#endif // MANGOS_RANDOMMOTIONGENERATOR_H

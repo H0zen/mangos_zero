@@ -49,8 +49,7 @@
  * @see GameObjectAI for behavior control
  */
 
-#ifndef MANGOSSERVER_GAMEOBJECT_H
-#define MANGOSSERVER_GAMEOBJECT_H
+#pragma once
 
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"
@@ -857,5 +856,3 @@ class GameObject : public WorldObject
 
         GridReference<GameObject> m_gridRef;
 };
-
-#endif

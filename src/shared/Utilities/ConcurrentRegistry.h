@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_CONCURRENTREGISTRY_H
-#define MANGOS_CONCURRENTREGISTRY_H
+#pragma once
 
 #include <mutex>
 #include <shared_mutex>
@@ -130,5 +129,3 @@ namespace MaNGOS
             MapType                   m_map;
     };
 }
-
-#endif

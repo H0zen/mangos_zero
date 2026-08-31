@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_COMPAT_SD3_COMMON_H
-#define MANGOS_COMPAT_SD3_COMMON_H
+#pragma once
 
 /**
  * @file
@@ -65,5 +64,3 @@
 #include "Platform/Define.h"
 #include "Utilities/MathDefines.h"
 #include "Utilities/Util.h"
-
-#endif // MANGOS_COMPAT_SD3_COMMON_H

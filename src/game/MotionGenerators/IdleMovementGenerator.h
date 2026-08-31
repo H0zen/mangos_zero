@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_IDLEMOVEMENTGENERATOR_H
-#define MANGOS_IDLEMOVEMENTGENERATOR_H
+#pragma once
 
 #include "MovementGenerator.h"
 
@@ -163,5 +162,3 @@ class AssistanceDistractMovementGenerator : public DistractMovementGenerator
          */
         void Finalize(Unit& unit) override;
 };
-
-#endif // MANGOS_IDLEMOVEMENTGENERATOR_H

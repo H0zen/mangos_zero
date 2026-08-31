@@ -27,8 +27,7 @@
 /// @{
 /// \file
 
-#ifndef MANGOS_PROTO_OPCODES_H
-#define MANGOS_PROTO_OPCODES_H
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -957,7 +956,6 @@ enum OpcodesList
 
 // Don't forget to change this value and add opcode metadata to OpcodeTable.cpp when you add a new opcode!
 #define NUM_MSG_TYPES 0x424
-#endif
 
 /**
  * \var OpcodesList::SMSG_PERIODICAURALOG

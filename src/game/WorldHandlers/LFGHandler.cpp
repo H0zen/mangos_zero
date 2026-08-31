@@ -58,10 +58,6 @@
 #include "LFGHandler.h"
 #include "LFGMgr.h"
 
-#ifdef ENABLE_PLAYERBOTS
-#include "PlayerbotMgr.h"
-#include "RandomPlayerbotMgr.h"
-#endif
 
 /**
  * @brief Handle meeting stone join request (CMSG_MEETINGSTONE_JOIN)
@@ -129,9 +125,6 @@ void WorldSession::HandleMeetingStoneJoinOpcode(WorldPacket& recv_data)
 
     GameObjectInfo const* gInfo = ObjectMgr::GetGameObjectInfo(obj->GetEntry());
 
-#ifdef ENABLE_PLAYERBOTS
-    sRandomPlayerbotMgr.HandleMeetingStoneClick(_player, obj);
-#endif
 
     sLFGMgr.AddToQueue(_player, gInfo->meetingstone.areaID);
 }

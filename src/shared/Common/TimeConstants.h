@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_TIMECONSTANTS_H
-#define MANGOS_TIMECONSTANTS_H
+#pragma once
 
 /**
  * @brief Durations in seconds, plus the milliseconds-per-second factor.
@@ -43,5 +42,3 @@ enum TimeConstants
     YEAR            = MONTH * 12,
     IN_MILLISECONDS = 1000
 };
-
-#endif

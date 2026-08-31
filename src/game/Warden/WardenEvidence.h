@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_WARDEN_EVIDENCE_H
-#define MANGOS_WARDEN_EVIDENCE_H
+#pragma once
 
 #include "WardenCheckPlan.h"
 #include "WardenConfiguration.h"
@@ -65,5 +64,3 @@ char const* ToString(WardenCheckType type);
 char const* ToString(WardenEvidenceClass evidenceClass);
 char const* ToString(WardenCheckOutcome outcome);
 }
-
-#endif

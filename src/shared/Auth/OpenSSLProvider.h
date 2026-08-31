@@ -32,8 +32,7 @@
  * provider loading and unloading.
  */
 
-#ifndef _AUTH_OPENSSL_PROVIDER_H
-#define _AUTH_OPENSSL_PROVIDER_H
+#pragma once
 
 #include <string>
 #include <openssl/evp.h>
@@ -202,5 +201,3 @@ private:
 };
 
 #endif // OPENSSL_VERSION_MAJOR >= 3
-
-#endif // _AUTH_OPENSSL_PROVIDER_H

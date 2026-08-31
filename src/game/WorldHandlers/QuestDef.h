@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_QUEST_H
-#define MANGOSSERVER_QUEST_H
+#pragma once
 
 #include <cmath>
 #include <string>
@@ -387,4 +386,3 @@ struct QuestStatusData
     uint32 m_itemcount[ QUEST_ITEM_OBJECTIVES_COUNT ];
     uint32 m_creatureOrGOcount[ QUEST_OBJECTIVES_COUNT ];
 };
-#endif

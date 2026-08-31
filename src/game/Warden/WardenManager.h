@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_WARDEN_MANAGER_H
-#define MANGOS_WARDEN_MANAGER_H
+#pragma once
 
 #include "WardenCheckCatalog.h"
 #include "WardenServer.h"
@@ -84,5 +83,3 @@ private:
     std::shared_ptr<WardenCheckCatalog const> m_checkCatalog;
 };
 }
-
-#endif

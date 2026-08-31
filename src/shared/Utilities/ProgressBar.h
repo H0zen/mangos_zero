@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_PROGRESSBAR_H
-#define MANGOSSERVER_PROGRESSBAR_H
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -123,4 +122,3 @@ class BarGoLink
         int num_rec; /**< TODO */
         int indic_len; /**< TODO */
 };
-#endif

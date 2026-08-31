@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_INTENTMOVEMENTGENERATOR_H
-#define MANGOS_INTENTMOVEMENTGENERATOR_H
+#pragma once
 
 #include "MotionDriver.h"
 #include "MovementGenerator.h"
@@ -80,5 +79,3 @@ class IntentMovementGenerator : public MovementGenerator
     private:
         MotionDriver m_driver;
 };
-
-#endif // MANGOS_INTENTMOVEMENTGENERATOR_H

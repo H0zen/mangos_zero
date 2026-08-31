@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_SPELLCOOLDOWNMGR
-#define MANGOS_H_SPELLCOOLDOWNMGR
+#pragma once
 
 #include "Platform/Define.h"
 #include <ctime>
@@ -85,5 +84,3 @@ class SpellCooldownMgr
         Player* m_owner;            ///< Non-owning pointer to the owning Player.
         SpellCooldowns m_cooldowns; ///< Active spell cooldowns keyed by spell id.
 };
-
-#endif // MANGOS_H_SPELLCOOLDOWNMGR

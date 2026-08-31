@@ -1,5 +1,4 @@
-#ifndef MANGOS_WAYPOINTSMOOTHING_H
-#define MANGOS_WAYPOINTSMOOTHING_H
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -112,5 +111,3 @@ void AddWaypointSmoothingPoint(WaypointSmoothingBounds& bounds, float x, float y
  * @return True while within budget (an empty box is within budget).
  */
 bool IsWaypointSmoothingWithinBudget(WaypointSmoothingBounds const& bounds);
-
-#endif

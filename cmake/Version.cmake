@@ -1,0 +1,28 @@
+set(MANGOS_PKG "Mangos Zero")
+set(MANGOS_EXP "CLASSIC")
+
+set(MANGOS_VERSION 22.6.4)
+
+string(REPLACE "." ";" _mangos_version_parts "${MANGOS_VERSION}")
+list(GET _mangos_version_parts 0 MANGOS_VERSION_MAJOR)
+list(GET _mangos_version_parts 1 MANGOS_VERSION_MINOR)
+list(GET _mangos_version_parts 2 MANGOS_VERSION_PATCH)
+unset(_mangos_version_parts)
+
+set(MANGOS_DB_REALMD_VERSION   22)
+set(MANGOS_DB_REALMD_STRUCTURE 4)
+set(MANGOS_DB_REALMD_CONTENT   1)
+set(MANGOS_DB_REALMD_DESCRIPT  "Warden audit")
+
+set(MANGOS_DB_CHAR_VERSION     22)
+set(MANGOS_DB_CHAR_STRUCTURE   5)
+set(MANGOS_DB_CHAR_CONTENT     4)
+set(MANGOS_DB_CHAR_DESCRIPT    "Remove_Warden_Action")
+
+set(MANGOS_DB_WORLD_VERSION    22)
+set(MANGOS_DB_WORLD_STRUCTURE  6)
+set(MANGOS_DB_WORLD_CONTENT    4)
+set(MANGOS_DB_WORLD_DESCRIPT   "Warden_Locale_Hardening")
+
+set(MANGOS_WORLD_VER 2026082000)
+set(MANGOS_REALM_VER 2026060300)

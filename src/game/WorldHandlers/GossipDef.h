@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_GOSSIP_H
-#define MANGOSSERVER_GOSSIP_H
+#pragma once
 
 #include "Platform/Define.h"
 #include <string>
@@ -336,4 +335,3 @@ class PlayerMenu
         void SendQuestGiverOfferReward(Quest const* pQuest, ObjectGuid npcGUID, bool EnbleNext) const;
         void SendQuestGiverRequestItems(Quest const* pQuest, ObjectGuid npcGUID, bool Completable, bool CloseOnCancel) const;
 };
-#endif

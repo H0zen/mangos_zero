@@ -22,8 +22,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef _WHEATYEXCEPTIONREPORT_
-#define _WHEATYEXCEPTIONREPORT_
+#pragma once
 
 // <dbghelp.h> is not self-contained: it is built on the Windows base types and will not
 // parse unless <windows.h> has been seen first.
@@ -142,4 +141,3 @@ class WheatyExceptionReport
 };
 
 extern WheatyExceptionReport g_WheatyExceptionReport;       //  global instance of class
-#endif                                                      // WheatyExceptionReport

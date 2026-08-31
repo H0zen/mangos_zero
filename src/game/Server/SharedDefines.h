@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_SHAREDDEFINES_H
-#define MANGOS_SHAREDDEFINES_H
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -2656,5 +2655,3 @@ enum SpellEntriesConsts
     SPELL_FILLING_EMPTY_JAR__PURE_OOZE      = 15702, // (Works on  Primal, Muculent and Glutonous Ooze)
     SPELL_GM_FREEZE                         = 9454,
 };
-
-#endif

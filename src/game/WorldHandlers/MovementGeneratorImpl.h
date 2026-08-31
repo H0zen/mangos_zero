@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_MOVEMENTGENERATOR_IMPL_H
-#define MANGOS_MOVEMENTGENERATOR_IMPL_H
+#pragma once
 
 #include "MovementGenerator.h"
 
@@ -35,4 +34,3 @@ template<class MOVEMENT_GEN>
     Creature* creature = reinterpret_cast<Creature*>(data);
     return (new MOVEMENT_GEN(*creature));
 }
-#endif

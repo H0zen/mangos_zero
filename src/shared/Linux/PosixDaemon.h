@@ -23,6 +23,8 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#pragma once
+
 #include <cstdint>
 #include "Log/Log.h"
 

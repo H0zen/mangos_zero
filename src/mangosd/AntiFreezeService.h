@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_ANTIFREEZESERVICE
-#define MANGOS_H_ANTIFREEZESERVICE
+#pragma once
 
 #include "Service.h"
 
@@ -83,5 +82,3 @@ class AntiFreezeService : public IService
         std::condition_variable m_wake;
         std::atomic<bool>       m_stop;
 };
-
-#endif

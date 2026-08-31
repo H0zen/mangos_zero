@@ -64,9 +64,6 @@
 #include "LootMgr.h"
 #include "LFGMgr.h"
 #include "LFGHandler.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Adds a member to the first available subgroup.

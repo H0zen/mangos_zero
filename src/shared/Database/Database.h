@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef DATABASE_H
-#define DATABASE_H
+#pragma once
 
 #include <unordered_map>
 #include <functional>
@@ -709,5 +708,3 @@ class DbThreadGuard
 
         Database* m_db;
 };
-
-#endif

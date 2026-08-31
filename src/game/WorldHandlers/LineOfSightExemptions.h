@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_LINEOFSIGHTEXEMPTIONS
-#define MANGOS_H_LINEOFSIGHTEXEMPTIONS
+#pragma once
 
 // Spells configured to skip the line-of-sight check (vmap.ignoreSpellIds).
 //
@@ -46,5 +45,3 @@ namespace LineOfSightExemptions
 
     void Clear();
 }
-
-#endif

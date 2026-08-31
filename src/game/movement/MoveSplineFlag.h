@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOSSERVER_MOVESPLINEFLAG_H
-#define MANGOSSERVER_MOVESPLINEFLAG_H
+#pragma once
 
 #include <string>
 #include "typedefs.h"
@@ -233,6 +232,3 @@ namespace Movement
 #pragma pack(pop)
 #endif
 }
-
-#endif // MANGOSSERVER_MOVESPLINEFLAG_H
-

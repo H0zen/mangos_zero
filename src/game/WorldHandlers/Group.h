@@ -50,8 +50,7 @@
  * @see LootMgr for loot management
  */
 
-#ifndef MANGOSSERVER_GROUP_H
-#define MANGOSSERVER_GROUP_H
+#pragma once
 
 #include <unordered_map>
 #include "Platform/Define.h"
@@ -543,9 +542,6 @@ class Group
             return m_boundInstances;
         }
 
-#ifdef ENABLE_PLAYERBOTS
-        ObjectGuid GetTargetIcon(int index) { return m_targetIcons[index]; }
-#endif
 
     protected:
         bool _addMember(ObjectGuid guid, const char* name, bool isAssistant = false);
@@ -640,4 +636,3 @@ class Group
         uint8*              m_subGroupsCounts;
         uint32              m_LFGAreaId;
 };
-#endif

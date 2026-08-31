@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOSSERVER_CINEMATIC_FLYOVER_ROUTE_H
-#define MANGOSSERVER_CINEMATIC_FLYOVER_ROUTE_H
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -47,5 +46,3 @@ struct CinematicFlyoverRoute
 
 /// Route accessor function - returns nullptr if no route exists for the race
 const CinematicFlyoverRoute* GetCinematicFlyoverRouteForRace(uint8 raceId);
-
-#endif // MANGOSSERVER_CINEMATIC_FLYOVER_ROUTE_H

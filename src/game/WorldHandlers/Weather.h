@@ -27,8 +27,7 @@
 /// @{
 /// \file
 
-#ifndef MANGOS_H_WEATHER
-#define MANGOS_H_WEATHER
+#pragma once
 
 #include <unordered_map>
 #include "Platform/Define.h"
@@ -173,5 +172,3 @@ class WeatherMgr
 };
 
 #define sWeatherMgr MaNGOS::Singleton<WeatherMgr>::Instance()
-
-#endif

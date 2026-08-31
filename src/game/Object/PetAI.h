@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_PETAI_H
-#define MANGOS_PETAI_H
+#pragma once
 
 #include "CreatureAI.h"
 #include "ObjectGuid.h"
@@ -63,4 +62,3 @@ class PetAI : public CreatureAI
         uint32 m_updateAlliesTimer;
         uint32 m_loiterUntilTime;
 };
-#endif

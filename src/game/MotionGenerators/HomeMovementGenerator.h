@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_HOMEMOVEMENTGENERATOR_H
-#define MANGOS_HOMEMOVEMENTGENERATOR_H
+#pragma once
 
 #include "IntentMovementGenerator.h"
 
@@ -100,5 +99,3 @@ class HomeMovementGenerator final : public IntentMovementGenerator
         std::array<float, 6> m_speedRates{};  ///< Every Vanilla UnitMoveType rate.
         uint32 m_stalled = 0;                ///< Update time without home-leg progress.
 };
-
-#endif // MANGOS_HOMEMOVEMENTGENERATOR_H

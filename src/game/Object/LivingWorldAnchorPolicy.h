@@ -21,8 +21,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_LIVING_WORLD_ANCHOR_POLICY_H
-#define MANGOS_LIVING_WORLD_ANCHOR_POLICY_H
+#pragma once
 
 #include "Creature.h"             // CreatureInfo, CREATURE_ELITE_WORLDBOSS, CREATURE_ELITE_NORMAL
 #include "Unit.h"                 // UNIT_NPC_FLAG_FLIGHTMASTER, UNIT_NPC_FLAG_GOSSIP
@@ -182,5 +181,3 @@ inline uint32 GetLivingWorldDefenderCategory(CreatureInfo const* cInfo, MapEntry
     }
     return LW_ANCHOR_NONE;
 }
-
-#endif

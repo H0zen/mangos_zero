@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_SINGLETON_H
-#define MANGOS_SINGLETON_H
+#pragma once
 
 namespace MaNGOS
 {
@@ -79,5 +78,3 @@ namespace MaNGOS
             ~Singleton() = default;
     };
 }
-
-#endif

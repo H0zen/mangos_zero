@@ -65,9 +65,6 @@
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 #include "Geometry/Vector3.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 /**
  * @brief Opens or sends loot for the specified object guid.

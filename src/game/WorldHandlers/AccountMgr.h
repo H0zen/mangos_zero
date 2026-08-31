@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_ACCMGR
-#define MANGOS_H_ACCMGR
+#pragma once
 
 #include "Common/ServerDefines.h"
 #include "Platform/Define.h"
@@ -155,4 +154,3 @@ class AccountMgr
 
 /* A macro that creates a global variable called `sAccountMgr` that is an instance of the `AccountMgr` class. */
 #define sAccountMgr MaNGOS::Singleton<AccountMgr>::Instance()
-#endif

@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef THREADING_H
-#define THREADING_H
+#pragma once
 
 #include <atomic>
 #include <chrono>
@@ -100,5 +99,3 @@ namespace MaNGOS
             Runnable*   m_task;   ///< Task executed by m_thread (we hold one reference)
     };
 }
-
-#endif

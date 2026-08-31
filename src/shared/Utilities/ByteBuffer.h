@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_BYTEBUFFER
-#define MANGOS_H_BYTEBUFFER
+#pragma once
 
 #include "Platform/Define.h"
 #include <cstring>
@@ -1056,4 +1055,3 @@ inline void ByteBuffer::read_skip<std::string>()
 {
     read_skip<char*>();
 }
-#endif

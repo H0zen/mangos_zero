@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_OBJECT_POS_SELECTOR
-#define MANGOS_H_OBJECT_POS_SELECTOR
+#pragma once
 
 #include "Platform/Define.h"
 #include <map>
@@ -85,4 +84,3 @@ struct ObjectPosSelector
 
     WorldObject const* m_searchPosFor;                      // For whom a position is searched (can be NULL)
 };
-#endif

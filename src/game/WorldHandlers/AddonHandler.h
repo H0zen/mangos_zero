@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_H_ADDONHANDLER
-#define MANGOS_H_ADDONHANDLER
+#pragma once
 
 #include "Policies/Singleton.h"
 #include "WorldPacket.h"
@@ -54,4 +53,3 @@ class AddonHandler
         bool BuildAddonPacket(WorldPacket* Source, WorldPacket* Target);
 };
 #define sAddOnHandler MaNGOS::Singleton<AddonHandler>::Instance()
-#endif

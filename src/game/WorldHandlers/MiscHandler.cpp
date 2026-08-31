@@ -76,9 +76,6 @@
 #include "Pet.h"
 #include "SocialMgr.h"
 #include "Corpse.h"
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 void WorldSession::HandleRepopRequestOpcode(WorldPacket& /*recv_data*/)
 {
@@ -102,13 +99,6 @@ void WorldSession::HandleRepopRequestOpcode(WorldPacket& /*recv_data*/)
         GetPlayer()->KillPlayer();
     }
 
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetPlayer()->GetEluna())
-    {
-        e->OnRepop(GetPlayer());
-    }
-#endif /* ENABLE_ELUNA */
 
     // this is spirit release confirm?
     GetPlayer()->RemovePet(PET_SAVE_REAGENTS);

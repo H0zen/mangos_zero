@@ -31,8 +31,7 @@
  * blocks in wait() until the whole tick has been processed.
  */
 
-#ifndef _MAP_UPDATER_H_INCLUDED
-#define _MAP_UPDATER_H_INCLUDED
+#pragma once
 
 #include "Platform/Define.h"
 
@@ -108,5 +107,3 @@ class MapUpdater
         size_t m_pending; ///< Scheduled but not yet finished updates
         bool   m_stop;    ///< Set by deactivate() to retire the workers
 };
-
-#endif //_MAP_UPDATER_H_INCLUDED

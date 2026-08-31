@@ -54,9 +54,6 @@
 #include "PlayerRegistry.h"
 #include "ObjectLookup.h"
 
-#ifdef ENABLE_ELUNA
-#include "LuaEngine.h"
-#endif /* ENABLE_ELUNA */
 
 
 /**
@@ -108,9 +105,6 @@ GameObject::~GameObject()
  */
 void GameObject::AddToWorld()
 {
-#ifdef ENABLE_ELUNA
-    bool inWorld = IsInWorld();
-#endif /* ENABLE_ELUNA */
 
     ///- Register the gameobject for guid lookup
     if (!IsInWorld())
@@ -128,15 +122,6 @@ void GameObject::AddToWorld()
     // After Object::AddToWorld so that for initial state the GO is added to the world (and hence handled correctly)
     UpdateCollisionState();
 
-#ifdef ENABLE_ELUNA
-    if (!inWorld)
-    {
-        if (Eluna* e = GetEluna())
-        {
-            e->OnAddToWorld(this);
-        }
-    }
-#endif /* ENABLE_ELUNA */
 
 }
 
@@ -148,12 +133,6 @@ void GameObject::RemoveFromWorld()
     ///- Remove the gameobject from the accessor
     if (IsInWorld())
     {
-#ifdef ENABLE_ELUNA
-        if (Eluna* e = GetEluna())
-        {
-            e->OnRemoveFromWorld(this);
-        }
-#endif /* ENABLE_ELUNA */
 
         // Notify the outdoor pvp script
         if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(GetTerrain()->GetZoneId(Where().X(), Where().Y(), Where().Z())))
@@ -283,13 +262,6 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map,float x, float 
             break;
     }
 
-    // Used by Eluna
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnSpawn(this);
-    }
-#endif /* ENABLE_ELUNA */
 
     // Notify the battleground or outdoor pvp script
     if (map->IsBattleGround())
@@ -1365,12 +1337,6 @@ uint32 GameObject::RollMineralVein(uint32 entry)      //Maybe incedicite bloodst
 void GameObject::SetLootState(LootState state)
 {
     m_lootState = state;
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnLootStateChanged(this, state);
-    }
-#endif /* ENABLE_ELUNA */
     UpdateCollisionState();
 }
 
@@ -1382,12 +1348,6 @@ void GameObject::SetLootState(LootState state)
 void GameObject::SetGoState(GOState state)
 {
     SetByteValue(GAMEOBJECT_STATE, 0, state);
-#ifdef ENABLE_ELUNA
-    if (Eluna* e = GetEluna())
-    {
-        e->OnGameObjectStateChanged(this, state);
-    }
-#endif /* ENABLE_ELUNA */
     UpdateCollisionState();
 }
 

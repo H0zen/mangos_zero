@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef DBCSTORE_H
-#define DBCSTORE_H
+#pragma once
 
 #include <cstdint>
 #include "Common/Locales.h"
@@ -223,5 +222,3 @@ class DBCStorage
         bool loaded;
         StringPoolList m_stringPoolList; /**< TODO */
 };
-
-#endif

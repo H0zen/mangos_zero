@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef MANGOS_POOLHANDLER_H
-#define MANGOS_POOLHANDLER_H
+#pragma once
 
 #include <cmath>
 #include <utility>
@@ -264,5 +263,3 @@ template<>
 
     return 0;
 }
-
-#endif

@@ -20,8 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MANGOS_WARDEN_AUDIT_STORE_H
-#define MANGOS_WARDEN_AUDIT_STORE_H
+#pragma once
 
 #include "WardenEvidence.h"
 
@@ -109,5 +108,3 @@ public:
     bool Record(WardenAuditContext const& context) const;
 };
 }
-
-#endif

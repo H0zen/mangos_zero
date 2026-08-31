@@ -23,8 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef LOCKEDQUEUE_H
-#define LOCKEDQUEUE_H
+#pragma once
 
 #include <deque>
 #include <mutex>
@@ -118,4 +117,3 @@ namespace MaNGOS
             StorageType _queue;  ///< Storage backing the queue
     };
 }
-#endif

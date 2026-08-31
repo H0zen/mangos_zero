@@ -24,8 +24,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#ifndef _AUTH_SARC4_H
-#define _AUTH_SARC4_H
+#pragma once
 
 #include <openssl/evp.h>
 #include "Platform/Define.h"
@@ -69,5 +68,3 @@ class ARC4
     private:
         OpenSSLCipherContext m_cipherContext;        /**< RAII cipher context */
 };
-
-#endif
