@@ -38,15 +38,6 @@ enum
     NPC_CENARION_INFANTRY           = 15184  // NPC ID for Cenarion Infantry
 };
 
-// Enumeration for Shattrath guard spells
-enum eShattrathGuard
-{
-    SPELL_BANISHED_SHATTRATH_A      = 36642,  // Spell ID for banished Shattrath (Aldor)
-    SPELL_BANISHED_SHATTRATH_S      = 36671,  // Spell ID for banished Shattrath (Scryer)
-    SPELL_BANISH_TELEPORT           = 36643,  // Spell ID for banish teleport
-    SPELL_EXILE                     = 39533   // Spell ID for exile
-};
-
 /**
  * @class guardAI
  * @brief AI for generic guards.

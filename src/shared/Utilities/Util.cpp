@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -880,113 +880,6 @@ void utf8printf(FILE* out, const char* str, ...)
     va_start(ap, str);
     vutf8printf(out, str, &ap);
     va_end(ap);
-}
-
-int return_iCoreNumber()
-{
-#if defined(CLASSIC)
-    return 0;
-#elif defined(TBC)
-    return 1;
-#elif defined(WOTLK)
-    return 2;
-#elif defined(CATA)
-    return 3;
-#elif defined(MOP)
-    return 4;
-#elif defined(WOD)
-    return 5;
-#elif defined(LEGION)
-    return 6;
-#else
-    return -1;
-#endif
-}
-
-/// Print out the core banner
-void print_banner()
-{
-    int iCoreNumber = return_iCoreNumber();
-    switch (iCoreNumber)
-    {
-    case 0: // CLASSIC
-        sLog.outString("<Ctrl-C> to stop.\n"
-            "  __  __      _  _  ___  ___  ___        ____              \n"
-            " |  \\/  |__ _| \\| |/ __|/ _ \\/ __|      /_  /___ _ _ ___   \n"
-            " | |\\/| / _` | .` | (_ | (_) \\__ \\       / // -_) '_/ _ \\ \n"
-            " |_|  |_\\__,_|_|\\_|\\___|\\___/|___/      /___\\___|_| \\___/\n"
-            " Powered By MaNGOS Core\n"
-            "__________________________________________________________\n"
-            "\n"
-            "Website/Forum/Wiki/Issue Tracker: https://www.getmangos.eu\n"
-            "__________________________________________________________\n"
-            "\n");
-        break;
-    case 1: // TBC
-        sLog.outString("<Ctrl-C> to stop.\n"
-            "  __  __      _  _  ___  ___  ___         ___             \n"
-            " |  \\/  |__ _| \\| |/ __|/ _ \\/ __|       / _ \\ ___  ___  \n"
-            " | |\\/| / _` | .` | (_ | (_) \\__ \\      | (_) |   \\/ -_) \n"
-            " |_|  |_\\__,_|_|\\_|\\___|\\___/|___/       \\___/|_||_\\___|\n"
-            " Powered By MaNGOS Core\n"
-            " __________________________________________________________\n"
-            "\n"
-            " Website/Forum/Wiki/Issue Tracker: https://www.getmangos.eu\n"
-            " __________________________________________________________\n"
-            "\n");
-        break;
-    case 2: // WOTLK
-        sLog.outString("<Ctrl-C> to stop.\n"
-            "  __  __      _  _  ___  ___  ___       _____          \n"
-            " |  \\/  |__ _| \\| |/ __|/ _ \\/ __|     |_   _|_ __ _____\n"
-            " | |\\/| / _` | .` | (_ | (_) \\__ \\       | | \\ V  V / _ \\\n"
-            " |_|  |_\\__,_|_|\\_|\\___|\\___/|___/       |_|  \\_/\\_/\\___/ \n"
-            " Powered By MaNGOS Core\n"
-            " __________________________________________________________\n"
-            "\n"
-            " Website/Forum/Wiki/Issue Tracker: https://www.getmangos.eu\n"
-            " __________________________________________________________\n"
-            "\n");
-        break;
-    case 3: // CATA
-        sLog.outString("<Ctrl-C> to stop.\n"
-            "  __  __      _  _  ___  ___  ___   _____ _         \n"
-            " |  \\/  |__ _| \\| |/ __|/ _ \\/ __| |_   _| |_  _ _ ___ ___    \n"
-            " | |\\/| / _` | .` | (_ | (_) \\__ \\   | | | ' \\| '_/ -_) -_)  \n"
-            " |_|  |_\\__,_|_|\\_|\\___|\\___/|___/   |_| |_||_|_| \\___\\___| \n"
-            " Powered By MaNGOS Core\n"
-            " __________________________________________________________\n"
-            "\n"
-            " Website/Forum/Wiki/Issue Tracker: https://www.getmangos.eu\n"
-            " __________________________________________________________\n"
-            "\n");
-        break;
-    case 4: // MOP
-        sLog.outString("<Ctrl-C> to stop.\n"
-            "  __  __      _  _  ___  ___  ___     _____             \n"
-            " |  \\/  |__ _| \\| |/ __|/ _ \\/ __|    | __|__ _  _ _ _  \n"
-            " | |\\/| / _` | .` | (_ | (_) \\__ \\    | _/ _ \\ || | '_|\n"
-            " |_|  |_\\__,_|_|\\_|\\___|\\___/|___/    |_|\\___/\\_,_|_| \n"
-            " Powered By MaNGOS Core\n"
-            " __________________________________________________________\n"
-            "\n"
-            " Website/Forum/Wiki/Issue Tracker: https://www.getmangos.eu\n"
-            " __________________________________________________________\n"
-            "\n");
-        break;
-    default:
-        sLog.outString("<Ctrl-C> to stop.\n"
-            "  __  __      _  _  ___  ___  ___                                \n"
-            " |  \\/  |__ _| \\| |/ __|/ _ \\/ __|     We have a problem !   \n"
-            " | |\\/| / _` | .` | (_ | (_) \\__ \\   Your version of MaNGOS  \n"
-            " |_|  |_\\__,_|_|\\_|\\___|\\___/|___/   could not be detected   \n"
-            " __________________________________________________________\n"
-            "\n"
-            " Website/Forum/Wiki/Issue Tracker: https://www.getmangos.eu\n"
-            " __________________________________________________________\n"
-            "\n");
-        break;
-    }
 }
 
 // Used by Playerbot

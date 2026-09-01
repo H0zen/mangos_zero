@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -66,9 +66,7 @@
 #include "WaypointMovementGenerator.h"
 #include "Mail.h"
 #include <DBCStores.h>
-#ifdef CLASSIC
 #include "LFGMgr.h"
-#endif /* CLASSIC */
 #ifdef ENABLE_SD3
 #include "system/ScriptDevMgr.h"
 #endif /* ENABLE_SD3 */
@@ -96,47 +94,24 @@ ScriptChainMap const* ScriptMgr::GetScriptChainMap(DBScriptType type)
 // returns priority (0 == can not start script)
 uint8 GetSpellStartDBScriptPriority(SpellEntry const* spellinfo, SpellEffectIndex effIdx)
 {
-#if defined (CATA)
-    SpellEffectEntry const* spellEffect = spellinfo->GetSpellEffect(effIdx);
-    if (!spellEffect)
-    {
-        return 0;
-    }
-#endif
-#if defined (CATA)
-    if (spellEffect->Effect == SPELL_EFFECT_SCRIPT_EFFECT)
-#else
     if (spellinfo->Effect[effIdx] == SPELL_EFFECT_SCRIPT_EFFECT)
-#endif
     {
         return 10;
     }
 
-#if defined (CATA)
-    if (spellEffect->Effect == SPELL_EFFECT_DUMMY)
-#else
     if (spellinfo->Effect[effIdx] == SPELL_EFFECT_DUMMY)
-#endif
     {
         return 9;
     }
 
     // NonExisting triggered spells can also start DB-Spell-Scripts
-#if defined (CATA)
-    if (spellEffect->Effect == SPELL_EFFECT_TRIGGER_SPELL && !sSpellStore.LookupEntry(spellEffect->EffectTriggerSpell))
-#else
     if (spellinfo->Effect[effIdx] == SPELL_EFFECT_TRIGGER_SPELL && !sSpellStore.LookupEntry(spellinfo->EffectTriggerSpell[effIdx]))
-#endif
     {
         return 5;
     }
 
     // NonExisting trigger missile spells can also start DB-Spell-Scripts
-#if defined (CATA)
-    if (spellEffect->Effect == SPELL_EFFECT_TRIGGER_MISSILE && !sSpellStore.LookupEntry(spellEffect->EffectTriggerSpell))
-#else
     if (spellinfo->Effect[effIdx] == SPELL_EFFECT_TRIGGER_MISSILE && !sSpellStore.LookupEntry(spellinfo->EffectTriggerSpell[effIdx]))
-#endif
     {
         return 4;
     }
@@ -579,19 +554,9 @@ void ScriptMgr::LoadScripts(DBScriptType type)
             }
             case SCRIPT_COMMAND_PLAY_MOVIE:                 // 19
             {
-#if defined(CLASSIC)
                 sLog.outErrorDb("Table `db_scripts [type = %d]` use unsupported SCRIPT_COMMAND_PLAY_MOVIE for script id %u",
                     type, tmp.id);
                 continue;
-#else
-                if (!sMovieStore.LookupEntry(tmp.playMovie.movieId))
-                {
-                    sLog.outErrorDb("Table `db_scripts [type = %d]` use non-existing movie_id (id: %u) in SCRIPT_COMMAND_PLAY_MOVIE for script id %u",
-                        type, tmp.playMovie.movieId, tmp.id);
-                    continue;
-                }
-                break;
-#endif
             }
             case SCRIPT_COMMAND_MOVEMENT:                   // 20
             {
@@ -711,25 +676,11 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                         {
                             for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
                             {
-#if defined (CATA)
-                                SpellEffectEntry const* spellEffect = spell->GetSpellEffect(SpellEffectIndex(j));
-                                if (!spellEffect)
-                                {
-                                    continue;
-                                }
-
-                                if (spellEffect->Effect == SPELL_EFFECT_SEND_TAXI && spellEffect->EffectMiscValue == tmp.sendTaxiPath.taxiPathId)
-                                {
-                                    taxiSpell = i;
-                                    break;
-                                }
-#else
                                 if (spell->Effect[j] == SPELL_EFFECT_SEND_TAXI && spell->EffectMiscValue[j] == int32(tmp.sendTaxiPath.taxiPathId))
                                 {
                                     taxiSpell = i;
                                     break;
                                 }
-#endif
                             }
                         }
                     }
@@ -855,7 +806,6 @@ void ScriptMgr::LoadScripts(DBScriptType type)
             }
             case SCRIPT_COMMAND_UPDATE_TEMPLATE:              // 44
             {
-#if defined(CLASSIC) || defined(TBC) || defined(WOTLK)
                 if (tmp.updateTemplate.entry && !ObjectMgr::GetCreatureTemplate(tmp.updateTemplate.entry))
                 {
                     sLog.outErrorDb("Table `db_scripts [type = %d]` has datalong = %u in SCRIPT_COMMAND_UPDATE_TEMPLATE for script id %u, but this creature_template does not exist.", type, tmp.updateTemplate.entry, tmp.id);
@@ -867,19 +817,6 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                     sLog.outErrorDb("Table `db_scripts [type = %d]` uses invalid faction team (datalong2 = %u, must be 0 or 1) in SCRIPT_COMMAND_UPDATE_TEMPLATE for script id %u", type, tmp.updateTemplate.faction, tmp.id);
                     continue;
                 }
-#else
-                if (!sCreatureStorage.LookupEntry<CreatureInfo>(tmp.updateTemplate.entry))
-                {
-                    sLog.outErrorDb("Table `db_scripts [type = %d]` has datalong = %u in SCRIPT_COMMAND_UPDATE_TEMPLATE for script id %u, but this creature_template does not exist.", type, tmp.updateTemplate.entry, tmp.id);
-                    continue;
-                }
-
-                if (tmp.updateTemplate.faction != 0 && tmp.updateTemplate.faction != 1)
-                {
-                    sLog.outErrorDb("Table `db_scripts [type = %d]` uses invalid faction team (datalong2 = %u, must be 0 or 1) in SCRIPT_COMMAND_UPDATE_TEMPLATE for script id %u", type, tmp.updateTemplate.faction, tmp.id);
-                    continue;
-                }
-#endif
                 break;
             }
             case SCRIPT_COMMAND_XP_USER:                      // 53

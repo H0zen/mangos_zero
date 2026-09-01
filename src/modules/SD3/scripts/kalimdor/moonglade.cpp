@@ -45,163 +45,6 @@
 #include "escort_ai.h"
 #include "ObjectMgr.h"
 
-#if defined (TBC) || defined (WOTLK) || defined (CATA) || defined(MISTS)
-/*######
-# npc_clintar_dw_spirit
-####*/
-
-enum
-{
-    SAY_START               = -1000280,
-    SAY_AGGRO_1             = -1000281,
-    SAY_AGGRO_2             = -1000282,
-    SAY_RELIC1              = -1000283,
-    SAY_RELIC2              = -1000284,
-    SAY_RELIC3              = -1000285,
-    SAY_END                 = -1000286,
-
-    QUEST_MERE_DREAM        = 10965,
-    SPELL_EMERALD_DREAM     = 39601,
-    NPC_CLINTAR_DW_SPIRIT   = 22916,
-    NPC_CLINTAR_SPIRIT      = 22901,
-    NPC_ASPECT_OF_RAVEN     = 22915,
-};
-
-struct npc_clintar_dw_spirit : public CreatureScript
-{
-    npc_clintar_dw_spirit() : CreatureScript("npc_clintar_dw_spirit") {}
-
-    struct npc_clintar_dw_spiritAI : public npc_escortAI
-    {
-        npc_clintar_dw_spiritAI(Creature* pCreature) : npc_escortAI(pCreature) {}
-
-        void WaypointReached(uint32 i) override
-        {
-            Player* pPlayer = GetPlayerForEscort();
-
-            if (!pPlayer)
-            {
-                return;
-            }
-
-            // visual details here probably need refinement
-            switch (i)
-            {
-                case 0:
-                    DoScriptText(SAY_START, m_creature, pPlayer);
-                    break;
-                case 13:
-                    m_creature->HandleEmote(EMOTE_STATE_USESTANDING_NOSHEATHE);
-                    break;
-                case 14:
-                    DoScriptText(SAY_RELIC1, m_creature, pPlayer);
-                    break;
-                case 26:
-                    m_creature->HandleEmote(EMOTE_STATE_USESTANDING_NOSHEATHE);
-                    break;
-                case 27:
-                    DoScriptText(SAY_RELIC2, m_creature, pPlayer);
-                    break;
-                case 31:
-                    m_creature->SummonCreature(NPC_ASPECT_OF_RAVEN, 7465.321f, -3088.515f, 429.006f, 5.550f, TEMPSPAWN_TIMED_OOC_DESPAWN, 10000);
-                    break;
-                case 35:
-                    m_creature->HandleEmote(EMOTE_STATE_USESTANDING_NOSHEATHE);
-                    break;
-                case 36:
-                    DoScriptText(SAY_RELIC3, m_creature, pPlayer);
-                    break;
-                case 49:
-                    DoScriptText(SAY_END, m_creature, pPlayer);
-                    pPlayer->TalkedToCreature(m_creature->GetEntry(), m_creature->GetObjectGuid());
-                    break;
-            }
-        }
-
-        void Aggro(Unit* /*who*/) override
-        {
-            DoScriptText(urand(0, 1) ? SAY_AGGRO_1 : SAY_AGGRO_2, m_creature);
-        }
-
-        void Reset() override
-        {
-            if (HasEscortState(STATE_ESCORT_ESCORTING))
-            {
-                return;
-            }
-
-            // m_creature are expected to always be spawned, but not visible for player
-            // spell casted from quest_template.SrcSpell require this to be this way
-            // we handle the triggered spell to get a "hook" to our guy so he can be escorted on quest accept
-
-            if (CreatureInfo const* pTemp = GetCreatureTemplateStore(m_creature->GetEntry()))
-            {
-                m_creature->SetDisplayId(Creature::ChooseDisplayId(pTemp));
-            }
-
-            m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-            m_creature->SetVisibility(VISIBILITY_OFF);
-        }
-
-        void JustSummoned(Creature* summoned) override
-        {
-            summoned->AI()->AttackStart(m_creature);
-        }
-    };
-
-    CreatureAI* GetAI(Creature* pCreature) override
-    {
-        return new npc_clintar_dw_spiritAI(pCreature);
-    }
-};
-
-// we expect this spell to be triggered from spell casted at questAccept
-struct spell_emerald_dream : public SpellScript
-{
-    spell_emerald_dream() : SpellScript("spell_emerald_dream") {}
-
-    bool EffectDummy(Unit* pCaster, uint32 spellId, SpellEffectIndex effIndex, Object* pTarget, ObjectGuid /*originalCasterGuid*/) override
-    {
-        // always check spellid and effectindex
-        if (spellId == SPELL_EMERALD_DREAM && effIndex == EFFECT_INDEX_0)
-        {
-            Creature *pCreatureTarget = pTarget->ToCreature();
-            if (pCaster->GetTypeId() != TYPEID_PLAYER || pCaster->HasAura(SPELL_EMERALD_DREAM))
-            {
-                return true;
-            }
-
-            if (pCreatureTarget->GetEntry() != NPC_CLINTAR_DW_SPIRIT)
-            {
-                return true;
-            }
-
-            if (CreatureInfo const* pTemp = GetCreatureTemplateStore(NPC_CLINTAR_SPIRIT))
-            {
-                pCreatureTarget->SetDisplayId(Creature::ChooseDisplayId(pTemp));
-            }
-            else
-            {
-                return true;
-            }
-
-            // done here, escort can start
-            npc_escortAI *pSpiritAI = (npc_escortAI*)pCreatureTarget->AI();
-            if (!pSpiritAI->HasEscortState(STATE_ESCORT_ESCORTING))
-            {
-                pCreatureTarget->SetVisibility(VISIBILITY_ON);
-                pCreatureTarget->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                pSpiritAI->Start(false, pCaster && pCaster->GetTypeId() == TYPEID_PLAYER ? (Player*)pCaster : nullptr);
-            }
-
-            // always return true when we are handling this spell and effect
-            return true;
-        }
-        return true;
-    }
-};
-#endif
-
 /*######
 ## npc_keeper_remulos
 ######*/
@@ -1122,24 +965,12 @@ struct boss_eranikus : public CreatureScript
 void AddSC_moonglade()
 {
     Script* s;
-#if defined (TBC) || defined (WOTLK) || defined (CATA) || defined(MISTS)
-    s = new npc_clintar_dw_spirit();
-    s->RegisterSelf();
-    s = new spell_emerald_dream();
-    s->RegisterSelf();
-#endif
     s = new npc_keeper_remulos();
     s->RegisterSelf();
     s = new boss_eranikus();
     s->RegisterSelf();
     s = new spell_conjure_rift();
     s->RegisterSelf();
-
-    //pNewScript = new Script; (TBC Onwards)
-    //pNewScript->Name = "npc_clintar_dw_spirit"; (TBC Onwards)
-    //pNewScript->GetAI = &GetAI_npc_clintar_dw_spirit; (TBC Onwards)
-    //pNewScript->pEffectDummyNPC = &EffectDummyCreature_npc_clintar_dw_spirit; (TBC Onwards)
-    //pNewScript->RegisterSelf();
 
     //pNewScript = new Script;
     //pNewScript->Name = "npc_keeper_remulos";

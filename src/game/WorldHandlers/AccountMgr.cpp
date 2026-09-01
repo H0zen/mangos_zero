@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -132,7 +132,7 @@ AccountOpResult AccountMgr::CreateAccount(std::string username, std::string pass
  * @brief Create a new game account with expansion level
  * @param username Desired account username (converted to uppercase)
  * @param password Plain-text password (converted to uppercase, SHA1 hashed for storage)
- * @param expansion Expansion level (0=Classic, 1=TBC, 2=WotLK, 3=Cata)
+ * @param expansion Expansion level stored on the account row
  * @return Account operation result code (AOR_OK on success)
  *
  * Extended version of CreateAccount that allows setting the account's

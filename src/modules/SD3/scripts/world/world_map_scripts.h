@@ -40,29 +40,18 @@ enum
     NPC_WRYNN                   = 1747,
     NPC_BOLVAR                  = 1748,
     NPC_PRESTOR                 = 1749,
-#if defined (CLASSIC)
     NPC_WINDSOR                 = 12580
-#endif
-    // Quest 11538
-#if defined (TBC) || defined (WOTLK) || defined (CATA) || defined(MISTS)
-    NPC_WINDSOR                 = 12580,
-    NPC_EMISSARY_OF_HATE        = 25003,
-    NPC_IRESPEAKER              = 24999,
-    NPC_UNLEASHED_HELLION       = 25002,
-#endif
 };
 
 enum SpawnIndexes
 {
-    POS_IDX_EMISSARY_SPAWN      = 0,                        // Not used in Classic, but keep here for code change simplification
-    POS_IDX_MURKDEEP_SPAWN      = 1,
-    POS_IDX_MURKDEEP_MOVE       = 2,
-    POS_IDX_MAX                 = 3
+    POS_IDX_MURKDEEP_SPAWN      = 0,
+    POS_IDX_MURKDEEP_MOVE       = 1,
+    POS_IDX_MAX                 = 2
 };
 
 static const float aSpawnLocations[POS_IDX_MAX][4] =
 {
-    {12583.019f, -6916.194f,  4.601f, 6.18f},               // Emissary of Hate, guesswork
     {4981.031f,    597.955f, -1.361f, 4.82f},               // Murkdeep spawn, guesswork
     {4988.970f,    547.002f,  5.379f, 0.0f},                // Murkdeep move, guesswork
 };

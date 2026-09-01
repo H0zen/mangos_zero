@@ -247,10 +247,9 @@ struct is_molten_core : public InstanceScript
                         return;
                 }
 
-                // if a rune boss is done, then: pre-WOTLK: allow to use the rune GO; WOTLK and later: set the rune as doused
+                // if a rune boss is done, allow the rune GO to be used
                 if (uiType > TYPE_LUCIFRON && uiType < TYPE_MAJORDOMO && uiData == DONE)
                 {
-#if defined (CLASSIC) || defined (TBC)
                     if (sRuneEncounters const *rstr = GetRuneStructForBoss(uiType))
                     {
                         m_auiRuneState[rstr->getRuneType()] = SPECIAL;
@@ -259,11 +258,6 @@ struct is_molten_core : public InstanceScript
                             trap->SetGoState(GO_STATE_READY);
                         }
                     }
-#endif
-#if defined (WOTLK) || defined (CATA) || defined(MISTS)
-                    SetRuneDoused(GetRuneStructForBoss(uiType));
-                    DoSpawnMajordomoIfCan(false);
-#endif
                 }
 
                 if (save)

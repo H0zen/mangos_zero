@@ -19,6 +19,9 @@ source_group("Object" FILES ${SRC_GRP_OBJECT})
 file(GLOB SRC_GRP_OUTDOOR_PVP OutdoorPvP/*.cpp OutdoorPvP/*.h)
 source_group("Outdoor PvP" FILES ${SRC_GRP_OUTDOOR_PVP})
 
+file(GLOB SRC_GRP_PROTOCOL Protocol/*.cpp Protocol/*.h)
+source_group("Protocol" FILES ${SRC_GRP_PROTOCOL})
+
 file(GLOB SRC_GRP_REFERENCES References/*.cpp References/*.h)
 source_group("References" FILES ${SRC_GRP_REFERENCES})
 
@@ -45,6 +48,7 @@ add_library(game STATIC
     ${SRC_GRP_MOVEMENT}
     ${SRC_GRP_OBJECT}
     ${SRC_GRP_OUTDOOR_PVP}
+    ${SRC_GRP_PROTOCOL}
     ${SRC_GRP_REFERENCES}
     ${SRC_GRP_SERVER}
     ${SRC_GRP_TIME}
@@ -62,6 +66,7 @@ target_include_directories(game
         MotionGenerators
         Object
         OutdoorPvP
+        Protocol
         References
         Server
         Time
@@ -80,7 +85,6 @@ target_link_libraries(game
 
         terrain
         geometry
-        proto
         shared
         RecastNavigation::Detour
         ZLIB::ZLIB

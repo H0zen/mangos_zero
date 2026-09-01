@@ -42,257 +42,14 @@
 /**
  * ContentData
  * npc_chicken_cluck          100%    support for quest 3861 (Cluck!)
- * npc_air_force_bots          80%    support for misc (invisible) guard bots in areas where player allowed to fly. Summon guards after a preset time if tagged by spell (WOTLK onwards)
- * npc_dancing_flames         100%    midsummer event NPC (WOTLK onwards)
- * npc_guardian               100%    guardianAI used to prevent players from accessing off-limits areas. Not in use by SD3 (WOTLK onwards)
+ * npc_guardian               100%    guardianAI used to prevent players from accessing off-limits areas. Not in use by SD3
  * npc_garments_of_quests     100%    NPC's related to all Garments of-quests 5621, 5624, 5625, 5648, 5650
  * npc_injured_patient         80%    patients for triage-quests (6622 and 6624)
  * npc_doctor                 100%    Gustaf Vanhowzen and Gregory Victor, quest 6622 and 6624 (Triage)
  * npc_innkeeper               25%    ScriptName not assigned. Innkeepers in general.
- * npc_spring_rabbit            1%    Used for pet "Spring Rabbit" of Noblegarden (WOTLK onwards)
  * npc_redemption_target      100%    Used for the paladin quests: 1779,1781,9600,9685
  * EndContentData
  */
-
-#if defined (TBC) || defined (WOTLK) || defined (CATA) || defined(MISTS)
-/*########
-# npc_air_force_bots
-#########*/
-
-enum SpawnType
-{
-    SPAWNTYPE_TRIPWIRE_ROOFTOP,                             // no warning, summon creature at smaller range
-    SPAWNTYPE_ALARMBOT                                      // cast guards mark and summon npc - if player shows up with that buff duration < 5 seconds attack
-};
-
-struct SpawnAssociation
-{
-    uint32 m_uiThisCreatureEntry;
-    uint32 m_uiSpawnedCreatureEntry;
-    SpawnType m_SpawnType;
-};
-
-enum
-{
-    SPELL_GUARDS_MARK               = 38067,
-    AURA_DURATION_TIME_LEFT         = 5000
-};
-
-const float RANGE_TRIPWIRE          = 15.0f;
-const float RANGE_GUARDS_MARK       = 50.0f;
-
-SpawnAssociation m_aSpawnAssociations[] =
-{
-    {2614,  15241, SPAWNTYPE_ALARMBOT},                     // Air Force Alarm Bot (Alliance)
-    {2615,  15242, SPAWNTYPE_ALARMBOT},                     // Air Force Alarm Bot (Horde)
-    {21974, 21976, SPAWNTYPE_ALARMBOT},                     // Air Force Alarm Bot (Area 52)
-    {21993, 15242, SPAWNTYPE_ALARMBOT},                     // Air Force Guard Post (Horde - Bat Rider)
-    {21996, 15241, SPAWNTYPE_ALARMBOT},                     // Air Force Guard Post (Alliance - Gryphon)
-    {21997, 21976, SPAWNTYPE_ALARMBOT},                     // Air Force Guard Post (Goblin - Area 52 - Zeppelin)
-    {21999, 15241, SPAWNTYPE_TRIPWIRE_ROOFTOP},             // Air Force Trip Wire - Rooftop (Alliance)
-    {22001, 15242, SPAWNTYPE_TRIPWIRE_ROOFTOP},             // Air Force Trip Wire - Rooftop (Horde)
-    {22002, 15242, SPAWNTYPE_TRIPWIRE_ROOFTOP},             // Air Force Trip Wire - Ground (Horde)
-    {22003, 15241, SPAWNTYPE_TRIPWIRE_ROOFTOP},             // Air Force Trip Wire - Ground (Alliance)
-    {22063, 21976, SPAWNTYPE_TRIPWIRE_ROOFTOP},             // Air Force Trip Wire - Rooftop (Goblin - Area 52)
-    {22065, 22064, SPAWNTYPE_ALARMBOT},                     // Air Force Guard Post (Ethereal - Stormspire)
-    {22066, 22067, SPAWNTYPE_ALARMBOT},                     // Air Force Guard Post (Scryer - Dragonhawk)
-    {22068, 22064, SPAWNTYPE_TRIPWIRE_ROOFTOP},             // Air Force Trip Wire - Rooftop (Ethereal - Stormspire)
-    {22069, 22064, SPAWNTYPE_ALARMBOT},                     // Air Force Alarm Bot (Stormspire)
-    {22070, 22067, SPAWNTYPE_TRIPWIRE_ROOFTOP},             // Air Force Trip Wire - Rooftop (Scryer)
-    {22071, 22067, SPAWNTYPE_ALARMBOT},                     // Air Force Alarm Bot (Scryer)
-    {22078, 22077, SPAWNTYPE_ALARMBOT},                     // Air Force Alarm Bot (Aldor)
-    {22079, 22077, SPAWNTYPE_ALARMBOT},                     // Air Force Guard Post (Aldor - Gryphon)
-    {22080, 22077, SPAWNTYPE_TRIPWIRE_ROOFTOP},             // Air Force Trip Wire - Rooftop (Aldor)
-    {22086, 22085, SPAWNTYPE_ALARMBOT},                     // Air Force Alarm Bot (Sporeggar)
-    {22087, 22085, SPAWNTYPE_ALARMBOT},                     // Air Force Guard Post (Sporeggar - Spore Bat)
-    {22088, 22085, SPAWNTYPE_TRIPWIRE_ROOFTOP},             // Air Force Trip Wire - Rooftop (Sporeggar)
-    {22090, 22089, SPAWNTYPE_ALARMBOT},                     // Air Force Guard Post (Toshley's Station - Flying Machine)
-    {22124, 22122, SPAWNTYPE_ALARMBOT},                     // Air Force Alarm Bot (Cenarion)
-    {22125, 22122, SPAWNTYPE_ALARMBOT},                     // Air Force Guard Post (Cenarion - Stormcrow)
-    {22126, 22122, SPAWNTYPE_ALARMBOT}                      // Air Force Trip Wire - Rooftop (Cenarion Expedition)
-};
-
-struct npc_air_force_bots : public CreatureScript
-{
-    npc_air_force_bots() : CreatureScript("npc_air_force_bots") {}
-
-    struct npc_air_force_botsAI : public ScriptedAI
-    {
-        npc_air_force_botsAI(Creature* pCreature) : ScriptedAI(pCreature)
-        {
-            m_pSpawnAssoc = nullptr;
-
-            // find the correct spawnhandling
-            for (uint8 i = 0; i < countof(m_aSpawnAssociations); ++i)
-            {
-                if (m_aSpawnAssociations[i].m_uiThisCreatureEntry == pCreature->GetEntry())
-                {
-                    m_pSpawnAssoc = &m_aSpawnAssociations[i];
-                    break;
-                }
-            }
-
-            if (!m_pSpawnAssoc)
-            {
-                error_db_log("SD3: Creature template entry %u has ScriptName npc_air_force_bots, but it's not handled by that script", pCreature->GetEntry());
-            }
-            else
-            {
-                CreatureInfo const* spawnedTemplate = GetCreatureTemplateStore(m_pSpawnAssoc->m_uiSpawnedCreatureEntry);
-
-                if (!spawnedTemplate)
-                {
-                    error_db_log("SD3: Creature template entry %u does not exist in DB, which is required by npc_air_force_bots", m_pSpawnAssoc->m_uiSpawnedCreatureEntry);
-                    m_pSpawnAssoc = nullptr;
-                    return;
-                }
-            }
-        }
-
-        SpawnAssociation* m_pSpawnAssoc;
-        ObjectGuid m_spawnedGuid;
-
-        Creature* SummonGuard()
-        {
-            Creature* pSummoned = m_creature->SummonCreature(m_pSpawnAssoc->m_uiSpawnedCreatureEntry, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSPAWN_TIMED_OOC_DESPAWN, 300000);
-
-            if (pSummoned)
-            {
-                m_spawnedGuid = pSummoned->GetObjectGuid();
-            }
-            else
-            {
-                error_db_log("SD3: npc_air_force_bots: wasn't able to spawn creature %u", m_pSpawnAssoc->m_uiSpawnedCreatureEntry);
-                m_pSpawnAssoc = nullptr;
-            }
-
-            return pSummoned;
-        }
-
-        void Reset() override {}
-
-        Creature* GetSummonedGuard()
-        {
-            Creature* pCreature = m_creature->GetMap()->GetCreature(m_spawnedGuid);
-
-            if (pCreature && pCreature->IsAlive())
-            {
-                return pCreature;
-            }
-
-            return nullptr;
-        }
-
-        void MoveInLineOfSight(Unit* pWho) override
-        {
-            if (!m_pSpawnAssoc)
-            {
-                return;
-            }
-
-            if (pWho->IsTargetableForAttack() && m_creature->IsHostileTo(pWho))
-            {
-                Player* pPlayerTarget = pWho->GetTypeId() == TYPEID_PLAYER ? (Player*)pWho : nullptr;
-
-                // airforce guards only spawn for players
-                if (!pPlayerTarget)
-                {
-                    return;
-                }
-
-                Creature* pLastSpawnedGuard = m_spawnedGuid ? GetSummonedGuard() : nullptr;
-
-                // prevent calling GetCreature at next MoveInLineOfSight call - speedup
-                if (!pLastSpawnedGuard)
-                {
-                    m_spawnedGuid.Clear();
-                }
-
-                switch (m_pSpawnAssoc->m_SpawnType)
-                {
-                    case SPAWNTYPE_ALARMBOT:
-                    {
-                        if (!InReach(*pWho, *m_creature, RANGE_GUARDS_MARK))
-                        {
-                            return;
-                        }
-
-                        Aura* pMarkAura = pWho->GetAura(SPELL_GUARDS_MARK, EFFECT_INDEX_0);
-                        if (pMarkAura)
-                        {
-                            // the target wasn't able to move out of our range within 25 seconds
-                            if (!pLastSpawnedGuard)
-                            {
-                                pLastSpawnedGuard = SummonGuard();
-
-                                if (!pLastSpawnedGuard)
-                                {
-                                    return;
-                                }
-                            }
-
-                            if (pMarkAura->GetAuraDuration() < AURA_DURATION_TIME_LEFT)
-                            {
-                                if (!pLastSpawnedGuard->getVictim())
-                                {
-                                    pLastSpawnedGuard->AI()->AttackStart(pWho);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (!pLastSpawnedGuard)
-                            {
-                                pLastSpawnedGuard = SummonGuard();
-                            }
-
-                            if (!pLastSpawnedGuard)
-                            {
-                                return;
-                            }
-
-                            pLastSpawnedGuard->CastSpell(pWho, SPELL_GUARDS_MARK, true);
-                        }
-                        break;
-                    }
-                    case SPAWNTYPE_TRIPWIRE_ROOFTOP:
-                    {
-                        if (!InReach(*pWho, *m_creature, RANGE_TRIPWIRE))
-                        {
-                            return;
-                        }
-
-                        if (!pLastSpawnedGuard)
-                        {
-                            pLastSpawnedGuard = SummonGuard();
-                        }
-
-                        if (!pLastSpawnedGuard)
-                        {
-                            return;
-                        }
-
-                        // ROOFTOP only triggers if the player is on the ground
-                        if (!pPlayerTarget->IsFlying())
-                        {
-                            if (!pLastSpawnedGuard->getVictim())
-                            {
-                                pLastSpawnedGuard->AI()->AttackStart(pWho);
-                            }
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-    };
-
-    CreatureAI* GetAI(Creature* pCreature) override
-    {
-        return new npc_air_force_botsAI(pCreature);
-    }
-};
-#endif
 
 /*########
 # npc_chicken_cluck
@@ -418,58 +175,6 @@ struct npc_chicken_cluck : public CreatureScript
         return true;
     }
 };
-#if defined (TBC) || defined (WOTLK) || defined (CATA) || defined(MISTS)
-/*######
-## npc_dancing_flames
-######*/
-
-enum
-{
-    SPELL_FIERY_SEDUCTION = 47057
-};
-
-struct npc_dancing_flames : public CreatureScript
-{
-    npc_dancing_flames() : CreatureScript("npc_dancing_flames") {}
-
-    struct npc_dancing_flamesAI : public ScriptedAI
-    {
-        npc_dancing_flamesAI(Creature* pCreature) : ScriptedAI(pCreature) {}
-
-        void ReceiveEmote(Player* pPlayer, uint32 uiEmote) override
-        {
-            m_creature->SetFacingToObject(pPlayer);
-
-            if (pPlayer->HasAura(SPELL_FIERY_SEDUCTION))
-            {
-                pPlayer->RemoveAurasDueToSpell(SPELL_FIERY_SEDUCTION);
-            }
-
-            if (pPlayer->IsMounted())
-            {
-                pPlayer->Unmount();                             // doesnt remove mount aura
-                pPlayer->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
-            }
-
-            switch (uiEmote)
-            {
-                case TEXTEMOTE_DANCE: DoCastSpellIfCan(pPlayer, SPELL_FIERY_SEDUCTION); break;// dance -> cast SPELL_FIERY_SEDUCTION
-                case TEXTEMOTE_WAVE:  m_creature->HandleEmote(EMOTE_ONESHOT_WAVE);      break;// wave -> wave
-                case TEXTEMOTE_JOKE:  m_creature->HandleEmote(EMOTE_STATE_LAUGH);       break;// silly -> laugh(with sound)
-                case TEXTEMOTE_BOW:   m_creature->HandleEmote(EMOTE_ONESHOT_BOW);       break;// bow -> bow
-                case TEXTEMOTE_KISS:  m_creature->HandleEmote(TEXTEMOTE_CURTSEY);       break;// kiss -> curtsey
-            }
-        }
-
-        void Reset() override {}
-    };
-
-    CreatureAI* GetAI(Creature* pCreature) override
-    {
-        return new npc_dancing_flamesAI(pCreature);
-    }
-};
-#endif
 
 /*######
 ## Triage quest
@@ -732,14 +437,8 @@ struct npc_doctor : public CreatureScript
 
                     if (Creature* Patient = m_creature->SummonCreature(patientEntry, (*itr)->x, (*itr)->y, (*itr)->z, (*itr)->o, TEMPSPAWN_TIMED_OOC_DESPAWN, 5000))
                     {
-#if defined (CLASSIC) || defined (TBC)
                         // 2.4.3, this flag appear to be required for client side item->spell to work (TARGET_SINGLE_FRIEND)
                         Patient->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP);
-#endif
-#if defined (WOTLK) || defined (CATA) || defined(MISTS)
-                        // 303, this flag appear to be required for client side item->spell to work (TARGET_SINGLE_FRIEND)
-                        Patient->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
-#endif
 
                         m_lPatientGuids.push_back(Patient->GetObjectGuid());
 
@@ -1248,16 +947,6 @@ struct npc_innkeeper : public CreatureScript
         // Should only apply to innkeeper close to start areas.
         if (AreaTableEntry const* pAreaEntry = GetAreaEntryByAreaID(pCreature->GetTerrain()->GetAreaId(pCreature->Where().X(), pCreature->Where().Y(), pCreature->Where().Z())))
         {
-#if defined (TBC) || defined (WOTLK)
-            // Note: this area flag doesn't exist in 1.12.1. The behavior of this gossip require additional research
-            if (pAreaEntry->Flags & AREA_FLAG_LOWLEVEL)
-#elif defined (MISTS)
-            // Note: this area flag doesn't exist in 1.12.1. The behavior of this gossip require additional research
-            if (pAreaEntry->Flags & AREA_FLAG_LOWLEVEL)
-#elif defined (CATA)
-            // Note: this area flag doesn't exist in 1.12.1. The behavior of this gossip require additional research
-            if (pAreaEntry->Flags & AREA_FLAG_LOWLEVEL)
-#endif
             {
                 pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM_WHAT_TO_DO, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
             }
@@ -1292,218 +981,6 @@ struct npc_innkeeper : public CreatureScript
         return true;
     }
 };
-
-#if defined (WOTLK) || defined (CATA) || defined(MISTS)
-/*######
-## npc_spring_rabbit
-## ATTENTION: This is actually a "fun" script, entirely done without proper source!
-######*/
-
-enum
-{
-    NPC_SPRING_RABBIT           = 32791,
-
-    SPELL_SPRING_RABBIT_JUMP    = 61724,
-    SPELL_SPRING_RABBIT_WANDER  = 61726,
-    SEPLL_SUMMON_BABY_BUNNY     = 61727,
-    SPELL_SPRING_RABBIT_IN_LOVE = 61728,
-    SPELL_SPRING_FLING          = 61875,
-};
-
-static const float DIST_START_EVENT = 15.0f;                // Guesswork
-
-struct npc_spring_rabbit : public CreatureScript
-{
-    npc_spring_rabbit() : CreatureScript("npc_spring_rabbit") {}
-
-    struct  npc_spring_rabbitAI : public ScriptedPetAI
-    {
-        npc_spring_rabbitAI(Creature* pCreature) : ScriptedPetAI(pCreature) {}
-
-        ObjectGuid m_partnerGuid;
-        uint32 m_uiStep;
-        uint32 m_uiStepTimer;
-        float m_fMoveAngle;
-
-        void Reset() override
-        {
-            m_uiStep = 0;
-            m_uiStepTimer = 0;
-            m_partnerGuid.Clear();
-            m_fMoveAngle = 0.0f;
-        }
-
-        bool CanStartWhatRabbitsDo()
-        {
-            return !m_partnerGuid && !m_uiStepTimer;
-        }
-
-        void StartWhatRabbitsDo(Creature* pPartner)
-        {
-            m_partnerGuid = pPartner->GetObjectGuid();
-            m_uiStep = 1;
-            m_uiStepTimer = 30000;
-            // Calculate meeting position
-            float m_fMoveAngle = m_creature->Where().BearingTo(pPartner->Where());
-            float fDist = m_creature->Where().DistanceTo(pPartner->Where());
-            float fX, fY, fZ;
-            FindFreeSpotNear(*m_creature, m_creature, fX, fY, fZ, m_creature->Where().Extent(), fDist * 0.5f, m_fMoveAngle);
-
-            m_creature->GetMotionMaster()->Clear();
-            m_creature->GetMotionMaster()->MovePoint(1, fX, fY, fZ);
-        }
-
-        // Helper to get the Other Bunnies AI
-        npc_spring_rabbitAI* GetPartnerAI(Creature* pBunny = nullptr)
-        {
-            if (!pBunny)
-            {
-                pBunny = m_creature->GetMap()->GetAnyTypeCreature(m_partnerGuid);
-            }
-
-            if (!pBunny)
-            {
-                return nullptr;
-            }
-
-            return dynamic_cast<npc_spring_rabbitAI*>(pBunny->AI());
-        }
-
-        // Event Starts when two rabbits see each other
-        void MoveInLineOfSight(Unit* pWho) override
-        {
-            if (m_creature->getVictim())
-            {
-                return;
-            }
-
-            if (pWho->GetTypeId() == TYPEID_UNIT && pWho->GetEntry() == NPC_SPRING_RABBIT && CanStartWhatRabbitsDo() && m_creature->IsFriendlyTo(pWho) && InReach(*m_creature, *pWho, DIST_START_EVENT, true))
-            {
-                if (npc_spring_rabbitAI* pOtherBunnyAI = GetPartnerAI((Creature*)pWho))
-                {
-                    if (pOtherBunnyAI->CanStartWhatRabbitsDo())
-                    {
-                        StartWhatRabbitsDo((Creature*)pWho);
-                        pOtherBunnyAI->StartWhatRabbitsDo(m_creature);
-                    }
-                }
-                return;
-            }
-
-            ScriptedPetAI::MoveInLineOfSight(pWho);
-        }
-
-        bool ReachedMeetingPlace()
-        {
-            if (m_uiStep == 3)                                  // Already there
-            {
-                m_uiStepTimer = 3000;
-                m_uiStep = 2;
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        void MovementInform(uint32 uiMovementType, uint32 uiData) override
-        {
-            if (uiMovementType != POINT_MOTION_TYPE || uiData != 1)
-            {
-                return;
-            }
-
-            if (!m_partnerGuid)
-            {
-                return;
-            }
-
-            m_uiStep = 3;
-            if (npc_spring_rabbitAI* pOtherBunnyAI = GetPartnerAI())
-            {
-                if (pOtherBunnyAI->ReachedMeetingPlace())
-                {
-                    m_creature->SetFacingTo(pOtherBunnyAI->m_creature->Where().Facing());
-                    m_uiStepTimer = 3000;
-                }
-                else
-                {
-                    m_creature->SetFacingTo(m_fMoveAngle + M_PI_F * 0.5f);
-                }
-            }
-
-            // m_creature->GetMotionMaster()->MoveRandom(); // does not move around current position, hence not usefull right now
-            m_creature->GetMotionMaster()->MoveIdle();
-        }
-
-        // Overwrite ScriptedPetAI::UpdateAI, to prevent re-following while the event is active!
-        void UpdateAI(const uint32 uiDiff) override
-        {
-            if (!m_partnerGuid || !m_uiStepTimer)
-            {
-                ScriptedPetAI::UpdateAI(uiDiff);
-                return;
-            }
-
-            if (m_uiStep == 6)
-            {
-                ScriptedPetAI::UpdateAI(uiDiff);                // Event nearly finished, do normal following
-            }
-
-            if (m_uiStepTimer <= uiDiff)
-            {
-                switch (m_uiStep)
-                {
-                    case 1:                                     // Timer expired, before reached meeting point. Reset.
-                        Reset();
-                        break;
-
-                    case 2:                                     // Called for the rabbit first reached meeting point
-                        if (Creature* pBunny = m_creature->GetMap()->GetAnyTypeCreature(m_partnerGuid))
-                        {
-                            pBunny->CastSpell(pBunny, SPELL_SPRING_RABBIT_IN_LOVE, false);
-                        }
-
-                        DoCastSpellIfCan(m_creature, SPELL_SPRING_RABBIT_IN_LOVE);
-                        // no break here
-                    case 3:
-                        m_uiStepTimer = 5000;
-                        m_uiStep += 2;
-                        break;
-
-                    case 4:                                     // Called for the rabbit first reached meeting point
-                        DoCastSpellIfCan(m_creature, SEPLL_SUMMON_BABY_BUNNY);
-                        // no break here
-                    case 5:
-                        // Let owner cast achievement related spell
-                        if (Unit* pOwner = m_creature->GetCharmerOrOwner())
-                        {
-                            pOwner->CastSpell(pOwner, SPELL_SPRING_FLING, true);
-                        }
-
-                        m_uiStep = 6;
-                        m_uiStepTimer = 30000;
-                        break;
-                    case 6:
-                        m_creature->RemoveAurasDueToSpell(SPELL_SPRING_RABBIT_IN_LOVE);
-                        Reset();
-                        break;
-                }
-            }
-            else
-            {
-                m_uiStepTimer -= uiDiff;
-            }
-        }
-    };
-
-    CreatureAI* GetAI(Creature* pCreature) override
-    {
-        return new npc_spring_rabbitAI(pCreature);
-    }
-};
-#endif
 
 /*######
 ## npc_redemption_target
@@ -1598,9 +1075,6 @@ struct npc_redemption_target : public CreatureScript
                 if (m_uiEvadeTimer <= uiDiff)
                 {
                     EnterEvadeMode();
-#if defined (TBC) || defined (WOTLK) || defined (CATA) || defined(MISTS)
-                    m_uiEvadeTimer = 0;
-#endif
                 }
                 else
                 {
@@ -1616,7 +1090,6 @@ struct npc_redemption_target : public CreatureScript
     }
 };
 
-#if defined (CLASSIC)
 struct spell_npc_redemption_target : public SpellScript
 {
     spell_npc_redemption_target() : SpellScript("spell_npc_redemption_target") {}
@@ -1638,307 +1111,12 @@ struct spell_npc_redemption_target : public SpellScript
         return false;
     }
 };
-#endif
-#if defined(TBC) || defined(WOTLK)
-struct spell_symbol_of_life : public SpellScript
-{
-    spell_symbol_of_life() : SpellScript("spell_symbol_of_life") {}
-
-    bool EffectDummy(Unit* pCaster, uint32 uiSpellId, SpellEffectIndex uiEffIndex, Object* pTarget, ObjectGuid /*originalCasterGuid*/) override
-    {
-        // always check spellid and effectindex
-        if ((uiSpellId == SPELL_SYMBOL_OF_LIFE || uiSpellId == SPELL_SHIMMERING_VESSEL) && uiEffIndex == EFFECT_INDEX_0)
-        {
-            if (CreatureAI* pTargetAI = pTarget->ToCreature()->AI())
-            {
-                pTargetAI->SendAIEvent(AI_EVENT_CUSTOM_A, pCaster, pTarget->ToCreature());//>DoReviveSelf(pCaster->GetObjectGuid());
-            }
-
-            // always return true when we are handling this spell and effect
-            return true;
-        }
-
-        return false;
-    }
-};
-#endif
-
-#if defined (TBC) || defined (WOTLK) || defined (CATA) || defined(MISTS)
-/*######
-## npc_burster_worm
-######*/
-
-enum
-{
-    // visual and idle spells
-    SPELL_TUNNEL_BORE_PASSIVE           = 29147,                // added by c_t_a
-    SPELL_TUNNEL_BORE                   = 29148,
-    SPELL_TUNNEL_BORE_BONE_PASSIVE      = 37989,                // added by c_t_a
-    SPELL_BONE_BORE                     = 37990,
-    SPELL_SANDWORM_SUBMERGE_VISUAL      = 33928,
-    SPELL_BIRTH                         = 26586,
-
-    // combat spells
-    SPELL_POISON                        = 31747,
-    SPELL_BORE                          = 32738,
-    SPELL_ENRAGE                        = 32714,
-
-    // npcs that get enrage
-    NPC_TUNNELER                        = 16968,
-    NPC_NETHERMINE_BURSTER              = 23285,
-
-    // npcs that don't use bore spell
-    NPC_MARAUDING_BURSTER               = 16857,
-    NPC_GREATER_CRUST_BURSTER           = 21380,
-
-    // npcs that use bone bore
-    NPC_BONE_CRAWLER                    = 21849,
-    NPC_HAISHULUD                       = 22038,
-    NPC_BONE_SIFTER                     = 22466,
-    NPC_MATURE_BONE_SIFTER              = 22482,
-
-    // combat phases
-    PHASE_COMBAT                        = 1,
-    PHASE_CHASE                         = 2,
-};
-
-struct npc_burster_worm : public CreatureScript
-{
-    npc_burster_worm() : CreatureScript("npc_burster_worm") {}
-
-    struct npc_burster_wormAI : public ScriptedAI
-    {
-        npc_burster_wormAI(Creature* pCreature) : ScriptedAI(pCreature) {}
-
-        uint8 m_uiPhase;
-
-        uint32 m_uiChaseTimer;
-        uint32 m_uiBirthDelayTimer;
-        uint32 m_uiBoreTimer;
-        uint32 m_uiEnrageTimer;
-
-        void Reset() override
-        {
-            m_uiPhase           = PHASE_COMBAT;
-            m_uiChaseTimer      = 0;
-            m_uiBoreTimer       = 0;
-            m_uiBirthDelayTimer = 0;
-            m_uiEnrageTimer     = 0;
-
-            SetCombatMovement(false);
-
-            // only spawned creatures have the submerge visual
-            if (!m_creature->IsTemporarySummon())
-            {
-                DoCastSpellIfCan(m_creature, SPELL_SANDWORM_SUBMERGE_VISUAL, CAST_AURA_NOT_PRESENT);
-            }
-        }
-
-        void SpellHitTarget(Unit* pTarget, const SpellEntry* pSpell) override
-        {
-            if ((SD3_SpellId(pSpell) == SPELL_TUNNEL_BORE || SD3_SpellId(pSpell) == SPELL_BONE_BORE) && pTarget->GetTypeId() == TYPEID_PLAYER)
-            {
-                // remove auras straight on spell hit
-                m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                m_creature->RemoveAurasDueToSpell(SD3_SpellId(pSpell) == SPELL_TUNNEL_BORE ? SPELL_TUNNEL_BORE_PASSIVE : SPELL_TUNNEL_BORE_BONE_PASSIVE);
-                m_creature->RemoveAurasDueToSpell(SPELL_SANDWORM_SUBMERGE_VISUAL);
-
-                AttackStart(pTarget);
-            }
-        }
-
-        void Aggro(Unit* /*pWho*/) override
-        {
-            // remove the bore bone aura again, for summoned creatures
-            m_creature->RemoveAurasDueToSpell(SPELL_TUNNEL_BORE_BONE_PASSIVE);
-
-            if (DoCastSpellIfCan(m_creature, SPELL_BIRTH) == CAST_OK)
-            {
-                m_uiBirthDelayTimer = 2000;
-            }
-        }
-
-        void EnterEvadeMode() override
-        {
-            m_creature->RemoveAllAurasOnEvade();
-            m_creature->DeleteThreatList();
-            m_creature->CombatStop(true);
-            m_creature->LoadCreatureAddon(true);
-            m_creature->SetLootRecipient(nullptr);
-
-            // add submerge aura
-            if (DoCastSpellIfCan(m_creature, SPELL_SANDWORM_SUBMERGE_VISUAL, CAST_FORCE_CAST | CAST_AURA_NOT_PRESENT) == CAST_OK)
-            {
-                m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                m_creature->GetMotionMaster()->MoveTargetedHome();
-            }
-
-            Reset();
-        }
-
-        // function to check for bone worms
-        bool IsBoneWorm()
-        {
-            if (m_creature->GetEntry() == NPC_BONE_CRAWLER || m_creature->GetEntry() == NPC_HAISHULUD || m_creature->GetEntry() == NPC_BONE_SIFTER ||
-                m_creature->GetEntry() == NPC_MATURE_BONE_SIFTER)
-            {
-                return true;
-            }
-            return false;
-        }
-
-        void UpdateAI(const uint32 uiDiff) override
-        {
-            if (!m_creature->SelectHostileTarget() || !m_creature->getVictim())
-            {
-                return;
-            }
-
-            // animation delay
-            if (m_uiBirthDelayTimer)
-            {
-                if (m_uiBirthDelayTimer <= uiDiff)
-                {
-                    m_uiBirthDelayTimer = 0;
-                }
-                else
-                {
-                    m_uiBirthDelayTimer -= uiDiff;
-                }
-
-                // no action during birth animaiton
-                return;
-            }
-
-            // combat phase
-            if (m_uiPhase == PHASE_COMBAT)
-            {
-                if (m_uiChaseTimer)
-                {
-                    if (m_uiChaseTimer <= uiDiff)
-                    {
-                        // sone creatures have bone bore spell
-                        if (IsBoneWorm())
-                        {
-                            DoCastSpellIfCan(m_creature, SPELL_TUNNEL_BORE_BONE_PASSIVE, CAST_TRIGGERED);
-                        }
-                        else
-                        {
-                            DoCastSpellIfCan(m_creature, SPELL_TUNNEL_BORE_PASSIVE, CAST_TRIGGERED);
-                        }
-
-                        m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                        m_uiPhase = PHASE_CHASE;
-                        SetCombatMovement(true);
-                        m_creature->GetMotionMaster()->MoveChase(m_creature->getVictim());
-                        m_uiChaseTimer = 0;
-                    }
-                    else
-                    {
-                        m_uiChaseTimer -= uiDiff;
-                    }
-
-                    // return when doing phase change
-                    return;
-                }
-
-                // If we are within range melee the target
-                if (InMeleeReach(*m_creature, *m_creature->getVictim()))
-                {
-                    DoMeleeAttackIfReady();
-                }
-                else
-                {
-                    if (!m_creature->IsNonMeleeSpellCasted(false))
-                    {
-                        DoCastSpellIfCan(m_creature->getVictim(), SPELL_POISON);
-                    }
-
-                    // if target not in range, submerge and chase
-                    if (!m_creature->Where().WithinRange(m_creature->getVictim()->Where(), 0, 50.0f))
-                    {
-                        if (DoCastSpellIfCan(m_creature, SPELL_SANDWORM_SUBMERGE_VISUAL, CAST_INTERRUPT_PREVIOUS) == CAST_OK)
-                        {
-                            m_uiChaseTimer = 1500;
-                        }
-                    }
-                }
-
-                // bore spell
-                if (m_creature->GetEntry() != NPC_MARAUDING_BURSTER && m_creature->GetEntry() != NPC_GREATER_CRUST_BURSTER)
-                {
-                    if (m_uiBoreTimer < uiDiff)
-                    {
-                        if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_BORE) == CAST_OK)
-                        {
-                            m_uiBoreTimer = 45000;
-                        }
-                    }
-                    else
-                    {
-                        m_uiBoreTimer -= uiDiff;
-                    }
-                }
-
-                // enrage spell
-                if ((m_creature->GetEntry() == NPC_TUNNELER || m_creature->GetEntry() == NPC_NETHERMINE_BURSTER) && m_creature->GetHealthPercent() < 30.0f)
-                {
-                    if (m_uiEnrageTimer < uiDiff)
-                    {
-                        if (DoCastSpellIfCan(m_creature, SPELL_ENRAGE) == CAST_OK)
-                        {
-                            m_uiEnrageTimer = urand(12000, 17000);
-                        }
-                    }
-                    else
-                    {
-                        m_uiEnrageTimer -= uiDiff;
-                    }
-                }
-            }
-            // chase target
-            else if (m_uiPhase == PHASE_CHASE)
-            {
-                if (m_creature->Where().WithinRange(m_creature->getVictim()->Where(), 0, 5.0f))
-                {
-                    m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                    m_creature->RemoveAurasDueToSpell(SPELL_TUNNEL_BORE_PASSIVE);
-                    m_creature->RemoveAurasDueToSpell(SPELL_TUNNEL_BORE_BONE_PASSIVE);
-                    m_creature->RemoveAurasDueToSpell(SPELL_SANDWORM_SUBMERGE_VISUAL);
-
-                    if (DoCastSpellIfCan(m_creature, SPELL_BIRTH) == CAST_OK)
-                    {
-                        m_creature->GetMotionMaster()->MoveIdle();
-                        SetCombatMovement(false);
-                        m_uiPhase = PHASE_COMBAT;
-                        m_uiBirthDelayTimer = 2000;
-                    }
-                }
-            }
-        }
-    };
-
-    CreatureAI* GetAI(Creature* pCreature) override
-    {
-        return new npc_burster_wormAI(pCreature);
-    }
-};
-#endif
 
 void AddSC_npcs_special()
 {
     Script* s;
     s = new npc_chicken_cluck();
     s->RegisterSelf();
-
-#if defined (TBC) || defined (WOTLK) || defined (CATA) || defined(MISTS)
-    s = new npc_air_force_bots();
-    s->RegisterSelf();
-    s = new npc_dancing_flames();
-    s->RegisterSelf();
-    s = new npc_burster_worm();
-    s->RegisterSelf();
-#endif
 
     s = new npc_doctor();
     s->RegisterSelf();
@@ -1952,18 +1130,8 @@ void AddSC_npcs_special()
     s->RegisterSelf(false);
     s = new npc_redemption_target();
     s->RegisterSelf();
-#if defined(CLASSIC)
     s = new spell_npc_redemption_target();
     s->RegisterSelf();
-#endif
-#if defined(TBC) || defined(WOTLK)
-    s = new spell_symbol_of_life();
-    s->RegisterSelf();
-#endif
-#if defined (WOTLK) || defined (CATA) || defined(MISTS)
-    s = new npc_spring_rabbit();
-    s->RegisterSelf();
-#endif
 
     //pNewScript = new Script;
     //pNewScript->Name = "npc_chicken_cluck";
@@ -1971,13 +1139,6 @@ void AddSC_npcs_special()
     //pNewScript->pQuestAcceptNPC =   &QuestAccept_npc_chicken_cluck;
     //pNewScript->pQuestRewardedNPC = &QuestRewarded_npc_chicken_cluck;
     //pNewScript->RegisterSelf();
-
-    // TBC Onwards
-    //pNewScript = new Script;
-    //pNewScript->Name = "npc_dancing_flames";
-    //pNewScript->GetAI = &GetAI_npc_dancing_flames;
-    //pNewScript->RegisterSelf();
-    // End of exceptions
 
     //pNewScript = new Script;
     //pNewScript->Name = "npc_injured_patient";
@@ -2005,13 +1166,6 @@ void AddSC_npcs_special()
     //pNewScript->pGossipHello = &GossipHello_npc_innkeeper;
     //pNewScript->pGossipSelect = &GossipSelect_npc_innkeeper;
     //pNewScript->RegisterSelf(false);                        // script and error report disabled, but script can be used for custom needs, adding ScriptName
-
-    // WOTLK onwards
-    //pNewScript = new Script;
-    //pNewScript->Name = "npc_spring_rabbit";
-    //pNewScript->GetAI = &GetAI_npc_spring_rabbit;
-    //pNewScript->RegisterSelf();
-    // End of exceptions
 
     //pNewScript = new Script;
     //pNewScript->Name = "npc_redemption_target";

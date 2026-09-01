@@ -19,9 +19,8 @@ namespace world::terrain
     class ExtractorConsole
     {
     public:
-        // `client` names the expansion this build bakes ("4.3.4"). It is the one
-        // thing about the console that a core cannot share with its siblings, so it
-        // is passed in rather than compiled in.
+        // `client` names the client this build reads ("1.12.x"); it comes from the
+        // build system rather than being compiled in here.
         bool Start(const std::string& src, const std::string& dest,
                    const std::string& client);
         void Stop();

@@ -3,8 +3,6 @@ add_subdirectory(shared/terrain)
 
 add_subdirectory(shared)
 
-add_subdirectory(proto)
-
 add_subdirectory(genrev)
 
 if(BUILD_MANGOSD)

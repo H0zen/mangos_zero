@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -450,11 +450,9 @@ bool TransportMap::Add(Player* passenger, InitialWorldEntryHook* initialEntry)
     {
         WorldPacket packet;
         // hasTransport, and it must be true: this packet carries the vessel and a
-        // passenger whose own block names her. The byte is written on CLASSIC and TBC
-        // only -- mangos_two omits the argument because there the field does not exist,
-        // and copying that form here tells the client there is no transport in a packet
-        // that is nothing but transport. It then has nothing to compose him against and
-        // never leaves the loading screen.
+        // passenger whose own block names her. Omitting the argument tells the client
+        // there is no transport in a packet that is nothing but transport. It then has
+        // nothing to compose him against and never leaves the loading screen.
         data.BuildPacket(&packet, true);
         passenger->GetSession()->SendPacket(&packet);
     }

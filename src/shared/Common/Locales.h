@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -28,16 +28,9 @@ enum LocaleConstant
     LOCALE_zhTW = 5,
     LOCALE_esES = 6,
     LOCALE_esMX = 7,
-#if !defined(CLASSIC)
-    LOCALE_ruRU = 8,
-#endif
 };
 
-#if defined(CLASSIC)
 #define MAX_LOCALE 8
-#else
-#define MAX_LOCALE 9
-#endif
 
 #define DEFAULT_LOCALE LOCALE_enUS
 

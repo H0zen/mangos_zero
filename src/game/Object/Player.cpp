@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -3403,21 +3403,6 @@ void Player::SendCinematicStart(uint32 CinematicSequenceId)
     data << uint32(CinematicSequenceId);
     SendDirectMessage(&data);
 }
-
-#if defined (WOTLK) || defined (CATA) || defined (MISTS)
-
-/**
- * @brief Starts a movie sequence for the player client.
- *
- * @param MovieId The movie identifier.
- */
-void Player::SendMovieStart(uint32 MovieId)
-{
-    WorldPacket data(SMSG_TRIGGER_MOVIE, 4);
-    data << uint32(MovieId);
-    SendDirectMessage(&data);
-}
-#endif
 
 
 /**

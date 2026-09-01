@@ -11,13 +11,11 @@ namespace world::terrain
     {
         using namespace world::terrain::internal;
 
-        // The MD20 header shrank twice on the way to 3.3.5a: version 264 dropped both
-        // playable_animation_lookup (8 bytes) and ofsViews (4), moving the bounding
-        // block from 236 to 216. Reading a 3.3.5a model at the 2.4.3 offset yields
-        // plausible-looking counts and a hull made of garbage, with no error anywhere.
-        constexpr size_t BOUND_BLOCK_WOTLK = 216;
-        constexpr size_t BOUND_BLOCK_LEGACY = 236;
-        constexpr uint32_t M2_VERSION_WOTLK = 264;
+        // Offset of the bounding block in the 1.12 MD20 header. Later clients shrank
+        // the header, so this offset is only correct for the 1.12 data this extractor
+        // reads; a model from a later client parsed here yields plausible-looking
+        // counts and a hull made of garbage, with no error anywhere.
+        constexpr size_t BOUND_BLOCK = 236;
 
         bool EndsWith(const std::string& s, const char* ext)
         {
@@ -55,17 +53,15 @@ namespace world::terrain
         }
 
         out.version = RdU32(data + 4);
-        const size_t block = out.version >= M2_VERSION_WOTLK ? BOUND_BLOCK_WOTLK
-                                                             : BOUND_BLOCK_LEGACY;
-        if (size < block + 16)
+        if (size < BOUND_BLOCK + 16)
         {
             return false;
         }
 
-        const uint32_t nTriIdx = RdU32(data + block + 0);
-        const uint32_t ofsTri = RdU32(data + block + 4);
-        const uint32_t nVerts = RdU32(data + block + 8);
-        const uint32_t ofsVerts = RdU32(data + block + 12);
+        const uint32_t nTriIdx = RdU32(data + BOUND_BLOCK + 0);
+        const uint32_t ofsTri = RdU32(data + BOUND_BLOCK + 4);
+        const uint32_t nVerts = RdU32(data + BOUND_BLOCK + 8);
+        const uint32_t ofsVerts = RdU32(data + BOUND_BLOCK + 12);
 
         const bool vertsOk = nVerts && uint64_t(ofsVerts) + uint64_t(nVerts) * 12 <= size;
         const bool trisOk = nTriIdx && uint64_t(ofsTri) + uint64_t(nTriIdx) * 2 <= size;

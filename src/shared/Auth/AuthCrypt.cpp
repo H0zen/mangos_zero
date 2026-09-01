@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -87,7 +87,6 @@ void AuthCrypt::EncryptSend(uint8* data, size_t len)
     }
 }
 
-#if defined(CLASSIC)
 /**
  * Resets the stream counters and marks the crypt state as initialized.
  */
@@ -105,26 +104,6 @@ void AuthCrypt::SetKey(uint8* key, size_t len)
     _key.resize(len);
     std::copy(key, key + len, _key.begin());
 }
-#else
-/**
- * Resets the stream counters and marks the crypt state as initialized.
- */
-void AuthCrypt::Init(BigNumber* K)
-{
-    uint8* key = new uint8[SHA_DIGEST_LENGTH];
-    uint8 recvSeed[SEED_KEY_SIZE] = { 0x38, 0xA7, 0x83, 0x15, 0xF8, 0x92, 0x25, 0x30, 0x71, 0x98, 0x67, 0xB1, 0x8C, 0x4, 0xE2, 0xAA };
-    HMACSHA1 recvHash(SEED_KEY_SIZE, (uint8*)recvSeed);
-    recvHash.UpdateBigNumber(K);
-    recvHash.Finalize();
-    memcpy(key, recvHash.GetDigest(), SHA_DIGEST_LENGTH);
-    _key.resize(SHA_DIGEST_LENGTH);
-    std::copy(key, key + SHA_DIGEST_LENGTH, _key.begin());
-    delete[] key;
-
-    _send_i = _send_j = _recv_i = _recv_j = 0;
-    _initialized = true;
-}
-#endif
 
 /**
  * Destroys the authentication crypt helper.

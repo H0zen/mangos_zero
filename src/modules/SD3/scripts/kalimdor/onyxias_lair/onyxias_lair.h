@@ -32,23 +32,8 @@ enum
 
     // Special data fields for Onyxia
     DATA_LIFTOFF                = 4,
-#if defined (WOTLK) || defined (CATA) || defined(MISTS)
-    DATA_PLAYER_TOASTED         = 5,
-#endif
 
     NPC_ONYXIA_WHELP            = 11262,
     NPC_ONYXIA_TRIGGER          = 12758,
 
-#if defined (WOTLK) || defined (CATA) || defined(MISTS)
-    // Achievement Related
-    TIME_LIMIT_MANY_WHELPS      = 10,                       // 10s timeframe to kill 50 whelps after liftoff
-    ACHIEV_CRIT_REQ_MANY_WHELPS = 50,
-
-    ACHIEV_CRIT_MANY_WHELPS_N   = 12565,                    // Achievements 4403, 4406
-    ACHIEV_CRIT_MANY_WHELPS_H   = 12568,
-    ACHIEV_CRIT_NO_BREATH_N     = 12566,                    // Acheivements 4404, 4407
-    ACHIEV_CRIT_NO_BREATH_H     = 12569,
-
-    ACHIEV_START_ONYXIA_ID      = 6601,
-#endif
 };

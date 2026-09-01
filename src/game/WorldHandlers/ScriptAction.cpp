@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -66,9 +66,7 @@
 #include "BattleGround/BattleGround.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "CorpseManager.h"
-#ifdef CLASSIC
 #include "LFGMgr.h"
-#endif /* CLASSIC */
 #ifdef ENABLE_SD3
 #include "system/ScriptDevMgr.h"
 #endif /* ENABLE_SD3 */
@@ -87,9 +85,6 @@ bool ScriptAction::GetScriptCommandObject(const ObjectGuid guid, bool includeIte
     switch (guid.GetHigh())
     {
         case HIGHGUID_UNIT:
-#if defined(WOTLK) || defined(CATA) || defined(MISTS)
-        case HIGHGUID_VEHICLE:
-#endif
             resultObject = m_map->GetCreature(guid);
             break;
         case HIGHGUID_PET:
@@ -866,15 +861,6 @@ bool ScriptAction::HandleScriptStep()
         }
         case SCRIPT_COMMAND_PLAY_MOVIE:                     // 19
         {
-#if defined(WOTLK) || defined (CATA) || defined (MISTS)
-            Player* pPlayer = GetPlayerTargetOrSourceAndLog(pSource, pTarget);
-            if (!pPlayer)
-            {
-                break;
-            }
-
-            pPlayer->SendMovieStart(m_script->playMovie.movieId);
-#endif
             break;                                      // must be skipped at loading
         }
         case SCRIPT_COMMAND_MOVEMENT:                       // 20
@@ -1258,20 +1244,7 @@ bool ScriptAction::HandleScriptStep()
                 break;
             }
 
-#if defined(CLASSIC) || defined(TBC) || defined(WOTLK)
             ((Creature*)pSource)->AI()->SendAIEventAround(AIEventType(m_script->sendAIEvent.eventType), (Unit*)pTarget, 0, float(m_script->sendAIEvent.radius));
-#else
-            // if radius is provided send AI event around
-            if (m_script->sendAIEvent.radius)
-            {
-                ((Creature*)pSource)->AI()->SendAIEventAround(AIEventType(m_script->sendAIEvent.eventType), (Unit*)pTarget, 0, float(m_script->sendAIEvent.radius));
-            }
-            // else if no radius and target is creature send AI event to target
-            else if (pTarget->GetTypeId() == TYPEID_UNIT)
-            {
-                ((Creature*)pSource)->AI()->SendAIEvent(AIEventType(m_script->sendAIEvent.eventType), NULL, (Creature*)pTarget);
-            }
-#endif
             break;
         }
         case SCRIPT_COMMAND_TURN_TO:                        // 36
@@ -1504,19 +1477,11 @@ bool ScriptAction::HandleScriptStep()
             {
                 if (m_script->fly.enable)
                 {
-#if defined(CLASSIC) || defined(TBC) || defined(WOTLK)
                     pSource->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND);
-#else
-                    pSource->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_FLY_ANIM);
-#endif
                 }
                 else
                 {
-#if defined(CLASSIC) || defined(TBC) || defined(WOTLK)
                     pSource->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND);
-#else
-                    pSource->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_FLY_ANIM);
-#endif
                 }
             }
 

@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -151,11 +151,11 @@ enum Powers
 {
     POWER_MANA                          = 0,         ///< The most common one, mobs usually have this or rage
     POWER_RAGE                          = 1,         ///< This is what warriors use to cast their spells
-    POWER_FOCUS                         = 2,         ///< Used by hunters after Cataclysm (4.x)
+    POWER_FOCUS                         = 2,         ///< Used by hunter pets
     POWER_ENERGY                        = 3,         ///< Used by rouges to do their spells
     POWER_HAPPINESS                     = 4,         ///< Hunter's pet's happiness affect their damage
     MAX_POWERS                          = 5,
-    POWER_ALL                           = 127,          // default for class? - need check for TBC
+    POWER_ALL                           = 127,          // default for class?
     POWER_HEALTH                        = 0xFFFFFFFE ///< Health, everyone has this (-2 as signed value)
 };
 

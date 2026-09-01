@@ -1,6 +1,6 @@
 /**
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -102,15 +102,9 @@ RealmList& sRealmList
     return realmlist;
 }
 
-RealmVersion RealmList::BelongsToVersion(uint32 build) const
+RealmListView RealmList::GetRealms() const
 {
-    ClientBuildPolicy const* policy = FindClientBuildPolicy(build);
-    return policy ? policy->realmVersion : REALM_VERSION_VANILLA;
-}
-
-RealmListView RealmList::GetRealmsForBuild(uint32 build) const
-{
-    return RealmListView(m_snapshots.Load(), BelongsToVersion(build));
+    return RealmListView(m_snapshots.Load());
 }
 
 /// Load the realm list from the database
@@ -121,12 +115,9 @@ void RealmList::Initialize(uint32 updateInterval)
     m_refreshGate.Reset(updateInterval, time(NULL));
 }
 
-void RealmList::AddRealmToBuildList(
-    RealmSnapshot& snapshot, Realm const& realm)
+void RealmList::AddRealmToList(RealmSnapshot& snapshot, Realm const& realm)
 {
-    RealmBuilds builds = realm.realmbuilds;
-    int buildNumber = *(builds.begin());
-    snapshot.realmsByVersion[BelongsToVersion(buildNumber)].push_back(&realm);
+    snapshot.realmList.push_back(&realm);
 }
 
 void RealmList::UpdateRealm(
@@ -168,7 +159,7 @@ void RealmList::UpdateRealm(
 
     if (first_build)
     {
-        AddRealmToBuildList(snapshot, realm);
+        AddRealmToList(snapshot, realm);
     }
     else
     {

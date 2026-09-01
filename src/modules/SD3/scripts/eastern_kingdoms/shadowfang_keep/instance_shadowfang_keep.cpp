@@ -43,12 +43,7 @@ struct is_shadowfang_keep : public InstanceScript
     class instance_shadowfang_keep : public ScriptedInstance
     {
         public:
-#if defined (CLASSIC) || defined (TBC)
             instance_shadowfang_keep(Map* pMap) : ScriptedInstance(pMap)
-#endif
-#if defined (WOTLK) || defined (CATA) || defined (MISTS)
-            instance_shadowfang_keep(Map* pMap) : ScriptedInstance(pMap), m_uiApothecaryDead(0)
-#endif
             {
                 Initialize();
             }
@@ -65,13 +60,6 @@ struct is_shadowfang_keep : public InstanceScript
                     case NPC_ASH:
                     case NPC_ADA:
                     case NPC_FENRUS:
-#if defined (WOTLK) || defined (CATA) || defined (MISTS)
-                    case NPC_HUMMEL:
-                    case NPC_FRYE:
-                    case NPC_BAXTER:
-                    case NPC_APOTHECARY_GENERATOR:
-                    case NPC_VALENTINE_BOSS_MGR:
-#endif
                         break;
                     case NPC_VINCENT:
                         // If Arugal has done the intro, make Vincent dead!
@@ -112,10 +100,6 @@ struct is_shadowfang_keep : public InstanceScript
                         }
                         break;
                     case GO_ARUGAL_FOCUS:
-#if defined (WOTLK) || defined (CATA) || defined(MISTS)
-                    case GO_APOTHECARE_VIALS:
-                    case GO_CHEMISTRY_SET:
-#endif
                         break;
 
                     default:
@@ -135,37 +119,6 @@ struct is_shadowfang_keep : public InstanceScript
                     DoScriptText(SAY_BOSS_DIE_AS, pAsh);
                 }
             }
-
-#if defined (WOTLK) || defined (CATA) || defined(MISTS)
-            void OnCreatureDeath(Creature* pCreature) override
-            {
-                switch (pCreature->GetEntry())
-                {
-                    // Remove lootable flag from Hummel
-                    // Instance data is set to SPECIAL because the encounter depends on multiple bosses
-                    case NPC_HUMMEL:
-                        pCreature->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
-                        DoScriptText(SAY_HUMMEL_DEATH, pCreature);
-                        // no break;
-                    case NPC_FRYE:
-                    case NPC_BAXTER:
-                        SetData(TYPE_APOTHECARY, SPECIAL);
-                        break;
-                }
-            }
-
-            void OnCreatureEvade(Creature* pCreature) override
-            {
-                switch (pCreature->GetEntry())
-                {
-                    case NPC_HUMMEL:
-                    case NPC_FRYE:
-                    case NPC_BAXTER:
-                        SetData(TYPE_APOTHECARY, FAIL);
-                        break;
-                }
-            }
-#endif
 
             void SetData(uint32 uiType, uint32 uiData) override
             {
@@ -215,35 +168,6 @@ struct is_shadowfang_keep : public InstanceScript
                             }
                         }
                         break;
-#if defined (WOTLK) || defined (CATA) || defined(MISTS)
-                    case TYPE_APOTHECARY:
-                        // Reset apothecary counter on fail
-                        if (uiData == IN_PROGRESS)
-                        {
-                            m_uiApothecaryDead = 0;
-                        }
-                        if (uiData == SPECIAL)
-                        {
-                            ++m_uiApothecaryDead;
-
-                            // Set Hummel as lootable only when the others are dead
-                            if (m_uiApothecaryDead == MAX_APOTHECARY)
-                            {
-                                if (Creature* pHummel = GetSingleCreatureFromStorage(NPC_HUMMEL))
-                                {
-                                    pHummel->SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
-                                }
-
-                                SetData(TYPE_APOTHECARY, DONE);
-                            }
-                        }
-                        // We don't want to store the SPECIAL data
-                        else
-                        {
-                            m_auiEncounter[6] = uiData;
-                        }
-                        break;
-#endif
                 }
 
                 if (uiData == DONE)
@@ -252,11 +176,7 @@ struct is_shadowfang_keep : public InstanceScript
 
                     std::ostringstream saveStream;
                     saveStream  << m_auiEncounter[0] << " " << m_auiEncounter[1] << " " << m_auiEncounter[2] << " " << m_auiEncounter[3]
-#if defined (CLASSIC) || defined (TBC)
                                 << " " << m_auiEncounter[4] << " " << m_auiEncounter[5];
-#else
-                                << " " << m_auiEncounter[4] << " " << m_auiEncounter[5] << " " << m_auiEncounter[6];
-#endif
                     m_strInstData = saveStream.str();
 
                     SaveToDB();
@@ -278,10 +198,6 @@ struct is_shadowfang_keep : public InstanceScript
                         return m_auiEncounter[3];
                     case TYPE_INTRO:
                         return m_auiEncounter[4];
-#if defined (WOTLK) || defined (CATA) || defined(MISTS)
-                    case TYPE_APOTHECARY:
-                        return m_auiEncounter[6];
-#endif
                     default:
                         return 0;
                 }
@@ -300,11 +216,7 @@ struct is_shadowfang_keep : public InstanceScript
 
                 std::istringstream loadStream(chrIn);
                 loadStream  >> m_auiEncounter[0] >> m_auiEncounter[1] >> m_auiEncounter[2] >> m_auiEncounter[3]
-#if defined (CLASSIC) || defined (TBC)
                             >> m_auiEncounter[4] >> m_auiEncounter[5];
-#else
-                            >> m_auiEncounter[4] >> m_auiEncounter[5] >> m_auiEncounter[6];
-#endif
                 for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
                 {
                     if (m_auiEncounter[i] == IN_PROGRESS)

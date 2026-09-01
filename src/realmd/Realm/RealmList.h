@@ -1,6 +1,6 @@
 /**
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -53,7 +53,7 @@ class RealmList
 
         void UpdateIfNeed();
 
-        RealmListView GetRealmsForBuild(uint32 build) const;
+        RealmListView GetRealms() const;
 
         /**
          * @return the total number of realms available
@@ -64,25 +64,12 @@ class RealmList
         }
     private:
         /**
-         * Checks what version (ie, vanilla, tbc) a certain build number belongs to
-         * @param build the build you want to check the version for
-         * @return the corresponding version to the given build number
+         * Adds the given \ref Realm to the list presented to connecting clients. A realm
+         * only reaches the list if it names at least one build in the allowedbuilds field
+         * of the realm.realmlist database table.
+         * @param realm the realm you want to list, should be done for all realms
          */
-        RealmVersion BelongsToVersion(uint32 build) const;
-
-        /**
-         * Adds the given \ref Realm to a list sorted by version, ie: vanilla, tbc etc. This
-         * in turn is used to only present the compatible realms to the clients connecting,
-         * ie: vanilla clients will only see vanilla realms.
-         *
-         * This is controlled by what you set in the allowedbuilds field in the realm.realmlist
-         * database, if you set more than one build the first one found in there will be
-         * used, so if you tag a realm as this: "8606 6141" only TBC clients will be able to
-         * see the realm and connect to it.
-         * @param realm the realm you want to add to the sorted list, should be done for all realms
-         * \see RealmVersion
-         */
-        void AddRealmToBuildList(RealmSnapshot& snapshot, Realm const& realm);
+        void AddRealmToList(RealmSnapshot& snapshot, Realm const& realm);
 
         std::shared_ptr<RealmSnapshot> BuildSnapshot(bool init);
 

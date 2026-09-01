@@ -18,7 +18,7 @@ endfunction()
 message("")
 message("======================================================================")
 
-_status("${MANGOS_PKG}" "${MANGOS_VERSION}  (${MANGOS_EXP}, WoW client 1.12.x)")
+_status("${MANGOS_PKG}" "${MANGOS_VERSION}  (WoW client 1.12.x)")
 _status("Source revision"
         "${rev_hash}  ${rev_date}  [${rev_branch}]")
 

@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -37,7 +37,7 @@
  * The previous implementation also exposed setPriority/suspend/resume/
  * destroy/current/currentId/currentHandle; grepping the tree found no caller
  * of any of them outside Threading.cpp itself, so they are dropped rather
- * than ported -- matching what mangostwo's de-ACE-ing (#240) kept.
+ * than ported.
  *
  * @see Thread for the main thread class
  * @see Runnable for the task interface

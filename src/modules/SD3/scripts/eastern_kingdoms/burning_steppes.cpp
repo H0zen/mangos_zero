@@ -356,10 +356,6 @@ struct npc_grark_lorkrub : public CreatureScript
                     m_creature->RemoveAllAurasOnDeath();
                     m_creature->ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, false);
 
-#if defined (TBC) || defined (WOTLK) || defined (CATA) || defined(MISTS)
-                    m_creature->ModifyAuraState(AURA_STATE_HEALTHLESS_35_PERCENT, false);
-#endif
-
                     m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                     m_creature->ClearAllReactives();
                     m_creature->GetMotionMaster()->Clear();

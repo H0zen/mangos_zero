@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -326,7 +326,7 @@ struct ActionButton
     }
 };
 
-#define  MAX_ACTION_BUTTONS 120   // TBC 132 checked in 2.3.0
+#define  MAX_ACTION_BUTTONS 120
 
 typedef std::map<uint8, ActionButton> ActionButtonList;
 
@@ -3574,10 +3574,6 @@ class Player : public Unit
 
         // Send cinematic start to the client
         void SendCinematicStart(uint32 CinematicSequenceId);
-#if defined(WOTLK) || defined(CATA) || defined(MISTS)
-        // Send movie start to the client
-        void SendMovieStart(uint32 MovieId);
-#endif
 
         /*********************************************************/
         /***                 INSTANCE SYSTEM                   ***/

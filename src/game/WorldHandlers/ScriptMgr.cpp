@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -63,9 +63,7 @@
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "WaypointMovementGenerator.h"
 #include "Mail.h"
-#if defined(CLASSIC)
 #include "LFGMgr.h"
-#endif
 
 
 #ifdef ENABLE_SD3
@@ -207,14 +205,6 @@ void ScriptMgr::CollectPossibleEventIds(std::set<uint32>& eventIds)
                 eventIds.insert(itr->capturePoint.winEventID1);
                 eventIds.insert(itr->capturePoint.winEventID2);
                 break;
-#if defined(WOTLK) || defined (CATA) || defined (MISTS)
-            case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
-                eventIds.insert(itr->destructibleBuilding.damagedEvent);
-                eventIds.insert(itr->destructibleBuilding.destroyedEvent);
-                eventIds.insert(itr->destructibleBuilding.intactEvent);
-                eventIds.insert(itr->destructibleBuilding.rebuildingEvent);
-                break;
-#endif
             default:
                 break;
         }
@@ -228,21 +218,6 @@ void ScriptMgr::CollectPossibleEventIds(std::set<uint32>& eventIds)
         {
             for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
             {
-#if defined (CATA)
-                SpellEffectEntry const* spellEffect = spell->GetSpellEffect(SpellEffectIndex(j));
-                if (!spellEffect)
-                {
-                    continue;
-                }
-
-                if (spellEffect->Effect == SPELL_EFFECT_SEND_EVENT)
-                {
-                    if (spellEffect->EffectMiscValue)
-                    {
-                        eventIds.insert(spellEffect->EffectMiscValue);
-                    }
-                }
-#else
                 if (spell->Effect[j] == SPELL_EFFECT_SEND_EVENT)
                 {
                     if (spell->EffectMiscValue[j])
@@ -250,30 +225,9 @@ void ScriptMgr::CollectPossibleEventIds(std::set<uint32>& eventIds)
                         eventIds.insert(spell->EffectMiscValue[j]);
                     }
                 }
-#endif
             }
         }
     }
-#if defined(TBC) || defined (WOTLK) || defined (CATA)
-    // Load all possible event entries from taxi path nodes
-    for (size_t path_idx = 0; path_idx < sTaxiPathNodesByPath.size(); ++path_idx)
-    {
-        for (size_t node_idx = 0; node_idx < sTaxiPathNodesByPath[path_idx].size(); ++node_idx)
-        {
-            TaxiPathNodeEntry const& node = sTaxiPathNodesByPath[path_idx][node_idx];
-
-            if (node.arrivalEventID)
-            {
-                eventIds.insert(node.arrivalEventID);
-            }
-
-            if (node.departureEventID)
-            {
-                eventIds.insert(node.departureEventID);
-            }
-        }
-    }
-#endif
 }
 
 // Starters for events
@@ -302,11 +256,7 @@ bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool
         }
         else
         {
-#if defined(CLASSIC)
             if (map->IsBattleGround())
-#else
-            if (map->IsBattleGroundOrArena())
-#endif
             {
                 bg = ((BattleGroundMap*)map)->GetBG();
             }

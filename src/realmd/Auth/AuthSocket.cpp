@@ -1,6 +1,6 @@
 /**
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -56,7 +56,6 @@
 #include "AuthSocket.h"
 #include "AuthCodes.h"
 #include "AuthProtocolGuard.h"
-#include "AuthResultPolicy.h"
 #include "ClientLocale.h"
 #include "PatchArtifact.h"
 #include "PatchHandler.h"
@@ -72,13 +71,6 @@ extern DatabaseType LoginDatabase;
 
 std::atomic<uint32> AuthSocket::s_connections{0};
 std::atomic<uint32> AuthSocket::s_authed{0};
-
-enum AccountFlags
-{
-    ACCOUNT_FLAG_GM         = 0x00000001,
-    ACCOUNT_FLAG_TRIAL      = 0x00000008,
-    ACCOUNT_FLAG_PROPASS    = 0x00800000,
-};
 
 namespace
 {
@@ -140,16 +132,6 @@ typedef struct AUTH_LOGON_PROOF_C
     uint8   number_of_keys;
     uint8   securityFlags;                                  // 0x00-0x04
 } sAuthLogonProof_C;
-
-typedef struct AUTH_LOGON_PROOF_S
-{
-    uint8   cmd;
-    uint8   error;
-    uint8   M2[20];
-    uint32  accountFlags;                                   // see enum AccountFlags
-    uint32  surveyId;                                       // SurveyId
-    uint16  unkFlags;                                       // some flags (AccountMsgAvailable = 0x01)
-} sAuthLogonProof_S;
 
 typedef struct AUTH_LOGON_PROOF_S_BUILD_6005
 {
@@ -499,44 +481,13 @@ void AuthSocket::_SetVSFields(const std::string& rI)
 
 void AuthSocket::SendProof(Sha1Hash sha)
 {
-    switch (_build)
-    {
-        case 5875:                                          // 1.12.1
-        case 6005:                                          // 1.12.2
-        case 6141:                                          // 1.12.3
-        {
-            sAuthLogonProof_S_BUILD_6005 proof;
-            memcpy(proof.M2, sha.GetDigest(), 20);
-            proof.cmd = CMD_AUTH_LOGON_PROOF;
-            proof.error = 0;
-            proof.unk2 = 0x00;
+    sAuthLogonProof_S_BUILD_6005 proof;
+    memcpy(proof.M2, sha.GetDigest(), 20);
+    proof.cmd = CMD_AUTH_LOGON_PROOF;
+    proof.error = 0;
+    proof.unk2 = 0x00;
 
-            send((char*)&proof, sizeof(proof));
-            break;
-        }
-        case 8606:                                          // 2.4.3
-        case 12340:                                         // 3.3.5a
-        case 15595:                                         // 4.3.4
-        case 18273:                                         // 5.4.8
-        case 18414:                                         // 5.4.8
-        case 21742:                                         // 6.2.4
-        case 25549:                                         // 7.3.2
-        case 32790:                                         // 8.2.5
-        case 40000:                                         // 9.0.0
-        default:                                            // or later
-        {
-            sAuthLogonProof_S proof;
-            memcpy(proof.M2, sha.GetDigest(), 20);
-            proof.cmd = CMD_AUTH_LOGON_PROOF;
-            proof.error = 0;
-            proof.accountFlags = ACCOUNT_FLAG_PROPASS;
-            proof.surveyId = 0x00000000;
-            proof.unkFlags = 0x0000;
-
-            send((char*)&proof, sizeof(proof));
-            break;
-        }
-    }
+    send((char*)&proof, sizeof(proof));
 }
 
 /// Logon Challenge command handler
@@ -643,8 +594,7 @@ bool AuthSocket::_HandleLogonChallenge()
                 if (strcmp((*result)[3].GetString(), get_remote_address().c_str()))
                 {
                     DEBUG_LOG("[AuthChallenge] Account IP differs");
-                    pkt << static_cast<uint8>(
-                        LockedAccountResultForBuild(_build));
+                    pkt << static_cast<uint8>(WOW_FAIL_DB_BUSY);
                     locked = true;
                 }
                 else
@@ -1227,160 +1177,70 @@ bool AuthSocket::_HandleRealmList()
 
 void AuthSocket::LoadRealmlist(ByteBuffer& pkt, uint32 acctid)
 {
-    RealmListView const realms = sRealmList.GetRealmsForBuild(_build);
+    RealmListView const realms = sRealmList.GetRealms();
     uint32 const numRealms = static_cast<uint32>(realms.size());
 
     uint32 clientIp = ParseClientIPv4(remote_address_);
 
-    switch (_build)
+    pkt << uint32(0);                               // unused value
+    pkt << uint8(numRealms);
+
+    for (Realm const* realm : realms)
     {
-        case 5875:                                          // 1.12.1
-        case 6005:                                          // 1.12.2
-        case 6141:                                          // 1.12.3
+        uint8 AmountOfCharacters;
+
+        // No SQL injection. id of realm is controlled by the database.
+        QueryResult* result = LoginDatabase.PQuery("SELECT `numchars` FROM `realmcharacters` WHERE `realmid` = '%d' AND `acctid`='%u'", realm->m_ID, acctid);
+        if (result)
         {
-            pkt << uint32(0);                               // unused value
-            pkt << uint8(numRealms);
-
-            for (Realm const* realm : realms)
-            {
-                uint8 AmountOfCharacters;
-
-                // No SQL injection. id of realm is controlled by the database.
-                QueryResult* result = LoginDatabase.PQuery("SELECT `numchars` FROM `realmcharacters` WHERE `realmid` = '%d' AND `acctid`='%u'", realm->m_ID, acctid);
-                if (result)
-                {
-                    Field* fields = result->Fetch();
-                    AmountOfCharacters = fields[0].GetUInt8();
-                    delete result;
-                }
-                else
-                {
-                    AmountOfCharacters = 0;
-                }
-
-                bool ok_build = std::find(realm->realmbuilds.begin(), realm->realmbuilds.end(), _build) != realm->realmbuilds.end();
-
-                RealmBuildInfo const* buildInfo = ok_build ? FindBuildInfo(_build) : NULL;
-                if (!buildInfo)
-                {
-                    buildInfo = &realm->realmBuildInfo;
-                }
-
-                RealmFlags realmflags = realm->realmflags;
-
-                // 1.x clients not support explicitly REALM_FLAG_SPECIFYBUILD, so manually form similar name as show in more recent clients
-                std::string name = realm->name;
-                if (realmflags & REALM_FLAG_SPECIFYBUILD)
-                {
-                    char buf[20];
-                    snprintf(buf, 20, " (%u,%u,%u)", buildInfo->major_version, buildInfo->minor_version, buildInfo->bugfix_version);
-                    name += buf;
-                }
-
-                // Show offline state for unsupported client builds and locked realms (1.x clients not support locked state show)
-                if (!ok_build || (realm->allowedSecurityLevel > _accountSecurityLevel))
-                {
-                    realmflags = RealmFlags(realmflags | REALM_FLAG_OFFLINE);
-                }
-
-                pkt << uint32(realm->icon);                                        // realm type
-                pkt << uint8(realmflags);                                           // realmflags
-                pkt << name;                                                        // name
-                {
-                    RealmAddress srvAddr = GetAddressForClient(*realm, clientIp);
-                    pkt << GetAddressString(srvAddr.ip, realm->ExternalAddress.port);  // address
-                }
-                pkt << float(realm->populationLevel);
-                pkt << uint8(AmountOfCharacters);
-                pkt << uint8(realm->timezone);                                     // realm category
-                pkt << uint8(0x00);                                                 // unk, may be realm number/id?
-            }
-
-            pkt << uint16(0x0002);                          // unused value (why 2?)
-            break;
+            Field* fields = result->Fetch();
+            AmountOfCharacters = fields[0].GetUInt8();
+            delete result;
+        }
+        else
+        {
+            AmountOfCharacters = 0;
         }
 
-        case 8606:                                          // 2.4.3
-        case 12340:                                         // 3.3.5a
-        case 15595:                                         // 4.3.4
-        case 18273:                                         // 5.4.8
-        case 18414:                                         // 5.4.8
-        case 21742:                                         // 6.2.4
-        case 25549:                                         // 7.3.2
-        case 32790:                                         // 8.2.5
-        case 40000:                                         // 9.0.0
-        default:                                            // and later
+        bool ok_build = std::find(realm->realmbuilds.begin(), realm->realmbuilds.end(), _build) != realm->realmbuilds.end();
+
+        RealmBuildInfo const* buildInfo = ok_build ? FindBuildInfo(_build) : NULL;
+        if (!buildInfo)
         {
-            uint16 tempRealm = uint16(numRealms);           // Force the cast here to prevent a compile fail in VS2017/32Bit
-            pkt << uint32(0);                               // unused value
-            pkt << tempRealm;
-
-            for (Realm const* realm : realms)
-            {
-                uint8 AmountOfCharacters;
-
-                // No SQL injection. id of realm is controlled by the database.
-                QueryResult* result = LoginDatabase.PQuery("SELECT `numchars` FROM `realmcharacters` WHERE `realmid` = '%d' AND `acctid`='%u'", realm->m_ID, acctid);
-                if (result)
-                {
-                    Field* fields = result->Fetch();
-                    AmountOfCharacters = fields[0].GetUInt8();
-                    delete result;
-                }
-                else
-                {
-                    AmountOfCharacters = 0;
-                }
-
-                bool ok_build = std::find(realm->realmbuilds.begin(), realm->realmbuilds.end(), _build) != realm->realmbuilds.end();
-
-                RealmBuildInfo const* buildInfo = ok_build ? FindBuildInfo(_build) : NULL;
-                if (!buildInfo)
-                {
-                    buildInfo = &realm->realmBuildInfo;
-                }
-
-                uint8 lock = (realm->allowedSecurityLevel > _accountSecurityLevel) ? 1 : 0;
-
-                RealmFlags realmFlags = realm->realmflags;
-
-                // Show offline state for unsupported client builds
-                if (!ok_build)
-                {
-                    realmFlags = RealmFlags(realmFlags | REALM_FLAG_OFFLINE);
-                }
-
-                if (!buildInfo)
-                {
-                    realmFlags = RealmFlags(realmFlags & ~REALM_FLAG_SPECIFYBUILD);
-                }
-
-                pkt << uint8(realm->icon);                                         // realm type (this is second column in Cfg_Configs.dbc)
-                pkt << uint8(lock);                                                 // flags, if 0x01, then realm locked
-                pkt << uint8(realmFlags);                                           // see enum RealmFlags
-                pkt << realm->name;                                                // name
-                {
-                    RealmAddress srvAddr = GetAddressForClient(*realm, clientIp);
-                    pkt << GetAddressString(srvAddr.ip, realm->ExternalAddress.port);  // address
-                }
-                pkt << float(realm->populationLevel);
-                pkt << uint8(AmountOfCharacters);
-                pkt << uint8(realm->timezone);                                     // realm category (Cfg_Categories.dbc)
-                pkt << uint8(0x2C);                                                 // unk, may be realm number/id?
-
-                if (realmFlags & REALM_FLAG_SPECIFYBUILD)
-                {
-                    pkt << uint8(buildInfo->major_version);
-                    pkt << uint8(buildInfo->minor_version);
-                    pkt << uint8(buildInfo->bugfix_version);
-                    pkt << uint16(_build);
-                }
-            }
-
-            pkt << uint16(0x0010);                          // unused value (why 10?)
-            break;
+            buildInfo = &realm->realmBuildInfo;
         }
+
+        RealmFlags realmflags = realm->realmflags;
+
+        // 1.x clients not support explicitly REALM_FLAG_SPECIFYBUILD, so manually form similar name as show in more recent clients
+        std::string name = realm->name;
+        if (realmflags & REALM_FLAG_SPECIFYBUILD)
+        {
+            char buf[20];
+            snprintf(buf, 20, " (%u,%u,%u)", buildInfo->major_version, buildInfo->minor_version, buildInfo->bugfix_version);
+            name += buf;
+        }
+
+        // Show offline state for unsupported client builds and locked realms (1.x clients not support locked state show)
+        if (!ok_build || (realm->allowedSecurityLevel > _accountSecurityLevel))
+        {
+            realmflags = RealmFlags(realmflags | REALM_FLAG_OFFLINE);
+        }
+
+        pkt << uint32(realm->icon);                                        // realm type
+        pkt << uint8(realmflags);                                           // realmflags
+        pkt << name;                                                        // name
+        {
+            RealmAddress srvAddr = GetAddressForClient(*realm, clientIp);
+            pkt << GetAddressString(srvAddr.ip, realm->ExternalAddress.port);  // address
+        }
+        pkt << float(realm->populationLevel);
+        pkt << uint8(AmountOfCharacters);
+        pkt << uint8(realm->timezone);                                     // realm category
+        pkt << uint8(0x00);                                                 // unk, may be realm number/id?
     }
+
+    pkt << uint16(0x0002);                          // unused value (why 2?)
 }
 
 /// Client accepted the offered patch: stream it from the beginning.

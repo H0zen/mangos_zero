@@ -1,6 +1,6 @@
 /**
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -15,7 +15,6 @@
 #include "Common/ServerDefines.h"
 #include "Platform/Define.h"
 
-#include <array>
 #include <atomic>
 #include <ctime>
 #include <list>
@@ -42,20 +41,6 @@ struct RealmBuildInfo
     int hotfix_version;
 };
 
-enum RealmVersion
-{
-    REALM_VERSION_VANILLA     = 0,
-    REALM_VERSION_TBC         = 1,
-    REALM_VERSION_WOTLK       = 2,
-    REALM_VERSION_CATA        = 3,
-    REALM_VERSION_MOP         = 4,
-    REALM_VERSION_WOD         = 5,
-    REALM_VERSION_LEGION      = 6,
-    REALM_VERSION_BFA         = 7,
-    REALM_VERSION_SHADOWLANDS = 8,
-    REALM_VERSION_COUNT       = 9
-};
-
 using RealmBuilds = std::set<uint32>;
 
 struct Realm
@@ -80,7 +65,7 @@ using RealmStlList = std::list<Realm const*>;
 struct RealmSnapshot
 {
     RealmMap realms;
-    std::array<RealmStlList, REALM_VERSION_COUNT> realmsByVersion;
+    RealmStlList realmList;
 };
 
 class RealmSnapshotStore
@@ -115,12 +100,9 @@ class RealmListView
 public:
     using const_iterator = RealmStlList::const_iterator;
 
-    RealmListView(
-        RealmSnapshotStore::SnapshotPtr snapshot,
-        RealmVersion version)
+    explicit RealmListView(RealmSnapshotStore::SnapshotPtr snapshot)
         : m_snapshot(std::move(snapshot)),
-          m_realms(&m_snapshot->realmsByVersion[
-              static_cast<std::size_t>(version)])
+          m_realms(&m_snapshot->realmList)
     {
     }
 

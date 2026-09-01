@@ -1889,8 +1889,6 @@ QuestTracker.Enable= 0
 #       Default: 0 (Recommended)
 #                1 (New)
 #
-#       Note: Recommended will display as 'New Players' for Wrath of the Lich King
-#
 ###################################################################################################
 
 Realm.RecommendedOrNew.Enabled = 0

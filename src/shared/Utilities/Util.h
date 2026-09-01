@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * MaNGOS is a full featured server for World of Warcraft, supporting
- * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ * the 1.12.x client.
  *
  * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
  *
@@ -956,18 +956,6 @@ std::string ByteArrayToHexStr(uint8 const* bytes, uint32 length, bool reverse = 
  * Converts a hexadecimal string into a byte array.
  */
 void HexStrToByteArray(std::string const& str, uint8* out, bool reverse = false);
-
-/**
-* @brief Define iCoreNumber to be set for the currently defined core
-*
-* @return int
-*/
-int return_iCoreNumber();
-
-/**
-* @brief Display the startup banner
-*/
-void print_banner();
 
 /**
  * Performs a case-insensitive substring search and returns a pointer to the first match.

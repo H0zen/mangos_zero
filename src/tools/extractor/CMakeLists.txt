@@ -1,14 +1,4 @@
-if("${MANGOS_EXP}" STREQUAL "CLASSIC")
-    set(MANGOS_CLIENT_NAME "World of Warcraft 1.12.x")
-elseif("${MANGOS_EXP}" STREQUAL "TBC")
-    set(MANGOS_CLIENT_NAME "The Burning Crusade 2.4.3")
-elseif("${MANGOS_EXP}" STREQUAL "WOTLK")
-    set(MANGOS_CLIENT_NAME "Wrath of the Lich King 3.3.5a")
-elseif("${MANGOS_EXP}" STREQUAL "CATA")
-    set(MANGOS_CLIENT_NAME "Cataclysm 4.3.4")
-else()
-    set(MANGOS_CLIENT_NAME "unknown client")
-endif()
+set(MANGOS_CLIENT_NAME "World of Warcraft 1.12.x")
 
 set(SRC_GRP_CLIENT
     client/AdtParser.cpp

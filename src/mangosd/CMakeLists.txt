@@ -26,7 +26,6 @@ target_include_directories(mangosd
 target_link_libraries(mangosd
     PRIVATE
         game
-        proto
         Threads::Threads
         mangos_openssl
         mangos_openssl_strict

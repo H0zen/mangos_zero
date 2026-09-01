@@ -68,7 +68,6 @@ enum
     GO_DRAKKISATH_DOOR_1        = 175946,
     GO_DRAKKISATH_DOOR_2        = 175947,
 
-#if defined (CLASSIC)
     // upper spire entrance
     GO_DRAGONSPINE              = 164725,
     GO_BRAZIER_1                = 175528,
@@ -77,7 +76,6 @@ enum
     GO_BRAZIER_4                = 175531,
     GO_BRAZIER_5                = 175532,
     GO_BRAZIER_6                = 175533,
-#endif
 
     GO_ROOM_7_RUNE              = 175194,
     GO_ROOM_3_RUNE              = 175195,
@@ -97,9 +95,7 @@ enum
     GO_EMBERSEER_RUNE_6         = 175271,
     GO_EMBERSEER_RUNE_7         = 175272,
 
-#if defined (CLASSIC)
     ITEM_SEAL_OF_ASCENSION      = 12344,
-#endif
 
     MAX_STADIUM_WAVES           = 7,
     MAX_STADIUM_MOBS_PER_WAVE   = 5,

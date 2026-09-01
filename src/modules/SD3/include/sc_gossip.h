@@ -53,19 +53,13 @@
 #define GOSSIP_TEXT_WEAPONMASTER        "The weapon master"
 #define GOSSIP_TEXT_OFFICERS            "The officers' lounge"
 #define GOSSIP_TEXT_BATTLEMASTER        "The battlemaster"
-#define GOSSIP_TEXT_BARBER              "Barber"
 #define GOSSIP_TEXT_CLASSTRAINER        "A class trainer"
 #define GOSSIP_TEXT_PROFTRAINER         "A profession trainer"
-#define GOSSIP_TEXT_LEXICON             "Lexicon of Power"
 
 #define GOSSIP_TEXT_ALTERACVALLEY       "Alterac Valley"
 #define GOSSIP_TEXT_ARATHIBASIN         "Arathi Basin"
 #define GOSSIP_TEXT_WARSONGULCH         "Warsong Gulch"
-#define GOSSIP_TEXT_ARENA               "Arena"
-#define GOSSIP_TEXT_EYEOFTHESTORM       "Eye of The Storm"
-#define GOSSIP_TEXT_STRANDOFANCIENT     "Strand of the Ancients"
 
-#define GOSSIP_TEXT_DEATH_KNIGHT        "Death Knight"
 #define GOSSIP_TEXT_DRUID               "Druid"
 #define GOSSIP_TEXT_HUNTER              "Hunter"
 #define GOSSIP_TEXT_PRIEST              "Priest"
@@ -88,8 +82,6 @@
 #define GOSSIP_TEXT_MINING              "Mining"
 #define GOSSIP_TEXT_FISHING             "Fishing"
 #define GOSSIP_TEXT_SKINNING            "Skinning"
-#define GOSSIP_TEXT_JEWELCRAFTING       "Jewelcrafting"
-#define GOSSIP_TEXT_INSCRIPTION         "Inscription"
 
 // Enumeration for trade skills and levels
 enum
@@ -108,8 +100,6 @@ enum
     TRADESKILL_MINING              = 11,
     TRADESKILL_FISHING             = 12,
     TRADESKILL_SKINNING            = 13,
-    TRADESKILL_JEWLCRAFTING        = 14,
-    TRADESKILL_INSCRIPTION         = 15,
 
     // Skill levels
     TRADESKILL_LEVEL_NONE          = 0,
@@ -117,8 +107,6 @@ enum
     TRADESKILL_LEVEL_JOURNEYMAN    = 2,
     TRADESKILL_LEVEL_EXPERT        = 3,
     TRADESKILL_LEVEL_ARTISAN       = 4,
-    TRADESKILL_LEVEL_MASTER        = 5,
-    TRADESKILL_LEVEL_GRAND_MASTER  = 6,
 
     // Gossip defines
     GOSSIP_ACTION_TRADE            = 1,
@@ -169,11 +157,7 @@ extern uint32 GetSkillLevel(Player* pPlayer, uint32 uiSkill);
 #define ADD_GOSSIP_ITEM(uiIcon, chrText, uiSender, uiOptionId)   PlayerTalkClass->GetGossipMenu().AddMenuItem(uiIcon, chrText, uiSender, uiOptionId, "", 0)
 #define ADD_GOSSIP_ITEM_ID(uiIcon, iTextId, uiSender, uiOptionId)   PlayerTalkClass->GetGossipMenu().AddMenuItem(uiIcon, iTextId, uiSender, uiOptionId, 0, 0)
 
-#if defined (CLASSIC)
 #define ADD_GOSSIP_ITEM_EXTENDED(uiIcon, chrText, uiSender, uiOptionId, chrBoxMessage, uiBoxMoney, bCode)   PlayerTalkClass->GetGossipMenu().AddMenuItem(uiIcon, chrText, uiSender, uiOptionId, chrBoxMessage, /*uiBoxMoney,*/ bCode)
-#else
-#define ADD_GOSSIP_ITEM_EXTENDED(uiIcon, chrText, uiSender, uiOptionId, chrBoxMessage, uiBoxMoney, bCode)   PlayerTalkClass->GetGossipMenu().AddMenuItem(uiIcon, chrText, uiSender, uiOptionId, chrBoxMessage, uiBoxMoney, bCode)
-#endif
 
 // This function sends the current menu to show to client
 // uiTextId - NPCTEXTID (uint32)
