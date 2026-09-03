@@ -13,6 +13,10 @@ set(TEST_SOURCES
 
     terrain/test_column.cpp
     terrain/test_fusedterrain.cpp
+
+    pose/test_spatial_boundary.cpp
+    pose/test_numeric_edges.cpp
+    pose/test_arc.cpp
 )
 
 add_executable(mangos_tests ${TEST_SOURCES})
