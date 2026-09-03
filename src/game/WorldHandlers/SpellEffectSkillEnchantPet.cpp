@@ -750,17 +750,12 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
         if (NewSummon->getPetType() == SUMMON_PET)
         {
             // Remove Demonic Sacrifice auras (known pet)
-            Unit::AuraList const& auraClassScripts = m_caster->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
-            for (Unit::AuraList::const_iterator itr = auraClassScripts.begin(); itr != auraClassScripts.end();)
+            const auto auraClassScripts = m_caster->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
+            for (const auto* script : auraClassScripts)
             {
-                if ((*itr)->GetModifier()->m_miscvalue == 2228)
+                if (script->GetModifier()->m_miscvalue == 2228)
                 {
-                    m_caster->RemoveAurasDueToSpell((*itr)->GetId());
-                    itr = auraClassScripts.begin();
-                }
-                else
-                {
-                    ++itr;
+                    m_caster->RemoveAurasDueToSpell(script->GetId());
                 }
             }
         }
@@ -826,17 +821,12 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
     if (NewSummon->getPetType() == SUMMON_PET)
     {
         // Remove Demonic Sacrifice auras (new pet)
-        Unit::AuraList const& auraClassScripts = m_caster->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
-        for (Unit::AuraList::const_iterator itr = auraClassScripts.begin(); itr != auraClassScripts.end();)
+        const auto auraClassScripts = m_caster->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
+        for (const auto* script : auraClassScripts)
         {
-            if ((*itr)->GetModifier()->m_miscvalue == 2228)
+            if (script->GetModifier()->m_miscvalue == 2228)
             {
-                m_caster->RemoveAurasDueToSpell((*itr)->GetId());
-                itr = auraClassScripts.begin();
-            }
-            else
-            {
-                ++itr;
+                m_caster->RemoveAurasDueToSpell(script->GetId());
             }
         }
     }
@@ -1021,16 +1011,16 @@ void Spell::EffectWeaponDmg(SpellEffectIndex eff_idx)
                 //Prevent Seal of Command damage overflow
                 if (m_spellInfo->ID == 20424)
                 {
-                    Unit::AuraList const& mModDamagePercentDone = m_caster->GetAurasByType(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE);
-                    for (Unit::AuraList::const_iterator i = mModDamagePercentDone.begin(); i != mModDamagePercentDone.end(); ++i)
+                    const auto mModDamagePercentDone = m_caster->GetAurasByType(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE);
+                    for (auto* aura : mModDamagePercentDone)
                     {
-                        if (((*i)->GetModifier()->m_miscvalue & SPELL_SCHOOL_MASK_HOLY) && ((*i)->GetModifier()->m_miscvalue & SPELL_SCHOOL_MASK_NORMAL) &&
-                            (*i)->GetSpellProto()->EquippedItemClass == -1 &&
+                        if ((aura->GetModifier()->m_miscvalue & SPELL_SCHOOL_MASK_HOLY) && (aura->GetModifier()->m_miscvalue & SPELL_SCHOOL_MASK_NORMAL) &&
+                            aura->GetSpellProto()->EquippedItemClass == -1 &&
                             // -1 == any item class (not wand then)
-                            (*i)->GetSpellProto()->EquippedItemInvTypes == 0)
+                            aura->GetSpellProto()->EquippedItemInvTypes == 0)
                             // 0 == any inventory type (not wand then)
                         {
-                            totalDamagePercentMod /= ((*i)->GetModifier()->m_amount + 100.0f) / 100.0f;
+                            totalDamagePercentMod /= (aura->GetModifier()->m_amount + 100.0f) / 100.0f;
                         }
                     }
                 }

@@ -834,12 +834,12 @@ SpellMissInfo Unit::SpellHitResult(Unit* pVictim, SpellEntry const* spell, bool 
     if (CanReflect)
     {
         int32 reflectchance = pVictim->GetTotalAuraModifier(SPELL_AURA_REFLECT_SPELLS);
-        Unit::AuraList const& mReflectSpellsSchool = pVictim->GetAurasByType(SPELL_AURA_REFLECT_SPELLS_SCHOOL);
-        for (Unit::AuraList::const_iterator i = mReflectSpellsSchool.begin(); i != mReflectSpellsSchool.end(); ++i)
+        const auto mReflectSpellsSchool = pVictim->GetAurasByType(SPELL_AURA_REFLECT_SPELLS_SCHOOL);
+        for (auto* aura : mReflectSpellsSchool)
         {
-            if ((*i)->GetModifier()->m_miscvalue & schoolMask)
+            if (aura->GetModifier()->m_miscvalue & schoolMask)
             {
-                reflectchance += (*i)->GetModifier()->m_amount;
+                reflectchance += aura->GetModifier()->m_amount;
             }
         }
 

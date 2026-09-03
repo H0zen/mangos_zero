@@ -623,10 +623,9 @@ bool InMeleeReach(Unit const& attacker, Unit const& victim, float flat_mod)
  */
 void Unit::RemoveSpellsCausingAura(AuraType auraType)
 {
-    for (AuraList::const_iterator iter = m_modAuras[auraType].begin(); iter != m_modAuras[auraType].end();)
+    for (auto* aura : GetAurasByType(auraType))
     {
-        RemoveAurasDueToSpell((*iter)->GetId());
-        iter = m_modAuras[auraType].begin();
+        RemoveAurasDueToSpell(aura->GetId());
     }
 }
 
@@ -638,17 +637,14 @@ void Unit::RemoveSpellsCausingAura(AuraType auraType)
  */
 void Unit::RemoveSpellsCausingAura(AuraType auraType, SpellAuraHolder* except)
 {
-    for (AuraList::const_iterator iter = m_modAuras[auraType].begin(); iter != m_modAuras[auraType].end();)
+    for (auto* aura : GetAurasByType(auraType))
     {
-        // skip `except` aura
-        if ((*iter)->GetHolder() == except)
+        if (aura->GetHolder() == except)
         {
-            ++iter;
             continue;
         }
 
-        RemoveAurasDueToSpell((*iter)->GetId(), except);
-        iter = m_modAuras[auraType].begin();
+        RemoveAurasDueToSpell(aura->GetId(), except);
     }
 }
 
@@ -660,16 +656,11 @@ void Unit::RemoveSpellsCausingAura(AuraType auraType, SpellAuraHolder* except)
  */
 void Unit::RemoveSpellsCausingAura(AuraType auraType, ObjectGuid casterGuid)
 {
-    for (AuraList::const_iterator iter = m_modAuras[auraType].begin(); iter != m_modAuras[auraType].end();)
+    for (auto* aura : GetAurasByType(auraType))
     {
-        if ((*iter)->GetCasterGuid() == casterGuid)
+        if (aura->GetCasterGuid() == casterGuid)
         {
-            RemoveAuraHolderFromStack((*iter)->GetId(), 1, casterGuid);
-            iter = m_modAuras[auraType].begin();
-        }
-        else
-        {
-            ++iter;
+            RemoveAuraHolderFromStack(aura->GetId(), 1, casterGuid);
         }
     }
 }
@@ -856,12 +847,12 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
         if (!damageFromSpiritOfRedemtionTalent &&           // not called from SPELL_AURA_SPIRIT_OF_REDEMPTION
             pVictim->GetTypeId() == TYPEID_PLAYER && pVictim->getClass() == CLASS_PRIEST)
         {
-            AuraList const& vDummyAuras = pVictim->GetAurasByType(SPELL_AURA_DUMMY);
-            for (AuraList::const_iterator itr = vDummyAuras.begin(); itr != vDummyAuras.end(); ++itr)
+            const auto vDummyAuras = pVictim->GetAurasByType(SPELL_AURA_DUMMY);
+            for (auto* aura : vDummyAuras)
             {
-                if ((*itr)->GetSpellProto()->SpellIconID == 1654)
+                if (aura->GetSpellProto()->SpellIconID == 1654)
                 {
-                    spiritOfRedemtionTalentReady = *itr;
+                    spiritOfRedemtionTalentReady = aura;
                     break;
                 }
             }
@@ -3628,14 +3619,14 @@ Unit* Unit::SelectMagnetTarget(Unit* victim, Spell* spell, SpellEffectIndex eff)
     // Magic case
     if (spell && (spell->m_spellInfo->DefenseType == SPELL_DAMAGE_CLASS_NONE || spell->m_spellInfo->DefenseType == SPELL_DAMAGE_CLASS_MAGIC))
     {
-        Unit::AuraList const& magnetAuras = victim->GetAurasByType(SPELL_AURA_SPELL_MAGNET);
-        for (Unit::AuraList::const_iterator itr = magnetAuras.begin(); itr != magnetAuras.end(); ++itr)
+        const auto magnetAuras = victim->GetAurasByType(SPELL_AURA_SPELL_MAGNET);
+        for (auto* aura : magnetAuras)
         {
-            if (Unit* magnet = (*itr)->GetCaster())
+            if (Unit* magnet = aura->GetCaster())
             {
                 if (magnet->IsAlive() && HasLineOfSight(*magnet, *this) && spell->CheckTarget(magnet, eff))
                 {
-                    if (SpellAuraHolder* holder = (*itr)->GetHolder())
+                    if (SpellAuraHolder* holder = aura->GetHolder())
                     {
                         if (holder->DropAuraCharge())
                         {
@@ -5655,10 +5646,10 @@ void Unit::UpdateModelData()
 float Unit::GetObjectScaleMod() const
 {
     int32 modValue = 0;
-    Unit::AuraList const& scaleAuraList = GetAurasByType(SPELL_AURA_MOD_SCALE);
-    for (Unit::AuraList::const_iterator itr = scaleAuraList.begin(); itr != scaleAuraList.end(); ++itr)
+    const auto scaleAuraList = GetAurasByType(SPELL_AURA_MOD_SCALE);
+    for (auto* aura : scaleAuraList)
     {
-        modValue += (*itr)->GetModifier()->m_amount;
+        modValue += aura->GetModifier()->m_amount;
     }
 
     float result = (100 + modValue) / 100.0f;
@@ -6095,15 +6086,15 @@ float Unit::GetAPMultiplier(WeaponAttackType attType, bool normalized)
  */
 Aura* Unit::GetDummyAura(uint32 spell_id) const
 {
-    Unit::AuraList const& mDummy = GetAurasByType(SPELL_AURA_DUMMY);
-    for (Unit::AuraList::const_iterator itr = mDummy.begin(); itr != mDummy.end(); ++itr)
+    const auto mDummy = GetAurasByType(SPELL_AURA_DUMMY);
+    for (auto* aura : mDummy)
     {
-        if ((*itr)->GetId() == spell_id)
+        if (aura->GetId() == spell_id)
         {
-            return *itr;
+            return aura;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /**

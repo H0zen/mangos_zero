@@ -1232,15 +1232,15 @@ void Aura::TriggerSpell()
                 int32 intelectLoss = 0;
                 int32 spiritLoss = 0;
 
-                Unit::AuraList const& mModStat = triggerTarget->GetAurasByType(SPELL_AURA_MOD_STAT);
-                for (Unit::AuraList::const_iterator i = mModStat.begin(); i != mModStat.end(); ++i)
+                const auto mModStat = triggerTarget->GetAurasByType(SPELL_AURA_MOD_STAT);
+                for (auto* aura : mModStat)
                 {
-                    if ((*i)->GetId() == 1010)
+                    if (aura->GetId() == 1010)
                     {
-                        switch ((*i)->GetModifier()->m_miscvalue)
+                        switch (aura->GetModifier()->m_miscvalue)
                         {
-                            case STAT_INTELLECT: intelectLoss += (*i)->GetModifier()->m_amount; break;
-                            case STAT_SPIRIT:    spiritLoss   += (*i)->GetModifier()->m_amount; break;
+                            case STAT_INTELLECT: intelectLoss += aura->GetModifier()->m_amount; break;
+                            case STAT_SPIRIT:    spiritLoss   += aura->GetModifier()->m_amount; break;
                             default: break;
                         }
                     }

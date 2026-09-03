@@ -68,6 +68,7 @@
 #include "Object.h"
 #include "Opcodes.h"
 #include "SpellAuraDefines.h"
+#include "AuraIndex.h"
 #include "Combat/Attempt.h"
 #include "UpdateFields.h"
 #include "SharedDefines.h"
@@ -3883,13 +3884,16 @@ class Unit : public WorldObject
         SpellAuraHolderMap const& GetSpellAuraHolderMap() const { return m_spellAuraHolders; }
 
         /**
-         * Get's a list of all the \ref Aura s of the given \ref AuraType that are currently
-         * affecting this \ref Unit.
-         * @param type the aura type we want to find
-         * @return A list of the auras currently applied to the \ref Unit with the given \ref AuraType
-         * \see Unit::m_modAuras
+         * The auras of one type currently on this unit.
+         *
+         * The result is a view, valid to walk even while auras are applied or
+         * removed during the walk.
          */
-        AuraList const& GetAurasByType(AuraType type) const { return m_modAuras[type]; }
+        auras::Index::Range GetAurasByType(AuraType type) const { return m_auraIndex.Of(type); }
+
+        /// Auras of a type, most recently applied first.
+        std::vector<Aura*> GetAurasByRecency(AuraType type) const { return m_auraIndex.ByRecency(type); }
+
         void ApplyAuraProcTriggerDamage(Aura* aura, bool apply);
 
         int32 GetTotalAuraModifier(AuraType auratype) const;
@@ -4145,7 +4149,7 @@ class Unit : public WorldObject
         bool m_isSorted;
         uint32 m_transform;
 
-        AuraList m_modAuras[TOTAL_AURAS];
+        auras::Index m_auraIndex;
         float m_auraModifiersGroup[UNIT_MOD_END][MODIFIER_TYPE_END];
         float m_weaponDamage[MAX_ATTACK][2];
         WeaponDamageInfo m_weaponDamageInfo;

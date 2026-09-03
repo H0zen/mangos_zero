@@ -228,10 +228,10 @@ bool Unit::IsVisibleForOrDetect(Unit const* u, WorldObject const* viewPoint, boo
         if (u->IsHostileTo(this))
         {
             // Hunter mark functionality
-            AuraList const& auras = GetAurasByType(SPELL_AURA_MOD_STALKED);
-            for (AuraList::const_iterator iter = auras.begin(); iter != auras.end(); ++iter)
+            const auto auras = GetAurasByType(SPELL_AURA_MOD_STALKED);
+            for (auto* aura : auras)
             {
-                if ((*iter)->GetCasterGuid() == u->GetObjectGuid())
+                if (aura->GetCasterGuid() == u->GetObjectGuid())
                 {
                     return true;
                 }
@@ -341,26 +341,13 @@ void Unit::UpdateVisibilityAndView()
     static const AuraType auratypes[] = {SPELL_AURA_BIND_SIGHT, SPELL_AURA_FAR_SIGHT, SPELL_AURA_NONE};
     for (AuraType const* type = &auratypes[0]; *type != SPELL_AURA_NONE; ++type)
     {
-        AuraList& alist = m_modAuras[*type];
-        if (alist.empty())
+        for (auto* aura : GetAurasByType(*type))
         {
-            continue;
-        }
-
-        for (AuraList::iterator it = alist.begin(); it != alist.end();)
-        {
-            Aura* aura = (*it);
-            Unit* owner = aura->GetCaster();
+            const Unit* owner = aura->GetCaster();
 
             if (!owner || !IsVisibleForOrDetect(owner, this, false))
             {
-                alist.erase(it);
                 RemoveAura(aura);
-                it = alist.begin();
-            }
-            else
-            {
-                ++it;
             }
         }
     }

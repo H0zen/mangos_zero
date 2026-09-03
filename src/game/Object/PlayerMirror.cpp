@@ -205,10 +205,10 @@ int32 Player::getMaxTimer(MirrorTimerType timer)
                 return DISABLED_MIRROR_TIMER;
             }
             int32 UnderWaterTime = sWorld.getConfig(CONFIG_UINT32_TIMERBAR_BREATH_MAX) * IN_MILLISECONDS;
-            AuraList const& mModWaterBreathing = GetAurasByType(SPELL_AURA_MOD_WATER_BREATHING);
-            for (AuraList::const_iterator i = mModWaterBreathing.begin(); i != mModWaterBreathing.end(); ++i)
+            const auto mModWaterBreathing = GetAurasByType(SPELL_AURA_MOD_WATER_BREATHING);
+            for (auto* aura : mModWaterBreathing)
             {
-                UnderWaterTime = uint32(UnderWaterTime * (100.0f + (*i)->GetModifier()->m_amount) / 100.0f);
+                UnderWaterTime = uint32(UnderWaterTime * (100.0f + aura->GetModifier()->m_amount) / 100.0f);
             }
             return UnderWaterTime;
         }

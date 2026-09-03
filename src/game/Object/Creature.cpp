@@ -1051,20 +1051,20 @@ void Creature::RegeneratePower()
     }
 
     // Apply modifiers (if any)
-    AuraList const& ModPowerRegenAuras = GetAurasByType(SPELL_AURA_MOD_POWER_REGEN);
-    for (AuraList::const_iterator i = ModPowerRegenAuras.begin(); i != ModPowerRegenAuras.end(); ++i)
+    const auto ModPowerRegenAuras = GetAurasByType(SPELL_AURA_MOD_POWER_REGEN);
+    for (auto* aura : ModPowerRegenAuras)
     {
-        Modifier const* modifier = (*i)->GetModifier();
+        Modifier const* modifier = aura->GetModifier();
         if (modifier->m_miscvalue == int32(powerType))
         {
             addValue += modifier->m_amount;
         }
     }
 
-    AuraList const& ModPowerRegenPCTAuras = GetAurasByType(SPELL_AURA_MOD_POWER_REGEN_PERCENT);
-    for (AuraList::const_iterator i = ModPowerRegenPCTAuras.begin(); i != ModPowerRegenPCTAuras.end(); ++i)
+    const auto ModPowerRegenPCTAuras = GetAurasByType(SPELL_AURA_MOD_POWER_REGEN_PERCENT);
+    for (auto* aura : ModPowerRegenPCTAuras)
     {
-        Modifier const* modifier = (*i)->GetModifier();
+        Modifier const* modifier = aura->GetModifier();
         if (modifier->m_miscvalue == int32(powerType))
         {
             addValue *= (modifier->m_amount + 100) / 100.0f;

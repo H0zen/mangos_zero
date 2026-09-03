@@ -104,7 +104,7 @@ TEST_CASE("a removed aura leaves no trace in a later walk")
     CHECK(index.Of(SPELL_AURA_DUMMY).size() == 2);
 }
 
-TEST_CASE("a hole is reused instead of growing the block")
+TEST_CASE("position in a block carries no meaning")
 {
     auras::Index index;
     index.Add(SPELL_AURA_DUMMY, Tag(1));
@@ -112,9 +112,60 @@ TEST_CASE("a hole is reused instead of growing the block")
     index.Remove(SPELL_AURA_DUMMY, Tag(1));
     index.Add(SPELL_AURA_DUMMY, Tag(3));
 
-    // Tag(3) took Tag(1)'s slot, so it comes first.
+    // Tag(3) reuses the freed slot and so is walked first despite being newest.
+    // That is exactly why nothing may read order out of the walk.
     CHECK(Walk(index.Of(SPELL_AURA_DUMMY)) == std::vector<Aura*>{Tag(3), Tag(2)});
     CHECK(index.Total() == 2);
+
+    // Order is asked for, and answered from when the aura was applied.
+    CHECK(index.Newest(SPELL_AURA_DUMMY) == Tag(3));
+}
+
+TEST_CASE("the newest aura of a type is the last one applied")
+{
+    auras::Index index;
+
+    CHECK(index.Newest(SPELL_AURA_MOD_TAUNT) == nullptr);
+
+    index.Add(SPELL_AURA_MOD_TAUNT, Tag(1));
+    CHECK(index.Newest(SPELL_AURA_MOD_TAUNT) == Tag(1));
+
+    index.Add(SPELL_AURA_MOD_TAUNT, Tag(2));
+    index.Add(SPELL_AURA_MOD_TAUNT, Tag(3));
+    CHECK(index.Newest(SPELL_AURA_MOD_TAUNT) == Tag(3));
+
+    // The newest taunter dropping hands priority back to the one before it,
+    // which is the whole behaviour taunt depends on.
+    index.Remove(SPELL_AURA_MOD_TAUNT, Tag(3));
+    CHECK(index.Newest(SPELL_AURA_MOD_TAUNT) == Tag(2));
+
+    index.Remove(SPELL_AURA_MOD_TAUNT, Tag(2));
+    index.Remove(SPELL_AURA_MOD_TAUNT, Tag(1));
+    CHECK(index.Newest(SPELL_AURA_MOD_TAUNT) == nullptr);
+}
+
+TEST_CASE("a reused slot does not inherit the rank it replaced")
+{
+    auras::Index index;
+    index.Add(SPELL_AURA_MOD_TAUNT, Tag(1));
+    index.Add(SPELL_AURA_MOD_TAUNT, Tag(2));
+
+    // Tag(1) leaves; Tag(3) lands in its slot but is the most recent taunter.
+    index.Remove(SPELL_AURA_MOD_TAUNT, Tag(1));
+    index.Add(SPELL_AURA_MOD_TAUNT, Tag(3));
+
+    CHECK(index.Newest(SPELL_AURA_MOD_TAUNT) == Tag(3));
+}
+
+TEST_CASE("newest is per type, not across types")
+{
+    auras::Index index;
+    index.Add(SPELL_AURA_MOD_TAUNT, Tag(1));
+    index.Add(SPELL_AURA_DUMMY, Tag(2));
+
+    CHECK(index.Newest(SPELL_AURA_MOD_TAUNT) == Tag(1));
+    CHECK(index.Newest(SPELL_AURA_DUMMY) == Tag(2));
+    CHECK(index.Newest(SPELL_AURA_SCHOOL_ABSORB) == nullptr);
 }
 
 TEST_CASE("removing the aura ahead of a walk keeps the walk valid")

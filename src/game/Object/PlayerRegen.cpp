@@ -183,12 +183,12 @@ void Player::Regenerate(Powers power)
     // Exist only for POWER_MANA, POWER_ENERGY, POWER_FOCUS auras
     if (power != POWER_MANA)
     {
-        AuraList const& ModPowerRegenPCTAuras = GetAurasByType(SPELL_AURA_MOD_POWER_REGEN_PERCENT);
-        for (AuraList::const_iterator i = ModPowerRegenPCTAuras.begin(); i != ModPowerRegenPCTAuras.end(); ++i)
+        const auto ModPowerRegenPCTAuras = GetAurasByType(SPELL_AURA_MOD_POWER_REGEN_PERCENT);
+        for (auto* aura : ModPowerRegenPCTAuras)
         {
-            if ((*i)->GetModifier()->m_miscvalue == int32(power))
+            if (aura->GetModifier()->m_miscvalue == int32(power))
             {
-                addvalue *= ((*i)->GetModifier()->m_amount + 100) / 100.0f;
+                addvalue *= (aura->GetModifier()->m_amount + 100) / 100.0f;
             }
         }
     }
@@ -248,10 +248,10 @@ void Player::RegenerateHealth()
         addvalue = OCTRegenHPPerSpirit() * HealthIncreaseRate;
         if (!IsInCombat())
         {
-            AuraList const& mModHealthRegenPct = GetAurasByType(SPELL_AURA_MOD_HEALTH_REGEN_PERCENT);
-            for (AuraList::const_iterator i = mModHealthRegenPct.begin(); i != mModHealthRegenPct.end(); ++i)
+            const auto mModHealthRegenPct = GetAurasByType(SPELL_AURA_MOD_HEALTH_REGEN_PERCENT);
+            for (auto* aura : mModHealthRegenPct)
             {
-                addvalue *= (100.0f + (*i)->GetModifier()->m_amount) / 100.0f;
+                addvalue *= (100.0f + aura->GetModifier()->m_amount) / 100.0f;
             }
         }
         else if (HasAuraType(SPELL_AURA_MOD_REGEN_DURING_COMBAT))

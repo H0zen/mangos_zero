@@ -467,33 +467,21 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
         }
 
         // victim's damage shield
-        std::set<Aura*> alreadyDone;
-        AuraList const& vDamageShields = pVictim->GetAurasByType(SPELL_AURA_DAMAGE_SHIELD);
-        for (AuraList::const_iterator i = vDamageShields.begin(); i != vDamageShields.end();)
+        for (const auto* shield : pVictim->GetAurasByType(SPELL_AURA_DAMAGE_SHIELD))
         {
-            if (alreadyDone.find(*i) == alreadyDone.end())
-            {
-                alreadyDone.insert(*i);
-                uint32 damage = (*i)->GetModifier()->m_amount;
-                SpellEntry const* i_spellProto = (*i)->GetSpellProto();
+            uint32 damage = shield->GetModifier()->m_amount;
+            const SpellEntry* shieldProto = shield->GetSpellProto();
 
-                pVictim->DealDamageMods(this, damage, NULL);
+            pVictim->DealDamageMods(this, damage, nullptr);
 
-                WorldPacket data(SMSG_SPELLDAMAGESHIELD, (8 + 8 + 4 + 4));
-                data << pVictim->GetObjectGuid();
-                data << GetObjectGuid();
-                data << uint32(damage);
-                data << uint32(i_spellProto->School);
-                pVictim->SendMessageToSet(&data, true);
+            WorldPacket data(SMSG_SPELLDAMAGESHIELD, (8 + 8 + 4 + 4));
+            data << pVictim->GetObjectGuid();
+            data << GetObjectGuid();
+            data << uint32(damage);
+            data << uint32(shieldProto->School);
+            pVictim->SendMessageToSet(&data, true);
 
-                pVictim->DealDamage(this, damage, 0, SPELL_DIRECT_DAMAGE, GetSpellSchoolMask(i_spellProto), i_spellProto, true);
-
-                i = vDamageShields.begin();
-            }
-            else
-            {
-                ++i;
-            }
+            pVictim->DealDamage(this, damage, 0, SPELL_DIRECT_DAMAGE, GetSpellSchoolMask(shieldProto), shieldProto, true);
         }
     }
 }

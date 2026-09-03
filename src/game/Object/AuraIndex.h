@@ -27,9 +27,9 @@
 
 #include "SpellAuraDefines.h"
 
-#include <cstddef>
-
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -44,30 +44,41 @@ namespace auras
      * auras of only a few types at once, so the type is the key and only the
      * types actually present cost anything.
      *
-     * The container is built around one demand the callers make of it: an aura
-     * may be applied or removed in the middle of a walk over these very auras,
-     * because that is what procs and effect handlers do. Three properties make
-     * that safe.
+     * Position in a block carries no meaning. Anything that wants the aura that
+     * arrived last asks for it and gets an answer from a recorded order of
+     * application, not from where an element happens to sit. The old engine read
+     * that by walking a list backwards, which quietly made the layout of a
+     * container part of the rules of taunt.
      *
-     *  - Each type owns a separately allocated block, so touching one type never
-     *    disturbs a walk over another.
-     *  - A removal leaves a hole instead of shifting its neighbours, so the
-     *    positions a walk has yet to reach do not change under it.
-     *  - A walk holds an index rather than a pointer, so it survives the block
-     *    growing beneath it, and sees an aura appended while it runs.
+     * The one real obligation here is that an aura may be applied or removed in
+     * the middle of a walk over these same auras, because that is what procs and
+     * effect handlers do. Three properties make that safe:
+     *
+     *  - each type owns a separately allocated block, so touching one type never
+     *    disturbs a walk over another;
+     *  - a removal leaves a hole instead of shifting its neighbours, so the
+     *    positions a walk has yet to reach do not change under it;
+     *  - a walk holds an index rather than a pointer, so it survives the block
+     *    growing beneath it.
      */
     class Index
     {
         private:
+            struct Entry
+            {
+                Aura* aura = nullptr;
+                uint64_t rank = 0;      ///< order of application, never reused
+            };
+
             struct Bucket
             {
                 AuraType type = static_cast<AuraType>(0);
                 size_t holes = 0;
-                std::vector<Aura*> auras;
+                std::vector<Entry> entries;
             };
 
         public:
-            /// The auras of one type, holes skipped.
+            /// The auras of one type, holes skipped, in no meaningful order.
             class Range
             {
                 public:
@@ -77,7 +88,7 @@ namespace auras
                             Iterator() : m_bucket(nullptr), m_at(0) {}
                             Iterator(const Bucket* bucket, size_t at) : m_bucket(bucket), m_at(at) { Settle(); }
 
-                            Aura* operator*() const { return m_bucket->auras[m_at]; }
+                            Aura* operator*() const { return m_bucket->entries[m_at].aura; }
 
                             Iterator& operator++()
                             {
@@ -96,12 +107,12 @@ namespace auras
                             bool operator!=(const Iterator& other) const { return !(*this == other); }
 
                         private:
-                            bool AtEnd() const { return !m_bucket || m_at >= m_bucket->auras.size(); }
+                            bool AtEnd() const { return !m_bucket || m_at >= m_bucket->entries.size(); }
 
                             /// Holes are not elements; step over them.
                             void Settle()
                             {
-                                while (m_bucket && m_at < m_bucket->auras.size() && !m_bucket->auras[m_at])
+                                while (m_bucket && m_at < m_bucket->entries.size() && !m_bucket->entries[m_at].aura)
                                 {
                                     ++m_at;
                                 }
@@ -117,9 +128,9 @@ namespace auras
                     Iterator begin() const { return Iterator(m_bucket, 0); }
                     Iterator end() const { return Iterator(); }
 
-                    bool empty() const { return !m_bucket || m_bucket->holes == m_bucket->auras.size(); }
+                    bool empty() const { return !m_bucket || m_bucket->holes == m_bucket->entries.size(); }
 
-                    size_t size() const { return m_bucket ? m_bucket->auras.size() - m_bucket->holes : 0; }
+                    size_t size() const { return m_bucket ? m_bucket->entries.size() - m_bucket->holes : 0; }
 
                     Aura* front() const { return *begin(); }
 
@@ -130,23 +141,24 @@ namespace auras
             void Add(AuraType type, Aura* aura)
             {
                 Bucket& bucket = Claim(type);
+                const Entry fresh{aura, ++m_clock};
 
-                // Fill a hole rather than growing: it keeps the block compact
-                // and puts the aura where a walk in progress has not been yet.
+                // Order lives in the rank, so reusing a slot costs nothing, and
+                // it puts the aura where a walk in progress has not been yet.
                 if (bucket.holes)
                 {
-                    for (Aura*& slot : bucket.auras)
+                    for (auto& slot : bucket.entries)
                     {
-                        if (!slot)
+                        if (!slot.aura)
                         {
-                            slot = aura;
+                            slot = fresh;
                             --bucket.holes;
                             return;
                         }
                     }
                 }
 
-                bucket.auras.push_back(aura);
+                bucket.entries.push_back(fresh);
             }
 
             bool Remove(AuraType type, Aura* aura)
@@ -157,11 +169,11 @@ namespace auras
                     return false;
                 }
 
-                for (Aura*& slot : bucket->auras)
+                for (auto& slot : bucket->entries)
                 {
-                    if (slot == aura)
+                    if (slot.aura == aura)
                     {
-                        slot = nullptr;
+                        slot = Entry();
                         ++bucket->holes;
                         return true;
                     }
@@ -174,6 +186,64 @@ namespace auras
 
             bool Empty(AuraType type) const { return Of(type).empty(); }
 
+            /// The aura of this type applied most recently, or null.
+            Aura* Newest(AuraType type) const
+            {
+                const Bucket* bucket = Find(type);
+                if (!bucket)
+                {
+                    return nullptr;
+                }
+
+                const Entry* best = nullptr;
+                for (const auto& slot : bucket->entries)
+                {
+                    if (slot.aura && (!best || slot.rank > best->rank))
+                    {
+                        best = &slot;
+                    }
+                }
+                return best ? best->aura : nullptr;
+            }
+
+            /**
+             * Auras of this type, most recently applied first.
+             *
+             * A snapshot, because asking for an order means paying for one. The
+             * callers that want this -- taunt picking the latest taunter still
+             * able to hold aggro -- deal in a handful of auras, and a copy also
+             * frees them to remove auras while they walk it.
+             */
+            std::vector<Aura*> ByRecency(AuraType type) const
+            {
+                std::vector<Aura*> ordered;
+                const Bucket* bucket = Find(type);
+                if (!bucket)
+                {
+                    return ordered;
+                }
+
+                std::vector<const Entry*> live;
+                live.reserve(bucket->entries.size() - bucket->holes);
+                for (const auto& slot : bucket->entries)
+                {
+                    if (slot.aura)
+                    {
+                        live.push_back(&slot);
+                    }
+                }
+
+                std::sort(live.begin(), live.end(),
+                          [](const Entry* a, const Entry* b) { return a->rank > b->rank; });
+
+                ordered.reserve(live.size());
+                for (const auto* slot : live)
+                {
+                    ordered.push_back(slot->aura);
+                }
+                return ordered;
+            }
+
             void Clear() { m_buckets.clear(); }
 
             /// Live auras across every type; for diagnostics, not for hot paths.
@@ -182,7 +252,7 @@ namespace auras
                 size_t n = 0;
                 for (const auto& bucket : m_buckets)
                 {
-                    n += bucket->auras.size() - bucket->holes;
+                    n += bucket->entries.size() - bucket->holes;
                 }
                 return n;
             }
@@ -217,5 +287,6 @@ namespace auras
             }
 
             std::vector<std::unique_ptr<Bucket>> m_buckets;
+            uint64_t m_clock = 0;
     };
 }

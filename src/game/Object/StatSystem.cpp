@@ -169,10 +169,10 @@ void Player::UpdateArmor()
     value += GetModifierValue(unitMod, TOTAL_VALUE);
 
     // add dynamic flat mods
-    AuraList const& mResbyIntellect = GetAurasByType(SPELL_AURA_MOD_RESISTANCE_OF_STAT_PERCENT);
-    for (AuraList::const_iterator i = mResbyIntellect.begin(); i != mResbyIntellect.end(); ++i)
+    const auto mResbyIntellect = GetAurasByType(SPELL_AURA_MOD_RESISTANCE_OF_STAT_PERCENT);
+    for (auto* aura : mResbyIntellect)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier* mod = aura->GetModifier();
         if (mod->m_miscvalue & SPELL_SCHOOL_MASK_NORMAL)
         {
             value += int32(GetStat(STAT_INTELLECT) * mod->m_amount / 100.0f);
@@ -313,13 +313,13 @@ void Player::UpdateAttackPowerAndDamage(bool ranged)
                     case FORM_DIREBEAR:
                     case FORM_MOONKIN:
                     {
-                        Unit::AuraList const& mDummy = GetAurasByType(SPELL_AURA_DUMMY);
-                        for (Unit::AuraList::const_iterator itr = mDummy.begin(); itr != mDummy.end(); ++itr)
+                        const auto mDummy = GetAurasByType(SPELL_AURA_DUMMY);
+                        for (auto* aura : mDummy)
                         {
                             // Predatory Strikes
-                            if ((*itr)->GetSpellProto()->SpellIconID == 1563)
+                            if (aura->GetSpellProto()->SpellIconID == 1563)
                             {
-                                mLevelMult = (*itr)->GetModifier()->m_amount / 100.0f;
+                                mLevelMult = aura->GetModifier()->m_amount / 100.0f;
                                 break;
                             }
                         }

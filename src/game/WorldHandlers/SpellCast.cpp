@@ -795,10 +795,10 @@ void Spell::finish(bool ok)
     }
 
     // handle SPELL_AURA_ADD_TARGET_TRIGGER auras
-    Unit::AuraList const& targetTriggers = m_caster->GetAurasByType(SPELL_AURA_ADD_TARGET_TRIGGER);
-    for (Unit::AuraList::const_iterator i = targetTriggers.begin(); i != targetTriggers.end(); ++i)
+    const auto targetTriggers = m_caster->GetAurasByType(SPELL_AURA_ADD_TARGET_TRIGGER);
+    for (auto* aura : targetTriggers)
     {
-        if (!(*i)->isAffectedOnSpell(m_spellInfo))
+        if (!aura->isAffectedOnSpell(m_spellInfo))
         {
             continue;
         }
@@ -810,14 +810,14 @@ void Spell::finish(bool ok)
                 Unit* unit = m_caster->GetObjectGuid() == ihit->targetGUID ? m_caster : ObjectLookup::GetUnit(*m_caster, ihit->targetGUID);
                 if (unit && unit->IsAlive())
                 {
-                    SpellEntry const* auraSpellInfo = (*i)->GetSpellProto();
-                    SpellEffectIndex auraSpellIdx = (*i)->GetEffIndex();
+                    SpellEntry const* auraSpellInfo = aura->GetSpellProto();
+                    SpellEffectIndex auraSpellIdx = aura->GetEffIndex();
                     // Calculate chance at that moment (can be depend for example from combo points)
-                    int32 auraBasePoints = (*i)->GetBasePoints();
+                    int32 auraBasePoints = aura->GetBasePoints();
                     int32 chance = m_caster->CalculateSpellDamage(unit, auraSpellInfo, auraSpellIdx, &auraBasePoints);
                     if (roll_chance_i(chance))
                     {
-                        m_caster->CastSpell(unit, auraSpellInfo->EffectTriggerSpell[auraSpellIdx], true, NULL, (*i));
+                        m_caster->CastSpell(unit, auraSpellInfo->EffectTriggerSpell[auraSpellIdx], true, NULL, aura);
                     }
                 }
             }

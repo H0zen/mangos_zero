@@ -270,22 +270,22 @@ void Player::_ApplyItemBonuses(ItemPrototype const* proto, uint8 slot, bool appl
  */
 void Player::_ApplyWeaponDependentAuraMods(Item* item, WeaponAttackType attackType, bool apply)
 {
-    AuraList const& auraCritList = GetAurasByType(SPELL_AURA_MOD_CRIT_PERCENT);
-    for (AuraList::const_iterator itr = auraCritList.begin(); itr != auraCritList.end(); ++itr)
+    const auto auraCritList = GetAurasByType(SPELL_AURA_MOD_CRIT_PERCENT);
+    for (auto* aura : auraCritList)
     {
-        _ApplyWeaponDependentAuraCritMod(item, attackType, *itr, apply);
+        _ApplyWeaponDependentAuraCritMod(item, attackType, aura, apply);
     }
 
-    AuraList const& auraDamageFlatList = GetAurasByType(SPELL_AURA_MOD_DAMAGE_DONE);
-    for (AuraList::const_iterator itr = auraDamageFlatList.begin(); itr != auraDamageFlatList.end(); ++itr)
+    const auto auraDamageFlatList = GetAurasByType(SPELL_AURA_MOD_DAMAGE_DONE);
+    for (auto* aura : auraDamageFlatList)
     {
-        _ApplyWeaponDependentAuraDamageMod(item, attackType, *itr, apply);
+        _ApplyWeaponDependentAuraDamageMod(item, attackType, aura, apply);
     }
 
-    AuraList const& auraDamagePCTList = GetAurasByType(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE);
-    for (AuraList::const_iterator itr = auraDamagePCTList.begin(); itr != auraDamagePCTList.end(); ++itr)
+    const auto auraDamagePCTList = GetAurasByType(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE);
+    for (auto* aura : auraDamagePCTList)
     {
-        _ApplyWeaponDependentAuraDamageMod(item, attackType, *itr, apply);
+        _ApplyWeaponDependentAuraDamageMod(item, attackType, aura, apply);
     }
 }
 

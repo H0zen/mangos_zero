@@ -72,10 +72,10 @@ int32 Unit::GetTotalAuraModifier(AuraType auratype) const
 {
     int32 modifier = 0;
 
-    AuraList const& mTotalAuraList = GetAurasByType(auratype);
-    for (AuraList::const_iterator i = mTotalAuraList.begin(); i != mTotalAuraList.end(); ++i)
+    const auto mTotalAuraList = GetAurasByType(auratype);
+    for (auto* aura : mTotalAuraList)
     {
-        modifier += (*i)->GetModifier()->m_amount;
+        modifier += aura->GetModifier()->m_amount;
     }
 
     return modifier;
@@ -91,10 +91,10 @@ float Unit::GetTotalAuraMultiplier(AuraType auratype) const
 {
     float multiplier = 1.0f;
 
-    AuraList const& mTotalAuraList = GetAurasByType(auratype);
-    for (AuraList::const_iterator i = mTotalAuraList.begin(); i != mTotalAuraList.end(); ++i)
+    const auto mTotalAuraList = GetAurasByType(auratype);
+    for (auto* aura : mTotalAuraList)
     {
-        multiplier *= (100.0f + (*i)->GetModifier()->m_amount) / 100.0f;
+        multiplier *= (100.0f + aura->GetModifier()->m_amount) / 100.0f;
     }
 
     return multiplier;
@@ -110,12 +110,12 @@ int32 Unit::GetMaxPositiveAuraModifier(AuraType auratype) const
 {
     int32 modifier = 0;
 
-    AuraList const& mTotalAuraList = GetAurasByType(auratype);
-    for (AuraList::const_iterator i = mTotalAuraList.begin(); i != mTotalAuraList.end(); ++i)
+    const auto mTotalAuraList = GetAurasByType(auratype);
+    for (auto* aura : mTotalAuraList)
     {
-        if ((*i)->GetModifier()->m_amount > modifier)
+        if (aura->GetModifier()->m_amount > modifier)
         {
-            modifier = (*i)->GetModifier()->m_amount;
+            modifier = aura->GetModifier()->m_amount;
         }
     }
     return modifier;
@@ -131,12 +131,12 @@ int32 Unit::GetMaxNegativeAuraModifier(AuraType auratype) const
 {
     int32 modifier = 0;
 
-    AuraList const& mTotalAuraList = GetAurasByType(auratype);
-    for (AuraList::const_iterator i = mTotalAuraList.begin(); i != mTotalAuraList.end(); ++i)
+    const auto mTotalAuraList = GetAurasByType(auratype);
+    for (auto* aura : mTotalAuraList)
     {
-        if ((*i)->GetModifier()->m_amount < modifier)
+        if (aura->GetModifier()->m_amount < modifier)
         {
-            modifier = (*i)->GetModifier()->m_amount;
+            modifier = aura->GetModifier()->m_amount;
         }
     }
     return modifier;
@@ -158,10 +158,10 @@ int32 Unit::GetTotalAuraModifierByMiscMask(AuraType auratype, uint32 misc_mask) 
 
     int32 modifier = 0;
 
-    AuraList const& mTotalAuraList = GetAurasByType(auratype);
-    for (AuraList::const_iterator i = mTotalAuraList.begin(); i != mTotalAuraList.end(); ++i)
+    const auto mTotalAuraList = GetAurasByType(auratype);
+    for (auto* aura : mTotalAuraList)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier* mod = aura->GetModifier();
         if (mod->m_miscvalue & misc_mask)
         {
             modifier += mod->m_amount;
@@ -186,10 +186,10 @@ float Unit::GetTotalAuraMultiplierByMiscMask(AuraType auratype, uint32 misc_mask
 
     float multiplier = 1.0f;
 
-    AuraList const& mTotalAuraList = GetAurasByType(auratype);
-    for (AuraList::const_iterator i = mTotalAuraList.begin(); i != mTotalAuraList.end(); ++i)
+    const auto mTotalAuraList = GetAurasByType(auratype);
+    for (auto* aura : mTotalAuraList)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier* mod = aura->GetModifier();
         if (mod->m_miscvalue & misc_mask)
         {
             multiplier *= (100.0f + mod->m_amount) / 100.0f;
@@ -214,10 +214,10 @@ int32 Unit::GetMaxPositiveAuraModifierByMiscMask(AuraType auratype, uint32 misc_
 
     int32 modifier = 0;
 
-    AuraList const& mTotalAuraList = GetAurasByType(auratype);
-    for (AuraList::const_iterator i = mTotalAuraList.begin(); i != mTotalAuraList.end(); ++i)
+    const auto mTotalAuraList = GetAurasByType(auratype);
+    for (auto* aura : mTotalAuraList)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier* mod = aura->GetModifier();
         if (mod->m_miscvalue & misc_mask && mod->m_amount > modifier)
         {
             modifier = mod->m_amount;
@@ -243,10 +243,10 @@ int32 Unit::GetMaxNegativeAuraModifierByMiscMask(AuraType auratype, uint32 misc_
 
     int32 modifier = 0;
 
-    AuraList const& mTotalAuraList = GetAurasByType(auratype);
-    for (AuraList::const_iterator i = mTotalAuraList.begin(); i != mTotalAuraList.end(); ++i)
+    const auto mTotalAuraList = GetAurasByType(auratype);
+    for (auto* aura : mTotalAuraList)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier* mod = aura->GetModifier();
         if (mod->m_miscvalue & misc_mask && mod->m_amount < modifier)
         {
             modifier = mod->m_amount;
@@ -267,10 +267,10 @@ int32 Unit::GetTotalAuraModifierByMiscValue(AuraType auratype, int32 misc_value)
 {
     int32 modifier = 0;
 
-    AuraList const& mTotalAuraList = GetAurasByType(auratype);
-    for (AuraList::const_iterator i = mTotalAuraList.begin(); i != mTotalAuraList.end(); ++i)
+    const auto mTotalAuraList = GetAurasByType(auratype);
+    for (auto* aura : mTotalAuraList)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier* mod = aura->GetModifier();
         if (mod->m_miscvalue == misc_value)
         {
             modifier += mod->m_amount;
@@ -290,10 +290,10 @@ float Unit::GetTotalAuraMultiplierByMiscValue(AuraType auratype, int32 misc_valu
 {
     float multiplier = 1.0f;
 
-    AuraList const& mTotalAuraList = GetAurasByType(auratype);
-    for (AuraList::const_iterator i = mTotalAuraList.begin(); i != mTotalAuraList.end(); ++i)
+    const auto mTotalAuraList = GetAurasByType(auratype);
+    for (auto* aura : mTotalAuraList)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier* mod = aura->GetModifier();
         if (mod->m_miscvalue == misc_value)
         {
             multiplier *= (100.0f + mod->m_amount) / 100.0f;
@@ -313,10 +313,10 @@ int32 Unit::GetMaxPositiveAuraModifierByMiscValue(AuraType auratype, int32 misc_
 {
     int32 modifier = 0;
 
-    AuraList const& mTotalAuraList = GetAurasByType(auratype);
-    for (AuraList::const_iterator i = mTotalAuraList.begin(); i != mTotalAuraList.end(); ++i)
+    const auto mTotalAuraList = GetAurasByType(auratype);
+    for (auto* aura : mTotalAuraList)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier* mod = aura->GetModifier();
         if (mod->m_miscvalue == misc_value && mod->m_amount > modifier)
         {
             modifier = mod->m_amount;
@@ -337,10 +337,10 @@ int32 Unit::GetMaxNegativeAuraModifierByMiscValue(AuraType auratype, int32 misc_
 {
     int32 modifier = 0;
 
-    AuraList const& mTotalAuraList = GetAurasByType(auratype);
-    for (AuraList::const_iterator i = mTotalAuraList.begin(); i != mTotalAuraList.end(); ++i)
+    const auto mTotalAuraList = GetAurasByType(auratype);
+    for (auto* aura : mTotalAuraList)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier* mod = aura->GetModifier();
         if (mod->m_miscvalue == misc_value && mod->m_amount < modifier)
         {
             modifier = mod->m_amount;
@@ -558,7 +558,7 @@ void Unit::AddAuraToModList(Aura* aura)
 {
     if (aura->GetModifier()->m_auraname < TOTAL_AURAS)
     {
-        m_modAuras[aura->GetModifier()->m_auraname].push_back(aura);
+        m_auraIndex.Add(aura->GetModifier()->m_auraname, aura);
     }
 }
 
@@ -1264,7 +1264,7 @@ void Unit::RemoveAura(Aura* Aur, AuraRemoveMode mode)
     // remove from list before mods removing (prevent cyclic calls, mods added before including to aura list - use reverse order)
     if (Aur->GetModifier()->m_auraname < TOTAL_AURAS)
     {
-        m_modAuras[Aur->GetModifier()->m_auraname].remove(Aur);
+        m_auraIndex.Remove(Aur->GetModifier()->m_auraname, Aur);
     }
 
     // Set remove mode
@@ -1450,11 +1450,11 @@ bool Unit::HasAuraType(AuraType auraType) const
  */
 bool Unit::HasAffectedAura(AuraType auraType, SpellEntry const* spellProto) const
 {
-    Unit::AuraList const& auras = GetAurasByType(auraType);
+    const auto auras = GetAurasByType(auraType);
 
-    for (Unit::AuraList::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
+    for (auto* aura : auras)
     {
-        if ((*itr)->isAffectedOnSpell(spellProto))
+        if (aura->isAffectedOnSpell(spellProto))
         {
             return true;
         }
@@ -1491,13 +1491,13 @@ Aura* Unit::GetAura(uint32 spellId, SpellEffectIndex effindex)
  */
 Aura* Unit::GetAura(AuraType type, SpellFamily family, uint64 familyFlag, ObjectGuid casterGuid)
 {
-    AuraList const& auras = GetAurasByType(type);
-    for (AuraList::const_iterator i = auras.begin(); i != auras.end(); ++i)
+    const auto auras = GetAurasByType(type);
+    for (auto* aura : auras)
     {
-        if ((*i)->GetSpellProto()->IsFitToFamily(family, familyFlag) &&
-            (!casterGuid || (*i)->GetCasterGuid() == casterGuid))
+        if (aura->GetSpellProto()->IsFitToFamily(family, familyFlag) &&
+            (!casterGuid || aura->GetCasterGuid() == casterGuid))
         {
-            return *i;
+            return aura;
         }
     }
     return NULL;

@@ -100,32 +100,32 @@ bool ChatHandler::HandleListAurasCommand(char* /*args*/)
     }
     for (int i = 0; i < TOTAL_AURAS; ++i)
     {
-        Unit::AuraList const& uAuraList = unit->GetAurasByType(AuraType(i));
+        const auto uAuraList = unit->GetAurasByType(AuraType(i));
         if (uAuraList.empty())
         {
             continue;
         }
         PSendSysMessage(LANG_COMMAND_TARGET_LISTAURATYPE, uAuraList.size(), i);
-        for (Unit::AuraList::const_iterator itr = uAuraList.begin(); itr != uAuraList.end(); ++itr)
+        for (auto* aura : uAuraList)
         {
-            bool talent = GetTalentSpellCost((*itr)->GetId()) > 0;
+            bool talent = GetTalentSpellCost(aura->GetId()) > 0;
 
-            char const* name = (*itr)->GetSpellProto()->Name_lang[GetSessionDbcLocale()];
+            char const* name = aura->GetSpellProto()->Name_lang[GetSessionDbcLocale()];
 
             if (m_session)
             {
                 std::ostringstream ss_name;
-                ss_name << "|cffffffff|Hspell:" << (*itr)->GetId() << "|h[" << name << "]|h|r";
+                ss_name << "|cffffffff|Hspell:" << aura->GetId() << "|h[" << name << "]|h|r";
 
-                PSendSysMessage(LANG_COMMAND_TARGET_AURASIMPLE, (*itr)->GetId(), (*itr)->GetEffIndex(),
-                    ss_name.str().c_str(), ((*itr)->GetHolder()->IsPassive() ? passiveStr : ""), (talent ? talentStr : ""),
-                    (*itr)->GetCasterGuid().GetString().c_str());
+                PSendSysMessage(LANG_COMMAND_TARGET_AURASIMPLE, aura->GetId(), aura->GetEffIndex(),
+                    ss_name.str().c_str(), (aura->GetHolder()->IsPassive() ? passiveStr : ""), (talent ? talentStr : ""),
+                    aura->GetCasterGuid().GetString().c_str());
             }
             else
             {
-                PSendSysMessage(LANG_COMMAND_TARGET_AURASIMPLE, (*itr)->GetId(), (*itr)->GetEffIndex(),
-                    name, ((*itr)->GetHolder()->IsPassive() ? passiveStr : ""), (talent ? talentStr : ""),
-                    (*itr)->GetCasterGuid().GetString().c_str());
+                PSendSysMessage(LANG_COMMAND_TARGET_AURASIMPLE, aura->GetId(), aura->GetEffIndex(),
+                    name, (aura->GetHolder()->IsPassive() ? passiveStr : ""), (talent ? talentStr : ""),
+                    aura->GetCasterGuid().GetString().c_str());
             }
         }
     }

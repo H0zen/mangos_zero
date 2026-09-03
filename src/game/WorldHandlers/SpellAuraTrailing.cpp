@@ -91,7 +91,7 @@ void Aura::HandlePreventFleeing(bool apply, bool Real)
         return;
     }
 
-    Unit::AuraList const& fearAuras = GetTarget()->GetAurasByType(SPELL_AURA_MOD_FEAR);
+    const auto fearAuras = GetTarget()->GetAurasByType(SPELL_AURA_MOD_FEAR);
     if (!fearAuras.empty())
     {
         const Aura *first = fearAuras.front();

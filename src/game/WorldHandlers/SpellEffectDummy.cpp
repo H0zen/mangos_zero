@@ -984,12 +984,12 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     int32 mana = dmg;
 
                     // Improved Life Tap mod
-                    Unit::AuraList const& auraDummy = m_caster->GetAurasByType(SPELL_AURA_DUMMY);
-                    for (Unit::AuraList::const_iterator itr = auraDummy.begin(); itr != auraDummy.end(); ++itr)
+                    const auto auraDummy = m_caster->GetAurasByType(SPELL_AURA_DUMMY);
+                    for (auto* aura : auraDummy)
                     {
-                        if ((*itr)->GetSpellProto()->SpellClassSet == SPELLFAMILY_WARLOCK && (*itr)->GetSpellProto()->SpellIconID == 208)
+                        if (aura->GetSpellProto()->SpellClassSet == SPELLFAMILY_WARLOCK && aura->GetSpellProto()->SpellIconID == 208)
                         {
-                            mana = ((*itr)->GetModifier()->m_amount + 100) * mana / 100;
+                            mana = (aura->GetModifier()->m_amount + 100) * mana / 100;
                         }
                     }
 
@@ -1079,10 +1079,10 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 bool found = false;
 
                 // check dazed affect
-                Unit::AuraList const& decSpeedList = unitTarget->GetAurasByType(SPELL_AURA_MOD_DECREASE_SPEED);
-                for (Unit::AuraList::const_iterator iter = decSpeedList.begin(); iter != decSpeedList.end(); ++iter)
+                const auto decSpeedList = unitTarget->GetAurasByType(SPELL_AURA_MOD_DECREASE_SPEED);
+                for (auto* aura : decSpeedList)
                 {
-                    if ((*iter)->GetSpellProto()->SpellIconID == 15 && (*iter)->GetSpellProto()->DispelType == 0)
+                    if (aura->GetSpellProto()->SpellIconID == 15 && aura->GetSpellProto()->DispelType == 0)
                     {
                         found = true;
                         break;

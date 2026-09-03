@@ -552,13 +552,14 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, UpdateMask* u
                     {
                         bool bIsEmpathy = false;
                         bool bIsCaster = false;
-                        Unit::AuraList const& mAuraEmpathy = ((Unit*)this)->GetAurasByType(SPELL_AURA_EMPATHY);
-                        for (Unit::AuraList::const_iterator itr = mAuraEmpathy.begin(); !bIsCaster && itr != mAuraEmpathy.end(); ++itr)
+                        const auto mAuraEmpathy = ((Unit*)this)->GetAurasByType(SPELL_AURA_EMPATHY);
+                        for (const auto* aura : mAuraEmpathy)
                         {
                             bIsEmpathy = true; // Empathy by aura set
-                            if ((*itr)->GetCasterGuid() == target->GetObjectGuid())
+                            if (aura->GetCasterGuid() == target->GetObjectGuid())
                             {
                                 bIsCaster = true; // target is the caster of an empathy aura
+                                break;
                             }
                         }
                         if (bIsEmpathy && !bIsCaster) // Empathy by aura, but target is not the caster

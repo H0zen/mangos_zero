@@ -320,12 +320,12 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
         {
             // remove movement affects
             target->RemoveSpellsCausingAura(SPELL_AURA_MOD_ROOT, GetHolder());
-            Unit::AuraList const& slowingAuras = target->GetAurasByType(SPELL_AURA_MOD_DECREASE_SPEED);
-            for (Unit::AuraList::const_iterator iter = slowingAuras.begin(); iter != slowingAuras.end();)
+            const auto slowingAuras = target->GetAurasByType(SPELL_AURA_MOD_DECREASE_SPEED);
+            for (const auto* slowing : slowingAuras)
             {
-                SpellEntry const* aurSpellInfo = (*iter)->GetSpellProto();
+                const SpellEntry* aurSpellInfo = slowing->GetSpellProto();
 
-                uint32 aurMechMask = GetAllSpellMechanicMask(aurSpellInfo);
+                const uint32 aurMechMask = GetAllSpellMechanicMask(aurSpellInfo);
 
                 // If spell that caused this aura has Croud Control or Daze effect
                 if ((aurMechMask & MECHANIC_NOT_REMOVED_BY_SHAPESHIFT) ||
@@ -333,13 +333,10 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                     (aurSpellInfo->SpellIconID == 15 && aurSpellInfo->DispelType == 0 &&
                     (aurMechMask & (1 << (MECHANIC_SNARE - 1))) == 0))
                 {
-                    ++iter;
                     continue;
                 }
 
-                // All OK, remove aura now
                 target->RemoveAurasDueToSpellByCancel(aurSpellInfo->ID);
-                iter = slowingAuras.begin();
             }
 
             // and polymorphic affects
@@ -388,12 +385,12 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                 {
                     // get furor proc chance
                     int32 furorChance = 0;
-                    Unit::AuraList const& mDummy = target->GetAurasByType(SPELL_AURA_DUMMY);
-                    for (Unit::AuraList::const_iterator i = mDummy.begin(); i != mDummy.end(); ++i)
+                    const auto mDummy = target->GetAurasByType(SPELL_AURA_DUMMY);
+                    for (auto* aura : mDummy)
                     {
-                        if ((*i)->GetSpellProto()->SpellIconID == 238)
+                        if (aura->GetSpellProto()->SpellIconID == 238)
                         {
-                            furorChance = (*i)->GetModifier()->m_amount;
+                            furorChance = aura->GetModifier()->m_amount;
                             break;
                         }
                     }
@@ -424,11 +421,11 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                     // Tactical mastery
                     if (target->GetTypeId() == TYPEID_PLAYER)
                     {
-                        Unit::AuraList const& aurasOverrideClassScripts = target->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
-                        for (Unit::AuraList::const_iterator iter = aurasOverrideClassScripts.begin(); iter != aurasOverrideClassScripts.end(); ++iter)
+                        const auto aurasOverrideClassScripts = target->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
+                        for (auto* aura : aurasOverrideClassScripts)
                         {
                             // select by script id
-                            switch ((*iter)->GetModifier()->m_miscvalue)
+                            switch (aura->GetModifier()->m_miscvalue)
                             {
                                 case 831: Rage_val =  50; break;
                                 case 832: Rage_val = 100; break;
@@ -598,17 +595,17 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
         }
 
         // re-apply some from still active with preference negative cases
-        Unit::AuraList const& otherTransforms = target->GetAurasByType(SPELL_AURA_TRANSFORM);
+        const auto otherTransforms = target->GetAurasByType(SPELL_AURA_TRANSFORM);
         if (!otherTransforms.empty())
         {
             // look for other transform auras
-            Aura* handledAura = *otherTransforms.begin();
-            for (Unit::AuraList::const_iterator i = otherTransforms.begin(); i != otherTransforms.end(); ++i)
+            Aura* handledAura = otherTransforms.front();
+            for (auto* transform : otherTransforms)
             {
                 // negative auras are preferred
-                if (!IsPositiveSpell((*i)->GetSpellProto()->ID))
+                if (!IsPositiveSpell(transform->GetSpellProto()->ID))
                 {
-                    handledAura = *i;
+                    handledAura = transform;
                     break;
                 }
             }

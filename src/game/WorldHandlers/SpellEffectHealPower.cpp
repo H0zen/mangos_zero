@@ -265,18 +265,18 @@ void Spell::EffectHeal(SpellEffectIndex /*eff_idx*/)
         // Swiftmend - consumes Regrowth or Rejuvenation
         if (m_spellInfo->ID == 18562)
         {
-            Unit::AuraList const& RejorRegr = unitTarget->GetAurasByType(SPELL_AURA_PERIODIC_HEAL);
+            const auto RejorRegr = unitTarget->GetAurasByType(SPELL_AURA_PERIODIC_HEAL);
             // find most short by duration
             Aura* targetAura = NULL;
-            for (Unit::AuraList::const_iterator i = RejorRegr.begin(); i != RejorRegr.end(); ++i)
+            for (auto* heal : RejorRegr)
             {
-                if ((*i)->GetSpellProto()->SpellClassSet == SPELLFAMILY_DRUID &&
+                if (heal->GetSpellProto()->SpellClassSet == SPELLFAMILY_DRUID &&
                     // Regrowth or Rejuvenation 0x40 | 0x10
-                    ((*i)->GetSpellProto()->SpellClassMask & UI64LIT(0x0000000000000050)))
+                    (heal->GetSpellProto()->SpellClassMask & UI64LIT(0x0000000000000050)))
                 {
-                    if (!targetAura || (*i)->GetAuraDuration() < targetAura->GetAuraDuration())
+                    if (!targetAura || heal->GetAuraDuration() < targetAura->GetAuraDuration())
                     {
-                        targetAura = *i;
+                        targetAura = heal;
                     }
                 }
             }

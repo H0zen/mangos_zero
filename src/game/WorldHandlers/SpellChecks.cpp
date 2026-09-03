@@ -212,16 +212,12 @@ SpellCastResult Spell::CheckCast(bool strict)
                 if (m_spellInfo->HasSpellEffect(SPELL_EFFECT_HEAL) || IsSpellHaveAura(m_spellInfo, SPELL_AURA_PERIODIC_HEAL) ||
                     m_spellInfo->HasSpellEffect(SPELL_EFFECT_DISPEL))
                 {
-                    Unit::AuraList const& auraClassScripts = m_caster->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
-                    for (Unit::AuraList::const_iterator itr = auraClassScripts.begin(); itr != auraClassScripts.end();)
+                    const auto auraClassScripts = m_caster->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
+                    for (const auto* script : auraClassScripts)
                     {
-                        if ((*itr)->GetModifier()->m_miscvalue == 4327)
+                        if (script->GetModifier()->m_miscvalue == 4327)
                         {
                             return SPELL_FAILED_FIZZLE;
-                        }
-                        else
-                        {
-                            ++itr;
                         }
                     }
                 }
@@ -274,14 +270,14 @@ SpellCastResult Spell::CheckCast(bool strict)
         // give error message when applying lower hot rank to higher hot rank on target
         if (!m_spellInfo->HasSpellEffect(SPELL_EFFECT_HEAL) && IsSpellHaveAura(m_spellInfo, SPELL_AURA_PERIODIC_HEAL))
         {
-            Unit::AuraList const& mPeriodicHeal = target->GetAurasByType(SPELL_AURA_PERIODIC_HEAL);
-            for (Unit::AuraList::const_iterator i = mPeriodicHeal.begin(); i != mPeriodicHeal.end(); ++i)
+            const auto mPeriodicHeal = target->GetAurasByType(SPELL_AURA_PERIODIC_HEAL);
+            for (auto* aura : mPeriodicHeal)
             {
-                if ((*i)->GetSpellProto()->SpellClassSet == m_spellInfo->SpellClassSet)
+                if (aura->GetSpellProto()->SpellClassSet == m_spellInfo->SpellClassSet)
                 {
-                    if (m_spellInfo->IsFitToFamilyMask((*i)->GetSpellProto()->SpellClassMask))
+                    if (m_spellInfo->IsFitToFamilyMask(aura->GetSpellProto()->SpellClassMask))
                     {
-                        if (CompareAuraRanks(m_spellInfo->ID, (*i)->GetSpellProto()->ID) < 0)
+                        if (CompareAuraRanks(m_spellInfo->ID, aura->GetSpellProto()->ID) < 0)
                         {
                             return SPELL_FAILED_MORE_POWERFUL_SPELL_ACTIVE;
                         }
@@ -962,13 +958,13 @@ SpellCastResult Spell::CheckCast(bool strict)
 
                     // for caster applied auras only
                     bool found = false;
-                    Unit::AuraList const& mPeriodic = m_targets.getUnitTarget()->GetAurasByType(SPELL_AURA_PERIODIC_DAMAGE);
-                    for (Unit::AuraList::const_iterator i = mPeriodic.begin(); i != mPeriodic.end(); ++i)
+                    const auto mPeriodic = m_targets.getUnitTarget()->GetAurasByType(SPELL_AURA_PERIODIC_DAMAGE);
+                    for (auto* aura : mPeriodic)
                     {
-                        if ((*i)->GetSpellProto()->SpellClassSet == SPELLFAMILY_WARLOCK &&
-                            (*i)->GetCasterGuid() == m_caster->GetObjectGuid() &&
+                        if (aura->GetSpellProto()->SpellClassSet == SPELLFAMILY_WARLOCK &&
+                            aura->GetCasterGuid() == m_caster->GetObjectGuid() &&
                             // Immolate
-                            ((*i)->GetSpellProto()->SpellClassMask & UI64LIT(0x0000000000000004)))
+                            (aura->GetSpellProto()->SpellClassMask & UI64LIT(0x0000000000000004)))
                         {
                             found = true;
                             break;

@@ -994,22 +994,22 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
                 SetUInt32Value(PLAYER_SKILL_BONUS_INDEX(i), 0);
 
                 // temporary bonuses
-                AuraList const& mModSkill = GetAurasByType(SPELL_AURA_MOD_SKILL);
-                for (AuraList::const_iterator j = mModSkill.begin(); j != mModSkill.end(); ++j)
+                const auto mModSkill = GetAurasByType(SPELL_AURA_MOD_SKILL);
+                for (auto* aura : mModSkill)
                 {
-                    if ((*j)->GetModifier()->m_miscvalue == int32(id))
+                    if (aura->GetModifier()->m_miscvalue == int32(id))
                     {
-                        (*j)->ApplyModifier(true);
+                        aura->ApplyModifier(true);
                     }
                 }
 
                 // permanent bonuses
-                AuraList const& mModSkillTalent = GetAurasByType(SPELL_AURA_MOD_SKILL_TALENT);
-                for (AuraList::const_iterator j = mModSkillTalent.begin(); j != mModSkillTalent.end(); ++j)
+                const auto mModSkillTalent = GetAurasByType(SPELL_AURA_MOD_SKILL_TALENT);
+                for (auto* aura : mModSkillTalent)
                 {
-                    if ((*j)->GetModifier()->m_miscvalue == int32(id))
+                    if (aura->GetModifier()->m_miscvalue == int32(id))
                     {
-                        (*j)->ApplyModifier(true);
+                        aura->ApplyModifier(true);
                     }
                 }
 

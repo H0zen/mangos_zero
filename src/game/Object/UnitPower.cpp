@@ -274,14 +274,13 @@ void Unit::ApplyMaxPowerMod(Powers power, uint32 val, bool apply)
  */
 void Unit::ApplyAuraProcTriggerDamage(Aura* aura, bool apply)
 {
-    AuraList& tAuraProcTriggerDamage = m_modAuras[SPELL_AURA_PROC_TRIGGER_DAMAGE];
     if (apply)
     {
-        tAuraProcTriggerDamage.push_back(aura);
+        m_auraIndex.Add(SPELL_AURA_PROC_TRIGGER_DAMAGE, aura);
     }
     else
     {
-        tAuraProcTriggerDamage.remove(aura);
+        m_auraIndex.Remove(SPELL_AURA_PROC_TRIGGER_DAMAGE, aura);
     }
 }
 

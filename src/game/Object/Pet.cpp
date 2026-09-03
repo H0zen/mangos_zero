@@ -1467,12 +1467,12 @@ void Pet::UpdateSpeed(UnitMoveType mtype, bool forced, float ratio)
         case MOVE_RUN:
             if (!m_attacking && owner->HasAura(19596))   // Bestial Swiftness: prevent while following
             {
-                AuraList const& auras = GetAurasByType(SPELL_AURA_MOD_INCREASE_SPEED);
-                for (AuraList::const_iterator it = auras.begin(); it != auras.end(); ++it)
+                const auto auras = GetAurasByType(SPELL_AURA_MOD_INCREASE_SPEED);
+                for (auto* auraOf : auras)
                 {
-                    if ((*it)->GetId() != 19582)                        // exclude the aura influenced by Bestial Swiftness
+                    if (auraOf->GetId() != 19582)                        // exclude the aura influenced by Bestial Swiftness
                     {
-                        main_speed_mod = std::max((*it)->GetBasePoints(), main_speed_mod);
+                        main_speed_mod = std::max(auraOf->GetBasePoints(), main_speed_mod);
                     }
                 }
             }

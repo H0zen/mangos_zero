@@ -552,10 +552,10 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura
 
                     // find Mage Armor
                     bool found = false;
-                    AuraList const& mRegenInterrupt = GetAurasByType(SPELL_AURA_MOD_MANA_REGEN_INTERRUPT);
-                    for (AuraList::const_iterator iter = mRegenInterrupt.begin(); iter != mRegenInterrupt.end(); ++iter)
+                    const auto mRegenInterrupt = GetAurasByType(SPELL_AURA_MOD_MANA_REGEN_INTERRUPT);
+                    for (auto* aura : mRegenInterrupt)
                     {
-                        if (SpellEntry const* iterSpellProto = (*iter)->GetSpellProto())
+                        if (SpellEntry const* iterSpellProto = aura->GetSpellProto())
                         {
                             if (iterSpellProto->SpellClassSet == SPELLFAMILY_MAGE && (iterSpellProto->SpellClassMask & UI64LIT(0x10000000)))
                             {
@@ -827,14 +827,14 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura
                 // Talent - Improve Seal of Righteousness
                 uint32 ModSpellId[] = { 20224, 20225, 20330, 20331, 20332 };
                 float ModPct = 1.0f;
-                AuraList const& mModDamagePercentModifier = GetAurasByType(SPELL_AURA_ADD_PCT_MODIFIER);
-                for (AuraList::const_iterator i = mModDamagePercentModifier.begin(); i != mModDamagePercentModifier.end(); ++i)
+                const auto mModDamagePercentModifier = GetAurasByType(SPELL_AURA_ADD_PCT_MODIFIER);
+                for (auto* aura : mModDamagePercentModifier)
                 {
                     for (int j = 0; j < 5; j++)
                     {
-                        if ((*i)->GetId() == ModSpellId[j])
+                        if (aura->GetId() == ModSpellId[j])
                         {
-                            ModPct *= ((*i)->GetModifier()->m_amount + 100.0f) / 100.0f;
+                            ModPct *= (aura->GetModifier()->m_amount + 100.0f) / 100.0f;
                         }
                     }
                 }

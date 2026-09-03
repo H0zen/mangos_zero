@@ -491,15 +491,15 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
 
                     uint32 itemtype;
                     uint32 rank = 0;
-                    Unit::AuraList const& mDummyAuras = unitTarget->GetAurasByType(SPELL_AURA_DUMMY);
-                    for (Unit::AuraList::const_iterator i = mDummyAuras.begin(); i != mDummyAuras.end(); ++i)
+                    const auto mDummyAuras = unitTarget->GetAurasByType(SPELL_AURA_DUMMY);
+                    for (auto* aura : mDummyAuras)
                     {
-                        if ((*i)->GetId() == 18692)
+                        if (aura->GetId() == 18692)
                         {
                             rank = 1;
                             break;
                         }
-                        else if ((*i)->GetId() == 18693)
+                        else if (aura->GetId() == 18693)
                         {
                             rank = 2;
                             break;
@@ -570,18 +570,18 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                 uint32 spellId2 = 0;
 
                 // all seals have aura dummy
-                Unit::AuraList const& m_dummyAuras = m_caster->GetAurasByType(SPELL_AURA_DUMMY);
-                for (Unit::AuraList::const_iterator itr = m_dummyAuras.begin(); itr != m_dummyAuras.end(); ++itr)
+                const auto m_dummyAuras = m_caster->GetAurasByType(SPELL_AURA_DUMMY);
+                for (auto* auraOf : m_dummyAuras)
                 {
-                    SpellEntry const* spellInfo = (*itr)->GetSpellProto();
+                    SpellEntry const* spellInfo = auraOf->GetSpellProto();
 
                     // the judgement spell id is stored in whatever effect index the seal's dummy aura occupies
-                    if (!spellInfo || !IsSealSpell((*itr)->GetSpellProto()))
+                    if (!spellInfo || !IsSealSpell(auraOf->GetSpellProto()))
                     {
                         continue;
                     }
 
-                    SpellEntry const* sealInfo = (*itr)->GetSpellProto();
+                    SpellEntry const* sealInfo = auraOf->GetSpellProto();
                     for (int32 eff = EFFECT_INDEX_0; eff < MAX_EFFECT_INDEX; ++eff)
                     {
                         uint32 val = sealInfo->CalculateSimpleValue(SpellEffectIndex(eff));
@@ -598,7 +598,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     }
 
                     // found, remove seal
-                    m_caster->RemoveAurasDueToSpell((*itr)->GetId());
+                    m_caster->RemoveAurasDueToSpell(auraOf->GetId());
 
                     break;
                 }

@@ -576,10 +576,10 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
             bool found_another = false;
             for (AuraType const* itr = &frozenAuraTypes[0]; *itr != SPELL_AURA_NONE; ++itr)
             {
-                Unit::AuraList const& auras = target->GetAurasByType(*itr);
-                for (Unit::AuraList::const_iterator i = auras.begin(); i != auras.end(); ++i)
+                const auto auras = target->GetAurasByType(*itr);
+                for (auto* aura : auras)
                 {
-                    if (GetSpellSchoolMask((*i)->GetSpellProto()) & SPELL_SCHOOL_MASK_FROST)
+                    if (GetSpellSchoolMask(aura->GetSpellProto()) & SPELL_SCHOOL_MASK_FROST)
                     {
                         found_another = true;
                         break;
@@ -763,10 +763,10 @@ void Aura::HandleInvisibility(bool apply, bool Real)
     {
         // recalculate value at modifier remove (current aura already removed)
         target->m_invisibilityMask = 0;
-        Unit::AuraList const& auras = target->GetAurasByType(SPELL_AURA_MOD_INVISIBILITY);
-        for (Unit::AuraList::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
+        const auto auras = target->GetAurasByType(SPELL_AURA_MOD_INVISIBILITY);
+        for (auto* aura : auras)
         {
-            target->m_invisibilityMask |= (1 << (*itr)->GetModifier()->m_miscvalue);
+            target->m_invisibilityMask |= (1 << aura->GetModifier()->m_miscvalue);
         }
 
         // only at real aura remove and if not have different invisibility auras.
@@ -809,10 +809,10 @@ void Aura::HandleInvisibilityDetect(bool apply, bool Real)
     {
         // recalculate value at modifier remove (current aura already removed)
         target->m_detectInvisibilityMask = 0;
-        Unit::AuraList const& auras = target->GetAurasByType(SPELL_AURA_MOD_INVISIBILITY_DETECTION);
-        for (Unit::AuraList::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
+        const auto auras = target->GetAurasByType(SPELL_AURA_MOD_INVISIBILITY_DETECTION);
+        for (auto* aura : auras)
         {
-            target->m_detectInvisibilityMask |= (1 << (*itr)->GetModifier()->m_miscvalue);
+            target->m_detectInvisibilityMask |= (1 << aura->GetModifier()->m_miscvalue);
         }
     }
     if (Real && target->GetTypeId() == TYPEID_PLAYER)
@@ -878,10 +878,10 @@ void Aura::HandleAuraModRoot(bool apply, bool Real)
             bool found_another = false;
             for (AuraType const* itr = &frozenAuraTypes[0]; *itr != SPELL_AURA_NONE; ++itr)
             {
-                Unit::AuraList const& auras = target->GetAurasByType(*itr);
-                for (Unit::AuraList::const_iterator i = auras.begin(); i != auras.end(); ++i)
+                const auto auras = target->GetAurasByType(*itr);
+                for (auto* aura : auras)
                 {
-                    if (GetSpellSchoolMask((*i)->GetSpellProto()) & SPELL_SCHOOL_MASK_FROST)
+                    if (GetSpellSchoolMask(aura->GetSpellProto()) & SPELL_SCHOOL_MASK_FROST)
                     {
                         found_another = true;
                         break;
@@ -1250,17 +1250,11 @@ void Aura::HandleAuraModStateImmunity(bool apply, bool Real)
 {
     if (apply && Real && GetSpellProto()->HasAttribute(SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY))
     {
-        Unit::AuraList const& auraList = GetTarget()->GetAurasByType(AuraType(m_modifier.m_miscvalue));
-        for (Unit::AuraList::const_iterator itr = auraList.begin(); itr != auraList.end();)
+        for (const auto* aura : GetTarget()->GetAurasByType(static_cast<AuraType>(m_modifier.m_miscvalue)))
         {
-            if (auraList.front() != this)                   // skip itself aura (it already added)
+            if (aura != this)                               // this aura was just added
             {
-                GetTarget()->RemoveAurasDueToSpell(auraList.front()->GetId());
-                itr = auraList.begin();
-            }
-            else
-            {
-                ++itr;
+                GetTarget()->RemoveAurasDueToSpell(aura->GetId());
             }
         }
     }

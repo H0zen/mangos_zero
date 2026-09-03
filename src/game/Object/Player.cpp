@@ -5585,7 +5585,7 @@ void Player::SendInitialPacketsAfterAddToMap(InitialWorldEntryContext const* ini
     for (AuraType const* itr = &auratypes[0]; itr && itr[0] != SPELL_AURA_NONE; ++itr)
     {
         /* Populate iterator with player's auras */
-        Unit::AuraList const& auraList = GetAurasByType(*itr);
+        const auto auraList = GetAurasByType(*itr);
 
         /* If the list isn't empty, re-apply the ones we found */
         if (!auraList.empty())
@@ -6119,13 +6119,13 @@ uint32 Player::GetResurrectionSpellId()
     // search priceless resurrection possibilities
     uint32 prio = 0;
     uint32 spell_id = 0;
-    AuraList const& dummyAuras = GetAurasByType(SPELL_AURA_DUMMY);
-    for (AuraList::const_iterator itr = dummyAuras.begin(); itr != dummyAuras.end(); ++itr)
+    const auto dummyAuras = GetAurasByType(SPELL_AURA_DUMMY);
+    for (auto* aura : dummyAuras)
     {
         // Soulstone Resurrection                           // prio: 3 (max, non death persistent)
-        if (prio < 2 && (*itr)->GetSpellProto()->SpellVisualID == 99 && (*itr)->GetSpellProto()->SpellIconID == 92)
+        if (prio < 2 && aura->GetSpellProto()->SpellVisualID == 99 && aura->GetSpellProto()->SpellIconID == 92)
         {
-            switch ((*itr)->GetId())
+            switch (aura->GetId())
             {
                 case 20707: spell_id =  3026; break;        // rank 1
                 case 20762: spell_id = 20758; break;        // rank 2
@@ -6134,14 +6134,14 @@ uint32 Player::GetResurrectionSpellId()
                 case 20765: spell_id = 20761; break;        // rank 5
                 case 27239: spell_id = 27240; break;        // rank 6
                 default:
-                    sLog.outError("Unhandled spell %u: S.Resurrection", (*itr)->GetId());
+                    sLog.outError("Unhandled spell %u: S.Resurrection", aura->GetId());
                     continue;
             }
 
             prio = 3;
         }
         // Twisting Nether                                  // prio: 2 (max)
-        else if ((*itr)->GetId() == 23701 && roll_chance_i(10))
+        else if (aura->GetId() == 23701 && roll_chance_i(10))
         {
             prio = 2;
             spell_id = 23700;
@@ -6430,12 +6430,12 @@ bool ItemPosCount::isContainedIn(ItemPosCountVec const& vec) const
  */
 bool Player::isTotalImmune()
 {
-    AuraList const& immune = GetAurasByType(SPELL_AURA_SCHOOL_IMMUNITY);
+    const auto immune = GetAurasByType(SPELL_AURA_SCHOOL_IMMUNITY);
 
     uint32 immuneMask = 0;
-    for (AuraList::const_iterator itr = immune.begin(); itr != immune.end(); ++itr)
+    for (auto* aura : immune)
     {
-        immuneMask |= (*itr)->GetModifier()->m_miscvalue;
+        immuneMask |= aura->GetModifier()->m_miscvalue;
         if (immuneMask & SPELL_SCHOOL_MASK_ALL)             // total immunity
         {
             return true;

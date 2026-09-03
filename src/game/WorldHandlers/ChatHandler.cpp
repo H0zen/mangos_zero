@@ -192,7 +192,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
             }
 
             // but overwrite it by SPELL_AURA_MOD_LANGUAGE auras (only single case used)
-            Unit::AuraList const& ModLangAuras = _player->GetAurasByType(SPELL_AURA_MOD_LANGUAGE);
+            const auto ModLangAuras = _player->GetAurasByType(SPELL_AURA_MOD_LANGUAGE);
             if (!ModLangAuras.empty())
             {
                 lang = ModLangAuras.front()->GetModifier()->m_miscvalue;
