@@ -52,8 +52,14 @@ namespace MaNGOS
             {
                 const size_t last = token.find_last_not_of(" \t\r\n\"'");
                 token = token.substr(first, last - first + 1);
-                const long id = std::strtol(token.c_str(), nullptr, 10);
-                if (id > 0)
+
+                // Zero is a real map id -- Eastern Kingdoms -- so "did it parse"
+                // has to be answered by where strtol stopped, not by whether the
+                // result is non-zero. Rejecting a zero result throws away map 0
+                // and anything else legitimately numbered nought.
+                char* end = nullptr;
+                const long id = std::strtol(token.c_str(), &end, 10);
+                if (end != token.c_str() && *end == '\0' && id >= 0)
                 {
                     ids.push_back(uint32(id));
                 }

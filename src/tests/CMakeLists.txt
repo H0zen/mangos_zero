@@ -33,6 +33,8 @@ set(TEST_SOURCES
     metrics/test_metrics.cpp
 
     synthetic/test_syntheticlink.cpp
+
+    util/test_idlist.cpp
     combat/test_manashield.cpp
 )
 
