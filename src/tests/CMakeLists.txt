@@ -10,6 +10,9 @@ set(TEST_SOURCES
 
     wire/test_authcrypt.cpp
     wire/test_packetcodec.cpp
+
+    terrain/test_column.cpp
+    terrain/test_fusedterrain.cpp
 )
 
 add_executable(mangos_tests ${TEST_SOURCES})
