@@ -251,6 +251,11 @@ class TerrainInfo : public Referencable<AtomicLong>
 
         int16 m_GridRef[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 
+        /// Whether a navmesh tile was ever brought in for that grid. A reference
+        /// count of zero says nobody wants it now; it does not say there is
+        /// anything to release, and most of a map's grids never hold one.
+        bool m_navLoaded[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
+
         IntervalTimer i_timer;
 
         typedef std::mutex LOCK_TYPE;

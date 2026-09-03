@@ -144,6 +144,7 @@ TerrainInfo::TerrainInfo(uint32 mapid) : m_mapId(mapid), m_terrain(mapid), m_ref
         for (int i = 0; i < MAX_NUMBER_OF_GRIDS; ++i)
         {
             m_GridRef[i][k] = 0;
+            m_navLoaded[i][k] = false;
         }
     }
 
@@ -193,6 +194,9 @@ bool TerrainInfo::Load(const uint32 x, const uint32 y)
     if (firstReference)
     {
         MMAP::MMapFactory::createOrGetMMapManager()->loadMap(m_mapId, x, y);
+
+        std::lock_guard<LOCK_TYPE> lock(m_refMutex);
+        m_navLoaded[x][y] = true;
     }
     return true;
 }
@@ -220,16 +224,32 @@ void TerrainInfo::CleanUpGrids(const uint32 diff)
         return;
     }
 
-    for (int y = 0; y < MAX_NUMBER_OF_GRIDS; ++y)
+    // Only grids that actually hold a navmesh tile, and only those nobody wants
+    // any more. Asking for the rest is four thousand calls a minute per map that
+    // can do nothing but be refused.
+    //
+    // Chosen under the lock and released outside it: unloading is the mmap
+    // manager's work, and holding a map's reference lock across it would put
+    // every grid activation behind the sweep.
+    std::vector<std::pair<uint32, uint32>> releasable;
     {
-        for (int x = 0; x < MAX_NUMBER_OF_GRIDS; ++x)
+        std::lock_guard<LOCK_TYPE> lock(m_refMutex);
+        for (uint32 y = 0; y < MAX_NUMBER_OF_GRIDS; ++y)
         {
-            std::lock_guard<LOCK_TYPE> lock(m_refMutex);
-            if (m_GridRef[x][y] == 0)
+            for (uint32 x = 0; x < MAX_NUMBER_OF_GRIDS; ++x)
             {
-                MMAP::MMapFactory::createOrGetMMapManager()->unloadMap(m_mapId, x, y);
+                if (m_navLoaded[x][y] && m_GridRef[x][y] == 0)
+                {
+                    m_navLoaded[x][y] = false;
+                    releasable.push_back(std::make_pair(x, y));
+                }
             }
         }
+    }
+
+    for (const auto& grid : releasable)
+    {
+        MMAP::MMapFactory::createOrGetMMapManager()->unloadMap(m_mapId, grid.first, grid.second);
     }
 
     i_timer.Reset();
