@@ -51,6 +51,7 @@
 #include <set>
 #include <mutex>
 #include "MapManager.h"
+#include <cstdio>
 #include "MapPersistentStateMgr.h"
 #include "Policies/Singleton.h"
 #include "Database/DatabaseEnv.h"
@@ -308,6 +309,38 @@ void MapManager::DeleteInstance(uint32 mapid, uint32 instanceId)
  *
  * @param diff The elapsed update time.
  */
+std::string MapManager::ReportTickTimes() const
+{
+    // A map is worth a line once its worst regular tick is past this. Below it
+    // there is nothing to say and plenty of maps to say it about.
+    const uint32 INTERESTING_MS = 5;
+
+    std::string out;
+    char buf[128];
+
+    for (const auto& entry : i_maps)
+    {
+        const Map* map = entry.second;
+        if (!map || map->TickSamples() == 0)
+        {
+            continue;
+        }
+
+        const uint32 p99 = map->TickMs(0.99f);
+        if (p99 < INTERESTING_MS && map->TickOverruns() == 0)
+        {
+            continue;
+        }
+
+        std::snprintf(buf, sizeof(buf), "  map %u tick p50/p99/max %u/%u/%u ms over %u",
+                      map->GetId(), map->TickMs(0.5f), p99, map->TickMsMax(),
+                      map->TickOverruns());
+        out += buf;
+    }
+
+    return out;
+}
+
 void MapManager::Update(uint32 diff)
 {
     i_timer.Update(diff);

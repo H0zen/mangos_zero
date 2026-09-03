@@ -26,6 +26,7 @@
 
 
 #include <set>
+#include "Metrics/ServerMetrics.h"
 #include "Player.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -241,6 +242,7 @@ void Player::UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* targe
 
             target->BuildOutOfRangeUpdateBlock(&data);
             m_clientGUIDs.erase(t_guid);
+            metrics::Server().sightDestroys.Add();
 
             DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "UpdateVisibilityOf(4p): %s is out of range for %s. Distance = %f", t_guid.GetString().c_str(), GetGuidStr().c_str(), Where().DistanceTo(target->Where()));
         }
@@ -251,6 +253,7 @@ void Player::UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* targe
         {
             visibleNow.insert(target);
             target->BuildCreateUpdateBlockForPlayer(&data, this);
+            metrics::Server().sightCreates.Add();
             if (GameObject* g = target->ToGameObject())
             {
                 if (!g->IsTransport())

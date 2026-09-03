@@ -29,6 +29,8 @@ set(TEST_SOURCES
     combat/test_resolve.cpp
     combat/test_hitqueue.cpp
     combat/test_flags.cpp
+
+    metrics/test_metrics.cpp
     combat/test_manashield.cpp
 )
 

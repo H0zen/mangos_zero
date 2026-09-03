@@ -72,6 +72,7 @@
 #include "ScriptMgr.h"
 #include "CreatureLinkingMgr.h"
 #include "MapMailbox.h"
+#include "Metrics/Distribution.h"
 #include "DynamicCollision.h"
 
 #include <bitset>
@@ -183,6 +184,28 @@ class Map : public GridRefManager<NGridType>
 
         /// Packets waiting for this map's next tick.
         size_t MailboxDepth() const { return m_mailbox.Depth(); }
+
+        /**
+         * @brief Record how long this map's tick took.
+         *
+         * Called by whoever ran it, so one place times every kind of map. What
+         * is kept is the shape of the tail: a map that ticks in four
+         * milliseconds and once a minute takes three hundred averages fine and
+         * stutters visibly.
+         */
+        void RecordTick(uint32 elapsedMs, uint32 budgetMs)
+        {
+            m_tickMs.Add(elapsedMs);
+            if (elapsedMs > budgetMs)
+            {
+                ++m_tickOverruns;
+            }
+        }
+
+        uint32 TickMs(float percentile) const { return m_tickMs.Percentile(percentile); }
+        uint32 TickMsMax() const { return m_tickMs.Max(); }
+        uint32 TickOverruns() const { return m_tickOverruns; }
+        size_t TickSamples() const { return m_tickMs.Count(); }
 
         void MessageBroadcast(Player const*, WorldPacket*, bool to_self);
         void MessageBroadcast(WorldObject const*, WorldPacket*);
@@ -537,6 +560,10 @@ class Map : public GridRefManager<NGridType>
 
         /// Written in the serial phase, drained by this map in the parallel one.
         MapMailbox m_mailbox;
+
+        /// The last few hundred ticks of this map, and how many ran long.
+        metrics::Distribution<256> m_tickMs;
+        uint32 m_tickOverruns = 0;
 
         struct PendingCellUnload
         {

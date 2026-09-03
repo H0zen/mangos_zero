@@ -169,6 +169,15 @@ class MapManager : public MaNGOS::Singleton<MapManager>
         // get list of all maps
         const MapMapType& Maps() const { return i_maps; }
 
+        /**
+         * @brief The tick tail of the maps that are actually busy.
+         *
+         * Only maps with a tail worth reading are named: a hundred idle
+         * instances ticking in under a millisecond would bury the one continent
+         * that is struggling.
+         */
+        std::string ReportTickTimes() const;
+
         template<typename Do> void DoForAllMaps(Do& _do)
         {
             for (auto& mapData : i_maps)

@@ -29,12 +29,19 @@
  */
 
 #include "MapUpdater.h"
+#include "Map.h"
+#include "Utilities/Timer.h"
 
 #include "Map.h"
 #include "DatabaseEnv.h"
 #include "Log.h"
 #include <mutex>
 #include <thread>
+
+/// A map tick that runs longer than this is counted as an overrun. The
+/// simulation aims at fifty milliseconds; anything past it has eaten into the
+/// next one.
+static const uint32 MAP_TICK_BUDGET_MS = 50;
 
 MapUpdater::MapUpdater()
     : m_pending(0), m_stop(false)
@@ -160,7 +167,10 @@ void MapUpdater::workerLoop()
             m_tasks.pop();
         }
 
+        const uint32 startMs = getMSTime();
         task.first->Update(task.second);
+        task.first->RecordTick(getMSTimeDiff(startMs, getMSTime()),
+                               MAP_TICK_BUDGET_MS);
 
         {
             std::lock_guard<std::mutex> guard(m_mutex);
