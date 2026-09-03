@@ -33,6 +33,7 @@
 #include "Opcodes.h"
 #include "Player.h"
 #include "MotionGenerators/MotionMaster.h"
+#include "PlayerRegistry.h"
 #include "SessionMailbox.h"
 #include "World.h"
 #include "WorldPacket.h"
@@ -150,6 +151,13 @@ namespace synthetic
                 error = "the map refused the player";
                 break;
             }
+
+            // The registry is how everything else finds a player by guid: the
+            // name query answers from it, and so does the driver below. Without
+            // it a bot is a body with no identity -- the client asks who it is,
+            // the lookup falls through to a character row that does not exist,
+            // and it renders as Unknown.
+            sPlayerRegistry.Add(bot);
 
             sWorld.AddSession(session);
 
