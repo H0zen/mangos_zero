@@ -5,8 +5,6 @@ set(SRC_GRP_MAIN
   CliService.h
   Master.cpp
   Master.h
-  RASession.cpp
-  RASession.h
   Service.h
   mangosd.cpp
 )

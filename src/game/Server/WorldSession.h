@@ -38,7 +38,6 @@
 #include <list>
 #include "CharacterEnumMapSnapshot.h"
 #include "SessionProtocolPolicy.h"
-#include "WardenConfiguration.h"
 #include "Auth/BigNumber.h"
 #include "SharedDefines.h"
 #include "ObjectGuid.h"
@@ -46,7 +45,6 @@
 #include "Item.h"
 #include <chrono>
 #include <memory>
-#include <unordered_set>
 
 struct ItemPrototype;
 struct AuctionEntry;
@@ -71,16 +69,6 @@ class WorldSession;
 namespace proto
 {
 class IClientLink;
-}
-
-namespace warden
-{
-struct AdmissionData;
-struct WardenEvidenceBatch;
-struct WardenLifecycleEvent;
-struct WardenPolicyDecision;
-class WardenEnforcementPolicy;
-class WardenServer;
 }
 
 struct OpcodeHandler;
@@ -142,10 +130,6 @@ class WorldSession
         WorldSession(uint32 id, std::shared_ptr<proto::IClientLink> link,
                      std::shared_ptr<SessionMailbox> mailbox, AccountTypes sec,
                      time_t mute_time, LocaleConstant locale);
-        WorldSession(uint32 id, std::shared_ptr<proto::IClientLink> link,
-                     std::shared_ptr<SessionMailbox> mailbox, AccountTypes sec,
-                     time_t mute_time, LocaleConstant locale,
-                     warden::AdmissionData&& admission);
 
         /**
          * @brief Destructor
@@ -184,9 +168,6 @@ class WorldSession
         void SendPacket(WorldPacket const* packet);
         void SetPendingAddonInfo(std::unique_ptr<WorldPacket> packet);
         void SendPendingAddonInfo();
-        void OnAuthenticatedAdmission();
-        void StartWardenBootstrap();
-        void UpdateWarden(uint32 diffMs);
         void SendNotification(const char* format, ...) ATTR_PRINTF(2, 3);
         void SendNotification(int32 string_id, ...);
         void SendPetNameInvalid(uint32 error, const std::string& name);
@@ -790,7 +771,6 @@ class WorldSession
         void HandleBattlefieldListOpcode(WorldPacket& recv_data);
         void HandleLeaveBattlefieldOpcode(WorldPacket& recv_data);
 
-        void HandleWardenDataOpcode(WorldPacket& recv_data);
         void HandleWorldTeleportOpcode(WorldPacket& recv_data);
         void HandleMoveSetRawPosition(WorldPacket& recv_data);
         void HandleMinimapPingOpcode(WorldPacket& recv_data);
@@ -819,15 +799,6 @@ class WorldSession
 
         void ExecuteOpcode(OpcodeHandler const& opHandle, WorldPacket* packet);
 
-        void HandleWardenLifecycle(
-            warden::WardenLifecycleEvent const& event);
-        void HandleWardenEvidenceBatch(
-            warden::WardenEvidenceBatch const& batch);
-        void PersistWardenAudit(
-            warden::WardenPolicyDecision const& decision);
-        void PersistWardenIncidentAndKick(
-            warden::WardenPolicyDecision const& decision);
-
         // logging helper
         void LogUnexpectedOpcode(WorldPacket* packet, const char* reason);
         void LogUnprocessedTail(WorldPacket* packet);
@@ -837,18 +808,6 @@ class WorldSession
         std::shared_ptr<proto::IClientLink> m_link;
         std::shared_ptr<SessionMailbox> m_mailbox;
         std::unique_ptr<WorldPacket> m_pendingAddonInfo;
-        std::unique_ptr<warden::AdmissionData> m_pendingWardenAdmission;
-        std::unique_ptr<warden::WardenServer> m_warden;
-        std::unique_ptr<warden::WardenEnforcementPolicy> m_wardenPolicy;
-        warden::WardenConfiguration m_wardenConfiguration;
-        uint32 m_wardenBuild = 0;
-        std::string m_wardenClientPlatform;
-        std::string m_wardenClientLocale;
-        uint64 m_wardenAggressiveUntil = 0;
-        bool m_wardenAggressive = false;
-        bool m_wardenEnforcementClosed = false;
-        std::unordered_set<uint64> m_wardenLoggedAnomalies;
-        bool m_wardenAdmissionHandled;
         std::string m_Address;
 
         AccountTypes _security;

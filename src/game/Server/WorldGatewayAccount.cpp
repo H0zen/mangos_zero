@@ -21,7 +21,6 @@
  */
 
 #include "WorldGatewayAccount.h"
-#include "Common/Locales.h"
 #include "Database/Field.h"
 
 namespace
@@ -39,9 +38,7 @@ enum AccountFieldIndex
     ACCOUNT_LOCALE = 8,
     ACCOUNT_BANNED = 9,
     IP_BANNED = 10,
-    WARDEN_PLATFORM = 11,
-    WARDEN_CLIENT_LOCALE = 12,
-    ACCOUNT_FIELD_COUNT = 13
+    ACCOUNT_FIELD_COUNT = 11
 };
 }
 
@@ -60,16 +57,4 @@ AccountRestriction EvaluateAccountRestriction(
     }
 
     return AccountRestriction::None;
-}
-
-std::string ReadWardenPlatformHint(Field const* fields)
-{
-    return fields[WARDEN_PLATFORM].GetCppString();
-}
-
-std::string ReadWardenClientLocale(Field const* fields)
-{
-    char const* exactLocale =
-        GetExactLocaleName(fields[WARDEN_CLIENT_LOCALE].GetCppString());
-    return exactLocale ? exactLocale : "";
 }

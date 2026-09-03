@@ -139,9 +139,9 @@ class Config
          * @brief Orders keys ignoring case, so lookup is case-insensitive.
          *
          * Config keys have never been consistently cased: the core reads
-         * `RA.Secure` and `GMLogFile` while every shipped config since Release
-         * 20 has written `Ra.Secure` and `GmLogFile`. That resolved for years,
-         * only stopped when the config backend became an exact-match std::map.
+         * `GMLogFile` while every shipped config since Release 20 has written
+         * `GmLogFile`. That resolved for years, only stopped when the config
+         * backend became an exact-match std::map.
          * Comparing case-insensitively restores it without touching either
          * spelling, and covers any other drift of the same kind.
          *

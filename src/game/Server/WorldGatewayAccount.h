@@ -35,5 +35,3 @@ enum class AccountRestriction
 
 AccountRestriction EvaluateAccountRestriction(
     Field const* fields, std::string const& peerAddress);
-std::string ReadWardenPlatformHint(Field const* fields);
-std::string ReadWardenClientLocale(Field const* fields);

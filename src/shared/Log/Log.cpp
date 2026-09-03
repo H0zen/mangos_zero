@@ -113,7 +113,7 @@ LogFilterData logFilterData[LOG_FILTER_COUNT] =
  * @note This is called automatically when sLog is first accessed
  */
 Log::Log() :
-    raLogfile(NULL), logfile(NULL), gmLogfile(NULL), charLogfile(NULL), dberLogfile(NULL),
+    logfile(NULL), gmLogfile(NULL), charLogfile(NULL), dberLogfile(NULL),
 
     eventAiErLogfile(NULL), scriptErrLogFile(NULL), worldLogfile(NULL),
     m_consoleBody(NULL), m_consoleThread(NULL), m_consoleAsync(false), m_colored(false),
@@ -316,11 +316,6 @@ void Log::CloseLogFiles()
     {
         fclose(scriptErrLogFile);
         scriptErrLogFile = NULL;
-    }
-    if (raLogfile != NULL)
-    {
-        fclose(raLogfile);
-        raLogfile = NULL;
     }
     if (worldLogfile != NULL)
     {
@@ -561,7 +556,6 @@ void Log::Initialize()
     dberLogfile = openLogFile("DBErrorLogFile", NULL, "a");
 
     eventAiErLogfile = openLogFile("EventAIErrorLogFile", NULL, "a");
-    raLogfile = openLogFile("RaLogFile", NULL, "a");
     // Packet logging is opt-in via PacketLoggingEnabled (default off): open the
     // packet log only when explicitly enabled, so it stays off even on legacy
     // configs that still set WorldLogFile with LogLevel=3 (and a disabled server
@@ -1144,27 +1138,6 @@ void Log::outCharDump(const char* str, uint32 account_id, uint32 guid, const cha
         fprintf(charLogfile, "== START DUMP == (account: %u guid: %u name: %s )\n%s\n== END DUMP ==\n", account_id, guid, name, str);
         fflush(charLogfile);
     }
-}
-
-void Log::outRALog(const char* str, ...)
-{
-    if (!str)
-    {
-        return;
-    }
-
-    if (raLogfile)
-    {
-        va_list ap;
-        outTimestamp(raLogfile);
-        va_start(ap, str);
-        vfprintf(raLogfile, str, ap);
-        fprintf(raLogfile, "\n");
-        va_end(ap);
-        fflush(raLogfile);
-    }
-
-    fflush(stdout);
 }
 
 void Log::WaitBeforeContinueIfNeed()

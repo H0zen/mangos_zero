@@ -28,7 +28,6 @@
 
 #include "AntiFreezeService.h"
 #include "CliService.h"
-#include "RASession.h"
 
 #include "Config/Config.h"
 #include "Console/ConsoleUI.h"
@@ -40,7 +39,6 @@
 #include "Version.h"
 #include "Timer.h"
 #include "World.h"
-#include "Server/WardenCheckCatalogLoader.h"
 
 
 #ifdef _WIN32
@@ -204,14 +202,6 @@ void Master::ClearOnlineAccounts()
 
 void Master::StartServices()
 {
-    // Remote administration, over the same networking engine the world uses.
-    if (sConfig.GetBoolDefault("Ra.Enable", false))
-    {
-        m_services.push_back(std::unique_ptr<IService>(new RaService(
-            uint16(sConfig.GetIntDefault("Ra.Port", 3443)),
-            sConfig.GetStringDefault("Ra.IP", "0.0.0.0"))));
-    }
-
     // Watchdog. Disabled unless MaxCoreStuckTime is set.
     m_services.push_back(std::unique_ptr<IService>(new AntiFreezeService(
         1000 * uint32(sConfig.GetIntDefault("MaxCoreStuckTime", 0)))));
@@ -362,12 +352,6 @@ int Master::Run()
     }
 
     ClearOnlineAccounts();
-
-    if (!warden::WardenCheckCatalogLoader().LoadAndPublish())
-    {
-        StopDatabases();
-        return 1;
-    }
 
     sWorld.SetInitialWorldSettings();
 

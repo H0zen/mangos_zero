@@ -43,9 +43,8 @@
  * could sequence against it. Running the loop here makes the order plain --
  * everything after Run() returns happens strictly after the last world tick.
  *
- * Services (console, remote administration, SOAP, freeze watchdog) are started
- * in registration order and stopped in reverse, with every RequestStop() issued
- * before the first Join().
+ * Services (console, freeze watchdog) are started in registration order and
+ * stopped in reverse, with every RequestStop() issued before the first Join().
  */
 class Master
 {

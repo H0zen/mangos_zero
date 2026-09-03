@@ -238,59 +238,6 @@ CleanCharacterDB                  = 1
 MaxWhoListReturns                 = 49
 
 ################################################################################
-# WARDEN
-#
-#    Warden.EnforcementMode
-#        Response to confirmed Warden violations and protocol failures.
-#        0 = observe and log only
-#        1 = kick confirmed violations; never permanently ban
-#        2 = kick confirmed violations and permanently ban at BanThreshold
-#        Default: 2
-#
-#    Warden.RequireExactProfile
-#        Require a complete (build,platform,locale) profile published from `warden_checks`
-#        whenever EnforcementMode is 1 or 2. Exact profiles are rows published
-#        from the required World table `warden_checks`.
-#        0 = allow compatible-module bootstrap with no check plan for an unprofiled Observe session
-#        1 = require a complete published profile and disconnect unprofiled clients
-#        With value 1, all other build/platform/locale combinations are disconnected
-#        after authentication. Use value 0 for observation-only compatibility.
-#        Default: 1
-#
-#    Warden.CheckIntervalMin / Warden.CheckIntervalMax
-#        Inclusive random interval, in seconds, between normal check batches.
-#        Default: 30 / 60
-#
-#    Warden.AggressiveIntervalMin / Warden.AggressiveIntervalMax
-#        Inclusive random interval, in seconds, between aggressive batches.
-#        Default: 10 / 20
-#
-#    Warden.AggressiveThreshold
-#        Confirmed incidents in the rolling window that enable aggressive mode.
-#        Default: 5
-#
-#    Warden.BanThreshold
-#        Confirmed incidents in the rolling window required for a permanent
-#        account ban when EnforcementMode is 2.
-#        Default: 10
-#
-#    Warden.IncidentWindow
-#        Rolling incident window in seconds.
-#        Default: 900
-#
-################################################################################
-
-Warden.EnforcementMode       = 2
-Warden.RequireExactProfile   = 1
-Warden.CheckIntervalMin      = 30
-Warden.CheckIntervalMax      = 60
-Warden.AggressiveIntervalMin = 10
-Warden.AggressiveIntervalMax = 20
-Warden.AggressiveThreshold   = 5
-Warden.BanThreshold          = 10
-Warden.IncidentWindow        = 900
-
-################################################################################
 # SERVER LOGGING
 #
 #    LogSQL
@@ -437,11 +384,6 @@ Warden.IncidentWindow        = 900
 #                     in form Logname_#ID_YYYY-MM-DD_HH-MM-SS.Ext
 #                     or form Logname_#ID.Ext
 #
-#    RaLogFile
-#        Log file of RA commands
-#        Default: "Ra.log"
-#                 "" - Empty name for disable
-#
 #    LogColors
 #        Color for messages (format "normal_color details_color debug_color error_color")
 #        Colors: 0 - BLACK, 1 - RED, 2 - GREEN,  3 - BROWN, 4 - BLUE, 5 - MAGENTA, 6 -  CYAN, 7 - GREY,
@@ -490,7 +432,6 @@ CharLogDump                  = 0
 GmLogFile                    = "world-gamemaster.log"
 GmLogTimestamp               = 0
 GmLogPerAccount              = 0
-RaLogFile                    = "world-remote-access.log"
 LogColors                    = "13 7 11 9"
 SD3ErrorLogFile              = "scriptdev3-errors.log"
 
@@ -1795,49 +1736,17 @@ Network.TcpNodelay      = 1
 Network.KickOnBadPacket = 0
 
 ################################################################################
-# CONSOLE AND REMOTE ACCESS
+# CONSOLE
 #
 #    Console.Enable
 #        Enable console
 #        Default: 1 - on
 #                 0 - off
 #
-#    Ra.Enable
-#        Enable remote console
-#        Default: 0 - off
-#                 1 - on
-#
-#    Ra.IP
-#        Default remote console ip address, use 0.0.0.0 for every address
-#
-#    Ra.Port
-#        Default remote console port
-#        Default: 3443
-#
-#    Ra.MinLevel
-#        Minimum level that's required to login,3 by default
-#        Default: 3 (Administrator)
-#
-#    Ra.Secure
-#        Kick client on wrong pass
-#                 0 - off
-#        Default: 1 - on
-#
-#    Ra.Stricted
-#        Not allow execute console level only commands remotly by RA
-#                 0 - off
-#        Default: 1 - on
-#
 ################################################################################
 
 Console.Enable = 1
 
-Ra.Enable      = 0
-Ra.IP          = 0.0.0.0
-Ra.Port        = 3443
-Ra.MinLevel    = 3
-Ra.Secure      = 1
-Ra.Stricted    = 1
 ################################################################################
 #    CharDelete.Method
 #        Character deletion behavior

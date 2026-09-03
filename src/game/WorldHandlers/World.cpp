@@ -322,10 +322,6 @@ World::AddSession_(WorldSession* s)
     packet << uint32(0);                                    // BillingTimeRested
     s->SendPacket(&packet);
 
-    // Addon metadata stays queued until CMSG_CHAR_ENUM. Emitting it at
-    // authentication reverses the ordering observed on the Classic client.
-    s->OnAuthenticatedAdmission();
-
     UpdateMaxSessionCounters();
 
     // Updates the population
@@ -930,18 +926,6 @@ void World::showFooter(uint32 startupMs)
 #ifdef ENABLE_SD3
     enabled.push_back("ScriptDev3");
 #endif
-
-    // The rest are compiled in but mangosd.conf still decides whether they run.
-
-    if (sConfig.GetBoolDefault("Ra.Enable", false))
-    {
-        enabled.push_back("Remote Access");
-    }
-    else
-    {
-        disabled.push_back("Remote Access");
-    }
-
 
     char database[128];
     snprintf(database, sizeof(database), "Rel%s.%s.%s", MangosVersion::WorldDbVersion(),
@@ -1804,10 +1788,8 @@ void World::ShutdownCancel()
 
 /**
  * @brief Updates all active sessions and integrates newly queued ones.
- *
- * @param diff The elapsed world update time in milliseconds.
  */
-void World::UpdateSessions(uint32 diff)
+void World::UpdateSessions(uint32 /*diff*/)
 {
     ///- Add new sessions
     WorldSession* sess;
@@ -1829,13 +1811,6 @@ void World::UpdateSessions(uint32 diff)
             RemoveQueuedSession(pSession);
             m_sessions.erase(itr);
             delete pSession;
-        }
-        else
-        {
-            // Drain queued Warden replies before evaluating their deadline.
-            // WardenServer suppresses pre-transition elapsed time when a
-            // handler created a fresh waiting or planner state in this tick.
-            pSession->UpdateWarden(diff);
         }
     }
 }

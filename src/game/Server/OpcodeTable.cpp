@@ -825,7 +825,7 @@ void InitializeOpcodes()
     OPCODE(SMSG_AREA_SPIRIT_HEALER_TIME,                   STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide);
     OPCODE(CMSG_GM_UNTEACH,                                STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL);
     OPCODE(SMSG_WARDEN_DATA,                               STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide);
-    OPCODE(CMSG_WARDEN_DATA,                               STATUS_AUTHED,   PROCESS_THREADUNSAFE, &WorldSession::HandleWardenDataOpcode);
+    OPCODE(CMSG_WARDEN_DATA,                               STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL);
     OPCODE(SMSG_GROUP_JOINED_BATTLEGROUND,                 STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide);
     OPCODE(MSG_BATTLEGROUND_PLAYER_POSITIONS,              STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleBattleGroundPlayerPositionsOpcode);
     OPCODE(CMSG_PET_STOP_ATTACK,                           STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandlePetStopAttack);

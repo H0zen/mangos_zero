@@ -318,12 +318,6 @@ class Log : public MaNGOS::Singleton<Log>
         /**
          * @brief
          *
-         * @param str...
-         */
-        void outRALog(const char* str, ...)       ATTR_PRINTF(2, 3);
-        /**
-         * @brief
-         *
          * @return uint32
          */
         uint32 GetLogLevel() const { return m_logLevel; }
@@ -529,7 +523,6 @@ class Log : public MaNGOS::Singleton<Log>
          */
         std::string ConsoleTimePrefix() const;
 
-        FILE* raLogfile; /**< TODO */
         FILE* logfile; /**< TODO */
         FILE* gmLogfile; /**< TODO */
         FILE* charLogfile; /**< TODO */

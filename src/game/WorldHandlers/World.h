@@ -205,14 +205,6 @@ enum eConfigUInt32Values
     CONFIG_UINT32_CREATURE_RESPAWN_AGGRO_DELAY,
     CONFIG_UINT32_MAX_WHOLIST_RETURNS,
     CONFIG_UINT32_LOG_WHISPERS,
-    CONFIG_UINT32_WARDEN_ENFORCEMENT_MODE,
-    CONFIG_UINT32_WARDEN_CHECK_INTERVAL_MIN,
-    CONFIG_UINT32_WARDEN_CHECK_INTERVAL_MAX,
-    CONFIG_UINT32_WARDEN_AGGRESSIVE_INTERVAL_MIN,
-    CONFIG_UINT32_WARDEN_AGGRESSIVE_INTERVAL_MAX,
-    CONFIG_UINT32_WARDEN_AGGRESSIVE_THRESHOLD,
-    CONFIG_UINT32_WARDEN_BAN_THRESHOLD,
-    CONFIG_UINT32_WARDEN_INCIDENT_WINDOW,
     CONFIG_UINT32_AUTOBROADCAST_INTERVAL,
     CONFIG_UINT32_VALUE_COUNT
 };
@@ -363,7 +355,6 @@ enum eConfigBoolValues
     CONFIG_BOOL_REALM_RECOMMENDED_OR_NEW_ENABLED,
     CONFIG_BOOL_REALM_RECOMMENDED_OR_NEW,
 
-    CONFIG_BOOL_WARDEN_REQUIRE_EXACT_PROFILE,
     CONFIG_BOOL_VALUE_COUNT
 };
 
@@ -420,7 +411,7 @@ struct CliCommandHolder
     typedef void Print(void*, const char*);
     typedef void CommandFinished(void*, bool success);
 
-    uint32 m_cliAccountId;                                  // 0 for console and real account id for RA/soap
+    uint32 m_cliAccountId;                                  // 0 for console commands
     AccountTypes m_cliAccessLevel;
     void* m_callbackArg;
     char* m_command;

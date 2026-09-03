@@ -211,10 +211,6 @@ void WorldSession::HandleCharEnum(QueryResult* result)
     SendPacket(&data);
     // Each enum response replaces the previous screen snapshot in full.
     m_characterEnumMaps.Replace(std::move(advertisedMaps));
-
-    // Retail 1.12.1.5875 emits its first Warden packet after the completed
-    // character list. Start is idempotent for repeated enumeration requests.
-    StartWardenBootstrap();
 }
 
 /**
@@ -531,10 +527,9 @@ void WorldSession::HandlePlayerLoginOpcode(WorldPacket& recv_data)
         return;
     }
 
-    // Do not gate login on addon info or Warden. These idempotent safety nets
-    // cover clients that skip character enumeration.
+    // Do not gate login on addon info. This idempotent safety net covers
+    // clients that skip character enumeration.
     SendPendingAddonInfo();
-    StartWardenBootstrap();
 
     m_playerLoading = true;
 
