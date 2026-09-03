@@ -71,6 +71,7 @@
 #include "MapRefManager.h"
 #include "ScriptMgr.h"
 #include "CreatureLinkingMgr.h"
+#include "MapMailbox.h"
 #include "DynamicCollision.h"
 
 #include <bitset>
@@ -172,6 +173,16 @@ class Map : public GridRefManager<NGridType>
         static void DeleteFromWorld(Player* player);        // player object will deleted at call
 
         virtual void Update(const uint32&);
+
+        /// Route a map-bound packet here. Serial phase only.
+        void PostPacket(WorldSession* session, ObjectGuid player,
+                        std::unique_ptr<WorldPacket> packet)
+        {
+            m_mailbox.Post(session, player, std::move(packet));
+        }
+
+        /// Packets waiting for this map's next tick.
+        size_t MailboxDepth() const { return m_mailbox.Depth(); }
 
         void MessageBroadcast(Player const*, WorldPacket*, bool to_self);
         void MessageBroadcast(WorldObject const*, WorldPacket*);
@@ -523,6 +534,9 @@ class Map : public GridRefManager<NGridType>
     private:
         time_t i_gridExpiry;
         CellEnvelopeStats m_cellEnvStats;
+
+        /// Written in the serial phase, drained by this map in the parallel one.
+        MapMailbox m_mailbox;
 
         struct PendingCellUnload
         {

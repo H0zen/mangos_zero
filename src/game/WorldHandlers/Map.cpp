@@ -946,17 +946,31 @@ void Map::VisitNearbyCellsOf(WorldObject* obj,
  */
 void Map::Update(const uint32& t_diff)
 {
-    /// update worldsessions for existing players
-    for (m_mapRefIter = m_mapRefManager.begin(); m_mapRefIter != m_mapRefManager.end(); ++m_mapRefIter)
+    /// Run the packets the serial phase routed here.
+    ///
+    /// Each entry is re-checked first: the serial phase continued after the
+    /// packet was posted and may have moved the player off this map, logged him
+    /// out, or destroyed him.
+    for (MapMailbox::Entry& entry : m_mailbox.Take())
     {
-        Player* plr = m_mapRefIter->getSource();
-        if (plr && plr->IsInWorld())
+        WorldSession* session = entry.session;
+        if (!session)
         {
-            WorldSession* pSession = plr->GetSession();
-            MapSessionFilter updater(pSession);
-
-            pSession->Update(updater);
+            continue;
         }
+
+        Player* plr = session->GetPlayer();
+        if (!plr || plr->GetObjectGuid() != entry.player)
+        {
+            continue;   // logged out, or the session is on a different character
+        }
+
+        if (!plr->IsInWorld() || plr->GetMap() != this)
+        {
+            continue;   // left for another map after the packet was routed
+        }
+
+        session->HandlePacket(*entry.packet);
     }
 
     /// update players at tick

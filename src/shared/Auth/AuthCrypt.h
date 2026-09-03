@@ -38,9 +38,8 @@ class BigNumber;
  * clear. It maintains separate encryption and decryption states for
  * bidirectional communication.
  *
- * This is NOT ARC4, despite what this comment said for years. RC4, keyed by an
- * HMAC-SHA1 of a fixed seed, arrives with WotLK. The 1.12 cipher is a byte-wise
- * chain applied directly to the raw 40-byte session key:
+ * This is NOT ARC4. RC4 keyed by an HMAC-SHA1 of a fixed seed is the WotLK
+ * cipher. The 1.12 one is a byte-wise chain over the raw 40-byte session key:
  *
  *     send: x = (b ^ key[i]) + j,   then j = x
  *     recv: x = (b - j) ^ key[i],   then j = b

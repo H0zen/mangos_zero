@@ -164,49 +164,10 @@ class PacketFilter
 };
 
 /**
- * @brief Map session filter class
- *
- * Process only thread-safe packets in Map::Update().
- */
-class MapSessionFilter : public PacketFilter
-{
-    public:
-        /**
-         * @brief Constructor
-         * @param pSession World session
-         */
-        explicit MapSessionFilter(WorldSession* pSession) : PacketFilter(pSession) {}
-
-        /**
-         * @brief Destructor
-         */
-        ~MapSessionFilter() {}
-
-        /**
-         * @brief Process packet
-         * @param packet World packet to process
-         * @return True if processed successfully
-         */
-        bool Process(WorldPacket* packet) override;
-
-        /**
-         * @brief Process logout
-         *
-         * In Map::Update() we do not process player logout.
-         *
-         * @return False (logout not processed)
-         */
-        bool ProcessLogout() const override
-        {
-            return false;
-        }
-};
-
-/**
  * @brief World session filter class
  *
- * Class used to filter only thread-unsafe packets from queue.
- * Used in World::UpdateSessions().
+ * Takes every packet out of the session inbox. WorldSession::MapForPacket
+ * decides which belong to a map.
  */
 class WorldSessionFilter : public PacketFilter
 {
@@ -379,6 +340,14 @@ class WorldSession
         void KickPlayer();
 
         void QueuePacket(WorldPacket* new_packet);
+
+        /// Dispatch one packet by its opcode's required status. Ownership
+        /// stays with the caller.
+        void HandlePacket(WorldPacket& packet);
+
+        /// The map that runs this packet, or NULL to answer it in the serial
+        /// phase.
+        Map* MapForPacket(const WorldPacket& packet) const;
 
         bool Update(PacketFilter& updater);
 

@@ -36,9 +36,9 @@
  * - Movement and action handling
  * - Chat and social interactions
  *
- * The session filters packets based on thread safety and context:
- * - Map::Update() context: Only process thread-safe packets
- * - World::UpdateSessions() context: Process all packets
+ * The serial phase drains this session's inbox whole and routes each packet:
+ * thread-safe opcodes for a player in the world go to his map's mailbox and run
+ * in the parallel phase; everything else is answered on the spot.
  *
  * @see WorldSession for the session class
  * @see proto::IClientLink for the client protocol link
@@ -79,34 +79,6 @@
 #include "SocialMgr.h"
 
 #include <cstdarg>
-
-/**
- * @brief Helper for Map session filtering
- * @param session World session
- * @param opHandle Opcode handler
- * @return True if packet can be processed in Map::Update
- *
- * Determines if an opcode can be safely processed in the Map::Update
- * thread context based on thread safety requirements.
- */
-static bool MapSessionFilterHelper(WorldSession* session, OpcodeHandler const& opHandle)
-{
-    // we do not process thread-unsafe packets
-    if (opHandle.packetProcessing == PROCESS_THREADUNSAFE)
-    {
-        return false;
-    }
-
-    // we do not process not loggined player packets
-    Player* plr = session->GetPlayer();
-    if (!plr)
-    {
-        return false;
-    }
-
-    // in Map::Update() we do not process packets where player is not in world!
-    return plr->IsInWorld();
-}
 
 static warden::WardenConfiguration SnapshotWardenConfiguration()
 {
@@ -153,45 +125,14 @@ static std::string SafeWardenLogToken(std::string const& value)
 }
 
 /**
- * @brief Process packet in Map context
- * @param packet Packet to process
- * @return True if packet should be processed
+ * @brief Accept every packet: the serial phase drains the inbox whole.
  *
- * Filters packets for processing in Map::Update context.
- * Only processes thread-safe packets when player is in world.
- */
-bool MapSessionFilter::Process(WorldPacket* packet)
-{
-    OpcodeHandler const& opHandle = opcodeTable[packet->GetOpcode()];
-    if (opHandle.packetProcessing == PROCESS_INPLACE)
-    {
-        return true;
-    }
-
-    // let's check if our opcode can be really processed in Map::Update()
-    return MapSessionFilterHelper(m_pSession, opHandle);
-}
-
-/**
- * @brief Process packet in World context
- * @param packet Packet to process
- * @return True if packet should be processed
- *
- * Filters packets for processing in World::UpdateSessions context.
- * Processes all packets when player is not in world or when
- * packet handler is not thread-safe.
+ * WorldSession::MapForPacket decides afterwards which belong to a map.
  */
 bool WorldSessionFilter::Process(WorldPacket* packet)
 {
-    OpcodeHandler const& opHandle = opcodeTable[packet->GetOpcode()];
-    // check if packet handler is supposed to be safe
-    if (opHandle.packetProcessing == PROCESS_INPLACE)
-    {
-        return true;
-    }
-
-    // let's check if our opcode can't be processed in Map::Update()
-    return !MapSessionFilterHelper(m_pSession, opHandle);
+    (void)packet;
+    return true;
 }
 
 /// WorldSession constructor
@@ -940,13 +881,38 @@ void WorldSession::LogUnprocessedTail(WorldPacket* packet)
         packet->rpos(), packet->wpos());
 }
 
-/// Update the WorldSession (triggered by World update)
-bool WorldSession::Update(PacketFilter& updater)
+/**
+ * @brief The map that runs this packet, or NULL to answer it in the serial phase.
+ *
+ * A packet is a map's when its handler is thread-safe and the player is in the
+ * world. PROCESS_INPLACE owes an immediate reply and PROCESS_THREADUNSAFE
+ * touches state no map owns, so both stay serial.
+ */
+Map* WorldSession::MapForPacket(const WorldPacket& packet) const
 {
-    ///- Retrieve packets from the receive queue and call the appropriate handlers
-    /// not process packets if the client link already closed
-    WorldPacket* packet = NULL;
-    while (m_link && !m_link->IsClosed() && m_mailbox->Next(packet, updater))
+    const OpcodeHandler& opHandle = opcodeTable[packet.GetOpcode()];
+    if (opHandle.packetProcessing != PROCESS_THREADSAFE)
+    {
+        return nullptr;
+    }
+
+    if (!_player || !_player->IsInWorld())
+    {
+        return nullptr;
+    }
+
+    return _player->GetMap();
+}
+
+/**
+ * @brief Dispatches one packet by its opcode's required status.
+ *
+ * Shared by both drains, the serial phase and the owning map, so a status cannot
+ * come to mean two things. Ownership stays with the caller.
+ */
+void WorldSession::HandlePacket(WorldPacket& packetRef)
+{
+    WorldPacket* const packet = &packetRef;
     {
         /**#if 1
          * sLog.outError( "MOEP: %s (0x%.4X)",
@@ -1053,9 +1019,29 @@ bool WorldSession::Update(PacketFilter& updater)
             }
         }
 
-        delete packet;
     }
+}
 
+/// Update the WorldSession (triggered by World update)
+bool WorldSession::Update(PacketFilter& updater)
+{
+    ///- Retrieve packets from the receive queue and call the appropriate handlers
+    /// not process packets if the client link already closed
+    WorldPacket* packet = NULL;
+    while (m_link && !m_link->IsClosed() && m_mailbox->Next(packet, updater))
+    {
+        std::unique_ptr<WorldPacket> owned(packet);
+
+        // A packet belonging to the player's map runs on that map later this
+        // tick; everything else is answered now.
+        if (Map* map = MapForPacket(*owned))
+        {
+            map->PostPacket(this, _player->GetObjectGuid(), std::move(owned));
+            continue;
+        }
+
+        HandlePacket(*owned);
+    }
 
     ///- Cleanup client link if needed
     if (m_link && m_link->IsClosed())

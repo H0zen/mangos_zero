@@ -60,15 +60,10 @@ namespace Geometry
 
     /// Wraps t into the half-open interval [lo, hi).
     ///
-    /// A non-finite t is returned untouched. It cannot be wrapped -- there is no
-    /// representative of NaN or infinity in [lo, hi) -- and the arithmetic below
-    /// would reach iFloor(), whose float-to-int conversion is UNDEFINED for a
-    /// value outside int's range. That is not theoretical: under UBSan it reports
-    /// "nan is outside the range of representable values of type 'int'", and at
-    /// -O2 it was observed to yield 0.0f, which is a perfectly plausible
-    /// orientation. Laundering a corrupt facing into a valid-looking one is worse
-    /// than propagating it, because every arc test downstream compares false
-    /// against NaN and so fails closed on its own.
+    /// A non-finite t comes back untouched: it has no representative in
+    /// [lo, hi), and the arithmetic below reaches iFloor(), whose float-to-int
+    /// conversion is undefined outside int's range. Letting NaN through keeps
+    /// the arc tests downstream failing closed on their own.
     inline float wrap(float t, float lo, float hi)
     {
         if ((t >= lo) && (t < hi))
