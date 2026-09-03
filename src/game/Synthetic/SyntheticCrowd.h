@@ -90,7 +90,7 @@ namespace synthetic
             /// Consume the window's counters.
             CrowdReport Report(uint32 elapsedMs);
 
-            uint32 Size() const { return uint32(m_bots.size()); }
+            uint32 Size() const { return static_cast<uint32>(m_bots.size()); }
             bool Empty() const { return m_bots.empty(); }
 
         private:

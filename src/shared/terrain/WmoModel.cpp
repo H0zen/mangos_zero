@@ -89,7 +89,7 @@ namespace world::terrain
                 continue;
             }
 
-            const size_t fi = size_t(tx) + size_t(ty) * lq.tilesX;
+            const size_t fi = static_cast<size_t>(tx) + static_cast<size_t>(ty) * lq.tilesX;
             if (fi < lq.flags.size() && (lq.flags[fi] & 0x0F) == 0x0F)
             {
                 continue;
@@ -97,7 +97,7 @@ namespace world::terrain
 
             const float dx = txf - tx, dy = tyf - ty;
             const uint32_t row = lq.tilesX + 1;
-            auto H = [&](int a, int b) { return lq.heights[size_t(a) + size_t(b) * row]; };
+            auto H = [&](int a, int b) { return lq.heights[static_cast<size_t>(a) + static_cast<size_t>(b) * row]; };
 
             float z;
             if (dx > dy)

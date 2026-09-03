@@ -61,7 +61,7 @@ namespace MaNGOS
                 const long id = std::strtol(token.c_str(), &end, 10);
                 if (end != token.c_str() && *end == '\0' && id >= 0)
                 {
-                    ids.push_back(uint32(id));
+                    ids.push_back(static_cast<uint32>(id));
                 }
             }
 

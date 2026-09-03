@@ -92,7 +92,7 @@ namespace combat
 
         if (outcome.manaSpent > 0)
         {
-            victim.ApplyPowerMod(POWER_MANA, uint32(outcome.manaSpent), false);
+            victim.ApplyPowerMod(POWER_MANA, static_cast<uint32>(outcome.manaSpent), false);
         }
 
         for (const uint32 spellId : spent)

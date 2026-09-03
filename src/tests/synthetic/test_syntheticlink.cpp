@@ -42,7 +42,7 @@ namespace
         WorldPacket p(opcode, payload);
         for (size_t i = 0; i < payload; ++i)
         {
-            p << uint8(0x5A);
+            p << static_cast<uint8>(0x5A);
         }
         return p;
     }

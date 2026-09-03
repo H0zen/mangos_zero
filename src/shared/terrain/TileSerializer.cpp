@@ -139,7 +139,7 @@ namespace world::terrain
                     }
 
                     const size_t at = AlignUp(m_off, alignof(T));
-                    const size_t bytes = size_t(count) * sizeof(T);
+                    const size_t bytes = static_cast<size_t>(count) * sizeof(T);
                     if (!m_file->Covers(at, bytes))
                     {
                         m_ok = false;

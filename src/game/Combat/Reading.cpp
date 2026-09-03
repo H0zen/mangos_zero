@@ -37,7 +37,7 @@ namespace combat
         /// back percentages.
         int32 ToBasisPoints(float percent)
         {
-            return int32(percent * 100.f);
+            return static_cast<int32>(percent * 100.f);
         }
 
         const Creature* AsCreature(const Unit& unit)
@@ -55,14 +55,14 @@ namespace combat
         c.guid = attacker.GetObjectGuid();
         c.level = attacker.getLevel();
         c.isPlayer = attacker.GetTypeId() == TYPEID_PLAYER;
-        c.classId = uint8(attacker.getClass());
-        c.health = int32(attacker.GetHealth());
+        c.classId = static_cast<uint8>(attacker.getClass());
+        c.health = static_cast<int32>(attacker.GetHealth());
 
         c.missChance = ToBasisPoints(attacker.MeleeMissChanceCalc(&victim, attackType));
         c.critChance = ToBasisPoints(attacker.GetUnitCriticalChance(attackType, &victim));
 
-        c.weaponSkill = int32(attacker.GetWeaponSkillValue(attackType, &victim));
-        c.maxSkillForLevel = int32(attacker.GetMaxSkillValueForLevel(&victim));
+        c.weaponSkill = static_cast<int32>(attacker.GetWeaponSkillValue(attackType, &victim));
+        c.maxSkillForLevel = static_cast<int32>(attacker.GetMaxSkillValueForLevel(&victim));
 
         if (const auto* creature = AsCreature(attacker))
         {
@@ -96,16 +96,16 @@ namespace combat
         c.guid = victim.GetObjectGuid();
         c.level = victim.getLevel();
         c.isPlayer = victim.GetTypeId() == TYPEID_PLAYER;
-        c.classId = uint8(victim.getClass());
-        c.health = int32(victim.GetHealth());
+        c.classId = static_cast<uint8>(victim.getClass());
+        c.health = static_cast<int32>(victim.GetHealth());
         c.isSitting = !victim.IsStandState();
 
         c.dodgeChance = ToBasisPoints(victim.GetUnitDodgeChance());
         c.parryChance = ToBasisPoints(victim.GetUnitParryChance());
         c.blockChance = ToBasisPoints(victim.GetUnitBlockChance());
 
-        c.defenceSkill = int32(victim.GetDefenseSkillValue(&attacker));
-        c.maxDefenceForLevel = int32(victim.GetMaxSkillValueForLevel(&attacker));
+        c.defenceSkill = static_cast<int32>(victim.GetDefenseSkillValue(&attacker));
+        c.maxDefenceForLevel = static_cast<int32>(victim.GetMaxSkillValueForLevel(&attacker));
 
         if (const auto* creature = AsCreature(victim))
         {
@@ -132,7 +132,7 @@ namespace combat
 
         // An attacker's target-resistance aura reduces what the victim has,
         // which is why both sides are read here rather than in the victim alone.
-        d.armour = int32(victim.GetArmor()) +
+        d.armour = static_cast<int32>(victim.GetArmor()) +
                    mutableAttacker.GetTotalAuraModifierByMiscMask(
                        SPELL_AURA_MOD_TARGET_RESISTANCE, SPELL_SCHOOL_MASK_NORMAL);
         if (d.armour < 0)
@@ -142,7 +142,7 @@ namespace combat
 
         if ((school & SPELL_SCHOOL_MASK_NORMAL) == 0)
         {
-            d.resistance = int32(victim.GetResistance(GetFirstSchoolInMask(school))) +
+            d.resistance = static_cast<int32>(victim.GetResistance(GetFirstSchoolInMask(school))) +
                            mutableAttacker.GetTotalAuraModifierByMiscMask(
                                SPELL_AURA_MOD_TARGET_RESISTANCE, school);
             if (d.resistance < 0)
@@ -151,7 +151,7 @@ namespace combat
             }
         }
 
-        d.blockValue = int32(victim.GetShieldBlockValue());
+        d.blockValue = static_cast<int32>(victim.GetShieldBlockValue());
 
         for (const Aura* aura : victim.GetAurasByType(SPELL_AURA_SCHOOL_ABSORB))
         {
@@ -165,7 +165,7 @@ namespace combat
             shield.caster = aura->GetCasterGuid();
             shield.spellId = aura->GetId();
             shield.remaining = mod->m_amount;
-            shield.schoolMask = uint32(mod->m_miscvalue);
+            shield.schoolMask = static_cast<uint32>(mod->m_miscvalue);
             d.absorbers.push_back(shield);
         }
 
@@ -183,7 +183,7 @@ namespace combat
             shield.caster = aura->GetCasterGuid();
             shield.spellId = aura->GetId();
             shield.remaining = mod->m_amount;
-            shield.schoolMask = uint32(mod->m_miscvalue);
+            shield.schoolMask = static_cast<uint32>(mod->m_miscvalue);
 
             auto multiplier = aura->GetSpellProto()->EffectAmplitude[aura->GetEffIndex()];
             if (multiplier > 0.f)
@@ -198,7 +198,7 @@ namespace combat
             d.absorbers.push_back(shield);
         }
 
-        d.mana = int32(victim.GetPower(POWER_MANA));
+        d.mana = static_cast<int32>(victim.GetPower(POWER_MANA));
 
         for (const Aura* aura : victim.GetAurasByType(SPELL_AURA_SPLIT_DAMAGE_FLAT))
         {
@@ -226,7 +226,7 @@ namespace combat
             Splitter splitter;
             splitter.target = aura->GetCasterGuid();
             splitter.spellId = aura->GetId();
-            splitter.fraction = float(mod->m_amount) / 100.f;
+            splitter.fraction = static_cast<float>(mod->m_amount) / 100.f;
             d.splitters.push_back(splitter);
         }
 

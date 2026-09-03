@@ -50,8 +50,8 @@ namespace
         tile->tx = tx;
         tile->ty = ty;
         tile->hasTerrain = true;
-        tile->v9.Adopt(std::vector<float>(size_t(V9_SIDE) * V9_SIDE, height));
-        tile->v8.Adopt(std::vector<float>(size_t(GRID_PER_TILE) * GRID_PER_TILE, height));
+        tile->v9.Adopt(std::vector<float>(static_cast<size_t>(V9_SIDE) * V9_SIDE, height));
+        tile->v8.Adopt(std::vector<float>(static_cast<size_t>(GRID_PER_TILE) * GRID_PER_TILE, height));
         return tile;
     }
 

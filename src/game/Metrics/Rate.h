@@ -76,7 +76,7 @@ namespace metrics
                 {
                     return 0.f;
                 }
-                return float(counted) * 1000.f / float(elapsedMs);
+                return static_cast<float>(counted) * 1000.f / static_cast<float>(elapsedMs);
             }
 
             /// What has accumulated since the last sample, without consuming it.

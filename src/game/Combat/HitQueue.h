@@ -79,7 +79,7 @@ namespace combat
 
                 PendingHit pending;
                 pending.attempt = attempt;
-                pending.depth = uint8(parentDepth + 1);
+                pending.depth = static_cast<uint8>(parentDepth + 1);
                 m_pending.push_back(pending);
                 return true;
             }

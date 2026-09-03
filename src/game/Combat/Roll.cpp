@@ -55,7 +55,7 @@ namespace combat
 
         const int32 skillBonus = SkillBonus(attacker, victim);
         int32 sum = 0;
-        const int32 r = int32(roll);
+        const int32 r = static_cast<int32>(roll);
 
         // Miss
         if (attacker.missChance > 0 && r < (sum += attacker.missChance))
@@ -158,7 +158,7 @@ namespace combat
         }
 
         int32 sum = 0;
-        const int32 r = int32(roll);
+        const int32 r = static_cast<int32>(roll);
 
         if (missChance > 0 && r < (sum += missChance))
         {

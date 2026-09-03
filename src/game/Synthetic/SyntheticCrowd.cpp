@@ -119,8 +119,8 @@ namespace synthetic
             // Scattered, so they do not all land in one cell -- a crowd in a
             // single cell is a case the grid never actually sees.
             const float spread = radius > 0.f ? radius : 1.f;
-            const float a = float(i) * 2.399963f;            // golden angle, an even scatter
-            const float r = spread * std::sqrt(float(i + 1) / float(count));
+            const float a = static_cast<float>(i) * 2.399963f;            // golden angle, an even scatter
+            const float r = spread * std::sqrt(static_cast<float>(i + 1) / static_cast<float>(count));
             const float px = x + r * std::cos(a);
             const float py = y + r * std::sin(a);
 
@@ -180,7 +180,7 @@ namespace synthetic
 
     uint32 SyntheticCrowd::Despawn()
     {
-        const uint32 had = uint32(m_bots.size());
+        const uint32 had = static_cast<uint32>(m_bots.size());
 
         for (Bot& bot : m_bots)
         {
@@ -223,7 +223,7 @@ namespace synthetic
             return;
         }
 
-        const float step = BOT_ANGULAR_SPEED * float(diff) / 1000.f;
+        const float step = BOT_ANGULAR_SPEED * static_cast<float>(diff) / 1000.f;
 
         for (Bot& bot : m_bots)
         {
@@ -244,10 +244,10 @@ namespace synthetic
             // field by six bytes, the position reads as nonsense, and the whole
             // packet is dropped by the coordinate check without a word.
             WorldPacket* move = new WorldPacket(MSG_MOVE_HEARTBEAT, 32);
-            *move << uint32(MOVEFLAG_FORWARD);
-            *move << uint32(getMSTime());
-            *move << float(px) << float(py) << float(bot.homeZ) << float(bot.angle);
-            *move << uint32(0);                  // fall time
+            *move << static_cast<uint32>(MOVEFLAG_FORWARD);
+            *move << static_cast<uint32>(getMSTime());
+            *move << static_cast<float>(px) << static_cast<float>(py) << static_cast<float>(bot.homeZ) << static_cast<float>(bot.angle);
+            *move << static_cast<uint32>(0);                  // fall time
 
             bot.session->QueuePacket(move);
         }
@@ -256,7 +256,7 @@ namespace synthetic
     CrowdReport SyntheticCrowd::Report(uint32 elapsedMs)
     {
         CrowdReport report;
-        report.bots = uint32(m_bots.size());
+        report.bots = static_cast<uint32>(m_bots.size());
 
         if (m_bots.empty() || elapsedMs == 0)
         {
@@ -280,8 +280,8 @@ namespace synthetic
             }
         }
 
-        report.bytesPerSecPeak = uint32(peak * 1000 / elapsedMs);
-        report.bytesPerSecMean = uint32(report.bytes * 1000 / elapsedMs / report.bots);
+        report.bytesPerSecPeak = static_cast<uint32>(peak * 1000 / elapsedMs);
+        report.bytesPerSecMean = static_cast<uint32>(report.bytes * 1000 / elapsedMs / report.bots);
         return report;
     }
 }

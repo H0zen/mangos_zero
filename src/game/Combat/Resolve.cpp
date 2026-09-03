@@ -50,11 +50,11 @@ namespace combat
                 armour = 0;
             }
 
-            float share = 0.1f * float(armour) / (8.5f * float(attackerLevel) + 40.f);
+            float share = 0.1f * static_cast<float>(armour) / (8.5f * static_cast<float>(attackerLevel) + 40.f);
             share = share / (1.f + share);
             share = std::max(0.f, std::min(0.75f, share));
 
-            const int32 reduced = int32(float(damage) - float(damage) * share);
+            const int32 reduced = static_cast<int32>(static_cast<float>(damage) - static_cast<float>(damage) * share);
 
             // A blow that connects always leaves a mark.
             return reduced > 1 ? reduced : 1;
@@ -71,14 +71,14 @@ namespace combat
                 return damage > 0 ? damage : 0;
             }
 
-            float average = float(resistance) * (0.15f / float(attackerLevel ? attackerLevel : 1));
+            float average = static_cast<float>(resistance) * (0.15f / static_cast<float>(attackerLevel ? attackerLevel : 1));
             average = std::max(0.f, std::min(0.75f, average));
 
             // Four bands around the average, as the client rolls it.
             const uint32 band = (roll % 10000u) / 2500u;   // 0..3
-            const float portion = std::max(0.f, std::min(1.f, average + 0.25f * float(band) - 0.375f));
+            const float portion = std::max(0.f, std::min(1.f, average + 0.25f * static_cast<float>(band) - 0.375f));
 
-            resisted = int32(float(damage) * portion);
+            resisted = static_cast<int32>(static_cast<float>(damage) * portion);
             if (resisted > damage)
             {
                 resisted = damage;
@@ -120,8 +120,8 @@ namespace combat
 
             const int32 diff = victim.defenceSkill - attacker.weaponSkill;
 
-            float low = lowBase - 0.05f * float(diff);
-            float high = highBase - 0.03f * float(diff);
+            float low = lowBase - 0.05f * static_cast<float>(diff);
+            float high = highBase - 0.03f * static_cast<float>(diff);
 
             low = std::max(0.01f, std::min(low, lowCap));
             high = std::max(0.2f, std::min(0.99f, high));
@@ -149,7 +149,7 @@ namespace combat
                     return damage + damage / 2;
 
                 case Landing::Glance:
-                    return int32(float(damage) * GlancingSurvival(attacker, victim, glanceBand));
+                    return static_cast<int32>(static_cast<float>(damage) * GlancingSurvival(attacker, victim, glanceBand));
 
                 case Landing::Block:
                     blocked = std::min(defences.blockValue, damage);
@@ -191,7 +191,7 @@ namespace combat
 
                 if (shield.CostsMana())
                 {
-                    const int32 affordable = int32(float(manaLeft) / shield.manaMultiplier);
+                    const int32 affordable = static_cast<int32>(static_cast<float>(manaLeft) / shield.manaMultiplier);
                     if (taken > affordable)
                     {
                         taken = affordable;
@@ -201,7 +201,7 @@ namespace combat
                         continue;
                     }
 
-                    share.manaSpent = int32(float(taken) * shield.manaMultiplier);
+                    share.manaSpent = static_cast<int32>(static_cast<float>(taken) * shield.manaMultiplier);
                     manaLeft -= share.manaSpent;
                     out.manaSpent += share.manaSpent;
                 }
@@ -231,7 +231,7 @@ namespace combat
                 int32 moved = splitter.flat;
                 if (splitter.fraction > 0.f)
                 {
-                    moved += int32(float(damage) * splitter.fraction);
+                    moved += static_cast<int32>(static_cast<float>(damage) * splitter.fraction);
                 }
                 if (moved <= 0)
                 {

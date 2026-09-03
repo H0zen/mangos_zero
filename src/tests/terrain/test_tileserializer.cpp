@@ -72,17 +72,17 @@ namespace
         tile.hasTerrain = true;
         tile.isGlobalWmo = false;
 
-        std::vector<float> v9(size_t(V9_SIDE) * V9_SIDE);
+        std::vector<float> v9(static_cast<size_t>(V9_SIDE) * V9_SIDE);
         for (size_t i = 0; i < v9.size(); ++i)
         {
-            v9[i] = float(i) * 0.5f;
+            v9[i] = static_cast<float>(i) * 0.5f;
         }
         tile.v9.Adopt(std::move(v9));
 
-        std::vector<float> v8(size_t(GRID_PER_TILE) * GRID_PER_TILE);
+        std::vector<float> v8(static_cast<size_t>(GRID_PER_TILE) * GRID_PER_TILE);
         for (size_t i = 0; i < v8.size(); ++i)
         {
-            v8[i] = 1000.f - float(i);
+            v8[i] = 1000.f - static_cast<float>(i);
         }
         tile.v8.Adopt(std::move(v8));
 
@@ -94,11 +94,11 @@ namespace
 
         tile.hasLiquid = true;
 
-        std::vector<float> heights(size_t(V9_SIDE) * V9_SIDE, 12.5f);
+        std::vector<float> heights(static_cast<size_t>(V9_SIDE) * V9_SIDE, 12.5f);
         heights[0] = 3.25f;
         tile.liquidHeight.Adopt(std::move(heights));
 
-        const size_t cells = size_t(GRID_PER_TILE) * GRID_PER_TILE;
+        const size_t cells = static_cast<size_t>(GRID_PER_TILE) * GRID_PER_TILE;
         tile.liquidShow.Adopt(std::vector<uint8_t>(cells, 1));
         tile.liquidKind.Adopt(std::vector<uint8_t>(cells, uint8_t(LiquidKind::Ocean)));
         tile.liquidEntry.Adopt(std::vector<uint16_t>(cells, 3));
@@ -396,7 +396,7 @@ TEST_CASE("A truncated tile is refused rather than read past the end")
         std::fseek(f, 0, SEEK_END);
         const long size = std::ftell(f);
         std::fseek(f, 0, SEEK_SET);
-        bytes.resize(size_t(size));
+        bytes.resize(static_cast<size_t>(size));
         REQUIRE(std::fread(bytes.data(), 1, bytes.size(), f) == bytes.size());
         std::fclose(f);
     }

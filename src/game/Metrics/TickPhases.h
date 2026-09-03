@@ -76,12 +76,12 @@ namespace metrics
 
             void Add(TickPhase phase, uint32 ms)
             {
-                m_phases[size_t(phase)].Add(ms);
+                m_phases[static_cast<size_t>(phase)].Add(ms);
             }
 
             uint32 Median(TickPhase phase) const
             {
-                return m_phases[size_t(phase)].Percentile(0.5f);
+                return m_phases[static_cast<size_t>(phase)].Percentile(0.5f);
             }
 
             /// The phase with the largest median, and what it costs. This is the
@@ -90,7 +90,7 @@ namespace metrics
             {
                 TickPhase worst = TickPhase::Mailbox;
                 ms = 0;
-                for (size_t i = 0; i < size_t(TickPhase::Count); ++i)
+                for (size_t i = 0; i < static_cast<size_t>(TickPhase::Count); ++i)
                 {
                     const uint32 median = m_phases[i].Percentile(0.5f);
                     if (median > ms)
@@ -104,7 +104,7 @@ namespace metrics
 
         private:
 
-            std::array<Distribution<64>, size_t(TickPhase::Count)> m_phases;
+            std::array<Distribution<64>, static_cast<size_t>(TickPhase::Count)> m_phases;
     };
 
     /**

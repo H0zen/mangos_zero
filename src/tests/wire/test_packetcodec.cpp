@@ -43,15 +43,15 @@ namespace
     /// then the opcode little-endian over 32 bits.
     std::vector<uint8> ClientFrame(uint32 opcode, const std::vector<uint8>& payload)
     {
-        const uint32 size = uint32(payload.size()) + 4;
+        const uint32 size = static_cast<uint32>(payload.size()) + 4;
 
         std::vector<uint8> bytes;
-        bytes.push_back(uint8((size >> 8) & 0xFF));
-        bytes.push_back(uint8(size & 0xFF));
-        bytes.push_back(uint8(opcode & 0xFF));
-        bytes.push_back(uint8((opcode >> 8) & 0xFF));
-        bytes.push_back(uint8((opcode >> 16) & 0xFF));
-        bytes.push_back(uint8((opcode >> 24) & 0xFF));
+        bytes.push_back(static_cast<uint8>((size >> 8) & 0xFF));
+        bytes.push_back(static_cast<uint8>(size & 0xFF));
+        bytes.push_back(static_cast<uint8>(opcode & 0xFF));
+        bytes.push_back(static_cast<uint8>((opcode >> 8) & 0xFF));
+        bytes.push_back(static_cast<uint8>((opcode >> 16) & 0xFF));
+        bytes.push_back(static_cast<uint8>((opcode >> 24) & 0xFF));
         bytes.insert(bytes.end(), payload.begin(), payload.end());
         return bytes;
     }
@@ -61,12 +61,12 @@ namespace
     std::vector<uint8> RawHeader(uint32 size, uint32 opcode)
     {
         std::vector<uint8> bytes;
-        bytes.push_back(uint8((size >> 8) & 0xFF));
-        bytes.push_back(uint8(size & 0xFF));
-        bytes.push_back(uint8(opcode & 0xFF));
-        bytes.push_back(uint8((opcode >> 8) & 0xFF));
-        bytes.push_back(uint8((opcode >> 16) & 0xFF));
-        bytes.push_back(uint8((opcode >> 24) & 0xFF));
+        bytes.push_back(static_cast<uint8>((size >> 8) & 0xFF));
+        bytes.push_back(static_cast<uint8>(size & 0xFF));
+        bytes.push_back(static_cast<uint8>(opcode & 0xFF));
+        bytes.push_back(static_cast<uint8>((opcode >> 8) & 0xFF));
+        bytes.push_back(static_cast<uint8>((opcode >> 16) & 0xFF));
+        bytes.push_back(static_cast<uint8>((opcode >> 24) & 0xFF));
         return bytes;
     }
 }

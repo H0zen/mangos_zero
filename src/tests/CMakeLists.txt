@@ -36,6 +36,8 @@ set(TEST_SOURCES
 
     util/test_idlist.cpp
     combat/test_manashield.cpp
+
+    spells/test_auraindex.cpp
 )
 
 add_executable(mangos_tests ${TEST_SOURCES})

@@ -74,8 +74,8 @@ namespace
     Attempt Swing(int32 base)
     {
         Attempt a;
-        a.attacker = ObjectGuid(HIGHGUID_PLAYER, uint32(1));
-        a.victim = ObjectGuid(HIGHGUID_PLAYER, uint32(2));
+        a.attacker = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(1));
+        a.victim = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
         a.source = Source::MeleeMain;
         a.school = SPELL_SCHOOL_MASK_NORMAL;
         a.base = base;
@@ -85,8 +85,8 @@ namespace
     Attempt Bolt(int32 base)
     {
         Attempt a;
-        a.attacker = ObjectGuid(HIGHGUID_PLAYER, uint32(1));
-        a.victim = ObjectGuid(HIGHGUID_PLAYER, uint32(2));
+        a.attacker = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(1));
+        a.victim = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
         a.source = Source::Spell;
         a.spellId = 133;
         a.school = SPELL_SCHOOL_MASK_FIRE;

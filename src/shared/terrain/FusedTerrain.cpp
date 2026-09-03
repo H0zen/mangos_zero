@@ -364,7 +364,7 @@ namespace world::terrain
         bool seen = false;
         for (int i = 0; i < samples; ++i)
         {
-            const float f = float(i) / float(samples - 1);
+            const float f = static_cast<float>(i) / static_cast<float>(samples - 1);
             const float px = a.x + dx * f, py = a.y + dy * f;
             const int tx = TileIndex(px), ty = TileIndex(py);
             if (seen && tx == lastTx && ty == lastTy)

@@ -61,7 +61,7 @@ namespace synthetic
                 {
                     return;
                 }
-                m_bytes.fetch_add(uint64(packet.size()) + SERVER_HEADER_BYTES,
+                m_bytes.fetch_add(static_cast<uint64>(packet.size()) + SERVER_HEADER_BYTES,
                                   std::memory_order_relaxed);
                 m_packets.fetch_add(1, std::memory_order_relaxed);
             }

@@ -91,7 +91,7 @@ namespace metrics
                     return sorted[m_count - 1];
                 }
 
-                size_t rank = size_t(fraction * float(m_count) + 0.9999f);
+                size_t rank = static_cast<size_t>(fraction * static_cast<float>(m_count) + 0.9999f);
                 if (rank == 0)
                 {
                     rank = 1;
