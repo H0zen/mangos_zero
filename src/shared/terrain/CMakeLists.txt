@@ -11,7 +11,10 @@ add_library(terrain STATIC
     GoModelStore.hpp
     ICollisionModel.hpp
     ILiveGeometry.hpp
+    MappedFile.cpp
+    MappedFile.hpp
     ModelTileSource.hpp
+    Store.hpp
     Terrain.hpp
     TileSerializer.cpp
     TileSerializer.hpp
