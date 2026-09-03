@@ -71,32 +71,6 @@ namespace MaNGOS
                 return true;
             }
 
-            /**
-             * @brief Pop the front item only if @p check accepts it.
-             *
-             * Returns false — leaving the item queued — if the queue is empty or the
-             * checker rejects it.
-             */
-            template<class Checker>
-            bool next(T& result, Checker& check)
-            {
-                std::lock_guard<std::mutex> guard(_lock);
-
-                if (_queue.empty())
-                {
-                    return false;
-                }
-
-                result = _queue.front();
-                if (!check.Process(result))
-                {
-                    return false;
-                }
-
-                _queue.pop_front();
-                return true;
-            }
-
             /// True when the queue holds no elements (lock held).
             bool empty()
             {

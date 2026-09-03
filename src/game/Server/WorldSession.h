@@ -121,77 +121,6 @@ enum TutorialDataState
 };
 
 /**
- * @brief Packet filter class
- *
- * Class to deal with packet processing.
- * Allows to determine if next packet is safe to be processed.
- */
-class PacketFilter
-{
-    public:
-        /**
-         * @brief Constructor
-         * @param pSession World session
-         */
-        explicit PacketFilter(WorldSession* pSession) : m_pSession(pSession) {}
-
-        /**
-         * @brief Virtual destructor
-         */
-        virtual ~PacketFilter() {}
-
-        /**
-         * @brief Process packet
-         * @param packet World packet to process
-         * @return True if processed successfully
-         */
-        virtual bool Process(WorldPacket* /*packet*/)
-        {
-            return true;
-        }
-
-        /**
-         * @brief Process logout
-         * @return True if logout processed
-         */
-        virtual bool ProcessLogout() const
-        {
-            return true;
-        }
-
-    protected:
-        WorldSession* const m_pSession;
-};
-
-/**
- * @brief World session filter class
- *
- * Takes every packet out of the session inbox. WorldSession::MapForPacket
- * decides which belong to a map.
- */
-class WorldSessionFilter : public PacketFilter
-{
-    public:
-        /**
-         * @brief Constructor
-         * @param pSession World session
-         */
-        explicit WorldSessionFilter(WorldSession* pSession) : PacketFilter(pSession) {}
-
-        /**
-         * @brief Destructor
-         */
-        ~WorldSessionFilter() {}
-
-        /**
-         * @brief Process packet
-         * @param packet World packet to process
-         * @return True if processed successfully
-         */
-        bool Process(WorldPacket* packet) override;
-};
-
-/**
  * @brief World session class
  *
  * Player session in the World.
@@ -349,7 +278,7 @@ class WorldSession
         /// phase.
         Map* MapForPacket(const WorldPacket& packet) const;
 
-        bool Update(PacketFilter& updater);
+        bool Update();
 
         /// Handle the authentication waiting queue (to be completed)
         void SendAuthWaitQue(uint32 position);

@@ -23,9 +23,9 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#include <memory>
-#include <mutex>
 #include "SessionMailbox.h"
+
+#include <utility>
 
 SessionMailbox::~SessionMailbox()
 {
@@ -35,42 +35,53 @@ SessionMailbox::~SessionMailbox()
 bool SessionMailbox::Enqueue(std::unique_ptr<WorldPacket> packet)
 {
     if (!packet)
+    {
         return false;
+    }
 
-    std::lock_guard<std::mutex> guard(m_stateLock);
+    std::lock_guard<std::mutex> guard(m_lock);
     if (m_closed)
+    {
         return false;
+    }
 
-    WorldPacket* accepted = packet.get();
-    m_packets.add(accepted);
-    (void)packet.release();
+    m_packets.push_back(std::move(packet));
     return true;
 }
 
-bool SessionMailbox::Next(WorldPacket*& packet)
+std::unique_ptr<WorldPacket> SessionMailbox::Next()
 {
-    std::lock_guard<std::mutex> guard(m_stateLock);
-    if (m_closed)
-        return false;
-    return m_packets.next(packet);
+    std::lock_guard<std::mutex> guard(m_lock);
+    if (m_closed || m_packets.empty())
+    {
+        return nullptr;
+    }
+
+    std::unique_ptr<WorldPacket> packet = std::move(m_packets.front());
+    m_packets.pop_front();
+    return packet;
 }
 
 void SessionMailbox::Close()
 {
+    std::deque<std::unique_ptr<WorldPacket>> abandoned;
+
     {
-        std::lock_guard<std::mutex> guard(m_stateLock);
+        std::lock_guard<std::mutex> guard(m_lock);
         if (m_closed)
+        {
             return;
+        }
         m_closed = true;
+        abandoned.swap(m_packets);
     }
 
-    WorldPacket* packet = nullptr;
-    while (m_packets.next(packet))
-        delete packet;
+    // Freed outside the lock: nothing else can reach them once the mailbox is
+    // closed, and a destructor has no business running under it.
 }
 
 bool SessionMailbox::IsClosed() const
 {
-    std::lock_guard<std::mutex> guard(m_stateLock);
+    std::lock_guard<std::mutex> guard(m_lock);
     return m_closed;
 }

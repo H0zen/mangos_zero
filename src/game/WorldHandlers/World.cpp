@@ -1805,9 +1805,8 @@ void World::UpdateSessions(uint32 diff)
         ++next;
         ///- and remove not active sessions from the list
         WorldSession* pSession = itr->second;
-        WorldSessionFilter updater(pSession);
 
-        if (!pSession->Update(updater))
+        if (!pSession->Update())
         {
             RemoveQueuedSession(pSession);
             m_sessions.erase(itr);

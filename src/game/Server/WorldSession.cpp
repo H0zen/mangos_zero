@@ -36,7 +36,7 @@
  * - Movement and action handling
  * - Chat and social interactions
  *
- * The serial phase drains this session's inbox whole and routes each packet:
+ * The serial phase drains this session's inbox and routes each packet:
  * thread-safe opcodes for a player in the world go to his map's mailbox and run
  * in the parallel phase; everything else is answered on the spot.
  *
@@ -122,17 +122,6 @@ static std::string SafeWardenLogToken(std::string const& value)
         }
     }
     return value;
-}
-
-/**
- * @brief Accept every packet: the serial phase drains the inbox whole.
- *
- * WorldSession::MapForPacket decides afterwards which belong to a map.
- */
-bool WorldSessionFilter::Process(WorldPacket* packet)
-{
-    (void)packet;
-    return true;
 }
 
 /// WorldSession constructor
@@ -1023,14 +1012,16 @@ void WorldSession::HandlePacket(WorldPacket& packetRef)
 }
 
 /// Update the WorldSession (triggered by World update)
-bool WorldSession::Update(PacketFilter& updater)
+bool WorldSession::Update()
 {
-    ///- Retrieve packets from the receive queue and call the appropriate handlers
-    /// not process packets if the client link already closed
-    WorldPacket* packet = NULL;
-    while (m_link && !m_link->IsClosed() && m_mailbox->Next(packet, updater))
+    ///- Drain what the network has read. Stops early if the link is already gone.
+    while (m_link && !m_link->IsClosed())
     {
-        std::unique_ptr<WorldPacket> owned(packet);
+        std::unique_ptr<WorldPacket> owned = m_mailbox->Next();
+        if (!owned)
+        {
+            break;
+        }
 
         // A packet belonging to the player's map runs on that map later this
         // tick; everything else is answered now.
@@ -1049,21 +1040,17 @@ bool WorldSession::Update(PacketFilter& updater)
         m_link.reset();
     }
 
-    // check if we are safe to proceed with logout
-    // logout procedure should happen only in World::UpdateSessions() method!!!
-    if (updater.ProcessLogout())
+    ///- If necessary, log the player out. Only the serial phase calls this,
+    ///  which is what keeps logout off the map threads.
+    time_t currTime = time(NULL);
+    if (!m_link || (ShouldLogOut(currTime) && !m_playerLoading))
     {
-        ///- If necessary, log the player out
-        time_t currTime = time(NULL);
-        if (!m_link || (ShouldLogOut(currTime) && !m_playerLoading))
-        {
-            LogoutPlayer(true);
-        }
+        LogoutPlayer(true);
+    }
 
-        if (!m_link)
-        {
-            return false;                                    // Will remove this session from the world session map
-        }
+    if (!m_link)
+    {
+        return false;                                    // Will remove this session from the world session map
     }
 
     return true;
