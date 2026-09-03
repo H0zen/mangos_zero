@@ -2119,7 +2119,7 @@ class Unit : public WorldObject
         /// How far a proc chain may go before it is cut. A proc that casts, whose
         /// cast damages, whose damage procs, is normal at two or three; anything
         /// deeper is two auras feeding each other.
-        static const uint32 MAX_PROC_DEPTH = 8;
+        static constexpr uint32 MAX_PROC_DEPTH = 8;
 
         /**
          * @brief Record damage this blow owes to somebody other than its victim.

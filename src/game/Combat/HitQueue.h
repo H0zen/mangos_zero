@@ -60,7 +60,7 @@ namespace combat
             /// A proc that casts, whose cast damages, whose damage procs, is
             /// ordinary at two or three. Past this it is two effects feeding
             /// each other and the chain is cut.
-            static const uint8 MAX_DEPTH = 8;
+            static constexpr uint8 MAX_DEPTH = 8;
 
             /**
              * @brief Queue a hit caused by one at `parentDepth`.

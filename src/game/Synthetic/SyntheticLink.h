@@ -51,7 +51,7 @@ namespace synthetic
 
             /// The header a 1.12 server packet carries: size big-endian, then
             /// opcode. Fixed at four -- see PacketCodec::Encode.
-            static const uint32 SERVER_HEADER_BYTES = 4;
+            static constexpr uint32 SERVER_HEADER_BYTES = 4;
 
             explicit SyntheticLink(std::string address) : m_address(std::move(address)) {}
 
