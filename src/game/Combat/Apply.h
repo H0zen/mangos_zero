@@ -45,13 +45,24 @@ namespace combat
      * ## Nothing is spent here
      *
      * There is deliberately no `combat::Spend`, and the absence is not an
-     * oversight. Spending is something an actor chooses: a caster pays mana,
-     * reagents and a cooldown in order to act, and that belongs to
-     * `spells::Spend`. In combat nobody elects to pay anything -- a shield is
-     * consumed by what struck it, health is taken rather than given up. Naming
-     * both "spend" would have put two unrelated ideas under one word in
-     * neighbouring namespaces, and the first person to read `combat::Spend`
-     * would reasonably have gone looking for a mana cost.
+     * oversight. The line is agency, not the kind of resource and not melee
+     * versus spell. An actor that *chooses* to pay in order to act pays in
+     * `spells::Spend`; the world taking something because of what happened is
+     * this function.
+     *
+     * Rage is the case that proves it, because it crosses the line in both
+     * directions and lands correctly each time. A warrior electing to use
+     * Heroic Strike pays rage for it -- that is an ability going through the
+     * cast pipeline like any other, and the resource being rage rather than mana
+     * changes which column is debited, nothing else. A warrior being struck
+     * *gains* rage, and chose none of it; that is step four below.
+     *
+     * A plain auto-attack, which is not an ability at all, pays nothing and
+     * never reaches `spells::Spend` in the first place.
+     *
+     * Naming both sides "spend" would have put two unrelated ideas under one
+     * word in neighbouring namespaces, and the first person to read
+     * `combat::Spend` would reasonably have gone looking for a mana cost.
      *
      * ## The order is fixed
      *
@@ -67,10 +78,14 @@ namespace combat
      *     as a debt, not dealt here -- dealing it inline is what let one blow
      *     re-enter the whole pipeline halfway through its own bookkeeping.
      *  3. **Health moves.** Once, by the final figure.
-     *  4. **Death is settled**, if the figure was enough.
-     *  5. **Procs are queued**, never called. What they trigger runs after this
+     *  4. **Rage answers the blow.** Dealing damage and taking it both generate
+     *     rage, from the figure settled in step three. The old engine did this
+     *     from three separate places inside its damage routine, which is why
+     *     the amount depended on which path the damage had taken to get there.
+     *  5. **Death is settled**, if the figure was enough.
+     *  6. **Procs are queued**, never called. What they trigger runs after this
      *     blow is finished and its state is whole.
-     *  6. **Owed splits are delivered**, each one a fresh blow through this same
+     *  7. **Owed splits are delivered**, each one a fresh blow through this same
      *     function, under a depth cap.
      */
 
@@ -82,6 +97,10 @@ namespace combat
         int32_t resisted = 0;
         int32_t blocked = 0;
         bool killed = false;
+
+        /// Rage the blow generated, which neither side elected to receive.
+        int32_t rageToAttacker = 0;
+        int32_t rageToVictim = 0;
 
         /// Splits recorded in step 2, delivered in step 6.
         std::vector<SplitShare> owed;
