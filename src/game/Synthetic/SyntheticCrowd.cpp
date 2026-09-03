@@ -216,12 +216,13 @@ namespace synthetic
             const float px = bot.homeX + BOT_ORBIT_RADIUS * std::cos(bot.angle);
             const float py = bot.homeY + BOT_ORBIT_RADIUS * std::sin(bot.angle);
 
-            // Fed in as the packet a client would have sent, so the whole
-            // receive path runs: dispatch, the map's mailbox, validation and
-            // the relay to everyone who can see him.
+            // Exactly the bytes a 1.12 client sends, which is a MovementInfo and
+            // nothing before it. The guid belongs to the RELAY the server writes
+            // on the way out, not to what comes in; putting one here shifts every
+            // field by six bytes, the position reads as nonsense, and the whole
+            // packet is dropped by the coordinate check without a word.
             WorldPacket* move = new WorldPacket(MSG_MOVE_HEARTBEAT, 32);
-            *move << player->GetPackGUID();
-            *move << uint32(0);                  // movement flags
+            *move << uint32(MOVEFLAG_FORWARD);
             *move << uint32(getMSTime());
             *move << float(px) << float(py) << float(bot.homeZ) << float(bot.angle);
             *move << uint32(0);                  // fall time
