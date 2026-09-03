@@ -1046,6 +1046,8 @@ void Map::Update(const uint32& t_diff)
         }
     }
 
+    phases.Mark(metrics::TickPhase::GridObjects, getMSTime());
+
     // non-player active objects
     if (!m_activeNonPlayers.empty())
     {
@@ -1067,7 +1069,7 @@ void Map::Update(const uint32& t_diff)
         }
     }
 
-    phases.Mark(metrics::TickPhase::GridObjects, getMSTime());
+    phases.Mark(metrics::TickPhase::ActiveObjects, getMSTime());
 
     // Send world objects and item update field changes
     SendObjectUpdates();

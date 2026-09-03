@@ -338,9 +338,10 @@ std::string MapManager::ReportTickTimes() const
         const metrics::TickPhase worst = map->Phases().Worst(worstMs);
 
         std::snprintf(buf, sizeof(buf),
-                      "  map %u tick p50/p99/max %u/%u/%u ms over %u [%s %u ms]",
+                      "  map %u tick p50/p99/max %u/%u/%u ms over %u [%s %u ms] active %u",
                       map->GetId(), map->TickMs(0.5f), p99, map->TickMsMax(),
-                      map->TickOverruns(), metrics::PhaseName(worst), worstMs);
+                      map->TickOverruns(), metrics::PhaseName(worst), worstMs,
+                      uint32(map->ActiveObjectCount()));
         out += buf;
     }
 

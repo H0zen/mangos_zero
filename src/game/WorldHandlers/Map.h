@@ -211,6 +211,11 @@ class Map : public GridRefManager<NGridType>
         /// boundary, so one slow phase can be named instead of guessed at.
         void RecordPhase(metrics::TickPhase phase, uint32 ms) { m_phases.Add(phase, ms); }
         const metrics::TickBreakdown& Phases() const { return m_phases; }
+
+        /// How many objects keep themselves awake here. A continent with nobody
+        /// on it should have very few, and the number says whether the grid
+        /// phase has a reason to be busy.
+        size_t ActiveObjectCount() const { return m_activeNonPlayers.size(); }
         size_t TickSamples() const { return m_tickMs.Count(); }
 
         void MessageBroadcast(Player const*, WorldPacket*, bool to_self);
