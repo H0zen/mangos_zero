@@ -305,9 +305,19 @@ void Creature::AddToWorld()
         hull->EnlistCrew(this);
     }
 
-    // Make active if required
-    if (sWorld.isForceLoadMap(GetMapId()) ||
-        (GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_ACTIVE) ||
+    // Make active if required.
+    //
+    // Being on a force-loaded map is deliberately NOT a reason. Loading a grid
+    // and simulating what stands in it are separate decisions with separate
+    // costs: a resident grid costs memory, which is cheap and bounded, while an
+    // active creature costs a cell visit every tick for as long as the server
+    // runs. Conflating them made every one of a continent's twenty-odd thousand
+    // spawns tick forever, which is most of a map's tick budget spent on ground
+    // nobody is standing on.
+    //
+    // What stays active is what has a reason to be: a template that says so, and
+    // whatever LivingWorld anchors.
+    if ((GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_ACTIVE) ||
         IsLivingWorldAnchor(GetCreatureInfo(), sMapStore.LookupEntry(GetMapId()),
                             sWorld.getConfig(CONFIG_UINT32_LIVINGWORLD_ANCHOR_MASK)) ||
         (GetLivingWorldDefenderCategory(GetCreatureInfo(), sMapStore.LookupEntry(GetMapId()),
