@@ -15,10 +15,8 @@
 #include "terrain/Terrain.hpp"
 
 #include <array>
-#include <atomic>
 #include <cstdint>
 #include <memory>
-#include <mutex>
 #include <shared_mutex>
 #include <string>
 #include <vector>
@@ -82,15 +80,11 @@ namespace world::terrain
         bool GetAreaInfo(float x, float y, float z, uint32_t& mogpFlags, int32_t& adtId,
                          int32_t& rootId, int32_t& groupId, float& groundZ) const;
 
-        // Advances the cache clock and, once a minute, drops tiles that nothing pins and
-        // no query has touched for a while. Without it the cache is monotonic: a player
-        // walking a continent leaves every WMO he passed resident for the map's life.
-        void Update(uint32_t diff);
-
-        // Pins a cell's tile against the sweep while a grid is active.
-        void PinCell(int tx, int ty);
-        void UnpinCell(int tx, int ty);
-
+        // Tiles are mapped, not read, so a resident one costs page cache the
+        // kernel reclaims on its own rather than heap the server must sweep.
+        // The cache is therefore monotonic on purpose and there is nothing to
+        // pin, evict or age: a tile is mapped on the first query that reaches it
+        // and stays for the life of the map.
         size_t ResidentTiles() const;
 
     private:
@@ -99,7 +93,6 @@ namespace world::terrain
         TilePtr TileAt(float x, float y) const;
         TilePtr GlobalWmo() const;
         TilePtr LoadCell(int tx, int ty) const;
-        void EvictTile(int tx, int ty) const;
 
         void CollectSegmentInstances(const Vec3& a, const Vec3& b,
                                      std::vector<const StaticInstance*>& out,
@@ -120,13 +113,5 @@ namespace world::terrain
         mutable TilePtr m_globalWmo;
         mutable uint8_t m_globalWmoProbed = 0;
         mutable std::shared_mutex m_mutex;
-
-        mutable std::array<std::array<std::atomic<uint32_t>, GRID_COUNT>, GRID_COUNT>
-            m_tileLastUse{};
-        std::atomic<uint32_t> m_clockMs{0};
-        uint32_t m_sweepAccumMs = 0;
-
-        std::array<std::array<int16_t, GRID_COUNT>, GRID_COUNT> m_cellRef{};
-        mutable std::mutex m_cellRefMutex;
     };
 }

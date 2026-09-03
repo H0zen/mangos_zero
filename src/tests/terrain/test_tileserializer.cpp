@@ -281,6 +281,59 @@ TEST_CASE("A tile's collision geometry round-trips, and comes back mapped")
     CHECK(verts < end);
 }
 
+TEST_CASE("A WMO-only tile round-trips: no grid, only geometry")
+{
+    // The shape a map built from a single global WMO takes -- Deeprun Tram, and
+    // every vessel hull. It carries no ADT grid at all, so the sections that are
+    // empty here are exactly the ones a grid tile fills, and a reader that
+    // assumed a grid would walk off the front of the geometry.
+    ScratchPath scratch;
+
+    world::terrain::TriSoup soup;
+    soup.verts.Adopt(std::vector<world::terrain::Vec3>{
+        {0.f, 0.f, 0.f}, {40.f, 0.f, 0.f}, {0.f, 40.f, 0.f}});
+    soup.tris.Adopt(std::vector<std::array<uint32_t, 3>>{{0, 1, 2}});
+
+    auto hull = std::make_shared<world::terrain::CollisionModel>(std::move(soup));
+
+    TerrainTile tile;
+    tile.tx = 0;
+    tile.ty = 0;
+    tile.hasTerrain = false;
+    tile.isGlobalWmo = true;
+    tile.hasLiquid = false;
+
+    world::terrain::StaticInstance inst;
+    inst.model = hull;
+    inst.worldBounds.expand(world::terrain::Vec3{0.f, 0.f, -1.f});
+    inst.worldBounds.expand(world::terrain::Vec3{40.f, 40.f, 1.f});
+    inst.adtId = 7;
+    tile.instances.push_back(inst);
+
+    REQUIRE(WriteTile(tile, scratch.Path()));
+
+    auto read = ReadTile(scratch.Path());
+    REQUIRE(static_cast<bool>(read));
+
+    CHECK(read->isGlobalWmo);
+    CHECK_FALSE(read->hasTerrain);
+    CHECK_FALSE(read->hasLiquid);
+    CHECK(read->v9.empty());
+    CHECK(read->v8.empty());
+    CHECK(read->liquidHeight.empty());
+
+    REQUIRE(read->instances.size() == 1);
+    CHECK(read->instances[0].adtId == 7);
+    REQUIRE(static_cast<bool>(read->instances[0].model));
+
+    const auto* mesh = static_cast<const world::terrain::CollisionModel*>(
+        read->instances[0].model.get());
+    REQUIRE(mesh->Soup().verts.size() == 3);
+    CHECK(mesh->Soup().verts[1].x == doctest::Approx(40.f));
+    CHECK_FALSE(mesh->Soup().verts.Owns());
+    CHECK_FALSE(mesh->GetBvh().Nodes().Owns());
+}
+
 TEST_CASE("A mapped model still answers a raycast")
 {
     // Reading geometry in place has to give the same answers as reading a copy;

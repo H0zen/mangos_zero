@@ -106,12 +106,10 @@ namespace world::terrain
             return nullptr;
         }
 
-        const uint32_t now = m_clockMs.load(std::memory_order_relaxed);
         {
             std::shared_lock<std::shared_mutex> lock(m_mutex);
             if (m_loaded[tx][ty])
             {
-                m_tileLastUse[tx][ty].store(now, std::memory_order_relaxed);
                 return m_tiles[tx][ty];
             }
         }
@@ -126,7 +124,6 @@ namespace world::terrain
             m_tiles[tx][ty] = std::move(tile);
             m_loaded[tx][ty] = 1;
         }
-        m_tileLastUse[tx][ty].store(now, std::memory_order_relaxed);
         return m_tiles[tx][ty];
     }
 
@@ -157,74 +154,6 @@ namespace world::terrain
             m_globalWmoProbed = 1;
         }
         return m_globalWmo;
-    }
-
-    void FusedTerrain::EvictTile(int tx, int ty) const
-    {
-        // m_loaded goes back to 0 so the next query re-probes. The absent-tile memo is
-        // not kept here: its whole value is recording that the file is missing, and this
-        // tile plainly exists.
-        m_tiles[tx][ty].reset();
-        m_loaded[tx][ty] = 0;
-        m_tileLastUse[tx][ty].store(0, std::memory_order_relaxed);
-    }
-
-    void FusedTerrain::Update(uint32_t diff)
-    {
-        const uint32_t now = m_clockMs.load(std::memory_order_relaxed) + diff;
-        m_clockMs.store(now, std::memory_order_relaxed);
-
-        m_sweepAccumMs += diff;
-        if (m_sweepAccumMs < SWEEP_INTERVAL_MS)
-        {
-            return;
-        }
-        m_sweepAccumMs = 0;
-
-        // Lock order is cell-ref then tile cache; nothing else takes both.
-        std::lock_guard<std::mutex> refLock(m_cellRefMutex);
-        std::unique_lock<std::shared_mutex> lock(m_mutex);
-
-        for (int tx = 0; tx < GRID_COUNT; ++tx)
-        {
-            for (int ty = 0; ty < GRID_COUNT; ++ty)
-            {
-                if (!m_tiles[tx][ty] || m_cellRef[tx][ty] > 0)
-                {
-                    continue;
-                }
-                // Unsigned subtraction, so this stays correct across the counter's wrap.
-                if (now - m_tileLastUse[tx][ty].load(std::memory_order_relaxed) <
-                    TILE_IDLE_MS)
-                {
-                    continue;
-                }
-                EvictTile(tx, ty);
-            }
-        }
-    }
-
-    void FusedTerrain::PinCell(int tx, int ty)
-    {
-        if (tx < 0 || tx >= GRID_COUNT || ty < 0 || ty >= GRID_COUNT)
-        {
-            return;
-        }
-        std::lock_guard<std::mutex> lock(m_cellRefMutex);
-        ++m_cellRef[tx][ty];
-    }
-
-    void FusedTerrain::UnpinCell(int tx, int ty)
-    {
-        if (tx < 0 || tx >= GRID_COUNT || ty < 0 || ty >= GRID_COUNT)
-        {
-            return;
-        }
-        std::lock_guard<std::mutex> lock(m_cellRefMutex);
-        if (m_cellRef[tx][ty] > 0)
-        {
-            --m_cellRef[tx][ty];
-        }
     }
 
     size_t FusedTerrain::ResidentTiles() const

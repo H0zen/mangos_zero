@@ -179,10 +179,6 @@ bool TerrainInfo::Load(const uint32 x, const uint32 y)
         firstReference = (++m_GridRef[x][y] == 1);
     }
 
-    // Pins the cell's tile against the cache sweep for as long as a grid stands on it.
-    // The tile data itself still loads lazily, on the first query that reaches it.
-    m_terrain.PinCell(int(x), int(y));
-
     // The navmesh tile is loaded by the FIRST referent only -- the refcount above is what
     // makes several owners of one grid legal, and Unload already releases on the last.
     // Loading unconditionally made every second owner ask for a tile the first had already
@@ -200,25 +196,18 @@ void TerrainInfo::Unload(const uint32 x, const uint32 y)
     MANGOS_ASSERT(x < MAX_NUMBER_OF_GRIDS);
     MANGOS_ASSERT(y < MAX_NUMBER_OF_GRIDS);
 
-    bool released = false;
+    // The count is what CleanUpGrids reads to decide a navmesh tile is free.
+    std::lock_guard<LOCK_TYPE> lock(m_refMutex);
+    if (m_GridRef[x][y] > 0)
     {
-        std::lock_guard<LOCK_TYPE> lock(m_refMutex);
-        if (m_GridRef[x][y] > 0)
-        {
-            released = (--m_GridRef[x][y] == 0);
-        }
-    }
-
-    if (released)
-    {
-        m_terrain.UnpinCell(int(x), int(y));
+        --m_GridRef[x][y];
     }
 }
 
 void TerrainInfo::CleanUpGrids(const uint32 diff)
 {
-    m_terrain.Update(diff);
-
+    // Terrain tiles are mapped and stay mapped. What ages out here is the
+    // navmesh, which the pathfinder's own manager holds in memory.
     i_timer.Update(diff);
     if (!i_timer.Passed())
     {
