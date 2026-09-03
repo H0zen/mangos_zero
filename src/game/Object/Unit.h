@@ -2111,6 +2111,11 @@ class Unit : public WorldObject
          * @param procSpell
          * \see ProcFlagsEx
          */
+        /// How far a proc chain may go before it is cut. A proc that casts, whose
+        /// cast damages, whose damage procs, is normal at two or three; anything
+        /// deeper is two auras feeding each other.
+        static const uint32 MAX_PROC_DEPTH = 8;
+
         void ProcDamageAndSpell(Unit* pVictim, uint32 procAttacker, uint32 procVictim, uint32 procEx, uint32 amount, WeaponAttackType attType = BASE_ATTACK, SpellEntry const* procSpell = NULL);
 
         /**

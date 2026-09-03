@@ -2688,6 +2688,20 @@ void Unit::SendPeriodicAuraLog(SpellPeriodicAuraLogInfo* pInfo)
  */
 void Unit::ProcDamageAndSpell(Unit* pVictim, uint32 procAttacker, uint32 procVictim, uint32 procExtra, uint32 amount, WeaponAttackType attType, SpellEntry const* procSpell)
 {
+    // A proc casts, the cast deals damage, the damage procs again. Legitimate
+    // chains are two or three deep; a pair of auras that trigger each other has
+    // no end, and without a bound it is the stack that stops it. The cap is on
+    // the thread rather than on a unit because a chain crosses units freely.
+    static thread_local uint32 depth = 0;
+    if (depth >= MAX_PROC_DEPTH)
+    {
+        sLog.outError("Unit::ProcDamageAndSpell: proc chain deeper than %u, dropped at spell %u",
+                      MAX_PROC_DEPTH, procSpell ? procSpell->ID : 0);
+        return;
+    }
+
+    ++depth;
+
     // Not much to do if no flags are set.
     if (procAttacker)
     {
@@ -2699,6 +2713,8 @@ void Unit::ProcDamageAndSpell(Unit* pVictim, uint32 procAttacker, uint32 procVic
     {
         pVictim->ProcDamageAndSpellFor(true, this, procVictim, procExtra, attType, procSpell, amount);
     }
+
+    --depth;
 }
 
 /**
