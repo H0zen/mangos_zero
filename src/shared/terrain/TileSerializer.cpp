@@ -3,10 +3,12 @@
 #include <vector>
 #include "terrain/TileSerializer.hpp"
 #include "terrain/CollisionModel.hpp"
+#include "terrain/MappedFile.hpp"
 #include "terrain/WmoModel.hpp"
 
 #include <array>
 #include <cstdio>
+#include <cstring>
 #include <unordered_map>
 
 namespace world::terrain
@@ -14,111 +16,205 @@ namespace world::terrain
     namespace
     {
         constexpr uint32_t MAGIC = 0x30474E4D;  // "MNG0" in file order
-        constexpr uint32_t VERSION = 1;
+
+        // 2: every array is preceded by padding to its own alignment, so the
+        // reader can point at it inside a mapping instead of copying it out. A
+        // tile written by an older extractor is refused, and the caller rebakes.
+        constexpr uint32_t VERSION = 2;
 
         constexpr uint32_t MAX_MODELS = 1u << 20;
         constexpr uint32_t MAX_INSTANCES = 1u << 22;
 
-        // A count is only believable if the file still holds that many elements. A fixed
-        // ceiling is not enough: it still lets a corrupt header reserve hundreds of
-        // megabytes before the short read is noticed, and on an overcommitting kernel
-        // that reservation succeeds, so the guard never fires and the test that was
-        // supposed to prove it stays green either way. Measuring against the actual file
-        // makes the allocation impossible rather than merely unlikely.
-        long RemainingBytes(std::FILE* f)
+        /// Where the next object of alignment `a` starts at or after `off`.
+        inline size_t AlignUp(size_t off, size_t a)
         {
-            const long here = std::ftell(f);
-            if (here < 0 || std::fseek(f, 0, SEEK_END) != 0)
-            {
-                return -1;
-            }
-            const long end = std::ftell(f);
-            if (end < 0 || std::fseek(f, here, SEEK_SET) != 0)
-            {
-                return -1;
-            }
-            return end - here;
+            const size_t rem = off % a;
+            return rem ? off + (a - rem) : off;
         }
 
-        template <class T>
-        bool WPod(std::FILE* f, const T& v)
+        /// Sequential writer that knows its own offset, so it can insert the same
+        /// padding the reader will skip. The two must agree exactly; they do
+        /// because both derive it from the offset and nothing else.
+        class Writer
         {
-            return std::fwrite(&v, sizeof(T), 1, f) == 1;
-        }
+            public:
+                explicit Writer(std::FILE* f) : m_f(f) {}
 
-        template <class T>
-        bool RPod(std::FILE* f, T& v)
-        {
-            return std::fread(&v, sizeof(T), 1, f) == 1;
-        }
+                bool Ok() const { return m_ok; }
 
-        template <class T>
-        bool WVec(std::FILE* f, const std::vector<T>& v)
-        {
-            const uint32_t n = uint32_t(v.size());
-            if (std::fwrite(&n, 4, 1, f) != 1)
-            {
-                return false;
-            }
-            return n == 0 || std::fwrite(v.data(), sizeof(T), n, f) == n;
-        }
+                void Pad(size_t align)
+                {
+                    static const uint8_t zeros[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+                    const size_t target = AlignUp(m_off, align);
+                    while (m_ok && m_off < target)
+                    {
+                        const size_t n = target - m_off;
+                        m_ok = std::fwrite(zeros, 1, n, m_f) == n;
+                        m_off += n;
+                    }
+                }
 
-        template <class T>
-        bool RVec(std::FILE* f, std::vector<T>& v)
-        {
-            uint32_t n = 0;
-            if (std::fread(&n, 4, 1, f) != 1)
-            {
-                return false;
-            }
-            const long left = RemainingBytes(f);
-            if (left < 0 || uint64_t(n) * sizeof(T) > uint64_t(left))
-            {
-                return false;
-            }
-            v.resize(n);
-            return n == 0 || std::fread(v.data(), sizeof(T), n, f) == n;
-        }
+                template <class T>
+                void Pod(const T& v)
+                {
+                    Pad(alignof(T));
+                    if (!m_ok)
+                    {
+                        return;
+                    }
+                    m_ok = std::fwrite(&v, sizeof(T), 1, m_f) == 1;
+                    m_off += sizeof(T);
+                }
 
-        template <class T, size_t N>
-        bool WArray(std::FILE* f, const std::array<T, N>& a)
-        {
-            return std::fwrite(a.data(), sizeof(T), N, f) == N;
-        }
+                template <class T>
+                void Raw(const T* data, size_t count)
+                {
+                    Pad(alignof(T));
+                    if (!m_ok || count == 0)
+                    {
+                        return;
+                    }
+                    m_ok = std::fwrite(data, sizeof(T), count, m_f) == count;
+                    m_off += sizeof(T) * count;
+                }
 
-        template <class T, size_t N>
-        bool RArray(std::FILE* f, std::array<T, N>& a)
-        {
-            return std::fread(a.data(), sizeof(T), N, f) == N;
-        }
+                /// A counted array: the count, then the elements on their own
+                /// alignment.
+                template <class T>
+                void Arr(const T* data, size_t count)
+                {
+                    Pod(uint32_t(count));
+                    Raw(data, count);
+                }
 
-        bool WriteGroup(std::FILE* f, const WmoModel::Group& g)
+                template <class T>
+                void Arr(const std::vector<T>& v) { Arr(v.data(), v.size()); }
+
+                template <class T>
+                void Arr(const Store<T>& s) { Arr(s.data(), s.size()); }
+
+                template <class T, size_t N>
+                void Fixed(const std::array<T, N>& a) { Raw(a.data(), N); }
+
+            private:
+                std::FILE* m_f;
+                size_t m_off = 0;
+                bool m_ok = true;
+        };
+
+        /// Sequential reader over a mapping. Nothing is copied unless a caller
+        /// asks for it: an array can be pointed at in place, which is what makes
+        /// a resident tile cost page cache rather than heap.
+        class Cursor
         {
-            bool ok = WPod(f, g.mogpFlags) && WPod(f, g.groupWmoId);
-            const uint8_t hasLiquid = g.hasLiquid ? 1 : 0;
-            ok = ok && WPod(f, hasLiquid);
+            public:
+                Cursor(std::shared_ptr<const MappedFile> file)
+                    : m_file(std::move(file)) {}
+
+                bool Ok() const { return m_ok; }
+                void Fail() { m_ok = false; }
+
+                template <class T>
+                bool Pod(T& v)
+                {
+                    const size_t at = AlignUp(m_off, alignof(T));
+                    if (!m_ok || !m_file->Covers(at, sizeof(T)))
+                    {
+                        m_ok = false;
+                        return false;
+                    }
+                    std::memcpy(&v, m_file->Data() + at, sizeof(T));
+                    m_off = at + sizeof(T);
+                    return true;
+                }
+
+                /// Point `out` at the array in place.
+                template <class T>
+                bool View(Store<T>& out)
+                {
+                    uint32_t count = 0;
+                    if (!Pod(count))
+                    {
+                        return false;
+                    }
+
+                    const size_t at = AlignUp(m_off, alignof(T));
+                    const size_t bytes = size_t(count) * sizeof(T);
+                    if (!m_file->Covers(at, bytes))
+                    {
+                        m_ok = false;
+                        return false;
+                    }
+
+                    out.View(reinterpret_cast<const T*>(m_file->Data() + at), count);
+                    m_off = at + bytes;
+                    return true;
+                }
+
+                /// Copy the array out. For the parts a builder still owns.
+                template <class T>
+                bool Copy(std::vector<T>& out)
+                {
+                    Store<T> view;
+                    if (!View(view))
+                    {
+                        return false;
+                    }
+                    out.assign(view.begin(), view.end());
+                    return true;
+                }
+
+                template <class T, size_t N>
+                bool Fixed(std::array<T, N>& out)
+                {
+                    const size_t at = AlignUp(m_off, alignof(T));
+                    const size_t bytes = sizeof(T) * N;
+                    if (!m_ok || !m_file->Covers(at, bytes))
+                    {
+                        m_ok = false;
+                        return false;
+                    }
+                    std::memcpy(out.data(), m_file->Data() + at, bytes);
+                    m_off = at + bytes;
+                    return true;
+                }
+
+                const std::shared_ptr<const MappedFile>& File() const { return m_file; }
+
+            private:
+                std::shared_ptr<const MappedFile> m_file;
+                size_t m_off = 0;
+                bool m_ok = true;
+        };
+
+        void WriteGroup(Writer& w, const WmoModel::Group& g)
+        {
+            w.Pod(g.mogpFlags);
+            w.Pod(g.groupWmoId);
+            w.Pod(uint8_t(g.hasLiquid ? 1 : 0));
             if (g.hasLiquid)
             {
-                ok = ok && WPod(f, g.liquid.tilesX) && WPod(f, g.liquid.tilesY) &&
-                     WPod(f, g.liquid.corner) && WPod(f, g.liquid.entry) &&
-                     WPod(f, g.liquid.kind) && WVec(f, g.liquid.heights) &&
-                     WVec(f, g.liquid.flags);
+                w.Pod(g.liquid.tilesX);
+                w.Pod(g.liquid.tilesY);
+                w.Pod(g.liquid.corner);
+                w.Pod(g.liquid.entry);
+                w.Pod(g.liquid.kind);
+                w.Arr(g.liquid.heights);
+                w.Arr(g.liquid.flags);
             }
-            return ok;
         }
 
-        bool ReadGroup(std::FILE* f, WmoModel::Group& g)
+        bool ReadGroup(Cursor& c, WmoModel::Group& g)
         {
-            bool ok = RPod(f, g.mogpFlags) && RPod(f, g.groupWmoId);
             uint8_t hasLiquid = 0;
-            ok = ok && RPod(f, hasLiquid);
+            bool ok = c.Pod(g.mogpFlags) && c.Pod(g.groupWmoId) && c.Pod(hasLiquid);
             g.hasLiquid = hasLiquid != 0;
             if (ok && g.hasLiquid)
             {
-                ok = RPod(f, g.liquid.tilesX) && RPod(f, g.liquid.tilesY) &&
-                     RPod(f, g.liquid.corner) && RPod(f, g.liquid.entry) &&
-                     RPod(f, g.liquid.kind) && RVec(f, g.liquid.heights) &&
-                     RVec(f, g.liquid.flags);
+                ok = c.Pod(g.liquid.tilesX) && c.Pod(g.liquid.tilesY) &&
+                     c.Pod(g.liquid.corner) && c.Pod(g.liquid.entry) &&
+                     c.Pod(g.liquid.kind) && c.Copy(g.liquid.heights) &&
+                     c.Copy(g.liquid.flags);
             }
             return ok;
         }
@@ -153,17 +249,24 @@ namespace world::terrain
             return false;
         }
 
-        const uint8_t hasTerrain = tile.hasTerrain ? 1 : 0;
-        const uint8_t globalWmo = tile.isGlobalWmo ? 1 : 0;
-        const uint8_t hasLiquid = tile.hasLiquid ? 1 : 0;
+        Writer w(f);
 
-        bool ok = WPod(f, MAGIC) && WPod(f, VERSION) && WPod(f, tile.tx) &&
-                  WPod(f, tile.ty) && WPod(f, hasTerrain) && WPod(f, globalWmo) &&
-                  WVec(f, tile.v9) && WVec(f, tile.v8) && WArray(f, tile.holes) &&
-                  WArray(f, tile.areaIds) && WPod(f, hasLiquid) &&
-                  WVec(f, tile.liquidHeight) && WVec(f, tile.liquidShow) &&
-                  WVec(f, tile.liquidKind) && WVec(f, tile.liquidEntry) &&
-                  WVec(f, tile.liquidDeep);
+        w.Pod(MAGIC);
+        w.Pod(VERSION);
+        w.Pod(tile.tx);
+        w.Pod(tile.ty);
+        w.Pod(uint8_t(tile.hasTerrain ? 1 : 0));
+        w.Pod(uint8_t(tile.isGlobalWmo ? 1 : 0));
+        w.Arr(tile.v9);
+        w.Arr(tile.v8);
+        w.Fixed(tile.holes);
+        w.Fixed(tile.areaIds);
+        w.Pod(uint8_t(tile.hasLiquid ? 1 : 0));
+        w.Arr(tile.liquidHeight);
+        w.Arr(tile.liquidShow);
+        w.Arr(tile.liquidKind);
+        w.Arr(tile.liquidEntry);
+        w.Arr(tile.liquidDeep);
 
         // Deduped model table: a WMO instanced fifty times is written once and the
         // instances index it.
@@ -179,44 +282,49 @@ namespace world::terrain
             }
         }
 
-        const uint32_t nModels = uint32_t(models.size());
-        ok = ok && WPod(f, nModels);
+        w.Pod(uint32_t(models.size()));
         for (const ICollisionModel* m : models)
         {
-            const uint8_t kind = uint8_t(m->Kind());
-            ok = ok && WPod(f, kind);
+            w.Pod(uint8_t(m->Kind()));
             if (m->Kind() == ModelKind::Wmo)
             {
-                const auto* w = static_cast<const WmoModel*>(m);
-                const uint32_t nGroups = uint32_t(w->Groups().size());
-                ok = ok && WPod(f, w->RootId()) && WPod(f, nGroups);
-                for (const WmoModel::Group& g : w->Groups())
+                const auto* wmo = static_cast<const WmoModel*>(m);
+                w.Pod(wmo->RootId());
+                w.Pod(uint32_t(wmo->Groups().size()));
+                for (const WmoModel::Group& g : wmo->Groups())
                 {
-                    ok = ok && WriteGroup(f, g);
+                    WriteGroup(w, g);
                 }
                 // soup.tris is already in the BVH's leaf order, so nothing is rebuilt.
-                ok = ok && WVec(f, w->Soup().verts) && WVec(f, w->Soup().tris) &&
-                     WVec(f, w->TriGroups()) && WVec(f, w->GetBvh().Nodes());
+                w.Arr(wmo->Soup().verts);
+                w.Arr(wmo->Soup().tris);
+                w.Arr(wmo->TriGroups());
+                w.Arr(wmo->GetBvh().Nodes());
             }
             else
             {
                 const auto* c = static_cast<const CollisionModel*>(m);
-                ok = ok && WVec(f, c->Soup().verts) && WVec(f, c->Soup().tris) &&
-                     WVec(f, c->GetBvh().Nodes());
+                w.Arr(c->Soup().verts);
+                w.Arr(c->Soup().tris);
+                w.Arr(c->GetBvh().Nodes());
             }
         }
 
-        const uint32_t nInstances = uint32_t(tile.instances.size());
-        ok = ok && WPod(f, nInstances);
+        w.Pod(uint32_t(tile.instances.size()));
         for (const StaticInstance& inst : tile.instances)
         {
             auto found = modelIndex.find(inst.model.get());
             const uint32_t idx = found != modelIndex.end() ? found->second : 0xFFFFFFFFu;
-            ok = ok && WPod(f, inst.xf.pos) && WArray(f, inst.xf.rot.m) &&
-                 WPod(f, inst.xf.scale) && WPod(f, inst.worldBounds.lo) &&
-                 WPod(f, inst.worldBounds.hi) && WPod(f, idx) && WPod(f, inst.adtId);
+            w.Pod(inst.xf.pos);
+            w.Fixed(inst.xf.rot.m);
+            w.Pod(inst.xf.scale);
+            w.Pod(inst.worldBounds.lo);
+            w.Pod(inst.worldBounds.hi);
+            w.Pod(idx);
+            w.Pod(inst.adtId);
         }
 
+        const bool ok = w.Ok();
         std::fclose(f);
         if (!ok)
         {
@@ -227,35 +335,38 @@ namespace world::terrain
 
     std::shared_ptr<TerrainTile> ReadTile(const std::string& path)
     {
-        std::FILE* f = std::fopen(path.c_str(), "rb");
-        if (!f)
+        std::shared_ptr<const MappedFile> file = MappedFile::Open(path);
+        if (!file)
         {
             return nullptr;
         }
 
+        Cursor c(file);
+
         uint32_t magic = 0, version = 0;
-        if (!RPod(f, magic) || !RPod(f, version) || magic != MAGIC || version != VERSION)
+        if (!c.Pod(magic) || !c.Pod(version) || magic != MAGIC || version != VERSION)
         {
-            std::fclose(f);
             return nullptr;
         }
 
         auto tile = std::make_shared<TerrainTile>();
+        tile->mapping = file;
+
         uint8_t hasTerrain = 0, globalWmo = 0, hasLiquid = 0;
 
-        bool ok = RPod(f, tile->tx) && RPod(f, tile->ty) && RPod(f, hasTerrain) &&
-                  RPod(f, globalWmo) && RVec(f, tile->v9) && RVec(f, tile->v8) &&
-                  RArray(f, tile->holes) && RArray(f, tile->areaIds) &&
-                  RPod(f, hasLiquid) && RVec(f, tile->liquidHeight) &&
-                  RVec(f, tile->liquidShow) && RVec(f, tile->liquidKind) &&
-                  RVec(f, tile->liquidEntry) && RVec(f, tile->liquidDeep);
+        bool ok = c.Pod(tile->tx) && c.Pod(tile->ty) && c.Pod(hasTerrain) &&
+                  c.Pod(globalWmo) && c.View(tile->v9) && c.View(tile->v8) &&
+                  c.Fixed(tile->holes) && c.Fixed(tile->areaIds) &&
+                  c.Pod(hasLiquid) && c.View(tile->liquidHeight) &&
+                  c.View(tile->liquidShow) && c.View(tile->liquidKind) &&
+                  c.View(tile->liquidEntry) && c.View(tile->liquidDeep);
 
         tile->hasTerrain = hasTerrain != 0;
         tile->isGlobalWmo = globalWmo != 0;
         tile->hasLiquid = hasLiquid != 0;
 
         uint32_t nModels = 0;
-        ok = ok && RPod(f, nModels) && nModels <= MAX_MODELS;
+        ok = ok && c.Pod(nModels) && nModels <= MAX_MODELS;
 
         std::vector<std::shared_ptr<const ICollisionModel>> models;
         if (ok)
@@ -266,7 +377,7 @@ namespace world::terrain
         for (uint32_t i = 0; ok && i < nModels; ++i)
         {
             uint8_t kind = 0;
-            if (!RPod(f, kind))
+            if (!c.Pod(kind))
             {
                 ok = false;
                 break;
@@ -278,16 +389,16 @@ namespace world::terrain
             if (kind == uint8_t(ModelKind::Wmo))
             {
                 uint32_t rootId = 0, nGroups = 0;
-                ok = RPod(f, rootId) && RPod(f, nGroups) && nGroups <= MAX_MODELS;
+                ok = c.Pod(rootId) && c.Pod(nGroups) && nGroups <= MAX_MODELS;
                 std::vector<WmoModel::Group> groups(ok ? nGroups : 0);
                 for (uint32_t g = 0; ok && g < nGroups; ++g)
                 {
-                    ok = ReadGroup(f, groups[g]);
+                    ok = ReadGroup(c, groups[g]);
                 }
 
                 std::vector<uint16_t> triGroup;
-                ok = ok && RVec(f, soup.verts) && RVec(f, soup.tris) &&
-                     RVec(f, triGroup) && RVec(f, nodes) &&
+                ok = ok && c.Copy(soup.verts) && c.Copy(soup.tris) &&
+                     c.Copy(triGroup) && c.Copy(nodes) &&
                      triGroup.size() == soup.tris.size();
                 if (ok)
                 {
@@ -301,7 +412,7 @@ namespace world::terrain
             }
             else if (kind == uint8_t(ModelKind::Mesh))
             {
-                ok = RVec(f, soup.verts) && RVec(f, soup.tris) && RVec(f, nodes);
+                ok = c.Copy(soup.verts) && c.Copy(soup.tris) && c.Copy(nodes);
                 if (ok)
                 {
                     Bvh bvh;
@@ -317,14 +428,14 @@ namespace world::terrain
         }
 
         uint32_t nInstances = 0;
-        ok = ok && RPod(f, nInstances) && nInstances <= MAX_INSTANCES;
+        ok = ok && c.Pod(nInstances) && nInstances <= MAX_INSTANCES;
         for (uint32_t i = 0; ok && i < nInstances; ++i)
         {
             StaticInstance inst;
             uint32_t idx = 0;
-            ok = RPod(f, inst.xf.pos) && RArray(f, inst.xf.rot.m) &&
-                 RPod(f, inst.xf.scale) && RPod(f, inst.worldBounds.lo) &&
-                 RPod(f, inst.worldBounds.hi) && RPod(f, idx) && RPod(f, inst.adtId);
+            ok = c.Pod(inst.xf.pos) && c.Fixed(inst.xf.rot.m) &&
+                 c.Pod(inst.xf.scale) && c.Pod(inst.worldBounds.lo) &&
+                 c.Pod(inst.worldBounds.hi) && c.Pod(idx) && c.Pod(inst.adtId);
             if (ok)
             {
                 if (idx < models.size())
@@ -335,7 +446,6 @@ namespace world::terrain
             }
         }
 
-        std::fclose(f);
         return ok ? tile : nullptr;
     }
 }

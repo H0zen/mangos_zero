@@ -186,14 +186,14 @@ namespace world::terrain
         tile->tx = tx;
         tile->ty = ty;
         tile->hasTerrain = true;
-        tile->v9 = std::move(adt.v9);
-        tile->v8 = std::move(adt.v8);
+        tile->v9.Adopt(std::move(adt.v9));
+        tile->v8.Adopt(std::move(adt.v8));
         tile->holes = adt.holes;
         tile->areaIds = adt.areaIds;
         tile->hasLiquid = adt.hasLiquid;
-        tile->liquidHeight = std::move(adt.liquidHeight);
-        tile->liquidShow = std::move(adt.liquidShow);
-        tile->liquidEntry = std::move(adt.liquidEntry);
+        tile->liquidHeight.Adopt(std::move(adt.liquidHeight));
+        tile->liquidShow.Adopt(std::move(adt.liquidShow));
+        tile->liquidEntry.Adopt(std::move(adt.liquidEntry));
 
         if (tile->hasLiquid)
         {
@@ -208,10 +208,10 @@ namespace world::terrain
                 }
                 const LiquidKind kind =
                     world::ClassifyLiquid(tile->liquidEntry[i], m_liquidTypes);
-                tile->liquidKind[i] = uint8_t(kind);
+                tile->liquidKind.Mutable(i) = uint8_t(kind);
                 // Dark water is the MCLQ per-cell bit, or an ocean layer that shipped no
                 // light map -- the rule the reference extractor has always used.
-                tile->liquidDeep[i] =
+                tile->liquidDeep.Mutable(i) =
                     (adt.liquidDark[i] ||
                      (kind == LiquidKind::Ocean && adt.liquidNoLight[i]))
                         ? 1

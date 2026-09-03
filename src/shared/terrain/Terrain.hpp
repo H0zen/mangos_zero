@@ -2,6 +2,8 @@
 
 #include "terrain/Geometry.hpp"
 #include "terrain/ICollisionModel.hpp"
+#include "terrain/MappedFile.hpp"
+#include "terrain/Store.hpp"
 
 #include <array>
 #include <cmath>
@@ -56,19 +58,26 @@ namespace world::terrain
         bool hasTerrain = false;
         bool isGlobalWmo = false;
 
-        std::vector<float> v9;                         ///< V9_SIDE*V9_SIDE corner heights
-        std::vector<float> v8;                         ///< GRID_PER_TILE^2 centre heights
+        // The bulk grids. Built by the extractor, mapped by the server -- see
+        // Store. The two small fixed arrays below are copied on load instead,
+        // being a kilobyte between them.
+        Store<float> v9;                               ///< V9_SIDE*V9_SIDE corner heights
+        Store<float> v8;                               ///< GRID_PER_TILE^2 centre heights
         std::array<uint16_t, CHUNKS * CHUNKS> holes{};
         std::array<uint16_t, CHUNKS * CHUNKS> areaIds{};
 
         bool hasLiquid = false;
-        std::vector<float> liquidHeight;    ///< V9_SIDE*V9_SIDE corner grid
-        std::vector<uint8_t> liquidShow;    ///< GRID_PER_TILE^2 cell mask
-        std::vector<uint8_t> liquidKind;    ///< GRID_PER_TILE^2 LiquidKind
-        std::vector<uint16_t> liquidEntry;  ///< GRID_PER_TILE^2 LiquidType.dbc id
-        std::vector<uint8_t> liquidDeep;    ///< GRID_PER_TILE^2 dark-water mask
+        Store<float> liquidHeight;          ///< V9_SIDE*V9_SIDE corner grid
+        Store<uint8_t> liquidShow;          ///< GRID_PER_TILE^2 cell mask
+        Store<uint8_t> liquidKind;          ///< GRID_PER_TILE^2 LiquidKind
+        Store<uint16_t> liquidEntry;        ///< GRID_PER_TILE^2 LiquidType.dbc id
+        Store<uint8_t> liquidDeep;          ///< GRID_PER_TILE^2 dark-water mask
 
         std::vector<StaticInstance> instances;
+
+        /// Keeps the file alive for as long as anything points into it. Null for
+        /// a tile that was built rather than mapped.
+        std::shared_ptr<const MappedFile> mapping;
 
         // Mirrors the reference GridMap: four triangles meeting at the V8 centre.
         std::optional<float> TerrainHeight(float x, float y) const

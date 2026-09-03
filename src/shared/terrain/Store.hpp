@@ -11,6 +11,7 @@
 // data() is computed on each call rather than cached, so moving a Store that
 // owns cannot leave a pointer behind to the vector's old buffer.
 
+#include <cassert>
 #include <cstddef>
 #include <type_traits>
 #include <utility>
@@ -41,7 +42,20 @@ namespace world::terrain
             size_t size() const { return m_view ? m_viewSize : m_owned.size(); }
             bool empty() const { return size() == 0; }
 
+            /// The only indexing. Deliberately const whatever the handle is:
+            /// an overload pair split by constness would send a read through the
+            /// writing path whenever the Store was reached through a non-const
+            /// reference, and on a view that reads an empty vector.
             const T& operator[](size_t i) const { return data()[i]; }
+
+            /// Element reference for a builder filling the array in place.
+            /// Mapped bytes are read-only and shared by everything holding the
+            /// tile, so this is not reachable from a view.
+            T& Mutable(size_t i)
+            {
+                assert(Owns() && "writing through a mapped Store");
+                return m_owned[i];
+            }
 
             const T* begin() const { return data(); }
             const T* end() const { return data() + size(); }
