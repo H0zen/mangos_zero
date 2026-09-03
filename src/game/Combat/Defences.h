@@ -28,7 +28,7 @@
 // What stands between a blow and a victim's health.
 //
 // Everything here is read, never written. A shield's remaining strength is an
-// input to the decision; spending it is apply()'s business, from the plan the
+// input to the decision; drawing on it is Apply()'s business, from the plan the
 // Outcome carries back. That separation is the whole reason resolve() can be a
 // function of its arguments.
 
@@ -92,7 +92,7 @@ namespace combat
         /// Nothing of this school touches the victim at all.
         bool immune = false;
 
-        /// What the victim has to spend on shields that charge for their work.
+        /// What the victim can be drawn on for shields that charge for their work.
         int32 mana = 0;
 
         std::vector<Absorber> absorbers;

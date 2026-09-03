@@ -28,7 +28,7 @@
 #include "Unit.h"
 #include "Combat/Mitigate.h"
 #include "Combat/Reading.h"
-#include "Combat/Spend.h"
+#include "Combat/Shields.h"
 #include "Log.h"
 #include "Opcodes.h"
 #include "WorldPacket.h"
@@ -185,7 +185,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit* pCaster, SpellSchoolMask schoolM
     combat::Outcome plan;
     combat::Mitigate(remaining, schoolMask, defences, pCaster == this, plan);
 
-    combat::SpendShields(*this, plan);
+    combat::ConsumeShields(*this, plan);
 
     if (!plan.splits.empty())
     {

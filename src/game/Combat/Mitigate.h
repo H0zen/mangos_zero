@@ -32,7 +32,7 @@
 // a spell that rolled its own hit, a periodic tick that cannot miss -- need the
 // same decision without a second hit table being run over them.
 //
-// Deciding is all it does. What the plan costs is spent by Spend().
+// Deciding is all it does. Carrying the plan out is Apply()'s work.
 
 #include "Combat/Attempt.h"
 #include "Combat/Defences.h"

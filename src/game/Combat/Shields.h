@@ -38,7 +38,15 @@ class Unit;
 
 namespace combat
 {
-    /// Take the shields down by what they stopped, remove the ones the blow used
-    /// up, and draw the mana the paid shields cost.
-    void SpendShields(Unit& victim, const Outcome& outcome);
+    /**
+      * Step one of applying a blow: the shields give way.
+      *
+      * Absorbing auras come down by what they stopped, the exhausted ones are
+      * removed, and any mana their absorption costs is drawn from the bearer.
+      *
+      * Not named for spending. Spending is a choice an actor makes in order to
+      * act, and belongs to the caster paying for a cast; a shield is consumed by
+      * what struck it.
+      */
+    void ConsumeShields(Unit& victim, const Outcome& outcome);
 }

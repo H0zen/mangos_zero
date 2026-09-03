@@ -115,8 +115,8 @@ namespace combat
      * @brief An absorbing aura, and how much of this hit it would take.
      *
      * resolve() decides the split of a hit across the shields covering it;
-     * apply() is what actually spends them. Keeping the decision and the
-     * spending apart is what lets resolve() stay a function of its arguments.
+     * Apply() is what actually takes them down. Keeping the decision and the
+     * consequence apart is what lets resolve() stay a function of its arguments.
      */
     struct AbsorbShare
     {

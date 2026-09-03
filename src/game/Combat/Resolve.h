@@ -30,7 +30,7 @@
 // Resolve() reads an Attempt, both sides and what the victim has in the way, and
 // returns the whole Outcome: how it landed, what reached health, and what it
 // WOULD cost the shields and split auras that softened it. It writes nothing.
-// Spending the shields and delivering the splits is apply()'s job, working from
+// Taking the shields down and delivering the splits is Apply()'s job, working from
 // the plan in the Outcome.
 //
 // That division is not tidiness. The old pipeline computed absorption by

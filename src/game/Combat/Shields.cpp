@@ -23,7 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#include "Combat/Spend.h"
+#include "Combat/Shields.h"
 
 #include "SpellAuras.h"
 #include "Unit.h"
@@ -49,7 +49,7 @@ namespace combat
         }
     }
 
-    void SpendShields(Unit& victim, const Outcome& outcome)
+    void ConsumeShields(Unit& victim, const Outcome& outcome)
     {
         if (outcome.absorbs.empty())
         {
