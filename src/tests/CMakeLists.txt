@@ -17,6 +17,7 @@ set(TEST_SOURCES
     terrain/test_store.cpp
     terrain/test_mappedfile.cpp
     terrain/test_tileserializer.cpp
+    terrain/test_preload.cpp
 
     pose/test_spatial_boundary.cpp
     pose/test_numeric_edges.cpp

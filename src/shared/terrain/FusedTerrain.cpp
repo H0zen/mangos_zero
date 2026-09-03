@@ -156,6 +156,51 @@ namespace world::terrain
         return m_globalWmo;
     }
 
+    FusedTerrain::PreloadStats FusedTerrain::PreloadAll()
+    {
+        PreloadStats stats;
+
+        // The global WMO first: a map built from one model has no grid at all,
+        // and asking for it settles that in a single probe.
+        if (GlobalWmo())
+        {
+            ++stats.mapped;
+        }
+
+        for (int tx = 0; tx < GRID_COUNT; ++tx)
+        {
+            for (int ty = 0; ty < GRID_COUNT; ++ty)
+            {
+                {
+                    std::shared_lock<std::shared_mutex> lock(m_mutex);
+                    if (m_loaded[tx][ty])
+                    {
+                        continue;
+                    }
+                }
+
+                TilePtr tile = LoadCell(tx, ty);
+                const bool present = tile != nullptr;
+
+                {
+                    std::unique_lock<std::shared_mutex> lock(m_mutex);
+                    if (!m_loaded[tx][ty])
+                    {
+                        m_tiles[tx][ty] = std::move(tile);
+                        m_loaded[tx][ty] = 1;
+                    }
+                }
+
+                // A null entry is a memo that the map has no such cell, and it
+                // is worth as much as a mapped one: it is what stops a query
+                // over open water reopening a missing file forever.
+                present ? ++stats.mapped : ++stats.absent;
+            }
+        }
+
+        return stats;
+    }
+
     size_t FusedTerrain::ResidentTiles() const
     {
         std::shared_lock<std::shared_mutex> lock(m_mutex);

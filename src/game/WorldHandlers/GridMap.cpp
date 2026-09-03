@@ -149,6 +149,12 @@ TerrainInfo::TerrainInfo(uint32 mapid) : m_mapId(mapid), m_terrain(mapid), m_ref
 
     i_timer.SetInterval(60 * 1000);
     i_timer.SetCurrent(urand(20, 40) * 1000);
+
+    // Map the whole thing now. The cost is paid here, once, instead of as a
+    // file open on whichever map thread first walks into each cell.
+    const auto stats = m_terrain.PreloadAll();
+    sLog.outString("Terrain map %u: %u tiles mapped, %u cells empty.",
+                   mapid, stats.mapped, stats.absent);
 }
 
 TerrainInfo::~TerrainInfo()

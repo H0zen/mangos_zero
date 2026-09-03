@@ -83,9 +83,28 @@ namespace world::terrain
         // Tiles are mapped, not read, so a resident one costs page cache the
         // kernel reclaims on its own rather than heap the server must sweep.
         // The cache is therefore monotonic on purpose and there is nothing to
-        // pin, evict or age: a tile is mapped on the first query that reaches it
-        // and stays for the life of the map.
+        // pin, evict or age.
         size_t ResidentTiles() const;
+
+        struct PreloadStats
+        {
+            uint32_t mapped = 0;   ///< cells that had a tile behind them
+            uint32_t absent = 0;   ///< cells this map simply does not cover
+        };
+
+        /**
+         * @brief Map every tile this map has, now, rather than on first touch.
+         *
+         * Pays the whole cost at startup so no map thread ever takes a page
+         * fault's worth of file opening mid-tick, and so address space and
+         * resident size are what they are going to be from the start. The
+         * absent cells are recorded too, which spares the runtime a failed open
+         * every time a query lands over open ocean.
+         *
+         * Counts come back rather than being logged: this library has no
+         * console, and whoever calls it does.
+         */
+        PreloadStats PreloadAll();
 
     private:
         using TilePtr = std::shared_ptr<const TerrainTile>;
