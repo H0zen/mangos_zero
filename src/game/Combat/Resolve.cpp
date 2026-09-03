@@ -24,6 +24,7 @@
  */
 
 #include "Combat/Resolve.h"
+#include "Combat/Mitigate.h"
 #include "Combat/Roll.h"
 
 #include <algorithm>
@@ -160,7 +161,7 @@ namespace combat
         }
 
         /**
-         * @brief Spend the shields covering this school, in the order they are held.
+         * @brief Decide what the shields covering this school take.
          *
          * A shield that charges mana stops nothing once the mana is gone, so the
          * budget is carried down the list: two mana shields draw from the same
@@ -252,6 +253,23 @@ namespace combat
         }
     }
 
+    void Mitigate(int32& damage, SpellSchoolMask school, const Defences& defences,
+                  bool selfInflicted, Outcome& out)
+    {
+        PlanAbsorption(defences, school, damage, out);
+
+        // Damage you do to yourself has nobody to share it with.
+        if (!selfInflicted)
+        {
+            PlanSplits(defences, damage, out);
+        }
+
+        if (damage < 0)
+        {
+            damage = 0;
+        }
+    }
+
     Outcome Resolve(const Attempt& attempt,
                     const Combatant& attacker,
                     const Combatant& victim,
@@ -309,13 +327,8 @@ namespace combat
             }
         }
 
-        PlanAbsorption(defences, attempt.school, damage, out);
-
-        // Damage you do to yourself has nobody to share it with.
-        if (attempt.attacker != attempt.victim)
-        {
-            PlanSplits(defences, damage, out);
-        }
+        Mitigate(damage, attempt.school, defences,
+                 attempt.attacker == attempt.victim, out);
 
         if (damage < 0)
         {

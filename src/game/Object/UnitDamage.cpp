@@ -26,6 +26,9 @@
 
 
 #include "Unit.h"
+#include "Combat/Mitigate.h"
+#include "Combat/Reading.h"
+#include "Combat/Spend.h"
 #include "Log.h"
 #include "Opcodes.h"
 #include "WorldPacket.h"
@@ -168,211 +171,32 @@ void Unit::CalculateDamageAbsorbAndResist(Unit* pCaster, SpellSchoolMask schoolM
         *resist = 0;
     }
 
-    int32 RemainingDamage = damage - *resist;
+    int32 remaining = damage - int32(*resist);
 
-    // full absorb cases (by chance)
-    /* none cases, but preserve for better backporting conflict resolve
-    AuraList const& vAbsorb = GetAurasByType(SPELL_AURA_SCHOOL_ABSORB);
-    for (AuraList::const_iterator i = vAbsorb.begin(); i != vAbsorb.end() && RemainingDamage > 0; ++i)
+    // Shields and splitting are decided by the combat core, which reads and
+    // decides but writes nothing, and then spent here. The split plan is handed
+    // to the caster rather than dealt: it is owed by this blow and is delivered
+    // once the blow itself has been applied, in DealDamage. Dealing it here
+    // would let the recipient die, proc and pull threat before the hit that
+    // split the damage had landed at all.
+    const combat::Defences defences =
+        combat::ReadDefences(*this, *pCaster, schoolMask);
+
+    combat::Outcome plan;
+    combat::Mitigate(remaining, schoolMask, defences, pCaster == this, plan);
+
+    combat::SpendShields(*this, plan);
+
+    if (!plan.splits.empty())
     {
-        // only work with proper school mask damage
-        Modifier* i_mod = (*i)->GetModifier();
-        if (!(i_mod->m_miscvalue & schoolMask))
-        {
-            continue;
-        }
-
-        SpellEntry const* i_spellProto = (*i)->GetSpellProto();
-    }
-    */
-
-    // Need remove expired auras after
-    bool existExpired = false;
-
-    // absorb without mana cost
-    AuraList const& vSchoolAbsorb = GetAurasByType(SPELL_AURA_SCHOOL_ABSORB);
-    for (AuraList::const_iterator i = vSchoolAbsorb.begin(); i != vSchoolAbsorb.end() && RemainingDamage > 0; ++i)
-    {
-        Modifier* mod = (*i)->GetModifier();
-        if (!(mod->m_miscvalue & schoolMask))
-        {
-            continue;
-        }
-
-        // Max Amount can be absorbed by this aura
-        int32  currentAbsorb = mod->m_amount;
-
-        // Found empty aura (impossible but..)
-        if (currentAbsorb <= 0)
-        {
-            existExpired = true;
-            continue;
-        }
-
-        // currentAbsorb - damage can be absorbed by shield
-        // If need absorb less damage
-        if (RemainingDamage < currentAbsorb)
-        {
-            currentAbsorb = RemainingDamage;
-        }
-
-        RemainingDamage -= currentAbsorb;
-
-        // Reduce shield amount
-        mod->m_amount -= currentAbsorb;
-        if ((*i)->GetHolder()->DropAuraCharge())
-        {
-            mod->m_amount = 0;
-        }
-        // Need remove it later
-        if (mod->m_amount <= 0)
-        {
-            existExpired = true;
-        }
+        pCaster->OweSplits(plan.splits, schoolMask);
     }
 
-    // Remove all expired absorb auras
-    if (existExpired)
+    *absorb = uint32(plan.absorbed);
+    if (remaining < 0)
     {
-        for (AuraList::const_iterator i = vSchoolAbsorb.begin(); i != vSchoolAbsorb.end();)
-        {
-            if ((*i)->GetModifier()->m_amount <= 0)
-            {
-                RemoveAurasDueToSpell((*i)->GetId(), NULL, AURA_REMOVE_BY_SHIELD_BREAK);
-                i = vSchoolAbsorb.begin();
-            }
-            else
-            {
-                ++i;
-            }
-        }
+        remaining = 0;
     }
-
-    // absorb by mana cost
-    AuraList const& vManaShield = GetAurasByType(SPELL_AURA_MANA_SHIELD);
-    for (AuraList::const_iterator i = vManaShield.begin(), next; i != vManaShield.end() && RemainingDamage > 0; i = next)
-    {
-        next = i; ++next;
-
-        // check damage school mask
-        if (((*i)->GetModifier()->m_miscvalue & schoolMask) == 0)
-        {
-            continue;
-        }
-
-        int32 currentAbsorb;
-        if (RemainingDamage >= (*i)->GetModifier()->m_amount)
-        {
-            currentAbsorb = (*i)->GetModifier()->m_amount;
-        }
-        else
-        {
-            currentAbsorb = RemainingDamage;
-        }
-
-        if (float manaMultiplier = (*i)->GetSpellProto()->EffectAmplitude[(*i)->GetEffIndex()])
-        {
-            if (Player* modOwner = GetSpellModOwner())
-            {
-                modOwner->ApplySpellMod((*i)->GetId(), SPELLMOD_MULTIPLE_VALUE, manaMultiplier);
-            }
-
-            int32 maxAbsorb = int32(GetPower(POWER_MANA) / manaMultiplier);
-            if (currentAbsorb > maxAbsorb)
-            {
-                currentAbsorb = maxAbsorb;
-            }
-
-            int32 manaReduction = int32(currentAbsorb * manaMultiplier);
-            ApplyPowerMod(POWER_MANA, manaReduction, false);
-        }
-
-        (*i)->GetModifier()->m_amount -= currentAbsorb;
-        if ((*i)->GetModifier()->m_amount <= 0)
-        {
-            RemoveAurasDueToSpell((*i)->GetId());
-            next = vManaShield.begin();
-        }
-
-        RemainingDamage -= currentAbsorb;
-    }
-
-    // only split damage if not damaging yourself
-    if (pCaster != this)
-    {
-        AuraList const& vSplitDamageFlat = GetAurasByType(SPELL_AURA_SPLIT_DAMAGE_FLAT);
-        for (AuraList::const_iterator i = vSplitDamageFlat.begin(), next; i != vSplitDamageFlat.end() && RemainingDamage >= 0; i = next)
-        {
-            next = i; ++next;
-
-            // check damage school mask
-            if (((*i)->GetModifier()->m_miscvalue & schoolMask) == 0)
-            {
-                continue;
-            }
-
-            // Damage can be splitted only if aura has an alive caster
-            Unit* caster = (*i)->GetCaster();
-            if (!caster || caster == this || !caster->IsInWorld() || !caster->IsAlive())
-            {
-                continue;
-            }
-
-            int32 currentAbsorb;
-            if (RemainingDamage >= (*i)->GetModifier()->m_amount)
-            {
-                currentAbsorb = (*i)->GetModifier()->m_amount;
-            }
-            else
-            {
-                currentAbsorb = RemainingDamage;
-            }
-
-            RemainingDamage -= currentAbsorb;
-
-            uint32 splitted = currentAbsorb;
-            uint32 splitted_absorb = 0;
-            pCaster->DealDamageMods(caster, splitted, &splitted_absorb);
-
-            pCaster->SendSpellNonMeleeDamageLog(caster, (*i)->GetSpellProto()->ID, splitted, schoolMask, splitted_absorb, 0, false, 0, false);
-
-            CleanDamage cleanDamage = CleanDamage(splitted, BASE_ATTACK, MELEE_HIT_NORMAL);
-            pCaster->DealDamage(caster, splitted, &cleanDamage, DIRECT_DAMAGE, schoolMask, (*i)->GetSpellProto(), false);
-        }
-
-        AuraList const& vSplitDamagePct = GetAurasByType(SPELL_AURA_SPLIT_DAMAGE_PCT);
-        for (AuraList::const_iterator i = vSplitDamagePct.begin(), next; i != vSplitDamagePct.end() && RemainingDamage >= 0; i = next)
-        {
-            next = i; ++next;
-
-            // check damage school mask
-            if (((*i)->GetModifier()->m_miscvalue & schoolMask) == 0)
-            {
-                continue;
-            }
-
-            // Damage can be splitted only if aura has an alive caster
-            Unit* caster = (*i)->GetCaster();
-            if (!caster || caster == this || !caster->IsInWorld() || !caster->IsAlive())
-            {
-                continue;
-            }
-
-            uint32 splitted = uint32(RemainingDamage * (*i)->GetModifier()->m_amount / 100.0f);
-
-            RemainingDamage -=  int32(splitted);
-
-            uint32 split_absorb = 0;
-            pCaster->DealDamageMods(caster, splitted, &split_absorb);
-
-            pCaster->SendSpellNonMeleeDamageLog(caster, (*i)->GetSpellProto()->ID, splitted, schoolMask, split_absorb, 0, false, 0, false);
-
-            CleanDamage cleanDamage = CleanDamage(splitted, BASE_ATTACK, MELEE_HIT_NORMAL);
-            pCaster->DealDamage(caster, splitted, &cleanDamage, DIRECT_DAMAGE, schoolMask, (*i)->GetSpellProto(), false);
-        }
-    }
-
-    *absorb = damage - RemainingDamage - *resist;
 }
 
 /**

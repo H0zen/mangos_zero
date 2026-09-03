@@ -48,6 +48,19 @@ namespace combat
     Combatant ReadAttacker(const Unit& attacker, const Unit& victim,
                            WeaponAttackType attackType);
 
+    /**
+     * @brief The attacker's side when the attacker is not a unit.
+     *
+     * A gameobject casts -- a trap, a fire it starts -- but it has no auras, no
+     * weapon and no class, and it cannot be swung with. All the core reads of
+     * such a caster is its level, which scales the victim's armour and
+     * resistance, and its guid for the log.
+     *
+     * The victim is always a unit: a gameobject takes no damage and does not
+     * die, so it is never on the receiving side of a resolution.
+     */
+    Combatant ReadObjectCaster(ObjectGuid caster, uint32 level);
+
     /// The victim's side, measured against the attacker.
     Combatant ReadVictim(const Unit& victim, const Unit& attacker);
 

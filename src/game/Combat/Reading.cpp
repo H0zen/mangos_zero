@@ -78,6 +78,18 @@ namespace combat
         return c;
     }
 
+    Combatant ReadObjectCaster(ObjectGuid caster, uint32 level)
+    {
+        Combatant c;
+        c.guid = caster;
+        c.level = level ? level : 1;
+
+        // Everything else stays at its default: no weapon, no class, no auras,
+        // and no melee. A gameobject casts and nothing more, so the melee table
+        // is never reached with one of these on the attacking side.
+        return c;
+    }
+
     Combatant ReadVictim(const Unit& victim, const Unit& attacker)
     {
         Combatant c;

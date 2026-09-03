@@ -1177,6 +1177,11 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
         }
     }
 
+    // Whatever this blow moved onto somebody else is delivered here, with the
+    // blow itself already applied: the recipient resolves against a victim whose
+    // health, death and threat have settled.
+    DeliverOwedSplits();
+
     DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "DealDamageEnd returned %d damage", damage);
 
     return damage;
@@ -2686,6 +2691,60 @@ void Unit::SendPeriodicAuraLog(SpellPeriodicAuraLogInfo* pInfo)
  * @param attType The attack type.
  * @param procSpell The spell responsible for the event, if any.
  */
+void Unit::OweSplits(const std::vector<combat::SplitShare>& splits, SpellSchoolMask school)
+{
+    m_owedSplits.insert(m_owedSplits.end(), splits.begin(), splits.end());
+    m_owedSplitSchool = school;
+}
+
+void Unit::DeliverOwedSplits()
+{
+    if (m_owedSplits.empty())
+    {
+        return;
+    }
+
+    // A split can be split again by whoever receives it. Bounded on the thread
+    // for the same reason a proc chain is: the chain crosses units freely, and
+    // what has to end is this branch of it.
+    static thread_local uint32 depth = 0;
+    if (depth >= MAX_PROC_DEPTH)
+    {
+        sLog.outError("Unit::DeliverOwedSplits: split chain deeper than %u, dropped", MAX_PROC_DEPTH);
+        m_owedSplits.clear();
+        return;
+    }
+
+    // Taken by value: delivering one may fill the list again, and those belong
+    // to the next round rather than to this walk.
+    std::vector<combat::SplitShare> owed;
+    owed.swap(m_owedSplits);
+
+    const SpellSchoolMask school = m_owedSplitSchool;
+
+    ++depth;
+
+    for (const combat::SplitShare& share : owed)
+    {
+        Unit* target = ObjectLookup::GetUnit(*this, share.target);
+        if (!target || !target->IsAlive())
+        {
+            continue;
+        }
+
+        uint32 amount = uint32(share.amount);
+        uint32 absorbed = 0;
+        DealDamageMods(target, amount, &absorbed);
+
+        SendSpellNonMeleeDamageLog(target, share.spellId, amount, school, absorbed, 0, false, 0, false);
+
+        CleanDamage cleanDamage = CleanDamage(amount, BASE_ATTACK, MELEE_HIT_NORMAL);
+        DealDamage(target, amount, &cleanDamage, DIRECT_DAMAGE, school, nullptr, false);
+    }
+
+    --depth;
+}
+
 void Unit::ProcDamageAndSpell(Unit* pVictim, uint32 procAttacker, uint32 procVictim, uint32 procExtra, uint32 amount, WeaponAttackType attType, SpellEntry const* procSpell)
 {
     // A proc casts, the cast deals damage, the damage procs again. Legitimate

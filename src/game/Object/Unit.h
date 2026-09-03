@@ -68,6 +68,7 @@
 #include "Object.h"
 #include "Opcodes.h"
 #include "SpellAuraDefines.h"
+#include "Combat/Attempt.h"
 #include "UpdateFields.h"
 #include "SharedDefines.h"
 #include "ThreatManager.h"
@@ -1375,6 +1376,10 @@ class Unit : public WorldObject
          */
         uint32 m_extraAttacks;
 
+        /// What the blow being applied owes to somebody other than its victim.
+        std::vector<combat::SplitShare> m_owedSplits;
+        SpellSchoolMask m_owedSplitSchool = SPELL_SCHOOL_MASK_NORMAL;
+
         /**
          * Internal function, must only be called from Unit::Attack(Unit*)
          * @param pAttacker The attacker to add to current attackers.
@@ -2115,6 +2120,20 @@ class Unit : public WorldObject
         /// cast damages, whose damage procs, is normal at two or three; anything
         /// deeper is two auras feeding each other.
         static const uint32 MAX_PROC_DEPTH = 8;
+
+        /**
+         * @brief Record damage this blow owes to somebody other than its victim.
+         *
+         * A split aura moves part of a hit onto a guardian. The move is decided
+         * while the victim's shields are being worked out, but it is delivered
+         * only after the hit itself has been applied -- otherwise the guardian
+         * can die, proc and pull threat before the blow that split the damage
+         * has landed.
+         */
+        void OweSplits(const std::vector<combat::SplitShare>& splits, SpellSchoolMask school);
+
+        /// Deal what OweSplits recorded. Called once the parent blow is applied.
+        void DeliverOwedSplits();
 
         void ProcDamageAndSpell(Unit* pVictim, uint32 procAttacker, uint32 procVictim, uint32 procEx, uint32 amount, WeaponAttackType attType = BASE_ATTACK, SpellEntry const* procSpell = NULL);
 
