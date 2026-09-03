@@ -65,12 +65,22 @@ class UpdateData
             ++m_blockCount;
         }
 
+        /// Record that a block in this packet is a global transport's. The wire
+        /// flag is a property of the whole packet, so it is the OR over the
+        /// blocks that went in, never a decision made at the call to BuildPacket.
+        void MarkTransport()
+        {
+            m_hasTransport = true;
+        }
+
+        bool HasTransport() const { return m_hasTransport; }
+
         ByteBuffer& GetBuffer()
         {
             return m_data;
         }
 
-        bool BuildPacket(WorldPacket* packet, bool hasTransport = false);
+        bool BuildPacket(WorldPacket* packet);
         bool HasData()
         {
             return m_blockCount > 0 || !m_outOfRangeGUIDs.empty();
@@ -81,6 +91,7 @@ class UpdateData
 
     protected:
         uint32 m_blockCount;
+        bool m_hasTransport;
         GuidSet m_outOfRangeGUIDs;
         ByteBuffer m_data;
 
@@ -95,10 +106,10 @@ class UpdateData
 class InitialWorldUpdateBatch
 {
     public:
-        InitialWorldUpdateBatch() : m_hasTransport(false), m_flushAttempted(false), m_sent(false) {}
+        InitialWorldUpdateBatch() : m_flushAttempted(false), m_sent(false) {}
 
         UpdateData& Data() { return m_data; }
-        void MarkTransport() { m_hasTransport = true; }
+        void MarkTransport() { m_data.MarkTransport(); }
 
         bool BuildPacket(WorldPacket* packet)
         {
@@ -108,7 +119,7 @@ class InitialWorldUpdateBatch
             }
 
             m_flushAttempted = true;
-            return m_data.BuildPacket(packet, m_hasTransport);
+            return m_data.BuildPacket(packet);
         }
 
         void MarkSent()
@@ -122,7 +133,6 @@ class InitialWorldUpdateBatch
 
     private:
         UpdateData m_data;
-        bool m_hasTransport;
         bool m_flushAttempted;
         bool m_sent;
 };

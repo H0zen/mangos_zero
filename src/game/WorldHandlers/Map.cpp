@@ -1863,12 +1863,9 @@ void Map::SendInitSelf(Player* player, InitialWorldUpdateBatch* batch)
     UpdateData localData;
     UpdateData& data = batch ? batch->Data() : localData;
 
-    bool hasTransport = false;
-
     // attach to player data current transport data
     if (Transport* transport = player->GetTransport())
     {
-        hasTransport = true;
         if (batch)
         {
             batch->MarkTransport();
@@ -1894,7 +1891,7 @@ void Map::SendInitSelf(Player* player, InitialWorldUpdateBatch* batch)
     }
 
     WorldPacket packet;
-    data.BuildPacket(&packet, hasTransport);
+    data.BuildPacket(&packet);
     player->GetSession()->SendPacket(&packet);
 }
 
@@ -3151,10 +3148,26 @@ void Map::SendObjectUpdates()
 {
     UpdateDataMapType update_players;
 
-    while (!i_objectsToClientUpdate.empty())
+    // A passenger's block names its hull by guid and carries (0,0,0) for a world
+    // position, so the client can only place it once that hull exists. Hulls go
+    // into every observer's batch first; the set this came from is ordered by
+    // pointer, which says nothing about either.
+    std::vector<Object*> hulls;
+    std::vector<Object*> rest;
+    rest.reserve(i_objectsToClientUpdate.size());
+
+    for (Object* obj : i_objectsToClientUpdate)
     {
-        Object* obj = *i_objectsToClientUpdate.begin();
-        i_objectsToClientUpdate.erase(i_objectsToClientUpdate.begin());
+        (obj->GetObjectGuid().IsMOTransport() ? hulls : rest).push_back(obj);
+    }
+    i_objectsToClientUpdate.clear();
+
+    for (Object* obj : hulls)
+    {
+        obj->BuildUpdateData(update_players);
+    }
+    for (Object* obj : rest)
+    {
         obj->BuildUpdateData(update_players);
     }
 

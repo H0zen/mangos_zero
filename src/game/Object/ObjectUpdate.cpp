@@ -149,6 +149,14 @@ void Object::BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) c
 
     // DEBUG_LOG("BuildCreateUpdate: update-type: %u, object-type: %u got updateFlags: %X", updatetype, m_objectTypeId, updateFlags);
 
+    // A passenger block names its hull by guid and carries (0,0,0) for a world
+    // position, so the client can only place it once it knows that hull. Marking
+    // here means every packet carrying a hull says so, whichever path built it.
+    if (GetObjectGuid().IsMOTransport())
+    {
+        data->MarkTransport();
+    }
+
     ByteBuffer& buf = data->GetBuffer();
     buf << uint8(updatetype);
     buf << GetPackGUID();

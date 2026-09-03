@@ -453,7 +453,7 @@ bool TransportMap::Add(Player* passenger, InitialWorldEntryHook* initialEntry)
         // passenger whose own block names her. Omitting the argument tells the client
         // there is no transport in a packet that is nothing but transport. It then has
         // nothing to compose him against and never leaves the loading screen.
-        data.BuildPacket(&packet, true);
+        data.BuildPacket(&packet);
         passenger->GetSession()->SendPacket(&packet);
     }
 
@@ -812,7 +812,7 @@ void TransportMap::SendCrewMemberCreate(Creature* crew)
         crew->BuildCreateUpdateBlockForPlayer(&data, observer);
 
         WorldPacket packet;
-        data.BuildPacket(&packet, true);
+        data.BuildPacket(&packet);
         observer->SendDirectMessage(&packet);
     }
 }
@@ -846,7 +846,7 @@ void TransportMap::AnnounceVessel(Transport* vessel, Player* observer)
     AppendVesselCreateBlocks(vessel, observer, data);
 
     WorldPacket packet;
-    data.BuildPacket(&packet, true);
+    data.BuildPacket(&packet);
     observer->SendDirectMessage(&packet);
 }
 
@@ -869,7 +869,7 @@ void TransportMap::RetractVessel(Transport* vessel, Player* observer)
     vessel->BuildOutOfRangeUpdateBlock(&data);
 
     WorldPacket packet;
-    data.BuildPacket(&packet, true);
+    data.BuildPacket(&packet);
     observer->SendDirectMessage(&packet);
 }
 

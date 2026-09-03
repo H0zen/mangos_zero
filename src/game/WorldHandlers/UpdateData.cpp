@@ -64,7 +64,7 @@
  * Initializes an empty update data accumulator with zero blocks.
  * Data buffers are allocated as needed during block accumulation.
  */
-UpdateData::UpdateData() : m_blockCount(0)
+UpdateData::UpdateData() : m_blockCount(0), m_hasTransport(false)
 {
 }
 
@@ -186,7 +186,7 @@ void UpdateData::Compress(void* dst, uint32* dst_size, void* src, int src_size)
  *
  * @note Packet must be empty before calling (assertion-checked)
  */
-bool UpdateData::BuildPacket(WorldPacket* packet, bool hasTransport)
+bool UpdateData::BuildPacket(WorldPacket* packet)
 {
     MANGOS_ASSERT(packet->empty());                         // shouldn't happen
 
@@ -194,7 +194,7 @@ bool UpdateData::BuildPacket(WorldPacket* packet, bool hasTransport)
     ByteBuffer buf(4 + 1 + (m_outOfRangeGUIDs.empty() ? 0 : 1 + 4 + 9 * m_outOfRangeGUIDs.size()) + m_data.wpos());
 
     buf << (uint32)(!m_outOfRangeGUIDs.empty() ? m_blockCount + 1 : m_blockCount);
-    buf << (uint8)(hasTransport ? 1 : 0);
+    buf << (uint8)(m_hasTransport ? 1 : 0);
 
     // Write out-of-range GUIDs if present
     if (!m_outOfRangeGUIDs.empty())
@@ -252,4 +252,5 @@ void UpdateData::Clear()
     m_data.clear();
     m_outOfRangeGUIDs.clear();
     m_blockCount = 0;
+    m_hasTransport = false;
 }
