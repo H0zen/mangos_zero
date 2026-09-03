@@ -27,6 +27,7 @@ set(TEST_SOURCES
     combat/test_roll.cpp
     combat/test_resolve.cpp
     combat/test_hitqueue.cpp
+    combat/test_flags.cpp
 )
 
 add_executable(mangos_tests ${TEST_SOURCES})
