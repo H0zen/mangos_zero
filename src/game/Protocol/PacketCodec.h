@@ -73,7 +73,8 @@ namespace proto
             /// once per header, before the size/opcode are read out of it.
             typedef std::function<void(uint8* header, size_t len)> HeaderDecryptor;
 
-            /// Encrypts an outgoing header in place, whose length varies (4 or 5).
+            /// Encrypts an outgoing header in place. Four bytes on 1.12; the
+            /// length is still passed so the hook cannot assume it.
             typedef std::function<void(uint8* header, size_t len)> HeaderEncryptor;
 
             /**
@@ -99,10 +100,12 @@ namespace proto
             /**
              * @brief Serialise a packet for the wire: header followed by payload.
              *
-             * The size field counts the opcode, and packets over 0x7FFF carry a
-             * three-byte size with the top bit of the first byte set -- which is why
-             * the outgoing header is 4 or 5 bytes and not a fixed struct. Mirrors
-             * WorldSocket.cpp's ServerPktHeader verbatim.
+             * The size field counts the opcode. On 1.12 the outgoing header is a
+             * FIXED four bytes: uint16 size big-endian, then uint16 opcode
+             * little-endian. The three-byte size marked by 0x80 in the first byte
+             * -- and with it the five-byte header -- arrives in WotLK; a 1.12
+             * client reads four bytes unconditionally and a five-byte header
+             * desynchronises its stream permanently. See Encode() in the .cpp.
              *
              * @param packet    Packet to serialise.
              * @param encryptor Header encryption hook; may be empty before the

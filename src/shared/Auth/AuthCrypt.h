@@ -33,10 +33,21 @@ class BigNumber;
 /**
  * @brief Authentication encryption/decryption for World of Warcraft protocol
  *
- * AuthCrypt handles the session key-based encryption and decryption of
- * World of Warcraft client-server packets using a modified version of ARC4.
- * It maintains separate encryption and decryption states for bidirectional
- * communication.
+ * AuthCrypt handles the session key-based encryption and decryption of the
+ * 1.12.x packet HEADERS -- 6 bytes inbound, 4 outbound; payloads travel in the
+ * clear. It maintains separate encryption and decryption states for
+ * bidirectional communication.
+ *
+ * This is NOT ARC4, despite what this comment said for years. RC4, keyed by an
+ * HMAC-SHA1 of a fixed seed, arrives with WotLK. The 1.12 cipher is a byte-wise
+ * chain applied directly to the raw 40-byte session key:
+ *
+ *     send: x = (b ^ key[i]) + j,   then j = x
+ *     recv: x = (b - j) ^ key[i],   then j = b
+ *
+ * with `i` cycling over the key and `j` carrying the previous ciphertext byte,
+ * so each header byte depends on the one before it and the streams cannot be
+ * resynchronised after a gap.
  */
 class AuthCrypt
 {
@@ -87,6 +98,6 @@ class AuthCrypt
 
     private:
         std::vector<uint8> _key; /**< Session key for encryption */
-        uint8 _send_i, _send_j, _recv_i, _recv_j; /**< ARC4 state variables for send/recv */
+        uint8 _send_i, _send_j, _recv_i, _recv_j; /**< key index and previous cipher byte, per direction */
         bool _initialized; /**< Initialization status */
 };

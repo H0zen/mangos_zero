@@ -11,3 +11,7 @@ add_subdirectory(utf8cpp)
 add_subdirectory(recastnavigation)
 
 add_subdirectory(StormLib)
+
+if(WITH_TESTS)
+    add_subdirectory(doctest)
+endif()

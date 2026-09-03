@@ -38,6 +38,11 @@ option(PCH                  "Enable precompiled headers"                    ON)
 option(WITH_IO_URING        "Use the io_uring network backend (Linux, needs liburing)" OFF)
 option(DEBUG                "Enable debug build (only on non IDEs)"         OFF)
 option(WITHOUT_GIT          "Disable Git revision detection"                OFF)
+option(WITH_TESTS           "Build the unit tests (ctest)"                  ON)
+
+if(WITH_TESTS)
+    enable_testing()
+endif()
 
 if(NOT CMAKE_CONFIGURATION_TYPES)
     if(DEBUG)

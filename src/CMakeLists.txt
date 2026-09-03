@@ -25,6 +25,10 @@ add_subdirectory(tools/extractor)
 
 add_subdirectory(tools/height-check)
 
+if(WITH_TESTS)
+    add_subdirectory(tests)
+endif()
+
 if (BUILD_MANGOSD OR BUILD_REALMD)
     if(WIN32)
         get_filename_component(MYSQL_LIB_DIR ${MySQL_LIBRARIES} DIRECTORY)

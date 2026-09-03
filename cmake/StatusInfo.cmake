@@ -113,6 +113,12 @@ else()
     _status("Precompiled headers" "off")
 endif()
 
+if(WITH_TESTS)
+    _status("Unit tests" "on -- target mangos_tests, run with ctest")
+else()
+    _status("Unit tests" "off")
+endif()
+
 message("")
 _status("Install binaries to" "${BIN_DIR}")
 _status("Install configs to" "${CONF_INSTALL_DIR}")
