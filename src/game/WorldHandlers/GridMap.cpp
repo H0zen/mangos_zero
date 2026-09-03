@@ -180,23 +180,27 @@ bool TerrainInfo::Load(const uint32 x, const uint32 y)
     MANGOS_ASSERT(x < MAX_NUMBER_OF_GRIDS);
     MANGOS_ASSERT(y < MAX_NUMBER_OF_GRIDS);
 
-    bool firstReference = false;
+    // What decides a load is whether the tile is in memory, not whether this is
+    // the first referent. A count that fell to zero does not unload anything by
+    // itself -- the sweep does, a minute later -- so between the two a fresh
+    // referent looks like the first one and asks for a tile that never left.
+    //
+    // The flag and the count are set together under the one lock, so two threads
+    // arriving at an empty grid cannot both decide they are the ones to load it.
+    bool needsLoad = false;
     {
         std::lock_guard<LOCK_TYPE> lock(m_refMutex);
-        firstReference = (++m_GridRef[x][y] == 1);
+        ++m_GridRef[x][y];
+        if (!m_navLoaded[x][y])
+        {
+            m_navLoaded[x][y] = true;
+            needsLoad = true;
+        }
     }
 
-    // The navmesh tile is loaded by the FIRST referent only -- the refcount above is what
-    // makes several owners of one grid legal, and Unload already releases on the last.
-    // Loading unconditionally made every second owner ask for a tile the first had already
-    // brought in, which the mmap manager rejects and logs. Common now that a vessel is an
-    // active object holding grids a player then walks into.
-    if (firstReference)
+    if (needsLoad)
     {
         MMAP::MMapFactory::createOrGetMMapManager()->loadMap(m_mapId, x, y);
-
-        std::lock_guard<LOCK_TYPE> lock(m_refMutex);
-        m_navLoaded[x][y] = true;
     }
     return true;
 }
