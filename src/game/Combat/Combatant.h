@@ -58,6 +58,14 @@ namespace combat
         /// crit at all.
         bool isSitting = false;
 
+        /// Read only by the glancing band, which lowers for caster classes and
+        /// raises its floor for warriors and rogues.
+        uint8 classId = 0;
+
+        /// Current health. Only the victim's is read, to say whether the blow
+        /// kills and by how much it overshoots.
+        int32 health = 0;
+
         int32 missChance = 0;
         int32 critChance = 0;
         int32 dodgeChance = 0;

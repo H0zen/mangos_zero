@@ -25,6 +25,7 @@ set(TEST_SOURCES
     wire/test_updatedata.cpp
 
     combat/test_roll.cpp
+    combat/test_resolve.cpp
 )
 
 add_executable(mangos_tests ${TEST_SOURCES})
