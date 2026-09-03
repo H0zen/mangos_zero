@@ -40,13 +40,22 @@
 
 namespace combat
 {
-    /// A shield, and how much it can still take.
+    /**
+     * @brief A shield, and how much it can still take.
+     *
+     * Some shields are paid for in mana as they work: every point they stop
+     * costs `manaMultiplier` mana, and they stop nothing once the mana is gone.
+     * A multiplier of zero is a shield that costs nothing to hold up.
+     */
     struct Absorber
     {
         ObjectGuid caster;
         uint32 spellId = 0;
         int32 remaining = 0;
         uint32 schoolMask = SPELL_SCHOOL_MASK_ALL;
+        float manaMultiplier = 0.f;
+
+        bool CostsMana() const { return manaMultiplier > 0.f; }
 
         bool Covers(SpellSchoolMask school) const
         {
@@ -82,6 +91,9 @@ namespace combat
 
         /// Nothing of this school touches the victim at all.
         bool immune = false;
+
+        /// What the victim has to spend on shields that charge for their work.
+        int32 mana = 0;
 
         std::vector<Absorber> absorbers;
         std::vector<Splitter> splitters;

@@ -44,7 +44,7 @@ namespace combat
         {
             return unit.GetTypeId() == TYPEID_UNIT
                        ? static_cast<const Creature*>(&unit)
-                       : NULL;
+                       : nullptr;
         }
     }
 
@@ -64,14 +64,14 @@ namespace combat
         c.weaponSkill = int32(attacker.GetWeaponSkillValue(attackType, &victim));
         c.maxSkillForLevel = int32(attacker.GetMaxSkillValueForLevel(&victim));
 
-        if (const Creature* creature = AsCreature(attacker))
+        if (const auto* creature = AsCreature(attacker))
         {
             c.isPet = creature->IsPet();
             c.isEvading = creature->IsInEvadeMode();
 
             // A creature crushes unless its template forbids it. A player never
             // does, whatever the flag says.
-            const CreatureInfo* info = creature->GetCreatureInfo();
+            const auto* info = creature->GetCreatureInfo();
             c.canCrush = info && !(info->ExtraFlags & CREATURE_FLAG_EXTRA_NO_CRUSH);
         }
 
@@ -95,12 +95,12 @@ namespace combat
         c.defenceSkill = int32(victim.GetDefenseSkillValue(&attacker));
         c.maxDefenceForLevel = int32(victim.GetMaxSkillValueForLevel(&attacker));
 
-        if (const Creature* creature = AsCreature(victim))
+        if (const auto* creature = AsCreature(victim))
         {
             c.isPet = creature->IsPet();
             c.isEvading = creature->IsInEvadeMode();
 
-            const CreatureInfo* info = creature->GetCreatureInfo();
+            const auto* info = creature->GetCreatureInfo();
             c.canParry = !info || !(info->ExtraFlags & CREATURE_FLAG_EXTRA_NO_PARRY);
             c.canBlock = !info || !(info->ExtraFlags & CREATURE_FLAG_EXTRA_NO_BLOCK);
         }
@@ -111,8 +111,8 @@ namespace combat
     Defences ReadDefences(const Unit& victim, const Unit& attacker,
                           SpellSchoolMask school)
     {
-        Unit& mutableVictim = const_cast<Unit&>(victim);
-        Unit& mutableAttacker = const_cast<Unit&>(attacker);
+        auto& mutableVictim = const_cast<Unit&>(victim);
+        auto& mutableAttacker = const_cast<Unit&>(attacker);
 
         Defences d;
 
@@ -141,51 +141,79 @@ namespace combat
 
         d.blockValue = int32(victim.GetShieldBlockValue());
 
-        const Unit::AuraList& shields = victim.GetAurasByType(SPELL_AURA_SCHOOL_ABSORB);
-        for (Unit::AuraList::const_iterator i = shields.begin(); i != shields.end(); ++i)
+        for (const Aura* aura : victim.GetAurasByType(SPELL_AURA_SCHOOL_ABSORB))
         {
-            const Modifier* mod = (*i)->GetModifier();
+            const auto* mod = aura->GetModifier();
             if (!mod || mod->m_amount <= 0)
             {
                 continue;
             }
 
             Absorber shield;
-            shield.caster = (*i)->GetCasterGuid();
-            shield.spellId = (*i)->GetId();
+            shield.caster = aura->GetCasterGuid();
+            shield.spellId = aura->GetId();
             shield.remaining = mod->m_amount;
             shield.schoolMask = uint32(mod->m_miscvalue);
             d.absorbers.push_back(shield);
         }
 
-        const Unit::AuraList& flatSplits = victim.GetAurasByType(SPELL_AURA_SPLIT_DAMAGE_FLAT);
-        for (Unit::AuraList::const_iterator i = flatSplits.begin(); i != flatSplits.end(); ++i)
+        // After the free shields, and in that order: a mage's mana is spent only
+        // once whatever costs nothing has already been used up.
+        for (const Aura* aura : victim.GetAurasByType(SPELL_AURA_MANA_SHIELD))
         {
-            const Modifier* mod = (*i)->GetModifier();
+            const auto* mod = aura->GetModifier();
+            if (!mod || mod->m_amount <= 0)
+            {
+                continue;
+            }
+
+            Absorber shield;
+            shield.caster = aura->GetCasterGuid();
+            shield.spellId = aura->GetId();
+            shield.remaining = mod->m_amount;
+            shield.schoolMask = uint32(mod->m_miscvalue);
+
+            auto multiplier = aura->GetSpellProto()->EffectAmplitude[aura->GetEffIndex()];
+            if (multiplier > 0.f)
+            {
+                if (auto* modOwner = mutableVictim.GetSpellModOwner())
+                {
+                    modOwner->ApplySpellMod(aura->GetId(), SPELLMOD_MULTIPLE_VALUE, multiplier);
+                }
+            }
+            shield.manaMultiplier = multiplier;
+
+            d.absorbers.push_back(shield);
+        }
+
+        d.mana = int32(victim.GetPower(POWER_MANA));
+
+        for (const Aura* aura : victim.GetAurasByType(SPELL_AURA_SPLIT_DAMAGE_FLAT))
+        {
+            const auto* mod = aura->GetModifier();
             if (!mod || mod->m_amount <= 0)
             {
                 continue;
             }
 
             Splitter splitter;
-            splitter.target = (*i)->GetCasterGuid();
-            splitter.spellId = (*i)->GetId();
+            splitter.target = aura->GetCasterGuid();
+            splitter.spellId = aura->GetId();
             splitter.flat = mod->m_amount;
             d.splitters.push_back(splitter);
         }
 
-        const Unit::AuraList& pctSplits = victim.GetAurasByType(SPELL_AURA_SPLIT_DAMAGE_PCT);
-        for (Unit::AuraList::const_iterator i = pctSplits.begin(); i != pctSplits.end(); ++i)
+        for (const Aura* aura : victim.GetAurasByType(SPELL_AURA_SPLIT_DAMAGE_PCT))
         {
-            const Modifier* mod = (*i)->GetModifier();
+            const auto* mod = aura->GetModifier();
             if (!mod || mod->m_amount <= 0)
             {
                 continue;
             }
 
             Splitter splitter;
-            splitter.target = (*i)->GetCasterGuid();
-            splitter.spellId = (*i)->GetId();
+            splitter.target = aura->GetCasterGuid();
+            splitter.spellId = aura->GetId();
             splitter.fraction = float(mod->m_amount) / 100.f;
             d.splitters.push_back(splitter);
         }

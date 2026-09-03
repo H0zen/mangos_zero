@@ -68,9 +68,14 @@ namespace
         return c;
     }
 
+    // Two different guids: damage a unit does to itself is not split onto
+    // anyone, so a fixture that left both empty would be testing that rule by
+    // accident rather than the one it names.
     Attempt Swing(int32 base)
     {
         Attempt a;
+        a.attacker = ObjectGuid(HIGHGUID_PLAYER, uint32(1));
+        a.victim = ObjectGuid(HIGHGUID_PLAYER, uint32(2));
         a.source = Source::MeleeMain;
         a.school = SPELL_SCHOOL_MASK_NORMAL;
         a.base = base;
@@ -80,6 +85,8 @@ namespace
     Attempt Bolt(int32 base)
     {
         Attempt a;
+        a.attacker = ObjectGuid(HIGHGUID_PLAYER, uint32(1));
+        a.victim = ObjectGuid(HIGHGUID_PLAYER, uint32(2));
         a.source = Source::Spell;
         a.spellId = 133;
         a.school = SPELL_SCHOOL_MASK_FIRE;

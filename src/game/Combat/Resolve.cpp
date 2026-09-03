@@ -159,10 +159,18 @@ namespace combat
             }
         }
 
-        /// Spend the shields covering this school, in the order they are held.
+        /**
+         * @brief Spend the shields covering this school, in the order they are held.
+         *
+         * A shield that charges mana stops nothing once the mana is gone, so the
+         * budget is carried down the list: two mana shields draw from the same
+         * pool, and the second only works with what the first left.
+         */
         void PlanAbsorption(const Defences& defences, SpellSchoolMask school,
                             int32& damage, Outcome& out)
         {
+            int32 manaLeft = defences.mana;
+
             for (const Absorber& shield : defences.absorbers)
             {
                 if (damage <= 0)
@@ -174,20 +182,34 @@ namespace combat
                     continue;
                 }
 
+                int32 taken = shield.remaining > damage ? damage : shield.remaining;
+
                 AbsorbShare share;
                 share.caster = shield.caster;
                 share.spellId = shield.spellId;
 
-                if (shield.remaining > damage)
+                if (shield.CostsMana())
                 {
-                    share.amount = damage;
-                    share.exhausted = false;
+                    const int32 affordable = int32(float(manaLeft) / shield.manaMultiplier);
+                    if (taken > affordable)
+                    {
+                        taken = affordable;
+                    }
+                    if (taken <= 0)
+                    {
+                        continue;
+                    }
+
+                    share.manaSpent = int32(float(taken) * shield.manaMultiplier);
+                    manaLeft -= share.manaSpent;
+                    out.manaSpent += share.manaSpent;
                 }
-                else
-                {
-                    share.amount = shield.remaining;
-                    share.exhausted = true;
-                }
+
+                share.amount = taken;
+
+                // Exhausted when the blow used the shield up, not merely when the
+                // mana ran short: a mage out of mana still has the shield.
+                share.exhausted = taken >= shield.remaining;
 
                 damage -= share.amount;
                 out.absorbed += share.amount;
@@ -288,7 +310,12 @@ namespace combat
         }
 
         PlanAbsorption(defences, attempt.school, damage, out);
-        PlanSplits(defences, damage, out);
+
+        // Damage you do to yourself has nobody to share it with.
+        if (attempt.attacker != attempt.victim)
+        {
+            PlanSplits(defences, damage, out);
+        }
 
         if (damage < 0)
         {

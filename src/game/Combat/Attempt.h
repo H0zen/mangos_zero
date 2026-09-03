@@ -123,6 +123,7 @@ namespace combat
         ObjectGuid caster;      ///< who cast the shield
         uint32 spellId = 0;
         int32 amount = 0;       ///< taken off this hit
+        int32 manaSpent = 0;    ///< what holding it up cost the victim
         bool exhausted = false; ///< the shield is spent and comes off
     };
 
@@ -162,6 +163,9 @@ namespace combat
 
         std::vector<AbsorbShare> absorbs;
         std::vector<SplitShare> splits;
+
+        /// Total drawn from the victim's mana by shields that charge for it.
+        int32 manaSpent = 0;
 
         /// Before mitigation, for the log and for threat.
         int32 beforeMitigation = 0;
