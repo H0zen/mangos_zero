@@ -73,6 +73,7 @@
 #include "CreatureLinkingMgr.h"
 #include "MapMailbox.h"
 #include "Metrics/Distribution.h"
+#include "Metrics/TickPhases.h"
 #include "DynamicCollision.h"
 
 #include <bitset>
@@ -205,6 +206,11 @@ class Map : public GridRefManager<NGridType>
         uint32 TickMs(float percentile) const { return m_tickMs.Percentile(percentile); }
         uint32 TickMsMax() const { return m_tickMs.Max(); }
         uint32 TickOverruns() const { return m_tickOverruns; }
+
+        /// Where a tick's time went. Recorded by Update as it crosses each
+        /// boundary, so one slow phase can be named instead of guessed at.
+        void RecordPhase(metrics::TickPhase phase, uint32 ms) { m_phases.Add(phase, ms); }
+        const metrics::TickBreakdown& Phases() const { return m_phases; }
         size_t TickSamples() const { return m_tickMs.Count(); }
 
         void MessageBroadcast(Player const*, WorldPacket*, bool to_self);
@@ -564,6 +570,7 @@ class Map : public GridRefManager<NGridType>
         /// The last few hundred ticks of this map, and how many ran long.
         metrics::Distribution<256> m_tickMs;
         uint32 m_tickOverruns = 0;
+        metrics::TickBreakdown m_phases;
 
         struct PendingCellUnload
         {

@@ -332,9 +332,15 @@ std::string MapManager::ReportTickTimes() const
             continue;
         }
 
-        std::snprintf(buf, sizeof(buf), "  map %u tick p50/p99/max %u/%u/%u ms over %u",
+        // Naming the phase is the whole point: a tick time says a map is slow,
+        // and only the breakdown says which part of it is awake.
+        uint32 worstMs = 0;
+        const metrics::TickPhase worst = map->Phases().Worst(worstMs);
+
+        std::snprintf(buf, sizeof(buf),
+                      "  map %u tick p50/p99/max %u/%u/%u ms over %u [%s %u ms]",
                       map->GetId(), map->TickMs(0.5f), p99, map->TickMsMax(),
-                      map->TickOverruns());
+                      map->TickOverruns(), metrics::PhaseName(worst), worstMs);
         out += buf;
     }
 

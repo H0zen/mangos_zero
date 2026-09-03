@@ -946,6 +946,8 @@ void Map::VisitNearbyCellsOf(WorldObject* obj,
  */
 void Map::Update(const uint32& t_diff)
 {
+    metrics::PhaseClock<Map> phases(*this, getMSTime());
+
     /// Run the packets the serial phase routed here.
     ///
     /// Each entry is re-checked first: the serial phase continued after the
@@ -973,6 +975,8 @@ void Map::Update(const uint32& t_diff)
         session->HandlePacket(*entry.packet);
     }
 
+    phases.Mark(metrics::TickPhase::Mailbox, getMSTime());
+
     /// update players at tick
     for (m_mapRefIter = m_mapRefManager.begin(); m_mapRefIter != m_mapRefManager.end(); ++m_mapRefIter)
     {
@@ -983,6 +987,8 @@ void Map::Update(const uint32& t_diff)
             helper.Update(t_diff);
         }
     }
+
+    phases.Mark(metrics::TickPhase::Players, getMSTime());
 
     /// update active cells around players and active objects
     resetMarkedCells();
@@ -1061,6 +1067,8 @@ void Map::Update(const uint32& t_diff)
         }
     }
 
+    phases.Mark(metrics::TickPhase::GridObjects, getMSTime());
+
     // Send world objects and item update field changes
     SendObjectUpdates();
 
@@ -1080,6 +1088,8 @@ void Map::Update(const uint32& t_diff)
 
     ProcessPendingCellUnloads();
 
+    phases.Mark(metrics::TickPhase::ObjectUpdates, getMSTime());
+
     ///- Process necessary scripts
     if (!m_scriptSchedule.empty())
     {
@@ -1093,6 +1103,8 @@ void Map::Update(const uint32& t_diff)
     }
 
     m_weatherSystem->UpdateWeathers(t_diff);
+
+    phases.Mark(metrics::TickPhase::Scripts, getMSTime());
 
     // LAST ACT, and it must stay last: every vessel sailing this map takes its tick here,
     // and that tick runs the vessel's deck map nested inside it. A deckhand's spell can

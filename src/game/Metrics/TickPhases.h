@@ -106,4 +106,28 @@ namespace metrics
 
             std::array<Distribution<64>, size_t(TickPhase::Count)> m_phases;
     };
+
+    /**
+     * @brief A stopwatch that files the time between marks.
+     *
+     * One line at each boundary rather than a scope per phase: the phases of a
+     * map tick run one after another in a single function, and bracketing each
+     * one would mean rewriting the function's shape to measure it.
+     */
+    template <class Sink>
+    class PhaseClock
+    {
+        public:
+            PhaseClock(Sink& sink, uint32 now) : m_sink(sink), m_last(now) {}
+
+            void Mark(TickPhase phase, uint32 now)
+            {
+                m_sink.RecordPhase(phase, now - m_last);
+                m_last = now;
+            }
+
+        private:
+            Sink& m_sink;
+            uint32 m_last;
+    };
 }
