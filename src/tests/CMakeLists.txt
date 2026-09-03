@@ -23,6 +23,8 @@ set(TEST_SOURCES
     pose/test_arc.cpp
 
     wire/test_updatedata.cpp
+
+    combat/test_roll.cpp
 )
 
 add_executable(mangos_tests ${TEST_SOURCES})

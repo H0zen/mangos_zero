@@ -4,6 +4,9 @@ source_group("BattleGround" FILES ${SRC_GRP_BATTLEGROUND})
 file(GLOB SRC_GRP_CHAT_COMMANDS ChatCommands/*.cpp ChatCommands/*.h)
 source_group("Chat Commands" FILES ${SRC_GRP_CHAT_COMMANDS})
 
+file(GLOB SRC_GRP_COMBAT Combat/*.cpp Combat/*.h)
+source_group("Combat" FILES ${SRC_GRP_COMBAT})
+
 file(GLOB SRC_GRP_MAP_THREAD Maps/*.cpp Maps/*.h)
 source_group("Map Threading" FILES ${SRC_GRP_MAP_THREAD})
 
@@ -43,6 +46,7 @@ source_group("World\\Handlers" FILES ${SRC_GRP_WORLD_HANDLERS})
 add_library(game STATIC
     ${SRC_GRP_BATTLEGROUND}
     ${SRC_GRP_CHAT_COMMANDS}
+    ${SRC_GRP_COMBAT}
     ${SRC_GRP_MAP_THREAD}
     ${SRC_GRP_MOTION_GEN}
     ${SRC_GRP_MOVEMENT}
@@ -62,6 +66,7 @@ target_include_directories(game
         ${CMAKE_CURRENT_SOURCE_DIR}
         BattleGround
         ChatCommands
+        Combat
         Maps
         MotionGenerators
         Object
