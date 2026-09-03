@@ -213,8 +213,8 @@ namespace world::terrain
             {
                 ok = c.Pod(g.liquid.tilesX) && c.Pod(g.liquid.tilesY) &&
                      c.Pod(g.liquid.corner) && c.Pod(g.liquid.entry) &&
-                     c.Pod(g.liquid.kind) && c.Copy(g.liquid.heights) &&
-                     c.Copy(g.liquid.flags);
+                     c.Pod(g.liquid.kind) && c.View(g.liquid.heights) &&
+                     c.View(g.liquid.flags);
             }
             return ok;
         }
@@ -384,7 +384,6 @@ namespace world::terrain
             }
 
             TriSoup soup;
-            std::vector<Bvh::Node> nodes;
 
             if (kind == uint8_t(ModelKind::Wmo))
             {
@@ -396,29 +395,35 @@ namespace world::terrain
                     ok = ReadGroup(c, groups[g]);
                 }
 
-                std::vector<uint16_t> triGroup;
-                ok = ok && c.Copy(soup.verts) && c.Copy(soup.tris) &&
-                     c.Copy(triGroup) && c.Copy(nodes) &&
+                Store<uint16_t> triGroup;
+                Store<Bvh::Node> nodeView;
+                ok = ok && c.View(soup.verts) && c.View(soup.tris) &&
+                     c.View(triGroup) && c.View(nodeView) &&
                      triGroup.size() == soup.tris.size();
                 if (ok)
                 {
                     Bvh bvh;
-                    bvh.Adopt(std::move(nodes));
-                    models[i] = std::make_shared<WmoModel>(std::move(soup),
-                                                           std::move(triGroup),
-                                                           std::move(groups), rootId,
-                                                           std::move(bvh));
+                    bvh.View(nodeView.data(), nodeView.size());
+                    auto wmo = std::make_shared<WmoModel>(std::move(soup),
+                                                          std::move(triGroup),
+                                                          std::move(groups), rootId,
+                                                          std::move(bvh));
+                    wmo->KeepAlive(file);
+                    models[i] = wmo;
                 }
             }
             else if (kind == uint8_t(ModelKind::Mesh))
             {
-                ok = c.Copy(soup.verts) && c.Copy(soup.tris) && c.Copy(nodes);
+                Store<Bvh::Node> nodeView;
+                ok = c.View(soup.verts) && c.View(soup.tris) && c.View(nodeView);
                 if (ok)
                 {
                     Bvh bvh;
-                    bvh.Adopt(std::move(nodes));
-                    models[i] = std::make_shared<CollisionModel>(std::move(soup),
+                    bvh.View(nodeView.data(), nodeView.size());
+                    auto mesh = std::make_shared<CollisionModel>(std::move(soup),
                                                                  std::move(bvh));
+                    mesh->KeepAlive(file);
+                    models[i] = mesh;
                 }
             }
             else

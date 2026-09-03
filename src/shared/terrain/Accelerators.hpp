@@ -5,6 +5,7 @@
 // pays to construct one.
 
 #include "terrain/Geometry.hpp"
+#include "terrain/Store.hpp"
 
 #include <array>
 #include <cstdint>
@@ -15,8 +16,8 @@ namespace world::terrain
 {
     struct TriSoup
     {
-        std::vector<Vec3> verts;
-        std::vector<std::array<uint32_t, 3>> tris;
+        Store<Vec3> verts;
+        Store<std::array<uint32_t, 3>> tris;
 
         Tri At(uint32_t i) const
         {
@@ -66,7 +67,7 @@ namespace world::terrain
         // PERMUTES soup.tris so each leaf owns a contiguous run, which removes the
         // per-triangle indirection from the query entirely. `parallel`, when given, is
         // permuted elementwise alongside it.
-        void Build(TriSoup& soup, std::vector<uint16_t>* parallel = nullptr, int leafSize = 4);
+        void Build(TriSoup& soup, Store<uint16_t>* parallel = nullptr, int leafSize = 4);
 
         std::optional<float> Raycast(const TriSoup& soup, const Vec3& o, const Vec3& d,
                                      float tMax, uint32_t* hitTri = nullptr) const;
@@ -84,8 +85,11 @@ namespace world::terrain
         void RaycastAll(const TriSoup& soup, const Vec3& o, const Vec3& d, float tMax,
                         std::vector<Crossing>& out) const;
 
-        const std::vector<Node>& Nodes() const { return m_nodes; }
-        void Adopt(std::vector<Node> nodes) { m_nodes = std::move(nodes); }
+        const Store<Node>& Nodes() const { return m_nodes; }
+        void Adopt(std::vector<Node> nodes) { m_nodes.Adopt(std::move(nodes)); }
+
+        /// Point at nodes inside a mapping. The holder keeps it alive.
+        void View(const Node* nodes, size_t count) { m_nodes.View(nodes, count); }
 
         size_t NodeCount() const { return m_nodes.size(); }
         int MaxDepth() const { return m_maxDepth; }
@@ -95,7 +99,7 @@ namespace world::terrain
         int BuildNode(const TriSoup& soup, std::vector<uint32_t>& order, uint32_t first,
                       uint32_t count, int leafSize, int depth);
 
-        std::vector<Node> m_nodes;
+        Store<Node> m_nodes;
         int m_maxDepth = 0;
     };
 }

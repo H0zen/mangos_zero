@@ -8,6 +8,9 @@
 #include "terrain/Accelerators.hpp"
 #include "terrain/Geometry.hpp"
 #include "terrain/ICollisionModel.hpp"
+#include "terrain/MappedFile.hpp"
+
+#include <memory>
 
 #include <optional>
 #include <vector>
@@ -38,11 +41,17 @@ namespace world::terrain
         const TriSoup& Soup() const { return m_soup; }
         const Bvh& GetBvh() const { return m_bvh; }
 
+        /// Hold the file this model's geometry points into. A model is shared
+        /// between tiles and outlives any one of them, so it keeps its own
+        /// reference rather than relying on the tile that loaded it.
+        void KeepAlive(std::shared_ptr<const MappedFile> file) { m_mapping = std::move(file); }
+
     protected:
         void DeriveBounds();
 
         TriSoup m_soup;
         Bvh m_bvh;
+        std::shared_ptr<const MappedFile> m_mapping;
         Aabb m_bounds;
         bool m_empty = true;
     };

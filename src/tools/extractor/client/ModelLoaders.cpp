@@ -54,7 +54,7 @@ namespace world::terrain
         // One soup for the whole WMO. Each group's vertices are re-indexed as they are
         // appended, so the ~60% that only ever fed render-only faces are never carried.
         TriSoup soup;
-        std::vector<uint16_t> triGroup;
+        Store<uint16_t> triGroup;
         std::vector<WmoModel::Group> groups;
 
         for (uint32_t g = 0; g < root.nGroups; ++g)
@@ -80,8 +80,8 @@ namespace world::terrain
                 meta.liquid.tilesX = parsed.liquid.tilesX;
                 meta.liquid.tilesY = parsed.liquid.tilesY;
                 meta.liquid.corner = parsed.liquid.corner;
-                meta.liquid.heights = std::move(parsed.liquid.heights);
-                meta.liquid.flags = std::move(parsed.liquid.flags);
+                meta.liquid.heights.Adopt(std::move(parsed.liquid.heights));
+                meta.liquid.flags.Adopt(std::move(parsed.liquid.flags));
                 meta.liquid.entry = parsed.liquid.entry;
                 meta.liquid.kind = static_cast<uint8_t>(
                     world::ClassifyLiquid(parsed.liquid.entry, m_liquidTypes));
@@ -142,8 +142,8 @@ namespace world::terrain
         ParseM2(bytes, parsed);
 
         TriSoup soup;
-        soup.verts = std::move(parsed.verts);
-        soup.tris = std::move(parsed.tris);
+        soup.verts.Adopt(std::move(parsed.verts));
+        soup.tris.Adopt(std::move(parsed.tris));
 
         auto model = std::make_shared<CollisionModel>(std::move(soup));
         m_cache.emplace(key, model);

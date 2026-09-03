@@ -32,6 +32,7 @@
 #include "doctest.h"
 
 #include "terrain/Terrain.hpp"
+#include "terrain/CollisionModel.hpp"
 #include "terrain/TileSerializer.hpp"
 
 #include <cstdio>
@@ -219,6 +220,108 @@ TEST_CASE("A tile with no liquid and no terrain still round-trips")
     CHECK_FALSE(read->hasLiquid);
     CHECK(read->v9.empty());
     CHECK(read->instances.empty());
+}
+
+TEST_CASE("A tile's collision geometry round-trips, and comes back mapped")
+{
+    // The models are the other half of a tile's bulk. If these went back to
+    // being copied, a resident tile would still put its triangles on the heap.
+    ScratchPath scratch;
+
+    world::terrain::TriSoup soup;
+    soup.verts.Adopt(std::vector<world::terrain::Vec3>{
+        {0.f, 0.f, 0.f}, {10.f, 0.f, 0.f}, {0.f, 10.f, 0.f}, {10.f, 10.f, 5.f}});
+    soup.tris.Adopt(std::vector<std::array<uint32_t, 3>>{{0, 1, 2}, {1, 3, 2}});
+
+    auto model = std::make_shared<world::terrain::CollisionModel>(std::move(soup));
+    REQUIRE(model->TriangleCount() == 2);
+    REQUIRE_FALSE(model->GetBvh().Empty());
+
+    world::terrain::TerrainTile tile = BuildTile();
+    world::terrain::StaticInstance inst;
+    inst.xf = world::terrain::Transform(world::terrain::Vec3{1.f, 2.f, 3.f},
+                                        world::terrain::Mat3{}, 2.0f);
+    inst.model = model;
+    inst.worldBounds.expand(world::terrain::Vec3{0.f, 0.f, 0.f});
+    inst.worldBounds.expand(world::terrain::Vec3{20.f, 20.f, 10.f});
+    inst.adtId = 42;
+    tile.instances.push_back(inst);
+
+    REQUIRE(WriteTile(tile, scratch.Path()));
+
+    auto read = ReadTile(scratch.Path());
+    REQUIRE(static_cast<bool>(read));
+    REQUIRE(read->instances.size() == 1);
+
+    const world::terrain::StaticInstance& back = read->instances[0];
+    CHECK(back.adtId == 42);
+    CHECK(back.xf.scale == doctest::Approx(2.0f));
+    CHECK(back.xf.pos.x == doctest::Approx(1.f));
+    CHECK(back.xf.pos.z == doctest::Approx(3.f));
+    REQUIRE(static_cast<bool>(back.model));
+
+    const auto* mesh =
+        static_cast<const world::terrain::CollisionModel*>(back.model.get());
+
+    REQUIRE(mesh->Soup().verts.size() == 4);
+    REQUIRE(mesh->Soup().tris.size() == 2);
+    CHECK(mesh->Soup().verts[1].x == doctest::Approx(10.f));
+    CHECK(mesh->Soup().verts[3].z == doctest::Approx(5.f));
+    CHECK_FALSE(mesh->GetBvh().Empty());
+
+    // Mapped, not copied -- for the geometry and for the tree over it.
+    CHECK_FALSE(mesh->Soup().verts.Owns());
+    CHECK_FALSE(mesh->Soup().tris.Owns());
+    CHECK_FALSE(mesh->GetBvh().Nodes().Owns());
+
+    const uint8_t* base = read->mapping->Data();
+    const uint8_t* end = base + read->mapping->Size();
+    const uint8_t* verts = reinterpret_cast<const uint8_t*>(mesh->Soup().verts.data());
+    CHECK(verts >= base);
+    CHECK(verts < end);
+}
+
+TEST_CASE("A mapped model still answers a raycast")
+{
+    // Reading geometry in place has to give the same answers as reading a copy;
+    // a ray through the middle of a known quad is the cheapest proof of that.
+    ScratchPath scratch;
+
+    world::terrain::TriSoup soup;
+    soup.verts.Adopt(std::vector<world::terrain::Vec3>{
+        {0.f, 0.f, 0.f}, {10.f, 0.f, 0.f}, {0.f, 10.f, 0.f}, {10.f, 10.f, 0.f}});
+    soup.tris.Adopt(std::vector<std::array<uint32_t, 3>>{{0, 1, 2}, {1, 3, 2}});
+
+    auto model = std::make_shared<world::terrain::CollisionModel>(std::move(soup));
+
+    world::terrain::TerrainTile tile;
+    tile.tx = 32;
+    tile.ty = 32;
+    world::terrain::StaticInstance inst;
+    inst.model = model;
+    inst.worldBounds.expand(world::terrain::Vec3{0.f, 0.f, -1.f});
+    inst.worldBounds.expand(world::terrain::Vec3{10.f, 10.f, 1.f});
+    tile.instances.push_back(inst);
+
+    REQUIRE(WriteTile(tile, scratch.Path()));
+
+    auto read = ReadTile(scratch.Path());
+    REQUIRE(static_cast<bool>(read));
+    REQUIRE(read->instances.size() == 1);
+
+    const auto& mapped = *read->instances[0].model;
+    CHECK_FALSE(mapped.Empty());
+
+    // Straight down through the middle of the quad, from five above it.
+    auto hit = mapped.RaycastNearest(world::terrain::Vec3{5.f, 5.f, 5.f},
+                                     world::terrain::Vec3{0.f, 0.f, -1.f}, 100.f);
+    REQUIRE(hit.has_value());
+    CHECK(*hit == doctest::Approx(5.f));
+
+    // And a ray that misses the quad entirely finds nothing.
+    auto miss = mapped.RaycastNearest(world::terrain::Vec3{50.f, 50.f, 5.f},
+                                      world::terrain::Vec3{0.f, 0.f, -1.f}, 100.f);
+    CHECK_FALSE(miss.has_value());
 }
 
 TEST_CASE("A missing tile reads as nothing")

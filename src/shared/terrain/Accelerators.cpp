@@ -37,7 +37,7 @@ namespace world::terrain
     static_assert(std::is_trivially_copyable<Bvh::Node>::value,
                   "Bvh::Node must stay trivially copyable (it is written raw to the tile)");
 
-    void Bvh::Build(TriSoup& soup, std::vector<uint16_t>* parallel, int leafSize)
+    void Bvh::Build(TriSoup& soup, Store<uint16_t>* parallel, int leafSize)
     {
         m_nodes.clear();
         m_maxDepth = 0;
@@ -87,13 +87,13 @@ namespace world::terrain
             box.expand(soup.TriBounds(t));
             centroids.expand(soup.Centroid(t));
         }
-        m_nodes[self].box = box;
+        m_nodes.Mutable(self).box = box;
 
         if (count <= uint32_t(leafSize) || depth > MAX_DEPTH)
         {
-            m_nodes[self].left = -1;
-            m_nodes[self].first = first;
-            m_nodes[self].count = count;
+            m_nodes.Mutable(self).left = -1;
+            m_nodes.Mutable(self).first = first;
+            m_nodes.Mutable(self).count = count;
             return self;
         }
 
@@ -179,9 +179,9 @@ namespace world::terrain
 
         const int l = BuildNode(soup, order, first, mid - first, leafSize, depth + 1);
         const int r = BuildNode(soup, order, mid, first + count - mid, leafSize, depth + 1);
-        m_nodes[self].left = l;
-        m_nodes[self].right = r;
-        m_nodes[self].count = 0;
+        m_nodes.Mutable(self).left = l;
+        m_nodes.Mutable(self).right = r;
+        m_nodes.Mutable(self).count = 0;
         return self;
     }
 

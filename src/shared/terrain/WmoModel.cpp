@@ -10,7 +10,7 @@ namespace world::terrain
         constexpr float LIQUID_TILE_SIZE = 533.333f / 128.f;
     }
 
-    WmoModel::WmoModel(TriSoup soup, std::vector<uint16_t> triGroup,
+    WmoModel::WmoModel(TriSoup soup, Store<uint16_t> triGroup,
                        std::vector<Group> groups, uint32_t rootWmoId, Bvh bvh)
         : m_triGroup(std::move(triGroup)), m_groups(std::move(groups)), m_rootId(rootWmoId)
     {

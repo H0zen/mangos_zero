@@ -25,8 +25,8 @@ namespace world::terrain
             Vec3 corner;
             uint16_t entry = 0;
             uint8_t kind = 0;
-            std::vector<float> heights;
-            std::vector<uint8_t> flags;
+            Store<float> heights;
+            Store<uint8_t> flags;
         };
 
         struct Group
@@ -39,7 +39,7 @@ namespace world::terrain
 
         WmoModel() = default;
 
-        WmoModel(TriSoup soup, std::vector<uint16_t> triGroup, std::vector<Group> groups,
+        WmoModel(TriSoup soup, Store<uint16_t> triGroup, std::vector<Group> groups,
                  uint32_t rootWmoId, Bvh bvh = Bvh{});
 
         ModelKind Kind() const override { return ModelKind::Wmo; }
@@ -48,7 +48,7 @@ namespace world::terrain
 
         uint32_t RootId() const { return m_rootId; }
         const std::vector<Group>& Groups() const { return m_groups; }
-        const std::vector<uint16_t>& TriGroups() const { return m_triGroup; }
+        const Store<uint16_t>& TriGroups() const { return m_triGroup; }
 
         struct AreaResult
         {
@@ -63,7 +63,7 @@ namespace world::terrain
     private:
         void DeriveWmoBounds();
 
-        std::vector<uint16_t> m_triGroup;
+        Store<uint16_t> m_triGroup;
         std::vector<Group> m_groups;
         uint32_t m_rootId = 0;
     };
