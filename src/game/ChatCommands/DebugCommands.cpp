@@ -45,6 +45,7 @@
 #include "Player.h"
 #include "OpcodeTable.h"
 #include "Chat.h"
+#include "Synthetic/SyntheticCrowd.h"
 #include "Log.h"
 #include "Unit.h"
 #include "GossipDef.h"
@@ -1008,6 +1009,71 @@ bool ChatHandler::HandleDebugSpellCheckCommand(char* /*args*/)
  * @param args Command arguments.
  * @returns True if the command executed successfully, false otherwise.
  */
+/**
+ * @brief Put a synthetic crowd where the caller stands.
+ *
+ * `.debug crowd [count] [radius]`. Administrator only: this fills a map with
+ * hundreds of players that are not people, and the point of it is to make the
+ * server sweat.
+ */
+bool ChatHandler::HandleDebugCrowdSpawnCommand(char* args)
+{
+    Player* me = m_session ? m_session->GetPlayer() : NULL;
+    if (!me)
+    {
+        SendSysMessage("This one has to be run from in the world.");
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    uint32 count = 499;
+    float radius = 40.f;
+
+    if (char* countStr = ExtractLiteralArg(&args))
+    {
+        count = uint32(atoi(countStr));
+    }
+    if (char* radiusStr = ExtractLiteralArg(&args))
+    {
+        radius = float(atof(radiusStr));
+    }
+
+    if (count == 0 || count > 2000)
+    {
+        SendSysMessage("Ask for between one and two thousand.");
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    std::string error;
+    const uint32 placed = synthetic::SyntheticCrowd::Instance().Spawn(
+        count, me->GetMapId(), me->Where().X(), me->Where().Y(), me->Where().Z(),
+        radius, error);
+
+    if (placed == 0)
+    {
+        PSendSysMessage("No crowd: %s", error.empty() ? "unknown reason" : error.c_str());
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    PSendSysMessage("Synthetic crowd: %u placed within %.0f yards. Watch the METRICS line.",
+                    placed, radius);
+    if (!error.empty())
+    {
+        PSendSysMessage("Stopped early: %s", error.c_str());
+    }
+    return true;
+}
+
+/// `.debug uncrowd` -- send them all home.
+bool ChatHandler::HandleDebugCrowdDespawnCommand(char* /*args*/)
+{
+    const uint32 released = synthetic::SyntheticCrowd::Instance().Despawn();
+    PSendSysMessage("Synthetic crowd: %u released.", released);
+    return true;
+}
+
 bool ChatHandler::HandleDebugAnimCommand(char* args)
 {
     uint32 emote_id;

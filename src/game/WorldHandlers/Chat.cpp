@@ -209,6 +209,8 @@ ChatCommand* ChatHandler::getCommandTable()
     static ChatCommand debugCommandTable[] =
     {
         { "anim",           SEC_GAMEMASTER,     false, &ChatHandler::HandleDebugAnimCommand,                "", NULL },
+        { "crowd",          SEC_ADMINISTRATOR,  false, &ChatHandler::HandleDebugCrowdSpawnCommand,          "", NULL },
+        { "uncrowd",        SEC_ADMINISTRATOR,  false, &ChatHandler::HandleDebugCrowdDespawnCommand,        "", NULL },
         { "bg",             SEC_ADMINISTRATOR,  false, &ChatHandler::HandleDebugBattlegroundCommand,        "", NULL },
         { "getitemstate",   SEC_ADMINISTRATOR,  false, &ChatHandler::HandleDebugGetItemStateCommand,        "", NULL },
         { "lootrecipient",  SEC_GAMEMASTER,     false, &ChatHandler::HandleDebugGetLootRecipientCommand,    "", NULL },

@@ -31,6 +31,8 @@ set(TEST_SOURCES
     combat/test_flags.cpp
 
     metrics/test_metrics.cpp
+
+    synthetic/test_syntheticlink.cpp
     combat/test_manashield.cpp
 )
 

@@ -281,6 +281,8 @@ class ChatHandler
         bool HandleCharacterReputationCommand(char* args);
 
         bool HandleDebugAnimCommand(char* args);
+        bool HandleDebugCrowdSpawnCommand(char* args);
+        bool HandleDebugCrowdDespawnCommand(char* args);
         bool HandleDebugBattlegroundCommand(char* args);
         bool HandleDebugGetItemStateCommand(char* args);
         bool HandleDebugGetItemValueCommand(char* args);

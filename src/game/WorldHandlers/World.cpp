@@ -71,6 +71,8 @@
 #include "ItemEnchantmentMgr.h"
 #include "MapManager.h"
 #include "Metrics/ServerMetrics.h"
+#include "Synthetic/SyntheticCrowd.h"
+#include <cstdio>
 #include "ScriptMgr.h"
 #include "CreatureAIRegistry.h"
 #include "ProgressBar.h"
@@ -1078,6 +1080,10 @@ void World::Update(uint32 diff)
     UpdateSessions(diff);
 
     /// <li> Update uptime table
+    // The crowd steps before the session drain, so the packets it feeds in are
+    // picked up by this same tick rather than waiting for the next.
+    synthetic::SyntheticCrowd::Instance().Drive(diff);
+
     if (m_timers[WUPDATE_METRICS].Passed())
     {
         const uint32 window = m_timers[WUPDATE_METRICS].GetCurrent();
@@ -1086,6 +1092,18 @@ void World::Update(uint32 diff)
         // The maps are reported alongside, because a rate means something
         // different when one map is spending forty milliseconds a tick.
         line += sMapMgr.ReportTickTimes();
+
+        const synthetic::CrowdReport crowd =
+            synthetic::SyntheticCrowd::Instance().Report(window ? uint32(window) : 5000);
+        if (crowd.bots > 0)
+        {
+            char buf[160];
+            std::snprintf(buf, sizeof(buf),
+                          "  crowd %u bots  out mean/peak %u/%u B/s  packets %llu",
+                          crowd.bots, crowd.bytesPerSecMean, crowd.bytesPerSecPeak,
+                          (unsigned long long)crowd.packets);
+            line += buf;
+        }
 
         sLog.outString("METRICS: %s", line.c_str());
         m_timers[WUPDATE_METRICS].Reset();
