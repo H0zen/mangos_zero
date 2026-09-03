@@ -294,7 +294,9 @@ SocialMgr::~SocialMgr()
  */
 void SocialMgr::GetFriendInfo(Player* player, uint32 friend_lowguid, FriendInfo& friendInfo)
 {
-    if (!player)
+    // The social list is loaded from the character row, so a player who never
+    // came from one has none.
+    if (!player || !player->GetSocial())
     {
         return;
     }

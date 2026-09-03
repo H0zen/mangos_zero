@@ -184,16 +184,30 @@ namespace synthetic
 
         for (Bot& bot : m_bots)
         {
+            // A synthetic character has no life outside the run, so it is taken
+            // out directly instead of being logged out: a logout persists the
+            // character, announces it to friends and guild, and expects a body
+            // of loaded state that was never built here. Map::Remove does the
+            // whole retirement -- cleanup, unlink, deregister, delete.
+            if (Player* player = sObjectMgr.GetPlayer(bot.guid, false))
+            {
+                if (Map* map = player->GetMap())
+                {
+                    map->Remove(player, true);
+                }
+            }
+
+            if (bot.session)
+            {
+                // With no player left on it the session's logout is a no-op,
+                // which is the point: nothing of this reaches the database.
+                bot.session->SetPlayer(NULL);
+                bot.session->KickPlayer();
+            }
+
             if (bot.link)
             {
                 bot.link->Close();
-            }
-            if (bot.session)
-            {
-                // Closing the link is what the session reads as a dead socket;
-                // the world's own session sweep then retires it, without the
-                // character save a real logout would do.
-                bot.session->KickPlayer();
             }
         }
 
