@@ -32,6 +32,7 @@
 #include "ObjectMgr.h"
 #include "Opcodes.h"
 #include "Player.h"
+#include "MotionGenerators/MotionMaster.h"
 #include "SessionMailbox.h"
 #include "World.h"
 #include "WorldPacket.h"
@@ -90,6 +91,14 @@ namespace synthetic
 
             Player* bot = new Player(session);
 
+            // The order below follows WorldSession::HandlePlayerLogin, because
+            // anything it does before the map sees the player is something the
+            // player is expected to already have. The movement generator stack
+            // is the first of those: Unit::Update walks it every tick and
+            // asserts that it is not empty, so a player who never got one dies
+            // on the first tick after being added.
+            bot->GetMotionMaster()->Initialize();
+
             char name[16];
             std::snprintf(name, sizeof(name), "Synth%u", i);
 
@@ -128,15 +137,20 @@ namespace synthetic
             bot->SetMap(map);
             bot->Place().MoveTo(px, py, z, 0.f);
 
+            // Before the map, as in login: adding a player reaches back through
+            // his session, and a session that does not know its player yet is a
+            // null waiting to be dereferenced.
+            session->SetPlayer(bot);
+
             if (!map->Add(bot))
             {
+                session->SetPlayer(NULL);
                 delete bot;
                 delete session;
                 error = "the map refused the player";
                 break;
             }
 
-            session->SetPlayer(bot);
             sWorld.AddSession(session);
 
             Bot record;
