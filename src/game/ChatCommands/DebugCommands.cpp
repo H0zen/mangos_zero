@@ -1405,7 +1405,8 @@ bool ChatHandler::HandlerDebugModValueHelper(Object* target, uint32 field, char*
         }
 
         uint32 value = target->GetUInt32Value(field);
-        const char* guidString = guid.GetString().c_str();
+        const std::string guidText = guid.GetString();
+        const char* guidString = guidText.c_str();
 
         switch (type)
         {

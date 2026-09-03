@@ -104,12 +104,9 @@ struct boss_thermaplugg : public CreatureScript
         {
             reader.PSendSysMessage("Thermaplugg, currently phase %s", m_bIsPhaseTwo ? "two" : "one");
 
-            if (m_asBombFaces)
+            for (uint8 i = 0; i < MAX_GNOME_FACES; ++i)
             {
-                for (uint8 i = 0; i < MAX_GNOME_FACES; ++i)
-                {
-                    reader.PSendSysMessage("Bomb face %u is %s ", (uint32)i, m_asBombFaces[i].m_bActivated ? "activated" : "not activated");
-                }
+                reader.PSendSysMessage("Bomb face %u is %s ", (uint32)i, m_asBombFaces[i].m_bActivated ? "activated" : "not activated");
             }
         }
 
@@ -286,28 +283,25 @@ struct boss_thermaplugg : public CreatureScript
             }
 
             // Spawn bombs
-            if (m_asBombFaces)
+            for (uint8 i = 0; i < MAX_GNOME_FACES; ++i)
             {
-                for (uint8 i = 0; i < MAX_GNOME_FACES; ++i)
+                if (m_asBombFaces[i].m_bActivated)
                 {
-                    if (m_asBombFaces[i].m_bActivated)
+                    if (m_asBombFaces[i].m_uiBombTimer < uiDiff)
                     {
-                        if (m_asBombFaces[i].m_uiBombTimer < uiDiff)
+                        // Calculate the spawning position as 90% between face and thermaplugg spawn-pos, and hight hardcoded
+                        float fX = 0.0f, fY = 0.0f;
+                        if (GameObject* pFace = m_creature->GetMap()->GetGameObject(m_asBombFaces[i].m_gnomeFaceGuid))
                         {
-                            // Calculate the spawning position as 90% between face and thermaplugg spawn-pos, and hight hardcoded
-                            float fX = 0.0f, fY = 0.0f;
-                            if (GameObject* pFace = m_creature->GetMap()->GetGameObject(m_asBombFaces[i].m_gnomeFaceGuid))
-                            {
-                                fX = 0.35 * m_afSpawnPos[0] + 0.65 * pFace->Where().X();
-                                fY = 0.35 * m_afSpawnPos[1] + 0.65 * pFace->Where().Y();
-                            }
-                            m_creature->SummonCreature(NPC_WALKING_BOMB, fX, fY, fBombSpawnZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
-                            m_asBombFaces[i].m_uiBombTimer = urand(10000, 25000);   // TODO
+                            fX = 0.35 * m_afSpawnPos[0] + 0.65 * pFace->Where().X();
+                            fY = 0.35 * m_afSpawnPos[1] + 0.65 * pFace->Where().Y();
                         }
-                        else
-                        {
-                            m_asBombFaces[i].m_uiBombTimer -= uiDiff;
-                        }
+                        m_creature->SummonCreature(NPC_WALKING_BOMB, fX, fY, fBombSpawnZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
+                        m_asBombFaces[i].m_uiBombTimer = urand(10000, 25000);   // TODO
+                    }
+                    else
+                    {
+                        m_asBombFaces[i].m_uiBombTimer -= uiDiff;
                     }
                 }
             }

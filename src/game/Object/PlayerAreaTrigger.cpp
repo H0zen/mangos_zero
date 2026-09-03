@@ -90,7 +90,7 @@ void Player::SendTransferAbortedByLockStatus(MapEntry const* mapEntry, AreaTrigg
 
     if (at && at->failed_text_mangos_string_id > 0)
     {
-        GetSession()->SendAreaTriggerMessage(GetSession()->GetMangosString(at->failed_text_mangos_string_id));
+        GetSession()->SendAreaTriggerMessage("%s", GetSession()->GetMangosString(at->failed_text_mangos_string_id));
         return;
     }
 
@@ -144,7 +144,7 @@ void Player::SendTransferAbortedByLockStatus(MapEntry const* mapEntry, AreaTrigg
         {
             // This portion of code should never be hit anymore since an AreaTrigger should handle that.
             const std::string msg = "You cannot enter this zone"; // fallback message
-            GetSession()->SendAreaTriggerMessage(msg.c_str());
+            GetSession()->SendAreaTriggerMessage("%s", msg.c_str());
             break;
         }
 

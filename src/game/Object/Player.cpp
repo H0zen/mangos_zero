@@ -2290,10 +2290,7 @@ void Player::SetGameMaster(bool on)
 
         if (Pet* pet = GetPet())
         {
-            if (m_ExtraFlags |= PLAYER_EXTRA_GM_ON)
-            {
-                pet->setFaction(35);
-            }
+            pet->setFaction(35);
             pet->GetHostileRefManager().setOnlineOfflineState(false);
         }
     }
