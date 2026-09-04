@@ -1021,7 +1021,7 @@ struct SpellEntry
     float     EffectChainAmplitude[MAX_EFFECT_INDEX];   // 167-169  (was DmgMultiplier)
     // uint32    MinFactionID;                          // 170 not used, and 0 in 2.4.2
     // uint32    MinReputation;                         // 171 not used, and 0 in 2.4.2
-    // uint32    RequiredAuraVision;                    // 172 not used
+    // uint32    RequiredAuraVision;                    // 172 the client reads it; the server needs only to grant the matching sight
 
     /**
      * function calculating the basic damage/snare/... points for a given Spell Effect.

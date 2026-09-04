@@ -667,9 +667,9 @@ void Aura::HandleModStealth(bool apply, bool Real)
         {
             target->SetCreeping(true);
 
-            if (target->GetTypeId() == TYPEID_PLAYER)
+            if (Player* player = ToPlayer(target))
             {
-                target->SetByteFlag(PLAYER_FIELD_BYTES2, 1, PLAYER_FIELD_BYTE2_STEALTH);
+                player->ApplyAuraVision(AURA_VISION_STEALTH, true);
             }
 
             // apply only if not in GM invisibility (and overwrite invisibility state)
@@ -708,9 +708,9 @@ void Aura::HandleModStealth(bool apply, bool Real)
             {
                 target->SetCreeping(false);
 
-                if (target->GetTypeId() == TYPEID_PLAYER)
+                if (Player* player = ToPlayer(target))
                 {
-                    target->RemoveByteFlag(PLAYER_FIELD_BYTES2, 1, PLAYER_FIELD_BYTE2_STEALTH);
+                    player->ApplyAuraVision(AURA_VISION_STEALTH, false);
                 }
 
                 // restore invisibility if any
@@ -744,10 +744,12 @@ void Aura::HandleInvisibility(bool apply, bool Real)
 
         target->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION);
 
-        if (Real && target->GetTypeId() == TYPEID_PLAYER)
+        if (Real)
         {
-            // apply glow vision
-            target->SetByteFlag(PLAYER_FIELD_BYTES2, 1, PLAYER_FIELD_BYTE2_INVISIBILITY_GLOW);
+            if (Player* player = ToPlayer(target))
+            {
+                player->ApplyAuraVision(AURA_VISION_INVISIBILITY, true);
+            }
         }
 
         // apply only if not in GM invisibility and not stealth
@@ -771,10 +773,9 @@ void Aura::HandleInvisibility(bool apply, bool Real)
         // only at real aura remove and if not have different invisibility auras.
         if (Real && target->m_invisibilityMask == 0)
         {
-            // remove glow vision
-            if (target->GetTypeId() == TYPEID_PLAYER)
+            if (Player* player = ToPlayer(target))
             {
-                target->RemoveByteFlag(PLAYER_FIELD_BYTES2, 1, PLAYER_FIELD_BYTE2_INVISIBILITY_GLOW);
+                player->ApplyAuraVision(AURA_VISION_INVISIBILITY, false);
             }
 
             // apply only if not in GM invisibility & not stealthed while invisible
@@ -821,14 +822,17 @@ void Aura::HandleInvisibilityDetect(bool apply, bool Real)
 }
 
 /**
- * @brief Applies or removes the detect amore player flag.
+ * @brief Grants or withdraws sight of one marked kind of aura.
  *
- * @param apply True to apply the flag; false to remove it.
+ * @param apply True to grant the sight; false to withdraw it.
  * @param real Unused.
  */
 void Aura::HandleDetectAmore(bool apply, bool /*real*/)
 {
-    GetTarget()->ApplyModByteFlag(PLAYER_FIELD_BYTES2, 1, (PLAYER_FIELD_BYTE2_DETECT_AMORE_0 << m_modifier.m_amount), apply);
+    if (Player* player = ToPlayer(GetTarget()))
+    {
+        player->ApplyAuraVision(uint8(AURA_VISION_AMORE_0 << m_modifier.m_amount), apply);
+    }
 }
 
 /**

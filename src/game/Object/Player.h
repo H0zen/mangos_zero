@@ -546,16 +546,18 @@ enum PlayerFieldByteFlags
     PLAYER_FIELD_BYTE_NO_RELEASE_WINDOW = 0x10  // Display no "release spirit" window at all
 };
 
-// used in byte (PLAYER_FIELD_BYTES2,1) values
-enum PlayerFieldByte2Flags
+// An aura may be marked in the spell data as needing sight to be seen at all:
+// column RequiredAuraVision carries a small number, and the client only shows
+// the aura to a player whose mask holds the bit for that number, less one.
+enum AuraVision
 {
-    PLAYER_FIELD_BYTE2_NONE              = 0x00, // No flags
-    PLAYER_FIELD_BYTE2_DETECT_AMORE_0    = 0x02, // SPELL_AURA_DETECT_AMORE, not used as value and maybe not related to, but used in code as base for mask apply
-    PLAYER_FIELD_BYTE2_DETECT_AMORE_1    = 0x04, // SPELL_AURA_DETECT_AMORE value 1
-    PLAYER_FIELD_BYTE2_DETECT_AMORE_2    = 0x08, // SPELL_AURA_DETECT_AMORE value 2
-    PLAYER_FIELD_BYTE2_DETECT_AMORE_3    = 0x10, // SPELL_AURA_DETECT_AMORE value 3
-    PLAYER_FIELD_BYTE2_STEALTH           = 0x20, // Stealth mode
-    PLAYER_FIELD_BYTE2_INVISIBILITY_GLOW = 0x40  // Invisibility glow effect
+    AURA_VISION_NONE         = 0x00,
+    AURA_VISION_AMORE_0      = 0x02,                        // base of the four SPELL_AURA_DETECT_AMORE values
+    AURA_VISION_AMORE_1      = 0x04,
+    AURA_VISION_AMORE_2      = 0x08,
+    AURA_VISION_AMORE_3      = 0x10,
+    AURA_VISION_STEALTH      = 0x20,                        // the shimmer a stealthed unit carries
+    AURA_VISION_INVISIBILITY = 0x40                         // the glow an invisible unit carries
 };
 
 // Mirror timer types
@@ -1251,6 +1253,15 @@ class Player : public Unit
 
         // Check if the player is a game master
         bool isGameMaster() const { return m_ExtraFlags & PLAYER_EXTRA_GM_ON; }
+
+        /// Which marked auras this player may see on others. A stealthed player
+        /// is given the bit for the stealth shimmer, which is how one rogue makes
+        /// out another; an invisible one is given the bit for the glow.
+        bool CanSeeAura(uint8 vision) const { return HasByteFlag(PLAYER_FIELD_BYTES2, 1, vision); }
+        void ApplyAuraVision(uint8 vision, bool apply)
+        {
+            ApplyModByteFlag(PLAYER_FIELD_BYTES2, 1, vision, apply);
+        }
 
         /// Which of the extra action bars the client shows.
         uint8 GetActionBars() const { return GetByteValue(PLAYER_FIELD_BYTES, 2); }
