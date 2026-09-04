@@ -52,7 +52,6 @@
 #include "ObjectMgr.h"
 #include "ObjectGuid.h"
 #include "UpdateData.h"
-#include "UpdateMask.h"
 #include "Util.h"
 #include "MapManager.h"
 #include "CellImpl.h"
@@ -226,34 +225,15 @@ void Object::SetObjectScale(float newScale)
 
 
 /**
- * @brief Mark flag field for client update
+ * @brief Queue a field for sending although its stored value is unchanged
  * @param index Field index
- *
- * Marks a flag field as changed and schedules client update.
  */
-void Object::MarkFlagUpdateForClient(uint16 index)
+void Object::ResendField(uint16 index)
 {
     MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
 
     m_changedValues[index] = true;
     MarkForClientUpdate();
-}
-
-/**
- * @brief Force values update at index
- * @param index Field index
- *
- * Forces a field to be marked as changed and adds to
- * update list if object is in world.
- */
-void Object::ForceValuesUpdateAtIndex(uint16 index)
-{
-    m_changedValues[index] = true;
-    if (m_inWorld && !m_objectUpdated)
-    {
-        AddToClientUpdateList();
-        m_objectUpdated = true;
-    }
 }
 
 

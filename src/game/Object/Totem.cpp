@@ -175,12 +175,12 @@ void Totem::UnSummon()
     SendObjectDeSpawnAnim(GetObjectGuid());
 
     CombatStop();
-    RemoveAurasDueToSpell(GetSpell());
+    RemoveAuras(GetSpell());
 
     if (Unit* owner = GetOwner())
     {
         owner->_RemoveTotem(this);
-        owner->RemoveAurasDueToSpell(GetSpell());
+        owner->RemoveAuras(GetSpell());
 
         // remove aura all party members too
         if (owner->GetTypeId() == TYPEID_PLAYER)
@@ -193,7 +193,7 @@ void Totem::UnSummon()
                     Player* Target = itr->getSource();
                     if (Target && pGroup->SameSubGroup((Player*)owner, Target))
                     {
-                        Target->RemoveAurasDueToSpell(GetSpell());
+                        Target->RemoveAuras(GetSpell());
                     }
                 }
             }

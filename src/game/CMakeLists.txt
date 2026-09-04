@@ -4,6 +4,9 @@ source_group("BattleGround" FILES ${SRC_GRP_BATTLEGROUND})
 file(GLOB SRC_GRP_CHAT_COMMANDS ChatCommands/*.cpp ChatCommands/*.h)
 source_group("Chat Commands" FILES ${SRC_GRP_CHAT_COMMANDS})
 
+file(GLOB SRC_GRP_COMPONENTS Components/*.cpp Components/*.h)
+source_group("Components" FILES ${SRC_GRP_COMPONENTS})
+
 file(GLOB SRC_GRP_COMBAT Combat/*.cpp Combat/*.h)
 source_group("Combat" FILES ${SRC_GRP_COMBAT})
 
@@ -50,6 +53,7 @@ add_library(game STATIC
     ${SRC_GRP_BATTLEGROUND}
     ${SRC_GRP_CHAT_COMMANDS}
     ${SRC_GRP_COMBAT}
+    ${SRC_GRP_COMPONENTS}
     ${SRC_GRP_METRICS}
     ${SRC_GRP_SYNTHETIC}
     ${SRC_GRP_MAP_THREAD}
@@ -71,6 +75,7 @@ target_include_directories(game
         BattleGround
         ChatCommands
         Combat
+        Components
         Metrics
         Synthetic
         Maps

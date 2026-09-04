@@ -35,7 +35,6 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
-#include "UpdateMask.h"
 #include "ObjectMgr.h"
 #include "DBCStores.h"
 #include "MapManager.h"

@@ -53,7 +53,6 @@
 #include "WorldSession.h"
 #include "Opcodes.h"
 #include "Log.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
@@ -216,7 +215,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
     Unit* target = GetTarget();
 
     // remove SPELL_AURA_EMPATHY
-    target->RemoveSpellsCausingAura(SPELL_AURA_EMPATHY);
+    target->RemoveAurasOfType(SPELL_AURA_EMPATHY);
 
     switch (form)
     {
@@ -319,7 +318,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
         case FORM_MOONKIN:
         {
             // remove movement affects
-            target->RemoveSpellsCausingAura(SPELL_AURA_MOD_ROOT, GetHolder());
+            target->RemoveAurasOfType(SPELL_AURA_MOD_ROOT, GetHolder());
             const auto slowingAuras = target->GetAurasByType(SPELL_AURA_MOD_DECREASE_SPEED);
             for (const auto* slowing : slowingAuras)
             {
@@ -336,13 +335,13 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                     continue;
                 }
 
-                target->RemoveAurasDueToSpellByCancel(aurSpellInfo->ID);
+                target->CancelAuras(aurSpellInfo->ID);
             }
 
             // and polymorphic affects
             if (target->IsPolymorphed())
             {
-                target->RemoveAurasDueToSpell(target->GetTransform());
+                target->RemoveAuras(target->GetTransform());
             }
 
             //no break here
@@ -350,7 +349,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
         case FORM_GHOSTWOLF:
         {
             // remove water walk aura. TODO:: there is probably better way to do this
-            target->RemoveSpellsCausingAura(SPELL_AURA_WATER_WALK);
+            target->RemoveAurasOfType(SPELL_AURA_WATER_WALK);
 
             break;
         }
@@ -361,7 +360,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
     if (apply)
     {
         // remove other shapeshift before applying a new one
-        target->RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT, GetHolder());
+        target->RemoveAurasOfType(SPELL_AURA_MOD_SHAPESHIFT, GetHolder());
 
         if (modelid > 0)
         {
@@ -814,7 +813,7 @@ void Aura::HandleAuraTrackCreatures(bool apply, bool /*Real*/)
 
     if (apply)
     {
-        GetTarget()->RemoveNoStackAurasDueToAuraHolder(GetHolder());
+        GetTarget()->RemoveConflictingAuras(GetHolder());
     }
 
     if (apply)
@@ -842,7 +841,7 @@ void Aura::HandleAuraTrackResources(bool apply, bool /*Real*/)
 
     if (apply)
     {
-        GetTarget()->RemoveNoStackAurasDueToAuraHolder(GetHolder());
+        GetTarget()->RemoveConflictingAuras(GetHolder());
     }
 
     if (apply)
@@ -870,7 +869,7 @@ void Aura::HandleAuraTrackStealthed(bool apply, bool /*Real*/)
 
     if (apply)
     {
-        GetTarget()->RemoveNoStackAurasDueToAuraHolder(GetHolder());
+        GetTarget()->RemoveConflictingAuras(GetHolder());
     }
 
     GetTarget()->ApplyModByteFlag(PLAYER_FIELD_BYTES, 0, PLAYER_FIELD_BYTE_TRACK_STEALTHED, apply);

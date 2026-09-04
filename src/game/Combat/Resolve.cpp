@@ -27,21 +27,18 @@
 #include "Combat/Mitigate.h"
 #include "Combat/Roll.h"
 
+#include "SharedDefines.h"
+
 #include <algorithm>
 
 namespace combat
 {
     namespace
     {
-        bool IsPhysical(SpellSchoolMask school)
-        {
-            return (school & SPELL_SCHOOL_MASK_NORMAL) != 0;
-        }
-
         /// Armour takes a share of a physical blow, capped at three quarters.
-        int32 AfterArmour(int32 damage, int32 armour, uint32 attackerLevel)
+        int32 AfterArmour(int32 amount, int32 armour, uint32 attackerLevel)
         {
-            if (damage <= 0)
+            if (amount <= 0)
             {
                 return 0;
             }
@@ -54,7 +51,7 @@ namespace combat
             share = share / (1.f + share);
             share = std::max(0.f, std::min(0.75f, share));
 
-            const int32 reduced = static_cast<int32>(static_cast<float>(damage) - static_cast<float>(damage) * share);
+            const int32 reduced = static_cast<int32>(static_cast<float>(amount) - static_cast<float>(amount) * share);
 
             // A blow that connects always leaves a mark.
             return reduced > 1 ? reduced : 1;
@@ -62,13 +59,13 @@ namespace combat
 
         /// The share of a magical blow the victim shrugs off, capped at three
         /// quarters, and drawn in the same four-band pattern the client uses.
-        int32 AfterResistance(int32 damage, int32 resistance, uint32 attackerLevel,
+        int32 AfterResistance(int32 amount, int32 resistance, uint32 attackerLevel,
                               uint32 roll, int32& resisted)
         {
             resisted = 0;
-            if (damage <= 0 || resistance <= 0)
+            if (amount <= 0 || resistance <= 0)
             {
-                return damage > 0 ? damage : 0;
+                return amount > 0 ? amount : 0;
             }
 
             float average = static_cast<float>(resistance) * (0.15f / static_cast<float>(attackerLevel ? attackerLevel : 1));
@@ -78,16 +75,16 @@ namespace combat
             const uint32 band = (roll % 10000u) / 2500u;   // 0..3
             const float portion = std::max(0.f, std::min(1.f, average + 0.25f * static_cast<float>(band) - 0.375f));
 
-            resisted = static_cast<int32>(static_cast<float>(damage) * portion);
-            if (resisted > damage)
+            resisted = static_cast<int32>(static_cast<float>(amount) * portion);
+            if (resisted > amount)
             {
-                resisted = damage;
+                resisted = amount;
             }
             if (resisted < 0)
             {
                 resisted = 0;
             }
-            return damage - resisted;
+            return amount - resisted;
         }
 
         /// The 1.12 glancing band: how much of the blow survives, from the skill
@@ -133,31 +130,41 @@ namespace combat
             return low + std::max(0.f, std::min(1.f, band)) * (high - low);
         }
 
-        /// What the landing does to the blow before anything mitigates it.
-        int32 AfterLanding(Landing landing, int32 damage, const Combatant& attacker,
-                           const Combatant& victim, const Defences& defences,
-                           float glanceBand, int32& blocked)
+        /**
+         * @brief What the strike's amplifiers do to the blow.
+         *
+         * Crit and crushing make it larger, glancing and a block make it
+         * smaller. All four are the same kind of thing -- a landing that changed
+         * size -- which is why they sit together and none of them decides
+         * whether the blow connected.
+         */
+        int32 AfterStrike(const Strike& strike, int32 amount, const Combatant& attacker,
+                          const Combatant& victim, const Defences& defences,
+                          float glanceBand, int32& blocked)
         {
             blocked = 0;
 
-            switch (landing)
+            if (strike.crit)
             {
-                case Landing::Crit:
-                    return damage * 2;
-
-                case Landing::Crush:
-                    return damage + damage / 2;
-
-                case Landing::Glance:
-                    return static_cast<int32>(static_cast<float>(damage) * GlancingSurvival(attacker, victim, glanceBand));
-
-                case Landing::Block:
-                    blocked = std::min(defences.blockValue, damage);
-                    return damage - blocked;
-
-                default:
-                    return damage;
+                amount *= 2;
             }
+            else if (strike.crushing)
+            {
+                amount += amount / 2;
+            }
+            else if (strike.glancing)
+            {
+                amount = static_cast<int32>(static_cast<float>(amount) *
+                                            GlancingSurvival(attacker, victim, glanceBand));
+            }
+
+            if (strike.blocked)
+            {
+                blocked = std::min(defences.blockValue, amount);
+                amount -= blocked;
+            }
+
+            return amount;
         }
 
         /**
@@ -167,14 +174,14 @@ namespace combat
          * budget is carried down the list: two mana shields draw from the same
          * pool, and the second only works with what the first left.
          */
-        void PlanAbsorption(const Defences& defences, SpellSchoolMask school,
-                            int32& damage, Outcome& out)
+        void PlanAbsorption(const Defences& defences, School school,
+                            int32& amount, Outcome& out)
         {
             int32 manaLeft = defences.mana;
 
             for (const Absorber& shield : defences.absorbers)
             {
-                if (damage <= 0)
+                if (amount <= 0)
                 {
                     break;
                 }
@@ -183,7 +190,7 @@ namespace combat
                     continue;
                 }
 
-                int32 taken = shield.remaining > damage ? damage : shield.remaining;
+                int32 taken = shield.remaining > amount ? amount : shield.remaining;
 
                 AbsorbShare share;
                 share.caster = shield.caster;
@@ -212,18 +219,18 @@ namespace combat
                 // mana ran short: a mage out of mana still has the shield.
                 share.exhausted = taken >= shield.remaining;
 
-                damage -= share.amount;
+                amount -= share.amount;
                 out.absorbed += share.amount;
                 out.absorbs.push_back(share);
             }
         }
 
         /// Move part of what is left onto whoever shares the victim's pain.
-        void PlanSplits(const Defences& defences, int32& damage, Outcome& out)
+        void PlanSplits(const Defences& defences, int32& amount, Outcome& out)
         {
             for (const Splitter& splitter : defences.splitters)
             {
-                if (damage <= 0)
+                if (amount <= 0)
                 {
                     break;
                 }
@@ -231,15 +238,15 @@ namespace combat
                 int32 moved = splitter.flat;
                 if (splitter.fraction > 0.f)
                 {
-                    moved += static_cast<int32>(static_cast<float>(damage) * splitter.fraction);
+                    moved += static_cast<int32>(static_cast<float>(amount) * splitter.fraction);
                 }
                 if (moved <= 0)
                 {
                     continue;
                 }
-                if (moved > damage)
+                if (moved > amount)
                 {
-                    moved = damage;
+                    moved = amount;
                 }
 
                 SplitShare share;
@@ -247,30 +254,53 @@ namespace combat
                 share.spellId = splitter.spellId;
                 share.amount = moved;
 
-                damage -= moved;
+                amount -= moved;
                 out.splits.push_back(share);
             }
         }
+
+        Strike RollFor(const Blow& blow, const Combatant& attacker,
+                       const Combatant& victim, bool fromBehind, uint32 roll)
+        {
+            if (IsWeaponSwing(blow.delivery))
+            {
+                return RollMelee(attacker, victim, fromBehind, blow.spellId != 0, roll);
+            }
+
+            if (blow.delivery == Delivery::Spell)
+            {
+                return RollSpell(attacker, victim, attacker.missChance,
+                                 attacker.critChance, blow.canCrit, roll);
+            }
+
+            // A tick and a fall neither miss nor crit; they simply land.
+            Strike strike;
+            if (victim.isEvading)
+            {
+                strike.result = Result::Evaded;
+            }
+            return strike;
+        }
     }
 
-    void Mitigate(int32& damage, SpellSchoolMask school, const Defences& defences,
+    void Mitigate(int32& amount, School school, const Defences& defences,
                   bool selfInflicted, Outcome& out)
     {
-        PlanAbsorption(defences, school, damage, out);
+        PlanAbsorption(defences, school, amount, out);
 
         // Damage you do to yourself has nobody to share it with.
         if (!selfInflicted)
         {
-            PlanSplits(defences, damage, out);
+            PlanSplits(defences, amount, out);
         }
 
-        if (damage < 0)
+        if (amount < 0)
         {
-            damage = 0;
+            amount = 0;
         }
     }
 
-    Outcome Resolve(const Attempt& attempt,
+    Outcome Resolve(const Blow& blow,
                     const Combatant& attacker,
                     const Combatant& victim,
                     const Defences& defences,
@@ -278,69 +308,67 @@ namespace combat
                     const Rolls& rolls)
     {
         Outcome out;
-        out.beforeMitigation = attempt.base;
+        out.beforeMitigation = blow.amount;
 
         if (defences.immune)
         {
-            out.landing = Landing::Immune;
+            out.strike.result = Result::Immune;
             return out;
         }
 
-        const bool weapon = IsWeaponSwing(attempt.source);
+        out.strike = RollFor(blow, attacker, victim, fromBehind, rolls.hit);
 
-        if (weapon)
-        {
-            out.landing = RollMelee(attacker, victim, fromBehind,
-                                    attempt.spellId != 0, rolls.hit);
-        }
-        else if (attempt.source == Source::Spell)
-        {
-            out.landing = RollSpell(attacker, victim, attacker.missChance,
-                                    attacker.critChance, attempt.canCrit, rolls.hit);
-        }
-        else
-        {
-            // A periodic tick and a fall neither miss nor crit; they simply land.
-            out.landing = victim.isEvading ? Landing::Evade : Landing::Hit;
-        }
-
-        if (!Landed(out.landing))
+        if (!out.strike.Landed())
         {
             return out;
         }
 
-        int32 damage = AfterLanding(out.landing, attempt.base, attacker, victim,
-                                    defences, rolls.glanceBand, out.blocked);
+        int32 amount = AfterStrike(out.strike, blow.amount, attacker, victim,
+                                   defences, rolls.glanceBand, out.blocked);
 
-        if (IsPhysical(attempt.school))
+        // The shield stopped the whole blow. The client has a word for that and
+        // shows it instead of a number, so the ending says so too.
+        if (amount <= 0 && out.strike.blocked)
         {
-            damage = AfterArmour(damage, defences.armour, attacker.level);
+            out.strike.result = Result::Blocked;
+            return out;
+        }
+
+        if (IsPhysical(blow.school))
+        {
+            amount = AfterArmour(amount, defences.armour, attacker.level);
         }
         else
         {
-            damage = AfterResistance(damage, defences.resistance, attacker.level,
+            amount = AfterResistance(amount, defences.resistance, attacker.level,
                                      rolls.resist, out.resisted);
-            if (damage <= 0)
+            if (amount <= 0)
             {
-                out.landing = Landing::Resist;
+                out.strike.result = Result::Resisted;
                 return out;
             }
         }
 
-        Mitigate(damage, attempt.school, defences,
-                 attempt.attacker == attempt.victim, out);
+        Mitigate(amount, blow.school, defences, blow.SelfInflicted(), out);
 
-        if (damage < 0)
+        if (amount < 0)
         {
-            damage = 0;
+            amount = 0;
         }
 
-        out.dealt = damage;
+        // Nothing reached health and a shield is why: again, a word rather than
+        // a number.
+        if (amount == 0 && out.absorbed > 0 && out.splits.empty())
+        {
+            out.strike.result = Result::Absorbed;
+        }
 
-        if (victim.health > 0 && damage >= victim.health)
+        out.dealt = amount;
+
+        if (victim.health > 0 && amount >= victim.health)
         {
             out.victimDies = true;
-            out.overkill = damage - victim.health;
+            out.overkill = amount - victim.health;
         }
 
         return out;

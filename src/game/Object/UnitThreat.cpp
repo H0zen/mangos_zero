@@ -330,7 +330,7 @@ bool Unit::SelectHostileTarget()
             if (!GetMotionMaster()->GetCurrent()->IsReachable())
             {
                 // remove all taunts
-                RemoveSpellsCausingAura(SPELL_AURA_MOD_TAUNT);
+                RemoveAurasOfType(SPELL_AURA_MOD_TAUNT);
 
                 if (m_ThreatManager.getThreatList().size() < 2)
                 {

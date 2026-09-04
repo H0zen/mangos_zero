@@ -93,7 +93,6 @@ class Player;
 class Unit;
 class Group;
 class Map;
-class UpdateMask;
 class InstanceData;
 class TerrainInfo;
 struct MangosStringLocale;
@@ -461,54 +460,6 @@ class Object
             }
         }
 
-        Corpse* ToCorpse()
-        {
-            if (GetTypeId() == TYPEID_CORPSE)
-            {
-                return reinterpret_cast<Corpse*>(this);
-            }
-            else
-            {
-                return NULL;
-            }
-        }
-
-        Corpse const* ToCorpse() const
-        {
-            if (GetTypeId() == TYPEID_CORPSE)
-            {
-                return reinterpret_cast<Corpse const*>(this);
-            }
-            else
-            {
-                return NULL;
-            }
-        }
-
-        DynamicObject* ToDynObject()
-        {
-            if (GetTypeId() == TYPEID_DYNAMICOBJECT)
-            {
-                return reinterpret_cast<DynamicObject*>(this);
-            }
-            else
-            {
-                return NULL;
-            }
-        }
-
-        DynamicObject const* ToDynObject() const
-        {
-            if (GetTypeId() == TYPEID_DYNAMICOBJECT)
-            {
-                return reinterpret_cast<DynamicObject const*>(this);
-            }
-            else
-            {
-                return NULL;
-            }
-        }
-
         void SetInt32Value(uint16 index,        int32  value);
         void SetUInt32Value(uint16 index,       uint32  value);
         void UpdateUInt32Value(uint16 index,    uint32  value);
@@ -520,7 +471,11 @@ class Object
         void SetGuidValue(uint16 index, ObjectGuid const& value) { SetUInt64Value(index, value.GetRawValue()); }
         void SetStatFloatValue(uint16 index, float value);
         void SetStatInt32Value(uint16 index, int32 value);
-        void ForceValuesUpdateAtIndex(uint16 index);
+
+        /// Send this field again although its stored value did not change --
+        /// because what it means to an observer did.
+        void ResendField(uint16 index);
+
         void ApplyModUInt32Value(uint16 index, int32 val, bool apply);
         void ApplyModInt32Value(uint16 index, int32 val, bool apply);
         void ApplyModPositiveFloatValue(uint16 index, float val, bool apply);
@@ -532,12 +487,6 @@ class Object
             SetFloatValue(index, GetFloatValue(index) * (apply ? (100.0f + val) / 100.0f : 100.0f / (100.0f + val)));
         }
 
-        /**
-         * method to force the update of a given flag to the client. The method is checking the index before indicating the flags need an update.
-         *
-         * \param index uint16 of the flag to be updated.
-         */
-        void MarkFlagUpdateForClient(uint16 index);
         void SetFlag(uint16 index, uint32 newFlag);
         void RemoveFlag(uint16 index, uint32 oldFlag);
 
@@ -707,12 +656,8 @@ class Object
         void _InitValues();
         void _Create(uint32 guidlow, uint32 entry, HighGuid guidhigh);
 
-        virtual void _SetUpdateBits(UpdateMask* updateMask, Player* target) const;
-
-        virtual void _SetCreateBits(UpdateMask* updateMask, Player* target) const;
-
         void BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const;
-        void BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, UpdateMask* updateMask, Player* target) const;
+        void BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, Player* target) const;
         void BuildUpdateDataForPlayer(Player* pl, UpdateDataMapType& update_players);
 
         uint16 m_objectType;
@@ -728,7 +673,6 @@ class Object
         };
 
         std::vector<bool> m_changedValues;
-        std::map<uint32, uint32> m_plrSpecificFlags;
 
         uint16 m_valuesCount;
 
@@ -958,16 +902,6 @@ void ContactPointNear(WorldObject const& anchor, WorldObject const* obj, float& 
                       float distance2d = CONTACT_DISTANCE);
 
 // Helper functions to cast between different Object pointers. Useful when unsure that your object* is valid at all.
-inline WorldObject* ToWorldObject(Object* object)
-{
-    return object && object->isType(TYPEMASK_WORLDOBJECT) ? static_cast<WorldObject*>(object) : nullptr;
-}
-
-inline WorldObject const* ToWorldObject(Object const* object)
-{
-    return object && object->isType(TYPEMASK_WORLDOBJECT) ? static_cast<WorldObject const*>(object) : nullptr;
-}
-
 inline GameObject* ToGameObject(Object* object)
 {
     return object && object->GetTypeId() == TYPEID_GAMEOBJECT ? reinterpret_cast<GameObject*>(object) : nullptr;

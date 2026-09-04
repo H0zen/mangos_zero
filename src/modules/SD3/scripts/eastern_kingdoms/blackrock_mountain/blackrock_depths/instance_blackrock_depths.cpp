@@ -375,7 +375,7 @@ void instance_blackrock_depths::SetData(uint32 uiType, uint32 uiData)
                         pConstruct = instance->GetCreature(*itr);
                         if (pConstruct)
                         {
-                            pConstruct->RemoveAurasDueToSpell(SPELL_STONED);
+                            pConstruct->RemoveAuras(SPELL_STONED);
                         }
                     }
 

@@ -1042,7 +1042,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
         case ACTION_T_REMOVEAURASFROMSPELL:     //28
             if (Unit* target = GetTargetByType(action.remove_aura.target, pActionInvoker, pAIEventSender, reportTargetError))
             {
-                target->RemoveAurasDueToSpell(action.remove_aura.spellId);
+                target->RemoveAuras(action.remove_aura.spellId);
             }
             else if (reportTargetError)
             {
@@ -1683,7 +1683,7 @@ void CreatureEventAI::MoveInLineOfSight(Unit* who)
             if (!m_creature->getVictim())
             {
                 AttackStart(who);
-                who->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+                who->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
             }
             else if (m_creature->GetMap()->IsDungeon())
             {

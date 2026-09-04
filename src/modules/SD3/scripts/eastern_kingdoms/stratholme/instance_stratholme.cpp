@@ -389,7 +389,7 @@ struct is_stratholme : public InstanceScript
                                     {
                                         if (pPlayer->HasAura(SPELL_BARON_ULTIMATUM))
                                         {
-                                            pPlayer->RemoveAurasDueToSpell(SPELL_BARON_ULTIMATUM);
+                                            pPlayer->RemoveAuras(SPELL_BARON_ULTIMATUM);
                                         }
 
                                         if (pPlayer->GetQuestStatus(QUEST_DEAD_MAN_PLEA) == QUEST_STATUS_INCOMPLETE)

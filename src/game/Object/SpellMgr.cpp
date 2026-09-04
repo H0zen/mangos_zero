@@ -3346,7 +3346,7 @@ void SpellArea::ApplyOrRemoveSpellIfCan(Player* player, uint32 newZone, uint32 n
     }
     else if (!onlyApply && player->HasAura(spellId))
     {
-        player->RemoveAurasDueToSpell(spellId);
+        player->RemoveAuras(spellId);
     }
 }
 

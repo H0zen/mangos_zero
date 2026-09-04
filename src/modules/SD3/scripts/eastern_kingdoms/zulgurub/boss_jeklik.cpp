@@ -228,7 +228,7 @@ struct boss_jeklik : public CreatureScript
                 // Phase Switch at 50%
                 if (m_creature->GetHealthPercent() < 50.0f)
                 {
-                    m_creature->RemoveAurasDueToSpell(SPELL_BAT_FORM);
+                    m_creature->RemoveAuras(SPELL_BAT_FORM);
                     m_creature->SetLevitate(false);
                     DoResetThreat();
                     m_bIsPhaseOne = false;

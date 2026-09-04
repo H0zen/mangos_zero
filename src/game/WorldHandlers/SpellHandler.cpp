@@ -503,7 +503,7 @@ void WorldSession::HandleCancelAuraOpcode(WorldPacket& recvPacket)
     }
 
     // non channeled case
-    _player->RemoveAurasDueToSpellByCancel(spellId);
+    _player->CancelAuras(spellId);
 }
 
 /**
@@ -552,7 +552,7 @@ void WorldSession::HandlePetCancelAuraOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    pet->RemoveAurasDueToSpell(spellId);
+    pet->RemoveAuras(spellId);
 
     pet->AddCreatureSpellCooldown(spellId);
 }

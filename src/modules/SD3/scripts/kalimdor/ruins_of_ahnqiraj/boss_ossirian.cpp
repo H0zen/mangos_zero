@@ -206,7 +206,7 @@ struct boss_ossirian : public CreatureScript
                     return;
                 }
 
-                m_creature->RemoveAurasDueToSpell(SPELL_SUPREME);
+                m_creature->RemoveAuras(SPELL_SUPREME);
                 m_uiSupremeTimer = 45000;
 
                 ((Creature*)pCaster)->ForcedDespawn();

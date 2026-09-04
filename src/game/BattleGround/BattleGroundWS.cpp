@@ -253,7 +253,7 @@ void BattleGroundWS::EventPlayerCapturedFlag(Player* source)
         // horde flag in base (but not respawned yet)
         m_FlagState[TEAM_INDEX_HORDE] = BG_WS_FLAG_STATE_WAIT_RESPAWN;
         // Drop Horde Flag from Player
-        source->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
+        source->RemoveAuras(BG_WS_SPELL_WARSONG_FLAG);
         if (m_TeamScores[TEAM_INDEX_ALLIANCE] < BG_WS_MAX_TEAM_SCORE)
         {
             m_TeamScores[TEAM_INDEX_ALLIANCE] += 1;
@@ -271,7 +271,7 @@ void BattleGroundWS::EventPlayerCapturedFlag(Player* source)
         // alliance flag in base (but not respawned yet)
         m_FlagState[TEAM_INDEX_ALLIANCE] = BG_WS_FLAG_STATE_WAIT_RESPAWN;
         // Drop Alliance Flag from Player
-        source->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
+        source->RemoveAuras(BG_WS_SPELL_SILVERWING_FLAG);
         if (m_TeamScores[TEAM_INDEX_HORDE] < BG_WS_MAX_TEAM_SCORE)
         {
             m_TeamScores[TEAM_INDEX_HORDE] += 1;
@@ -349,7 +349,7 @@ void BattleGroundWS::EventPlayerDroppedFlag(Player* source)
             if (GetHordeFlagCarrierGuid() == source->GetObjectGuid())
             {
                 ClearHordeFlagCarrier();
-                source->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
+                source->RemoveAuras(BG_WS_SPELL_WARSONG_FLAG);
             }
         }
         else
@@ -361,7 +361,7 @@ void BattleGroundWS::EventPlayerDroppedFlag(Player* source)
             if (GetAllianceFlagCarrierGuid() == source->GetObjectGuid())
             {
                 ClearAllianceFlagCarrier();
-                source->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
+                source->RemoveAuras(BG_WS_SPELL_SILVERWING_FLAG);
             }
         }
         return;
@@ -378,7 +378,7 @@ void BattleGroundWS::EventPlayerDroppedFlag(Player* source)
         if (GetHordeFlagCarrierGuid() == source->GetObjectGuid())
         {
             ClearHordeFlagCarrier();
-            source->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
+            source->RemoveAuras(BG_WS_SPELL_WARSONG_FLAG);
             m_FlagState[TEAM_INDEX_HORDE] = BG_WS_FLAG_STATE_ON_GROUND;
             source->CastSpell(source, BG_WS_SPELL_WARSONG_FLAG_DROPPED, true);
             set = true;
@@ -393,7 +393,7 @@ void BattleGroundWS::EventPlayerDroppedFlag(Player* source)
         if (GetAllianceFlagCarrierGuid() == source->GetObjectGuid())
         {
             ClearAllianceFlagCarrier();
-            source->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
+            source->RemoveAuras(BG_WS_SPELL_SILVERWING_FLAG);
             m_FlagState[TEAM_INDEX_ALLIANCE] = BG_WS_FLAG_STATE_ON_GROUND;
             source->CastSpell(source, BG_WS_SPELL_SILVERWING_FLAG_DROPPED, true);
             set = true;

@@ -97,7 +97,7 @@ namespace combat
 
         for (const uint32 spellId : spent)
         {
-            victim.RemoveAurasDueToSpell(spellId, nullptr, AURA_REMOVE_BY_SHIELD_BREAK);
+            victim.RemoveAuras(spellId, nullptr, AURA_REMOVE_BY_SHIELD_BREAK);
         }
     }
 }

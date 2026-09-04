@@ -305,7 +305,7 @@ struct spell_thaddius_encounter : public SpellScript
                         return true;
                     }
                     // remove Stun and then Cast
-                    pCreatureTarget->ToCreature()->RemoveAurasDueToSpell(SPELL_THADIUS_SPAWN);
+                    pCreatureTarget->ToCreature()->RemoveAuras(SPELL_THADIUS_SPAWN);
                     pCreatureTarget->ToCreature()->CastSpell(pCreatureTarget->ToCreature(), SPELL_THADIUS_LIGHTNING_VISUAL, false);
                 }
                 return true;
@@ -477,7 +477,7 @@ struct npc_tesla_coil : public CreatureScript
                 if (m_uiOverloadTimer <= uiDiff)
                 {
                     m_uiOverloadTimer = 0;
-                    m_creature->RemoveAurasDueToSpell(m_bToFeugen ? SPELL_FEUGEN_TESLA_PASSIVE : SPELL_STALAGG_TESLA_PASSIVE);
+                    m_creature->RemoveAuras(m_bToFeugen ? SPELL_FEUGEN_TESLA_PASSIVE : SPELL_STALAGG_TESLA_PASSIVE);
                     DoCastSpellIfCan(m_creature, SPELL_SHOCK_OVERLOAD, CAST_INTERRUPT_PREVIOUS);
                     DoScriptText(EMOTE_TESLA_OVERLOAD, m_creature);
                     m_pInstance->DoUseDoorOrButton(m_bToFeugen ? GO_CONS_NOX_TESLA_FEUGEN : GO_CONS_NOX_TESLA_STALAGG);

@@ -32,7 +32,6 @@
 #include "WorldPacket.h"
 #include "Opcodes.h"
 #include "Log.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
@@ -304,7 +303,7 @@ void Spell::EffectHeal(SpellEffectIndex /*eff_idx*/)
                 tickcount -= 1;
             }
 
-            unitTarget->RemoveAurasDueToSpell(targetAura->GetId());
+            unitTarget->RemoveAuras(targetAura->GetId());
 
             addhealth += tickheal * tickcount;
         }

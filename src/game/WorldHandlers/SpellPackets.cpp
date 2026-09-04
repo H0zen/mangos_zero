@@ -54,7 +54,6 @@
 #include "GridNotifiersImpl.h"
 #include "Opcodes.h"
 #include "Log.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
@@ -531,14 +530,14 @@ void Spell::SendChannelUpdate(uint32 time)
             }
         }
 
-        m_caster->RemoveAurasByCasterSpell(m_spellInfo->ID, m_caster->GetObjectGuid());
+        m_caster->RemoveAurasCastBy(m_spellInfo->ID, m_caster->GetObjectGuid());
 
         ObjectGuid target_guid = m_caster->GetChannelObjectGuid();
         if (target_guid != m_caster->GetObjectGuid() && target_guid.IsUnit())
         {
             if (Unit* target = ObjectLookup::GetUnit(*m_caster, target_guid))
             {
-                target->RemoveAurasByCasterSpell(m_spellInfo->ID, m_caster->GetObjectGuid());
+                target->RemoveAurasCastBy(m_spellInfo->ID, m_caster->GetObjectGuid());
             }
         }
 

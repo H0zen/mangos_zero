@@ -61,7 +61,6 @@
 #include "CinematicFlyover.h"
 #include "Guild.h"
 #include "GuildMgr.h"
-#include "UpdateMask.h"
 #include "CorpseManager.h"
 #include "Group.h"
 #include "PlayerDump.h"

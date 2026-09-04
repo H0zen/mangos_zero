@@ -40,7 +40,6 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
-#include "UpdateMask.h"
 #include "CinematicFlyover.h"
 #include "QuestDef.h"
 #include "GossipDef.h"
@@ -457,7 +456,6 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
 
 //== Player ====================================================
 
-UpdateMask Player::updateVisualBits;
 
 /**
  * @brief Initializes a player instance and its runtime state.
@@ -1410,7 +1408,7 @@ void Player::SetDeathState(DeathState s)
         clearResurrectRequestData();
 
         // remove form before other mods to prevent incorrect stats calculation
-        RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT);
+        RemoveAurasOfType(SPELL_AURA_MOD_SHAPESHIFT);
 
         // FIXME: is pet dismissed at dying or releasing spirit? if second, add SetDeathState(DEAD) to HandleRepopRequestOpcode and define pet unsummon here with (s == DEAD)
         RemovePet(PET_SAVE_REAGENTS);
@@ -3263,7 +3261,7 @@ bool Player::SetPosition(float x, float y, float z, float orientation, bool tele
             RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_TURNING);
         }
 
-        RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
 
         // move and update visible state if need
         m->PlayerRelocation(this, x, y, z, orientation);
@@ -4793,7 +4791,7 @@ void Player::RemoveSpellMods(Spell const* spell)
 
             if (mod && mod->charges == -1 && (mod->lastAffected == spell || mod->lastAffected == NULL))
             {
-                RemoveAurasDueToSpell(mod->spellId);
+                RemoveAuras(mod->spellId);
                 if (m_spellMods[i].empty())
                 {
                     break;
@@ -6092,7 +6090,7 @@ void Player::RemoveItemDependentAurasAndCasts(Item* pItem)
         }
 
         // no alt item, remove aura, restart check
-        RemoveAurasDueToSpell(holder->GetId());
+        RemoveAuras(holder->GetId());
         itr = auras.begin();
     }
 
@@ -6285,7 +6283,7 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
         m_MirrorTimerFlags &= ~(UNDERWATER_INWATER | UNDERWATER_INLAVA | UNDERWATER_INSLIME | UNDERWATER_INDARKWATER);
         if (m_lastLiquid && m_lastLiquid->SpellID)
         {
-            RemoveAurasDueToSpell(m_lastLiquid->SpellID);
+            RemoveAuras(m_lastLiquid->SpellID);
         }
         m_lastLiquid = NULL;
         return;
@@ -6296,7 +6294,7 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
         LiquidTypeEntry const* liquid = sLiquidTypeStore.LookupEntry(liqEntry);
         if (m_lastLiquid && m_lastLiquid->SpellID && m_lastLiquid->ID != liqEntry)
         {
-            RemoveAurasDueToSpell(m_lastLiquid->SpellID);
+            RemoveAuras(m_lastLiquid->SpellID);
         }
 
         if (liquid && liquid->SpellID)
@@ -6310,7 +6308,7 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
             }
             else
             {
-                RemoveAurasDueToSpell(liquid->SpellID);
+                RemoveAuras(liquid->SpellID);
             }
         }
 
@@ -6318,7 +6316,7 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
     }
     else if (m_lastLiquid && m_lastLiquid->SpellID)
     {
-        RemoveAurasDueToSpell(m_lastLiquid->SpellID);
+        RemoveAuras(m_lastLiquid->SpellID);
         m_lastLiquid = NULL;
     }
 

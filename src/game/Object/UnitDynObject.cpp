@@ -262,7 +262,7 @@ void Unit::RemoveGameObject(GameObject* gameObj, bool del)
     // GO created by some spell
     if (uint32 spellid = gameObj->GetSpellId())
     {
-        RemoveAurasDueToSpell(spellid);
+        RemoveAuras(spellid);
 
         if (GetTypeId() == TYPEID_PLAYER)
         {

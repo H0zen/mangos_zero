@@ -27,13 +27,14 @@
 
 // One Outcome, told three ways.
 //
-// The core answers in a Landing. The client wants a HitInfo mask and a
+// The core answers in a Result and a set of amplifiers. The client wants a
+// HitInfo mask and a
 // VictimState; the proc system wants its own mask. All three say the same thing,
 // so the translation belongs in one place rather than being rebuilt at each
 // site that needs a different dialect -- which is how they drift, and how a
 // blocked hit ends up procing as a plain one.
 
-#include "Combat/Attempt.h"
+#include "Combat/Blow.h"
 
 namespace combat
 {

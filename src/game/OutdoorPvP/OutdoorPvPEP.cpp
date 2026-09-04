@@ -94,7 +94,7 @@ void OutdoorPvPEP::HandlePlayerEnterZone(Player* player, bool isMainZone)
     // remove the buff from the player first; Sometimes on relog players still have the aura
     for (uint8 i = 0; i < MAX_EP_TOWERS; ++i)
     {
-        player->RemoveAurasDueToSpell(player->GetTeam() == ALLIANCE ? plaguelandsTowerBuffs[i].spellIdAlliance : plaguelandsTowerBuffs[i].spellIdHorde);
+        player->RemoveAuras(player->GetTeam() == ALLIANCE ? plaguelandsTowerBuffs[i].spellIdAlliance : plaguelandsTowerBuffs[i].spellIdHorde);
     }
 
     // buff the player
@@ -128,7 +128,7 @@ void OutdoorPvPEP::HandlePlayerLeaveZone(Player* player, bool isMainZone)
     // remove the buff from the player
     for (uint8 i = 0; i < MAX_EP_TOWERS; ++i)
     {
-        player->RemoveAurasDueToSpell(player->GetTeam() == ALLIANCE ? plaguelandsTowerBuffs[i].spellIdAlliance : plaguelandsTowerBuffs[i].spellIdHorde);
+        player->RemoveAuras(player->GetTeam() == ALLIANCE ? plaguelandsTowerBuffs[i].spellIdAlliance : plaguelandsTowerBuffs[i].spellIdHorde);
     }
 
     OutdoorPvP::HandlePlayerLeaveZone(player, isMainZone);

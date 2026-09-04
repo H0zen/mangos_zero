@@ -41,7 +41,6 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
-#include "UpdateMask.h"
 #include "CinematicFlyover.h"
 #include "QuestDef.h"
 #include "GossipDef.h"

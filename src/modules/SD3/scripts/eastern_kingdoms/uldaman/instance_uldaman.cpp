@@ -164,7 +164,7 @@ struct is_uldaman : public InstanceScript
                         }
 
                         // Attack the player
-                        pKeeper->RemoveAurasDueToSpell(SPELL_STONED);
+                        pKeeper->RemoveAuras(SPELL_STONED);
                         pKeeper->AI()->AttackStart(pPlayer);
                         break;
                     }

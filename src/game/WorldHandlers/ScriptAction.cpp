@@ -744,7 +744,7 @@ bool ScriptAction::HandleScriptStep()
                 break;
             }
 
-            ((Unit*)pSource)->RemoveAurasDueToSpell(m_script->removeAura.spellId);
+            ((Unit*)pSource)->RemoveAuras(m_script->removeAura.spellId);
             break;
         }
         case SCRIPT_COMMAND_CAST_SPELL:                     // 15

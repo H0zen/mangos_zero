@@ -147,7 +147,7 @@ void FollowerAI::MoveInLineOfSight(Unit* pWho)
             {
                 if (!m_creature->getVictim())
                 {
-                    pWho->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+                    pWho->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
                     AttackStart(pWho);
                 }
                 else if (m_creature->GetMap()->IsDungeon())

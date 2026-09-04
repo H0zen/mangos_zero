@@ -134,7 +134,7 @@ struct npc_web_wrap : public CreatureScript
                 {
                     if (pVictim->IsAlive())
                     {
-                        pVictim->RemoveAurasDueToSpell(SPELL_WEBWRAP);
+                        pVictim->RemoveAuras(SPELL_WEBWRAP);
                     }
                 }
             }

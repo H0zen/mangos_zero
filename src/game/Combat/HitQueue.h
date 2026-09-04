@@ -40,7 +40,7 @@
 // Depth is carried per entry rather than counted globally: a chain is a tree, and
 // what matters is how far THIS branch has come, not how many hits happened.
 
-#include "Combat/Attempt.h"
+#include "Combat/Blow.h"
 
 #include <deque>
 
@@ -49,7 +49,7 @@ namespace combat
     /// One hit waiting to be dealt, and how far down a chain it already is.
     struct PendingHit
     {
-        Attempt attempt;
+        Blow blow;
         uint8 depth = 0;
     };
 
@@ -69,7 +69,7 @@ namespace combat
              * it: a dropped chain is worth knowing about, and silently swallowing
              * one turns a runaway aura pair into a mystery.
              */
-            bool Push(const Attempt& attempt, uint8 parentDepth)
+            bool Push(const Blow& blow, uint8 parentDepth)
             {
                 if (parentDepth >= MAX_DEPTH)
                 {
@@ -78,17 +78,17 @@ namespace combat
                 }
 
                 PendingHit pending;
-                pending.attempt = attempt;
+                pending.blow = blow;
                 pending.depth = static_cast<uint8>(parentDepth + 1);
                 m_pending.push_back(pending);
                 return true;
             }
 
             /// A hit begun by intent rather than by another hit.
-            bool PushRoot(const Attempt& attempt)
+            bool PushRoot(const Blow& blow)
             {
                 PendingHit pending;
-                pending.attempt = attempt;
+                pending.blow = blow;
                 pending.depth = 0;
                 m_pending.push_back(pending);
                 return true;

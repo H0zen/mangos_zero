@@ -101,7 +101,7 @@ struct boss_hakkar : public CreatureScript
             //DoCastSpellIfCan(nullptr, SPELL_DOUBLE_ATTACK, CAST_TRIGGERED | CAST_AURA_NOT_PRESENT);
 
             // Initiate Hakkar power stacks
-            m_creature->RemoveAurasDueToSpell(SPELL_HAKKAR_POWER);
+            m_creature->RemoveAuras(SPELL_HAKKAR_POWER);
             for (uint8 i = 0; i < MAX_PRIESTS; i++)
             {
                 if (m_pInstance->GetData(i) != DONE)

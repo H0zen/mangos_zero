@@ -393,7 +393,7 @@ struct npc_disciple_of_naralex : public CreatureScript
                                         DoScriptText(SAY_NARALEX_AWAKE, pNaralex);
                                     }
                                     m_creature->InterruptNonMeleeSpells(false, SPELL_AWAKENING);
-                                    m_creature->RemoveAurasDueToSpell(SPELL_AWAKENING);
+                                    m_creature->RemoveAuras(SPELL_AWAKENING);
                                     m_pInstance->SetData(TYPE_DISCIPLE, DONE);
                                     ++m_uiSubeventPhase;
                                     m_uiEventTimer = 2000;

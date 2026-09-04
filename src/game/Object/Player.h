@@ -98,7 +98,6 @@ class DynamicObject;
 class Creature;
 class PlayerMenu;
 class Transport;
-class UpdateMask;
 class SpellCastTargets;
 class PlayerSocial;
 class DungeonPersistentState;
@@ -1136,9 +1135,6 @@ class Player : public Unit
         time_t lastTimeLooted; // Time when the player last looted
 
         void CleanupsBeforeDelete() override; // Cleanup operations before deleting the player
-
-        static UpdateMask updateVisualBits; // Update mask for visual bits
-        static void InitVisibleBits(); // Initialize visible bits
 
         void AddToWorld() override; // Add the player to the world
         void RemoveFromWorld() override; // Remove the player from the world
@@ -3809,11 +3805,6 @@ class Player : public Unit
         // Save player stats to the database
         void _SaveStats();
 
-        // Set create bits for the update mask
-        void _SetCreateBits(UpdateMask* updateMask, Player* target) const override;
-
-        // Set update bits for the update mask
-        void _SetUpdateBits(UpdateMask* updateMask, Player* target) const override;
 
         /*********************************************************/
         /***              ENVIRONMENTAL SYSTEM                 ***/

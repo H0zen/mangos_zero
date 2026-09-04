@@ -247,7 +247,7 @@ void BattleGround::EndBattleGround(Team winner)
         // should remove spirit of redemption
         if (plr->HasAuraType(SPELL_AURA_SPIRIT_OF_REDEMPTION))
         {
-            plr->RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT);
+            plr->RemoveAurasOfType(SPELL_AURA_MOD_SHAPESHIFT);
         }
 
         if (!plr->IsAlive())

@@ -36,7 +36,6 @@
 #include "WorldPacket.h"
 #include "Opcodes.h"
 #include "Log.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
@@ -91,7 +90,7 @@ void Spell::EffectDispelMechanic(SpellEffectIndex eff_idx)
         SpellEntry const* spell = iter->second->GetSpellProto();
         if (iter->second->HasMechanic(mechanic))
         {
-            unitTarget->RemoveAurasDueToSpell(spell->ID);
+            unitTarget->RemoveAuras(spell->ID);
             if (Auras.empty())
             {
                 break;

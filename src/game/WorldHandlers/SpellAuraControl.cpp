@@ -54,7 +54,6 @@
 #include "WorldSession.h"
 #include "Opcodes.h"
 #include "Log.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
@@ -314,8 +313,8 @@ void Aura::HandleModCharm(bool apply, bool Real)
     if (apply)
     {
         // is it really need after spell check checks?
-        target->RemoveSpellsCausingAura(SPELL_AURA_MOD_CHARM, GetHolder());
-        target->RemoveSpellsCausingAura(SPELL_AURA_MOD_POSSESS, GetHolder());
+        target->RemoveAurasOfType(SPELL_AURA_MOD_CHARM, GetHolder());
+        target->RemoveAurasOfType(SPELL_AURA_MOD_POSSESS, GetHolder());
 
         target->SetCharmerGuid(GetCasterGuid());
         target->setFaction(caster->getFaction());
@@ -692,13 +691,13 @@ void Aura::HandleModStealth(bool apply, bool Real)
         // for RACE_NIGHTELF stealth
         if (Real && target->GetTypeId() == TYPEID_PLAYER && GetId() == 20580)
         {
-            target->RemoveAurasDueToSpell(21009);
+            target->RemoveAuras(21009);
         }
 
         // Remove vanish buff if user cancel stealth
         if (m_removeMode == AURA_REMOVE_BY_CANCEL)
         {
-            target->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+            target->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
         }
 
         // only at real aura remove of _last_ SPELL_AURA_MOD_STEALTH
@@ -1254,7 +1253,7 @@ void Aura::HandleAuraModStateImmunity(bool apply, bool Real)
         {
             if (aura != this)                               // this aura was just added
             {
-                GetTarget()->RemoveAurasDueToSpell(aura->GetId());
+                GetTarget()->RemoveAuras(aura->GetId());
             }
         }
     }
@@ -1296,7 +1295,7 @@ void Aura::HandleAuraModSchoolImmunity(bool apply, bool Real)
                 !iter->second->IsPositive() &&         // Don't remove positive spells
                 spell->ID != GetId())                  // Don't remove self
             {
-                target->RemoveAurasDueToSpell(spell->ID);
+                target->RemoveAuras(spell->ID);
                 if (Auras.empty())
                 {
                     break;

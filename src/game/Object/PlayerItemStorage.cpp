@@ -36,7 +36,6 @@
 #include "Language.h"
 #include "SpellMgr.h"
 #include "World.h"
-#include "UpdateMask.h"
 #include "CinematicFlyover.h"
 #include "QuestDef.h"
 #include "GossipDef.h"

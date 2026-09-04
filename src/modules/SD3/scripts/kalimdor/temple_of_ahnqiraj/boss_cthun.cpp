@@ -322,8 +322,8 @@ struct boss_eye_of_cthun : public CreatureScript
                     if (m_uiDarkGlareEndTimer < uiDiff)
                     {
                         // Remove rotation auras
-                        m_creature->RemoveAurasDueToSpell(SPELL_ROTATE_360_LEFT);
-                        m_creature->RemoveAurasDueToSpell(SPELL_ROTATE_360_RIGHT);
+                        m_creature->RemoveAuras(SPELL_ROTATE_360_LEFT);
+                        m_creature->RemoveAuras(SPELL_ROTATE_360_RIGHT);
 
                         // Switch to Eye Beam
                         m_uiDarkGlareEndTimer = 40000;
@@ -938,7 +938,7 @@ struct at_stomach_cthun : public AreaTriggerScript
                     }
 
                     // Teleport back to C'thun and remove the Digestive Acid
-                    pPlayer->RemoveAurasDueToSpell(SPELL_DIGESTIVE_ACID);
+                    pPlayer->RemoveAuras(SPELL_DIGESTIVE_ACID);
                     pPlayer->NearTeleportTo(pCthun->Where().X(), pCthun->Where().Y(), pCthun->Where().Z() + 15.0f, frand(0, 2 * M_PI_F));
 
                     // Note: the real knockback spell id should be 26230

@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "Combat/Attempt.h"
+#include "Combat/Blow.h"
 
 #include <cstdint>
 #include <vector>

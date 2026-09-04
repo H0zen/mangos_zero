@@ -40,7 +40,6 @@
 #include "WorldPacket.h"
 #include "Opcodes.h"
 #include "Log.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
@@ -238,7 +237,7 @@ void Spell::EffectDispel(SpellEffectIndex eff_idx)
                 SpellAuraHolder* dispelledHolder = j->first;
                 data << uint32(dispelledHolder->GetId());   // Spell Id
                 //data << uint8(0);                           // [-ZERO] 0 - dispelled !=0 cleansed
-                unitTarget->RemoveAuraHolderDueToSpellByDispel(dispelledHolder->GetId(), j->second, dispelledHolder->GetCasterGuid(), m_caster);
+                unitTarget->RemoveStacks(dispelledHolder->GetId(), j->second, dispelledHolder->GetCasterGuid(), AURA_REMOVE_BY_DISPEL);
             }
             m_caster->SendMessageToSet(&data, true);
 
@@ -367,7 +366,7 @@ void Spell::EffectPickPocket(SpellEffectIndex /*eff_idx*/)
         {
             // Reveal action + get attack
             m_caster->SendSpellMiss(unitTarget, m_spellInfo->ID, SPELL_MISS_RESIST); // Pickpocket resisted.
-            m_caster->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+            m_caster->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
             unitTarget->AttackedBy(m_caster);
         }
     }
@@ -755,7 +754,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
             {
                 if (script->GetModifier()->m_miscvalue == 2228)
                 {
-                    m_caster->RemoveAurasDueToSpell(script->GetId());
+                    m_caster->RemoveAuras(script->GetId());
                 }
             }
         }
@@ -826,7 +825,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
         {
             if (script->GetModifier()->m_miscvalue == 2228)
             {
-                m_caster->RemoveAurasDueToSpell(script->GetId());
+                m_caster->RemoveAuras(script->GetId());
             }
         }
     }

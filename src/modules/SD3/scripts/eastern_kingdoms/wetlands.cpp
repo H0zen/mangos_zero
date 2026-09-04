@@ -115,7 +115,7 @@ struct npc_tapoke_slim_jahn : public CreatureScript
             {
                 case WAYPOINT_MAILBOX:
                     SetRun();
-                    m_creature->RemoveAurasDueToSpell(SPELL_STEALTH);
+                    m_creature->RemoveAuras(SPELL_STEALTH);
                     m_creature->SetFactionTemporary(FACTION_ENEMY, TEMPFACTION_RESTORE_RESPAWN | TEMPFACTION_RESTORE_COMBAT_STOP);
                     break;
 

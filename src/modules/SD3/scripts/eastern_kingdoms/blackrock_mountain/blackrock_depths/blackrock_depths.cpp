@@ -2190,7 +2190,7 @@ struct npc_ironhand_guardian : public CreatureScript
             switch (m_uiPhase)
             {
                 case 0:
-                    m_creature->RemoveAurasDueToSpell(SPELL_STONED);
+                    m_creature->RemoveAuras(SPELL_STONED);
                     if (DoCastSpellIfCan(m_creature, SPELL_STONED_VISUAL) == CAST_OK)
                     {
                         m_uiPhase = 1;

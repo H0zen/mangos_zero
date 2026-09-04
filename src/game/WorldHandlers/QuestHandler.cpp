@@ -132,7 +132,7 @@ void WorldSession::HandleQuestgiverHelloOpcode(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     // Stop the npc if moving

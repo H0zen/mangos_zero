@@ -25,27 +25,29 @@
 
 #pragma once
 
-// The two hit tables. They are the only place a swing and a spell disagree, and
-// they meet again immediately: both answer in the same Landing.
+// The two rolls. They are where a swing and a spell genuinely disagree, and they
+// meet again immediately: both answer in the same Strike.
 //
-// The roll is a PARAMETER. A hit table that draws its own random number cannot
-// be checked -- every boundary in it becomes a statistical argument instead of a
+// The roll is a PARAMETER. A table that draws its own random number cannot be
+// checked -- every boundary in it becomes a statistical argument instead of a
 // case. Passed in, each band is one assertion. The convention is already in the
-// tree: Placement::RandomPointAround takes its roll the same way and for the
-// same reason.
+// tree: Placement::RandomPointAround takes its roll the same way, for the same
+// reason.
 //
-// 1.12 rolls one number against cumulative bands in a fixed order: miss, dodge,
+// One number is drawn against cumulative bands in a fixed order: miss, dodge,
 // parry, glancing, block, crit, crushing. The order is the rule, not an
 // implementation detail -- a dodge and a crit cannot both happen, and which one
-// wins is decided by which band the single roll fell in.
+// wins is decided by which band the single roll fell in. Bands that end the blow
+// answer with an ending; bands that only change its size answer with Landed and
+// a flag.
 
-#include "Combat/Attempt.h"
+#include "Combat/Blow.h"
 #include "Combat/Combatant.h"
 
 namespace combat
 {
     /// The roll's range: hundredths of a percent, so 10000 is certainty.
-    const uint32 ROLL_RANGE = 10000;
+    constexpr uint32 ROLL_RANGE = 10000;
 
     /**
      * @brief What a weapon swing does, given a roll in [0, ROLL_RANGE).
@@ -55,18 +57,19 @@ namespace combat
      * knowing that, and a version that reached for world positions would be
      * wrong for everyone aboard a ship.
      *
-     * `isSpellSwing` marks an ability that uses the melee table rather than an
-     * auto-attack: those cannot glance and cannot be crushed.
+     * `isAbility` marks a blow that uses the weapon table without being an
+     * auto-attack: those neither glance nor are crushed.
      */
-    Landing RollMelee(const Combatant& attacker, const Combatant& victim,
-                      bool fromBehind, bool isSpellSwing, uint32 roll);
+    Strike RollMelee(const Combatant& attacker, const Combatant& victim,
+                     bool fromBehind, bool isAbility, uint32 roll);
 
     /**
      * @brief What a spell does, given a roll in [0, ROLL_RANGE).
      *
-     * Spells weigh a chance to land and a chance to be resisted, and nothing
-     * else: there is no dodging or parrying a bolt in 1.12.
+     * A bolt weighs a chance to land and a chance to be critical, and nothing
+     * else: there is no dodging or parrying one in 1.12. Being resisted is
+     * decided further down, against resistance, not here.
      */
-    Landing RollSpell(const Combatant& attacker, const Combatant& victim,
-                      int32 missChance, int32 critChance, bool canCrit, uint32 roll);
+    Strike RollSpell(const Combatant& attacker, const Combatant& victim,
+                     int32 missChance, int32 critChance, bool canCrit, uint32 roll);
 }

@@ -34,7 +34,6 @@
 #include "WorldPacket.h"
 #include "Opcodes.h"
 #include "Log.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
@@ -237,7 +236,7 @@ void Spell::EffectSanctuary(SpellEffectIndex /*eff_idx*/)
     // Vanish allows to remove all threat and cast regular stealth so other spells can be used
     if (m_spellInfo->IsFitToFamily(SPELLFAMILY_ROGUE, UI64LIT(0x0000000000000800)))
     {
-        ((Player*)m_caster)->RemoveSpellsCausingAura(SPELL_AURA_MOD_ROOT);
+        ((Player*)m_caster)->RemoveAurasOfType(SPELL_AURA_MOD_ROOT);
     }
 
     // Improved Sap: a hacky way

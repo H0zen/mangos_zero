@@ -658,7 +658,7 @@ void AreaAura::Update(uint32 diff)
             !InReach(*caster, *target, m_radius)           ||
             caster->IsFriendlyTo(target) != needFriendly)
         {
-            target->RemoveSingleAuraFromSpellAuraHolder(GetId(), GetEffIndex(), GetCasterGuid());
+            target->RemoveAuraEffect(GetId(), GetEffIndex(), GetCasterGuid());
         }
         else if (m_areaAuraType == AREA_AURA_PARTY)         // check if in same sub group
         {
@@ -673,12 +673,12 @@ void AreaAura::Update(uint32 diff)
                     Player* checkTarget = target->GetCharmerOrOwnerPlayerOrPlayerItself();
                     if (!checkTarget || !pGroup->SameSubGroup(check, checkTarget))
                     {
-                        target->RemoveSingleAuraFromSpellAuraHolder(GetId(), GetEffIndex(), GetCasterGuid());
+                        target->RemoveAuraEffect(GetId(), GetEffIndex(), GetCasterGuid());
                     }
                 }
                 else
                 {
-                    target->RemoveSingleAuraFromSpellAuraHolder(GetId(), GetEffIndex(), GetCasterGuid());
+                    target->RemoveAuraEffect(GetId(), GetEffIndex(), GetCasterGuid());
                 }
             }
         }
@@ -686,7 +686,7 @@ void AreaAura::Update(uint32 diff)
         {
             if (target->GetObjectGuid() != caster->GetCharmerOrOwnerGuid())
             {
-                target->RemoveSingleAuraFromSpellAuraHolder(GetId(), GetEffIndex(), GetCasterGuid());
+                target->RemoveAuraEffect(GetId(), GetEffIndex(), GetCasterGuid());
             }
         }
     }
@@ -868,7 +868,7 @@ void Aura::ReapplyAffectedPassiveAuras(Unit* target)
         for (std::map<uint32, ObjectGuid>::const_iterator map_itr = affectedSelf.begin(); map_itr != affectedSelf.end(); ++map_itr)
         {
             Item* item = pTarget && map_itr->second ? pTarget->GetItemByGuid(map_itr->second) : NULL;
-            target->RemoveAurasDueToSpell(map_itr->first);
+            target->RemoveAuras(map_itr->first);
             target->CastSpell(target, map_itr->first, true, item);
         }
     }
@@ -1812,7 +1812,7 @@ void Aura::PeriodicTick()
                 uint32 dmg = spellProto->ManaPerSecond;
                 if (pCaster->GetHealth() <= dmg && pCaster->GetTypeId() == TYPEID_PLAYER)
                 {
-                    pCaster->RemoveAurasDueToSpell(GetId());
+                    pCaster->RemoveAuras(GetId());
 
                     // finish current generic/channeling spells, don't affect autorepeat
                     pCaster->FinishSpell(CURRENT_GENERIC_SPELL);
@@ -1915,7 +1915,7 @@ void Aura::PeriodicTick()
                     if (target->GetTypeId() == TYPEID_PLAYER && target->GetPower(power) == 0)
                     {
                         target->CastSpell(target, 21058, true, NULL, this);
-                        target->RemoveAurasDueToSpell(GetId());
+                        target->RemoveAuras(GetId());
                     }
                     break;
             }
@@ -2396,7 +2396,7 @@ void SpellAuraHolder::_AddSpellAuraHolder()
     // register aura diminishing on apply
     if (getDiminishGroup() != DIMINISHING_NONE)
     {
-        m_target->ApplyDiminishingAura(getDiminishGroup(), true);
+        m_target->Diminishing().Hold(getDiminishGroup());
     }
 
     // Update Seals information
@@ -2449,7 +2449,7 @@ void SpellAuraHolder::_RemoveSpellAuraHolder()
     // unregister aura diminishing (and store last time)
     if (getDiminishGroup() != DIMINISHING_NONE)
     {
-        m_target->ApplyDiminishingAura(getDiminishGroup(), false);
+        m_target->Diminishing().Release(getDiminishGroup(), GameTime::GetGameTimeMS());
     }
 
     SetAura(slot, true);
@@ -2551,7 +2551,7 @@ void SpellAuraHolder::CleanupTriggeredSpells()
             continue;
         }
 
-        m_target->RemoveAurasDueToSpell(tSpellId);
+        m_target->RemoveAuras(tSpellId);
     }
 }
 
@@ -2755,7 +2755,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
         {
             apply ?
             m_target->CastSpell(m_target, *itr, true, NULL, NULL, GetCasterGuid()) :
-            m_target->RemoveAurasByCasterSpell(*itr, GetCasterGuid());
+            m_target->RemoveAurasCastBy(*itr, GetCasterGuid());
         }
     }
 
@@ -2777,7 +2777,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
         {
             for (SpellLinkedSet::const_iterator itr = linkedSet.begin(); itr != linkedSet.end(); ++itr)
             {
-                m_target->RemoveAurasByCasterSpell(*itr, GetCasterGuid());
+                m_target->RemoveAurasCastBy(*itr, GetCasterGuid());
             }
         }
     }
@@ -2894,19 +2894,19 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
     {
         if (spellId1)
         {
-            m_target->RemoveAurasByCasterSpell(spellId1, GetCasterGuid());
+            m_target->RemoveAurasCastBy(spellId1, GetCasterGuid());
         }
         if (spellId2)
         {
-            m_target->RemoveAurasByCasterSpell(spellId2, GetCasterGuid());
+            m_target->RemoveAurasCastBy(spellId2, GetCasterGuid());
         }
         if (spellId3)
         {
-            m_target->RemoveAurasByCasterSpell(spellId3, GetCasterGuid());
+            m_target->RemoveAurasCastBy(spellId3, GetCasterGuid());
         }
         if (spellId4)
         {
-            m_target->RemoveAurasByCasterSpell(spellId4, GetCasterGuid());
+            m_target->RemoveAurasCastBy(spellId4, GetCasterGuid());
         }
     }
 
@@ -2992,7 +2992,7 @@ void SpellAuraHolder::Update(uint32 diff)
         Unit* caster = GetCaster();
         if (!caster)
         {
-            m_target->RemoveAurasByCasterSpell(GetId(), GetCasterGuid());
+            m_target->RemoveAurasCastBy(GetId(), GetCasterGuid());
             return;
         }
 

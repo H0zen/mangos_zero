@@ -54,7 +54,6 @@
 #include "GridNotifiersImpl.h"
 #include "Opcodes.h"
 #include "Log.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
@@ -116,7 +115,7 @@ void Spell::cancel()
                     Unit* unit = m_caster->GetObjectGuid() == (*ihit).targetGUID ? m_caster : ObjectLookup::GetUnit(*m_caster, ihit->targetGUID);
                     if (unit && unit->IsAlive())
                     {
-                        unit->RemoveAurasByCasterSpell(m_spellInfo->ID, m_caster->GetObjectGuid());
+                        unit->RemoveAurasCastBy(m_spellInfo->ID, m_caster->GetObjectGuid());
                     }
                 }
             }
@@ -232,7 +231,7 @@ void Spell::cast(bool skipCheck)
             // exit stealth on sap when improved sap is not skilled
             if (m_spellInfo->SpellClassMask & UI64LIT(0x00000080) && m_caster->GetTypeId() == TYPEID_PLAYER && (!m_caster->GetAura(14076, SpellEffectIndex(0)) && !m_caster->GetAura(14094, SpellEffectIndex(0)) && !m_caster->GetAura(14095, SpellEffectIndex(0))))
             {
-                m_caster->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+                m_caster->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
             }
             break;
         }
@@ -277,7 +276,7 @@ void Spell::cast(bool skipCheck)
     // As of patch 1.10.0, Arcane Power will replace Power Infusion
     if (m_spellInfo->ID == 12042)
     {
-        m_targets.getUnitTarget()->RemoveAurasDueToSpell(10060);
+        m_targets.getUnitTarget()->RemoveAuras(10060);
     }
 
     // Linked spells (precast chain)
@@ -489,7 +488,7 @@ void Spell::_handle_immediate_phase()
     }
 
     // initialize Diminishing Returns Data
-    m_diminishLevel = DIMINISHING_LEVEL_1;
+    m_diminishLevel = unit::Fade::Full;
     m_diminishGroup = DIMINISHING_NONE;
 
     // process items

@@ -138,7 +138,7 @@ struct spell_apply_salve : public SpellScript
 
             // Update entry, remove aura, set the kill credit and despawn
             uint32 uiUpdateEntry = pCreatureTarget->GetEntry() == NPC_SICKLY_DEER ? NPC_CURED_DEER : NPC_CURED_GAZELLE;
-            pCreatureTarget->RemoveAurasDueToSpell(SPELL_SICKLY_AURA);
+            pCreatureTarget->RemoveAuras(SPELL_SICKLY_AURA);
             pCreatureTarget->UpdateEntry(uiUpdateEntry);
             ((Player*)pCaster)->KilledMonsterCredit(uiUpdateEntry);
             pCreatureTarget->ForcedDespawn(20000);

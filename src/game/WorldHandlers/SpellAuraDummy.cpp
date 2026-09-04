@@ -53,7 +53,6 @@
 #include "WorldSession.h"
 #include "Opcodes.h"
 #include "Log.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
@@ -344,7 +343,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     }
                     else
                     {
-                        target->RemoveAurasDueToSpell(24659);
+                        target->RemoveAuras(24659);
                     }
                     return;
                 }
@@ -362,7 +361,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     }
                     else
                     {
-                        target->RemoveAurasDueToSpell(24662);
+                        target->RemoveAuras(24662);
                     }
                     return;
                 }

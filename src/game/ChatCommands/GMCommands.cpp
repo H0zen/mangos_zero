@@ -414,7 +414,7 @@ bool ChatHandler::HandleGMVisibleCommand(char* args)
         m_session->SendNotification(LANG_INVISIBLE_VISIBLE);
         if (invisibleAuraInfo)
         {
-            player->RemoveAurasDueToSpell(invisibleAuraInfo->ID);
+            player->RemoveAuras(invisibleAuraInfo->ID);
         }
     }
     else
@@ -623,7 +623,7 @@ bool freezePlayer(Player* player, WorldObject* caster)
 // Internal shortcut function to freeze a player
 void unFreezePlayer(Player* player)
 {
-    player->RemoveAurasDueToSpell(SPELL_GM_FREEZE);
+    player->RemoveAuras(SPELL_GM_FREEZE);
 }
 
 /**

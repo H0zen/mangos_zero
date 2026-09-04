@@ -36,7 +36,6 @@
 #include "Database/DatabaseEnv.h"
 #include "SpellMgr.h"
 #include "World.h"
-#include "UpdateMask.h"
 #include "CinematicFlyover.h"
 #include "QuestDef.h"
 #include "GossipDef.h"
@@ -352,7 +351,7 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                         }
                         else
                         {
-                            RemoveAurasDueToItemSpell(item, enchant_spell_id);
+                            RemoveAurasFromItem(item, enchant_spell_id);
                         }
                     }
                     break;

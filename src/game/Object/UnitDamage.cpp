@@ -179,11 +179,15 @@ void Unit::CalculateDamageAbsorbAndResist(Unit* pCaster, SpellSchoolMask schoolM
     // once the blow itself has been applied, in DealDamage. Dealing it here
     // would let the recipient die, proc and pull threat before the hit that
     // split the damage had landed at all.
+    // The blow has one school. Spell data stores a mask, so it narrows here,
+    // once, rather than inside the core.
+    const combat::School school = combat::FirstSchoolIn(schoolMask);
+
     const combat::Defences defences =
-        combat::ReadDefences(*this, *pCaster, schoolMask);
+        combat::ReadDefences(*this, *pCaster, school);
 
     combat::Outcome plan;
-    combat::Mitigate(remaining, schoolMask, defences, pCaster == this, plan);
+    combat::Mitigate(remaining, school, defences, pCaster == this, plan);
 
     combat::ConsumeShields(*this, plan);
 

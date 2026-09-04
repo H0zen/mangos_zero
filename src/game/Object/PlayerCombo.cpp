@@ -34,7 +34,6 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
-#include "UpdateMask.h"
 #include "QuestDef.h"
 #include "GossipDef.h"
 #include "UpdateData.h"
@@ -87,7 +86,7 @@ void Player::AddComboPoints(Unit* target, int8 count)
     }
 
     // without combo points lost (duration checked in aura)
-    RemoveSpellsCausingAura(SPELL_AURA_RETAIN_COMBO_POINTS);
+    RemoveAurasOfType(SPELL_AURA_RETAIN_COMBO_POINTS);
 
     if (target->GetObjectGuid() == m_comboTargetGuid)
     {
@@ -132,7 +131,7 @@ void Player::ClearComboPoints()
     }
 
     // without combopoints lost (duration checked in aura)
-    RemoveSpellsCausingAura(SPELL_AURA_RETAIN_COMBO_POINTS);
+    RemoveAurasOfType(SPELL_AURA_RETAIN_COMBO_POINTS);
 
     m_comboPoints = 0;
 

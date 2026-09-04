@@ -69,7 +69,8 @@
 #include "Opcodes.h"
 #include "SpellAuraDefines.h"
 #include "AuraIndex.h"
-#include "Combat/Attempt.h"
+#include "Combat/Blow.h"
+#include "Components/Diminishing.h"
 #include "UpdateFields.h"
 #include "SharedDefines.h"
 #include "ThreatManager.h"
@@ -774,58 +775,6 @@ namespace Movement
 }
 
 /**
- * The different available diminishing return levels.
- * \see DiminishingReturn
- */
-enum DiminishingLevels
-{
-    DIMINISHING_LEVEL_1             = 0,         ///<Won't make a difference to stun duration
-    DIMINISHING_LEVEL_2             = 1,         ///<Reduces stun time by 50%
-    DIMINISHING_LEVEL_3             = 2,         ///<Reduces stun time by 75%
-    DIMINISHING_LEVEL_IMMUNE        = 3          ///<The target is immune to the DiminishingGrouop
-};
-
-/**
- * Structure to keep track of diminishing returns, for more information
- * about the idea behind diminishing returns, see: http://www.wowwiki.com/Diminishing_returns
- * \see Unit::GetDiminishing
- * \see Unit::IncrDiminishing
- * \see Unit::ApplyDiminishingToDuration
- * \see Unit::ApplyDiminishingAura
- */
-struct DiminishingReturn
-{
-    DiminishingReturn(DiminishingGroup group, uint32 t, uint32 count)
-        : DRGroup(group), stack(0), hitTime(t), hitCount(count)
-    {}
-
-    /**
-     * Group that this diminishing return will affect
-     */
-    DiminishingGroup        DRGroup: 16;
-
-    /**
-     * Seems to be how many times this has been stacked, modified in
-     * Unit::ApplyDiminishingAura
-     */
-    uint16                  stack: 16;
-
-    /**
-     * Records at what time the last hit with this DiminishingGroup was done, if it's
-     * higher than 15 seconds (ie: 15 000 ms) the DiminishingReturn::hitCount will be reset
-     * to DiminishingLevels::DIMINISHING_LEVEL_1, which will do no difference to the duration
-     * of the stun etc.
-     */
-    uint32                  hitTime;
-
-    /**
-     * Records how many times a spell of this DiminishingGroup has hit, this in turn
-     * decides how how long the duration of the stun etc is.
-     */
-    uint32                  hitCount;
-};
-
-/**
  * At least some values expected fixed and used in auras field, other custom
  */
 enum MeleeHitOutcome
@@ -1216,15 +1165,6 @@ class Unit : public WorldObject
          */
         typedef std::list<Aura*> AuraList;
 
-        /**
-         * List of \ref DiminishingReturn used for calculation of the same thing.
-         * \see DiminishingReturn
-         * \see DiminishingLevels
-         * \see Unit::GetDiminishing
-         * \see Unit::IncrDiminishing
-         * \see Unit::ApplyDiminishingToDuration
-         */
-        typedef std::list<DiminishingReturn> Diminishing;
         typedef std::set < uint32 /*playerGuidLow*/ > ComboPointHolderSet;
         typedef std::map < SpellEntry const*, ObjectGuid /*targetGuid*/ > TrackedAuraTargetMap;
 
@@ -1254,48 +1194,15 @@ class Unit : public WorldObject
         }
 
         /**
-         * Gets the current DiminishingLevels for the given group
-         * @param group The group that you would like to know the current diminishing return level for
-         * @return The current diminishing level, up to DiminishingLevels::DIMINISHING_LEVEL_IMMUNE
+         * How often this unit has been controlled lately, and what that costs
+         * the next control effect.
+         *
+         * The component owns that history and answers about it. Whether a given
+         * effect diminishes at all is the caster's question, so it is asked
+         * there rather than being another method here.
          */
-        DiminishingLevels GetDiminishing(DiminishingGroup  group);
-
-        /**
-         * Increases the level of the DiminishingGroup by one level up until
-         * DIMINISHING_LEVEL_IMMUNE where the target becomes immune to spells of
-         * that DiminishingGroup
-         * @param group The group to increase the level for by one
-         */
-        void IncrDiminishing(DiminishingGroup group);
-
-        /**
-         * Calculates how long the duration of a spell should be considering
-         * diminishing returns, ie, if the Level passed in is DIMINISHING_LEVEL_IMMUNE
-         * then the duration will be zeroed out. If it is DIMINISHING_LEVEL_1 then a full
-         * duration will be used
-         * @param group The group to affect
-         * @param duration The duration to be changed, will be updated with the new duration
-         * @param caster Who's casting the spell, used to decide whether anything should be calculated
-         * @param Level The current level of diminishing returns for the group, decides the new duration
-         * @param isReflected Whether the spell was reflected or not, used to determine if we should do any calculations at all.
-         */
-        void ApplyDiminishingToDuration(DiminishingGroup  group, int32& duration, Unit* caster, DiminishingLevels Level, bool isReflected);
-
-        /**
-         * Applies a diminishing return to the given group if apply is true,
-         * otherwise lowers the level by one (?)
-         * @param group The group to affect
-         * @param apply whether this aura is being added/removed
-         */
-        void ApplyDiminishingAura(DiminishingGroup  group, bool apply);
-
-        /**
-         * Clears all the current diminishing returns for this Unit.
-         */
-        void ClearDiminishings()
-        {
-            m_Diminishing.clear();
-        }
+        unit::Diminishing& Diminishing() { return m_diminishing; }
+        const unit::Diminishing& Diminishing() const { return m_diminishing; }
 
         void Update(uint32 update_diff, uint32 time) override;
 
@@ -3563,7 +3470,7 @@ class Unit : public WorldObject
          * @param holder holder to be removed
          * @param mode reason for removal
          */
-        void RemoveSpellAuraHolder(SpellAuraHolder* holder, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
+        void RemoveHolder(SpellAuraHolder* holder, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
 
         /**
          * Removes a single \ref Aura from a \ref SpellAuraHolder to cancel out just one effect of a
@@ -3572,17 +3479,17 @@ class Unit : public WorldObject
          * @param index the effect index to tell which \ref Aura we want to remove
          * @param mode the reason for removing it
          */
-        void RemoveSingleAuraFromSpellAuraHolder(SpellAuraHolder* holder, SpellEffectIndex index, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
+        void RemoveAuraEffect(SpellAuraHolder* holder, SpellEffectIndex index, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
 
         /**
-         * Does the same thing as \ref Unit::RemoveSingleAuraFromSpellAuraHolder but with spell id
+         * Does the same thing as \ref Unit::RemoveAuraEffect but with spell id
          * instead of a \ref SpellAuraHolder
          * @param id id of the spell to find the \ref Aura in
          * @param index the effect index to tell which \ref Aura we want to remove
          * @param casterGuid guid of the caster to filter it out to just one \ref Aura to remove
          * @param mode reason for removal
          */
-        void RemoveSingleAuraFromSpellAuraHolder(uint32 id, SpellEffectIndex index, ObjectGuid casterGuid, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
+        void RemoveAuraEffect(uint32 id, SpellEffectIndex index, ObjectGuid casterGuid, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
 
         /**
          * Removes all \ref Aura s that a certain spell would cause via it's effects (up to 3 of them
@@ -3594,7 +3501,7 @@ class Unit : public WorldObject
          * @param mode reason for removal
          * \see SpellEntry::Effect
          */
-        void RemoveAurasDueToSpell(uint32 spellId, SpellAuraHolder* except = NULL, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
+        void RemoveAuras(uint32 spellId, SpellAuraHolder* except = NULL, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
 
         /**
          * Removes all \ref Aura s that a certain spell cast by a certain \ref Item would cause via
@@ -3602,7 +3509,7 @@ class Unit : public WorldObject
          * @param castItem the \ref Item that cast the spell
          * @param spellId id of the spell causing the \ref Aura s you would like to remove
          */
-        void RemoveAurasDueToItemSpell(Item* castItem, uint32 spellId);
+        void RemoveAurasFromItem(Item* castItem, uint32 spellId);
 
         /**
          * Removes all \ref Aura s applied by spells casted by a certain \ref Player / \ref Unit
@@ -3616,13 +3523,13 @@ class Unit : public WorldObject
          * @param spellId id of the \ref Spell causing the \ref Aura s you would like to remove
          * @param casterGuid \ref ObjectGuid of the caster
          */
-        void RemoveAurasByCasterSpell(uint32 spellId, ObjectGuid casterGuid);
+        void RemoveAurasCastBy(uint32 spellId, ObjectGuid casterGuid);
 
         /**
          * Removes all \ref Aura s caused by a certain spell because it was canceled.
          * @param spellId id of the \ref Spell causing the \ref Aura s you would like to remove
          */
-        void RemoveAurasDueToSpellByCancel(uint32 spellId);
+        void CancelAuras(uint32 spellId);
 
         // removing unknown aura stacks by diff reasons and selections
 
@@ -3630,7 +3537,7 @@ class Unit : public WorldObject
          * From old doc: removing unknown aura stacks by diff reasons and selections
          * \todo Document and find out what it does
          */
-        void RemoveNotOwnTrackedTargetAuras();
+        void RemoveTrackedAurasOfOthers();
 
         /**
          * Removes all \ref SpellAuraHolder s that have the given \ref Mechanics mask which is created
@@ -3649,29 +3556,29 @@ class Unit : public WorldObject
          * Removes all \ref Spell s that cause the given \ref AuraType
          * @param auraType the type of auras we would like to remove spells for
          */
-        void RemoveSpellsCausingAura(AuraType auraType);
+        void RemoveAurasOfType(AuraType auraType);
 
         /**
-         * Same as \ref Unit::RemoveSpellsCausingAura but with an exception
+         * Same as \ref Unit::RemoveAurasOfType but with an exception
          * for a \ref SpellAuraHolder that shouldn't be removed
          * @param auraType the type of auras we would like to remove spells for
          * @param except this will be excepted from removal
          */
-        void RemoveSpellsCausingAura(AuraType auraType, SpellAuraHolder* except);
+        void RemoveAurasOfType(AuraType auraType, SpellAuraHolder* except);
 
         /**
-         * Same as \ref Unit::RemoveSpellsCausingAura but for a matching caster aswell.
+         * Same as \ref Unit::RemoveAurasOfType but for a matching caster aswell.
          * @param auraType the type of auras we would like to remove spells for
          * @param casterGuid remove the aura only if the caster is equal to this guid
          */
-        void RemoveSpellsCausingAura(AuraType auraType, ObjectGuid casterGuid);
+        void RemoveAurasOfType(AuraType auraType, ObjectGuid casterGuid);
 
         /**
          * Removes all ranks of the given \ref Spell, ie: if the spellid of rank 1 inner fire is
          * given all the ranks of it will be removed.
          * @param spellId id of the spell we want to remove all ranks for
          */
-        void RemoveRankAurasDueToSpell(uint32 spellId);
+        void RemoveOtherRanks(uint32 spellId);
 
         /**
          *
@@ -3679,7 +3586,7 @@ class Unit : public WorldObject
          * @return true if we could remove something (and did), false otherwise
          * \todo Document what this does and break into smaller functions!
          */
-        bool RemoveNoStackAurasDueToAuraHolder(SpellAuraHolder* holder);
+        bool RemoveConflictingAuras(SpellAuraHolder* holder);
 
         /**
          * Removes all \ref Aura s that have the given interrupt flags
@@ -3723,8 +3630,7 @@ class Unit : public WorldObject
         void RemoveAllAurasOnEvade();
 
         // removing specific aura FROM stack by diff reasons and selections
-        void RemoveAuraHolderFromStack(uint32 spellId, uint32 stackAmount = 1, ObjectGuid casterGuid = ObjectGuid(), AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
-        void RemoveAuraHolderDueToSpellByDispel(uint32 spellId, uint32 stackAmount, ObjectGuid casterGuid, Unit* dispeller);
+        void RemoveStacks(uint32 spellId, uint32 stackAmount = 1, ObjectGuid casterGuid = ObjectGuid(), AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
 
         void DelaySpellAuraHolder(uint32 spellId, int32 delaytime, ObjectGuid casterGuid);
 
@@ -4161,6 +4067,10 @@ class Unit : public WorldObject
 
         CharmInfo* m_charmInfo;
 
+        /// Owned outright, not shared and not allocated: a component is state
+        /// this unit has, and its lifetime is the unit's.
+        unit::Diminishing m_diminishing;
+
         virtual SpellSchoolMask GetMeleeDamageSchoolMask() const;
 
         MotionMaster i_motionMaster;
@@ -4196,7 +4106,6 @@ class Unit : public WorldObject
         bool m_AINotifyScheduled;
         TimeTracker m_movesplineTimer;
 
-        Diminishing m_Diminishing;
         // Manage all Units threatening us
         ThreatManager m_ThreatManager;
         // Manage all Units that are threatened by us

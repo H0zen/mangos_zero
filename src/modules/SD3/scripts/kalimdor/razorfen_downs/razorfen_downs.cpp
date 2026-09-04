@@ -248,7 +248,7 @@ struct npc_belnistrasz : public CreatureScript
                                 }
                             }
 
-                            m_creature->RemoveAurasDueToSpell(SPELL_IDOL_SHUTDOWN);
+                            m_creature->RemoveAuras(SPELL_IDOL_SHUTDOWN);
                             SetEscortPaused(false);
                             break;
                     }

@@ -154,7 +154,7 @@ struct boss_faerlina : public CreatureScript
                 if (m_creature->HasAura(SPELL_ENRAGE))
                 {
                     m_uiEnrageTimer = 60000;
-                    m_creature->RemoveAurasDueToSpell(SPELL_ENRAGE);
+                    m_creature->RemoveAuras(SPELL_ENRAGE);
 
                     //bIsFrenzyRemove = true;
                 }

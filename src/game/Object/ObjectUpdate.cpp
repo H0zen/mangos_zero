@@ -57,7 +57,7 @@
 #include "ObjectMgr.h"
 #include "ObjectGuid.h"
 #include "UpdateData.h"
-#include "UpdateMask.h"
+#include "FieldTable.h"
 #include "Util.h"
 #include "MapManager.h"
 #include "Transports.h"
@@ -164,10 +164,7 @@ void Object::BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) c
 
     BuildMovementUpdate(&buf, updateFlags);
 
-    UpdateMask updateMask;
-    updateMask.SetCount(m_valuesCount);
-    _SetCreateBits(&updateMask, target);
-    BuildValuesUpdate(updatetype, &buf, &updateMask, target);
+    BuildValuesUpdate(updatetype, &buf, target);
     data->AddUpdateBlock();
 }
 
@@ -204,11 +201,7 @@ void Object::BuildValuesUpdateBlockForPlayer(UpdateData* data, Player* target) c
     buf << uint8(UPDATETYPE_VALUES);
     buf << GetPackGUID();
 
-    UpdateMask updateMask;
-    updateMask.SetCount(m_valuesCount);
-
-    _SetUpdateBits(&updateMask, target);
-    BuildValuesUpdate(UPDATETYPE_VALUES, &buf, &updateMask, target);
+    BuildValuesUpdate(UPDATETYPE_VALUES, &buf, target);
 
     data->AddUpdateBlock();
 }
@@ -422,210 +415,66 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const
 }
 
 /**
- * @brief Build values update data
- * @param updatetype Update type (create or values)
- * @param data Byte buffer to write to
- * @param updateMask Update mask indicating which fields changed
- * @param target Target player
+ * @brief Build the mask and the values for one observer
  *
- * Builds the actual field value data for the update packet.
- * Handles special cases for gameobjects and units.
+ * The mask is the intersection of three things: what this class of object can
+ * carry at all, what this observer is entitled to, and what is worth sending --
+ * a value that is not zero on a create, a value that changed on an update.
+ *
+ * Nothing here knows what kind of object it is serializing. Fields whose value
+ * depends on who is asking are rewritten by Fields::Project, and the handful
+ * that vary that way go out even when the stored value stood still, because the
+ * observer is what changed.
  */
-void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, UpdateMask* updateMask, Player* target) const
+void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, Player* target) const
 {
     if (!target)
     {
         return;
     }
 
-    bool IsActivateToQuest = false;
-    if (isType(TYPEMASK_GAMEOBJECT) && !((GameObject*)this)->IsTransport())
-    {
-        IsActivateToQuest = ((GameObject*)this)->ActivateToQuest(target) || target->isGameMaster();
+    Fields::Table const& table = Fields::For(m_objectTypeId);
+    MANGOS_ASSERT(table.count == m_valuesCount);
 
-        updateMask->SetBit(GAMEOBJECT_DYN_FLAGS);
-        if (updatetype == UPDATETYPE_VALUES)
+    uint32 admitted[Fields::MaxBlocks];
+    Fields::MaskFor(table, Fields::AudienceFor(*this, *target), admitted);
+
+    bool const creating = (updatetype != UPDATETYPE_VALUES);
+
+    uint32 send[Fields::MaxBlocks] = { 0 };
+    for (uint16 index = 0; index < table.count; ++index)
+    {
+        uint32 const bit = 1u << (index & 31);
+        if (!(admitted[index >> 5] & bit))
         {
-            updateMask->SetBit(GAMEOBJECT_ANIMPROGRESS);
+            continue;
+        }
+
+        bool wanted = creating ? (m_uint32Values[index] != 0) : m_changedValues[index];
+
+        if (!wanted && Fields::AlwaysResend(m_objectTypeId, index))
+        {
+            wanted = !creating
+                  || Fields::Project(*this, *target, index, m_uint32Values[index]) != 0;
+        }
+
+        if (wanted)
+        {
+            send[index >> 5] |= bit;
         }
     }
 
-    MANGOS_ASSERT(updateMask && updateMask->GetCount() == m_valuesCount);
-
-    *data << (uint8)updateMask->GetBlockCount();
-    updateMask->AppendToPacket(data);
-
-    // 2 specialized loops for speed optimization in non-unit case
-    if (isType(TYPEMASK_UNIT))                              // unit (creature/player) case
+    *data << uint8(table.blocks);
+    for (uint16 block = 0; block < table.blocks; ++block)
     {
-        for (uint16 index = 0; index < m_valuesCount; ++index)
-        {
-            if (updateMask->GetBit(index))
-            {
-                if (index == UNIT_NPC_FLAGS)
-                {
-                    uint32 appendValue = m_uint32Values[index];
-
-                    if (GetTypeId() == TYPEID_UNIT)
-                    {
-                        if (appendValue & UNIT_NPC_FLAG_TRAINER)
-                        {
-                            if (!((Creature*)this)->IsTrainerOf(target, false))
-                            {
-                                appendValue &= ~UNIT_NPC_FLAG_TRAINER;
-                            }
-                        }
-
-                        if (appendValue & UNIT_NPC_FLAG_STABLEMASTER)
-                        {
-                            if (target->getClass() != CLASS_HUNTER)
-                            {
-                                appendValue &= ~UNIT_NPC_FLAG_STABLEMASTER;
-                            }
-                        }
-                    }
-
-                    *data << uint32(appendValue);
-                }
-                // FIXME: Some values at server stored in float format but must be sent to client in uint32 format
-                else if (index >= UNIT_FIELD_BASEATTACKTIME && index <= UNIT_FIELD_RANGEDATTACKTIME)
-                {
-                    // convert from float to uint32 and send
-                    *data << uint32(m_floatValues[index] < 0 ? 0 : m_floatValues[index]);
-                }
-
-                // there are some float values which may be negative or can't get negative due to other checks
-                else if ((index >= PLAYER_FIELD_NEGSTAT0    && index <= PLAYER_FIELD_NEGSTAT4) ||
-                    (index >= PLAYER_FIELD_RESISTANCEBUFFMODSPOSITIVE  && index <= (PLAYER_FIELD_RESISTANCEBUFFMODSPOSITIVE + 6)) ||
-                    (index >= PLAYER_FIELD_RESISTANCEBUFFMODSNEGATIVE  && index <= (PLAYER_FIELD_RESISTANCEBUFFMODSNEGATIVE + 6)) ||
-                    (index >= PLAYER_FIELD_POSSTAT0    && index <= PLAYER_FIELD_POSSTAT4))
-                {
-                    *data << uint32(m_floatValues[index]);
-                }
-
-                // Gamemasters should be always able to select units - remove not selectable flag
-                else if (index == UNIT_FIELD_FLAGS && target->isGameMaster())
-                {
-                    *data << (m_uint32Values[index] & ~UNIT_FLAG_NOT_SELECTABLE);
-                }
-                /* Hide loot animation for players that aren't permitted to loot the corpse */
-                else if (index == UNIT_DYNAMIC_FLAGS && GetTypeId() == TYPEID_UNIT)
-                {
-                    uint32 send_value = m_uint32Values[index];
-
-                    /* Initiate pointer to creature so we can check loot */
-                    if (Creature* my_creature = (Creature*)this)
-                    {
-                        /* If the creature is NOT fully looted */
-                        if (!my_creature->loot.isLooted())
-                        {
-                            /* If the lootable flag is NOT set */
-                            if (!(send_value & UNIT_DYNFLAG_LOOTABLE))
-                            {
-                                /* Update it on the creature */
-                                my_creature->SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
-                                /* Update it in the packet */
-                                send_value = send_value | UNIT_DYNFLAG_LOOTABLE;
-                            }
-                        }
-                    }
-                    /* If we're not allowed to loot the target, destroy the lootable flag */
-                    if (!target->isAllowedToLoot((Creature*)this))
-                    {
-                        if (send_value & UNIT_DYNFLAG_LOOTABLE)
-                        {
-                            send_value = send_value & ~UNIT_DYNFLAG_LOOTABLE;
-                        }
-                    }
-
-                    /* If we are allowed to loot it and mob is tapped by us, destroy the tapped flag */
-                    bool is_tapped = target->IsTappedByMeOrMyGroup((Creature*)this);
-
-                    /* If the creature has tapped flag but is tapped by us, remove the flag */
-                    if (send_value & UNIT_DYNFLAG_TAPPED && is_tapped)
-                    {
-                        send_value = send_value & ~UNIT_DYNFLAG_TAPPED;
-                    }
-
-                    // Checking SPELL_AURA_EMPATHY and caster
-                    if (send_value & UNIT_DYNFLAG_SPECIALINFO && ((Unit*)this)->IsAlive())
-                    {
-                        bool bIsEmpathy = false;
-                        bool bIsCaster = false;
-                        const auto mAuraEmpathy = ((Unit*)this)->GetAurasByType(SPELL_AURA_EMPATHY);
-                        for (const auto* aura : mAuraEmpathy)
-                        {
-                            bIsEmpathy = true; // Empathy by aura set
-                            if (aura->GetCasterGuid() == target->GetObjectGuid())
-                            {
-                                bIsCaster = true; // target is the caster of an empathy aura
-                                break;
-                            }
-                        }
-                        if (bIsEmpathy && !bIsCaster) // Empathy by aura, but target is not the caster
-                        {
-                            send_value &= ~UNIT_DYNFLAG_SPECIALINFO;
-                        }
-                    }
-
-                    *data << send_value;
-                }
-                else                                        // Unhandled index, just send
-                {
-                    // send in current format (float as float, uint32 as uint32)
-                    *data << m_uint32Values[index];
-                }
-            }
-        }
+        *data << send[block];
     }
-    else if (isType(TYPEMASK_GAMEOBJECT))                   // gameobject case
+
+    for (uint16 index = 0; index < table.count; ++index)
     {
-        for (uint16 index = 0; index < m_valuesCount; ++index)
+        if (send[index >> 5] & (1u << (index & 31)))
         {
-            if (updateMask->GetBit(index))
-            {
-                // send in current format (float as float, uint32 as uint32)
-                if (index == GAMEOBJECT_DYN_FLAGS)
-                {
-                    if (IsActivateToQuest)
-                    {
-                        switch (((GameObject*)this)->GetGoType())
-                        {
-                            case GAMEOBJECT_TYPE_QUESTGIVER:
-                            case GAMEOBJECT_TYPE_CHEST:
-                            case GAMEOBJECT_TYPE_GENERIC:
-                            case GAMEOBJECT_TYPE_SPELL_FOCUS:
-                            case GAMEOBJECT_TYPE_GOOBER:
-                                *data << uint16(GO_DYNFLAG_LO_ACTIVATE);
-                                *data << uint16(0);
-                                break;
-                            default:
-                                *data << uint32(0);         // unknown, not happen.
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        // disable quest object
-                        *data << uint32(0);
-                    }
-                }
-                else
-                {
-                    *data << m_uint32Values[index];          // other cases
-                }
-            }
-        }
-    }
-    else                                                    // other objects case (no special index checks)
-    {
-        for (uint16 index = 0; index < m_valuesCount; ++index)
-        {
-            if (updateMask->GetBit(index))
-            {
-                // send in current format (float as float, uint32 as uint32)
-                *data << m_uint32Values[index];
-            }
+            *data << Fields::Project(*this, *target, index, m_uint32Values[index]);
         }
     }
 }
@@ -687,41 +536,4 @@ bool Object::LoadValues(const char* data)
     }
 
     return true;
-}
-
-/**
- * @brief Set update bits in mask
- * @param updateMask Update mask to modify
- * @param target Target player (unused)
- *
- * Sets bits in the update mask for all fields that have changed.
- */
-void Object::_SetUpdateBits(UpdateMask* updateMask, Player* /*target*/) const
-{
-    for (uint16 index = 0; index < m_valuesCount; ++index)
-    {
-        if (m_changedValues[index])
-        {
-            updateMask->SetBit(index);
-        }
-    }
-}
-
-/**
- * @brief Set create bits in mask
- * @param updateMask Update mask to modify
- * @param target Target player (unused)
- *
- * Sets bits in the update mask for all non-zero fields.
- * Used when creating a new object for a player.
- */
-void Object::_SetCreateBits(UpdateMask* updateMask, Player* /*target*/) const
-{
-    for (uint16 index = 0; index < m_valuesCount; ++index)
-    {
-        if (GetUInt32Value(index) != 0)
-        {
-            updateMask->SetBit(index);
-        }
-    }
 }

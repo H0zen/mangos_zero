@@ -35,7 +35,6 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
-#include "UpdateMask.h"
 #include "QuestDef.h"
 #include "GossipDef.h"
 #include "UpdateData.h"
@@ -193,7 +192,7 @@ void Player::DuelComplete(DuelCompleteType type)
 
     for (size_t i = 0; i < auras2remove.size(); ++i)
     {
-        duel->opponent->RemoveAurasDueToSpell(auras2remove[i]);
+        duel->opponent->RemoveAuras(auras2remove[i]);
     }
 
     auras2remove.clear();
@@ -208,7 +207,7 @@ void Player::DuelComplete(DuelCompleteType type)
     }
     for (size_t i = 0; i < auras2remove.size(); ++i)
     {
-        RemoveAurasDueToSpell(auras2remove[i]);
+        RemoveAuras(auras2remove[i]);
     }
 
     // cleanup combo points

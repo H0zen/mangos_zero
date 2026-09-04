@@ -281,7 +281,7 @@ struct boss_ouro : public CreatureScript
 
                     if (DoCastSpellIfCan(m_creature, SPELL_BIRTH) == CAST_OK)
                     {
-                        m_creature->RemoveAurasDueToSpell(SPELL_SUBMERGE_VISUAL);
+                        m_creature->RemoveAuras(SPELL_SUBMERGE_VISUAL);
                         m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
 
                         m_bSubmerged = false;

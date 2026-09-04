@@ -142,7 +142,7 @@ struct boss_archaedas : public CreatureScript
                             break;
                         case 2:
                             DoScriptText(SAY_AGGRO, m_creature);
-                            m_creature->RemoveAurasDueToSpell(SPELL_FREEZE_ANIM);
+                            m_creature->RemoveAuras(SPELL_FREEZE_ANIM);
                             m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
 
                             // Attack player
@@ -239,7 +239,7 @@ struct spell_npc_vault_warder : public SpellScript
         {
             if (pCreatureTarget->GetEntry() == NPC_VAULT_WARDER)
             {
-                pCreatureTarget->ToCreature()->RemoveAurasDueToSpell(SPELL_STONED);
+                pCreatureTarget->ToCreature()->RemoveAuras(SPELL_STONED);
 
                 ScriptedInstance* pInstance = (ScriptedInstance*)pCreatureTarget->ToCreature()->GetInstanceData();
                 if (!pInstance)
@@ -275,7 +275,7 @@ struct spell_aura_awaken_dwarf : public AuraScript
         {
             if (Creature* pTarget = (Creature*)pAura->GetTarget())
             {
-                pTarget->RemoveAurasDueToSpell(SPELL_STONED);
+                pTarget->RemoveAuras(SPELL_STONED);
 
                 ScriptedInstance* pInstance = (ScriptedInstance*)pTarget->GetInstanceData();
                 if (!pInstance)

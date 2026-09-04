@@ -117,8 +117,8 @@ struct boss_buru : public CreatureScript
                 return;
             }
 
-            m_creature->RemoveAurasDueToSpell(SPELL_FULL_SPEED);
-            m_creature->RemoveAurasDueToSpell(SPELL_GATHERING_SPEED);
+            m_creature->RemoveAuras(SPELL_FULL_SPEED);
+            m_creature->RemoveAuras(SPELL_GATHERING_SPEED);
 
             if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0, uint32(0), SELECT_FLAG_PLAYER))
             {
@@ -186,7 +186,7 @@ struct boss_buru : public CreatureScript
                         {
                             // Not sure of this but the boss should gain full speed in phase II
                             DoCastSpellIfCan(m_creature, SPELL_FULL_SPEED, CAST_TRIGGERED);
-                            m_creature->RemoveAurasDueToSpell(SPELL_THORNS);
+                            m_creature->RemoveAuras(SPELL_THORNS);
                             m_creature->FixateTarget(nullptr);
                             m_uiPhase = PHASE_TRANSFORM;
                         }

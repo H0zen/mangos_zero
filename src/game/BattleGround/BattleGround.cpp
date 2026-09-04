@@ -750,10 +750,10 @@ void BattleGround::RemovePlayerAtLeave(ObjectGuid guid, bool Transport, bool Sen
         // should remove spirit of redemption
         if (plr->HasAuraType(SPELL_AURA_SPIRIT_OF_REDEMPTION))
         {
-            plr->RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT);
+            plr->RemoveAurasOfType(SPELL_AURA_MOD_SHAPESHIFT);
         }
 
-        plr->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
+        plr->RemoveAurasOfType(SPELL_AURA_MOUNTED);
 
         if (!plr->IsAlive())                                // resurrect on exit
         {

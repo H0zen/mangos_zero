@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "Combat/Attempt.h"
+#include "Combat/Blow.h"
 #include "Spells/AuraBook.h"
 #include "Spells/Caster.h"
 #include "Spells/Ids.h"

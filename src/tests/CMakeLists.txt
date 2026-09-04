@@ -24,7 +24,11 @@ set(TEST_SOURCES
     pose/test_arc.cpp
 
     wire/test_updatedata.cpp
+    wire/test_fieldtable.cpp
 
+    unit/test_diminishing.cpp
+
+    combat/test_school.cpp
     combat/test_roll.cpp
     combat/test_resolve.cpp
     combat/test_hitqueue.cpp

@@ -245,7 +245,7 @@ struct boss_mr_smite : public CreatureScript
 
                             // will clear getVictim (m_attacking)
                             m_creature->AttackStop(true);
-                            m_creature->RemoveAurasDueToSpell(SPELL_NIBLE_REFLEXES);
+                            m_creature->RemoveAuras(SPELL_NIBLE_REFLEXES);
                         }
                         return;
                     }
@@ -261,7 +261,7 @@ struct boss_mr_smite : public CreatureScript
 
                             // will clear getVictim (m_attacking)
                             m_creature->AttackStop(true);
-                            m_creature->RemoveAurasDueToSpell(SPELL_THRASH);
+                            m_creature->RemoveAuras(SPELL_THRASH);
                         }
                         return;
                     }

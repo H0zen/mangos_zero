@@ -257,7 +257,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     // mount allow check
     if (!mEntry->IsMountAllowed())
     {
-        _player->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
+        _player->RemoveAurasOfType(SPELL_AURA_MOUNTED);
     }
 
     // honorless target

@@ -86,7 +86,7 @@ void WorldSession::HandleAuctionHelloOpcode(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     SendAuctionHello(unit);
@@ -382,7 +382,7 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     if (!itemGuid)
@@ -498,7 +498,7 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     AuctionEntry* auction = auctionHouse->GetAuction(auctionId);
@@ -586,7 +586,7 @@ void WorldSession::HandleAuctionRemoveItem(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     AuctionEntry* auction = auctionHouse->GetAuction(auctionId);
@@ -695,7 +695,7 @@ void WorldSession::HandleAuctionListBidderItems(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     Player* pl = GetPlayer();
@@ -755,7 +755,7 @@ void WorldSession::HandleAuctionListOwnerItems(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     // --- no worker configured (legacy single-process): in-process path ---
@@ -801,7 +801,7 @@ void WorldSession::HandleAuctionListItems(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     // DEBUG_LOG("Auctionhouse search %s list from: %u, searchedname: %s, levelmin: %u, levelmax: %u, auctionSlotID: %u, auctionMainCategory: %u, auctionSubCategory: %u, quality: %u, usable: %u",

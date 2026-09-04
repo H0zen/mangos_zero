@@ -103,7 +103,7 @@ void WorldSession::HandleTabardVendorActivateOpcode(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     SendTabardVendorActivate(guid);
@@ -142,7 +142,7 @@ void WorldSession::HandleBankerActivateOpcode(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     SendShowBank(guid);
@@ -252,7 +252,7 @@ void WorldSession::SendTrainerList(ObjectGuid guid, const std::string& strTitle)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     // trainer list loaded at check;
@@ -383,7 +383,7 @@ void WorldSession::HandleTrainerBuySpellOpcode(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     if (!unit->IsTrainerOf(_player, true))
@@ -495,7 +495,7 @@ void WorldSession::HandleGossipHelloOpcode(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     pCreature->StopMoving();
@@ -536,7 +536,7 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     uint32 sender = _player->PlayerTalkClass->GossipOptionSender(gossipListId);
@@ -622,7 +622,7 @@ void WorldSession::HandleSpiritHealerActivateOpcode(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     SendSpiritResurrect();
@@ -698,7 +698,7 @@ void WorldSession::HandleBinderActivateOpcode(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     SendBindPoint(unit);
@@ -745,7 +745,7 @@ void WorldSession::HandleListStabledPetsOpcode(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     SendStablePet(npcGUID);
@@ -882,7 +882,7 @@ void WorldSession::HandleStablePet(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     Pet* pet = _player->GetPet();
@@ -953,7 +953,7 @@ void WorldSession::HandleUnstablePet(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     uint32 creature_id = 0;
@@ -1028,7 +1028,7 @@ void WorldSession::HandleBuyStableSlot(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     if (GetPlayer()->GetStableSlots() < MAX_PET_STABLES)
@@ -1083,7 +1083,7 @@ void WorldSession::HandleStableSwapPet(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     Pet* pet = _player->GetPet();
@@ -1162,7 +1162,7 @@ void WorldSession::HandleRepairItemOpcode(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     // reputation discount

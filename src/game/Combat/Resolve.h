@@ -27,18 +27,18 @@
 
 // One question, answered without touching anything.
 //
-// Resolve() reads an Attempt, both sides and what the victim has in the way, and
-// returns the whole Outcome: how it landed, what reached health, and what it
+// Resolve reads a Blow, both sides and what the victim has in the way, and
+// returns the whole Outcome: how it ended, what reached health, and what it
 // WOULD cost the shields and split auras that softened it. It writes nothing.
-// Taking the shields down and delivering the splits is Apply()'s job, working from
+// Taking the shields down and delivering the splits is Apply's job, working from
 // the plan in the Outcome.
 //
 // That division is not tidiness. The old pipeline computed absorption by
-// consuming it, and delivered split damage by recursing into a fresh hit in the
+// consuming it, and delivered split damage by recursing into a fresh blow in the
 // middle of the parent's mitigation -- so a split victim could die, proc and
 // generate threat before the blow that split the damage had landed at all.
 
-#include "Combat/Attempt.h"
+#include "Combat/Blow.h"
 #include "Combat/Combatant.h"
 #include "Combat/Defences.h"
 
@@ -53,18 +53,18 @@ namespace combat
      */
     struct Rolls
     {
-        uint32 hit = 0;         ///< picks the band in the hit table
+        uint32 hit = 0;         ///< picks the band
         uint32 resist = 0;      ///< how much of a magical blow is resisted
         float glanceBand = 0.f; ///< where in the glancing range this one falls
     };
 
     /**
-     * @brief Resolve one attempt. Pure.
+     * @brief Resolve one blow. Pure.
      *
      * `fromBehind` arrives from the caller because facing is geometry, and for
      * anyone aboard a vessel it has to be measured in that deck's frame.
      */
-    Outcome Resolve(const Attempt& attempt,
+    Outcome Resolve(const Blow& blow,
                     const Combatant& attacker,
                     const Combatant& victim,
                     const Defences& defences,

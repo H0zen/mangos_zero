@@ -360,7 +360,7 @@ bool ChatHandler::HandleUnAuraCommand(char* args)
         return false;
     }
 
-    target->RemoveAurasDueToSpell(spellID);
+    target->RemoveAuras(spellID);
 
     return true;
 }
@@ -533,7 +533,7 @@ bool ChatHandler::HandleUnAuraGroupCommand(char* args)
             }
             else
             {
-                playerTarget->RemoveAurasDueToSpell(spellIdToRemove);
+                playerTarget->RemoveAuras(spellIdToRemove);
                 PSendSysMessage(LANG_COMMAND_AURAGROUP_AURA_REMOVED_FOR_SPELL, spellIdToRemove, nameLink.c_str());
             }
 
@@ -567,7 +567,7 @@ bool ChatHandler::HandleUnAuraGroupCommand(char* args)
                 }
                 else
                 {
-                    pl->RemoveAurasDueToSpell(spellIdToRemove);
+                    pl->RemoveAuras(spellIdToRemove);
                     PSendSysMessage(LANG_COMMAND_AURAGROUP_AURA_REMOVED_FOR_SPELL, spellIdToRemove, nameLink.c_str());
                 }
 

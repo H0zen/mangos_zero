@@ -33,7 +33,6 @@
 #include "WorldPacket.h"
 #include "Opcodes.h"
 #include "Log.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
@@ -251,7 +250,7 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                             // Immolate
                             aura->GetSpellProto()->IsFitToFamily(SPELLFAMILY_WARLOCK, UI64LIT(0x0000000000000004)))
                         {
-                            unitTarget->RemoveAurasByCasterSpell(aura->GetId(), m_caster->GetObjectGuid());
+                            unitTarget->RemoveAurasCastBy(aura->GetId(), m_caster->GetObjectGuid());
                             break;
                         }
                     }
@@ -335,9 +334,9 @@ void Spell::EffectTriggerSpell(SpellEffectIndex eff_idx)
         // Vanish (not exist)
         case 18461:
         {
-            unitTarget->RemoveSpellsCausingAura(SPELL_AURA_MOD_ROOT);
-            unitTarget->RemoveSpellsCausingAura(SPELL_AURA_MOD_DECREASE_SPEED);
-            unitTarget->RemoveSpellsCausingAura(SPELL_AURA_MOD_STALKED);
+            unitTarget->RemoveAurasOfType(SPELL_AURA_MOD_ROOT);
+            unitTarget->RemoveAurasOfType(SPELL_AURA_MOD_DECREASE_SPEED);
+            unitTarget->RemoveAurasOfType(SPELL_AURA_MOD_STALKED);
 
             // if this spell is given to NPC it must handle rest by it's own AI
             if (unitTarget->GetTypeId() != TYPEID_PLAYER)

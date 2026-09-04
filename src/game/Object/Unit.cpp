@@ -621,11 +621,11 @@ bool InMeleeReach(Unit const& attacker, Unit const& victim, float flat_mod)
  *
  * @param auraType The aura type to remove.
  */
-void Unit::RemoveSpellsCausingAura(AuraType auraType)
+void Unit::RemoveAurasOfType(AuraType auraType)
 {
     for (auto* aura : GetAurasByType(auraType))
     {
-        RemoveAurasDueToSpell(aura->GetId());
+        RemoveAuras(aura->GetId());
     }
 }
 
@@ -635,7 +635,7 @@ void Unit::RemoveSpellsCausingAura(AuraType auraType)
  * @param auraType The aura type to remove.
  * @param except The aura holder to keep.
  */
-void Unit::RemoveSpellsCausingAura(AuraType auraType, SpellAuraHolder* except)
+void Unit::RemoveAurasOfType(AuraType auraType, SpellAuraHolder* except)
 {
     for (auto* aura : GetAurasByType(auraType))
     {
@@ -644,7 +644,7 @@ void Unit::RemoveSpellsCausingAura(AuraType auraType, SpellAuraHolder* except)
             continue;
         }
 
-        RemoveAurasDueToSpell(aura->GetId(), except);
+        RemoveAuras(aura->GetId(), except);
     }
 }
 
@@ -654,13 +654,13 @@ void Unit::RemoveSpellsCausingAura(AuraType auraType, SpellAuraHolder* except)
  * @param auraType The aura type to remove.
  * @param casterGuid The caster GUID whose auras should be removed.
  */
-void Unit::RemoveSpellsCausingAura(AuraType auraType, ObjectGuid casterGuid)
+void Unit::RemoveAurasOfType(AuraType auraType, ObjectGuid casterGuid)
 {
     for (auto* aura : GetAurasByType(auraType))
     {
         if (aura->GetCasterGuid() == casterGuid)
         {
-            RemoveAuraHolderFromStack(aura->GetId(), 1, casterGuid);
+            RemoveStacks(aura->GetId(), 1, casterGuid);
         }
     }
 }
@@ -722,9 +722,9 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
     {
         if (damagetype != SELF_DAMAGE_ROGUE_FALL)
         {
-            RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+            RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
         }
-        RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
 
         if (pVictim->GetTypeId() == TYPEID_PLAYER && !pVictim->IsStandState() && !pVictim->hasUnitState(UNIT_STAT_STUNNED))
         {
@@ -1089,7 +1089,7 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
             }
             if (!se->ProcFlags && (se->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DAMAGE))
             {
-                pVictim->RemoveAurasDueToSpell(i->second->GetId());
+                pVictim->RemoveAuras(i->second->GetId());
                 next = vAuras.begin();
             }
         }
@@ -1466,7 +1466,7 @@ void Unit::CastSpell(Unit* Victim, SpellEntry const* spellInfo, bool triggered, 
     {
         for (SpellLinkedSet::const_iterator itr = linkedSet.begin(); itr != linkedSet.end(); ++itr)
         {
-            Victim->RemoveAurasDueToSpell(*itr);
+            Victim->RemoveAuras(*itr);
         }
     }
 }
@@ -2041,7 +2041,7 @@ void Unit::_UpdateSpells(uint32 time)
 
         if (!(holder->IsPermanent() || holder->IsPassive()) && holder->GetAuraDuration() == 0)
         {
-            RemoveSpellAuraHolder(holder, AURA_REMOVE_BY_EXPIRE);
+            RemoveHolder(holder, AURA_REMOVE_BY_EXPIRE);
             iter = m_spellAuraHolders.begin();
         }
         else
@@ -2526,7 +2526,7 @@ void Unit::RemoveAurasByCaster(ObjectGuid casterGuid)
     {
         if (iter->second->GetCasterGuid() == casterGuid)
         {
-            RemoveSpellAuraHolder(iter->second);
+            RemoveHolder(iter->second);
             iter = m_spellAuraHolders.begin();
         }
         else
@@ -2937,7 +2937,7 @@ bool Unit::Attack(Unit* victim, bool meleeAttack)
     // remove SPELL_AURA_MOD_UNATTACKABLE at attack (in case non-interruptible spells stun aura applied also that not let attack)
     if (HasAuraType(SPELL_AURA_MOD_UNATTACKABLE))
     {
-        RemoveSpellsCausingAura(SPELL_AURA_MOD_UNATTACKABLE);
+        RemoveAurasOfType(SPELL_AURA_MOD_UNATTACKABLE);
     }
 
     // in fighting already
@@ -3207,7 +3207,7 @@ void Unit::ModifyAuraState(AuraState flag, bool apply)
                         continue;
                     }
 
-                    RemoveSpellAuraHolder(itr->second);
+                    RemoveHolder(itr->second);
                     itr = tAuras.begin();
                 }
                 else
@@ -3395,9 +3395,9 @@ void Unit::Uncharm()
 {
     if (Unit* charm = GetCharm())
     {
-        charm->RemoveSpellsCausingAura(SPELL_AURA_MOD_CHARM);
-        charm->RemoveSpellsCausingAura(SPELL_AURA_MOD_POSSESS);
-        charm->RemoveSpellsCausingAura(SPELL_AURA_MOD_POSSESS_PET);
+        charm->RemoveAurasOfType(SPELL_AURA_MOD_CHARM);
+        charm->RemoveAurasOfType(SPELL_AURA_MOD_POSSESS);
+        charm->RemoveAurasOfType(SPELL_AURA_MOD_POSSESS_PET);
     }
 }
 
@@ -3630,7 +3630,7 @@ Unit* Unit::SelectMagnetTarget(Unit* victim, Spell* spell, SpellEffectIndex eff)
                     {
                         if (holder->DropAuraCharge())
                         {
-                            victim->RemoveSpellAuraHolder(holder);
+                            victim->RemoveHolder(holder);
                         }
                     }
                     return magnet;
@@ -4230,7 +4230,7 @@ void Unit::SetDeathState(DeathState s)
         ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, false);
         // remove aurastates allowing special moves
         ClearAllReactives();
-        ClearDiminishings();
+        m_diminishing.Clear();
     }
     else if (s == JUST_ALIVED)
     {
@@ -4475,6 +4475,10 @@ void Unit::SetMaxHealth(uint32 val)
     uint32 health = GetHealth();
     SetUInt32Value(UNIT_FIELD_MAXHEALTH, val);
 
+    // Observers other than this unit are told a percentage, so a pool that
+    // changes under a steady hit-point count still changes what they must see.
+    ResendField(UNIT_FIELD_HEALTH);
+
     // group update
     if (GetTypeId() == TYPEID_PLAYER)
     {
@@ -4538,7 +4542,7 @@ void Unit::RemoveFromWorld()
     if (IsInWorld())
     {
         Uncharm();
-        RemoveNotOwnTrackedTargetAuras();
+        RemoveTrackedAurasOfOthers();
         RemoveGuardians();
         RemoveAllGameObjects();
         RemoveAllDynObjects();
@@ -5166,7 +5170,7 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* pTarget, uint32 procFlag, 
         // Remove auras from removedAuras
         for (RemoveSpellList::const_iterator i = removedSpells.begin(); i != removedSpells.end(); ++i)
         {
-            RemoveAurasDueToSpell(*i);
+            RemoveAuras(*i);
         }
     }
 }
@@ -6153,7 +6157,7 @@ void Unit::RemovePetAura(PetAura const* petSpell)
     m_petAuras.erase(petSpell);
     if (Pet* pet = GetPet())
     {
-        pet->RemoveAurasDueToSpell(petSpell->GetAura(pet->GetEntry()));
+        pet->RemoveAuras(petSpell->GetAura(pet->GetEntry()));
     }
 }
 
@@ -6184,7 +6188,7 @@ void Unit::RemoveAurasAtMechanicImmunity(uint32 mechMask, uint32 exceptSpellId, 
         }
         else if (iter->second->HasMechanicMask(mechMask))
         {
-            RemoveAurasDueToSpell(spell->ID);
+            RemoveAuras(spell->ID);
 
             if (auras.empty())
             {

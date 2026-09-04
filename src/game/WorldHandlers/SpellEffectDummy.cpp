@@ -37,7 +37,6 @@
 #include "WorldPacket.h"
 #include "Opcodes.h"
 #include "Log.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
@@ -558,7 +557,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                             return;
                         }
                     }
-                    unitTarget->RemoveAurasDueToSpell(28820);
+                    unitTarget->RemoveAuras(28820);
                     return;
                 }
                 case 19395:                                 // Gordunni Trap
@@ -748,7 +747,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     return;
                 }
                 case 23645:                                 // Hourglass Sand
-                    m_caster->RemoveAurasDueToSpell(23170); // Brood Affliction: Bronze
+                    m_caster->RemoveAuras(23170); // Brood Affliction: Bronze
                     return;
                 case 23725:                                 // Gift of Life (warrior bwl trinket)
                 {
@@ -791,7 +790,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                     float speed = m_caster->GetSpeedRate(MOVE_RUN);
 
-                    m_caster->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
+                    m_caster->RemoveAurasOfType(SPELL_AURA_MOUNTED);
 
                     // 5 different spells used depending on mounted speed
                     if (speed >= 2.0f)
@@ -848,7 +847,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     else
                     {
                         // "Evade"
-                        unitTarget->RemoveAurasDueToSpell(m_spellInfo->ID == 28098 ? 28097 : 28109);
+                        unitTarget->RemoveAuras(m_spellInfo->ID == 28098 ? 28097 : 28109);
                         unitTarget->DeleteThreatList();
                         unitTarget->CombatStop(true);
                         // Recast chain (Stalagg Chain or Feugen Chain

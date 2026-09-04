@@ -3264,7 +3264,7 @@ void Creature::ApplyGameEventSpells(GameEventCreatureData const* eventData, bool
         {
             if (IsSpellAppliesAura(spellEntry))
             {
-                RemoveAurasDueToSpell(remove_spell);
+                RemoveAuras(remove_spell);
             }
         }
     }

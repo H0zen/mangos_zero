@@ -27,14 +27,14 @@
 
 // Shields and splitting, decided on their own.
 //
-// Resolve() runs this as one step of a whole resolution. It is exposed
-// separately because the entry points that already know how their blow landed --
-// a spell that rolled its own hit, a periodic tick that cannot miss -- need the
-// same decision without a second hit table being run over them.
+// Resolve runs this as one step of a whole resolution. It is exposed separately
+// because the entry points that already know how their blow ended -- a spell
+// that rolled its own, a tick that cannot miss -- need the same decision without
+// a second roll being run over them.
 //
-// Deciding is all it does. Carrying the plan out is Apply()'s work.
+// Deciding is all it does. Carrying the plan out is Apply's work.
 
-#include "Combat/Attempt.h"
+#include "Combat/Blow.h"
 #include "Combat/Defences.h"
 
 namespace combat
@@ -42,13 +42,13 @@ namespace combat
     /**
      * @brief Decide what the shields take and what is shared away.
      *
-     * `damage` comes in already through armour or resistance and goes out as
+     * `amount` comes in already through armour or resistance and goes out as
      * what reaches health. `selfInflicted` suppresses splitting: damage a unit
      * does to itself has nobody to share it with.
      *
      * The Outcome's absorb, split and mana fields are filled; nothing else is
      * touched, and nothing in the world is written.
      */
-    void Mitigate(int32& damage, SpellSchoolMask school, const Defences& defences,
+    void Mitigate(int32& amount, School school, const Defences& defences,
                   bool selfInflicted, Outcome& out);
 }

@@ -314,7 +314,7 @@ struct boss_arlokk : public CreatureScript
                 // Transform back
                 if (m_uiTransformTimer < uiDiff)
                 {
-                    m_creature->RemoveAurasDueToSpell(SPELL_PANTHER_TRANSFORM);
+                    m_creature->RemoveAuras(SPELL_PANTHER_TRANSFORM);
                     m_uiTransformTimer = 30000;
                     m_bIsPhaseTwo = false;
                 }

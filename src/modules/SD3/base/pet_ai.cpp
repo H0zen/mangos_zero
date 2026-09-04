@@ -78,7 +78,7 @@ void ScriptedPetAI::MoveInLineOfSight(Unit* pWho)
 
         if (InReach(*m_creature, *pWho, m_creature->GetAttackDistance(pWho)) && HasLineOfSight(*m_creature, *pWho))
         {
-            pWho->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+            pWho->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
             AttackStart(pWho);
         }
     }

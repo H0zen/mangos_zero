@@ -150,7 +150,7 @@ struct npc_aged_dying_ancient_kodo : public CreatureScript
             // the expected quest objective
             pPlayer->TalkedToCreature(pCreature->GetEntry(), pCreature->GetObjectGuid());
 
-            pPlayer->RemoveAurasDueToSpell(SPELL_KODO_KOMBO_PLAYER_BUFF);
+            pPlayer->RemoveAuras(SPELL_KODO_KOMBO_PLAYER_BUFF);
             pCreature->GetMotionMaster()->MoveIdle();
         }
 

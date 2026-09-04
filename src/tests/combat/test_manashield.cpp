@@ -32,16 +32,17 @@
 #include "doctest.h"
 
 #include "Combat/Resolve.h"
+#include "SharedDefines.h"
 
 using combat::Absorber;
-using combat::Attempt;
+using combat::Blow;
 using combat::Combatant;
 using combat::Defences;
-using combat::Landing;
+using combat::Result;
 using combat::Outcome;
 using combat::Resolve;
 using combat::Rolls;
-using combat::Source;
+using combat::Delivery;
 
 namespace
 {
@@ -68,14 +69,14 @@ namespace
         return c;
     }
 
-    Attempt Swing(int32 base)
+    Blow Swing(int32 base)
     {
-        Attempt a;
+        Blow a;
         a.attacker = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(1));
         a.victim = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
-        a.source = Source::MeleeMain;
-        a.school = SPELL_SCHOOL_MASK_NORMAL;
-        a.base = base;
+        a.delivery = Delivery::MeleeMain;
+        a.school = combat::School::Physical;
+        a.amount = base;
         return a;
     }
 
@@ -216,7 +217,7 @@ TEST_CASE("Damage you do to yourself is not split onto anyone")
     splitter.fraction = 0.5f;
     d.splitters.push_back(splitter);
 
-    Attempt self = Swing(100);
+    Blow self = Swing(100);
     self.victim = self.attacker;
 
     Combatant me = Attacker();

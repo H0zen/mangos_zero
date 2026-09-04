@@ -479,7 +479,7 @@ struct boss_taerar : public CreatureScript
 
         void DoUnbanishBoss()
         {
-            m_creature->RemoveAurasDueToSpell(SPELL_SELF_STUN);
+            m_creature->RemoveAuras(SPELL_SELF_STUN);
             m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
 
             m_uiShadesTimeoutTimer = 0;

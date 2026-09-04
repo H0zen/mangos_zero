@@ -42,7 +42,6 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
-#include "UpdateMask.h"
 #include "CinematicFlyover.h"
 #include "QuestDef.h"
 #include "GossipDef.h"
@@ -1703,11 +1702,11 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
     // cast case or scripted call case
     else
     {
-        RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
+        RemoveAurasOfType(SPELL_AURA_MOUNTED);
 
         if (IsInDisallowedMountForm())
         {
-            RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT);
+            RemoveAurasOfType(SPELL_AURA_MOD_SHAPESHIFT);
         }
 
         if (Spell* spell = GetCurrentSpell(CURRENT_GENERIC_SPELL))
@@ -1835,7 +1834,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
     ModifyMoney(-(int32)totalcost);
 
     // prevent stealth flight
-    RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+    RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
 
     if (sWorld.getConfig(CONFIG_BOOL_INSTANT_TAXI))
     {

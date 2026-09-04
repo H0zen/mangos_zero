@@ -640,7 +640,7 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
                         }
 
                     }
-                    pCreature->MarkFlagUpdateForClient(UNIT_DYNAMIC_FLAGS);
+                    pCreature->ResendField(UNIT_DYNAMIC_FLAGS);
                 }
             }
 

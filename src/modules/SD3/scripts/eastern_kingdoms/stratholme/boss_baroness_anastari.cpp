@@ -99,7 +99,7 @@ struct boss_baroness_anastari : public CreatureScript
                     Player* pPlayer = m_creature->GetMap()->GetPlayer(m_possessedPlayer);
                     if (!pPlayer || !pPlayer->IsAlive())
                     {
-                        m_creature->RemoveAurasDueToSpell(SPELL_POSSESS_INV);
+                        m_creature->RemoveAuras(SPELL_POSSESS_INV);
                         m_uiPossessEndTimer = 0;
                         return;
                     }
@@ -107,9 +107,9 @@ struct boss_baroness_anastari : public CreatureScript
                     // If possessed player has less than 50% health
                     if (pPlayer->GetHealth() <= pPlayer->GetMaxHealth() * .5f)
                     {
-                        m_creature->RemoveAurasDueToSpell(SPELL_POSSESS_INV);
-                        pPlayer->RemoveAurasDueToSpell(SPELL_POSSESSED);
-                        pPlayer->RemoveAurasDueToSpell(SPELL_POSSESS);
+                        m_creature->RemoveAuras(SPELL_POSSESS_INV);
+                        pPlayer->RemoveAuras(SPELL_POSSESSED);
+                        pPlayer->RemoveAuras(SPELL_POSSESS);
                         m_uiPossessEndTimer = 0;
                         return;
                     }

@@ -156,7 +156,7 @@ struct boss_moam : public CreatureScript
                         m_uiCheckoutManaTimer = 1500;
                         if (m_creature->GetPower(POWER_MANA) == m_creature->GetMaxPower(POWER_MANA))
                         {
-                            m_creature->RemoveAurasDueToSpell(SPELL_ENERGIZE);
+                            m_creature->RemoveAuras(SPELL_ENERGIZE);
                             DoCastSpellIfCan(m_creature, SPELL_ARCANE_ERUPTION);
                             DoScriptText(EMOTE_MANA_FULL, m_creature);
                             m_uiPhase = PHASE_ATTACKING;

@@ -33,16 +33,17 @@
 #include "doctest.h"
 
 #include "Combat/Resolve.h"
+#include "SharedDefines.h"
 
 using combat::Absorber;
-using combat::Attempt;
+using combat::Blow;
 using combat::Combatant;
 using combat::Defences;
-using combat::Landing;
+using combat::Result;
 using combat::Outcome;
 using combat::Resolve;
 using combat::Rolls;
-using combat::Source;
+using combat::Delivery;
 using combat::Splitter;
 
 namespace
@@ -71,26 +72,26 @@ namespace
     // Two different guids: damage a unit does to itself is not split onto
     // anyone, so a fixture that left both empty would be testing that rule by
     // accident rather than the one it names.
-    Attempt Swing(int32 base)
+    Blow Swing(int32 base)
     {
-        Attempt a;
+        Blow a;
         a.attacker = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(1));
         a.victim = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
-        a.source = Source::MeleeMain;
-        a.school = SPELL_SCHOOL_MASK_NORMAL;
-        a.base = base;
+        a.delivery = Delivery::MeleeMain;
+        a.school = combat::School::Physical;
+        a.amount = base;
         return a;
     }
 
-    Attempt Bolt(int32 base)
+    Blow Bolt(int32 base)
     {
-        Attempt a;
+        Blow a;
         a.attacker = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(1));
         a.victim = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
-        a.source = Source::Spell;
+        a.delivery = Delivery::Spell;
         a.spellId = 133;
-        a.school = SPELL_SCHOOL_MASK_FIRE;
-        a.base = base;
+        a.school = combat::School::Fire;
+        a.amount = base;
         return a;
     }
 
@@ -104,7 +105,7 @@ TEST_CASE("A clean swing with nothing in the way deals its base")
 {
     const Outcome out = Resolve(Swing(100), Attacker(), Victim(), Defences(), false, Rolls());
 
-    CHECK(out.landing == Landing::Hit);
+    CHECK(out.strike.result == Result::Landed);
     CHECK(out.dealt == 100);
     CHECK(out.absorbed == 0);
     CHECK(out.resisted == 0);
@@ -120,7 +121,7 @@ TEST_CASE("An immune victim ends it before anything is rolled")
 
     const Outcome out = Resolve(Swing(100), Attacker(), Victim(), d, false, Rolls());
 
-    CHECK(out.landing == Landing::Immune);
+    CHECK(out.strike.result == Result::Immune);
     CHECK(out.dealt == 0);
     CHECK(out.absorbs.empty());
     CHECK(out.splits.empty());
@@ -140,7 +141,7 @@ TEST_CASE("A miss deals nothing and costs no shield")
 
     const Outcome out = Resolve(Swing(100), a, Victim(), d, false, Rolls());
 
-    CHECK(out.landing == Landing::Miss);
+    CHECK(out.strike.result == Result::Missed);
     CHECK(out.dealt == 0);
     CHECK(out.absorbed == 0);
     CHECK(out.absorbs.empty());
@@ -153,7 +154,7 @@ TEST_CASE("A critical swing lands twice its base")
 
     const Outcome out = Resolve(Swing(100), a, Victim(), Defences(), false, Rolls());
 
-    CHECK(out.landing == Landing::Crit);
+    CHECK(out.strike.crit);
     CHECK(out.dealt == 200);
 }
 
@@ -167,7 +168,7 @@ TEST_CASE("A crushing blow lands half again")
 
     const Outcome out = Resolve(Swing(100), a, Victim(), Defences(), false, Rolls());
 
-    CHECK(out.landing == Landing::Crush);
+    CHECK(out.strike.crushing);
     CHECK(out.dealt == 150);
 }
 
@@ -181,7 +182,7 @@ TEST_CASE("A block takes the shield's value off the blow")
 
     const Outcome out = Resolve(Swing(100), Attacker(), v, d, false, Rolls());
 
-    CHECK(out.landing == Landing::Block);
+    CHECK(out.strike.blocked);
     CHECK(out.blocked == 30);
     CHECK(out.dealt == 70);
 }
@@ -207,7 +208,7 @@ TEST_CASE("Armour takes a share of a physical blow, never all of it")
 
     const Outcome out = Resolve(Swing(1000), Attacker(), Victim(), d, false, Rolls());
 
-    CHECK(out.landing == Landing::Hit);
+    CHECK(out.strike.result == Result::Landed);
     CHECK(out.dealt < 1000);
     CHECK(out.dealt > 0);
 }
@@ -230,7 +231,7 @@ TEST_CASE("Armour does not touch a magical blow")
 
     const Outcome out = Resolve(Bolt(100), Attacker(), Victim(), d, false, Rolls());
 
-    CHECK(out.landing == Landing::Hit);
+    CHECK(out.strike.result == Result::Landed);
     CHECK(out.dealt == 100);
 }
 
@@ -258,7 +259,7 @@ TEST_CASE("A blow resisted to nothing is reported as resisted, not as a hit for 
 
     const Outcome out = Resolve(Bolt(4), Attacker(), Victim(), d, false, rolls);
 
-    CHECK(out.landing == Landing::Resist);
+    CHECK(out.strike.result == Result::Resisted);
     CHECK(out.dealt == 0);
 }
 
@@ -342,7 +343,7 @@ TEST_CASE("A shield of the wrong school is passed over")
     Absorber shield;
     shield.caster = SomeGuid(1);
     shield.remaining = 500;
-    shield.schoolMask = SPELL_SCHOOL_MASK_FROST;
+    shield.covers = combat::SchoolSet(combat::School::Frost);
     d.absorbers.push_back(shield);
 
     const Outcome out = Resolve(Bolt(100), Attacker(), Victim(), d, false, Rolls());
@@ -460,10 +461,10 @@ TEST_CASE("A blow a shield swallows entirely does not kill")
 
 TEST_CASE("A periodic tick neither misses nor crits")
 {
-    Attempt tick;
-    tick.source = combat::Source::Periodic;
-    tick.school = SPELL_SCHOOL_MASK_SHADOW;
-    tick.base = 40;
+    Blow tick;
+    tick.delivery = combat::Delivery::Periodic;
+    tick.school = combat::School::Shadow;
+    tick.amount = 40;
 
     Combatant a = Attacker();
     a.missChance = 10000;   // would be certain for a swing
@@ -471,22 +472,22 @@ TEST_CASE("A periodic tick neither misses nor crits")
 
     const Outcome out = Resolve(tick, a, Victim(), Defences(), false, Rolls());
 
-    CHECK(out.landing == Landing::Hit);
+    CHECK(out.strike.result == Result::Landed);
     CHECK(out.dealt == 40);
 }
 
 TEST_CASE("An evading victim refuses a periodic tick too")
 {
-    Attempt tick;
-    tick.source = combat::Source::Periodic;
-    tick.base = 40;
+    Blow tick;
+    tick.delivery = combat::Delivery::Periodic;
+    tick.amount = 40;
 
     Combatant v = Victim();
     v.isEvading = true;
 
     const Outcome out = Resolve(tick, Attacker(), v, Defences(), false, Rolls());
 
-    CHECK(out.landing == Landing::Evade);
+    CHECK(out.strike.result == Result::Evaded);
     CHECK(out.dealt == 0);
 }
 
@@ -511,7 +512,7 @@ TEST_CASE("Resolving twice with the same inputs gives the same answer")
     const Outcome first = Resolve(Swing(100), a, Victim(), d, false, rolls);
     const Outcome second = Resolve(Swing(100), a, Victim(), d, false, rolls);
 
-    CHECK(first.landing == second.landing);
+    CHECK(first.strike.result == second.strike.result);
     CHECK(first.dealt == second.dealt);
     CHECK(first.absorbed == second.absorbed);
     CHECK(first.absorbs.size() == second.absorbs.size());

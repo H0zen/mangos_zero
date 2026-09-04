@@ -164,7 +164,7 @@ struct npc_kerlonian : public CreatureScript
 
         void ClearSleeping()
         {
-            m_creature->RemoveAurasDueToSpell(SPELL_SLEEP_VISUAL);
+            m_creature->RemoveAuras(SPELL_SLEEP_VISUAL);
             m_creature->SetStandState(UNIT_STAND_STATE_STAND);
 
             DoScriptText(EMOTE_KER_AWAKEN, m_creature);

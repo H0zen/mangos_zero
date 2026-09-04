@@ -112,7 +112,7 @@ void WorldSession::HandlePetitionBuyOpcode(WorldPacket& recv_data)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     // if tabard designer, then trying to buy a guild charter.
@@ -752,7 +752,7 @@ void WorldSession::SendPetitionShowList(ObjectGuid guid)
     // remove fake death
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     WorldPacket data(SMSG_PETITION_SHOWLIST, 8 + 1 + 4 * 5);

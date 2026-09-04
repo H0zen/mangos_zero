@@ -43,31 +43,40 @@ namespace combat
                        ? victim.maxDefenceForLevel
                        : victim.defenceSkill;
         }
+
+        Strike Ending(Result result)
+        {
+            Strike strike;
+            strike.result = result;
+            return strike;
+        }
     }
 
-    Landing RollMelee(const Combatant& attacker, const Combatant& victim,
-                      bool fromBehind, bool isSpellSwing, uint32 roll)
+    Strike RollMelee(const Combatant& attacker, const Combatant& victim,
+                     bool fromBehind, bool isAbility, uint32 roll)
     {
         if (victim.isEvading)
         {
-            return Landing::Evade;
+            return Ending(Result::Evaded);
         }
 
         const int32 skillBonus = SkillBonus(attacker, victim);
         int32 sum = 0;
         const int32 r = static_cast<int32>(roll);
 
-        // Miss
+        Strike strike;
+
         if (attacker.missChance > 0 && r < (sum += attacker.missChance))
         {
-            return Landing::Miss;
+            return Ending(Result::Missed);
         }
 
         // A player who is not on his feet is hit critically by anything that can
         // crit at all, before any avoidance is considered.
         if (victim.isPlayer && victim.isSitting && attacker.critChance > 0)
         {
-            return Landing::Crit;
+            strike.crit = true;
+            return strike;
         }
 
         // Only players lose their dodge to an attacker behind them.
@@ -76,27 +85,24 @@ namespace combat
             int32 dodge = victim.dodgeChance;
             if (dodge > 0 && (dodge -= skillBonus) > 0 && r < (sum += dodge))
             {
-                return Landing::Dodge;
+                return Ending(Result::Dodged);
             }
         }
 
         // Nothing is parried or blocked from behind, by anyone.
-        if (!fromBehind)
+        if (!fromBehind && victim.canParry && victim.parryChance > 0)
         {
-            if (victim.canParry && victim.parryChance > 0)
+            const int32 parry = victim.parryChance - skillBonus;
+            if (parry > 0 && r < (sum += parry))
             {
-                const int32 parry = victim.parryChance - skillBonus;
-                if (parry > 0 && r < (sum += parry))
-                {
-                    return Landing::Parry;
-                }
+                return Ending(Result::Parried);
             }
         }
 
         // A player or pet swinging up at a higher-level creature glances, up to
         // forty percent of the time. Abilities do not glance, and neither does a
         // ranged shot -- the caller marks both.
-        if (!isSpellSwing && (attacker.isPlayer || attacker.isPet) &&
+        if (!isAbility && (attacker.isPlayer || attacker.isPet) &&
             !victim.isPlayer && !victim.isPet && attacker.level < victim.level)
         {
             const int32 skill = attacker.weaponSkill > attacker.maxSkillForLevel
@@ -110,7 +116,8 @@ namespace combat
             }
             if (glancing > 0 && r < (sum += glancing))
             {
-                return Landing::Glance;
+                strike.glancing = true;
+                return strike;
             }
         }
 
@@ -119,18 +126,22 @@ namespace combat
             int32 block = victim.blockChance;
             if (block > 0 && (block -= skillBonus) > 0 && r < (sum += block))
             {
-                return Landing::Block;
+                // The blow still lands; the shield's value comes off it, and
+                // whether anything survives that is decided in Resolve.
+                strike.blocked = true;
+                return strike;
             }
         }
 
         if (attacker.critChance > 0 && r < (sum += attacker.critChance))
         {
-            return Landing::Crit;
+            strike.crit = true;
+            return strike;
         }
 
         // A creature three levels up, or fifteen weapon skill above the victim's
         // defence, can crush. Auto-attacks only.
-        if (attacker.canCrush && !attacker.isPlayer && !attacker.isPet && !isSpellSwing)
+        if (attacker.canCrush && !attacker.isPlayer && !attacker.isPet && !isAbility)
         {
             const int32 lacking = attacker.maxSkillForLevel - CappedDefence(victim);
             if (lacking >= 15)
@@ -139,22 +150,23 @@ namespace combat
                 const int32 crush = lacking * 200 - 1500;
                 if (r < (sum += crush))
                 {
-                    return Landing::Crush;
+                    strike.crushing = true;
+                    return strike;
                 }
             }
         }
 
-        return Landing::Hit;
+        return strike;
     }
 
-    Landing RollSpell(const Combatant& attacker, const Combatant& victim,
-                      int32 missChance, int32 critChance, bool canCrit, uint32 roll)
+    Strike RollSpell(const Combatant& attacker, const Combatant& victim,
+                     int32 missChance, int32 critChance, bool canCrit, uint32 roll)
     {
         (void)attacker;
 
         if (victim.isEvading)
         {
-            return Landing::Evade;
+            return Ending(Result::Evaded);
         }
 
         int32 sum = 0;
@@ -162,14 +174,14 @@ namespace combat
 
         if (missChance > 0 && r < (sum += missChance))
         {
-            return Landing::Miss;
+            return Ending(Result::Missed);
         }
 
+        Strike strike;
         if (canCrit && critChance > 0 && r < (sum += critChance))
         {
-            return Landing::Crit;
+            strike.crit = true;
         }
-
-        return Landing::Hit;
+        return strike;
     }
 }

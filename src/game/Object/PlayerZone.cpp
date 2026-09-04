@@ -36,7 +36,6 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
-#include "UpdateMask.h"
 #include "QuestDef.h"
 #include "GossipDef.h"
 #include "UpdateData.h"
@@ -425,7 +424,7 @@ void Player::UpdateAreaDependentAuras()
         // use m_zoneUpdateId for speed: UpdateArea called from UpdateZone or instead UpdateZone in both cases m_zoneUpdateId up-to-date
         if (sSpellMgr.GetSpellAllowedInLocationError(iter->second->GetSpellProto(), GetMapId(), m_zoneUpdateId, m_areaUpdateId, this) != SPELL_CAST_OK)
         {
-            RemoveSpellAuraHolder(iter->second);
+            RemoveHolder(iter->second);
             iter = m_spellAuraHolders.begin();
         }
         else

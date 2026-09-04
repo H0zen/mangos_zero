@@ -34,12 +34,42 @@
 #include "Combat/Roll.h"
 
 using combat::Combatant;
-using combat::Landing;
+using combat::Result;
 using combat::RollMelee;
 using combat::RollSpell;
+using combat::Strike;
 
 namespace
 {
+    /// The bands the table can produce, as one name each.
+    ///
+    /// A Strike keeps the ending and the amplifiers apart, because a critical
+    /// blow and a blocked one both landed. The table still picks exactly one
+    /// band per roll, so for a boundary case the two forms carry the same
+    /// information and this collapses them back into the one the case is about.
+    enum class Band
+    {
+        Hit, Crit, Glance, Crush, Block, Miss, Dodge, Parry, Evade
+    };
+
+    Band BandOf(const Strike& strike)
+    {
+        switch (strike.result)
+        {
+            case Result::Missed:  return Band::Miss;
+            case Result::Dodged:  return Band::Dodge;
+            case Result::Parried: return Band::Parry;
+            case Result::Evaded:  return Band::Evade;
+            default:              break;
+        }
+
+        if (strike.crit)     { return Band::Crit; }
+        if (strike.glancing) { return Band::Glance; }
+        if (strike.crushing) { return Band::Crush; }
+        if (strike.blocked)  { return Band::Block; }
+        return Band::Hit;
+    }
+
     /// A level-60 player with a capped weapon skill and no chance of anything
     /// but a plain hit. Cases turn on one number at a time from here.
     Combatant Attacker()
@@ -62,10 +92,10 @@ namespace
         return c;
     }
 
-    Landing Swing(const Combatant& a, const Combatant& v, uint32 roll,
-                  bool fromBehind = false, bool isSpellSwing = false)
+    Band Swing(const Combatant& a, const Combatant& v, uint32 roll,
+               bool fromBehind = false, bool isSpellSwing = false)
     {
-        return RollMelee(a, v, fromBehind, isSpellSwing, roll);
+        return BandOf(RollMelee(a, v, fromBehind, isSpellSwing, roll));
     }
 }
 
@@ -74,9 +104,9 @@ TEST_CASE("With no avoidance and no crit, every roll is a plain hit")
     const Combatant a = Attacker();
     const Combatant v = Victim();
 
-    CHECK(Swing(a, v, 0) == Landing::Hit);
-    CHECK(Swing(a, v, 5000) == Landing::Hit);
-    CHECK(Swing(a, v, combat::ROLL_RANGE - 1) == Landing::Hit);
+    CHECK(Swing(a, v, 0) == Band::Hit);
+    CHECK(Swing(a, v, 5000) == Band::Hit);
+    CHECK(Swing(a, v, combat::ROLL_RANGE - 1) == Band::Hit);
 }
 
 TEST_CASE("An evading victim takes nothing, whatever the roll")
@@ -86,8 +116,8 @@ TEST_CASE("An evading victim takes nothing, whatever the roll")
     v.isEvading = true;
     v.dodgeChance = 5000;
 
-    CHECK(Swing(a, v, 0) == Landing::Evade);
-    CHECK(Swing(a, v, 9999) == Landing::Evade);
+    CHECK(Swing(a, v, 0) == Band::Evade);
+    CHECK(Swing(a, v, 9999) == Band::Evade);
 }
 
 TEST_CASE("Miss owns the bottom of the range")
@@ -96,9 +126,9 @@ TEST_CASE("Miss owns the bottom of the range")
     a.missChance = 500;   // five percent
     const Combatant v = Victim();
 
-    CHECK(Swing(a, v, 0) == Landing::Miss);
-    CHECK(Swing(a, v, 499) == Landing::Miss);
-    CHECK(Swing(a, v, 500) == Landing::Hit);
+    CHECK(Swing(a, v, 0) == Band::Miss);
+    CHECK(Swing(a, v, 499) == Band::Miss);
+    CHECK(Swing(a, v, 500) == Band::Hit);
 }
 
 TEST_CASE("The bands stack in order: miss, then dodge, then parry")
@@ -110,12 +140,12 @@ TEST_CASE("The bands stack in order: miss, then dodge, then parry")
     v.dodgeChance = 500;
     v.parryChance = 500;
 
-    CHECK(Swing(a, v, 499) == Landing::Miss);
-    CHECK(Swing(a, v, 500) == Landing::Dodge);
-    CHECK(Swing(a, v, 999) == Landing::Dodge);
-    CHECK(Swing(a, v, 1000) == Landing::Parry);
-    CHECK(Swing(a, v, 1499) == Landing::Parry);
-    CHECK(Swing(a, v, 1500) == Landing::Hit);
+    CHECK(Swing(a, v, 499) == Band::Miss);
+    CHECK(Swing(a, v, 500) == Band::Dodge);
+    CHECK(Swing(a, v, 999) == Band::Dodge);
+    CHECK(Swing(a, v, 1000) == Band::Parry);
+    CHECK(Swing(a, v, 1499) == Band::Parry);
+    CHECK(Swing(a, v, 1500) == Band::Hit);
 }
 
 TEST_CASE("Weapon skill above the victim's cap shrinks the avoidance bands")
@@ -128,8 +158,8 @@ TEST_CASE("Weapon skill above the victim's cap shrinks the avoidance bands")
     Combatant v = Victim();
     v.dodgeChance = 500;
 
-    CHECK(Swing(a, v, 459) == Landing::Dodge);
-    CHECK(Swing(a, v, 460) == Landing::Hit);
+    CHECK(Swing(a, v, 459) == Band::Dodge);
+    CHECK(Swing(a, v, 460) == Band::Hit);
 }
 
 TEST_CASE("Skill can close an avoidance band entirely")
@@ -140,7 +170,7 @@ TEST_CASE("Skill can close an avoidance band entirely")
     Combatant v = Victim();
     v.dodgeChance = 300;   // less than the 400 the bonus removes
 
-    CHECK(Swing(a, v, 0) == Landing::Hit);
+    CHECK(Swing(a, v, 0) == Band::Hit);
 }
 
 TEST_CASE("A player behind you takes your dodge away, a creature's does not")
@@ -151,13 +181,13 @@ TEST_CASE("A player behind you takes your dodge away, a creature's does not")
     player.isPlayer = true;
     player.dodgeChance = 5000;
 
-    CHECK(Swing(a, player, 0, /*fromBehind*/ false) == Landing::Dodge);
-    CHECK(Swing(a, player, 0, /*fromBehind*/ true) == Landing::Hit);
+    CHECK(Swing(a, player, 0, /*fromBehind*/ false) == Band::Dodge);
+    CHECK(Swing(a, player, 0, /*fromBehind*/ true) == Band::Hit);
 
     Combatant creature = Victim();
     creature.dodgeChance = 5000;
 
-    CHECK(Swing(a, creature, 0, /*fromBehind*/ true) == Landing::Dodge);
+    CHECK(Swing(a, creature, 0, /*fromBehind*/ true) == Band::Dodge);
 }
 
 TEST_CASE("Nobody parries or blocks an attacker behind them")
@@ -168,8 +198,8 @@ TEST_CASE("Nobody parries or blocks an attacker behind them")
     v.parryChance = 5000;
     v.blockChance = 5000;
 
-    CHECK(Swing(a, v, 0, /*fromBehind*/ false) == Landing::Parry);
-    CHECK(Swing(a, v, 0, /*fromBehind*/ true) == Landing::Hit);
+    CHECK(Swing(a, v, 0, /*fromBehind*/ false) == Band::Parry);
+    CHECK(Swing(a, v, 0, /*fromBehind*/ true) == Band::Hit);
 }
 
 TEST_CASE("A creature forbidden to parry or block does neither")
@@ -182,7 +212,7 @@ TEST_CASE("A creature forbidden to parry or block does neither")
     v.canParry = false;
     v.canBlock = false;
 
-    CHECK(Swing(a, v, 0) == Landing::Hit);
+    CHECK(Swing(a, v, 0) == Band::Hit);
 }
 
 TEST_CASE("A seated player is hit critically before anything can avoid it")
@@ -195,8 +225,8 @@ TEST_CASE("A seated player is hit critically before anything can avoid it")
     v.dodgeChance = 5000;
     v.parryChance = 5000;
 
-    CHECK(Swing(a, v, 0) == Landing::Crit);
-    CHECK(Swing(a, v, 9999) == Landing::Crit);
+    CHECK(Swing(a, v, 0) == Band::Crit);
+    CHECK(Swing(a, v, 9999) == Band::Crit);
 }
 
 TEST_CASE("A miss still beats a seated victim's automatic crit")
@@ -210,8 +240,8 @@ TEST_CASE("A miss still beats a seated victim's automatic crit")
     v.isPlayer = true;
     v.isSitting = true;
 
-    CHECK(Swing(a, v, 0) == Landing::Miss);
-    CHECK(Swing(a, v, 500) == Landing::Crit);
+    CHECK(Swing(a, v, 0) == Band::Miss);
+    CHECK(Swing(a, v, 500) == Band::Crit);
 }
 
 TEST_CASE("A seated victim is not auto-crit by an attacker who cannot crit")
@@ -222,7 +252,7 @@ TEST_CASE("A seated victim is not auto-crit by an attacker who cannot crit")
     v.isPlayer = true;
     v.isSitting = true;
 
-    CHECK(Swing(a, v, 0) == Landing::Hit);
+    CHECK(Swing(a, v, 0) == Band::Hit);
 }
 
 TEST_CASE("A player swinging up at a higher-level creature glances")
@@ -236,8 +266,8 @@ TEST_CASE("A player swinging up at a higher-level creature glances")
     v.maxDefenceForLevel = 315;
 
     // (10 + 2 * (315 - 300)) * 100 = 4000, the cap.
-    CHECK(Swing(a, v, 3999) == Landing::Glance);
-    CHECK(Swing(a, v, 4000) == Landing::Hit);
+    CHECK(Swing(a, v, 3999) == Band::Glance);
+    CHECK(Swing(a, v, 4000) == Band::Hit);
 }
 
 TEST_CASE("Glancing is capped at forty percent however wide the skill gap")
@@ -250,8 +280,8 @@ TEST_CASE("Glancing is capped at forty percent however wide the skill gap")
     v.defenceSkill = 500;
     v.maxDefenceForLevel = 500;
 
-    CHECK(Swing(a, v, 3999) == Landing::Glance);
-    CHECK(Swing(a, v, 4000) == Landing::Hit);
+    CHECK(Swing(a, v, 3999) == Band::Glance);
+    CHECK(Swing(a, v, 4000) == Band::Hit);
 }
 
 TEST_CASE("An ability does not glance, and neither does a swing at a player")
@@ -264,11 +294,11 @@ TEST_CASE("An ability does not glance, and neither does a swing at a player")
     creature.defenceSkill = 315;
     creature.maxDefenceForLevel = 315;
 
-    CHECK(Swing(a, creature, 0, false, /*isSpellSwing*/ true) == Landing::Hit);
+    CHECK(Swing(a, creature, 0, false, /*isSpellSwing*/ true) == Band::Hit);
 
     Combatant player = creature;
     player.isPlayer = true;
-    CHECK(Swing(a, player, 0) == Landing::Hit);
+    CHECK(Swing(a, player, 0) == Band::Hit);
 }
 
 TEST_CASE("A creature does not glance at all")
@@ -282,7 +312,7 @@ TEST_CASE("A creature does not glance at all")
     v.defenceSkill = 315;
     v.maxDefenceForLevel = 315;
 
-    CHECK(Swing(a, v, 0) == Landing::Hit);
+    CHECK(Swing(a, v, 0) == Band::Hit);
 }
 
 TEST_CASE("Block sits between glancing and crit")
@@ -292,10 +322,10 @@ TEST_CASE("Block sits between glancing and crit")
     Combatant v = Victim();
     v.blockChance = 500;
 
-    CHECK(Swing(a, v, 499) == Landing::Block);
-    CHECK(Swing(a, v, 500) == Landing::Crit);
-    CHECK(Swing(a, v, 999) == Landing::Crit);
-    CHECK(Swing(a, v, 1000) == Landing::Hit);
+    CHECK(Swing(a, v, 499) == Band::Block);
+    CHECK(Swing(a, v, 500) == Band::Crit);
+    CHECK(Swing(a, v, 999) == Band::Crit);
+    CHECK(Swing(a, v, 1000) == Band::Hit);
 }
 
 TEST_CASE("A creature far above its victim crushes")
@@ -311,8 +341,8 @@ TEST_CASE("A creature far above its victim crushes")
     v.maxDefenceForLevel = 300;
 
     // Fifteen points lacking: 15 * 200 - 1500 = 1500.
-    CHECK(Swing(a, v, 1499) == Landing::Crush);
-    CHECK(Swing(a, v, 1500) == Landing::Hit);
+    CHECK(Swing(a, v, 1499) == Band::Crush);
+    CHECK(Swing(a, v, 1500) == Band::Hit);
 }
 
 TEST_CASE("Fourteen points short of the gap is no crush at all")
@@ -327,7 +357,7 @@ TEST_CASE("Fourteen points short of the gap is no crush at all")
     v.defenceSkill = 300;
     v.maxDefenceForLevel = 300;
 
-    CHECK(Swing(a, v, 0) == Landing::Hit);
+    CHECK(Swing(a, v, 0) == Band::Hit);
 }
 
 TEST_CASE("Defence above a level's cap does not hold off a crush")
@@ -344,7 +374,7 @@ TEST_CASE("Defence above a level's cap does not hold off a crush")
     v.defenceSkill = 400;          // well over
     v.maxDefenceForLevel = 300;    // but the cap is what counts
 
-    CHECK(Swing(a, v, 0) == Landing::Crush);
+    CHECK(Swing(a, v, 0) == Band::Crush);
 }
 
 TEST_CASE("A player never crushes, and an ability never crushes")
@@ -358,10 +388,10 @@ TEST_CASE("A player never crushes, and an ability never crushes")
     v.defenceSkill = 300;
     v.maxDefenceForLevel = 300;
 
-    CHECK(Swing(a, v, 0) == Landing::Hit);           // isPlayer
+    CHECK(Swing(a, v, 0) == Band::Hit);           // isPlayer
 
     a.isPlayer = false;
-    CHECK(Swing(a, v, 0, false, /*isSpellSwing*/ true) == Landing::Hit);
+    CHECK(Swing(a, v, 0, false, /*isSpellSwing*/ true) == Band::Hit);
 }
 
 TEST_CASE("A spell weighs landing and crit, and nothing else")
@@ -374,8 +404,8 @@ TEST_CASE("A spell weighs landing and crit, and nothing else")
     v.blockChance = 5000;
 
     // None of the melee avoidance applies to a bolt.
-    CHECK(RollSpell(a, v, 0, 0, true, 0) == Landing::Hit);
-    CHECK(RollSpell(a, v, 0, 0, true, 9999) == Landing::Hit);
+    CHECK(BandOf(RollSpell(a, v, 0, 0, true, 0)) == Band::Hit);
+    CHECK(BandOf(RollSpell(a, v, 0, 0, true, 9999)) == Band::Hit);
 }
 
 TEST_CASE("A spell's miss band comes before its crit band")
@@ -383,10 +413,10 @@ TEST_CASE("A spell's miss band comes before its crit band")
     const Combatant a = Attacker();
     const Combatant v = Victim();
 
-    CHECK(RollSpell(a, v, 400, 500, true, 399) == Landing::Miss);
-    CHECK(RollSpell(a, v, 400, 500, true, 400) == Landing::Crit);
-    CHECK(RollSpell(a, v, 400, 500, true, 899) == Landing::Crit);
-    CHECK(RollSpell(a, v, 400, 500, true, 900) == Landing::Hit);
+    CHECK(BandOf(RollSpell(a, v, 400, 500, true, 399)) == Band::Miss);
+    CHECK(BandOf(RollSpell(a, v, 400, 500, true, 400)) == Band::Crit);
+    CHECK(BandOf(RollSpell(a, v, 400, 500, true, 899)) == Band::Crit);
+    CHECK(BandOf(RollSpell(a, v, 400, 500, true, 900)) == Band::Hit);
 }
 
 TEST_CASE("A spell that cannot crit does not, however high the chance")
@@ -394,7 +424,7 @@ TEST_CASE("A spell that cannot crit does not, however high the chance")
     const Combatant a = Attacker();
     const Combatant v = Victim();
 
-    CHECK(RollSpell(a, v, 0, 9000, /*canCrit*/ false, 0) == Landing::Hit);
+    CHECK(BandOf(RollSpell(a, v, 0, 9000, /*canCrit*/ false, 0)) == Band::Hit);
 }
 
 TEST_CASE("A spell against an evading victim is refused too")
@@ -403,23 +433,41 @@ TEST_CASE("A spell against an evading victim is refused too")
     Combatant v = Victim();
     v.isEvading = true;
 
-    CHECK(RollSpell(a, v, 0, 0, true, 0) == Landing::Evade);
+    CHECK(BandOf(RollSpell(a, v, 0, 0, true, 0)) == Band::Evade);
 }
 
-TEST_CASE("Landed says which results carry damage")
+TEST_CASE("Every band that carries damage comes back as a landing")
 {
-    CHECK(combat::Landed(Landing::Hit));
-    CHECK(combat::Landed(Landing::Crit));
-    CHECK(combat::Landed(Landing::Block));
-    CHECK(combat::Landed(Landing::Glance));
-    CHECK(combat::Landed(Landing::Crush));
+    // The amplifiers are not endings: a critical, glancing, crushing or blocked
+    // blow all connected, and only the avoidance bands did not. Reading that off
+    // the ending alone is what the two fields exist for.
+    Combatant a = Attacker();
+    Combatant v = Victim();
 
-    CHECK_FALSE(combat::Landed(Landing::Miss));
-    CHECK_FALSE(combat::Landed(Landing::Dodge));
-    CHECK_FALSE(combat::Landed(Landing::Parry));
-    CHECK_FALSE(combat::Landed(Landing::Resist));
-    CHECK_FALSE(combat::Landed(Landing::Immune));
-    CHECK_FALSE(combat::Landed(Landing::Evade));
+    a.critChance = 10000;
+    CHECK(RollMelee(a, v, false, false, 0).Landed());
+
+    a.critChance = 0;
+    a.missChance = 10000;
+    CHECK_FALSE(RollMelee(a, v, false, false, 0).Landed());
+
+    a.missChance = 0;
+    v.dodgeChance = 10000;
+    CHECK_FALSE(RollMelee(a, v, false, false, 0).Landed());
+
+    v.dodgeChance = 0;
+    v.parryChance = 10000;
+    CHECK_FALSE(RollMelee(a, v, false, false, 0).Landed());
+
+    v.parryChance = 0;
+    v.blockChance = 10000;
+    const Strike blocked = RollMelee(a, v, false, false, 0);
+    CHECK(blocked.Landed());
+    CHECK(blocked.blocked);
+
+    v.blockChance = 0;
+    v.isEvading = true;
+    CHECK_FALSE(RollMelee(a, v, false, false, 0).Landed());
 }
 
 TEST_CASE("The same inputs always give the same answer")

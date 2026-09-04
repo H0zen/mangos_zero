@@ -29,16 +29,16 @@
 
 #include "Combat/HitQueue.h"
 
-using combat::Attempt;
+using combat::Blow;
 using combat::HitQueue;
 using combat::PendingHit;
 
 namespace
 {
-    Attempt Hit(int32 base)
+    Blow Hit(int32 base)
     {
-        Attempt a;
-        a.base = base;
+        Blow a;
+        a.amount = base;
         return a;
     }
 }
@@ -63,7 +63,7 @@ TEST_CASE("A hit begun by intent starts at depth zero")
     PendingHit out;
     REQUIRE(queue.Pop(out));
     CHECK(out.depth == 0);
-    CHECK(out.attempt.base == 10);
+    CHECK(out.blow.amount == 10);
 }
 
 TEST_CASE("A caused hit is one deeper than what caused it")
@@ -89,11 +89,11 @@ TEST_CASE("Hits come out in the order they went in")
 
     PendingHit out;
     REQUIRE(queue.Pop(out));
-    CHECK(out.attempt.base == 1);
+    CHECK(out.blow.amount == 1);
     REQUIRE(queue.Pop(out));
-    CHECK(out.attempt.base == 2);
+    CHECK(out.blow.amount == 2);
     REQUIRE(queue.Pop(out));
-    CHECK(out.attempt.base == 3);
+    CHECK(out.blow.amount == 3);
     CHECK_FALSE(queue.Pop(out));
 }
 
@@ -143,7 +143,7 @@ TEST_CASE("A chain walked to its end terminates")
         ++dealt;
 
         // Every hit provokes another, as a runaway pair of auras would.
-        queue.Push(Hit(current.attempt.base), current.depth);
+        queue.Push(Hit(current.blow.amount), current.depth);
 
         REQUIRE(dealt < 1000);   // a live-lock would trip this before the cap
     }
@@ -196,14 +196,14 @@ TEST_CASE("The queued attempt survives intact")
 {
     HitQueue queue;
 
-    Attempt a;
+    Blow a;
     a.attacker = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(11));
     a.victim = ObjectGuid(HIGHGUID_UNIT, static_cast<uint32>(7), static_cast<uint32>(22));
-    a.source = combat::Source::Spell;
+    a.delivery = combat::Delivery::Spell;
     a.spellId = 133;
     a.effectIndex = 1;
-    a.school = SPELL_SCHOOL_MASK_FIRE;
-    a.base = 250;
+    a.school = combat::School::Fire;
+    a.amount = 250;
     a.canCrit = false;
     a.triggered = true;
 
@@ -212,11 +212,11 @@ TEST_CASE("The queued attempt survives intact")
     PendingHit out;
     REQUIRE(queue.Pop(out));
 
-    CHECK(out.attempt.attacker == a.attacker);
-    CHECK(out.attempt.victim == a.victim);
-    CHECK(out.attempt.spellId == 133);
-    CHECK(out.attempt.effectIndex == 1);
-    CHECK(out.attempt.base == 250);
-    CHECK_FALSE(out.attempt.canCrit);
-    CHECK(out.attempt.triggered);
+    CHECK(out.blow.attacker == a.attacker);
+    CHECK(out.blow.victim == a.victim);
+    CHECK(out.blow.spellId == 133);
+    CHECK(out.blow.effectIndex == 1);
+    CHECK(out.blow.amount == 250);
+    CHECK_FALSE(out.blow.canCrit);
+    CHECK(out.blow.triggered);
 }

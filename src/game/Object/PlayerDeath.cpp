@@ -35,7 +35,6 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
-#include "UpdateMask.h"
 #include "QuestDef.h"
 #include "GossipDef.h"
 #include "UpdateData.h"
@@ -163,9 +162,9 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
 
     if (getRace() == RACE_NIGHTELF)
     {
-        RemoveAurasDueToSpell(20584); // speed bonuses
+        RemoveAuras(20584); // speed bonuses
     }
-    RemoveAurasDueToSpell(8326);                            // SPELL_AURA_GHOST
+    RemoveAuras(8326);                            // SPELL_AURA_GHOST
 
     SetWaterWalk(false);
     SetRoot(false);

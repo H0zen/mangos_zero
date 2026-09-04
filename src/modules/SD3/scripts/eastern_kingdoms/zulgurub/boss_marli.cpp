@@ -255,7 +255,7 @@ struct boss_marli : public CreatureScript
                     if (DoCastSpellIfCan(m_creature, SPELL_TRANSFORM_BACK) == CAST_OK)
                     {
                         DoScriptText(SAY_TRANSFORM_BACK, m_creature);
-                        m_creature->RemoveAurasDueToSpell(SPELL_SPIDER_FORM);
+                        m_creature->RemoveAuras(SPELL_SPIDER_FORM);
                         m_bIsInPhaseTwo = false;
                         m_uiTransformTimer = 60000;
                     }

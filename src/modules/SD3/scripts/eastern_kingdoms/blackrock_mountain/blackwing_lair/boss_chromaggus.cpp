@@ -157,7 +157,7 @@ struct boss_chromaggus : public CreatureScript
                 // Remove old vulnerability spell
                 if (m_uiCurrentVulnerabilitySpell)
                 {
-                    m_creature->RemoveAurasDueToSpell(m_uiCurrentVulnerabilitySpell);
+                    m_creature->RemoveAuras(m_uiCurrentVulnerabilitySpell);
                 }
 
                 // Cast new random vurlnabilty on self

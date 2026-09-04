@@ -75,7 +75,7 @@ struct npc_ragged_john : public CreatureScript
                 float attackRadius = m_creature->GetAttackDistance(who);
                 if (InReach(*m_creature, *who, attackRadius) && HasLineOfSight(*m_creature, *who))
                 {
-                    who->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+                    who->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
                     AttackStart(who);
                 }
             }
@@ -680,7 +680,7 @@ struct npc_klinfran_the_crazed : public CreatureScript
         {
             if (pSpell && SD3_SpellId(pSpell) == 14277)   // Scorpid Sting (Rank 4)
             {
-                m_creature->RemoveAurasDueToSpell(SPELL_DEMONIC_FRENZY);
+                m_creature->RemoveAuras(SPELL_DEMONIC_FRENZY);
                 DoCastSpellIfCan(m_creature, SPELL_ENTROPIC_STING, CAST_TRIGGERED);
             }
         }

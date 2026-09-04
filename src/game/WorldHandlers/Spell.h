@@ -577,7 +577,8 @@ class Spell
         int32 damage;
 
         // this is set in Spell Hit, but used in Apply Aura handler
-        DiminishingLevels m_diminishLevel;
+        unit::Fade m_diminishLevel = unit::Fade::Full;
+        bool m_diminishApplies = false;
         DiminishingGroup m_diminishGroup;
 
         // -------------------------------------------

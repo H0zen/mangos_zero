@@ -91,7 +91,7 @@ struct npc_lazy_peon : public CreatureScript
             m_uiStopSleepingTimer = 0;
             if (GameObject* pLumber = GetClosestGameObjectWithEntry(m_creature, GO_LUMBERPILE, 15.0f))
             {
-                m_creature->RemoveAurasDueToSpell(SPELL_PEON_SLEEP);
+                m_creature->RemoveAuras(SPELL_PEON_SLEEP);
 
                 float fX, fY, fZ;
                 m_creature->SetWalk(false);

@@ -171,7 +171,7 @@ void OutdoorPvP::BuffTeam(Team team, uint32 spellId, bool remove /*= false*/)
         {
             if (remove)
             {
-                player->RemoveAurasDueToSpell(spellId);
+                player->RemoveAuras(spellId);
             }
             else
             {

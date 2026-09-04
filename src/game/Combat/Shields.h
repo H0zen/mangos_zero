@@ -32,7 +32,7 @@
 // as deciding and taking stay apart, a resolution can be read, logged and tested
 // without anything in the world having moved yet.
 
-#include "Combat/Attempt.h"
+#include "Combat/Blow.h"
 
 class Unit;
 

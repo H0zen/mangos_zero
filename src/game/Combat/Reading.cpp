@@ -121,14 +121,19 @@ namespace combat
     }
 
     Defences ReadDefences(const Unit& victim, const Unit& attacker,
-                          SpellSchoolMask school)
+                          School school)
     {
         auto& mutableVictim = const_cast<Unit&>(victim);
         auto& mutableAttacker = const_cast<Unit&>(attacker);
 
         Defences d;
 
-        d.immune = mutableVictim.IsImmuneToDamage(school);
+        // Spell data and the unit accessors speak in masks. A blow has one
+        // school, so widening it happens here, at the seam, and the core below
+        // never sees a mask it would have to narrow again.
+        const auto asMask = static_cast<SpellSchoolMask>(SchoolSet(school).ToMask());
+
+        d.immune = mutableVictim.IsImmuneToDamage(asMask);
 
         // An attacker's target-resistance aura reduces what the victim has,
         // which is why both sides are read here rather than in the victim alone.
@@ -140,11 +145,12 @@ namespace combat
             d.armour = 0;
         }
 
-        if ((school & SPELL_SCHOOL_MASK_NORMAL) == 0)
+        if (!IsPhysical(school))
         {
-            d.resistance = static_cast<int32>(victim.GetResistance(GetFirstSchoolInMask(school))) +
+            d.resistance = static_cast<int32>(
+                               victim.GetResistance(static_cast<SpellSchools>(WireIndex(school)))) +
                            mutableAttacker.GetTotalAuraModifierByMiscMask(
-                               SPELL_AURA_MOD_TARGET_RESISTANCE, school);
+                               SPELL_AURA_MOD_TARGET_RESISTANCE, asMask);
             if (d.resistance < 0)
             {
                 d.resistance = 0;
@@ -165,7 +171,7 @@ namespace combat
             shield.caster = aura->GetCasterGuid();
             shield.spellId = aura->GetId();
             shield.remaining = mod->m_amount;
-            shield.schoolMask = static_cast<uint32>(mod->m_miscvalue);
+            shield.covers = SchoolSet::FromMask(static_cast<uint32>(mod->m_miscvalue));
             d.absorbers.push_back(shield);
         }
 
@@ -183,7 +189,7 @@ namespace combat
             shield.caster = aura->GetCasterGuid();
             shield.spellId = aura->GetId();
             shield.remaining = mod->m_amount;
-            shield.schoolMask = static_cast<uint32>(mod->m_miscvalue);
+            shield.covers = SchoolSet::FromMask(static_cast<uint32>(mod->m_miscvalue));
 
             auto multiplier = aura->GetSpellProto()->EffectAmplitude[aura->GetEffIndex()];
             if (multiplier > 0.f)

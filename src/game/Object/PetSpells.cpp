@@ -610,7 +610,7 @@ bool Pet::removeSpell(uint32 spell_id, bool learn_prev, bool clear_ab)
         itr->second.state = PETSPELL_REMOVED;
     }
 
-    RemoveAurasDueToSpell(spell_id);
+    RemoveAuras(spell_id);
 
     if (learn_prev)
     {

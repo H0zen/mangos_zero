@@ -54,7 +54,6 @@
 #include "GridNotifiersImpl.h"
 #include "Opcodes.h"
 #include "Log.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
@@ -403,7 +402,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
             // not break stealth by cast targeting
             if (!(m_spellInfo->AttributesEx & SPELL_ATTR_EX_NOT_BREAK_STEALTH) && m_spellInfo->ID != 51690 && m_spellInfo->ID != 53055)
             {
-                unit->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+                unit->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
             }
 
             // can cause back attack (if detected), stealth removed at Spell::cast if spell break it
@@ -413,11 +412,11 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
                 // use speedup check to avoid re-remove after above lines
                 if (m_spellInfo->HasAttribute(SPELL_ATTR_EX_NOT_BREAK_STEALTH))
                 {
-                    unit->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+                    unit->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
                 }
 
                 // caster can be detected but have stealth aura
-                m_caster->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+                m_caster->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
 
                 if (!unit->IsStandState() && !unit->hasUnitState(UNIT_STAT_STUNNED))
                 {
@@ -483,12 +482,18 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
 
     // Get Data Needed for Diminishing Returns, some effects may have multiple auras, so this must be done on spell hit, not aura add
     m_diminishGroup = GetDiminishingReturnsGroupForSpell(m_spellInfo, m_triggeredByAuraSpell);
-    m_diminishLevel = unit->GetDiminishing(m_diminishGroup);
-    // Increase Diminishing on unit, current informations for actually casts will use values above
-    if ((GetDiminishingReturnsGroupType(m_diminishGroup) == DRTYPE_PLAYER && unit->GetTypeId() == TYPEID_PLAYER) ||
-        GetDiminishingReturnsGroupType(m_diminishGroup) == DRTYPE_ALL)
+    m_diminishLevel = unit->Diminishing().FadeOf(m_diminishGroup, GameTime::GetGameTimeMS());
+
+    // Whether this group diminishes against this victim at all is decided here,
+    // where both the spell and the target are in hand. The component holds the
+    // history; it is not asked to know what a player is.
+    const DiminishingReturnsType type = GetDiminishingReturnsGroupType(m_diminishGroup);
+    m_diminishApplies = (type == DRTYPE_PLAYER && unit->GetTypeId() == TYPEID_PLAYER) ||
+                        type == DRTYPE_ALL;
+
+    if (m_diminishApplies)
     {
-        unit->IncrDiminishing(m_diminishGroup);
+        unit->Diminishing().RecordHit(m_diminishGroup, GameTime::GetGameTimeMS());
     }
 
     // Apply additional spell effects to target
@@ -537,7 +542,12 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
 
             if (duration > 0)
             {
-                unit->ApplyDiminishingToDuration(m_diminishGroup, duration, m_caster, m_diminishLevel, isReflected);
+                // A friendly caster's effect is not shortened, and neither is
+                // one that was reflected back.
+                if (m_diminishApplies && (isReflected || !m_caster->IsFriendlyTo(unit)))
+                {
+                    duration = unit::Diminishing::Shorten(duration, m_diminishLevel);
+                }
 
                 // Fully diminished
                 if (duration == 0)

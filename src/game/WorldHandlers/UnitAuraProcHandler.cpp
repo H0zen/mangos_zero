@@ -355,7 +355,7 @@ bool Unit::IsTriggeredAtSpellProcEvent(Unit* pVictim, SpellAuraHolder* holder, S
         // Break stealth on sap if improved sap doesnt proc
         if ((procSpell && procSpell->SpellIconID == 249 && procSpell->SpellVisualID == 257) && (spellProto->SpellClassSet == SPELLFAMILY_ROGUE && spellProto->SpellIconID == 249 && spellProto->SpellVisualID == 0))
         {
-            RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+            RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
         }
         return false;
     }
@@ -532,14 +532,14 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura
                         return SPELL_AURA_PROC_FAILED;
                     }
                     // Need remove one 24659 aura
-                    RemoveAuraHolderFromStack(24659);
+                    RemoveStacks(24659);
                     return SPELL_AURA_PROC_OK;
                 }
                 // Restless Strength
                 case 24661:
                 {
                     // Need remove one 24662 aura
-                    RemoveAuraHolderFromStack(24662);
+                    RemoveStacks(24662);
                     return SPELL_AURA_PROC_OK;
                 }
                 // Adaptive Warding (Frostfire Regalia set)
@@ -681,7 +681,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura
                     // last charge and crit
                     if (triggeredByAura->GetHolder()->GetAuraCharges() <= 1 && (procEx & PROC_EX_CRITICAL_HIT))
                     {
-                        RemoveAurasDueToSpell(28682);       //-> remove Combustion auras
+                        RemoveAuras(28682);       //-> remove Combustion auras
                         return SPELL_AURA_PROC_OK;          // charge counting (will removed)
                     }
 
@@ -1660,7 +1660,7 @@ SpellAuraProcResult Unit::HandleRemoveByDamageChanceProc(Unit* pVictim, uint32 d
     if (roll_chance_f(chance))
     {
         triggeredByAura->SetInUse(true);
-        RemoveAurasByCasterSpell(triggeredByAura->GetId(), triggeredByAura->GetCasterGuid());
+        RemoveAurasCastBy(triggeredByAura->GetId(), triggeredByAura->GetCasterGuid());
         triggeredByAura->SetInUse(false);
         return SPELL_AURA_PROC_OK;
     }
@@ -1680,6 +1680,6 @@ SpellAuraProcResult Unit::HandleInvisibilityAuraProc(Unit* pVictim, uint32 damag
         return SPELL_AURA_PROC_FAILED;
     }
 
-    RemoveAurasDueToSpell(triggeredByAura->GetId());
+    RemoveAuras(triggeredByAura->GetId());
     return SPELL_AURA_PROC_OK;
 }

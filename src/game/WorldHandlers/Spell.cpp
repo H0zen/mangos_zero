@@ -661,9 +661,9 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, Aura* triggeredB
         // Pick Pocket - don't exit Stealth at all
         if (!(m_spellInfo->SpellClassSet == SPELLFAMILY_ROGUE && (m_spellInfo->SpellClassMask & UI64LIT(0x00000080) || m_spellInfo->SpellClassMask & 2147483648)))
         {
-            m_caster->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+            m_caster->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
         }
-        m_caster->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        m_caster->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
     // add non-triggered (with cast time and without)

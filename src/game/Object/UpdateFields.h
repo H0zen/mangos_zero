@@ -63,9 +63,9 @@ enum EContainerFields
 {
     CONTAINER_FIELD_NUM_SLOTS                  = ITEM_END + 0x00, // Size:1
     CONTAINER_ALIGN_PAD                        = ITEM_END + 0x01, // Size:1
-    CONTAINER_FIELD_SLOT_1                     = ITEM_END + 0x02, // count=56
-    CONTAINER_FIELD_SLOT_LAST                  = ITEM_END + 0x38,
-    CONTAINER_END                              = ITEM_END + 0x3A,
+    CONTAINER_FIELD_SLOT_1                     = ITEM_END + 0x02, // count=72, i.e. 36 guids
+    CONTAINER_FIELD_SLOT_LAST                  = ITEM_END + 0x48,
+    CONTAINER_END                              = ITEM_END + 0x4A,
 };
 
 /**

@@ -52,7 +52,6 @@
 #include "WorldSession.h"
 #include "Opcodes.h"
 #include "Log.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
@@ -204,11 +203,11 @@ void Aura::HandleShapeshiftBoosts(bool apply)
     {
         if (spellId1)
         {
-            target->RemoveAurasDueToSpell(spellId1);
+            target->RemoveAuras(spellId1);
         }
         if (spellId2)
         {
-            target->RemoveAurasDueToSpell(spellId2);
+            target->RemoveAuras(spellId2);
         }
 
         Unit::SpellAuraHolderMap& tAuras = target->GetSpellAuraHolderMap();
@@ -216,7 +215,7 @@ void Aura::HandleShapeshiftBoosts(bool apply)
         {
             if ((itr->second->IsRemovedOnShapeLost() && itr->second->GetSpellProto()->ID != 12292) || itr->second->GetSpellProto()->ID == 24864)   // Feline Swiftness Passive 2a drop, Sweeping Strikes keep TODO
             {
-                target->RemoveAurasDueToSpell(itr->second->GetId());
+                target->RemoveAuras(itr->second->GetId());
                 itr = tAuras.begin();
             }
             else

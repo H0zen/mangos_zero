@@ -34,7 +34,6 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
-#include "UpdateMask.h"
 #include "QuestDef.h"
 #include "GossipDef.h"
 #include "UpdateData.h"
@@ -487,11 +486,11 @@ void Player::ApplyEquipSpell(SpellEntry const* spellInfo, Item* item, bool apply
 
         if (item)
         {
-            RemoveAurasDueToItemSpell(item, spellInfo->ID); // un-apply all spells , not only at-equipped
+            RemoveAurasFromItem(item, spellInfo->ID); // un-apply all spells , not only at-equipped
         }
         else
         {
-            RemoveAurasDueToSpell(spellInfo->ID); // un-apply spell (item set case)
+            RemoveAuras(spellInfo->ID); // un-apply spell (item set case)
         }
     }
 }

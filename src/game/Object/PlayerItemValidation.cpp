@@ -36,7 +36,6 @@
 #include "SpellMgr.h"
 #include "World.h"
 #include "WorldPacket.h"
-#include "UpdateMask.h"
 #include "CinematicFlyover.h"
 #include "QuestDef.h"
 #include "GossipDef.h"

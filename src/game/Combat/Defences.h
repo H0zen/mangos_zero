@@ -28,13 +28,16 @@
 // What stands between a blow and a victim's health.
 //
 // Everything here is read, never written. A shield's remaining strength is an
-// input to the decision; drawing on it is Apply()'s business, from the plan the
-// Outcome carries back. That separation is the whole reason resolve() can be a
+// input to the decision; drawing on it is Apply's business, from the plan the
+// Outcome carries back. That separation is the whole reason Resolve can be a
 // function of its arguments.
+//
+// A shield covers a SET of schools while the blow it stops has exactly one, so
+// the question a defence asks is always membership.
 
+#include "Combat/School.h"
 #include "Platform/Define.h"
 #include "ObjectGuid.h"
-#include "SharedDefines.h"
 
 #include <vector>
 
@@ -52,15 +55,12 @@ namespace combat
         ObjectGuid caster;
         uint32 spellId = 0;
         int32 remaining = 0;
-        uint32 schoolMask = SPELL_SCHOOL_MASK_ALL;
+        SchoolSet covers = SchoolSet::All();
         float manaMultiplier = 0.f;
 
         bool CostsMana() const { return manaMultiplier > 0.f; }
 
-        bool Covers(SpellSchoolMask school) const
-        {
-            return (schoolMask & school) != 0;
-        }
+        bool Covers(School school) const { return covers.Contains(school); }
     };
 
     /**
@@ -68,7 +68,7 @@ namespace combat
      *
      * A flat share takes a fixed amount off; a fractional one takes a portion.
      * Either way the amount leaves this victim and arrives at another, and the
-     * arrival is queued rather than dealt during this hit's mitigation.
+     * arrival is queued rather than dealt during this blow's mitigation.
      */
     struct Splitter
     {

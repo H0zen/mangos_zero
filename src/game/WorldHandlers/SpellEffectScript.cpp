@@ -35,7 +35,6 @@
 #include "WorldPacket.h"
 #include "Opcodes.h"
 #include "Log.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
@@ -222,7 +221,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     return;
                 }
                 case 24590:                                 // Brittle Armor - need remove one 24575 Brittle Armor aura
-                    unitTarget->RemoveAuraHolderFromStack(24575);
+                    unitTarget->RemoveStacks(24575);
                     return;
                 case 24714:                                 // Trick
                 {
@@ -386,7 +385,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     return;
                 }
                 case 26465:                                 // Mercurial Shield - need remove one 26464 Mercurial Shield aura
-                    unitTarget->RemoveAuraHolderFromStack(26464);
+                    unitTarget->RemoveStacks(26464);
                     return;
                 case 26656:                                 // Summon Black Qiraji Battle Tank
                 {
@@ -396,7 +395,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     }
 
                     // Prevent stacking of mounts
-                    unitTarget->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
+                    unitTarget->RemoveAurasOfType(SPELL_AURA_MOUNTED);
 
                     // Two separate mounts depending on area id (allows use both in and out of specific instance)
                     if (unitTarget->GetTerrain()->GetAreaId(unitTarget->Where().X(), unitTarget->Where().Y(), unitTarget->Where().Z()) == 3428)
@@ -598,7 +597,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     }
 
                     // found, remove seal
-                    m_caster->RemoveAurasDueToSpell(auraOf->GetId());
+                    m_caster->RemoveAuras(auraOf->GetId());
 
                     break;
                 }

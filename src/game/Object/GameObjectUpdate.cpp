@@ -31,7 +31,6 @@
 #include "PoolManager.h"
 #include "SpellMgr.h"
 #include "Spell.h"
-#include "UpdateMask.h"
 #include "Opcodes.h"
 #include "WorldPacket.h"
 #include "World.h"
@@ -124,7 +123,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                                 m_reStockTimer = 0;
                                 m_lootState = GO_READY;
                                 loot.clear();
-                                ForceValuesUpdateAtIndex(GAMEOBJECT_DYN_FLAGS);
+                                ResendField(GAMEOBJECT_DYN_FLAGS);
                             }
                         }
                         else

@@ -152,7 +152,7 @@ struct boss_gyth : public CreatureScript
             {
                 if (DoCastSpellIfCan(m_creature, SPELL_SUMMON_REND) == CAST_OK)
                 {
-                    m_creature->RemoveAurasDueToSpell(SPELL_REND_MOUNTS);
+                    m_creature->RemoveAuras(SPELL_REND_MOUNTS);
                     m_bSummonedRend = true;
                 }
             }

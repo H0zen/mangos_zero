@@ -38,7 +38,6 @@
 #include "ObjectGuid.h"
 #include "ScriptMgr.h"
 #include "SpellMgr.h"
-#include "UpdateMask.h"
 #include "World.h"
 #include "Group.h"
 #include "Transports.h"

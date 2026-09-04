@@ -1040,7 +1040,7 @@ struct npc_solenor_the_slayer : public CreatureScript
 
             if (m_creature->HasAura(SPELL_SOUL_FLAME) && m_creature->HasAura(SPELL_FROST_TRAP))
             {
-                m_creature->RemoveAurasDueToSpell(SPELL_SOUL_FLAME);
+                m_creature->RemoveAuras(SPELL_SOUL_FLAME);
             }
 
             if (m_creature->GetThreatManager().getThreatList().size() > 1 /*|| pHunter->IsDead()*/)

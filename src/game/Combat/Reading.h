@@ -37,6 +37,7 @@
 // either one carries alone.
 
 #include "Combat/Combatant.h"
+#include "Combat/School.h"
 #include "Combat/Defences.h"
 #include "SharedDefines.h"
 
@@ -66,5 +67,5 @@ namespace combat
 
     /// What the victim has in the way of a blow of this school.
     Defences ReadDefences(const Unit& victim, const Unit& attacker,
-                          SpellSchoolMask school);
+                          School school);
 }

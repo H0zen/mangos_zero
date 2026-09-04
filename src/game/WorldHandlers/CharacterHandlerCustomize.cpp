@@ -57,7 +57,6 @@
 #include "CinematicFlyover.h"
 #include "Guild.h"
 #include "GuildMgr.h"
-#include "UpdateMask.h"
 #include "Group.h"
 #include "PlayerDump.h"
 #include "SocialMgr.h"
