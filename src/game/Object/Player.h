@@ -71,6 +71,7 @@
 #include "ItemPrototype.h"
 #include "Unit.h"
 #include "Item.h"
+#include "ItemSaveQueue.h"
 
 #include "Database/DatabaseEnv.h"
 #include "QuestDef.h"
@@ -1127,8 +1128,6 @@ class TradeData
 class Player : public Unit
 {
     friend class WorldSession;
-    friend void Item::AddToUpdateQueueOf(Player* player);
-    friend void Item::RemoveFromUpdateQueueOf(Player* player);
 
     public:
         explicit Player(WorldSession* session);
@@ -1539,11 +1538,9 @@ class Player : public Unit
         // Get the attack type by the slot
         static uint32 GetAttackBySlot(uint8 slot);
 
-        // Get the item update queue
-        std::vector<Item*>& GetItemUpdateQueue()
-        {
-            return m_itemUpdateQueue;
-        }
+        /// The items this player has changed and not yet written.
+        ItemSaveQueue& ItemSaves() { return m_itemSaves; }
+        ItemSaveQueue const& ItemSaves() const { return m_itemSaves; }
 
         // Check if the position is an inventory position
         static bool IsInventoryPos(uint16 pos) { return IsInventoryPos(pos >> 8, pos & 255); }
@@ -3942,8 +3939,7 @@ class Player : public Unit
         Item* m_items[PLAYER_SLOTS_COUNT]; // Array of player items
         uint32 m_currentBuybackSlot; // Current buyback slot
 
-        std::vector<Item*> m_itemUpdateQueue; // Item update queue
-        bool m_itemUpdateQueueBlocked; // Item update queue blocked flag
+        ItemSaveQueue m_itemSaves;
 
         uint32 m_ExtraFlags; // Extra flags
         ObjectGuid m_curSelectionGuid; // Current selection GUID

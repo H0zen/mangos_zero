@@ -189,6 +189,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     }
 
     Object::_Create(guid.GetCounter(), 0, HIGHGUID_PLAYER);
+    m_itemSaves.Belongs(GetObjectGuid());
 
     m_name = fields[2].GetCppString();
 
@@ -1126,7 +1127,7 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
         std::list<Item*> problematicItems;
 
         // prevent items from being added to the queue when stored
-        m_itemUpdateQueueBlocked = true;
+        m_itemSaves.Shut(true);
         do
         {
             Field* fields = result->Fetch();
@@ -1273,7 +1274,7 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
         while (result->NextRow());
 
         delete result;
-        m_itemUpdateQueueBlocked = false;
+        m_itemSaves.Shut(false);
 
         // send by mail problematic items
         while (!problematicItems.empty())

@@ -543,7 +543,7 @@ void Player::MoveItemFromInventory(uint8 bag, uint8 slot, bool update)
     {
         ItemRemovedQuestCheck(it->GetEntry(), it->GetCount());
         RemoveItem(bag, slot, update);
-        it->RemoveFromUpdateQueueOf(this);
+        m_itemSaves.Forget(it);
         if (it->IsInWorld())
         {
             it->RemoveFromWorld();

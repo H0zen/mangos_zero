@@ -632,7 +632,6 @@ Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(this), m_
     // Initialize reset talents time to 0
     m_resetTalentsTime = 0;
     // Initialize item update queue blocked flag to false
-    m_itemUpdateQueueBlocked = false;
 
     // Initialize forced speed changes for all move types to 0
     for (int i = 0; i < MAX_MOVE_TYPE; ++i)
@@ -777,6 +776,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
 
     // Create the player object with the given GUID
     Object::_Create(guidlow, 0, HIGHGUID_PLAYER);
+    m_itemSaves.Belongs(GetObjectGuid());
 
     // Set the player's name
     m_name = name;

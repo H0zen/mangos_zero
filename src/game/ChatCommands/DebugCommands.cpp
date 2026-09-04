@@ -747,10 +747,9 @@ bool ChatHandler::HandleDebugGetItemStateCommand(char* args)
 
     if (list_queue)
     {
-        std::vector<Item*>& updateQueue = player->GetItemUpdateQueue();
-        for (size_t i = 0; i < updateQueue.size(); ++i)
+        ItemSaveQueue const& saves = player->ItemSaves();
+        for (Item* item : saves.Waiting())
         {
-            Item* item = updateQueue[i];
             if (!item)
             {
                 continue;
@@ -771,16 +770,16 @@ bool ChatHandler::HandleDebugGetItemStateCommand(char* args)
             PSendSysMessage("%s bag: %u slot: %u - state: %s",
                 item->GetGuidStr().c_str(), bag_slot, item->GetSlot(), st.c_str());
         }
-        if (updateQueue.empty())
+        if (saves.IsEmpty())
         {
-            PSendSysMessage("updatequeue empty");
+            PSendSysMessage("nothing is waiting to be saved");
         }
     }
 
     if (check_all)
     {
         bool error = false;
-        std::vector<Item*>& updateQueue = player->GetItemUpdateQueue();
+        ItemSaveQueue const& saves = player->ItemSaves();
         for (uint8 i = PLAYER_SLOT_START; i < PLAYER_SLOT_END; ++i)
         {
             if (i >= BUYBACK_SLOT_START && i < BUYBACK_SLOT_END)
@@ -817,34 +816,9 @@ bool ChatHandler::HandleDebugGetItemStateCommand(char* args)
                 error = true; continue;
             }
 
-            if (item->IsInUpdateQueue())
+            if (!saves.Holds(item) && item->GetState() != ITEM_UNCHANGED)
             {
-                uint16 qp = item->GetQueuePos();
-                if (qp > updateQueue.size())
-                {
-                    PSendSysMessage("%s at slot %u has a queuepos (%d) larger than the update queue size! ",
-                        item->GetGuidStr().c_str(), item->GetSlot(), qp);
-                    error = true; continue;
-                }
-
-                if (updateQueue[qp] == NULL)
-                {
-                    PSendSysMessage("%s at slot %u has a queuepos (%d) that points to NULL in the queue!",
-                        item->GetGuidStr().c_str(), item->GetSlot(), qp);
-                    error = true; continue;
-                }
-
-                if (updateQueue[qp] != item)
-                {
-                    PSendSysMessage("%s at slot %u has a queuepos (%d) that points to %s in the queue (bag %u, slot %u)",
-                        item->GetGuidStr().c_str(), item->GetSlot(), qp,
-                        updateQueue[qp]->GetGuidStr().c_str(), updateQueue[qp]->GetBagSlot(), updateQueue[qp]->GetSlot());
-                    error = true; continue;
-                }
-            }
-            else if (item->GetState() != ITEM_UNCHANGED)
-            {
-                PSendSysMessage("%s at slot %u is not in queue but should be (state: %d)!",
+                PSendSysMessage("%s at slot %u is not waiting to be saved but should be (state: %d)!",
                     item->GetGuidStr().c_str(), item->GetSlot(), item->GetState());
                 error = true; continue;
             }
@@ -891,34 +865,9 @@ bool ChatHandler::HandleDebugGetItemStateCommand(char* args)
                         error = true; continue;
                     }
 
-                    if (item2->IsInUpdateQueue())
+                    if (!saves.Holds(item2) && item2->GetState() != ITEM_UNCHANGED)
                     {
-                        uint16 qp = item2->GetQueuePos();
-                        if (qp > updateQueue.size())
-                        {
-                            PSendSysMessage("%s in bag %u at slot %u has a queuepos (%d) larger than the update queue size! ",
-                                item2->GetGuidStr().c_str(), bag->GetSlot(), item2->GetSlot(), qp);
-                            error = true; continue;
-                        }
-
-                        if (updateQueue[qp] == NULL)
-                        {
-                            PSendSysMessage("%s in bag %u at slot %u has a queuepos (%d) that points to NULL in the queue!",
-                                item2->GetGuidStr().c_str(), bag->GetSlot(), item2->GetSlot(), qp);
-                            error = true; continue;
-                        }
-
-                        if (updateQueue[qp] != item2)
-                        {
-                            PSendSysMessage("%s in bag %u at slot %u has a queuepos (%d) that points to %s in the queue (bag %u slot %u)",
-                                item2->GetGuidStr().c_str(), bag->GetSlot(), item2->GetSlot(), qp,
-                                updateQueue[qp]->GetGuidStr().c_str(), updateQueue[qp]->GetBagSlot(), updateQueue[qp]->GetSlot());
-                            error = true; continue;
-                        }
-                    }
-                    else if (item2->GetState() != ITEM_UNCHANGED)
-                    {
-                        PSendSysMessage("%s in bag %u at slot %u is not in queue but should be (state: %d)!",
+                        PSendSysMessage("%s in bag %u at slot %u is not waiting to be saved but should be (state: %d)!",
                             item2->GetGuidStr().c_str(), bag->GetSlot(), item2->GetSlot(), item2->GetState());
                         error = true; continue;
                     }
@@ -926,9 +875,10 @@ bool ChatHandler::HandleDebugGetItemStateCommand(char* args)
             }
         }
 
-        for (size_t i = 0; i < updateQueue.size(); ++i)
+        size_t i = 0;
+        for (Item* item : saves.Waiting())
         {
-            Item* item = updateQueue[i];
+            ++i;
             if (!item)
             {
                 continue;
@@ -939,13 +889,6 @@ bool ChatHandler::HandleDebugGetItemStateCommand(char* args)
                 PSendSysMessage("queue(%zu): %s has the owner (%s) and inventory owner (%s) don't match!",
                     i, item->GetGuidStr().c_str(),
                     item->GetOwnerGuid().GetString().c_str(), player->GetGuidStr().c_str());
-                error = true; continue;
-            }
-
-            if (item->GetQueuePos() != i)
-            {
-                PSendSysMessage("queue(%zu): %s has queuepos doesn't match it's position in the queue!",
-                    i, item->GetGuidStr().c_str());
                 error = true; continue;
             }
 

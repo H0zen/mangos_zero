@@ -294,7 +294,6 @@ Item::Item()
 
     m_slot = 0;
     uState = ITEM_NEW;
-    uQueuePos = -1;
     m_container = NULL;
     mb_in_trade = false;
     m_lootState = ITEM_LOOT_NONE;
@@ -500,12 +499,23 @@ void Item::SetItemRandomProperties(int32 randomPropId)
  */
 void Item::SetState(ItemUpdateState state, Player* forplayer)
 {
+    Player* owner = forplayer;
+    if (!owner && GetOwnerGuid())
+    {
+        owner = GetOwner();
+        if (!owner)
+        {
+            sLog.outError("Item::SetState - %s is owned by %s, who is not in world",
+                          GetGuidStr().c_str(), GetOwnerGuid().GetString().c_str());
+        }
+    }
+
     if (uState == ITEM_NEW && state == ITEM_REMOVED)
     {
         // pretend the item never existed
-        if (forplayer || GetOwnerGuid())
+        if (owner)
         {
-            RemoveFromUpdateQueueOf(forplayer);
+            owner->ItemSaves().Forget(this);
         }
         delete this;
         return;
@@ -519,96 +529,19 @@ void Item::SetState(ItemUpdateState state, Player* forplayer)
             uState = state;
         }
 
-        if (forplayer || GetOwnerGuid())
+        if (owner)
         {
-            AddToUpdateQueueOf(forplayer);
+            owner->ItemSaves().Note(this);
         }
     }
     else
     {
-        // unset in queue
-        // the item must be removed from the queue manually
-        uQueuePos = -1;
         uState = ITEM_UNCHANGED;
-    }
-}
-
-/**
- * @brief Adds the item to the owner's update queue.
- *
- * @param player Optional owner override.
- */
-void Item::AddToUpdateQueueOf(Player* player)
-{
-    if (IsInUpdateQueue())
-    {
-        return;
-    }
-
-    if (!player)
-    {
-        player = GetOwner();
-        if (!player)
+        if (owner)
         {
-            sLog.outError("Item::AddToUpdateQueueOf - %s current owner (%s) not in world!",
-                GetGuidStr().c_str(), GetOwnerGuid().GetString().c_str());
-            return;
+            owner->ItemSaves().Forget(this);
         }
     }
-
-    if (player->GetObjectGuid() != GetOwnerGuid())
-    {
-        sLog.outError("Item::AddToUpdateQueueOf - %s current owner (%s) and inventory owner (%s) don't match!",
-            GetGuidStr().c_str(), GetOwnerGuid().GetString().c_str(), player->GetGuidStr().c_str());
-        return;
-    }
-
-    if (player->m_itemUpdateQueueBlocked)
-    {
-        return;
-    }
-
-    player->m_itemUpdateQueue.push_back(this);
-    uQueuePos = player->m_itemUpdateQueue.size() - 1;
-}
-
-/**
- * @brief Removes the item from the owner's update queue.
- *
- * @param player Optional owner override.
- */
-void Item::RemoveFromUpdateQueueOf(Player* player)
-{
-    if (!IsInUpdateQueue())
-    {
-        return;
-    }
-
-    if (!player)
-    {
-        player = GetOwner();
-        if (!player)
-        {
-            sLog.outError("Item::RemoveFromUpdateQueueOf - %s current owner (%s) not in world!",
-                GetGuidStr().c_str(), GetOwnerGuid().GetString().c_str());
-            return;
-        }
-    }
-
-    if (player->GetObjectGuid() != GetOwnerGuid())
-    {
-        sLog.outError("Item::RemoveFromUpdateQueueOf - %s current owner (%s) and inventory owner (%s) don't match!",
-            GetGuidStr().c_str(), GetOwnerGuid().GetString().c_str(), player->GetGuidStr().c_str());
-        return;
-    }
-
-    if (player->m_itemUpdateQueueBlocked)
-    {
-        return;
-    }
-
-    player->m_itemUpdateQueue[uQueuePos] = NULL;
-    uQueuePos = -1;
 }
 
 /**

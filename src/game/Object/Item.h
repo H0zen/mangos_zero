@@ -395,10 +395,6 @@ class Item : public Object
         // Update States
         ItemUpdateState GetState() const { return uState; }
         void SetState(ItemUpdateState state, Player* forplayer = NULL);
-        void AddToUpdateQueueOf(Player* player);
-        void RemoveFromUpdateQueueOf(Player* player);
-        bool IsInUpdateQueue() const { return uQueuePos != -1; }
-        uint16 GetQueuePos() const { return uQueuePos; }
         void FSetState(ItemUpdateState state)               // forced
         {
             uState = state;
@@ -418,7 +414,6 @@ class Item : public Object
         uint8 m_slot;
         Bag* m_container;
         ItemUpdateState uState;
-        int16 uQueuePos;
         bool mb_in_trade;                                   // true if item is currently in trade-window
         ItemLootUpdateState m_lootState;
 };

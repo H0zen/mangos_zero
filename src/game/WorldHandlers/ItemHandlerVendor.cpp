@@ -170,7 +170,7 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recv_data)
                 {
                     _player->ItemRemovedQuestCheck(pItem->GetEntry(), pItem->GetCount());
                     _player->RemoveItem(pItem->GetBagSlot(), pItem->GetSlot(), true);
-                    pItem->RemoveFromUpdateQueueOf(_player);
+                    _player->ItemSaves().Forget(pItem);
                     _player->AddItemToBuyBackSlot(pItem);
                 }
 
