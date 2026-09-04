@@ -272,11 +272,11 @@ void Aura::HandleAuraModPacify(bool apply, bool /*Real*/)
 {
     if (apply)
     {
-        GetTarget()->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+        GetTarget()->SetUnitFlag(UNIT_FLAG_PACIFIED);
     }
     else
     {
-        GetTarget()->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+        GetTarget()->RemoveUnitFlag(UNIT_FLAG_PACIFIED);
     }
 }
 
@@ -360,7 +360,7 @@ void Aura::HandleModUnattackable(bool Apply, bool Real)
         GetTarget()->CombatStop();
         GetTarget()->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION);
     }
-    GetTarget()->ApplyModFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE, Apply);
+    GetTarget()->ApplyUnitFlag(UNIT_FLAG_NON_ATTACKABLE, Apply);
 }
 
 /**

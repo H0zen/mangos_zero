@@ -164,7 +164,7 @@ struct boss_kelthuzad : public CreatureScript
             m_uiPhase = PHASE_INTRO;
 
             // it may be some spell should be used instead, to control the intro phase
-            m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+            m_creature->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
             SetCombatMovement(false);
         }
 
@@ -452,7 +452,7 @@ struct boss_kelthuzad : public CreatureScript
                         m_uiPhase = PHASE_NORMAL;
                         DespawnIntroCreatures();
 
-                        m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                        m_creature->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
                         SetCombatMovement(true);
                         m_creature->GetMotionMaster()->MoveChase(m_creature->getVictim());
 

@@ -81,7 +81,7 @@ void WorldSession::HandleAttackSwingOpcode(WorldPacket& recv_data)
         return;
     }
 
-    if (_player->IsFriendlyTo(pEnemy) || pEnemy->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE))
+    if (_player->IsFriendlyTo(pEnemy) || pEnemy->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE))
     {
         sLog.outError("WORLD: Enemy %s is friendly", guid.GetString().c_str());
 

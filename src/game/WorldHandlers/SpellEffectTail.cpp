@@ -153,7 +153,7 @@ void Spell::EffectSummonDeadPet(SpellEffectIndex /*eff_idx*/)
     }
 
     pet->SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
-    pet->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
+    pet->RemoveUnitFlag(UNIT_FLAG_SKINNABLE);
     pet->SetDeathState(ALIVE);
     pet->clearUnitState(UNIT_STAT_ALL_STATE);
     pet->SetHealth(uint32(pet->GetMaxHealth() * (float(damage) / 100)));

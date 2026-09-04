@@ -222,7 +222,7 @@ struct boss_ouro : public CreatureScript
                             DoCastSpellIfCan(m_creature, SPELL_SUMMON_OURO_MOUNDS, CAST_TRIGGERED);
                             DoCastSpellIfCan(m_creature, SPELL_SUMMON_TRIGGER, CAST_TRIGGERED);
 
-                            m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                            m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
 
                             m_bSubmerged = true;
                             m_uiSubmergeTimer = 30000;
@@ -282,7 +282,7 @@ struct boss_ouro : public CreatureScript
                     if (DoCastSpellIfCan(m_creature, SPELL_BIRTH) == CAST_OK)
                     {
                         m_creature->RemoveAuras(SPELL_SUBMERGE_VISUAL);
-                        m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
 
                         m_bSubmerged = false;
                         m_uiSummonBaseTimer = 2000;

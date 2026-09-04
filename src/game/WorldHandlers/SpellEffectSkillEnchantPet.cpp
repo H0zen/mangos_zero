@@ -841,7 +841,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
     }
     else if (NewSummon->getPetType() == HUNTER_PET)
     {
-        NewSummon->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_RENAME);
+        NewSummon->SetUnitFlag(UNIT_FLAG_RENAME);
     }
 
     NewSummon->SetHealth(NewSummon->GetMaxHealth());

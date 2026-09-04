@@ -242,7 +242,7 @@ void Player::UpdateFallInformationIfNeed(MovementInfo const& minfo, uint16 opcod
  */
 bool Player::canSeeSpellClickOn(Creature const* c) const
 {
-    if (!c->HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK))
+    if (!c->HasNpcFlag(UNIT_NPC_FLAG_SPELLCLICK))
     {
         return false;
     }

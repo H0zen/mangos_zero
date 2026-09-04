@@ -82,7 +82,7 @@ struct npc_chicken_cluck : public CreatureScript
             m_uiResetFlagTimer = 120000;
 
             m_creature->setFaction(FACTION_CHICKEN);
-            m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+            m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
         }
 
         void ReceiveEmote(Player* pPlayer, uint32 uiEmote) override
@@ -93,7 +93,7 @@ struct npc_chicken_cluck : public CreatureScript
                 {
                     if (pPlayer->GetQuestStatus(QUEST_CLUCK) == QUEST_STATUS_NONE)
                     {
-                        m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                        m_creature->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                         m_creature->setFaction(FACTION_FRIENDLY);
 
                         DoScriptText(EMOTE_A_HELLO, m_creature);
@@ -116,7 +116,7 @@ struct npc_chicken_cluck : public CreatureScript
             {
                 if (pPlayer->GetQuestStatus(QUEST_CLUCK) == QUEST_STATUS_COMPLETE)
                 {
-                    m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                    m_creature->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                     m_creature->setFaction(FACTION_FRIENDLY);
                     DoScriptText(EMOTE_CLUCK_TEXT2, m_creature);
                 }
@@ -126,7 +126,7 @@ struct npc_chicken_cluck : public CreatureScript
         void UpdateAI(const uint32 uiDiff) override
         {
             // Reset flags after a certain time has passed so that the next player has to start the 'event' again
-            if (m_creature->HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER))
+            if (m_creature->HasNpcFlag(UNIT_NPC_FLAG_QUESTGIVER))
             {
                 if (m_uiResetFlagTimer < uiDiff)
                 {
@@ -291,7 +291,7 @@ struct npc_doctor : public CreatureScript
 
             m_bIsEventInProgress = false;
 
-            m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
         }
 
         void BeginEvent(Player* pPlayer)
@@ -320,7 +320,7 @@ struct npc_doctor : public CreatureScript
             }
 
             m_bIsEventInProgress = true;
-            m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
         }
 
         void PatientDied(Location* pPoint)
@@ -439,7 +439,7 @@ struct npc_doctor : public CreatureScript
                     if (Creature* Patient = SummonCreature(*m_creature, patientEntry, (*itr)->x, (*itr)->y, (*itr)->z, (*itr)->o, TEMPSPAWN_TIMED_OOC_DESPAWN, 5000))
                     {
                         // 2.4.3, this flag appear to be required for client side item->spell to work (TARGET_SINGLE_FRIEND)
-                        Patient->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP);
+                        Patient->SetUnitFlag(UNIT_FLAG_PVP);
 
                         m_lPatientGuids.push_back(Patient->GetObjectGuid());
 
@@ -503,9 +503,9 @@ struct npc_injured_patient : public CreatureScript
             m_pCoord = nullptr;
 
             // no select
-            m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
             // no regen health
-            m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
+            m_creature->SetUnitFlag(UNIT_FLAG_IN_COMBAT);
             // to make them lay with face down
             m_creature->SetStandState(UNIT_STAND_STATE_DEAD);
 
@@ -548,9 +548,9 @@ struct npc_injured_patient : public CreatureScript
                 m_creature->SetHealth(uint32(m_creature->GetMaxHealth()*0.20));
 
                 // make not selectable
-                m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                 // regen health
-                m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
+                m_creature->RemoveUnitFlag(UNIT_FLAG_IN_COMBAT);
                 // stand up
                 m_creature->SetStandState(UNIT_STAND_STATE_STAND);
 
@@ -612,10 +612,10 @@ struct npc_injured_patient : public CreatureScript
 
             if (m_creature->IsAlive() && m_creature->GetHealth() <= 1 + uiHPLose)
             {
-                m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
-                m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                m_creature->RemoveUnitFlag(UNIT_FLAG_IN_COMBAT);
+                m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                 m_creature->SetDeathState(JUST_DIED);
-                m_creature->SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
+                m_creature->SetDynFlag(UNIT_DYNFLAG_DEAD);
 
                 if (Creature* pDoctor = m_creature->GetMap()->GetCreature(m_doctorGuid))
                 {
@@ -1017,7 +1017,7 @@ struct npc_redemption_target : public CreatureScript
             m_uiEvadeTimer = 0;
             m_uiHealTimer = 0;
 
-            m_creature->SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
+            m_creature->SetDynFlag(UNIT_DYNFLAG_DEAD);
             m_creature->SetStandState(UNIT_STAND_STATE_DEAD);
         }
 
@@ -1060,7 +1060,7 @@ struct npc_redemption_target : public CreatureScript
                         }
                     }
 
-                    m_creature->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
+                    m_creature->RemoveDynFlag(UNIT_DYNFLAG_DEAD);
                     m_creature->SetStandState(UNIT_STAND_STATE_STAND);
                     m_uiHealTimer = 0;
                     m_uiEvadeTimer = 2 * MINUTE * IN_MILLISECONDS;

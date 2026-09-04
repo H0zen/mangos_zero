@@ -333,7 +333,7 @@ struct npc_grimstone : public CreatureScript
 
         void Reset() override
         {
-            m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+            m_creature->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
 
             m_uiEventTimer    = 1000;
             m_uiEventPhase    = 0;
@@ -855,9 +855,9 @@ struct npc_mistress_nagmaraAI : public ScriptedAI
             return;
         }
 
-        m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
-        m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
-        pRocknot->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+        m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
+        m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
+        pRocknot->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
 
         m_creature->GetMotionMaster()->MoveIdle();
         m_creature->GetMotionMaster()->MoveFollow(pRocknot, 2.0f, 0);
@@ -1272,7 +1272,7 @@ struct npc_marshal_windsor : public CreatureScript
                     {
                         if (Creature* pDughal = m_pInstance->GetSingleCreatureFromStorage(NPC_DUGHAL))
                         {
-                            pDughal->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                            pDughal->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
                             m_creature->SetFacingToObject(pDughal);
                         }
                     }
@@ -1381,7 +1381,7 @@ struct npc_marshal_windsor : public CreatureScript
                     {
                         if (Creature* pTobias = m_pInstance->GetSingleCreatureFromStorage(NPC_TOBIAS))
                         {
-                            pTobias->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                            pTobias->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
                             m_creature->SetFacingToObject(pTobias);
                         }
                     }
@@ -1501,7 +1501,7 @@ struct npc_dughal_stormwing : public CreatureScript
             }
 
             DoScriptText(SAY_DUGHAL_FREE, pCreature, pPlayer);
-            pCreature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+            pCreature->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
 
             pCreature->SetWalk(false);
             pCreature->GetMotionMaster()->MoveWaypoint();
@@ -1545,7 +1545,7 @@ struct npc_tobias_seecher : public CreatureScript
             }
 
             DoScriptText(urand(0, 1) ? SAY_TOBIAS_FREE_1 : SAY_TOBIAS_FREE_2, pCreature);
-            pCreature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+            pCreature->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
 
             pCreature->SetWalk(false);
             pCreature->GetMotionMaster()->MoveWaypoint();

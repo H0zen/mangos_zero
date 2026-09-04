@@ -161,9 +161,9 @@ struct boss_ragnaros : public CreatureScript
             }
 
             // Reset flag if had been submerged
-            if (m_creature->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE))
+            if (m_creature->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE))
             {
-                m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
             }
 
             ScriptedAI::EnterEvadeMode();
@@ -226,7 +226,7 @@ struct boss_ragnaros : public CreatureScript
                     {
                         m_uiEnterCombatTimer = 0;
                         // If we don't remove this passive flag, he will be unattackable after evading, this way he will enter combat
-                        m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+                        m_creature->RemoveUnitFlag(UNIT_FLAG_PASSIVE);
                         if (m_pInstance)
                         {
                             if (Player* pPlayer = m_pInstance->GetPlayerInMap(true, false))
@@ -255,7 +255,7 @@ struct boss_ragnaros : public CreatureScript
                 {
                     // Become emerged again
                     DoCastSpellIfCan(m_creature, SPELL_RAGNA_EMERGE);
-                    m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                     m_uiSubmergeTimer = 3 * MINUTE * IN_MILLISECONDS;
                     m_uiMagmaBlastTimer = 3000;                 // Delay the magma blast after emerge
                     m_bIsSubmerged = false;
@@ -326,7 +326,7 @@ struct boss_ragnaros : public CreatureScript
                 m_bIsSubmerged = true;
                 m_uiAttackTimer = 90 * IN_MILLISECONDS;
 
-                m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
 
                 // Say dependend if first time or not
                 DoScriptText(!m_bHasSubmergedOnce ? SAY_REINFORCEMENTS_1 : SAY_REINFORCEMENTS_2, m_creature);

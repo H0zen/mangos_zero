@@ -88,7 +88,7 @@ struct boss_pyroguard_emberseer : public CreatureScript
             m_uiPyroBlastTimer = 14000;
             m_uiGrowingStacks = 0;
 
-            m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
         }
 
         void JustDied(Unit* /*pKiller*/) override
@@ -217,7 +217,7 @@ struct boss_pyroguard_emberseer : public CreatureScript
                         m_pInstance->SetData(TYPE_EMBERSEER, IN_PROGRESS);
                     }
 
-                    m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                 }
             }
     };

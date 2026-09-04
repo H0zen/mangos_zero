@@ -711,7 +711,7 @@ void Spell::EffectSummonTotem(SpellEffectIndex eff_idx)
 
     if (m_caster->GetTypeId() == TYPEID_PLAYER)
     {
-        pTotem->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
+        pTotem->SetUnitFlag(UNIT_FLAG_PVP_ATTACKABLE);
     }
 
     if (m_caster->IsPvP())
@@ -748,7 +748,7 @@ void Spell::EffectSummonPossessed(SpellEffectIndex eff_idx)
     spawnCreature->SetCharmerGuid(m_caster->GetObjectGuid());
     spawnCreature->SetCreatorGuid(m_caster->GetObjectGuid());
     spawnCreature->SetUInt32Value(UNIT_CREATED_BY_SPELL, m_spellInfo->ID);
-    spawnCreature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_POSSESSED);
+    spawnCreature->SetUnitFlag(UNIT_FLAG_POSSESSED);
 
     spawnCreature->SetLevel(m_caster->getLevel());
 

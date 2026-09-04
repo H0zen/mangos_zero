@@ -1671,7 +1671,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
         return false;
     }
 
-    if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_CLIENT_CONTROL_LOST))
+    if (HasUnitFlag(UNIT_FLAG_CLIENT_CONTROL_LOST))
     {
         return false;
     }

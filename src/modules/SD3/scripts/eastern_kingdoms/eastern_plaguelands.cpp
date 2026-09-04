@@ -121,7 +121,7 @@ struct npc_eris_havenfire : public CreatureScript
 
             m_playerGuid.Clear();
             m_lSummonedGuidList.clear();
-            m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+            m_creature->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
         }
 
         void JustSummoned(Creature* pSummoned) override
@@ -291,7 +291,7 @@ struct npc_eris_havenfire : public CreatureScript
 
         void DoStartBalanceEvent(Player* pPlayer)
         {
-            m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+            m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
             m_playerGuid = pPlayer->GetObjectGuid();
             m_uiEventTimer = 5000;
         }

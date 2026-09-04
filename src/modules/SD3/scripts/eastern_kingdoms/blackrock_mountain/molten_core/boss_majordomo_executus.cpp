@@ -159,7 +159,7 @@ struct boss_majordomo : public CreatureScript
                 m_creature->SetLootRecipient(nullptr);
 
                 // Set friendly
-                m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
+                m_creature->SetUnitFlag(UNIT_FLAG_OOC_NOT_ATTACKABLE);
                 m_creature->SetFactionTemporary(FACTION_MAJORDOMO_FRIENDLY, TEMPFACTION_RESTORE_RESPAWN);
 
                 // Reset orientation
@@ -175,7 +175,7 @@ struct boss_majordomo : public CreatureScript
 
         void StartSummonEvent(Player* pPlayer)
         {
-            m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+            m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
 
             // Prevent possible exploits with double summoning
             if (m_creature->GetMap()->GetCreature(m_ragnarosGuid))
@@ -195,7 +195,7 @@ struct boss_majordomo : public CreatureScript
             if (m_bHasEncounterFinished)
             {
                 // This needs to be set to be able to resummon Ragnaros
-                m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                m_creature->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
 
                 // Relocate here
                 debug_log("[SD3]: boss_majordomo_executus: Relocate to Ragnaros' Lair on respawn");
@@ -540,7 +540,7 @@ struct spell_boss_majordomo : public SpellScript
             return false;
         }
 
-        pCreatureTarget->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP); //TODO is here ToCreature() needed?
+        ToCreature(pCreatureTarget)->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
         ToCreature(pCreatureTarget)->NearTeleportTo(m_aMajordomoLocations[1].m_fX, m_aMajordomoLocations[1].m_fY, m_aMajordomoLocations[1].m_fZ, m_aMajordomoLocations[1].m_fO, true);
         // TODO - some visibility update?
         return true;

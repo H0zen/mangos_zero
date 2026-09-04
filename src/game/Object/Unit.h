@@ -1266,7 +1266,7 @@ class Unit : public Presence
             {
                 default:
                 case BASE_ATTACK:
-                    return !HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISARMED);
+                    return !HasUnitFlag(UNIT_FLAG_DISARMED);
                 case OFF_ATTACK:
                 case RANGED_ATTACK:
                     return true;
@@ -1629,6 +1629,29 @@ class Unit : public Presence
          */
         uint32 GetHealth()    const { return m_health; }
 
+        /// The three flag words a unit carries. Asking one of these says what is
+        /// being asked; where the bits are kept is the unit's own business.
+        bool HasUnitFlag(uint32 flag) const { return HasUnitFlag( flag); }
+        void SetUnitFlag(uint32 flag) { SetUnitFlag( flag); }
+        void RemoveUnitFlag(uint32 flag) { RemoveUnitFlag( flag); }
+        void ApplyUnitFlag(uint32 flag, bool apply) { ApplyUnitFlag( flag, apply); }
+        uint32 GetUnitFlags() const { return GetUInt32Value(UNIT_FIELD_FLAGS); }
+        void SetAllUnitFlags(uint32 flags) { SetUInt32Value(UNIT_FIELD_FLAGS, flags); }
+
+        /// What a player may do with this unit at a distance: trade, train, heal
+        /// a pet, take a quest.
+        bool HasNpcFlag(uint32 flag) const { return HasNpcFlag( flag); }
+        void SetNpcFlag(uint32 flag) { SetNpcFlag( flag); }
+        void RemoveNpcFlag(uint32 flag) { RemoveNpcFlag( flag); }
+        void ApplyNpcFlag(uint32 flag, bool apply) { ApplyNpcFlag( flag, apply); }
+
+        /// Lootable, tapped, and the detail Beast Lore reveals. Rewritten for
+        /// each observer on the way out, so what is stored is not what is sent.
+        bool HasDynFlag(uint32 flag) const { return HasDynFlag( flag); }
+        void SetDynFlag(uint32 flag) { SetDynFlag( flag); }
+        void RemoveDynFlag(uint32 flag) { RemoveDynFlag( flag); }
+        void ApplyDynFlag(uint32 flag, bool apply) { ApplyDynFlag( flag, apply); }
+
         /**
          * Gets the maximum health of this Unit
          * @return the max health this Unit can have
@@ -1835,7 +1858,7 @@ class Unit : public Presence
          * Is PVP enabled?
          * @return true if this Unit is eligible for PVP fighting
          */
-        bool IsPvP() const { return HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP); }
+        bool IsPvP() const { return HasUnitFlag(UNIT_FLAG_PVP); }
 
         /**
          * Put the Unit into our out of PVP
@@ -1864,28 +1887,27 @@ class Unit : public Presence
             return (creatureType >= 1) ? (1 << (creatureType - 1)) : 0;
         }
 
-        bool isVendor()       const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_VENDOR); }
-        bool isTrainer()      const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_TRAINER); }
-        bool isQuestGiver()   const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER); }
-        bool isGossip()       const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP); }
-        bool isTaxi()         const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_FLIGHTMASTER); }
-        bool isGuildMaster()  const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_PETITIONER); }
-        bool isBattleMaster() const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_BATTLEMASTER); }
-        bool isBanker()       const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_BANKER); }
-        bool isInnkeeper()    const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_INNKEEPER); }
-        bool isSpiritHealer() const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPIRITHEALER); }
-        bool isSpiritGuide()  const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPIRITGUIDE); }
-        bool isTabardDesigner()const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_TABARDDESIGNER); }
-        bool isArmorer()      const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_REPAIR); }
+        bool isVendor()       const { return HasNpcFlag(UNIT_NPC_FLAG_VENDOR); }
+        bool isTrainer()      const { return HasNpcFlag(UNIT_NPC_FLAG_TRAINER); }
+        bool isQuestGiver()   const { return HasNpcFlag(UNIT_NPC_FLAG_QUESTGIVER); }
+        bool isGossip()       const { return HasNpcFlag(UNIT_NPC_FLAG_GOSSIP); }
+        bool isTaxi()         const { return HasNpcFlag(UNIT_NPC_FLAG_FLIGHTMASTER); }
+        bool isGuildMaster()  const { return HasNpcFlag(UNIT_NPC_FLAG_PETITIONER); }
+        bool isBattleMaster() const { return HasNpcFlag(UNIT_NPC_FLAG_BATTLEMASTER); }
+        bool isBanker()       const { return HasNpcFlag(UNIT_NPC_FLAG_BANKER); }
+        bool isInnkeeper()    const { return HasNpcFlag(UNIT_NPC_FLAG_INNKEEPER); }
+        bool isSpiritHealer() const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER); }
+        bool isSpiritGuide()  const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITGUIDE); }
+        bool isTabardDesigner()const { return HasNpcFlag(UNIT_NPC_FLAG_TABARDDESIGNER); }
+        bool isArmorer()      const { return HasNpcFlag(UNIT_NPC_FLAG_REPAIR); }
         bool isServiceProvider() const
         {
-            return HasFlag(UNIT_NPC_FLAGS,
-                UNIT_NPC_FLAG_VENDOR | UNIT_NPC_FLAG_TRAINER | UNIT_NPC_FLAG_FLIGHTMASTER |
+            return HasNpcFlag(UNIT_NPC_FLAG_VENDOR | UNIT_NPC_FLAG_TRAINER | UNIT_NPC_FLAG_FLIGHTMASTER |
                 UNIT_NPC_FLAG_PETITIONER | UNIT_NPC_FLAG_BATTLEMASTER | UNIT_NPC_FLAG_BANKER |
                 UNIT_NPC_FLAG_INNKEEPER | UNIT_NPC_FLAG_SPIRITHEALER |
                 UNIT_NPC_FLAG_SPIRITGUIDE | UNIT_NPC_FLAG_TABARDDESIGNER | UNIT_NPC_FLAG_AUCTIONEER);
         }
-        bool isSpiritService() const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPIRITHEALER | UNIT_NPC_FLAG_SPIRITGUIDE); }
+        bool isSpiritService() const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER | UNIT_NPC_FLAG_SPIRITGUIDE); }
 
         /**
          * Gets the current stand state for this Unit as described by UnitStandStateType.
@@ -2363,7 +2385,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool IsVendor()       const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_VENDOR); }
+        bool IsVendor()       const { return HasNpcFlag(UNIT_NPC_FLAG_VENDOR); }
 
         /**
          * @return true if this unit is a trainer, false otherwise
@@ -2371,7 +2393,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool IsTrainer()      const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_TRAINER); }
+        bool IsTrainer()      const { return HasNpcFlag(UNIT_NPC_FLAG_TRAINER); }
 
         /**
          * @return true if this unit is a QuestGiver, false otherwise
@@ -2379,7 +2401,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool IsQuestGiver()   const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER); }
+        bool IsQuestGiver()   const { return HasNpcFlag(UNIT_NPC_FLAG_QUESTGIVER); }
 
         /**
          * @return true if this unit is a gossip, false otherwise
@@ -2387,7 +2409,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool IsGossip()       const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP); }
+        bool IsGossip()       const { return HasNpcFlag(UNIT_NPC_FLAG_GOSSIP); }
 
         /**
          * @return true if this unit is a taxi, false otherwise
@@ -2395,7 +2417,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool IsTaxi()         const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_FLIGHTMASTER); }
+        bool IsTaxi()         const { return HasNpcFlag(UNIT_NPC_FLAG_FLIGHTMASTER); }
 
         /**
          * @return true if this unit is a GuildMaster, false otherwise
@@ -2403,7 +2425,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool IsGuildMaster()  const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_PETITIONER); }
+        bool IsGuildMaster()  const { return HasNpcFlag(UNIT_NPC_FLAG_PETITIONER); }
 
         /**
          * @return true if this unit is a BattleMaster, false otherwise
@@ -2411,7 +2433,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool IsBattleMaster() const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_BATTLEMASTER); }
+        bool IsBattleMaster() const { return HasNpcFlag(UNIT_NPC_FLAG_BATTLEMASTER); }
 
         /**
          * @return true if this unit is a banker, false otherwise
@@ -2419,7 +2441,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool IsBanker()       const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_BANKER); }
+        bool IsBanker()       const { return HasNpcFlag(UNIT_NPC_FLAG_BANKER); }
 
         /**
          * @return true if this unit is a innkeeper, false otherwise
@@ -2427,7 +2449,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool IsInnkeeper()    const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_INNKEEPER); }
+        bool IsInnkeeper()    const { return HasNpcFlag(UNIT_NPC_FLAG_INNKEEPER); }
 
         /**
          * @return true if this unit is a SpiritHealer, false otherwise
@@ -2435,7 +2457,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool IsSpiritHealer() const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPIRITHEALER); }
+        bool IsSpiritHealer() const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER); }
 
         /**
          * @return true if this unit is a SpiritGuide, false otherwise
@@ -2443,7 +2465,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool IsSpiritGuide()  const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPIRITGUIDE); }
+        bool IsSpiritGuide()  const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITGUIDE); }
 
         /**
          * @return true if this unit is a TabardDesigner, false otherwise
@@ -2451,7 +2473,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool IsTabardDesigner()const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_TABARDDESIGNER); }
+        bool IsTabardDesigner()const { return HasNpcFlag(UNIT_NPC_FLAG_TABARDDESIGNER); }
 
         /**
          * @return true if this unit is a Auctioneer, false otherwise
@@ -2459,7 +2481,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool isAuctioner()    const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_AUCTIONEER); }
+        bool isAuctioner()    const { return HasNpcFlag(UNIT_NPC_FLAG_AUCTIONEER); }
 
         /**
          * @return true if this unit is a armorer, false otherwise
@@ -2467,7 +2489,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool IsArmorer()      const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_REPAIR); }
+        bool IsArmorer()      const { return HasNpcFlag(UNIT_NPC_FLAG_REPAIR); }
 
         /**
          * Returns if this is a service provider or not, a service provider has one of the
@@ -2491,8 +2513,7 @@ class Unit : public Presence
          */
         bool IsServiceProvider() const
         {
-            return HasFlag(UNIT_NPC_FLAGS,
-                UNIT_NPC_FLAG_VENDOR | UNIT_NPC_FLAG_TRAINER | UNIT_NPC_FLAG_FLIGHTMASTER |
+            return HasNpcFlag(UNIT_NPC_FLAG_VENDOR | UNIT_NPC_FLAG_TRAINER | UNIT_NPC_FLAG_FLIGHTMASTER |
                 UNIT_NPC_FLAG_PETITIONER | UNIT_NPC_FLAG_BATTLEMASTER | UNIT_NPC_FLAG_BANKER |
                 UNIT_NPC_FLAG_INNKEEPER | UNIT_NPC_FLAG_SPIRITHEALER |
                 UNIT_NPC_FLAG_SPIRITGUIDE | UNIT_NPC_FLAG_TABARDDESIGNER | UNIT_NPC_FLAG_AUCTIONEER);
@@ -2508,7 +2529,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see NPCFlags
          */
-        bool IsSpiritService() const { return HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPIRITHEALER | UNIT_NPC_FLAG_SPIRITGUIDE); }
+        bool IsSpiritService() const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER | UNIT_NPC_FLAG_SPIRITGUIDE); }
 
         /**
          * Is this unit flying in taxi?
@@ -2537,7 +2558,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see UnitFlags
          */
-        bool IsInCombat()  const { return HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT); }
+        bool IsInCombat()  const { return HasUnitFlag(UNIT_FLAG_IN_COMBAT); }
 
         /**
          * Sets this \ref Unit into combat, if it already was this has no bigger meaning if the
@@ -2731,7 +2752,7 @@ class Unit : public Presence
          */
         bool isPassiveToHostile()
         {
-            return HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+            return HasUnitFlag(UNIT_FLAG_PASSIVE);
         }
 
         /**
@@ -3946,9 +3967,9 @@ class Unit : public Presence
         // These getters operate on unit flags set by IncapacitatedState and are meant for formal usage in conjunction with spell effects only
         // For actual internal movement states use UnitState flags
         // TODO: The UnitState thing needs to be rewriten at some point, this kind of duality is bad
-        bool IsFleeing() const { return HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_FLEEING); }
-        bool IsConfused() const { return HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_CONFUSED); }
-        bool IsStunned() const { return HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED); }
+        bool IsFleeing() const { return HasUnitFlag(UNIT_FLAG_FLEEING); }
+        bool IsConfused() const { return HasUnitFlag(UNIT_FLAG_CONFUSED); }
+        bool IsStunned() const { return HasUnitFlag(UNIT_FLAG_STUNNED); }
         bool IsIncapacitated() const { return (IsFleeing() || IsConfused() || IsStunned()); }
 
         void SetFeared(bool apply, ObjectGuid casterGuid = ObjectGuid(), uint32 spellID = 0, uint32 time = 0);

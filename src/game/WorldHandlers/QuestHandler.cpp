@@ -812,7 +812,7 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
                 continue;
             }
 
-            if (!questgiver->HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER))
+            if (!questgiver->HasNpcFlag(UNIT_NPC_FLAG_QUESTGIVER))
             {
                 continue;
             }

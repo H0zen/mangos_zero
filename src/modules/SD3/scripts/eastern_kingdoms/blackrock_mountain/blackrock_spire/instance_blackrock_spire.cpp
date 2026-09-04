@@ -378,7 +378,7 @@ struct is_blackrock_spire : public InstanceScript
                                     {
                                         pIncarcerator->Respawn();
                                     }
-                                    pIncarcerator->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+                                    pIncarcerator->SetUnitFlag(UNIT_FLAG_PASSIVE);
                                 }
                             }
 
@@ -851,7 +851,7 @@ struct is_blackrock_spire : public InstanceScript
                         if (pCreature->IsAlive())
                         {
                             pCreature->InterruptNonMeleeSpells(false);
-                            pCreature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+                            pCreature->RemoveUnitFlag(UNIT_FLAG_PASSIVE);
                         }
                     }
                 }
@@ -962,7 +962,7 @@ struct at_blackrock_spire : public AreaTriggerScript
                     }
                     if (Creature* pRend = SummonCreature(*pPlayer, NPC_REND_BLACKHAND, aStadiumLocs[4].m_fX, aStadiumLocs[4].m_fY, aStadiumLocs[4].m_fZ, aStadiumLocs[4].m_fO, TEMPSPAWN_CORPSE_DESPAWN, 0))
                     {
-                        pRend->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
+                        pRend->SetUnitFlag(UNIT_FLAG_OOC_NOT_ATTACKABLE);
                     }
 
                     pInstance->SetData(TYPE_STADIUM, IN_PROGRESS);

@@ -1355,7 +1355,7 @@ void Group::CountTheRoll(Rolls::iterator& rollI)
                                 /// If creature has been fully looted, remove flag.
                                 if (creature->loot.isLooted())
                                 {
-                                    creature->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
+                                    creature->RemoveDynFlag(UNIT_DYNFLAG_LOOTABLE);
                                 }
                             }
                         }
@@ -1418,7 +1418,7 @@ void Group::CountTheRoll(Rolls::iterator& rollI)
                                 /// If creature has been fully looted, remove flag.
                                 if (creature->loot.isLooted())
                                 {
-                                    creature->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
+                                    creature->RemoveDynFlag(UNIT_DYNFLAG_LOOTABLE);
                                 }
                             }
                         }

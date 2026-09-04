@@ -132,9 +132,9 @@ struct npc_calvin_montague : public CreatureScript
             m_uiPhase = 0;
             m_uiPhaseTimer = 5000;
             m_playerGuid.Clear();
-            if (!m_creature->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE))
+            if (!m_creature->HasUnitFlag(UNIT_FLAG_PASSIVE))
             {
-                m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+                m_creature->SetUnitFlag(UNIT_FLAG_PASSIVE);
             }
         }
 
@@ -155,7 +155,7 @@ struct npc_calvin_montague : public CreatureScript
                 uiDamage = 0;
 
                 m_creature->CombatStop(true);
-                m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+                m_creature->SetUnitFlag(UNIT_FLAG_PASSIVE);
                 m_uiPhase = 1;
 
                 if (pDoneBy->GetTypeId() == TYPEID_PLAYER)
@@ -222,9 +222,9 @@ struct npc_calvin_montague : public CreatureScript
         if (pQuest->GetQuestId() == QUEST_590)
         {
             pCreature->SetFactionTemporary(FACTION_HOSTILE, TEMPFACTION_RESTORE_COMBAT_STOP | TEMPFACTION_RESTORE_RESPAWN);
-            if (pCreature->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE))
+            if (pCreature->HasUnitFlag(UNIT_FLAG_PASSIVE))
             {
-                pCreature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+                pCreature->RemoveUnitFlag(UNIT_FLAG_PASSIVE);
             }
             pCreature->AI()->AttackStart(pPlayer);
             return true;

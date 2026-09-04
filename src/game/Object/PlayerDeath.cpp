@@ -130,7 +130,7 @@ void Player::BuildPlayerRepop()
     }
 
     // BG - remove insignia related
-    RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
+    RemoveUnitFlag(UNIT_FLAG_SKINNABLE);
 
     SendCorpseReclaimDelay();
 

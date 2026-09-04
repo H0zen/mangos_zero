@@ -786,7 +786,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 bool Player::isAllowedToLoot(Creature* creature)
 {
     /* Nobody tapped the monster (kill either solo or mostly by another NPC) */
-    if (!creature->HasFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_TAPPED) || !creature->IsDamageEnoughForLootingAndReward())
+    if (!creature->HasDynFlag(UNIT_DYNFLAG_TAPPED) || !creature->IsDamageEnoughForLootingAndReward())
     {
         return false;
     }

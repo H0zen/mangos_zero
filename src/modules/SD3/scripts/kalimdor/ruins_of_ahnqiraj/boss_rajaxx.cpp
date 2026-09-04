@@ -171,7 +171,7 @@ struct npc_general_andorov : public CreatureScript
                     m_creature->GetMotionMaster()->MovePoint(m_uiPointId, aAndorovMoveLocs[m_uiPointId].m_fX, aAndorovMoveLocs[m_uiPointId].m_fY, aAndorovMoveLocs[m_uiPointId].m_fZ);
                     break;
                 case POINT_ID_MOVE_INTRO:
-                    m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                    m_creature->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
                     m_creature->SetFacingTo(aAndorovMoveLocs[3].m_fO);
                     ++m_uiPointId;
                     break;
@@ -229,7 +229,7 @@ struct npc_general_andorov : public CreatureScript
         void DoMoveToEventLocation()
         {
             m_creature->GetMotionMaster()->MovePoint(m_uiPointId, aAndorovMoveLocs[m_uiPointId].m_fX, aAndorovMoveLocs[m_uiPointId].m_fY, aAndorovMoveLocs[m_uiPointId].m_fZ);
-            m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+            m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
             StartNextDialogueText(SAY_ANDOROV_INTRO_1);
         }
 

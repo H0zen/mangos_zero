@@ -419,7 +419,7 @@ void Creature::RemoveCorpse(bool inPlace)
     m_lootGroupRecipientId = 0;
     m_lootRecipientGuid.Clear();
 
-    RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_TAPPED);
+    RemoveDynFlag(UNIT_DYNFLAG_TAPPED);
 
     uint32 respawnDelay = 0;
 
@@ -639,7 +639,7 @@ bool Creature::UpdateEntry(uint32 Entry, Team team, const CreatureData* data /*=
     uint32 unitFlags = GetCreatureInfo()->UnitFlags;
 
     // we may need to append or remove additional flags
-    if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT))
+    if (HasUnitFlag(UNIT_FLAG_IN_COMBAT))
     {
         unitFlags |= UNIT_FLAG_IN_COMBAT;
     }
@@ -1420,7 +1420,7 @@ void Creature::PrepareBodyLootState()
         // have normal loot
         if (GetCreatureInfo()->MaxLootGold > 0 || GetCreatureInfo()->LootId || (GetCreatureType() != CREATURE_TYPE_CRITTER && (GetCreatureInfo()->SkinningLootId && sWorld.getConfig(CONFIG_BOOL_CORPSE_EMPTY_LOOT_SHOW))))
         {
-            SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
+            SetDynFlag(UNIT_DYNFLAG_LOOTABLE);
             return;
         }
     }
@@ -1430,13 +1430,13 @@ void Creature::PrepareBodyLootState()
     // if not have normal loot allow skinning if need
     if (!lootForSkin && GetCreatureInfo()->SkinningLootId)
     {
-        RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
+        RemoveDynFlag(UNIT_DYNFLAG_LOOTABLE);
+        SetUnitFlag(UNIT_FLAG_SKINNABLE);
         return;
     }
 
-    RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
-    RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
+    RemoveDynFlag(UNIT_DYNFLAG_LOOTABLE);
+    RemoveUnitFlag(UNIT_FLAG_SKINNABLE);
 }
 
 /**
@@ -1551,7 +1551,7 @@ void Creature::SetLootRecipient(Unit* unit)
         m_lootGroupRecipientId = group->GetId();
     }
 
-    SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_TAPPED);
+    SetDynFlag(UNIT_DYNFLAG_TAPPED);
 }
 
 /**
@@ -2105,7 +2105,7 @@ void Creature::SetDeathState(DeathState s)
         // Flags after LoadCreatureAddon. Any spell in *addon
         // will not be able to adjust these.
         SetUInt32Value(UNIT_NPC_FLAGS, GetCreatureInfo()->NpcFlags);
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
+        RemoveUnitFlag(UNIT_FLAG_SKINNABLE);
 
         SetWalk(true, true);
         i_motionMaster.Initialize();
@@ -2304,7 +2304,7 @@ SpellEntry const* Creature::ReachWithSpellAttack(Unit* pVictim)
         {
             continue;
         }
-        if (spellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE && HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED))
+        if (spellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE && HasUnitFlag(UNIT_FLAG_SILENCED))
         {
             continue;
         }
@@ -2312,7 +2312,7 @@ SpellEntry const* Creature::ReachWithSpellAttack(Unit* pVictim)
         {
             continue;
         }
-        if (spellInfo->PreventionType == SPELL_PREVENTION_TYPE_PACIFY && HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
+        if (spellInfo->PreventionType == SPELL_PREVENTION_TYPE_PACIFY && HasUnitFlag(UNIT_FLAG_PACIFIED))
         {
             continue;
         }
@@ -2368,7 +2368,7 @@ SpellEntry const* Creature::ReachWithSpellCure(Unit* pVictim)
         {
             continue;
         }
-        if (spellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE && HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED))
+        if (spellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE && HasUnitFlag(UNIT_FLAG_SILENCED))
         {
             continue;
         }
@@ -2376,7 +2376,7 @@ SpellEntry const* Creature::ReachWithSpellCure(Unit* pVictim)
         {
             continue;
         }
-        if (spellInfo->PreventionType == SPELL_PREVENTION_TYPE_PACIFY && HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
+        if (spellInfo->PreventionType == SPELL_PREVENTION_TYPE_PACIFY && HasUnitFlag(UNIT_FLAG_PACIFIED))
         {
             continue;
         }
@@ -2511,7 +2511,7 @@ bool Creature::CanAssistTo(const Unit* u, const Unit* enemy, bool checkfaction /
         return false;
     }
 
-    if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_PASSIVE))
+    if (HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_PASSIVE))
     {
         return false;
     }
@@ -2565,7 +2565,7 @@ bool Creature::CanInitiateAttack()
         return false;
     }
 
-    if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE))
+    if (HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE))
     {
         return false;
     }
@@ -3052,7 +3052,7 @@ void Creature::AllLootRemovedFromCorpse()
             // Check for Skinning Loot, and set flag is loot exists
             if (!lootForSkin)
             {
-                HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
+                HasUnitFlag(UNIT_FLAG_SKINNABLE);
             }
         }
     }
@@ -3168,23 +3168,23 @@ void Creature::SetFactionTemporary(uint32 factionId, uint32 tempFactionFlags)
 
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_NON_ATTACKABLE)
     {
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+        RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
     }
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_OOC_NOT_ATTACK)
     {
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
+        RemoveUnitFlag(UNIT_FLAG_OOC_NOT_ATTACKABLE);
     }
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_PASSIVE)
     {
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+        RemoveUnitFlag(UNIT_FLAG_PASSIVE);
     }
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_PACIFIED)
     {
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+        RemoveUnitFlag(UNIT_FLAG_PACIFIED);
     }
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_NOT_SELECTABLE)
     {
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+        RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
     }
 }
 
@@ -3206,23 +3206,23 @@ void Creature::ClearTemporaryFaction()
     // Reset UNIT_FLAG_NON_ATTACKABLE, UNIT_FLAG_OOC_NOT_ATTACKABLE, UNIT_FLAG_PASSIVE, UNIT_FLAG_PACIFIED or UNIT_FLAG_NOT_SELECTABLE flags
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_NON_ATTACKABLE && GetCreatureInfo()->UnitFlags & UNIT_FLAG_NON_ATTACKABLE)
     {
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+        SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
     }
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_OOC_NOT_ATTACK && GetCreatureInfo()->UnitFlags & UNIT_FLAG_OOC_NOT_ATTACKABLE && !IsInCombat())
     {
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
+        SetUnitFlag(UNIT_FLAG_OOC_NOT_ATTACKABLE);
     }
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_PASSIVE && GetCreatureInfo()->UnitFlags & UNIT_FLAG_PASSIVE)
     {
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+        SetUnitFlag(UNIT_FLAG_PASSIVE);
     }
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_PACIFIED && GetCreatureInfo()->UnitFlags & UNIT_FLAG_PACIFIED)
     {
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+        SetUnitFlag(UNIT_FLAG_PACIFIED);
     }
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_NOT_SELECTABLE && GetCreatureInfo()->UnitFlags & UNIT_FLAG_NOT_SELECTABLE)
     {
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+        SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
     }
 
     m_temporaryFactionFlags = TEMPFACTION_NONE;

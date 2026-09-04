@@ -272,13 +272,13 @@ void Player::PrepareGossipMenu(Presence* pSource, uint32 menuId)
     // some gossips aren't handled in normal way ... so we need to do it this way .. TODO: handle it in normal way ;-)
     /*if (pMenu->Empty())
     {
-        if (pCreature->HasFlag(UNIT_NPC_FLAGS,UNIT_NPC_FLAG_TRAINER))
+        if (pCreature->HasNpcFlag(UNIT_NPC_FLAG_TRAINER))
         {
             // output error message if need
             pCreature->IsTrainerOf(this, true);
         }
 
-        if (pCreature->HasFlag(UNIT_NPC_FLAGS,UNIT_NPC_FLAG_BATTLEMASTER))
+        if (pCreature->HasNpcFlag(UNIT_NPC_FLAG_BATTLEMASTER))
         {
             // output error message if need
             pCreature->CanInteractWithBattleMaster(this, true);
@@ -301,7 +301,7 @@ void Player::SendPreparedGossip(Presence* pSource)
     if (pSource->GetTypeId() == TYPEID_UNIT)
     {
         // in case no gossip flag and quest menu not empty, open quest menu (client expect gossip menu with this flag)
-        if (!((Creature*)pSource)->HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP) && !PlayerTalkClass->GetQuestMenu().Empty())
+        if (!ToCreature(pSource)->HasNpcFlag(UNIT_NPC_FLAG_GOSSIP) && !PlayerTalkClass->GetQuestMenu().Empty())
         {
             SendPreparedQuest(pSource->GetObjectGuid());
             return;

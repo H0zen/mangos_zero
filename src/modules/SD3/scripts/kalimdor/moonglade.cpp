@@ -226,7 +226,7 @@ struct npc_keeper_remulos : public CreatureScript
                     // Make Eranikus unattackable first
                     // ToDo: uncomment the fly effect when it will be possible to cancel it properly
                     // pSummoned->SetByteValue(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_FLY_ANIM);
-                    pSummoned->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                    pSummoned->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
                     pSummoned->SetLevitate(true);
                     break;
                 case NPC_NIGHTMARE_PHANTASM:
@@ -252,7 +252,7 @@ struct npc_keeper_remulos : public CreatureScript
                     break;
                 case POINT_ID_ERANIKUS_COMBAT:
                     // Start attack
-                    pSummoned->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                    pSummoned->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
                     pSummoned->AI()->AttackStart(m_creature);
                     DoScriptText(SAY_ERANIKUS_ATTACK_2, pSummoned);
                     break;

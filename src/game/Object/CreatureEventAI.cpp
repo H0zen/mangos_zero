@@ -951,7 +951,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
         case ACTION_T_SET_UNIT_FLAG:        //18
             if (Unit* target = GetTargetByType(action.unit_flag.target, pActionInvoker, pAIEventSender, reportTargetError))
             {
-                target->SetFlag(UNIT_FIELD_FLAGS, action.unit_flag.value);
+                target->SetUnitFlag(action.unit_flag.value);
             }
             else if (reportTargetError)
             {
@@ -961,7 +961,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
         case ACTION_T_REMOVE_UNIT_FLAG:     //19
             if (Unit* target = GetTargetByType(action.unit_flag.target, pActionInvoker, pAIEventSender, reportTargetError))
             {
-                target->RemoveFlag(UNIT_FIELD_FLAGS, action.unit_flag.value);
+                target->RemoveUnitFlag(action.unit_flag.value);
             }
             else if (reportTargetError)
             {

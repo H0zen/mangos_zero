@@ -1073,27 +1073,23 @@ bool ScriptAction::HandleScriptStep()
                 break;
             }
 
+            Creature* pCreature = ToCreature(pSource);
+
             // Add Flags
             if (m_script->npcFlag.change_flag & 0x01)
             {
-                pSource->SetFlag(UNIT_NPC_FLAGS, m_script->npcFlag.flag);
+                pCreature->SetNpcFlag(m_script->npcFlag.flag);
             }
             // Remove Flags
             else if (m_script->npcFlag.change_flag & 0x02)
             {
-                pSource->RemoveFlag(UNIT_NPC_FLAGS, m_script->npcFlag.flag);
+                pCreature->RemoveNpcFlag(m_script->npcFlag.flag);
             }
             // Toggle Flags
             else
             {
-                if (pSource->HasFlag(UNIT_NPC_FLAGS, m_script->npcFlag.flag))
-                {
-                    pSource->RemoveFlag(UNIT_NPC_FLAGS, m_script->npcFlag.flag);
-                }
-                else
-                {
-                    pSource->SetFlag(UNIT_NPC_FLAGS, m_script->npcFlag.flag);
-                }
+                pCreature->ApplyNpcFlag(m_script->npcFlag.flag,
+                                        !pCreature->HasNpcFlag(m_script->npcFlag.flag));
             }
 
             break;

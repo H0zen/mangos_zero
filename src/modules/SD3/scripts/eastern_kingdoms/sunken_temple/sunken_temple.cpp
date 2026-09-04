@@ -109,7 +109,7 @@ struct npc_malfurion : public CreatureScript
                 m_uiSayTimer = 3000;
             }
 
-            m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+            m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
         }
 
         uint32 m_uiSayTimer;
@@ -148,7 +148,7 @@ struct npc_malfurion : public CreatureScript
                                 m_uiSayTimer = 4000;
                                 break;
                             case 5:
-                                m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                                m_creature->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                                 m_creature->HandleEmote(EMOTE_STATE_NONE);
                                 break;
                         }

@@ -682,7 +682,7 @@ struct go_fixed_trap : public GameObjectScript
     {
 
         Creature* slipkik = (Creature*)p;
-        slipkik->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
+        slipkik->SetUnitFlag(UNIT_FLAG_OOC_NOT_ATTACKABLE);
         DoScriptText(SAY_SLIPKIK_TRAP, slipkik);
         if (pGo->GetGOInfo()->trap.charges > 0)
         {

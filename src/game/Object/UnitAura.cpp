@@ -1381,9 +1381,9 @@ void Unit::RemoveAllAurasOnEvade()
         }
     }
 
-    if ((GetTypeId() == TYPEID_UNIT) && HasFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_TAPPED))
+    if ((GetTypeId() == TYPEID_UNIT) && HasDynFlag(UNIT_DYNFLAG_TAPPED))
     {
-        RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_TAPPED);
+        RemoveDynFlag(UNIT_DYNFLAG_TAPPED);
     }
 }
 

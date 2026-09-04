@@ -1414,7 +1414,7 @@ void Aura::HandleModDetectRange(bool apply, bool Real)
  */
 void Aura::HandleAurasVisible(bool apply, bool /*Real*/)
 {
-    GetTarget()->ApplyModFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_AURAS_VISIBLE, apply);
+    GetTarget()->ApplyUnitFlag(UNIT_FLAG_AURAS_VISIBLE, apply);
 }
 
 

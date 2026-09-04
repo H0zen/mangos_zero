@@ -294,11 +294,11 @@ void Unit::SetFeignDeath(bool apply, ObjectGuid casterGuid /*= ObjectGuid()*/)
             ((Player*)this)->m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
         }
 
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);
+        SetUnitFlag(UNIT_FLAG_UNK_29);
         // blizz like 2.0.x
         // SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);  [-ZERO] remove/replace ?
 
-        SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
+        SetDynFlag(UNIT_DYNFLAG_DEAD);
 
         addUnitState(UNIT_STAT_DIED);
         CombatStop();
@@ -319,11 +319,11 @@ void Unit::SetFeignDeath(bool apply, ObjectGuid casterGuid /*= ObjectGuid()*/)
         SendDirectMessage(&data);
         */
 
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);
+        RemoveUnitFlag(UNIT_FLAG_UNK_29);
         // blizz like 2.0.x
         // SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH); [-ZERO] remove/replace ?
 
-        RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
+        RemoveDynFlag(UNIT_DYNFLAG_DEAD);
 
         clearUnitState(UNIT_STAT_DIED);
 

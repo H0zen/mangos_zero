@@ -114,7 +114,7 @@ struct boss_twin_emperorsAI : public ScriptedAI
             if (!uiTwinHealth)
             {
                 pTwin->SetDeathState(JUST_DIED);
-                pTwin->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
+                pTwin->RemoveDynFlag(UNIT_DYNFLAG_LOOTABLE);
             }
         }
     }

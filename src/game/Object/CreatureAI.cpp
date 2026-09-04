@@ -97,7 +97,7 @@ CanCastResult CreatureAI::CanCastSpell(Unit* pTarget, const SpellEntry* pSpell, 
             return CAST_FAIL_STATE;
         }
 
-        if (pSpell->PreventionType == SPELL_PREVENTION_TYPE_SILENCE && m_creature->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED))
+        if (pSpell->PreventionType == SPELL_PREVENTION_TYPE_SILENCE && m_creature->HasUnitFlag(UNIT_FLAG_SILENCED))
         {
             return CAST_FAIL_SILENCED;
         }
@@ -107,7 +107,7 @@ CanCastResult CreatureAI::CanCastSpell(Unit* pTarget, const SpellEntry* pSpell, 
             return CAST_FAIL_SILENCED;
         }
 
-        if (pSpell->PreventionType == SPELL_PREVENTION_TYPE_PACIFY && m_creature->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
+        if (pSpell->PreventionType == SPELL_PREVENTION_TYPE_PACIFY && m_creature->HasUnitFlag(UNIT_FLAG_PACIFIED))
         {
             return CAST_FAIL_STATE;
         }

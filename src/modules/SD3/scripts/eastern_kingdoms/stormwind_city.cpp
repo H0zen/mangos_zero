@@ -411,7 +411,7 @@ struct npc_squire_rowe : public CreatureScript
 
                     DoScriptText(SAY_WELCOME, pWindsor, pPlayer);
                     // Allow players to finish quest and also finish the escort
-                    pWindsor->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                    pWindsor->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                     SetEscortPaused(false);
                     break;
                 }
@@ -678,7 +678,7 @@ struct npc_reginald_windsor : public CreatureScript
 
         void Reset() override
         {
-            m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+            m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
             m_uiGuardCheckTimer = 0;
             m_bIsKeepReady = false;
             m_bCanGuardSalute = false;
@@ -889,8 +889,8 @@ struct npc_reginald_windsor : public CreatureScript
                     break;
                 case SAY_WINDSOR_BEFORE_KEEP:
                     m_bIsKeepReady = true;
-                    m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
-                    m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                    m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
+                    m_creature->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
                     break;
                 case NPC_GUARD_CITY:
                     SetEscortPaused(false);
@@ -899,15 +899,15 @@ struct npc_reginald_windsor : public CreatureScript
                     // Remove npc flags during the event
                     if (Creature* pOnyxia = m_pScriptedMap->GetSingleCreatureFromStorage(NPC_PRESTOR))
                     {
-                        pOnyxia->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP | UNIT_NPC_FLAG_QUESTGIVER);
+                        pOnyxia->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP | UNIT_NPC_FLAG_QUESTGIVER);
                     }
                     if (Creature* pWrynn = m_pScriptedMap->GetSingleCreatureFromStorage(NPC_WRYNN))
                     {
-                        pWrynn->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                        pWrynn->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                     }
                     if (Creature* pBolvar = m_pScriptedMap->GetSingleCreatureFromStorage(NPC_BOLVAR))
                     {
-                        pBolvar->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                        pBolvar->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                     }
                     break;
                 case SAY_BOLVAR_KEEP_2:
@@ -999,7 +999,7 @@ struct npc_reginald_windsor : public CreatureScript
                     m_creature->RemoveAllAurasOnDeath();
                     m_creature->ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, false);
 
-                    m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                     m_creature->ClearAllReactives();
                     m_creature->GetMotionMaster()->Clear();
                     m_creature->GetMotionMaster()->MoveIdle();
@@ -1044,13 +1044,13 @@ struct npc_reginald_windsor : public CreatureScript
                     // Reset Bolvar and Wrynn
                     if (Creature* pBolvar = m_pScriptedMap->GetSingleCreatureFromStorage(NPC_BOLVAR))
                     {
-                        pBolvar->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                        pBolvar->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                         pBolvar->SetStandState(UNIT_STAND_STATE_STAND);
                         pBolvar->GetMotionMaster()->MoveTargetedHome();
                     }
                     if (Creature* pWrynn = m_pScriptedMap->GetSingleCreatureFromStorage(NPC_WRYNN))
                     {
-                        pWrynn->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                        pWrynn->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                         pWrynn->Respawn();
                         pWrynn->SetWalk(true);
                         pWrynn->GetMotionMaster()->MoveTargetedHome();
@@ -1058,7 +1058,7 @@ struct npc_reginald_windsor : public CreatureScript
                     // Onyxia will respawn by herself in about 30 min, so just reset flags
                     if (Creature* pOnyxia = m_pScriptedMap->GetSingleCreatureFromStorage(NPC_PRESTOR))
                     {
-                        pOnyxia->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP | UNIT_NPC_FLAG_QUESTGIVER);
+                        pOnyxia->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP | UNIT_NPC_FLAG_QUESTGIVER);
                     }
                     // Allow creature to despawn
                     SetEscortPaused(false);
@@ -1069,7 +1069,7 @@ struct npc_reginald_windsor : public CreatureScript
         void DoStartKeepEvent()
         {
             StartNextDialogueText(SAY_WINDSOR_TO_KEEP);
-            m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+            m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
         }
 
         void DoStartEscort(Player* pPlayer)

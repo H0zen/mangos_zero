@@ -117,7 +117,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                                 return;
                             }
 
-                            caster->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                            caster->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                             caster->addUnitState(UNIT_STAT_ROOT);
                         }
                         return;

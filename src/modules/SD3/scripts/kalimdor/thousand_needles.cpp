@@ -327,9 +327,9 @@ struct npc_plucky_johnson : public CreatureScript
         {
             m_uiResetTimer = 120000;
 
-            if (m_creature->HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP))
+            if (m_creature->HasNpcFlag(UNIT_NPC_FLAG_GOSSIP))
             {
-                m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
             }
 
             m_creature->CastSpell(m_creature, SPELL_PLUCKY_CHICKEN, false);
@@ -342,21 +342,21 @@ struct npc_plucky_johnson : public CreatureScript
                 if (uiTextEmote == TEXTEMOTE_BECKON)
                 {
                     m_creature->SetFactionTemporary(FACTION_FRIENDLY, TEMPFACTION_RESTORE_RESPAWN | TEMPFACTION_RESTORE_COMBAT_STOP);
-                    m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                    m_creature->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
                     m_creature->CastSpell(m_creature, SPELL_PLUCKY_HUMAN, false);
                 }
             }
 
             if (uiTextEmote == TEXTEMOTE_CHICKEN)
             {
-                if (m_creature->HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP))
+                if (m_creature->HasNpcFlag(UNIT_NPC_FLAG_GOSSIP))
                 {
                     return;
                 }
                 else
                 {
                     m_creature->SetFactionTemporary(FACTION_FRIENDLY, TEMPFACTION_RESTORE_RESPAWN | TEMPFACTION_RESTORE_COMBAT_STOP);
-                    m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                    m_creature->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
                     m_creature->CastSpell(m_creature, SPELL_PLUCKY_HUMAN, false);
                     m_creature->HandleEmote(EMOTE_ONESHOT_WAVE);
                 }
@@ -365,7 +365,7 @@ struct npc_plucky_johnson : public CreatureScript
 
         void UpdateAI(const uint32 uiDiff) override
         {
-            if (m_creature->HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP))
+            if (m_creature->HasNpcFlag(UNIT_NPC_FLAG_GOSSIP))
             {
                 if (m_uiResetTimer < uiDiff)
                 {
@@ -375,7 +375,7 @@ struct npc_plucky_johnson : public CreatureScript
                     }
                     else
                     {
-                        m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                        m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
                     }
 
                     return;

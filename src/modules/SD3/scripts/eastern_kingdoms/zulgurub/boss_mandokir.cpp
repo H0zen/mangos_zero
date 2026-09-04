@@ -272,7 +272,7 @@ struct boss_mandokir : public CreatureScript
 
             if (uiPointId == POINT_DOWNSTAIRS)
             {
-                m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+                m_creature->RemoveUnitFlag(UNIT_FLAG_PASSIVE);
                 m_creature->SetInCombatWithZone();
             }
         }

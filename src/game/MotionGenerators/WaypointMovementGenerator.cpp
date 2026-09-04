@@ -754,7 +754,7 @@ void FlightPathMovementGenerator::Reset(Unit& owner)
 
     player.GetHostileRefManager().setOnlineOfflineState(false);
     player.addUnitState(UNIT_STAT_TAXI_FLIGHT);
-    player.SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_CLIENT_CONTROL_LOST | UNIT_FLAG_TAXI_FLIGHT);
+    player.SetUnitFlag(UNIT_FLAG_CLIENT_CONTROL_LOST | UNIT_FLAG_TAXI_FLIGHT);
 
     // One spline through every node up to the end of this map, flown at a fixed speed.
     Movement::MoveSplineInit init(player);
@@ -785,7 +785,7 @@ void FlightPathMovementGenerator::Finalize(Unit& owner)
     player.clearUnitState(UNIT_STAT_TAXI_FLIGHT);
 
     player.Unmount();
-    player.RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_CLIENT_CONTROL_LOST | UNIT_FLAG_TAXI_FLIGHT);
+    player.RemoveUnitFlag(UNIT_FLAG_CLIENT_CONTROL_LOST | UNIT_FLAG_TAXI_FLIGHT);
 
     if (!player.m_taxi.empty())
     {

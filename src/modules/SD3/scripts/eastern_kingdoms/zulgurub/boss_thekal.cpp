@@ -112,7 +112,7 @@ struct boss_thekalBaseAI : public ScriptedAI
         m_creature->RemoveAllAurasOnDeath();
         m_creature->ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, false);
 
-        m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+        m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
         m_creature->ClearAllReactives();
         m_creature->GetMotionMaster()->Clear();
         m_creature->GetMotionMaster()->MoveIdle();
@@ -125,7 +125,7 @@ struct boss_thekalBaseAI : public ScriptedAI
 
     void Revive(bool bOnlyFlags = false)
     {
-        m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+        m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
         m_creature->SetStandState(UNIT_STAND_STATE_STAND);
 
         if (bOnlyFlags)

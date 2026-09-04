@@ -157,7 +157,7 @@ struct boss_victor_nefarius : public CreatureScript
             m_uiShadowBlinkTimer = 40000;
 
             // set gossip flag to begin the event
-            m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+            m_creature->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
 
             // Make visible if needed
             if (m_creature->GetVisibility() != VISIBILITY_ON)
@@ -445,7 +445,7 @@ struct boss_victor_nefarius : public CreatureScript
                 pPlayer->SEND_GOSSIP_MENU(GOSSIP_TEXT_NEFARIUS_3, pCreature->GetObjectGuid());
                 break;
             case GOSSIP_ACTION_INFO_DEF + 3:
-                pCreature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                pCreature->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
                 pPlayer->CLOSE_GOSSIP_MENU();
                 // Start the intro event
                 if (boss_victor_nefariusAI* pBossAI = dynamic_cast<boss_victor_nefariusAI*>(pCreature->AI()))

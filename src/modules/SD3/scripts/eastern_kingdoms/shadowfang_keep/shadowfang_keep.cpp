@@ -532,7 +532,7 @@ struct boss_arugal : public CreatureScript
 
             if (pCreature->Where().Z() < HEIGHT_FENRUS_ROOM)
             {
-                m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                m_creature->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
                 m_creature->SetVisibility(VISIBILITY_OFF);
                 m_bEventMode = true;
             }

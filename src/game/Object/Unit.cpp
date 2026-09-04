@@ -2299,13 +2299,13 @@ bool Unit::IsClientControlled(Player const* exactClient /*= nullptr*/) const
     // Severvide method to check if unit is client controlled (optionally check for specific client in control)
 
     // Applies only to player controlled units
-    if (!HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_POSSESSED))
+    if (!HasUnitFlag(UNIT_FLAG_POSSESSED))
     {
         return false;
     }
 
     // These flags are meant to be used when server controls this unit, client control is taken away
-    if (HasFlag(UNIT_FIELD_FLAGS, (UNIT_FLAG_CLIENT_CONTROL_LOST | UNIT_FLAG_CONFUSED | UNIT_FLAG_FLEEING)))
+    if (HasUnitFlag((UNIT_FLAG_CLIENT_CONTROL_LOST | UNIT_FLAG_CONFUSED | UNIT_FLAG_FLEEING)))
     {
         return false;
     }
@@ -2314,7 +2314,7 @@ bool Unit::IsClientControlled(Player const* exactClient /*= nullptr*/) const
     if (ObjectGuid const& guid = GetCharmerGuid())
     {
         // ... but if it is a possessing charm, then we have to check if some other player controls it
-        if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_POSSESSED) && guid.IsPlayer())
+        if (HasUnitFlag(UNIT_FLAG_POSSESSED) && guid.IsPlayer())
         {
             return (exactClient ? (exactClient->GetObjectGuid() == guid) : true);
         }
@@ -3966,13 +3966,13 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy)
         return;
     }
 
-    bool creatureNotInCombat = GetTypeId() == TYPEID_UNIT && !HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
+    bool creatureNotInCombat = GetTypeId() == TYPEID_UNIT && !HasUnitFlag(UNIT_FLAG_IN_COMBAT);
 
-    SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
+    SetUnitFlag(UNIT_FLAG_IN_COMBAT);
 
     if (IsCharmed() || (GetTypeId() != TYPEID_PLAYER && ((Creature*)this)->IsPet()))
     {
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PET_IN_COMBAT);
+        SetUnitFlag(UNIT_FLAG_PET_IN_COMBAT);
     }
 
     // interrupt all delayed non-combat casts
@@ -3990,7 +3990,7 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy)
     if (creatureNotInCombat)
     {
         // should probably be removed for the attacked (+ it's party/group) only, not global
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
+        RemoveUnitFlag(UNIT_FLAG_OOC_NOT_ATTACKABLE);
 
         Creature* pCreature = (Creature*)this;
 
@@ -4025,11 +4025,11 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy)
 void Unit::ClearInCombat()
 {
     m_CombatTimer = 0;
-    RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
+    RemoveUnitFlag(UNIT_FLAG_IN_COMBAT);
 
     if (IsCharmed() || (GetTypeId() != TYPEID_PLAYER && ((Creature*)this)->IsPet()))
     {
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PET_IN_COMBAT);
+        RemoveUnitFlag(UNIT_FLAG_PET_IN_COMBAT);
     }
 
 
@@ -4039,7 +4039,7 @@ void Unit::ClearInCombat()
         Creature* cThis = static_cast<Creature*>(this);
         if (cThis->GetCreatureInfo()->UnitFlags & UNIT_FLAG_OOC_NOT_ATTACKABLE && !(cThis->GetTemporaryFactionFlags() & TEMPFACTION_TOGGLE_OOC_NOT_ATTACK))
         {
-            SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
+            SetUnitFlag(UNIT_FLAG_OOC_NOT_ATTACKABLE);
         }
 
         clearUnitState(UNIT_STAT_ATTACK_PLAYER);
@@ -4059,13 +4059,13 @@ bool Unit::IsTargetableForAttack(bool inverseAlive /*=false*/) const
         return false;
     }
 
-    if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE))
+    if (HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE))
     {
         return false;
     }
 
     // to be removed if unit by any reason enter combat
-    if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE))
+    if (HasUnitFlag(UNIT_FLAG_OOC_NOT_ATTACKABLE))
     {
         return false;
     }
@@ -4234,7 +4234,7 @@ void Unit::SetDeathState(DeathState s)
     }
     else if (s == JUST_ALIVED)
     {
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);  // clear skinnable for creature and player (at battleground)
+        RemoveUnitFlag(UNIT_FLAG_SKINNABLE);  // clear skinnable for creature and player (at battleground)
     }
 
     if (m_deathState != ALIVE && s == ALIVE)
@@ -5445,11 +5445,11 @@ void Unit::SetIncapacitatedState(bool apply, uint32 state, ObjectGuid casterGuid
                 state &= ~UNIT_FLAG_FLEEING;
             }
         }
-        SetFlag(UNIT_FIELD_FLAGS, state);
+        SetUnitFlag(state);
     }
     else
     {
-        RemoveFlag(UNIT_FIELD_FLAGS, state);
+        RemoveUnitFlag(state);
     }
 
     if (movement)
@@ -5463,7 +5463,7 @@ void Unit::SetIncapacitatedState(bool apply, uint32 state, ObjectGuid casterGuid
 
     if (GetTypeId() == TYPEID_UNIT)
     {
-        if (HasFlag(UNIT_FIELD_FLAGS, filter))
+        if (HasUnitFlag(filter))
         {
             if (!GetTargetGuid().IsEmpty()) // Incapacitated creature loses its target
             {
@@ -5522,11 +5522,11 @@ void Unit::SetIncapacitatedState(bool apply, uint32 state, ObjectGuid casterGuid
     }
 
     // Update incapacitated movement if required:
-    if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_CONFUSED))
+    if (HasUnitFlag(UNIT_FLAG_CONFUSED))
     {
         GetMotionMaster()->MoveConfused();
     }
-    else if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_FLEEING))
+    else if (HasUnitFlag(UNIT_FLAG_FLEEING))
     {
         GetMotionMaster()->MoveFleeing(IsInWorld() ? GetMap()->GetUnit(casterGuid) : nullptr, time);
     }
@@ -6293,11 +6293,11 @@ void Unit::SetPvP(bool state)
 {
     if (state)
     {
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP);
+        SetUnitFlag(UNIT_FLAG_PVP);
     }
     else
     {
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP);
+        RemoveUnitFlag(UNIT_FLAG_PVP);
     }
 
     CallForAllControlledUnits(SetPvPHelper(state), CONTROLLED_PET | CONTROLLED_TOTEMS | CONTROLLED_GUARDIANS | CONTROLLED_CHARM);

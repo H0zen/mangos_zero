@@ -261,7 +261,7 @@ struct is_ruins_of_ahnqiraj : public InstanceScript
                             {
                                 if (pAndorov->IsAlive())
                                 {
-                                    pAndorov->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                                    pAndorov->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
                                 }
                             }
                         }

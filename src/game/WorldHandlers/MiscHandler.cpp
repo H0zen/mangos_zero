@@ -409,7 +409,7 @@ void WorldSession::HandleLogoutRequestOpcode(WorldPacket& /*recv_data*/)
         }
 
         GetPlayer()->SetRoot(true);
-        GetPlayer()->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
+        GetPlayer()->SetUnitFlag(UNIT_FLAG_STUNNED);
     }
 
     LogoutRequest(time(NULL));
@@ -455,7 +455,7 @@ void WorldSession::HandleLogoutCancelOpcode(WorldPacket& /*recv_data*/)
         GetPlayer()->SetStandState(UNIT_STAND_STATE_STAND);
 
         //! DISABLE_ROTATE
-        GetPlayer()->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
+        GetPlayer()->RemoveUnitFlag(UNIT_FLAG_STUNNED);
     }
 
     DEBUG_LOG("WORLD: sent SMSG_LOGOUT_CANCEL_ACK Message");

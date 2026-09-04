@@ -141,7 +141,7 @@ void Pet::SetDeathState(DeathState s)                       // overwrite virtual
         {
             // pet corpse non lootable and non skinnable
             SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
-            RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
+            RemoveUnitFlag(UNIT_FLAG_SKINNABLE);
 
             // lose happiness when died and not in BG
             MapEntry const* mapEntry = sMapStore.LookupEntry(GetMapId());
@@ -150,12 +150,12 @@ void Pet::SetDeathState(DeathState s)                       // overwrite virtual
                 ModifyPower(POWER_HAPPINESS, -HAPPINESS_LEVEL_SIZE);
             }
 
-            SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
+            SetUnitFlag(UNIT_FLAG_STUNNED);
         }
     }
     else if (GetDeathState() == ALIVE)
     {
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
+        RemoveUnitFlag(UNIT_FLAG_STUNNED);
         CastPetAuras(true);
     }
     CastOwnerTalentAuras();
@@ -901,7 +901,7 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
             SetByteValue(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_UNK3 | UNIT_BYTE2_FLAG_AURAS | UNIT_BYTE2_FLAG_UNK5);
 
             // this enables popup window (pet abandon, cancel), original value set in CreateBaseAtCreature
-            SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE | UNIT_FLAG_RESTING);
+            SetUnitFlag(UNIT_FLAG_PVP_ATTACKABLE | UNIT_FLAG_RESTING);
             break;
         case GUARDIAN_PET:
         case MINI_PET:
@@ -1264,7 +1264,7 @@ bool Pet::Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo const* ci
 
     if (getPetType() == MINI_PET)                           // always non-attackable
     {
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+        SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
     }
 
     return true;

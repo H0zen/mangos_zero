@@ -431,9 +431,9 @@ struct boss_taerar : public CreatureScript
             m_uiShadesDead = 0;
 
             // Remove Unselectable if needed
-            if (m_creature->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE))
+            if (m_creature->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE))
             {
-                m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
             }
         }
 
@@ -453,7 +453,7 @@ struct boss_taerar : public CreatureScript
                 DoCastSpellIfCan(m_creature, SPELL_SUMMON_SHADE_3, CAST_TRIGGERED);
 
                 // Make boss not selectable when banished
-                m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
 
                 DoScriptText(SAY_SUMMONSHADE, m_creature);
                 m_uiShadesTimeoutTimer = 60000;
@@ -481,7 +481,7 @@ struct boss_taerar : public CreatureScript
         void DoUnbanishBoss()
         {
             m_creature->RemoveAuras(SPELL_SELF_STUN);
-            m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
 
             m_uiShadesTimeoutTimer = 0;
             m_uiShadesDead = 0;

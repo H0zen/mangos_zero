@@ -191,7 +191,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
 
             if (!fields[12].GetBool())
             {
-                SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_RENAME);
+                SetUnitFlag(UNIT_FLAG_RENAME);
             }
 
             SetTP(fields[9].GetInt32());
@@ -454,7 +454,7 @@ void Pet::SavePetToDB(PetSaveMode mode)
         savePet.addInt32(m_TrainingPoints);
         savePet.addUInt32(uint32(mode));
         savePet.addString(m_name.c_str());
-        savePet.addUInt32(uint32(HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_RENAME) ? 0 : 1));
+        savePet.addUInt32(uint32(HasUnitFlag(UNIT_FLAG_RENAME) ? 0 : 1));
         savePet.addUInt32((curhealth));
         savePet.addUInt32(curpower);
         savePet.addUInt32(GetPower(POWER_HAPPINESS));

@@ -267,7 +267,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
             }
 
             go->SetGoState(GO_STATE_ACTIVE);
-            SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_LOOTING);
+            SetUnitFlag(UNIT_FLAG_LOOTING);
 
             break;
         }
@@ -536,7 +536,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 
     if (loot_type == LOOT_CORPSE && !guid.IsItem())
     {
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_LOOTING);
+        SetUnitFlag(UNIT_FLAG_LOOTING);
     }
 }
 

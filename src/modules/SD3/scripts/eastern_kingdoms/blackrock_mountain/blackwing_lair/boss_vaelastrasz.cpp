@@ -189,7 +189,7 @@ struct boss_vaelastrasz : public CreatureScript
             if (pSummoned->GetEntry() == NPC_LORD_VICTOR_NEFARIUS)
             {
                 // Set not selectable, so players won't interact with it
-                pSummoned->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                pSummoned->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                 m_nefariusGuid = pSummoned->GetObjectGuid();
             }
         }
@@ -229,8 +229,8 @@ struct boss_vaelastrasz : public CreatureScript
                             }
 
                             // Set npc flags now
-                            m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
-                            m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                            m_creature->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
+                            m_creature->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                             m_uiIntroTimer = 0;
                             break;
                     }

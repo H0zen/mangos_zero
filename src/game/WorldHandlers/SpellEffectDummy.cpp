@@ -191,7 +191,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                     // see spell 10255 (aura dummy)
                     m_caster->clearUnitState(UNIT_STAT_ROOT);
-                    m_caster->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    m_caster->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                     return;
                 }
                 case 12975:                                 // Last Stand

@@ -83,7 +83,7 @@ struct boss_archaedas : public CreatureScript
             m_uiHpPhaseCheck = 1;
 
             DoCastSpellIfCan(m_creature, SPELL_FREEZE_ANIM);
-            m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
         }
 
         void Aggro(Unit* /*pWho*/) override
@@ -143,7 +143,7 @@ struct boss_archaedas : public CreatureScript
                         case 2:
                             DoScriptText(SAY_AGGRO, m_creature);
                             m_creature->RemoveAuras(SPELL_FREEZE_ANIM);
-                            m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                            m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
 
                             // Attack player
                             if (Player* pPlayer = m_creature->GetMap()->GetPlayer(m_pInstance->GetGuid(DATA_EVENT_STARTER)))

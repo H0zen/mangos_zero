@@ -250,7 +250,7 @@ struct npc_taelan_fordring : public CreatureScript
         npc_taelan_fordringAI(Creature* pCreature) : npc_escortAI(pCreature),
             DialogueHelper(aScarletDialogue)
         {
-            m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
 
             m_bScarletComplete = false;
             m_bFightStarted = false;
@@ -315,7 +315,7 @@ struct npc_taelan_fordring : public CreatureScript
                 m_creature->ClearComboPointHolders();
                 m_creature->RemoveAllAurasOnDeath();
                 m_creature->ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, false);
-                m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                 m_creature->ClearAllReactives();
                 m_creature->GetMotionMaster()->Clear();
                 m_creature->GetMotionMaster()->MoveIdle();
@@ -439,7 +439,7 @@ struct npc_taelan_fordring : public CreatureScript
                 {
                     // kneel and make everyone worried
                     m_creature->SetStandState(UNIT_STAND_STATE_KNEEL);
-                    m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                    m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
 
                     std::list<Creature*> lCavaliersInRange;
                     GetCreatureListWithEntryInGrid(lCavaliersInRange, m_creature, NPC_SCARLET_CAVALIER, 10.0f);
@@ -484,7 +484,7 @@ struct npc_taelan_fordring : public CreatureScript
                     m_bScarletComplete = true;
                     break;
                 case SAY_SCARLET_COMPLETE_2:
-                    m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                    m_creature->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                     break;
                 case MODEL_TAELAN_MOUNT:
                     // mount when outside
@@ -584,7 +584,7 @@ struct npc_taelan_fordring : public CreatureScript
                         }
 
                         pTirion->ForcedDespawn(3 * MINUTE*IN_MILLISECONDS);
-                        pTirion->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                        pTirion->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                     }
                     m_creature->ForcedDespawn(3 * MINUTE*IN_MILLISECONDS);
                     break;

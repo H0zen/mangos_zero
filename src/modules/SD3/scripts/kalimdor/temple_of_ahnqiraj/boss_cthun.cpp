@@ -440,7 +440,7 @@ struct boss_cthun : public CreatureScript
             m_lPlayersInStomachList.clear();
 
             // Reset flags
-            m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
         }
 
         void DamageTaken(Unit* /*pDealer*/, uint32& uiDamage) override
@@ -654,7 +654,7 @@ struct boss_cthun : public CreatureScript
                         // Transform and start C'thun phase
                         if (DoCastSpellIfCan(m_creature, SPELL_TRANSFORM) == CAST_OK)
                         {
-                            m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                            m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                             DoSpawnFleshTentacles();
 
                             m_Phase = PHASE_CTHUN;

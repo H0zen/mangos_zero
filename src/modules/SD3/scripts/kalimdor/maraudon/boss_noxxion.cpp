@@ -136,11 +136,11 @@ struct aura_dummy_noxxion_spawns : public AuraScript
                 if (bApply)
                 {
                     pTarget->CastSpell(pTarget, SPELL_NOXXION_SPAWNS_SUMMON, true);
-                    pTarget->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    pTarget->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                 }
                 else
                 {
-                    pTarget->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    pTarget->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                 }
             }
         }

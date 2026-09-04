@@ -132,7 +132,7 @@ struct is_sunken_temple : public InstanceScript
                         break;
                     // Shade of Eranikus: prevent it to become unattackable after a wipe
                     case NPC_SHADE_OF_ERANIKUS:
-                        pCreature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
+                        pCreature->RemoveUnitFlag(UNIT_FLAG_OOC_NOT_ATTACKABLE);
                         break;
                 }
             }
@@ -196,7 +196,7 @@ struct is_sunken_temple : public InstanceScript
                         {
                             if (Creature* pEranikus = GetSingleCreatureFromStorage(NPC_SHADE_OF_ERANIKUS))
                             {
-                                pEranikus->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
+                                pEranikus->RemoveUnitFlag(UNIT_FLAG_OOC_NOT_ATTACKABLE);
                             }
                         }
                         m_auiEncounter[uiType] = uiData;

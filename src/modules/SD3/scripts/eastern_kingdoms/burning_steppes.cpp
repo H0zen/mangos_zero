@@ -244,7 +244,7 @@ struct npc_grark_lorkrub : public CreatureScript
 
                 m_lSearscaleGuidList.clear();
 
-                m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
             }
         }
 
@@ -357,7 +357,7 @@ struct npc_grark_lorkrub : public CreatureScript
                     m_creature->RemoveAllAurasOnDeath();
                     m_creature->ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, false);
 
-                    m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                     m_creature->ClearAllReactives();
                     m_creature->GetMotionMaster()->Clear();
                     m_creature->GetMotionMaster()->MoveIdle();

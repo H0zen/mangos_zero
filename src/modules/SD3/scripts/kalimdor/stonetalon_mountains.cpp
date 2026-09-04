@@ -205,8 +205,8 @@ struct npc_piznik : public CreatureScript
 
         void StartEvent(uint64 uiPlayerGUID)
         {
-            m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
-            m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+            m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
+            m_creature->RemoveUnitFlag(UNIT_FLAG_PASSIVE);
             m_creature->setFaction(FACTION_QUEST);
 
             m_uiPlayerGUID = uiPlayerGUID;
@@ -222,7 +222,7 @@ struct npc_piznik : public CreatureScript
         {
             m_uiPlayerGUID = 0;
             m_bEventStarted = false;
-            m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+            m_creature->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
             m_creature->setFaction(m_uiNormFaction);
         }
 

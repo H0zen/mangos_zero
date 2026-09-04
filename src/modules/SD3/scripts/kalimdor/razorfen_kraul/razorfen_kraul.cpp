@@ -144,7 +144,7 @@ struct npc_willix_the_importer : public CreatureScript
                     break;
                 case 45:
                     DoScriptText(SAY_WILLIX_END, m_creature);
-                    m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                    m_creature->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                     // Complete event
                     if (Player* pPlayer = GetPlayerForEscort())
                     {

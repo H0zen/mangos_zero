@@ -115,7 +115,7 @@ void Aura::HandleModPossess(bool apply, bool Real)
     {
         target->addUnitState(UNIT_STAT_CONTROLLED);
 
-        target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_POSSESSED);
+        target->SetUnitFlag(UNIT_FLAG_POSSESSED);
         target->SetCharmerGuid(p_caster->GetObjectGuid());
         target->setFaction(p_caster->getFaction());
 
@@ -174,7 +174,7 @@ void Aura::HandleModPossess(bool apply, bool Real)
         target->DeleteThreatList();
         target->GetHostileRefManager().deleteReferences();
 
-        target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_POSSESSED);
+        target->RemoveUnitFlag(UNIT_FLAG_POSSESSED);
 
         target->SetCharmerGuid(ObjectGuid());
 
@@ -239,7 +239,7 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
         p_caster->SetClientControl(pet, 1);
         ((Player*)caster)->SetMover(pet);
 
-        pet->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_POSSESSED);
+        pet->SetUnitFlag(UNIT_FLAG_POSSESSED);
 
         pet->StopMoving();
         pet->GetMotionMaster()->Clear(false);
@@ -263,7 +263,7 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
 
         pet->clearUnitState(UNIT_STAT_CONTROLLED);
 
-        pet->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_POSSESSED);
+        pet->RemoveUnitFlag(UNIT_FLAG_POSSESSED);
 
         pet->AttackStop();
 
@@ -517,7 +517,7 @@ void Aura::HandleAuraModDisarm(bool apply, bool Real)
         return;
     }
 
-    target->ApplyModFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISARMED, apply);
+    target->ApplyUnitFlag(UNIT_FLAG_DISARMED, apply);
 
     if (target->GetTypeId() != TYPEID_PLAYER)
     {
@@ -927,7 +927,7 @@ void Aura::HandleAuraModSilence(bool apply, bool Real)
 
     if (apply)
     {
-        target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED);
+        target->SetUnitFlag(UNIT_FLAG_SILENCED);
         // Stop cast only spells vs PreventionType == SPELL_PREVENTION_TYPE_SILENCE
         for (uint32 i = CURRENT_MELEE_SPELL; i < CURRENT_MAX_SPELL; ++i)
         {
@@ -949,7 +949,7 @@ void Aura::HandleAuraModSilence(bool apply, bool Real)
             return;
         }
 
-        target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED);
+        target->RemoveUnitFlag(UNIT_FLAG_SILENCED);
     }
 }
 

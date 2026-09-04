@@ -128,7 +128,7 @@ struct boss_thaddius : public CreatureScript
             m_uiBallLightningTimer = 1 * IN_MILLISECONDS;
             m_uiBerserkTimer = 6 * MINUTE * IN_MILLISECONDS;
 
-            m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
         }
 
         void Aggro(Unit* /*pWho*/) override
@@ -147,7 +147,7 @@ struct boss_thaddius : public CreatureScript
             }
 
             // Make Attackable
-            m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
         }
 
         void JustReachedHome() override
@@ -532,7 +532,7 @@ struct boss_thaddiusAddsAI : public ScriptedAI
         m_uiWarStompTimer = urand(8 * IN_MILLISECONDS, 10 * IN_MILLISECONDS);
 
         // We might Reset while faking death, so undo this
-        m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+        m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
         m_creature->SetHealth(m_creature->GetMaxHealth());
         m_creature->SetStandState(UNIT_STAND_STATE_STAND);
     }
@@ -723,7 +723,7 @@ struct boss_thaddiusAddsAI : public ScriptedAI
         m_creature->ClearComboPointHolders();
         m_creature->RemoveAllAurasOnDeath();
         m_creature->ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, false);
-        m_creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+        m_creature->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
         m_creature->ClearAllReactives();
         m_creature->GetMotionMaster()->Clear();
         m_creature->GetMotionMaster()->MoveIdle();

@@ -124,11 +124,11 @@ void Aura::HandleAuraModStalked(bool apply, bool /*Real*/)
     // used by spells: Hunter's Mark, Mind Vision, Syndicate Tracker (MURP) DND
     if (apply)
     {
-        GetTarget()->SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_TRACK_UNIT);
+        GetTarget()->SetDynFlag(UNIT_DYNFLAG_TRACK_UNIT);
     }
     else
     {
-        GetTarget()->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_TRACK_UNIT);
+        GetTarget()->RemoveDynFlag(UNIT_DYNFLAG_TRACK_UNIT);
     }
 }
 

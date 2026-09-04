@@ -343,13 +343,13 @@ struct npc_deathstalker_faerleia : public CreatureScript
 
         void JustRespawned()
         {
-            m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER); // Reseting flags on respawn in case questgiver died durin event
+            m_creature->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER); // Reseting flags on respawn in case questgiver died durin event
             Reset();
         }
 
         void StartEvent(uint64 uiPlayerGUID)
         {
-            m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+            m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
 
             m_uiPlayerGUID = uiPlayerGUID;
             m_bEventStarted = true;
@@ -404,7 +404,7 @@ struct npc_deathstalker_faerleia : public CreatureScript
             if (m_bEventStarted && m_bWaveDied && m_uiRunbackTimer < uiDiff && m_uiWaveCount == 4)
             {
                 DoScriptText(SAY_COMPLETED, m_creature);
-                m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                m_creature->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                 if (Player* pPlayer = (m_creature->GetMap()->GetPlayer(m_uiPlayerGUID)))
                 {
                     pPlayer->GroupEventHappens(QUEST_PYREWOOD_AMBUSH, m_creature);

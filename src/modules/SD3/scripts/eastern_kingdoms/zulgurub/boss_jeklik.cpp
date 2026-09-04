@@ -413,7 +413,7 @@ struct npc_gurubashi_bat_rider : public CreatureScript
 
             DoCastSpellIfCan(m_creature, SPELL_DEMORALIZING_SHOUT);
             // For normal mobs flag needs to be removed
-            m_creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            m_creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
         }
 
         void AttackStart(Unit* pWho) override

@@ -81,7 +81,7 @@ struct npc_kitten : public CreatureScript
                 SetFollowPaused(true);
                 DoScriptText(EMOTE_SAB_JUMP, m_creature);
 
-                pCreature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                pCreature->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
 
                 // find a decent way to move to center of moonwell
             }
@@ -94,11 +94,11 @@ struct npc_kitten : public CreatureScript
         void MoveInLineOfSight(Unit* pWho) override
         {
             // should not have npcflag by default, so set when expected
-            if (!m_creature->getVictim() && !m_creature->HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP) && HasFollowState(STATE_FOLLOW_INPROGRESS) && pWho->GetEntry() == NPC_WINNA)
+            if (!m_creature->getVictim() && !m_creature->HasNpcFlag(UNIT_NPC_FLAG_GOSSIP) && HasFollowState(STATE_FOLLOW_INPROGRESS) && pWho->GetEntry() == NPC_WINNA)
             {
                 if (InReach(*m_creature, *pWho, INTERACTION_DISTANCE))
                 {
-                    m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                    m_creature->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
                 }
             }
         }
@@ -245,7 +245,7 @@ struct npc_niby_the_almighty : public CreatureScript
         {
             Reset();
             m_bEventStarted = true;
-            m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+            m_creature->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
         }
 
         void UpdateAI(const uint32 uiDiff) override
@@ -291,7 +291,7 @@ struct npc_niby_the_almighty : public CreatureScript
                             break;
                         case 6:
                             m_creature->GetMotionMaster()->MoveTargetedHome();
-                            m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                            m_creature->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                             m_bEventStarted = false;
                             break;
                     }

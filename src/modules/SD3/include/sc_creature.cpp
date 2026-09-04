@@ -298,7 +298,7 @@ SpellEntry const* ScriptedAI::SelectSpell(Unit* pTarget, int32 uiSchool, int32 i
     }
 
     // Silenced so we can't cast
-    if (m_creature->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED))
+    if (m_creature->HasUnitFlag(UNIT_FLAG_SILENCED))
     {
         return nullptr;
     }
@@ -416,7 +416,7 @@ bool ScriptedAI::CanCast(Unit* pTarget, SpellEntry const* pSpellEntry, bool bTri
     }
 
     // Silenced so we can't cast
-    if (!bTriggered && m_creature->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED))
+    if (!bTriggered && m_creature->HasUnitFlag(UNIT_FLAG_SILENCED))
     {
         return false;
     }

@@ -1129,7 +1129,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     return SPELL_FAILED_BAD_TARGETS;
                 }
 
-                if (!m_targets.getUnitTarget()->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE))
+                if (!m_targets.getUnitTarget()->HasUnitFlag(UNIT_FLAG_SKINNABLE))
                 {
                     return SPELL_FAILED_TARGET_UNSKINNABLE;
                 }
@@ -2206,7 +2206,7 @@ SpellCastResult Spell::CheckPower()
     if (m_caster->GetTypeId() != TYPEID_PLAYER)
     {
         // power for pets should be checked
-        if (!m_caster->GetObjectGuid().IsPet() && m_caster->HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER) && !m_caster->IsInCombat())
+        if (!m_caster->GetObjectGuid().IsPet() && m_caster->HasNpcFlag(UNIT_NPC_FLAG_QUESTGIVER) && !m_caster->IsInCombat())
         {
             return SPELL_CAST_OK;
         }

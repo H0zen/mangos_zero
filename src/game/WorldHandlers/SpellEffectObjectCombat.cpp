@@ -1216,7 +1216,7 @@ void Spell::EffectSkinning(SpellEffectIndex /*eff_idx*/)
     uint32 skill = creature->GetCreatureInfo()->GetRequiredLootSkill();
 
     ((Player*)m_caster)->SendLoot(creature->GetObjectGuid(), LOOT_SKINNING);
-    creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
+    creature->RemoveUnitFlag(UNIT_FLAG_SKINNABLE);
     creature->SetLootRecipient(m_caster);
 
     int32 reqValue = targetLevel < 10 ? 0 : targetLevel < 20 ? (targetLevel - 10) * 10 : targetLevel * 5;

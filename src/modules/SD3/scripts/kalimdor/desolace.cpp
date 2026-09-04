@@ -107,7 +107,7 @@ struct npc_aged_dying_ancient_kodo : public CreatureScript
         {
             if (SD3_SpellId(pSpell) == SPELL_KODO_KOMBO_GOSSIP)
             {
-                m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                m_creature->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
                 m_uiDespawnTimer = 60000;
             }
         }

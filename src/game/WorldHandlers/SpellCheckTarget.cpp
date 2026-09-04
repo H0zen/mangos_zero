@@ -161,7 +161,7 @@ bool Spell::CheckTarget(Unit* target, SpellEffectIndex eff)
     if (target != m_caster && target->GetCharmerOrOwnerGuid() != m_caster->GetObjectGuid())
     {
         // any unattackable target skipped
-        if (target->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE))
+        if (target->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE))
         {
             return false;
         }
@@ -169,7 +169,7 @@ bool Spell::CheckTarget(Unit* target, SpellEffectIndex eff)
         // unselectable targets skipped in all cases except TARGET_SCRIPT targeting
         // in case TARGET_SCRIPT target selected by server always and can't be cheated
         if ((!m_IsTriggeredSpell || target != m_targets.getUnitTarget()) &&
-            target->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE) &&
+            target->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE) &&
             m_spellInfo->ImplicitTargetA[eff] != TARGET_SCRIPT &&
             m_spellInfo->ImplicitTargetB[eff] != TARGET_SCRIPT &&
             m_spellInfo->ImplicitTargetA[eff] != TARGET_AREAEFFECT_INSTANT &&
