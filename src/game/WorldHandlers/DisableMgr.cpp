@@ -427,7 +427,7 @@ namespace DisableMgr
                 if (unit)
                 {
                     if ((spellFlags & SPELL_DISABLE_PLAYER && unit->GetTypeId() == TYPEID_PLAYER) ||
-                        (unit->GetTypeId() == TYPEID_UNIT && ((unit->ToCreature()->IsPet() && spellFlags & SPELL_DISABLE_PET) || spellFlags & SPELL_DISABLE_CREATURE)))
+                        (unit->GetTypeId() == TYPEID_UNIT && ((ToCreature(unit)->IsPet() && spellFlags & SPELL_DISABLE_PET) || spellFlags & SPELL_DISABLE_CREATURE)))
                     {
                         if (spellFlags & SPELL_DISABLE_MAP)
                         {
@@ -474,7 +474,7 @@ namespace DisableMgr
                 break;
             }
             case DISABLE_TYPE_MAP:
-                if (/*Player const* player = */unit->ToPlayer())
+                if (/*Player const* player = */ToPlayer(unit))
                 {
                     /** [-ZERO]
                      * MapEntry const* mapEntry = sMapStore.LookupEntry(entry);
@@ -507,7 +507,7 @@ namespace DisableMgr
                 {
                     return true;
                 }
-                if (Player const* player = unit->ToPlayer())
+                if (Player const* player = ToPlayer(unit))
                 {
                     return !player->isGameMaster();
                 }

@@ -301,7 +301,7 @@ struct spell_summon_hakkar : public SpellScript
             {
                 pAvatar->CastSpell(pAvatar, SPELL_AVATAR_SUMMONED, true);
             }
-            pCaster->ToCreature()->ForcedDespawn(10);
+            ToCreature(pCaster)->ForcedDespawn(10);
 
             // Always return true when we are handling this spell and effect
             return true;

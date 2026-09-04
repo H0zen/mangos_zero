@@ -1024,9 +1024,9 @@ void Map::Update(const uint32& t_diff)
             {
                 if (Unit* unit = ref->getSource()->getOwner())
                 {
-                    if (unit->ToCreature() && unit->GetMapId() == plr->GetMapId() && !InReach(*unit, *plr, GetVisibilityDistance(), false))
+                    if (ToCreature(unit) && unit->GetMapId() == plr->GetMapId() && !InReach(*unit, *plr, GetVisibilityDistance(), false))
                     {
-                        _removeList.push_back(unit->ToCreature());
+                        _removeList.push_back(ToCreature(unit));
                     }
                 }
 

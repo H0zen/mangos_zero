@@ -1264,7 +1264,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
                 if (!pet)
                 {
-                    if (Player* player = m_caster->ToPlayer())
+                    if (Player* player = ToPlayer(m_caster))
                     {
                         PetDatabaseStatus status = Pet::GetStatusFromDB(player);
                         if (status == PET_DB_NO_PET)
@@ -1305,7 +1305,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             }
             case SPELL_EFFECT_SUMMON_PET:
             {
-                Player* plr = m_caster->ToPlayer();
+                Player* plr = ToPlayer(m_caster);
                 if (m_caster->GetPetGuid())                 // let warlock do a replacement summon
                 {
                     if (plr && m_caster->getClass() != CLASS_WARLOCK)

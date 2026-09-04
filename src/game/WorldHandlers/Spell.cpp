@@ -1366,7 +1366,7 @@ SpellCastResult Spell::CanTameUnit(bool isGM)
         return SPELL_FAILED_BAD_TARGETS;
     }
 
-    Player* plrCaster = caster->ToPlayer();
+    Player* plrCaster = ToPlayer(caster);
 
     if (plrCaster->getClass() != CLASS_HUNTER)
     {

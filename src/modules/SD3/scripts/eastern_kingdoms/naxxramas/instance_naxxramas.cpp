@@ -625,7 +625,7 @@ struct is_naxxramas : public InstanceScript
                                             uiTriggered = SPELL_C_TO_ANCHOR_2;
                                         }
 
-                                        pCreatureTarget->ToCreature()->CastSpell(pAnchor2, uiTriggered, true);
+                                        ToCreature(pCreatureTarget)->CastSpell(pAnchor2, uiTriggered, true);
                                     }
                                     break;
                                 case SPELL_A_TO_ANCHOR_2:                           // trigger mobs at high left side

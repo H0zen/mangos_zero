@@ -261,11 +261,11 @@ void PathFinder::BuildPolyPath(const Vector3& startPos, const Vector3& endPos)
             if ((startPoly == INVALID_POLYREF && m_sourceUnit->GetMap()->GetTerrain()->IsUnderWater(startPos.x, startPos.y, startPos.z)) ||
                 (endPoly == INVALID_POLYREF && m_sourceUnit->GetMap()->GetTerrain()->IsUnderWater(endPos.x, endPos.y, endPos.z)))
             {
-                m_type = m_sourceUnit->ToCreature()->CanSwim() ? PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH) : PATHFIND_NOPATH;
+                m_type = ToCreature(m_sourceUnit)->CanSwim() ? PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH) : PATHFIND_NOPATH;
             }
             else
             {
-                m_type = m_sourceUnit->ToCreature()->CanFly() ? PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH) : PATHFIND_NOPATH;
+                m_type = ToCreature(m_sourceUnit)->CanFly() ? PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH) : PATHFIND_NOPATH;
             }
         }
         else
@@ -286,7 +286,7 @@ void PathFinder::BuildPolyPath(const Vector3& startPos, const Vector3& endPos)
         bool buildShortcut = false;
         if (m_sourceUnit->GetTypeId() == TYPEID_UNIT)
         {
-            const Creature* owner = m_sourceUnit->ToCreature();
+            const Creature* owner = ToCreature(m_sourceUnit);
 
             Vector3 p = (distToStartPoly > 7.0f) ? startPos : endPos;
             if (m_sourceUnit->GetMap()->GetTerrain()->IsInWater(p.x, p.y, p.z + 1.0))

@@ -355,7 +355,7 @@ struct spell_npc_shay_leafrunner : public SpellScript
                 return true;
             }
 
-            pCreatureTarget->ToCreature()->AI()->SendAIEvent(AI_EVENT_CUSTOM_A, pCaster, pCreatureTarget->ToCreature());
+            ToCreature(pCreatureTarget)->AI()->SendAIEvent(AI_EVENT_CUSTOM_A, pCaster, ToCreature(pCreatureTarget));
             return true;
         }
 

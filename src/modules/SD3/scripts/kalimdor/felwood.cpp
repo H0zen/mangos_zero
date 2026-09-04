@@ -141,7 +141,7 @@ struct spell_npc_kitten : public SpellScript
         // always check spellid and effectindex
         if (uiSpellId == SPELL_CORRUPT_SABER_VISUAL && uiEffIndex == EFFECT_INDEX_0)
         {
-            Creature *pCreatureTarget = pTarget->ToCreature();
+            Creature *pCreatureTarget = ToCreature(pTarget);
             // Not nice way, however using UpdateEntry will not be correct.
             if (const CreatureInfo* pTemp = GetCreatureTemplateStore(NPC_CORRUPT_SABER))
             {
@@ -387,7 +387,7 @@ struct npc_kroshius : public CreatureScript
         {
             if (eventType == AI_EVENT_CUSTOM_A && pSender == m_creature && pInvoker->GetTypeId() == TYPEID_PLAYER)
             {
-                DoRevive(pInvoker->ToPlayer());
+                DoRevive(ToPlayer(pInvoker));
             }
         }
 

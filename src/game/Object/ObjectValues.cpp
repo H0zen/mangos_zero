@@ -55,6 +55,8 @@
 #include "ObjectGuid.h"
 #include "UpdateData.h"
 #include "Util.h"
+
+#include <sstream>
 #include "MapManager.h"
 #include "Transports.h"
 #include "TargetedMovementGenerator.h"
@@ -462,6 +464,64 @@ void Object::RemoveShortFlag(uint16 index, bool highpart, uint16 oldFlag)
  *
  * Logs an error when attempting to access a nonexistent field.
  */
+/**
+ * @brief Read a run of fields back from their stored text form
+ * @param data Space-separated decimal values
+ * @param first Index of the first field the text describes
+ * @param count How many fields it must describe
+ * @return false when the text does not hold exactly that many values
+ *
+ * The storage format happens to be the field array written out, which is why a
+ * range is enough for both callers: a whole item, or one run of a character's
+ * explored zones.
+ */
+bool Object::LoadFields(char const* data, uint16 first, uint16 count)
+{
+    if (!data)
+    {
+        return false;
+    }
+
+    if (!m_uint32Values)
+    {
+        _InitValues();
+    }
+
+    MANGOS_ASSERT(first + count <= m_valuesCount || PrintIndexError(first, true));
+
+    Tokens tokens = StrSplit(data, " ");
+    if (tokens.size() != count)
+    {
+        return false;
+    }
+
+    uint16 index = first;
+    for (const auto& token : tokens)
+    {
+        m_uint32Values[index++] = std::strtoul(token.c_str(), nullptr, 10);
+    }
+
+    return true;
+}
+
+/**
+ * @brief Write a run of fields out in the form LoadFields reads
+ * @param first Index of the first field
+ * @param count How many fields to write
+ */
+std::string Object::SaveFields(uint16 first, uint16 count) const
+{
+    MANGOS_ASSERT(first + count <= m_valuesCount || PrintIndexError(first, false));
+
+    std::ostringstream out;
+    for (uint16 index = first; index < first + count; ++index)
+    {
+        out << m_uint32Values[index] << " ";
+    }
+
+    return out.str();
+}
+
 bool Object::PrintIndexError(uint32 index, bool set) const
 {
     sLog.outError("Attempt %s nonexistent value field: %u (count: %u) for object typeid: %u type mask: %u", (set ? "set value to" : "get value from"), index, m_valuesCount, GetTypeId(), m_objectType);

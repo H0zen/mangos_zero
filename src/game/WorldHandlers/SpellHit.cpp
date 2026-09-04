@@ -155,7 +155,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
 
             if (m_caster->GetTypeId() == TYPEID_UNIT)
             {
-                m_caster->ToCreature()->LowerPlayerDamageReq(target->damage);
+                ToCreature(m_caster)->LowerPlayerDamageReq(target->damage);
             }
         }
     }

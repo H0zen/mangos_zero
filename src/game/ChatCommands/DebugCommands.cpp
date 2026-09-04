@@ -418,7 +418,7 @@ bool ChatHandler::HandleDebugSendOpcodeCommand(char* /*args*/)
     DEBUG_LOG("Sending opcode %u, %s", data.GetOpcode(), LookupOpcodeName(data.GetOpcode()));
 
     data.hexlike();
-    unit->ToPlayer()->SendDirectMessage(&data);
+    ToPlayer(unit)->SendDirectMessage(&data);
 
     PSendSysMessage(LANG_COMMAND_OPCODESENT, data.GetOpcode(), unit->GetName());
 

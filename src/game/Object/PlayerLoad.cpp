@@ -146,35 +146,6 @@ bool Player::LoadPositionFromDB(ObjectGuid guid, uint32& mapid, float& x, float&
 }
 
 /**
- * @brief Loads serialized uint32 values into the player's update field array.
- *
- * @param data The serialized space-separated field data.
- * @param startOffset The first update-field offset to populate.
- * @param count The number of uint32 values expected.
- */
-void Player::_LoadIntoDataField(const char* data, uint32 startOffset, uint32 count)
-{
-    if (!data)
-    {
-        return;
-    }
-
-    Tokens tokens = StrSplit(data, " ");
-
-    if (tokens.size() != count)
-    {
-        return;
-    }
-
-    Tokens::iterator iter;
-    uint32 index;
-    for (iter = tokens.begin(), index = 0; index < count; ++iter, ++index)
-    {
-        m_uint32Values[startOffset + index] = std::strtoul((*iter).c_str(), NULL, 10);
-    }
-}
-
-/**
  * @brief Loads the player's persisted state from the database and initializes runtime data.
  *
  * @param guid The player GUID to load.
@@ -255,7 +226,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     SetUInt32Value(UNIT_FIELD_LEVEL, fields[6].GetUInt8());
     SetUInt32Value(PLAYER_XP, fields[7].GetUInt32());
 
-    _LoadIntoDataField(fields[51].GetString(), PLAYER_EXPLORED_ZONES_1, PLAYER_EXPLORED_ZONES_SIZE);
+    LoadFields(fields[51].GetString(), PLAYER_EXPLORED_ZONES_1, PLAYER_EXPLORED_ZONES_SIZE);
 
     InitDisplayIds();                                       // model, scale and model data
 

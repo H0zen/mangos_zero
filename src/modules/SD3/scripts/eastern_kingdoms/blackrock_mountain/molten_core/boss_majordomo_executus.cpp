@@ -540,7 +540,7 @@ struct spell_boss_majordomo : public SpellScript
         }
 
         pCreatureTarget->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP); //TODO is here ToCreature() needed?
-        pCreatureTarget->ToCreature()->NearTeleportTo(m_aMajordomoLocations[1].m_fX, m_aMajordomoLocations[1].m_fY, m_aMajordomoLocations[1].m_fZ, m_aMajordomoLocations[1].m_fO, true);
+        ToCreature(pCreatureTarget)->NearTeleportTo(m_aMajordomoLocations[1].m_fX, m_aMajordomoLocations[1].m_fY, m_aMajordomoLocations[1].m_fZ, m_aMajordomoLocations[1].m_fO, true);
         // TODO - some visibility update?
         return true;
     }

@@ -465,7 +465,7 @@ void Spell::SendLogExecute()
  */
 void Spell::SendInterrupted(SpellCastResult result)
 {
-    Player *casterPlayer = m_caster->ToPlayer();
+    Player *casterPlayer = ToPlayer(m_caster);
 
     if (casterPlayer)
     {

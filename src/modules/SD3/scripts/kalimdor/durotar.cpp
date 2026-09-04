@@ -172,7 +172,7 @@ struct spell_lazy_peon_awake : public SpellScript
         // always check spellid and effectindex
         if (uiSpellId == SPELL_AWAKEN_PEON && uiEffIndex == EFFECT_INDEX_0)
         {
-            Creature* pCreatureTarget = pTarget->ToCreature();
+            Creature* pCreatureTarget = ToCreature(pTarget);
             if (!pCreatureTarget)
             {
                 return true;

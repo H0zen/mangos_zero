@@ -399,7 +399,7 @@ struct npc_doctor : public CreatureScript
             loc->o = pSender->Where().Facing();
             if (eventType == AI_EVENT_CUSTOM_A && pInvoker->GetTypeId() == TYPEID_PLAYER)
             {
-                PatientSaved(pSender, pInvoker->ToPlayer(), loc);
+                PatientSaved(pSender, ToPlayer(pInvoker), loc);
             }
             else if (eventType == AI_EVENT_CUSTOM_B && pInvoker == pSender)
             {
@@ -1099,9 +1099,9 @@ struct spell_npc_redemption_target : public SpellScript
         // always check spellid and effectindex
         if ((uiSpellId == SPELL_SYMBOL_OF_LIFE || uiSpellId == SPELL_SHIMMERING_VESSEL) && uiEffIndex == EFFECT_INDEX_0)
         {
-            if (CreatureAI* pTargetAI = pCreatureTarget->ToCreature()->AI())
+            if (CreatureAI* pTargetAI = ToCreature(pCreatureTarget)->AI())
             {
-                pTargetAI->SendAIEvent(AI_EVENT_CUSTOM_A, pCaster, pCreatureTarget->ToCreature());//>DoReviveSelf(pCaster->GetObjectGuid());
+                pTargetAI->SendAIEvent(AI_EVENT_CUSTOM_A, pCaster, ToCreature(pCreatureTarget));//>DoReviveSelf(pCaster->GetObjectGuid());
             }
 
             // always return true when we are handling this spell and effect

@@ -487,15 +487,15 @@ struct spell_capture_grark : public SpellScript
         if (uiSpellId == SPELL_CAPTURE_GRARK && uiEffIndex == EFFECT_INDEX_0)
         {
             // Note: this implementation needs additional research! There is a lot of guesswork involved in this!
-            if (pCreatureTarget->ToCreature()->GetHealthPercent() > 25.0f)
+            if (ToCreature(pCreatureTarget)->GetHealthPercent() > 25.0f)
             {
                 return false;
             }
 
             // The faction is guesswork - needs more research
-            DoScriptText(EMOTE_SUBMIT, pCreatureTarget->ToCreature());
-            pCreatureTarget->ToCreature()->SetFactionTemporary(FACTION_FRIENDLY, TEMPFACTION_RESTORE_RESPAWN);
-            pCreatureTarget->ToCreature()->AI()->EnterEvadeMode();
+            DoScriptText(EMOTE_SUBMIT, ToCreature(pCreatureTarget));
+            ToCreature(pCreatureTarget)->SetFactionTemporary(FACTION_FRIENDLY, TEMPFACTION_RESTORE_RESPAWN);
+            ToCreature(pCreatureTarget)->AI()->EnterEvadeMode();
 
             // always return true when we are handling this spell and effect
             return true;

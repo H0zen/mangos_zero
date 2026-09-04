@@ -797,7 +797,7 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
         }
     }
 
-    if (Creature* victim = pVictim->ToCreature())
+    if (Creature* victim = ToCreature(pVictim))
     {
         if (!victim->IsPet() && !victim->HasLootRecipient())
         {
@@ -862,7 +862,7 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
          *                      Generic Actions (ProcEvents, Combat-Log, Kill Rewards, Stop Combat)
          */
         bool isRewardAllowed = true;
-        if (Creature* creature = pVictim->ToCreature())
+        if (Creature* creature = ToCreature(pVictim))
         {
             isRewardAllowed = creature->IsDamageEnoughForLootingAndReward();
             if (!isRewardAllowed)
@@ -942,14 +942,12 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
         }
 
         // Call KilledUnit for creatures
-        if (GetTypeId() == TYPEID_UNIT && ((Creature*)this)->AI())
+        if (Creature* killer = ToCreature(this))
         {
-            ((Creature*)this)->AI()->KilledUnit(pVictim);
-        }
-
-        if (Creature* killer = ToCreature())
-        {
-
+            if (CreatureAI* ai = killer->AI())
+            {
+                ai->KilledUnit(pVictim);
+            }
         }
 
         // Call AI OwnerKilledUnit (for any current summoned minipet/guardian/protector)
@@ -5245,7 +5243,7 @@ void Unit::SendPetCastFail(uint32 spellid, SpellCastResult msg)
         default:
             break;
     }
-    owner->ToPlayer()->SendDirectMessage(&data);
+    ToPlayer(owner)->SendDirectMessage(&data);
 }
 
 /**

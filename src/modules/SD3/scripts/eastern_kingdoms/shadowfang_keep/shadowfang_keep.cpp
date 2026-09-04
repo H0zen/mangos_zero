@@ -320,7 +320,7 @@ struct mob_arugal_voidwalker : public CreatureScript
         {
             if (eventType == AI_EVENT_CUSTOM_A && pSender->GetEntry() == NPC_ARCHMAGE_ARUGAL)
             {
-                SetPosition(data, pInvoker->ToCreature());
+                SetPosition(data, ToCreature(pInvoker));
             }
         }
 

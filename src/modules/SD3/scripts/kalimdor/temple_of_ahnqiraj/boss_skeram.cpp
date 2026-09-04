@@ -338,7 +338,7 @@ struct spell_npc_prophet_skeram : public SpellScript
         if (uiSpellId == SPELL_INITIALIZE_IMAGE && uiEffIndex == EFFECT_INDEX_0)
         {
             // check for target == caster first
-            if (ScriptedInstance* pInstance = (ScriptedInstance*)pCreatureTarget->ToCreature()->GetInstanceData())
+            if (ScriptedInstance* pInstance = static_cast<ScriptedInstance*>(ToCreature(pCreatureTarget)->GetInstanceData()))
             {
                 if (Creature* pProphet = pInstance->GetSingleCreatureFromStorage(NPC_SKERAM))
                 {
@@ -349,9 +349,9 @@ struct spell_npc_prophet_skeram : public SpellScript
                 }
             }
 
-            if (CreatureAI* pSkeramAI = pCreatureTarget->ToCreature()->AI())
+            if (CreatureAI* pSkeramAI = ToCreature(pCreatureTarget)->AI())
             {
-                pSkeramAI->SendAIEvent(AI_EVENT_CUSTOM_A, pCreatureTarget->ToCreature(), pCreatureTarget->ToCreature());
+                pSkeramAI->SendAIEvent(AI_EVENT_CUSTOM_A, ToCreature(pCreatureTarget), ToCreature(pCreatureTarget));
             }
         }
 

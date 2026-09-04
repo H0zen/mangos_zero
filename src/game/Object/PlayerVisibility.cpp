@@ -172,7 +172,7 @@ bool Player::IsVisibleGloballyFor(Player* u) const
  */
 inline void BeforeVisibilityDestroy(WorldObject* o, Player* p)
 {
-    if (Creature* t = o->ToCreature())
+    if (Creature* t = ToCreature(o))
     {
         if (p->GetPetGuid() == t->GetObjectGuid() && t->IsPet())
         {
@@ -253,7 +253,7 @@ void Player::UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* targe
             visibleNow.insert(target);
             target->BuildCreateUpdateBlockForPlayer(&data, this);
             metrics::Server().sightCreates.Add();
-            if (GameObject* g = target->ToGameObject())
+            if (GameObject* g = ToGameObject(target))
             {
                 if (!g->IsTransport())
                 {

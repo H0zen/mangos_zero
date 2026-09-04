@@ -464,7 +464,7 @@ struct npc_twiggy_flathead : public CreatureScript
         {
             if (eventType == AI_EVENT_CUSTOM_A && pSender == m_creature && pInvoker->GetTypeId() == TYPEID_PLAYER)
             {
-                CanStartEvent(pInvoker->ToPlayer());
+                CanStartEvent(ToPlayer(pInvoker));
             }
         }
 
@@ -873,7 +873,7 @@ struct npc_regthar_deathgate : public CreatureScript
 
         void JustSummoned(Creature* pSummoned)
         {
-            SendAIEventAround(AI_EVENT_CUSTOM_A, pSummoned->ToUnit(), 0, 40.0f);
+            SendAIEventAround(AI_EVENT_CUSTOM_A, ToUnit(pSummoned), 0, 40.0f);
 
             if (pSummoned->GetEntry() == NPC_HORDE_DEFENDER) //replace died creature from list with new spawned one
             {
@@ -1254,7 +1254,7 @@ struct horde_defender : public CreatureScript
             if (eventType == AI_EVENT_CUSTOM_A)
             {
                 m_creature->AddThreat(pInvoker, 0.0f);
-                pSender->AddThreat(m_creature->ToUnit(), 0.0f);
+                pSender->AddThreat(ToUnit(m_creature), 0.0f);
             }
         }
 
@@ -1346,7 +1346,7 @@ struct kolkar_invader : public CreatureScript
             if (eventType == AI_EVENT_CUSTOM_A)
             {
                 m_creature->AddThreat(pInvoker, 0.0f);
-                pSender->AddThreat(m_creature->ToUnit(), 0.0f);
+                pSender->AddThreat(ToUnit(m_creature), 0.0f);
             }
         }
 
@@ -1422,7 +1422,7 @@ struct warlord_kromzar : public CreatureScript
 
         void JustDied(Unit* /**/)
         {
-            m_creature->CastSpell(m_creature->ToUnit(), 13965, true);
+            m_creature->CastSpell(ToUnit(m_creature), 13965, true);
         }
 
         void JustRespawned() override

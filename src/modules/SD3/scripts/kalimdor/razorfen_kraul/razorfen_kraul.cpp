@@ -293,9 +293,9 @@ struct spell_npc_snufflenose_gopher : public SpellScript
         {
             if (pCreatureTarget->GetEntry() == NPC_SNUFFLENOSE_GOPHER)
             {
-                if (CreatureAI* pGopherAI = pCreatureTarget->ToCreature()->AI())
+                if (CreatureAI* pGopherAI = ToCreature(pCreatureTarget)->AI())
                 {
-                    pGopherAI->SendAIEvent(AI_EVENT_CUSTOM_A, pCreatureTarget->ToCreature(), pCreatureTarget->ToCreature());
+                    pGopherAI->SendAIEvent(AI_EVENT_CUSTOM_A, ToCreature(pCreatureTarget), ToCreature(pCreatureTarget));
                 }
             }
 

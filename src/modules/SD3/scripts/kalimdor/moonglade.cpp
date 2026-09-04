@@ -300,7 +300,7 @@ struct npc_keeper_remulos : public CreatureScript
         {
             if (eventType == AI_EVENT_CUSTOM_A && pSender == m_creature)
             {
-                DoHandleOutro(pInvoker->ToCreature());
+                DoHandleOutro(ToCreature(pInvoker));
             }
         }
 

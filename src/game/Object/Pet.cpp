@@ -1437,7 +1437,7 @@ void Pet::ApplyModeFlags(PetModeFlags mode, bool apply)
     WorldPacket data(SMSG_PET_MODE, 12);
     data << GetObjectGuid();
     data << uint32(m_petModeFlags);
-    owner->ToPlayer()->SendDirectMessage(&data);
+    ToPlayer(owner)->SendDirectMessage(&data);
 }
 
 /**
@@ -1450,7 +1450,7 @@ void Pet::ApplyModeFlags(PetModeFlags mode, bool apply)
 void Pet::UpdateSpeed(UnitMoveType mtype, bool forced, float ratio)
 {
     Unit* unitOwner = GetOwner();
-    Player *owner = unitOwner ? unitOwner->ToPlayer() : NULL;
+    Player *owner = unitOwner ? ToPlayer(unitOwner) : NULL;
     if (!owner)
     {
         return Unit::UpdateSpeed(mtype, forced, ratio);         // NPC pets are usual creatures

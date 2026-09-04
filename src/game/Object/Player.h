@@ -3777,7 +3777,6 @@ class Player : public Unit
         void _LoadBGData(QueryResult* result);
 
         // Load data into a data field
-        void _LoadIntoDataField(const char* data, uint32 startOffset, uint32 count);
 
         /*********************************************************/
         /***                   SAVE SYSTEM                     ***/

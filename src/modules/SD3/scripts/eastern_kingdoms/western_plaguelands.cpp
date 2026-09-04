@@ -723,8 +723,8 @@ struct spell_npc_taelan_fordring : public SpellScript
         // always check spellid and effectindex
         if (uiSpellId == SPELL_TAELAN_DEATH && uiEffIndex == EFFECT_INDEX_0 && pCaster->GetEntry() == NPC_ISILLIEN)
         {
-            pCreatureTarget->ToCreature()->AI()->EnterEvadeMode();
-            pCaster->SetFacingToObject(pCreatureTarget->ToCreature());
+            ToCreature(pCreatureTarget)->AI()->EnterEvadeMode();
+            pCaster->SetFacingToObject(ToCreature(pCreatureTarget));
             ((Creature*)pCaster)->AI()->EnterEvadeMode();
 
             return true;

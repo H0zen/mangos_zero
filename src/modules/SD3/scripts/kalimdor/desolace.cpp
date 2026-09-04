@@ -168,7 +168,7 @@ struct spell_npc_aged_dying_ancient_kodo : public SpellScript
         // always check spellid and effectindex
         if (spellId == SPELL_KODO_KOMBO_ITEM && effIndex == EFFECT_INDEX_0)
         {
-            Creature *pCreatureTarget = pTarget->ToCreature();
+            Creature *pCreatureTarget = ToCreature(pTarget);
             // no effect if player/creature already have aura from spells
             if (pCaster->HasAura(SPELL_KODO_KOMBO_PLAYER_BUFF) || pCreatureTarget->HasAura(SPELL_KODO_KOMBO_DESPAWN_BUFF))
             {

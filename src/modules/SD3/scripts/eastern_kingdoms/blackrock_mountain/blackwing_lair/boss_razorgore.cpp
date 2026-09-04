@@ -256,12 +256,12 @@ struct spell_go_black_dragon_egg : public SpellScript
     {
         if (uiSpellId == SPELL_DESTROY_EGG && uiEffIndex == EFFECT_INDEX_1)
         {
-            if (!pGOTarget->ToGameObject()->isSpawned())
+            if (!ToGameObject(pGOTarget)->isSpawned())
             {
                 return true;
             }
 
-            if (ScriptedInstance* pInstance = (ScriptedInstance*)pGOTarget->ToGameObject()->GetInstanceData())
+            if (ScriptedInstance* pInstance = static_cast<ScriptedInstance*>(ToGameObject(pGOTarget)->GetInstanceData()))
             {
                 if (urand(0, 1))
                 {

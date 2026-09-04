@@ -505,35 +505,3 @@ void Object::ClearUpdateMask(bool remove)
         m_objectUpdated = false;
     }
 }
-
-/**
- * @brief Load values from data string
- * @param data Data string to load from
- * @return True if successful
- *
- * Loads update field values from a character data string.
- * Used when loading objects from database.
- */
-bool Object::LoadValues(const char* data)
-{
-    if (!m_uint32Values)
-    {
-        _InitValues();
-    }
-
-    Tokens tokens = StrSplit(data, " ");
-
-    if (tokens.size() != m_valuesCount)
-    {
-        return false;
-    }
-
-    Tokens::iterator iter;
-    int index;
-    for (iter = tokens.begin(), index = 0; index < m_valuesCount; ++iter, ++index)
-    {
-        m_uint32Values[index] = std::strtoul((*iter).c_str(), NULL, 10);
-    }
-
-    return true;
-}

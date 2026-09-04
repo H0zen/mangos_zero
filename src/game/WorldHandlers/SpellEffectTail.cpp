@@ -110,7 +110,7 @@ void Spell::EffectDispelMechanic(SpellEffectIndex eff_idx)
  */
 void Spell::EffectSummonDeadPet(SpellEffectIndex /*eff_idx*/)
 {
-    Player* _player = m_caster->ToPlayer();
+    Player* _player = ToPlayer(m_caster);
 
     if (!_player || damage < 0)
     {

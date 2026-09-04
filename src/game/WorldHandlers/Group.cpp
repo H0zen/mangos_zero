@@ -1349,7 +1349,7 @@ void Group::CountTheRoll(Rolls::iterator& rollI)
                             Item* newitem = player->StoreNewItem(dest, roll->itemid, true, item->randomPropertyId);
                             player->SendNewItem(newitem, uint32(item->count), false, false, true);
 
-                            if (Creature* creature = object->ToCreature())
+                            if (Creature* creature = ToCreature(object))
                             {
                                 /// If creature has been fully looted, remove flag.
                                 if (creature->loot.isLooted())
@@ -1412,7 +1412,7 @@ void Group::CountTheRoll(Rolls::iterator& rollI)
                             --roll->getLoot()->unlootedCount;
                             Item* newitem = player->StoreNewItem(dest, roll->itemid, true, item->randomPropertyId);
                             player->SendNewItem(newitem, uint32(item->count), false, false, true);
-                            if (Creature* creature = object->ToCreature())
+                            if (Creature* creature = ToCreature(object))
                             {
                                 /// If creature has been fully looted, remove flag.
                                 if (creature->loot.isLooted())

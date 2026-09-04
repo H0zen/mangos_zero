@@ -620,7 +620,7 @@ struct spell_banner_of_provocation : public SpellScript
     {
         if (uiSpellId == SPELL_SUMMON_THELRIN_DND && uiEffIndex == EFFECT_INDEX_1)
         {
-            InstanceData* pInstance = pCreatureTarget->ToCreature()->GetInstanceData();
+            InstanceData* pInstance = ToCreature(pCreatureTarget)->GetInstanceData();
             if (pInstance && pInstance->GetData(TYPE_RING_OF_LAW) != DONE && pInstance->GetData(TYPE_RING_OF_LAW) != SPECIAL)
             {
                 pInstance->SetData(TYPE_RING_OF_LAW, pInstance->GetData(TYPE_RING_OF_LAW) == IN_PROGRESS ? uint32(SPECIAL) : uint32(DATA_BANNER_BEFORE_EVENT));

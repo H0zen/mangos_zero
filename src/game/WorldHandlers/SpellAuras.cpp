@@ -2085,7 +2085,7 @@ void Aura::PeriodicTick()
             // Setting the rage decay rate to the value of the spell/aura. Currently only works on players.
             if (powerType == POWER_RAGE)
             {
-                target->ToPlayer()->m_rageDecayMultiplier = m_modifier.m_amount;
+                ToPlayer(target)->m_rageDecayMultiplier = m_modifier.m_amount;
             }
             break;
         }
@@ -2976,7 +2976,7 @@ void SpellAuraHolder::Update(uint32 diff)
 
     if (m_isHeartbeatSubject && m_duration)
     {
-        if (HeartbeatResist(diff)) //m_duration, GetCaster()->ToPlayer(), GetTarget()->ToPlayer() all available within AuraHolder instance
+        if (HeartbeatResist(diff)) //m_duration, ToPlayer(GetCaster()), ToPlayer(GetTarget()) all available within AuraHolder instance
         {
             if (diff >= 1 * IN_MILLISECONDS || urand(1, 1 * IN_MILLISECONDS) < diff)
             {

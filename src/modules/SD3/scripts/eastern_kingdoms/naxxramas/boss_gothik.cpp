@@ -444,7 +444,7 @@ struct spell_anchor : public SpellScript
             return true;
         }
 
-        ScriptedInstance* pInstance = (ScriptedInstance*)pCreatureTarget->ToCreature()->GetInstanceData();
+        ScriptedInstance* pInstance = static_cast<ScriptedInstance*>(ToCreature(pCreatureTarget)->GetInstanceData());
 
         if (!pInstance)
         {

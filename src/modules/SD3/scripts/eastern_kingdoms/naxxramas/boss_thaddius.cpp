@@ -300,23 +300,23 @@ struct spell_thaddius_encounter : public SpellScript
                 if (uiEffIndex == EFFECT_INDEX_0)
                 {
                     // Only do something to Thaddius, and on the first hit.
-                    if (pCreatureTarget->GetEntry() != NPC_THADDIUS || !pCreatureTarget->ToCreature()->HasAura(SPELL_THADIUS_SPAWN))
+                    if (pCreatureTarget->GetEntry() != NPC_THADDIUS || !ToCreature(pCreatureTarget)->HasAura(SPELL_THADIUS_SPAWN))
                     {
                         return true;
                     }
                     // remove Stun and then Cast
-                    pCreatureTarget->ToCreature()->RemoveAuras(SPELL_THADIUS_SPAWN);
-                    pCreatureTarget->ToCreature()->CastSpell(pCreatureTarget->ToCreature(), SPELL_THADIUS_LIGHTNING_VISUAL, false);
+                    ToCreature(pCreatureTarget)->RemoveAuras(SPELL_THADIUS_SPAWN);
+                    ToCreature(pCreatureTarget)->CastSpell(ToCreature(pCreatureTarget), SPELL_THADIUS_LIGHTNING_VISUAL, false);
                 }
                 return true;
             case SPELL_THADIUS_LIGHTNING_VISUAL:
                 if (uiEffIndex == EFFECT_INDEX_0 && pCreatureTarget->GetEntry() == NPC_THADDIUS)
                 {
-                    if (ScriptedInstance* pInstance = (ScriptedInstance*)pCreatureTarget->ToCreature()->GetInstanceData())
+                    if (ScriptedInstance* pInstance = static_cast<ScriptedInstance*>(ToCreature(pCreatureTarget)->GetInstanceData()))
                     {
                         if (Player* pPlayer = pInstance->GetPlayerInMap(true, false))
                         {
-                            pCreatureTarget->ToCreature()->AI()->AttackStart(pPlayer);
+                            ToCreature(pCreatureTarget)->AI()->AttackStart(pPlayer);
                         }
                     }
                 }

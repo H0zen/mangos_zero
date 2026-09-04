@@ -563,7 +563,7 @@ struct boss_cthun : public CreatureScript
         {
             if (eventType == AI_EVENT_CUSTOM_A && pSender == m_creature)
             {
-                DoRemovePlayerFromStomach(pInvoker->ToPlayer());
+                DoRemovePlayerFromStomach(ToPlayer(pInvoker));
             }
         }
 

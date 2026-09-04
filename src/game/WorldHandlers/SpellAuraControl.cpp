@@ -360,7 +360,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
                 }
             }
         }
-        else if (Player *plTarget = target->ToPlayer())
+        else if (Player *plTarget = ToPlayer(target))
         {
             plTarget->SetClientControl(plTarget, 0);
         }
@@ -374,7 +374,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
     {
         target->SetCharmerGuid(ObjectGuid());
 
-        if (Player *plTarget = target->ToPlayer())
+        if (Player *plTarget = ToPlayer(target))
         {
             plTarget->SetClientControl(plTarget, 1);
             plTarget->setFactionForRace(target->getRace());

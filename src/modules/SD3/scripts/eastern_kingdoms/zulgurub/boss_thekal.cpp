@@ -791,7 +791,7 @@ struct spell_thekal_resurrection : public SpellScript
 
     bool EffectDummy(Unit* /*pCaster*/, uint32 uiSpellId, SpellEffectIndex uiEffIndex, Object* pTarget, ObjectGuid /*originalCasterGuid*/) override
     {
-        if (Creature* pCreatureTarget = pTarget->ToCreature())
+        if (Creature* pCreatureTarget = ToCreature(pTarget))
         {
             // always check spellid and effectindex
             if (uiSpellId == SPELL_RESURRECT && uiEffIndex == EFFECT_INDEX_0)

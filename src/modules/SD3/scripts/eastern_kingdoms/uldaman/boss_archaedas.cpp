@@ -239,9 +239,9 @@ struct spell_npc_vault_warder : public SpellScript
         {
             if (pCreatureTarget->GetEntry() == NPC_VAULT_WARDER)
             {
-                pCreatureTarget->ToCreature()->RemoveAuras(SPELL_STONED);
+                ToCreature(pCreatureTarget)->RemoveAuras(SPELL_STONED);
 
-                ScriptedInstance* pInstance = (ScriptedInstance*)pCreatureTarget->ToCreature()->GetInstanceData();
+                ScriptedInstance* pInstance = static_cast<ScriptedInstance*>(ToCreature(pCreatureTarget)->GetInstanceData());
                 if (!pInstance)
                 {
                     return true;
@@ -249,7 +249,7 @@ struct spell_npc_vault_warder : public SpellScript
 
                 if (Creature* pArchaedas = pInstance->GetSingleCreatureFromStorage(NPC_ARCHAEDAS))
                 {
-                    pCreatureTarget->ToCreature()->AI()->AttackStart(pArchaedas->getVictim());
+                    ToCreature(pCreatureTarget)->AI()->AttackStart(pArchaedas->getVictim());
                 }
 
                 return true;
