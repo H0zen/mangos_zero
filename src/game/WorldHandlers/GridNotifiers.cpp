@@ -163,38 +163,33 @@ void VisibleNotifier::Notify()
 }
 
 /**
- * @brief Delivers a packet to cameras in range of the source player.
+ * @brief Hands a packet to every viewer the reach admits.
  *
  * @param m The camera map to visit.
  */
-void MessageDeliverer::Visit(CameraMapType& m)
+void PacketDeliverer::Visit(CameraMapType& m)
 {
+    Player const* subjectPlayer = ToPlayer(i_reach.subject);
+
     for (CameraMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
     {
-        Player* owner = iter->getSource()->GetOwner();
+        Camera* camera = iter->getSource();
+        Player* owner = camera->GetOwner();
 
-        if (i_toSelf || owner != &i_player)
+        if (owner == i_reach.skip)
         {
-            if (WorldSession* session = owner->GetSession())
-            {
-                session->SendPacket(i_message);
-            }
+            continue;
         }
-    }
-}
 
-/**
- * @brief Delivers a packet to nearby cameras except one skipped receiver.
- *
- * @param m The camera map to visit.
- */
-void MessageDelivererExcept::Visit(CameraMapType& m)
-{
-    for (CameraMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
-    {
-        Player* owner = iter->getSource()->GetOwner();
+        if (i_reach.ownTeamOnly && subjectPlayer && owner->GetTeam() != subjectPlayer->GetTeam())
+        {
+            continue;
+        }
 
-        if (owner == i_skipped_receiver)
+        // The distance is to what the viewer is looking through, which is not
+        // always where the viewer stands.
+        if (i_reach.dist > 0.0f
+            && !camera->GetBody()->Where().WithinDist(i_reach.subject->Where(), i_reach.dist))
         {
             continue;
         }
@@ -202,64 +197,6 @@ void MessageDelivererExcept::Visit(CameraMapType& m)
         if (WorldSession* session = owner->GetSession())
         {
             session->SendPacket(i_message);
-        }
-    }
-}
-
-/**
- * @brief Delivers an object-scoped packet to all camera owners in the visited set.
- *
- * @param m The camera map to visit.
- */
-void ObjectMessageDeliverer::Visit(CameraMapType& m)
-{
-    for (CameraMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
-    {
-        if (WorldSession* session = iter->getSource()->GetOwner()->GetSession())
-        {
-            session->SendPacket(i_message);
-        }
-    }
-}
-
-/**
- * @brief Delivers a packet to nearby cameras within an optional distance filter.
- *
- * @param m The camera map to visit.
- */
-void MessageDistDeliverer::Visit(CameraMapType& m)
-{
-    for (CameraMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
-    {
-        Player* owner = iter->getSource()->GetOwner();
-
-        if ((i_toSelf || owner != &i_player) &&
-            (!i_ownTeamOnly || owner->GetTeam() == i_player.GetTeam()) &&
-            (!i_dist || iter->getSource()->GetBody()->Where().WithinDist(i_player.Where(), i_dist)))
-        {
-            if (WorldSession* session = owner->GetSession())
-            {
-                session->SendPacket(i_message);
-            }
-        }
-    }
-}
-
-/**
- * @brief Delivers an object-scoped packet to cameras within an optional distance filter.
- *
- * @param m The camera map to visit.
- */
-void ObjectMessageDistDeliverer::Visit(CameraMapType& m)
-{
-    for (CameraMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
-    {
-        if (!i_dist || iter->getSource()->GetBody()->Where().WithinDist(i_object.Where(), i_dist))
-        {
-            if (WorldSession* session = iter->getSource()->GetOwner()->GetSession())
-            {
-                session->SendPacket(i_message);
-            }
         }
     }
 }

@@ -2447,7 +2447,7 @@ void Creature::SendAIReaction(AiReaction reactionType)
     data << GetObjectGuid();
     data << uint32(reactionType);
 
-    ((WorldObject*)this)->SendMessageToSet(&data, true);
+    Broadcast(*this, &data, true);
 
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "WORLD: Sent SMSG_AI_REACTION, type %u.", reactionType);
 }

@@ -26,11 +26,10 @@
 /**
  * Who may be told what, and what the value looks like when they are told.
  *
- * This is the one place that is allowed to know every kind of object at once.
- * It exists so that the base class does not: the serializer used to reach down
- * into Creature, GameObject and Player from inside Object, which made the root
- * of the hierarchy depend on its own leaves and, in one case, mutate a creature
- * from a const packet builder.
+ * This is the one place that is allowed to know every kind of object at once,
+ * so that the serializer in Object needs to know none of them. Nothing here
+ * writes: a projection answers what a value looks like to one observer, and
+ * leaves the object as it found it.
  */
 
 #include "FieldTable.h"

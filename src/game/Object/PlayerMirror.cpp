@@ -158,7 +158,7 @@ uint32 Player::EnvironmentalDamage(EnvironmentalDamageType type, uint32 damage)
     data << uint32(damage);
     data << uint32(absorb);
     data << uint32(resist);
-    SendMessageToSet(&data, true);
+    Broadcast(*this, &data, true);
 
     DamageEffectType damageType = SELF_DAMAGE;
     if (type == DAMAGE_FALL && getClass() == CLASS_ROGUE)

@@ -444,7 +444,7 @@ void Unit::SendMeleeAttackStart(Unit* pVictim)
     data << GetObjectGuid();
     data << pVictim->GetObjectGuid();
 
-    SendMessageToSet(&data, true);
+    Broadcast(*this, &data, true);
     DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "WORLD: Sent SMSG_ATTACKSTART: %s -> %s", GetGuidStr().c_str(), pVictim->GetGuidStr().c_str());
 }
 
@@ -464,7 +464,7 @@ void Unit::SendMeleeAttackStop(Unit* victim)
     data << GetPackGUID();
     data << victim->GetPackGUID();                          // can be 0x00...
     data << uint32(0);                                      // can be 0x1
-    SendMessageToSet(&data, true);
+    Broadcast(*this, &data, true);
     DETAIL_FILTER_LOG(LOG_FILTER_COMBAT, "%s %u stopped attacking %s %u", (GetTypeId() == TYPEID_PLAYER ? "player" : "creature"), GetGUIDLow(), (victim->GetTypeId() == TYPEID_PLAYER ? "player" : "creature"), victim->GetGUIDLow());
 
     /*if (victim->GetTypeId() == TYPEID_UNIT)

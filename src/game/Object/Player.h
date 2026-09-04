@@ -2781,13 +2781,10 @@ class Player : public Unit
         void UpdateUnderwaterState(Map* m, float x, float y, float z);
 
         // Send a message to the set of players
-        void SendMessageToSet(WorldPacket* data, bool self) const override;
 
         // Send a message to the set of players within a range
-        void SendMessageToSetInRange(WorldPacket* data, float dist, bool self) const override;
 
         // Send a message to the set of players within a range, with an option for own team only
-        void SendMessageToSetInRange(WorldPacket* data, float dist, bool self, bool own_team_only) const;
 
         // Get the player's corpse
         Corpse* GetCorpse() const;

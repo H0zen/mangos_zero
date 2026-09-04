@@ -37,8 +37,8 @@
  * in some way, and you can find what functions handle what opcode in the implementation of
  * \ref Opcodes::BuildOpcodeList
  *
- * To send messages the following functions can be used: \ref WorldObject::SendMessageToSet,
- * \ref WorldObject::SendMessageToSetExcept, \ref WorldObject::SendMessageToSetInRange
+ * To send messages the following functions can be used: \ref Broadcast,
+ * \ref BroadcastExcept, \ref BroadcastWithin
  *
  * \see WorldPacket
  * \todo Replace the Pack GUID part with a packed GUID, ie: it's shorter than usual?
@@ -1001,9 +1001,9 @@ enum OpcodesList
  * To not create this packet and send it all the time you need it you can use
  * \ref Unit::SendPeriodicAuraLog
  *
- * Also, this should be sent with \ref Object::SendMessageToSet so that all nearby (in
+ * Also, this should be sent with \ref Broadcast so that all nearby (in
  * the same \ref Cell) \ref Player s get the information. To do this with an \ref Aura
- * one could use \ref Aura::GetTarget and then use the \ref Unit::SendMessageToSet
+ * one could use \ref Aura::GetTarget and then use the \ref Broadcast
  * \todo Is it actually for the combat log?
  * \todo Is it in the same \ref Cell?
  * \todo What is the count that is sent as a uint32?
@@ -1033,7 +1033,7 @@ enum OpcodesList
  * To not create this packet and send it all the time you need it you can use
  * \ref Unit::SendSpellNonMeleeDamageLog
  *
- * Also, this should be sent with \ref Object::SendMessageToSet so that all nearby (in
+ * Also, this should be sent with \ref Broadcast so that all nearby (in
  * the same \ref Cell) \ref Player s get the information.
  * \todo Is it actually for the combat log?
  * \todo Is it in the same \ref Cell?
@@ -1051,7 +1051,7 @@ enum OpcodesList
  *
  * To not create this packet and send it all the time you need it you can use
  * \ref Unit::SendEnergizeSpellLog
- * Also, this should be sent with \ref Object::SendMessageToSet so that all nearby (in
+ * Also, this should be sent with \ref Broadcast so that all nearby (in
  * the same \ref Cell) \ref Player s get the information.
  * \todo Is it actually for the combat log?
  * \todo Is it in the same \ref Cell?
@@ -1070,7 +1070,7 @@ enum OpcodesList
  *
  * To not create this packet and send it all the time you need it you can use
  * \ref Unit::SendHealSpellLog
- * Also, this should be sent with \ref Object::SendMessageToSet so that all nearby (in
+ * Also, this should be sent with \ref Broadcast so that all nearby (in
  * the same \ref Cell) \ref Player s get the information.
  * \todo Is it actually for the combat log?
  * \todo Is it in the same \ref Cell?
@@ -1100,7 +1100,7 @@ enum OpcodesList
  * - The blocked amount as a \ref uint32 (see \ref CalcDamageInfo::blocked_amount) this is
  * normally \ref HitInfo::HITINFO_NOACTION according to comments in \ref Unit::SendAttackStateUpdate
  *
- * It appears this should also be sent with \ref Object::SendMessageToSet to that all nearby (in
+ * It appears this should also be sent with \ref Broadcast to that all nearby (in
  * the same \ref Cell) \ref Player s can get take part of the info
  * \see VictimState
  * \todo Is this correct? Is it really about a recent hit?

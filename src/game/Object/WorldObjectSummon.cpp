@@ -538,7 +538,7 @@ void WorldObject::PlayDistanceSound(uint32 sound_id, Player const* target /*= NU
     }
     else
     {
-        SendMessageToSet(&data, true);
+        Broadcast(*this, &data, true);
     }
 }
 
@@ -558,7 +558,7 @@ void WorldObject::PlayDirectSound(uint32 sound_id, Player const* target /*= NULL
     }
     else
     {
-        SendMessageToSet(&data, true);
+        Broadcast(*this, &data, true);
     }
 }
 
@@ -578,7 +578,7 @@ void WorldObject::PlayMusic(uint32 sound_id, Player const* target /*= NULL*/) co
     }
     else
     {
-        SendMessageToSet(&data, true);
+        Broadcast(*this, &data, true);
     }
 }
 

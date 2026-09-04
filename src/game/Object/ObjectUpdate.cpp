@@ -306,23 +306,15 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const
     if (updateFlags & UPDATEFLAG_LIVING)
     {
         MANGOS_ASSERT(unit);
-        // Ask the spline, not the unit states.
+        // Ask the spline, not the unit states: a unit state says whether some generator
+        // declared itself moving, which is a different question from whether a spline is
+        // running.
         //
-        // This used to test IsStopped(), which is !hasUnitState(UNIT_STAT_MOVING) — a
-        // question about whether some generator has declared itself moving, not about
-        // whether a spline is running. HomeMovementGenerator declared nothing, so every
-        // healthy evade-return answered "stopped" and tripped this: 151 times in a single
-        // evening, against creatures whose splines were perfectly live.
-        //
-        // Worse, it then STRIPPED the flags. A packet builder was reaching into unit
-        // movement state and turning off a spline that was still running, so an observer
-        // entering visibility mid-return was handed a creature with no movement to draw
-        // while everyone already watching had been told it was moving.
-        //
-        // The real defect this was meant to catch is a flag that outlived its spline, so
-        // that is what it now asks. It reports and does not touch anything; with the
-        // reconciliation in Unit::UpdateSplineMovement it should never fire at all, which
-        // is the point of leaving it here.
+        // The defect worth catching is a movement flag that outlived its spline. This
+        // reports one and touches nothing -- a packet builder must not reach into unit
+        // movement state, or an observer entering visibility gets a creature with no
+        // movement to draw while everyone already watching was told it is moving. With
+        // the reconciliation in Unit::UpdateSplineMovement it should never fire at all.
         if (unit->movespline->Finalized() && unit->m_movementInfo.HasMovementFlag(MOVEFLAG_SPLINE_ENABLED))
         {
             sLog.outError("%s has spline movement enabled but its spline is finalized!", GetGuidStr().c_str());

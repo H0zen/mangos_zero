@@ -29,6 +29,7 @@
 #include <set>
 #include <list>
 #include "UpdateData.h"
+#include "PacketReach.h"
 
 #include "Corpse.h"
 #include "Object.h"
@@ -70,56 +71,15 @@ namespace MaNGOS
         void Visit(CameraMapType&);
     };
 
-    struct MessageDeliverer
-    {
-        Player const& i_player;
-        WorldPacket* i_message;
-        bool i_toSelf;
-        MessageDeliverer(Player const& pl, WorldPacket* msg, bool to_self) : i_player(pl), i_message(msg), i_toSelf(to_self) {}
-        void Visit(CameraMapType& m);
-        template<class SKIP> void Visit(GridRefManager<SKIP>&) {}
-    };
-
-    struct MessageDelivererExcept
-    {
-        WorldPacket*  i_message;
-        Player const* i_skipped_receiver;
-
-        MessageDelivererExcept(WorldPacket* msg, Player const* skipped)
-            : i_message(msg), i_skipped_receiver(skipped) {}
-
-        void Visit(CameraMapType& m);
-        template<class SKIP> void Visit(GridRefManager<SKIP>&) {}
-    };
-
-    struct ObjectMessageDeliverer
+    /// Hands a packet to every viewer the reach admits.
+    struct PacketDeliverer
     {
         WorldPacket* i_message;
-        explicit ObjectMessageDeliverer(WorldPacket* msg) : i_message(msg) {}
-        void Visit(CameraMapType& m);
-        template<class SKIP> void Visit(GridRefManager<SKIP>&) {}
-    };
+        PacketReach  i_reach;
 
-    struct MessageDistDeliverer
-    {
-        Player const& i_player;
-        WorldPacket* i_message;
-        bool i_toSelf;
-        bool i_ownTeamOnly;
-        float i_dist;
+        PacketDeliverer(WorldPacket* msg, PacketReach const& reach)
+            : i_message(msg), i_reach(reach) {}
 
-        MessageDistDeliverer(Player const& pl, WorldPacket* msg, float dist, bool to_self, bool ownTeamOnly)
-            : i_player(pl), i_message(msg), i_toSelf(to_self), i_ownTeamOnly(ownTeamOnly), i_dist(dist) {}
-        void Visit(CameraMapType& m);
-        template<class SKIP> void Visit(GridRefManager<SKIP>&) {}
-    };
-
-    struct ObjectMessageDistDeliverer
-    {
-        WorldObject const& i_object;
-        WorldPacket* i_message;
-        float i_dist;
-        ObjectMessageDistDeliverer(WorldObject const& obj, WorldPacket* msg, float dist) : i_object(obj), i_message(msg), i_dist(dist) {}
         void Visit(CameraMapType& m);
         template<class SKIP> void Visit(GridRefManager<SKIP>&) {}
     };

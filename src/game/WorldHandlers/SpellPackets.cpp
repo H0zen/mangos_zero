@@ -187,7 +187,7 @@ void Spell::SendSpellStart()
         WriteAmmoToPacket(&data);
     }
 
-    m_caster->SendMessageToSet(&data, true);
+    Broadcast(*m_caster, &data, true);
 }
 
 /**
@@ -233,7 +233,7 @@ void Spell::SendSpellGo()
         WriteAmmoToPacket(&data);
     }
 
-    m_caster->SendMessageToSet(&data, true);
+    Broadcast(*m_caster, &data, true);
 }
 
 /**
@@ -455,7 +455,7 @@ void Spell::SendLogExecute()
     }
     data.put<uint32>(efcount_pos, effectCount);
 
-    m_caster->SendMessageToSet(&data, true);
+    Broadcast(*m_caster, &data, true);
 }
 
 /**
@@ -481,11 +481,11 @@ void Spell::SendInterrupted(SpellCastResult result)
     data << m_spellInfo->ID;
     if (casterPlayer)
     {
-        casterPlayer->SendMessageToSetExcept(&data, casterPlayer);
+        BroadcastExcept(*casterPlayer, &data, casterPlayer);
     }
     else
     {
-        m_caster->SendMessageToSet(&data, true);
+        Broadcast(*m_caster, &data, true);
     }
 }
 

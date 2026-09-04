@@ -244,7 +244,7 @@ void Unit::SetSpeedRate(UnitMoveType mtype, float rate, bool forced)
         WorldPacket data(speedOpcodes[1], 12);
         data << GetPackGUID();
         data << float(GetSpeed(mtype));
-        SendMessageToSet(&data, false);
+        Broadcast(*this, &data, false);
     }
 
     CallForAllControlledUnits(SetSpeedRateHelper(mtype, forced), CONTROLLED_PET | CONTROLLED_GUARDIANS | CONTROLLED_CHARM | CONTROLLED_MINIPET);

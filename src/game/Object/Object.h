@@ -659,9 +659,6 @@ class WorldObject : public Object
 
         virtual void CleanupsBeforeDelete();                // used in destructor or explicitly before mass creature delete to remove cross-references to already deleted units
 
-        virtual void SendMessageToSet(WorldPacket* data, bool self) const;
-        virtual void SendMessageToSetInRange(WorldPacket* data, float dist, bool self) const;
-        void SendMessageToSetExcept(WorldPacket* data, Player const* skipped_receiver) const;
 
         void MonsterSay(const char* text, uint32 language, Unit const* target = NULL) const;
         void MonsterYell(const char* text, uint32 language, Unit const* target = NULL) const;
@@ -772,6 +769,15 @@ class WorldObject : public Object
 // world membership is game state, line of sight is a terrain question, and a map's
 // coordinate bounds belong to the map. Each asks the placement for the geometry and adds
 // only what the placement must not know.
+// Delivering a packet to the people who can see something. The map owns the
+// cells and the cameras, so it answers who; these add what the map must not
+// know -- the relay across a vessel's map boundary, and the subject's own
+// client when the subject has one.
+void Broadcast(WorldObject const& from, WorldPacket* data, bool toSubject);
+void BroadcastWithin(WorldObject const& from, WorldPacket* data, float dist,
+                     bool toSubject, bool ownTeamOnly = false);
+void BroadcastExcept(WorldObject const& from, WorldPacket* data, Player const* skip);
+
 /// Can A reach B -- a common frame is required. Melee, spells, threat, aggro.
 bool CanInteract(WorldObject const& a, WorldObject const& b);
 

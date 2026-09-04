@@ -239,7 +239,7 @@ void Spell::EffectDispel(SpellEffectIndex eff_idx)
                 //data << uint8(0);                           // [-ZERO] 0 - dispelled !=0 cleansed
                 unitTarget->RemoveStacks(dispelledHolder->GetId(), j->second, dispelledHolder->GetCasterGuid(), AURA_REMOVE_BY_DISPEL);
             }
-            m_caster->SendMessageToSet(&data, true);
+            Broadcast(*m_caster, &data, true);
 
             // On success dispel
             // Devour Magic
@@ -274,7 +274,7 @@ void Spell::EffectDispel(SpellEffectIndex eff_idx)
             {
                 data << uint32(*j);                          // Spell Id
             }
-            m_caster->SendMessageToSet(&data, true);
+            Broadcast(*m_caster, &data, true);
         }
     }
 }

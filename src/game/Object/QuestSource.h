@@ -34,12 +34,10 @@ class WorldObject;
 /**
  * Handing out quests, and rolling for loot.
  *
- * Neither is a property of "an object". Both used to be virtual on the root of
- * the hierarchy, answering false or doing nothing for the five kinds that have
- * no business with them, so that the two or three kinds that do could override.
- * A base class that declares what its leaves might one day want is the same
- * inversion the field serializer had, and it has the same cure: ask here, and
- * let this decide which kind it is talking to.
+ * Neither is a property of "an object": a creature and a gameobject give and
+ * take quests, an item starts one, and nothing else has anything to say. Ask
+ * here and let this decide which kind it is talking to, so that the roots of
+ * the hierarchy declare nothing on behalf of two of their leaves.
  */
 
 /// Does this object offer the quest -- a questgiver, a gameobject, or an item

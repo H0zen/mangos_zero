@@ -85,7 +85,7 @@ void WorldObject::MonsterSay(const char* text, uint32 /*language*/, Unit const* 
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, CHAT_MSG_MONSTER_SAY, text, LANG_UNIVERSAL, CHAT_TAG_NONE, GetObjectGuid(), GetName(),
         target ? target->GetObjectGuid() : ObjectGuid(), target ? target->GetName() : "");
-    SendMessageToSetInRange(&data, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_SAY), true);
+    BroadcastWithin(*this, &data, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_SAY), true);
 }
 
 /**
@@ -101,7 +101,7 @@ void WorldObject::MonsterYell(const char* text, uint32 /*language*/, Unit const*
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, CHAT_MSG_MONSTER_YELL, text, LANG_UNIVERSAL, CHAT_TAG_NONE, GetObjectGuid(), GetName(),
         target ? target->GetObjectGuid() : ObjectGuid(), target ? target->GetName() : "");
-    SendMessageToSetInRange(&data, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_YELL), true);
+    BroadcastWithin(*this, &data, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_YELL), true);
 }
 
 /**
@@ -117,7 +117,7 @@ void WorldObject::MonsterTextEmote(const char* text, Unit const* target, bool Is
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, IsBossEmote ? CHAT_MSG_RAID_BOSS_EMOTE : CHAT_MSG_MONSTER_EMOTE, text, LANG_UNIVERSAL, CHAT_TAG_NONE, GetObjectGuid(), GetName(),
         target ? target->GetObjectGuid() : ObjectGuid(), target ? target->GetName() : "");
-    SendMessageToSetInRange(&data, sWorld.getConfig(IsBossEmote ? CONFIG_FLOAT_LISTEN_RANGE_YELL : CONFIG_FLOAT_LISTEN_RANGE_TEXTEMOTE), true);
+    BroadcastWithin(*this, &data, sWorld.getConfig(IsBossEmote ? CONFIG_FLOAT_LISTEN_RANGE_YELL : CONFIG_FLOAT_LISTEN_RANGE_TEXTEMOTE), true);
 }
 
 /**
@@ -276,108 +276,137 @@ void WorldObject::MonsterText(MangosStringLocale const* textData, Unit const* ta
 }
 
 /**
- * @brief Broadcasts a packet to all players in the object's visibility set.
+ * @brief Delivers a packet to the sessions that can see an object.
  *
+ * @param from The object the packet is about.
  * @param data The packet to send.
- * @param bToSelf Unused self-delivery flag.
+ * @param toSubject Also deliver to the subject's own client, if it has one.
  */
-void WorldObject::SendMessageToSet(WorldPacket* data, bool /*bToSelf*/) const
+void Broadcast(WorldObject const& from, WorldPacket* data, bool toSubject)
 {
-    if (!IsInWorld())
+    if (from.IsInWorld())
     {
-        return;
-    }
+        // A boarded unit's audience is EVERYONE ON ITS OWN MAP -- which is the deck, and
+        // which is exactly where the passengers are too. That is the whole point of the
+        // vessel being a map: this reaches the people standing next to him.
+        PacketReach reach;
+        reach.subject = &from;
+        reach.skip = ToPlayer(&from);
+        from.GetMap()->DeliverPacket(data, reach);
 
-    // A boarded unit's audience is EVERYONE ON ITS OWN MAP -- which is the deck, and which
-    // is exactly where the passengers are too. That is the whole point of the vessel being
-    // a map: the ordinary broadcast below already reaches the people standing next to him.
-    GetMap()->MessageBroadcast(this, data);
-
-    // THE RELAY, OUTBOUND. The people ashore are on another map and no cell of theirs will
-    // ever hold this deckhand, so the same packet goes out again to the watchers the vessel
-    // gathered at the top of this tick. Sent immediately: the deck runs INSIDE the tick of
-    // the map it sails, on that map's own thread, so there is nothing to wait for and no
-    // race to avoid. Without this a deckhand walks for his shipmates and stands frozen for
-    // the pier.
-    if (GetMap()->AsTransport())
-    {
-        for (Player* observer : GetMap()->ExternalObservers())
+        // THE RELAY, OUTBOUND. The people ashore are on another map and no cell of theirs
+        // will ever hold this deckhand, so the same packet goes out again to the watchers
+        // the vessel gathered at the top of this tick. Sent immediately: the deck runs
+        // INSIDE the tick of the map it sails, on that map's own thread, so there is
+        // nothing to wait for and no race to avoid. Without this a deckhand walks for his
+        // shipmates and stands frozen for the pier.
+        if (from.GetMap()->AsTransport())
         {
-            if (observer && observer->GetSession())
+            for (Player* observer : from.GetMap()->ExternalObservers())
             {
-                observer->GetSession()->SendPacket(data);
+                if (observer && observer->GetSession())
+                {
+                    observer->GetSession()->SendPacket(data);
+                }
             }
         }
-
-        return;
-    }
-
-    // THE RELAY, INBOUND, and it is not filtered by anything. Whatever happens on the water
-    // a ship is crossing has to reach the people standing on her: they are on another map,
-    // no cell of theirs will ever hold the thing that moved, and a passenger who is told
-    // nothing watches a harbour full of statues.
-    //
-    // No distance test. The one object that could measure it is the vessel, whose pose is an
-    // estimate we already refuse to trust for anything that decides something -- and being
-    // told about a creature too far away costs a packet, while not being told about one in
-    // front of you costs the illusion that the world is running.
-    MapManager::TransportsByMapType::const_iterator vessels =
-        sMapMgr.m_TransportsByMap.find(GetMapId());
-    if (vessels == sMapMgr.m_TransportsByMap.end())
-    {
-        return;
-    }
-
-    for (Transport* vessel : vessels->second)
-    {
-        TransportMap* hull = vessel->AsMap();
-        if (!hull || vessel->GetMap() != GetMap())
+        // THE RELAY, INBOUND, and it is not filtered by anything. Whatever happens on the
+        // water a ship is crossing has to reach the people standing on her: they are on
+        // another map, no cell of theirs will ever hold the thing that moved, and a
+        // passenger who is told nothing watches a harbour full of statues.
+        //
+        // No distance test. The one object that could measure it is the vessel, whose pose
+        // is an estimate we already refuse to trust for anything that decides something --
+        // and being told about a creature too far away costs a packet, while not being told
+        // about one in front of you costs the illusion that the world is running.
+        MapManager::TransportsByMapType::const_iterator vessels =
+            sMapMgr.m_TransportsByMap.find(from.GetMapId());
+        if (!from.GetMap()->AsTransport() && vessels != sMapMgr.m_TransportsByMap.end())
         {
-            continue;
-        }
-
-        Map::PlayerList const& aboard = hull->GetPlayers();
-        for (Map::PlayerList::const_iterator itr = aboard.begin(); itr != aboard.end(); ++itr)
-        {
-            Player* passenger = itr->getSource();
-            if (passenger && passenger->GetSession())
+            for (Transport* vessel : vessels->second)
             {
-                passenger->GetSession()->SendPacket(data);
+                TransportMap* hull = vessel->AsMap();
+                if (!hull || vessel->GetMap() != from.GetMap())
+                {
+                    continue;
+                }
+
+                Map::PlayerList const& aboard = hull->GetPlayers();
+                for (Map::PlayerList::const_iterator itr = aboard.begin(); itr != aboard.end(); ++itr)
+                {
+                    Player* passenger = itr->getSource();
+                    if (passenger && passenger->GetSession())
+                    {
+                        passenger->GetSession()->SendPacket(data);
+                    }
+                }
+            }
+        }
+    }
+
+    if (toSubject)
+    {
+        if (Player const* self = ToPlayer(&from))
+        {
+            if (WorldSession* session = self->GetSession())
+            {
+                session->SendPacket(data);
             }
         }
     }
 }
 
 /**
- * @brief Broadcasts a packet to players within a specified range.
+ * @brief Delivers a packet to the sessions within a distance of an object.
  *
+ * @param from The object the packet is about, and the distance origin.
  * @param data The packet to send.
- * @param dist The broadcast distance.
- * @param bToSelf Unused self-delivery flag.
+ * @param dist The delivery distance.
+ * @param toSubject Also deliver to the subject's own client, if it has one.
+ * @param ownTeamOnly Deliver only to viewers on the subject's side.
  */
-void WorldObject::SendMessageToSetInRange(WorldPacket* data, float dist, bool /*bToSelf*/) const
+void BroadcastWithin(WorldObject const& from, WorldPacket* data, float dist, bool toSubject, bool ownTeamOnly)
 {
-    // if object is in world, map for it already created!
-    if (IsInWorld())
+    if (from.IsInWorld())
     {
-        GetMap()->MessageDistBroadcast(this, data, dist);
+        PacketReach reach;
+        reach.subject = &from;
+        reach.skip = ToPlayer(&from);
+        reach.dist = dist;
+        reach.ownTeamOnly = ownTeamOnly;
+        from.GetMap()->DeliverPacket(data, reach);
+    }
+
+    if (toSubject)
+    {
+        if (Player const* self = ToPlayer(&from))
+        {
+            if (WorldSession* session = self->GetSession())
+            {
+                session->SendPacket(data);
+            }
+        }
     }
 }
 
 /**
- * @brief Broadcasts a packet to visible players except one receiver.
+ * @brief Delivers a packet to the sessions that can see an object, bar one.
  *
+ * @param from The object the packet is about.
  * @param data The packet to send.
- * @param skipped_receiver The player to exclude.
+ * @param skip The viewer to leave out.
  */
-void WorldObject::SendMessageToSetExcept(WorldPacket* data, Player const* skipped_receiver) const
+void BroadcastExcept(WorldObject const& from, WorldPacket* data, Player const* skip)
 {
-    // if object is in world, map for it already created!
-    if (IsInWorld())
+    if (!from.IsInWorld())
     {
-        MaNGOS::MessageDelivererExcept notifier(data, skipped_receiver);
-        Cell::VisitWorldObjects(this, notifier, GetMap()->GetBroadcastRadius());
+        return;
     }
+
+    PacketReach reach;
+    reach.subject = &from;
+    reach.skip = skip;
+    from.GetMap()->DeliverPacket(data, reach);
 }
 
 /**
@@ -389,5 +418,5 @@ void WorldObject::SendObjectDeSpawnAnim(ObjectGuid guid)
 {
     WorldPacket data(SMSG_GAMEOBJECT_DESPAWN_ANIM, 8);
     data << ObjectGuid(guid);
-    SendMessageToSet(&data, true);
+    Broadcast(*this, &data, true);
 }

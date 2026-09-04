@@ -106,7 +106,7 @@ namespace
                         m_player.GetObjectGuid().GetRawValue()) :
                     LoginEffectPackets::BuildGo(
                         m_player.GetObjectGuid().GetRawValue());
-                m_player.SendMessageToSet(&packet, true);
+                Broadcast(m_player, &packet, true);
 
                 if (*phase == LoginEffectPhase::Start)
                 {
@@ -3316,68 +3316,6 @@ void Player::SaveRecallPosition()
 }
 
 /**
- * @brief Broadcasts a packet to nearby clients and optionally to the player.
- *
- * @param data The packet to send.
- * @param self True to also send the packet to the player session.
- */
-void Player::SendMessageToSet(WorldPacket* data, bool self) const
-{
-    if (IsInWorld())
-    {
-        GetMap()->MessageBroadcast(this, data, false);
-    }
-
-    // if player is not in world and map in not created/already destroyed
-    // no need to create one, just send packet for itself!
-    if (self)
-    {
-        GetSession()->SendPacket(data);
-    }
-}
-
-/**
- * @brief Broadcasts a packet to nearby clients within a distance and optionally to the player.
- *
- * @param data The packet to send.
- * @param dist The maximum broadcast distance.
- * @param self True to also send the packet to the player session.
- */
-void Player::SendMessageToSetInRange(WorldPacket* data, float dist, bool self) const
-{
-    if (IsInWorld())
-    {
-        GetMap()->MessageDistBroadcast(this, data, dist, false);
-    }
-
-    if (self)
-    {
-        GetSession()->SendPacket(data);
-    }
-}
-
-/**
- * @brief Broadcasts a packet within range with optional team filtering.
- *
- * @param data The packet to send.
- * @param dist The maximum broadcast distance.
- * @param self True to also send the packet to the player session.
- * @param own_team_only True to restrict delivery to the player's team.
- */
-void Player::SendMessageToSetInRange(WorldPacket* data, float dist, bool self, bool own_team_only) const
-{
-    if (IsInWorld())
-    {
-        GetMap()->MessageDistBroadcast(this, data, dist, false, own_team_only);
-    }
-
-    if (self)
-    {
-        GetSession()->SendPacket(data);
-    }
-}
-
-/**
  * @brief Sends a packet directly to the player's session.
  *
  * @param data The packet to send.
@@ -5570,7 +5508,7 @@ void Player::SendInitialPacketsAfterAddToMap(InitialWorldEntryContext const* ini
     }
 
     /** Sets aura effects that need to be sent after the player is added to the map
-     * We use SendMessageToSet so that it's sent to everyone, including the player
+     * We use Broadcast so that it's sent to everyone, including the player
      * Some auras lose their state on long teleports, we should reapply them in this case also */
     static const AuraType auratypes[] =
     {

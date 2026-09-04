@@ -51,6 +51,7 @@
 
 #pragma once
 
+#include "PacketReach.h"
 #include "Utilities/Errors.h"
 #include <ctime>
 #include <vector>
@@ -218,10 +219,8 @@ class Map : public GridRefManager<NGridType>
         size_t ActiveObjectCount() const { return m_activeNonPlayers.size(); }
         size_t TickSamples() const { return m_tickMs.Count(); }
 
-        void MessageBroadcast(Player const*, WorldPacket*, bool to_self);
-        void MessageBroadcast(WorldObject const*, WorldPacket*);
-        void MessageDistBroadcast(Player const*, WorldPacket*, float dist, bool to_self, bool own_team_only = false);
-        void MessageDistBroadcast(WorldObject const*, WorldPacket*, float dist);
+        /// Hand a packet to the sessions the reach admits around its subject.
+        void DeliverPacket(WorldPacket* msg, PacketReach const& reach);
 
         float GetVisibilityDistance() const { return m_VisibleDistance; }
         // function for setting up visibility distance for maps on per-type/per-Id basis

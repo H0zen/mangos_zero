@@ -81,7 +81,7 @@ void Player::SetRoot(bool enable)
     WorldPacket data(enable ? SMSG_FORCE_MOVE_ROOT : SMSG_FORCE_MOVE_UNROOT, GetPackGUID().size() + 4);
     data << GetPackGUID();
     data << uint32(0);
-    SendMessageToSet(&data, true);
+    Broadcast(*this, &data, true);
 }
 
 /**
@@ -113,12 +113,12 @@ void Player::SetLevitate(bool /*enable*/)
     //
     // data << GetPackGUID();
     // data << uint32(0);                                      // unk
-    // SendMessageToSet(&data, true);
+    // Broadcast(*this, &data, true);
 
     // data.Initialize(MSG_MOVE_GRAVITY_CHNG, 64);
     // data << GetPackGUID();
     // m_movementInfo.Write(data);
-    // SendMessageToSet(&data, false);
+    // Broadcast(*this, &data, false);
 }
 
 /**
@@ -160,7 +160,7 @@ void Player::SetFeatherFall(bool enable)
 
     data << GetPackGUID();
     data << uint32(0);
-    SendMessageToSet(&data, true);
+    Broadcast(*this, &data, true);
 
     // start fall from current height
     if (!enable)
@@ -188,5 +188,5 @@ void Player::SetHover(bool enable)
 
     data << GetPackGUID();
     data << uint32(0);
-    SendMessageToSet(&data, true);
+    Broadcast(*this, &data, true);
 }

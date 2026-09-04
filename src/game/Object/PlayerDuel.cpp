@@ -141,7 +141,7 @@ void Player::DuelComplete(DuelCompleteType type)
         data << (uint8)((type == DUEL_WON) ? 0 : 1);          // 0 = just won; 1 = fled
         data << duel->opponent->GetName();
         data << GetName();
-        SendMessageToSet(&data, true);
+        Broadcast(*this, &data, true);
     }
 
     switch (type)

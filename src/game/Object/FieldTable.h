@@ -36,13 +36,10 @@ class Player;
  *
  * The client carries this as data -- a 20-byte record per field giving its name,
  * width, storage kind and a word of visibility flags -- and replicates it per
- * dword so any raw wire index resolves in one step. The server used to carry
- * none of it and reconstructed pieces by hand at the point of serialization: a
- * list of index ranges to convert from float, and a hand-maintained bitmask of
- * "what other players may see". Both were approximations of this table.
+ * dword so any raw wire index resolves in one step. This is that table.
  *
- * Nothing here is a guess. The table is generated from the client's own records
- * and the generator refuses to run if a single index disagrees with the server's
+ * Nothing here is a guess. It is generated from the client's own records, and
+ * the generator refuses to run if a single index disagrees with the server's
  * enum.
  */
 namespace Fields

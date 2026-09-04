@@ -774,19 +774,23 @@ template<class T>
 }
 
 /**
- * @brief Broadcasts a packet from a player to nearby visible objects.
+ * @brief Hands a packet to the sessions the reach admits.
  *
- * @param player The source player.
  * @param msg The packet to send.
- * @param to_self True to include the source player in the broadcast.
+ * @param reach Whose surroundings, and which viewers are admitted.
  */
-void Map::MessageBroadcast(Player const* player, WorldPacket* msg, bool to_self)
+void Map::DeliverPacket(WorldPacket* msg, PacketReach const& reach)
 {
-    CellPair p = MaNGOS::ComputeCellPair(player->Where().X(), player->Where().Y());
+    MANGOS_ASSERT(reach.subject);
+
+    WorldObject const& subject = *reach.subject;
+    CellPair p = MaNGOS::ComputeCellPair(subject.Where().X(), subject.Where().Y());
 
     if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
     {
-        sLog.outError("Map::MessageBroadcast: Player (GUID: %u) have invalid coordinates X:%f Y:%f grid cell [%u:%u]", player->GetGUIDLow(), player->Where().X(), player->Where().Y(), p.x_coord, p.y_coord);
+        sLog.outError("Map::DeliverPacket: %s has invalid coordinates X:%f Y:%f grid cell [%u:%u]",
+                      subject.GetGuidStr().c_str(), subject.Where().X(), subject.Where().Y(),
+                      p.x_coord, p.y_coord);
         return;
     }
 
@@ -798,102 +802,9 @@ void Map::MessageBroadcast(Player const* player, WorldPacket* msg, bool to_self)
         return;
     }
 
-    MaNGOS::MessageDeliverer post_man(*player, msg, to_self);
-    TypeContainerVisitor<MaNGOS::MessageDeliverer, WorldTypeMapContainer > message(post_man);
-    cell.Visit(p, message, *this, *player, GetBroadcastRadius());
-}
-
-/**
- * @brief Broadcasts a packet from a world object to nearby visible players.
- *
- * @param obj The source world object.
- * @param msg The packet to send.
- */
-void Map::MessageBroadcast(WorldObject const* obj, WorldPacket* msg)
-{
-    CellPair p = MaNGOS::ComputeCellPair(obj->Where().X(), obj->Where().Y());
-
-    if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
-    {
-        sLog.outError("Map::MessageBroadcast: Object (GUID: %u TypeId: %u) have invalid coordinates X:%f Y:%f grid cell [%u:%u]", obj->GetGUIDLow(), obj->GetTypeId(), obj->Where().X(), obj->Where().Y(), p.x_coord, p.y_coord);
-        return;
-    }
-
-    Cell cell(p);
-    cell.SetNoCreate();
-
-    if (!loaded(GridPair(cell.data.Part.grid_x, cell.data.Part.grid_y)))
-    {
-        return;
-    }
-
-    // TODO: currently on continents when Visibility.Distance.InFlight > Visibility.Distance.Continents
-    // we have alot of blinking mobs because monster move packet send is broken...
-    MaNGOS::ObjectMessageDeliverer post_man(msg);
-    TypeContainerVisitor<MaNGOS::ObjectMessageDeliverer, WorldTypeMapContainer > message(post_man);
-    cell.Visit(p, message, *this, *obj, GetBroadcastRadius());
-}
-
-/**
- * @brief Broadcasts a packet from a player to objects within a fixed distance.
- *
- * @param player The source player.
- * @param msg The packet to send.
- * @param dist The broadcast distance.
- * @param to_self True to include the source player in the broadcast.
- * @param own_team_only True to restrict delivery to the player's team.
- */
-void Map::MessageDistBroadcast(Player const* player, WorldPacket* msg, float dist, bool to_self, bool own_team_only)
-{
-    CellPair p = MaNGOS::ComputeCellPair(player->Where().X(), player->Where().Y());
-
-    if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
-    {
-        sLog.outError("Map::MessageBroadcast: Player (GUID: %u) have invalid coordinates X:%f Y:%f grid cell [%u:%u]", player->GetGUIDLow(), player->Where().X(), player->Where().Y(), p.x_coord, p.y_coord);
-        return;
-    }
-
-    Cell cell(p);
-    cell.SetNoCreate();
-
-    if (!loaded(GridPair(cell.data.Part.grid_x, cell.data.Part.grid_y)))
-    {
-        return;
-    }
-
-    MaNGOS::MessageDistDeliverer post_man(*player, msg, dist, to_self, own_team_only);
-    TypeContainerVisitor<MaNGOS::MessageDistDeliverer , WorldTypeMapContainer > message(post_man);
-    cell.Visit(p, message, *this, *player, dist);
-}
-
-/**
- * @brief Broadcasts a packet from a world object to nearby players within a distance limit.
- *
- * @param obj The source world object.
- * @param msg The packet to send.
- * @param dist The broadcast distance.
- */
-void Map::MessageDistBroadcast(WorldObject const* obj, WorldPacket* msg, float dist)
-{
-    CellPair p = MaNGOS::ComputeCellPair(obj->Where().X(), obj->Where().Y());
-
-    if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
-    {
-        sLog.outError("Map::MessageBroadcast: Object (GUID: %u TypeId: %u) have invalid coordinates X:%f Y:%f grid cell [%u:%u]", obj->GetGUIDLow(), obj->GetTypeId(), obj->Where().X(), obj->Where().Y(), p.x_coord, p.y_coord);
-        return;
-    }
-
-    Cell cell(p);
-    cell.SetNoCreate();
-
-    if (!loaded(GridPair(cell.data.Part.grid_x, cell.data.Part.grid_y)))
-    {
-        return;
-    }
-
-    MaNGOS::ObjectMessageDistDeliverer post_man(*obj, msg, dist);
-    TypeContainerVisitor<MaNGOS::ObjectMessageDistDeliverer, WorldTypeMapContainer > message(post_man);
-    cell.Visit(p, message, *this, *obj, dist);
+    MaNGOS::PacketDeliverer post_man(msg, reach);
+    TypeContainerVisitor<MaNGOS::PacketDeliverer, WorldTypeMapContainer> message(post_man);
+    cell.Visit(p, message, *this, subject, reach.dist > 0.0f ? reach.dist : GetBroadcastRadius());
 }
 
 /**
