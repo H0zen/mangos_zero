@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Reaction.h"
 #include "Utterance.h"
 #include "GameObject.h"
 #include "Geometry/Quat.h"
@@ -1109,24 +1110,16 @@ bool GameObject::IsHostileTo(Unit const* unit) const
         return false;
     }
 
-    // GvP forced reaction and reputation case
-    if (unit->GetTypeId() == TYPEID_PLAYER)
+    if (Player const* judged = ToPlayer(unit))
     {
-        if (tester_faction->Faction)
-        {
-            // forced reaction
-            if (ReputationRank const* force = ((Player*)unit)->GetReputationMgr().GetForcedRankIfAny(tester_faction))
-            {
-                return *force <= REP_HOSTILE;
-            }
-
-            // apply reputation state
-            FactionEntry const* raw_tester_faction = sFactionStore.LookupEntry(tester_faction->Faction);
-            if (raw_tester_faction && raw_tester_faction->ReputationIndex >= 0)
-            {
-                return ((Player const*)unit)->GetReputationMgr().GetRank(raw_tester_faction) <= REP_HOSTILE;
-            }
-        }
+        Reaction const verdict = OpinionOf(*judged, tester_faction, false);
+    switch (verdict)
+    {
+        case Reaction::Hostile:   return true;
+        case Reaction::Friendly:
+        case Reaction::Neither:   return false;
+        case Reaction::NoOpinion: break;
+    }
     }
 
     // common faction based case (GvC,GvP)
@@ -1172,26 +1165,16 @@ bool GameObject::IsFriendlyTo(Unit const* unit) const
         return false;
     }
 
-    // GvP forced reaction and reputation case
-    if (unit->GetTypeId() == TYPEID_PLAYER)
+    if (Player const* judged = ToPlayer(unit))
     {
-        if (tester_faction->Faction)
-        {
-            // forced reaction
-            if (ReputationRank const* force = ((Player*)unit)->GetReputationMgr().GetForcedRankIfAny(tester_faction))
-            {
-                return *force >= REP_FRIENDLY;
-            }
-
-            // apply reputation state
-            if (FactionEntry const* raw_tester_faction = sFactionStore.LookupEntry(tester_faction->Faction))
-            {
-                if (raw_tester_faction->ReputationIndex >= 0)
-                {
-                    return ((Player const*)unit)->GetReputationMgr().GetRank(raw_tester_faction) >= REP_FRIENDLY;
-                }
-            }
-        }
+        Reaction const verdict = OpinionOf(*judged, tester_faction, false);
+    switch (verdict)
+    {
+        case Reaction::Friendly:  return true;
+        case Reaction::Hostile:
+        case Reaction::Neither:   return false;
+        case Reaction::NoOpinion: break;
+    }
     }
 
     // common faction based case (GvC,GvP)
