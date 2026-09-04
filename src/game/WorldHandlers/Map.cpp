@@ -43,6 +43,7 @@
  */
 
 #include <cmath>
+#include "PerKind.h"
 #include "Utilities/Errors.h"
 #include <algorithm>
 #include <vector>
@@ -1154,7 +1155,7 @@ template<class T>
         // if option set then object already saved at this moment
         if (!sWorld.getConfig(CONFIG_BOOL_SAVE_RESPAWN_TIME_IMMEDIATELY))
         {
-            obj->SaveRespawnTime();
+            SaveRespawnTime(*obj);
         }
 
         // Note: In case resurrectable corpse and pet its removed from global lists in own destructor

@@ -754,7 +754,7 @@ class GameObject : public WorldObject
         uint32 GetUseCount() const { return m_useTimes; }
         uint32 GetUniqueUseCount() const { return m_UniqueUsers.size(); }
 
-        void SaveRespawnTime() override;
+        void SaveRespawnTime();
 
         // Loot System
         Loot loot;

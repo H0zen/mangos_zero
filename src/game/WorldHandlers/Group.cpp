@@ -62,7 +62,7 @@
 #include "MapManager.h"
 #include "MapPersistentStateMgr.h"
 #include "LootMgr.h"
-#include "QuestSource.h"
+#include "PerKind.h"
 #include "LFGMgr.h"
 #include "LFGHandler.h"
 

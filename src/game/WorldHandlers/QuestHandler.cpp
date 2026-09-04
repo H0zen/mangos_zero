@@ -53,7 +53,7 @@
 #include "Player.h"
 #include "GossipDef.h"
 #include "QuestDef.h"
-#include "QuestSource.h"
+#include "PerKind.h"
 #include "PlayerRegistry.h"
 #include "ScriptMgr.h"
 #include "Group.h"

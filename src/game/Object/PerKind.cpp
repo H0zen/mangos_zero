@@ -20,7 +20,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#include "QuestSource.h"
+#include "PerKind.h"
 
 #include "Object.h"
 #include "Creature.h"
@@ -86,5 +86,17 @@ void StopGroupLoot(WorldObject& holder)
     else if (GameObject* go = ToGameObject(&holder))
     {
         go->StopGroupLoot();
+    }
+}
+
+void SaveRespawnTime(WorldObject& what)
+{
+    if (Creature* creature = ToCreature(&what))
+    {
+        creature->SaveRespawnTime();
+    }
+    else if (GameObject* go = ToGameObject(&what))
+    {
+        go->SaveRespawnTime();
     }
 }

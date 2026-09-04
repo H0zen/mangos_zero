@@ -44,6 +44,7 @@
  * @see ObjectGridRespawnMover for respawn point correction
  */
 
+#include "PerKind.h"
 #include "Utilities/Errors.h"
 #include "ObjectGridLoader.h"
 #include "CorpseManager.h"
@@ -458,7 +459,7 @@ template<class T>
         // if option set then object already saved at this moment
         if (!sWorld.getConfig(CONFIG_BOOL_SAVE_RESPAWN_TIME_IMMEDIATELY))
         {
-            obj->SaveRespawnTime();
+            SaveRespawnTime(*obj);
         }
         ///- object must be out of world before delete
         obj->RemoveFromWorld();

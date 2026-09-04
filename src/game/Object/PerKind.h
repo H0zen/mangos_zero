@@ -32,12 +32,12 @@ class Object;
 class WorldObject;
 
 /**
- * Handing out quests, and rolling for loot.
+ * Questions only some kinds of object answer.
  *
- * Neither is a property of "an object": a creature and a gameobject give and
- * take quests, an item starts one, and nothing else has anything to say. Ask
- * here and let this decide which kind it is talking to, so that the roots of
- * the hierarchy declare nothing on behalf of two of their leaves.
+ * Handing out a quest, rolling for loot, having a respawn time: a creature and
+ * a gameobject do these, an item starts a quest, and nothing else has anything
+ * to say. Ask here and let this decide which kind it is talking to, so that the
+ * roots of the hierarchy declare nothing on behalf of two of their leaves.
  */
 
 /// Does this object offer the quest -- a questgiver, a gameobject, or an item
@@ -50,3 +50,6 @@ bool EndsQuest(Object const& object, uint32 questId);
 /// Begin the group's roll on what this object is holding, and end it.
 void StartGroupLoot(WorldObject& holder, Group* group, uint32 timer);
 void StopGroupLoot(WorldObject& holder);
+
+/// Persist when this object comes back, if it comes back at all.
+void SaveRespawnTime(WorldObject& what);

@@ -667,7 +667,6 @@ class WorldObject : public Object
         virtual bool IsFriendlyTo(Unit const* unit) const = 0;
         virtual bool IsControlledByPlayer() const { return false; }
 
-        virtual void SaveRespawnTime() {}
         void AddObjectToRemoveList();
 
         void UpdateObjectVisibility();
@@ -695,7 +694,6 @@ class WorldObject : public Object
 
 
         bool IsActiveObject() const { return m_isActiveObject || m_viewPoint.hasViewers(); }
-        bool isActiveObject() const { return IsActiveObject(); } // This is for Eluna to build. Should be removed in the future!
 
         void SetActiveObjectState(bool active);
 
