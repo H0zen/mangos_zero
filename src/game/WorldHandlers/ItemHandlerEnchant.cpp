@@ -146,8 +146,8 @@ void WorldSession::HandleWrapItemOpcode(WorldPacket& recv_data)
         return;
     }
 
-    // HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_WRAPPED)
-    if (item->GetGuidValue(ITEM_FIELD_GIFTCREATOR))
+    // HasItemFlag(ITEM_DYNFLAG_WRAPPED)
+    if (item->GetGiftCreatorGuid())
     {
         _player->SendEquipError(EQUIP_ERR_WRAPPED_CANT_BE_WRAPPED, item, NULL);
         return;
@@ -179,7 +179,7 @@ void WorldSession::HandleWrapItemOpcode(WorldPacket& recv_data)
     }
 
     CharacterDatabase.BeginTransaction();
-    CharacterDatabase.PExecute("INSERT INTO `character_gifts` VALUES ('%u', '%u', '%u', '%u')", item->GetOwnerGuid().GetCounter(), item->GetGUIDLow(), item->GetEntry(), item->GetUInt32Value(ITEM_FIELD_FLAGS));
+    CharacterDatabase.PExecute("INSERT INTO `character_gifts` VALUES ('%u', '%u', '%u', '%u')", item->GetOwnerGuid().GetCounter(), item->GetGUIDLow(), item->GetEntry(), item->GetItemFlags());
     item->SetEntry(gift->GetEntry());
 
     switch (item->GetEntry())
@@ -191,8 +191,8 @@ void WorldSession::HandleWrapItemOpcode(WorldPacket& recv_data)
         case 17307: item->SetEntry(17308); break;
         case 21830: item->SetEntry(21831); break;
     }
-    item->SetGuidValue(ITEM_FIELD_GIFTCREATOR, _player->GetObjectGuid());
-    item->SetUInt32Value(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_WRAPPED);
+    item->SetGiftCreatorGuid(_player->GetObjectGuid());
+    item->SetAllItemFlags(ITEM_DYNFLAG_WRAPPED);
     item->SetState(ITEM_CHANGED, _player);
 
     if (item->GetState() == ITEM_NEW)                       // save new item, to have alway for `character_gifts` record in `item_instance`

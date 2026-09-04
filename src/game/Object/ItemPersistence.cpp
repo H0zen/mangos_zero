@@ -142,7 +142,7 @@ void Item::SaveToDB()
 
             stmt.PExecute(SaveFields(0, GetValuesCount()).c_str(), GetOwnerGuid().GetCounter(), m_text.c_str(), guid);
 
-            if (HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_WRAPPED))
+            if (HasItemFlag(ITEM_DYNFLAG_WRAPPED))
             {
                 stmt = CharacterDatabase.CreateStatement(updGifts, "UPDATE `character_gifts` SET `guid` = ? WHERE `item_guid` = ?");
                 stmt.PExecute(GetOwnerGuid().GetCounter(), GetGUIDLow());
@@ -157,7 +157,7 @@ void Item::SaveToDB()
             SqlStatement stmt = CharacterDatabase.CreateStatement(delInst, "DELETE FROM `item_instance` WHERE `guid` = ?");
             stmt.PExecute(guid);
 
-            if (HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_WRAPPED))
+            if (HasItemFlag(ITEM_DYNFLAG_WRAPPED))
             {
                 stmt = CharacterDatabase.CreateStatement(delGifts, "DELETE FROM `character_gifts` WHERE `item_guid` = ?");
                 stmt.PExecute(GetGUIDLow());
@@ -289,7 +289,7 @@ bool Item::LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid)
     // Remove bind flag for items vs NO_BIND set
     if (IsSoulBound() && proto->Bonding == NO_BIND)
     {
-        ApplyModFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BINDED, false);
+        ApplyItemFlag(ITEM_DYNFLAG_BINDED, false);
         need_save = true;
     }
 
@@ -308,12 +308,12 @@ bool Item::LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid)
     }
 
     // set correct wrapped state
-    if (HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_WRAPPED))
+    if (HasItemFlag(ITEM_DYNFLAG_WRAPPED))
     {
         // wrapped item must be wrapper (used version that not stackable)
         if (!(proto->Flags & ITEM_FLAG_WRAPPER) || GetMaxStackCount() > 1)
         {
-            RemoveFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_WRAPPED);
+            RemoveItemFlag(ITEM_DYNFLAG_WRAPPED);
             need_save = true;
 
             static SqlStatementID delGifts ;

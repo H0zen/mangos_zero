@@ -1217,7 +1217,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     lockId = item->GetProto()->LockID;
 
                     // if already unlocked
-                    if (!lockId || item->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_UNLOCKED))
+                    if (!lockId || item->HasItemFlag(ITEM_DYNFLAG_UNLOCKED))
                     {
                         return SPELL_FAILED_ALREADY_OPEN;
                     }

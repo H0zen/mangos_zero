@@ -102,7 +102,7 @@ void Player::CheckAreaExploreAndOutdoor()
 
     if (isOutdoor)
     {
-        if (HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING) && GetRestType() == REST_TYPE_IN_TAVERN)
+        if (HasPlayerFlag(PLAYER_FLAGS_RESTING) && GetRestType() == REST_TYPE_IN_TAVERN)
         {
             AreaTriggerEntry const* at = sAreaTriggerStore.LookupEntry(inn_trigger_id);
             if (!at || !IsPointInAreaTriggerZone(at, GetMapId(), Where().X(), Where().Y(), Where().Z()))
@@ -314,7 +314,7 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea, bool sendInitialWorldSta
     }
     else                                                    // in friendly area
     {
-        if (IsPvP() && !HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_IN_PVP) && pvpInfo.endTimer == 0)
+        if (IsPvP() && !HasPlayerFlag(PLAYER_FLAGS_IN_PVP) && pvpInfo.endTimer == 0)
         {
             pvpInfo.endTimer = time(0); // start toggle-off
         }
@@ -324,7 +324,7 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea, bool sendInitialWorldSta
     {
         SetRestType(REST_TYPE_IN_CITY);
     }
-    else if (HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING) && GetRestType() != REST_TYPE_IN_TAVERN)
+    else if (HasPlayerFlag(PLAYER_FLAGS_RESTING) && GetRestType() != REST_TYPE_IN_TAVERN)
     {
         // resting and not in tavern (leave city then); tavern leave handled in CheckAreaExploreAndOutdoor
         SetRestType(REST_TYPE_NO);

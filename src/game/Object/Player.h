@@ -1196,11 +1196,11 @@ class Player : public Unit
         void ToggleDND(); // Toggle DND status
         bool isAFK() const // Check if the player is AFK
         {
-            return HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_AFK);
+            return HasPlayerFlag(PLAYER_FLAGS_AFK);
         }
         bool isDND() const // Check if the player is DND
         {
-            return HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_DND);
+            return HasPlayerFlag(PLAYER_FLAGS_DND);
         }
         ChatTagFlags GetChatTag() const; // Get the chat tag flags
         std::string autoReplyMsg; // Auto-reply message
@@ -1251,6 +1251,17 @@ class Player : public Unit
 
         // Check if the player is a game master
         bool isGameMaster() const { return m_ExtraFlags & PLAYER_EXTRA_GM_ON; }
+
+        /// What everyone around is told about the player: away, dead, resting,
+        /// in a duel, hiding a helm. Distinct from the unit flags, which say
+        /// what may be done to them.
+        bool HasPlayerFlag(uint32 flag) const { return HasFlag(PLAYER_FLAGS, flag); }
+        void SetPlayerFlag(uint32 flag) { SetFlag(PLAYER_FLAGS, flag); }
+        void RemovePlayerFlag(uint32 flag) { RemoveFlag(PLAYER_FLAGS, flag); }
+        void ApplyPlayerFlag(uint32 flag, bool apply) { ApplyModFlag(PLAYER_FLAGS, flag, apply); }
+        void TogglePlayerFlag(uint32 flag) { ToggleFlag(PLAYER_FLAGS, flag); }
+        uint32 GetPlayerFlags() const { return GetUInt32Value(PLAYER_FLAGS); }
+        void SetAllPlayerFlags(uint32 flags) { SetUInt32Value(PLAYER_FLAGS, flags); }
 
         // Set the game master state
         void SetGameMaster(bool on);
@@ -2481,7 +2492,7 @@ class Player : public Unit
         // Check if the player is in Free-for-All PvP mode
         bool IsFFAPvP() const
         {
-            return HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_FFA_PVP);
+            return HasPlayerFlag(PLAYER_FLAGS_FFA_PVP);
         }
 
         // Set Free-for-All PvP mode
@@ -2518,7 +2529,7 @@ class Player : public Unit
         void ResetContestedPvP()
         {
             clearUnitState(UNIT_STAT_ATTACK_PLAYER);
-            RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_CONTESTED_PVP);
+            RemovePlayerFlag(PLAYER_FLAGS_CONTESTED_PVP);
             m_contestedPvPTimer = 0;
         }
 

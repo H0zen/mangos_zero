@@ -127,11 +127,11 @@ void ScriptedInstance::DoToggleGameObjectFlags(ObjectGuid guid, uint32 uiGOflags
     {
         if (bApply)
         {
-            pGo->SetFlag(GAMEOBJECT_FLAGS, uiGOflags);
+            pGo->SetGoFlag(uiGOflags);
         }
         else
         {
-            pGo->RemoveFlag(GAMEOBJECT_FLAGS, uiGOflags);
+            pGo->RemoveGoFlag(uiGOflags);
         }
     }
 }

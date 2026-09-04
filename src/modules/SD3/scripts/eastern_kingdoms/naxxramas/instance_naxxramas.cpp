@@ -320,25 +320,25 @@ struct is_naxxramas : public InstanceScript
                     case GO_ARAC_PORTAL:
                         if (m_auiEncounter[TYPE_MAEXXNA] == DONE)
                         {
-                            pGo->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
+                            pGo->RemoveGoFlag(GO_FLAG_NO_INTERACT);
                         }
                         break;
                     case GO_PLAG_PORTAL:
                         if (m_auiEncounter[TYPE_LOATHEB] == DONE)
                         {
-                            pGo->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
+                            pGo->RemoveGoFlag(GO_FLAG_NO_INTERACT);
                         }
                         break;
                     case GO_MILI_PORTAL:
                         if (m_auiEncounter[TYPE_FOUR_HORSEMEN] == DONE)
                         {
-                            pGo->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
+                            pGo->RemoveGoFlag(GO_FLAG_NO_INTERACT);
                         }
                         break;
                     case GO_CONS_PORTAL:
                         if (m_auiEncounter[TYPE_THADDIUS] == DONE)
                         {
-                            pGo->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
+                            pGo->RemoveGoFlag(GO_FLAG_NO_INTERACT);
                         }
                         break;
 

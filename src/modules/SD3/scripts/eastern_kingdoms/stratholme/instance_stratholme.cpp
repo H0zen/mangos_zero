@@ -146,7 +146,7 @@ struct is_stratholme : public InstanceScript
                     case GO_GAUNTLET_GATE1:
                         // TODO
                         // weird, but unless flag is set, client will not respond as expected. DB bug?
-                        pGo->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_LOCKED);
+                        pGo->SetGoFlag(GO_FLAG_LOCKED);
                         break;
 
                     case GO_ZIGGURAT_DOOR_1:

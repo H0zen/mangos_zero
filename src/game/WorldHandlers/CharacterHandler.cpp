@@ -870,12 +870,12 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     pCurrChar->LoadPet();
 
     /* If we're running an FFA PvP realm and the player isn't a GM, mark them as PvP flagged */
-    if (sWorld.IsFFAPvPRealm() && !pCurrChar->isGameMaster() && !pCurrChar->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING))
+    if (sWorld.IsFFAPvPRealm() && !pCurrChar->isGameMaster() && !pCurrChar->HasPlayerFlag(PLAYER_FLAGS_RESTING))
     {
         pCurrChar->SetFFAPvP(true);
     }
 
-    if (pCurrChar->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_CONTESTED_PVP))
+    if (pCurrChar->HasPlayerFlag(PLAYER_FLAGS_CONTESTED_PVP))
     {
         pCurrChar->SetContestedPvP();
     }
@@ -1055,7 +1055,7 @@ void WorldSession::HandleSetFactionInactiveOpcode(WorldPacket& recv_data)
 void WorldSession::HandleShowingHelmOpcode(WorldPacket & /*recv_data*/)
 {
     DEBUG_LOG("CMSG_SHOWING_HELM for %s", _player->GetName());
-    _player->ToggleFlag(PLAYER_FLAGS, PLAYER_FLAGS_HIDE_HELM);
+    _player->TogglePlayerFlag(PLAYER_FLAGS_HIDE_HELM);
 }
 
 /**
@@ -1066,5 +1066,5 @@ void WorldSession::HandleShowingHelmOpcode(WorldPacket & /*recv_data*/)
 void WorldSession::HandleShowingCloakOpcode(WorldPacket & /*recv_data*/)
 {
     DEBUG_LOG("CMSG_SHOWING_CLOAK for %s", _player->GetName());
-    _player->ToggleFlag(PLAYER_FLAGS, PLAYER_FLAGS_HIDE_CLOAK);
+    _player->TogglePlayerFlag(PLAYER_FLAGS_HIDE_CLOAK);
 }

@@ -107,6 +107,11 @@ class Corpse : public Presence
 
         ObjectGuid const& GetOwnerGuid() const { return GetGuidValue(CORPSE_FIELD_OWNER); }
 
+        /// Whether the bones still hold something to take.
+        bool HasCorpseDynFlag(uint32 flag) const { return HasFlag(CORPSE_FIELD_DYNAMIC_FLAGS, flag); }
+        void SetCorpseDynFlag(uint32 flag) { SetFlag(CORPSE_FIELD_DYNAMIC_FLAGS, flag); }
+        void RemoveCorpseDynFlag(uint32 flag) { RemoveFlag(CORPSE_FIELD_DYNAMIC_FLAGS, flag); }
+
         time_t const& GetGhostTime() const { return m_time; }
         void ResetGhostTime()
         {

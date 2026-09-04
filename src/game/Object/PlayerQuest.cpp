@@ -1856,7 +1856,7 @@ void Player::GroupEventHappens(uint32 questId, Presence const* pEventObject)
             Player* pGroupGuy = itr->getSource();
 
             // for any leave or dead (with not released body) group member at appropriate distance
-            if (pGroupGuy && pGroupGuy->IsAtGroupRewardDistance(pEventObject) && !pGroupGuy->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
+            if (pGroupGuy && pGroupGuy->IsAtGroupRewardDistance(pEventObject) && !pGroupGuy->HasPlayerFlag(PLAYER_FLAGS_GHOST))
             {
                 pGroupGuy->AreaExploredOrEventHappens(questId);
             }

@@ -93,7 +93,7 @@ struct go_mausoleum_trigger : public GameObjectScript
         if (GameObject* pDoor = GetClosestGameObjectWithEntry(pPlayer, GO_DOOR, 30.0f))
         {
             pGo->SetGoState(GO_STATE_ACTIVE);
-            pDoor->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_INTERACT_COND);
+            pDoor->RemoveGoFlag(GO_FLAG_INTERACT_COND);
             return true;
         }
 

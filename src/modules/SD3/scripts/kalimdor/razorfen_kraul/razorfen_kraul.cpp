@@ -219,7 +219,7 @@ struct npc_snufflenose_gopher : public CreatureScript
                 pGo->SetRespawnTime(5 * MINUTE);
                 pGo->Refresh();
 
-                pGo->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_INTERACT_COND);
+                pGo->RemoveGoFlag(GO_FLAG_INTERACT_COND);
             }
 
             m_bIsMovementActive = false;
@@ -250,7 +250,7 @@ struct npc_snufflenose_gopher : public CreatureScript
             // Always need to find new ones
             for (std::list<GameObject*>::const_iterator itr = lTubbersInRange.begin(); itr != lTubbersInRange.end(); ++itr)
             {
-                if (!(*itr)->isSpawned() && (*itr)->HasFlag(GAMEOBJECT_FLAGS, GO_FLAG_INTERACT_COND) && HasLineOfSight(*(*itr), *m_creature) && (*itr)->Where().HeightGapTo(m_creature->Where()) <= 6.0f)
+                if (!(*itr)->isSpawned() && (*itr)->HasGoFlag(GO_FLAG_INTERACT_COND) && HasLineOfSight(*(*itr), *m_creature) && (*itr)->Where().HeightGapTo(m_creature->Where()) <= 6.0f)
                 {
                     pNearestTubber = *itr;
                     break;

@@ -247,7 +247,7 @@ void WorldSession::HandleSendMail(WorldPacket& recv_data)
             return;
         }
 
-        if (COD && item->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_WRAPPED))
+        if (COD && item->HasItemFlag(ITEM_DYNFLAG_WRAPPED))
         {
             pl->SendMailResult(0, MAIL_SEND, MAIL_ERR_CANT_SEND_WRAPPED_COD);
             return;
@@ -771,7 +771,7 @@ void WorldSession::HandleMailCreateTextItem(WorldPacket& recv_data)
     }
 
     bodyItem->SetUInt32Value(ITEM_FIELD_ITEM_TEXT_ID, mailId);
-    bodyItem->SetGuidValue(ITEM_FIELD_CREATOR, ObjectGuid(HIGHGUID_PLAYER, m->sender));
+    bodyItem->SetCreatorGuid(ObjectGuid(HIGHGUID_PLAYER, m->sender));
 
     DETAIL_LOG("HandleMailCreateTextItem mailid=%u", mailId);
 

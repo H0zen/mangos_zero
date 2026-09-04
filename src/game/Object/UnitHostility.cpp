@@ -138,7 +138,7 @@ bool Unit::IsHostileTo(Unit const* unit) const
         }
 
         // Sanctuary
-        if (pTarget->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_SANCTUARY) && pTester->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_SANCTUARY))
+        if (pTarget->HasPlayerFlag(PLAYER_FLAGS_SANCTUARY) && pTester->HasPlayerFlag(PLAYER_FLAGS_SANCTUARY))
         {
             return false;
         }
@@ -276,7 +276,7 @@ bool Unit::IsFriendlyTo(Unit const* unit) const
         }
 
         // Sanctuary
-        if (pTarget->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_SANCTUARY) && pTester->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_SANCTUARY))
+        if (pTarget->HasPlayerFlag(PLAYER_FLAGS_SANCTUARY) && pTester->HasPlayerFlag(PLAYER_FLAGS_SANCTUARY))
         {
             return true;
         }

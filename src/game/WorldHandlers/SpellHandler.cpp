@@ -225,7 +225,7 @@ void WorldSession::HandleOpenItemOpcode(WorldPacket& recvPacket)
 
     // locked item
     uint32 lockId = proto->LockID;
-    if (lockId && !pItem->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_UNLOCKED))
+    if (lockId && !pItem->HasItemFlag(ITEM_DYNFLAG_UNLOCKED))
     {
         LockEntry const* lockInfo = sLockStore.LookupEntry(lockId);
 
@@ -244,7 +244,7 @@ void WorldSession::HandleOpenItemOpcode(WorldPacket& recvPacket)
         }
     }
 
-    if (pItem->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_WRAPPED))// wrapped?
+    if (pItem->HasItemFlag(ITEM_DYNFLAG_WRAPPED))// wrapped?
     {
         QueryResult* result = CharacterDatabase.PQuery("SELECT `entry`, `flags` FROM `character_gifts` WHERE `item_guid` = '%u'", pItem->GetGUIDLow());
         if (result)
@@ -253,9 +253,9 @@ void WorldSession::HandleOpenItemOpcode(WorldPacket& recvPacket)
             uint32 entry = fields[0].GetUInt32();
             uint32 flags = fields[1].GetUInt32();
 
-            pItem->SetGuidValue(ITEM_FIELD_GIFTCREATOR, ObjectGuid());
+            pItem->SetGiftCreatorGuid(ObjectGuid());
             pItem->SetEntry(entry);
-            pItem->SetUInt32Value(ITEM_FIELD_FLAGS, flags);
+            pItem->SetAllItemFlags(flags);
             pItem->SetState(ITEM_CHANGED, pUser);
             delete result;
         }
@@ -322,9 +322,9 @@ void WorldSession::HandleGameObjectUseOpcode(WorldPacket& recv_data)
     }
 
     // Never expect this opcode for non intractable GO's
-    if (obj->HasFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT))
+    if (obj->HasGoFlag(GO_FLAG_NO_INTERACT))
     {
-        sLog.outError("HandleGameObjectUseOpcode: CMSG_GAMEOBJ_USE for GameObject (Entry %u) with non intractable flag (Flags %u), didn't expect this to happen.", obj->GetEntry(), obj->GetUInt32Value(GAMEOBJECT_FLAGS));
+        sLog.outError("HandleGameObjectUseOpcode: CMSG_GAMEOBJ_USE for GameObject (Entry %u) with non intractable flag (Flags %u), didn't expect this to happen.", obj->GetEntry(), obj->GetGoFlags());
         return;
     }
 

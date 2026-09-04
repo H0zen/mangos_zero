@@ -116,11 +116,11 @@ void WorldSession::SendUpdateTrade(bool trader_state /*= true*/)
             data << uint32(item->GetCount());               // stack count
 
             // wrapped: hide stats but show giftcreator name
-            data << uint32(item->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_WRAPPED) ? 1 : 0);
-            data << item->GetGuidValue(ITEM_FIELD_GIFTCREATOR);
+            data << uint32(item->HasItemFlag(ITEM_DYNFLAG_WRAPPED) ? 1 : 0);
+            data << item->GetGiftCreatorGuid();
 
             data << uint32(item->GetEnchantmentId(PERM_ENCHANTMENT_SLOT));
-            data << item->GetGuidValue(ITEM_FIELD_CREATOR);
+            data << item->GetCreatorGuid();
             data << uint32(item->GetSpellCharges());        // charges
             data << uint32(item->GetItemSuffixFactor());    // SuffixFactor
             data << uint32(item->GetItemRandomPropertyId());// random properties id
@@ -502,12 +502,12 @@ void WorldSession::HandleAcceptTradeOpcode(WorldPacket& recvPacket)
         {
             if (Item* item = myItems[i])
             {
-                item->SetGuidValue(ITEM_FIELD_GIFTCREATOR, _player->GetObjectGuid());
+                item->SetGiftCreatorGuid(_player->GetObjectGuid());
                 _player->MoveItemFromInventory(item->GetBagSlot(), item->GetSlot(), true);
             }
             if (Item* item = hisItems[i])
             {
-                item->SetGuidValue(ITEM_FIELD_GIFTCREATOR, trader->GetObjectGuid());
+                item->SetGiftCreatorGuid(trader->GetObjectGuid());
                 trader->MoveItemFromInventory(item->GetBagSlot(), item->GetSlot(), true);
             }
         }

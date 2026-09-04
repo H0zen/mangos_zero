@@ -877,9 +877,9 @@ Item* Item::CloneItem(uint32 count, Player const* player) const
         return NULL;
     }
 
-    newItem->SetGuidValue(ITEM_FIELD_CREATOR,     GetGuidValue(ITEM_FIELD_CREATOR));
-    newItem->SetGuidValue(ITEM_FIELD_GIFTCREATOR, GetGuidValue(ITEM_FIELD_GIFTCREATOR));
-    newItem->SetUInt32Value(ITEM_FIELD_FLAGS,     GetUInt32Value(ITEM_FIELD_FLAGS));
+    newItem->SetCreatorGuid(GetCreatorGuid());
+    newItem->SetGiftCreatorGuid(GetGiftCreatorGuid());
+    newItem->SetAllItemFlags(GetItemFlags());
     newItem->SetUInt32Value(ITEM_FIELD_DURATION,  GetUInt32Value(ITEM_FIELD_DURATION));
     return newItem;
 }

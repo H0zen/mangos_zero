@@ -710,6 +710,15 @@ class GameObject : public Presence
         GameobjectTypes GetGoType() const { return GameobjectTypes(GetUInt32Value(GAMEOBJECT_TYPE_ID)); }
         void SetGoType(GameobjectTypes type) { SetUInt32Value(GAMEOBJECT_TYPE_ID, type); }
         GOState GetGoState() const { return GOState(GetUInt32Value(GAMEOBJECT_STATE)); }
+
+        /// What the client may do with this object: whether it is locked, in
+        /// use, or refuses interaction at all.
+        bool HasGoFlag(uint32 flag) const { return HasFlag(GAMEOBJECT_FLAGS, flag); }
+        void SetGoFlag(uint32 flag) { SetFlag(GAMEOBJECT_FLAGS, flag); }
+        void RemoveGoFlag(uint32 flag) { RemoveFlag(GAMEOBJECT_FLAGS, flag); }
+        void ApplyGoFlag(uint32 flag, bool apply) { ApplyModFlag(GAMEOBJECT_FLAGS, flag, apply); }
+        uint32 GetGoFlags() const { return GetUInt32Value(GAMEOBJECT_FLAGS); }
+        void SetAllGoFlags(uint32 flags) { SetUInt32Value(GAMEOBJECT_FLAGS, flags); }
         void SetGoState(GOState state);
         uint32 GetGoArtKit() const { return GetUInt32Value(GAMEOBJECT_ARTKIT); }
         void SetGoArtKit(uint32 artkit) { SetUInt32Value(GAMEOBJECT_ARTKIT, artkit); }

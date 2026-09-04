@@ -289,8 +289,23 @@ class Item : public Object
         void SetOwnerGuid(ObjectGuid guid) { SetGuidValue(ITEM_FIELD_OWNER, guid); }
         Player* GetOwner()const;
 
-        void SetBinding(bool val) { ApplyModFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BINDED, val); }
-        bool IsSoulBound() const { return HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BINDED); }
+        void SetBinding(bool val) { ApplyItemFlag(ITEM_DYNFLAG_BINDED, val); }
+        bool IsSoulBound() const { return HasItemFlag(ITEM_DYNFLAG_BINDED); }
+
+        /// Bound, wrapped as a gift, unlocked.
+        bool HasItemFlag(uint32 flag) const { return HasFlag(ITEM_FIELD_FLAGS, flag); }
+        void SetItemFlag(uint32 flag) { SetFlag(ITEM_FIELD_FLAGS, flag); }
+        void RemoveItemFlag(uint32 flag) { RemoveFlag(ITEM_FIELD_FLAGS, flag); }
+        void ApplyItemFlag(uint32 flag, bool apply) { ApplyModFlag(ITEM_FIELD_FLAGS, flag, apply); }
+        uint32 GetItemFlags() const { return GetUInt32Value(ITEM_FIELD_FLAGS); }
+        void SetAllItemFlags(uint32 flags) { SetUInt32Value(ITEM_FIELD_FLAGS, flags); }
+
+        /// Who made it, and who wrapped it. The second is set only while the
+        /// item is a gift and is what the recipient is shown.
+        ObjectGuid const& GetCreatorGuid() const { return GetGuidValue(ITEM_FIELD_CREATOR); }
+        void SetCreatorGuid(ObjectGuid const& guid) { SetGuidValue(ITEM_FIELD_CREATOR, guid); }
+        ObjectGuid const& GetGiftCreatorGuid() const { return GetGuidValue(ITEM_FIELD_GIFTCREATOR); }
+        void SetGiftCreatorGuid(ObjectGuid const& guid) { SetGuidValue(ITEM_FIELD_GIFTCREATOR, guid); }
         bool IsBindedNotWith(Player const* player) const;
         bool IsBoundByEnchant() const;
         virtual void SaveToDB();
@@ -312,7 +327,7 @@ class Item : public Object
         }
         const Bag* ToBag() const { if (IsBag()) return reinterpret_cast<const Bag*>(this); else return NULL; }
 
-        bool IsLocked() const { return !HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_UNLOCKED); }
+        bool IsLocked() const { return !HasItemFlag(ITEM_DYNFLAG_UNLOCKED); }
         bool IsBag() const { return GetProto()->InventoryType == INVTYPE_BAG; }
         bool IsNotEmptyBag() const;
         bool IsBroken() const { return GetUInt32Value(ITEM_FIELD_MAXDURABILITY) > 0 && GetUInt32Value(ITEM_FIELD_DURABILITY) == 0; }

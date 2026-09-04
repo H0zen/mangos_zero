@@ -1203,7 +1203,7 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     }
 
     // Speed collect rest bonus (section/in hour)
-    if (HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING))
+    if (HasPlayerFlag(PLAYER_FLAGS_RESTING))
     {
         if (GetTimeInnEnter() > 0) // Freeze update
         {
@@ -1575,7 +1575,7 @@ bool Player::BuildEnumData(QueryResult* result, WorldPacket* p_data)
  */
 void Player::ToggleAFK()
 {
-    ToggleFlag(PLAYER_FLAGS, PLAYER_FLAGS_AFK);
+    TogglePlayerFlag(PLAYER_FLAGS_AFK);
 
     // afk player not allowed in battleground
     if (isAFK() && InBattleGround())
@@ -1589,7 +1589,7 @@ void Player::ToggleAFK()
  */
 void Player::ToggleDND()
 {
-    ToggleFlag(PLAYER_FLAGS, PLAYER_FLAGS_DND);
+    TogglePlayerFlag(PLAYER_FLAGS_DND);
 }
 
 /**
@@ -2269,7 +2269,7 @@ void Player::SetGameMaster(bool on)
         m_ExtraFlags |= PLAYER_EXTRA_GM_ON;
         //setFaction(35);
         SetUnitFlag(UNIT_FLAG_UNK_0);
-        SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_GM);
+        SetPlayerFlag(PLAYER_FLAGS_GM);
         CallForAllControlledUnits(SetGameMasterOnHelper(), CONTROLLED_PET | CONTROLLED_TOTEMS | CONTROLLED_GUARDIANS | CONTROLLED_CHARM);
 
         SetFFAPvP(false);
@@ -2289,7 +2289,7 @@ void Player::SetGameMaster(bool on)
         m_ExtraFlags &= ~ PLAYER_EXTRA_GM_ON;
         //setFactionForRace(getRace());
         RemoveUnitFlag(UNIT_FLAG_UNK_0);
-        RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_GM);
+        RemovePlayerFlag(PLAYER_FLAGS_GM);
 
         if (Pet* pet = GetPet())
         {
@@ -2710,7 +2710,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     SetUnitFlag(UNIT_FLAG_PVP_ATTACKABLE);    // must be set
 
     // cleanup player flags (will be re-applied if need at aura load), to avoid have ghost flag without ghost aura, for example.
-    RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_AFK | PLAYER_FLAGS_DND | PLAYER_FLAGS_GM | PLAYER_FLAGS_GHOST | PLAYER_FLAGS_FFA_PVP);
+    RemovePlayerFlag(PLAYER_FLAGS_AFK | PLAYER_FLAGS_DND | PLAYER_FLAGS_GM | PLAYER_FLAGS_GHOST | PLAYER_FLAGS_FFA_PVP);
 
     // one form stealth modified bytes
     SetBearing(0);
@@ -4597,11 +4597,11 @@ void Player::SetFFAPvP(bool state)
 {
     if (state)
     {
-        SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_FFA_PVP);
+        SetPlayerFlag(PLAYER_FLAGS_FFA_PVP);
     }
     else
     {
-        RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_FFA_PVP);
+        RemovePlayerFlag(PLAYER_FLAGS_FFA_PVP);
     }
 }
 

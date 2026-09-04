@@ -203,7 +203,7 @@ struct is_gnomeregan : public InstanceScript
                             // Make Door locked
                             if (GameObject* pDoor = GetSingleGameObjectFromStorage(GO_THE_FINAL_CHAMBER))
                             {
-                                pDoor->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_LOCKED);
+                                pDoor->SetGoFlag(GO_FLAG_LOCKED);
                                 if (pDoor->getLootState() == GO_ACTIVATED)
                                 {
                                     pDoor->ResetDoorOrButton();
@@ -221,7 +221,7 @@ struct is_gnomeregan : public InstanceScript
                             // Make Door unlocked again
                             if (GameObject* pDoor = GetSingleGameObjectFromStorage(GO_THE_FINAL_CHAMBER))
                             {
-                                pDoor->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_LOCKED);
+                                pDoor->RemoveGoFlag(GO_FLAG_LOCKED);
                                 if (pDoor->getLootState() == GO_READY)
                                 {
                                     pDoor->UseDoorOrButton();

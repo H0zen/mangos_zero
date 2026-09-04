@@ -189,12 +189,12 @@ void Spell::EffectOpenLock(SpellEffectIndex eff_idx)
     // mark item as unlocked
     if (itemTarget)
     {
-        itemTarget->SetFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_UNLOCKED);
+        itemTarget->SetItemFlag(ITEM_DYNFLAG_UNLOCKED);
     }
 
     if (gameObjTarget)
     {
-        gameObjTarget->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_LOCKED);
+        gameObjTarget->RemoveGoFlag(GO_FLAG_LOCKED);
     }
 
     SendLoot(guid, LOOT_SKINNING, LockType(m_spellInfo->EffectMiscValue[eff_idx]));

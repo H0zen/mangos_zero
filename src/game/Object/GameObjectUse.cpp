@@ -309,7 +309,7 @@ void GameObject::Use(Unit* user)
 
             TriggerLinkedGameObject(user);
 
-            SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_IN_USE);
+            SetGoFlag(GO_FLAG_IN_USE);
             SetLootState(GO_ACTIVATED);
 
             // this appear to be ok, however others exist in addition to this that should have custom (ex: 190510, 188692, 187389)
@@ -626,7 +626,7 @@ void GameObject::Use(Unit* user)
         }
         case GAMEOBJECT_TYPE_SPELLCASTER:                   // 22
         {
-            SetUInt32Value(GAMEOBJECT_FLAGS, GO_FLAG_LOCKED);
+            SetAllGoFlags(GO_FLAG_LOCKED);
 
             GameObjectInfo const* info = GetGOInfo();
             if (!info)

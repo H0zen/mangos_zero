@@ -300,18 +300,9 @@ void Aura::HandleAuraModPacifyAndSilence(bool apply, bool Real)
  */
 void Aura::HandleAuraGhost(bool apply, bool /*Real*/)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (Player* player = ToPlayer(GetTarget()))
     {
-        return;
-    }
-
-    if (apply)
-    {
-        GetTarget()->SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST);
-    }
-    else
-    {
-        GetTarget()->RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST);
+        player->ApplyPlayerFlag(PLAYER_FLAGS_GHOST, apply);
     }
 }
 

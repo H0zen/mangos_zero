@@ -156,7 +156,7 @@ void Player::SaveToDB()
     uberInsert.addUInt32(GetMoney());
     uberInsert.addUInt32(GetUInt32Value(PLAYER_BYTES));
     uberInsert.addUInt32(GetUInt32Value(PLAYER_BYTES_2));
-    uberInsert.addUInt32(GetUInt32Value(PLAYER_FLAGS));
+    uberInsert.addUInt32(GetPlayerFlags());
 
     if (!IsBeingTeleported())
     {
@@ -222,7 +222,7 @@ void Player::SaveToDB()
 
     uberInsert.addFloat(finiteAlways(m_rest_bonus));
     uberInsert.addUInt64(uint64(time(NULL)));
-    uberInsert.addUInt32(HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING) ? 1 : 0);
+    uberInsert.addUInt32(HasPlayerFlag(PLAYER_FLAGS_RESTING) ? 1 : 0);
     // save, far from tavern/city
     // save, but in tavern/city
     uberInsert.addUInt32(m_resetTalentsCost);

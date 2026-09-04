@@ -213,7 +213,7 @@ struct npc_ranshalla : public CreatureScript
             {
                 if (GameObject* pGo = GetClosestGameObjectWithEntry(m_creature, GO_ELUNE_ALTAR, 10.0f))
                 {
-                    pGo->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
+                    pGo->RemoveGoFlag(GO_FLAG_NO_INTERACT);
                     m_creature->SetFacingToObject(pGo);
                     m_altarGuid = pGo->GetObjectGuid();
                 }
@@ -222,7 +222,7 @@ struct npc_ranshalla : public CreatureScript
             {
                 if (GameObject* pGo = GetClosestGameObjectWithEntry(m_creature, GO_ELUNE_FIRE, 10.0f))
                 {
-                    pGo->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
+                    pGo->RemoveGoFlag(GO_FLAG_NO_INTERACT);
                 }
             }
 

@@ -158,7 +158,7 @@ struct npc_muglash : public CreatureScript
                     if (GameObject* pGo = GetClosestGameObjectWithEntry(m_creature, GO_NAGA_BRAZIER, INTERACTION_DISTANCE * 2))
                     {
                         // some kind of event flag? Update to player/group only?
-                        pGo->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
+                        pGo->RemoveGoFlag(GO_FLAG_NO_INTERACT);
                         SetEscortPaused(true);
                     }
                     break;

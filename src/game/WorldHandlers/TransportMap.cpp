@@ -649,7 +649,7 @@ void TransportMap::VesselLeavingWorld(Map* oldWorld, uint32 newMapId,
 
     for (Player* passenger : aboard)
     {
-        if (passenger->IsDead() && !passenger->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
+        if (passenger->IsDead() && !passenger->HasPlayerFlag(PLAYER_FLAGS_GHOST))
         {
             passenger->ResurrectPlayer(1.0);
         }

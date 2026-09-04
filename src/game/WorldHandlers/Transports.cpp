@@ -281,7 +281,7 @@ bool Transport::Create(uint32 guidlow, uint32 mapid, float x, float y, float z, 
 
     // Forced, not taken from `gameobject_template`: a vessel is a transport and never
     // despawns, whatever the row happens to say.
-    SetUInt32Value(GAMEOBJECT_FLAGS, (GO_FLAG_TRANSPORT | GO_FLAG_NODESPAWN));
+    SetAllGoFlags((GO_FLAG_TRANSPORT | GO_FLAG_NODESPAWN));
 
     // THE ROUTE'S PERIOD, AND THE CLIENT READS IT FROM HERE. It interpolates the hull
     // itself from `time % period`, so a vessel that ships a zero here is drawn stopped at

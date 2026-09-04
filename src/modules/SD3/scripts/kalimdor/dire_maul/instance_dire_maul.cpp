@@ -200,8 +200,8 @@ struct is_dire_maul : public InstanceScript
                         }
                         break;
                     case GO_WEST_LIBRARY_DOOR:
-                        pGo->SetFlag(GAMEOBJECT_FLAGS, m_bDoNorthBeforeWest ? GO_FLAG_NO_INTERACT : GO_FLAG_LOCKED);
-                        pGo->RemoveFlag(GAMEOBJECT_FLAGS, m_bDoNorthBeforeWest ? GO_FLAG_LOCKED : GO_FLAG_NO_INTERACT);
+                        pGo->SetGoFlag(m_bDoNorthBeforeWest ? GO_FLAG_NO_INTERACT : GO_FLAG_LOCKED);
+                        pGo->RemoveGoFlag(m_bDoNorthBeforeWest ? GO_FLAG_LOCKED : GO_FLAG_NO_INTERACT);
                         break;
 
                     // North

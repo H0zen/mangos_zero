@@ -274,7 +274,7 @@ struct go_eternal_flame : public GameObjectScript
 
         // Set data to special when flame is used
         pInstance->SetData(TYPE_AVATAR, SPECIAL);
-        pGo->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
+        pGo->SetGoFlag(GO_FLAG_NO_INTERACT);
 
         return true;
     }

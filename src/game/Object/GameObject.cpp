@@ -240,7 +240,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map,float x, float 
     SetFloatValue(GAMEOBJECT_POS_Y, y);
     SetFloatValue(GAMEOBJECT_POS_Z, z);
     SetUInt32Value(GAMEOBJECT_FACTION, m_goInfo->faction);
-    SetUInt32Value(GAMEOBJECT_FLAGS, m_goInfo->flags);
+    SetAllGoFlags(m_goInfo->flags);
     SetEntry(m_goInfo->id);
     SetDisplayId(m_goInfo->displayId);
     SetGoState(go_state);
@@ -326,7 +326,7 @@ void GameObject::Delete()
     SendDespawnAnimation(*this);
 
     SetGoState(GO_STATE_READY);
-    SetUInt32Value(GAMEOBJECT_FLAGS, GetGOInfo()->flags);
+    SetAllGoFlags(GetGOInfo()->flags);
 
     if (uint16 poolid = sPoolMgr.IsPartOfAPool<GameObject>(GetGUIDLow()))
     {
@@ -450,7 +450,7 @@ bool GameObject::LoadFromDB(uint32 guid, Map* map)
 
     if (!GetGOInfo()->GetDespawnPossibility() && !GetGOInfo()->IsDespawnAtAction() && data->spawntimesecs >= 0)
     {
-        SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_NODESPAWN);
+        SetGoFlag(GO_FLAG_NODESPAWN);
         m_spawnedByDefault = true;
         m_respawnDelayTime = 0;
         m_respawnTime = 0;
@@ -994,11 +994,11 @@ void GameObject::SwitchDoorOrButton(bool activate, bool alternative /* = false *
 {
     if (activate)
     {
-        SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_IN_USE);
+        SetGoFlag(GO_FLAG_IN_USE);
     }
     else
     {
-        RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_IN_USE);
+        RemoveGoFlag(GO_FLAG_IN_USE);
     }
 
     if (GetGoState() == GO_STATE_READY)                     // if closed -> open

@@ -1037,20 +1037,20 @@ bool ScriptAction::HandleScriptStep()
             // Lock or Unlock
             if (m_script->goLockState.lockState & 0x01)
             {
-                pGo->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_LOCKED);
+                pGo->SetGoFlag(GO_FLAG_LOCKED);
             }
             else if (m_script->goLockState.lockState & 0x02)
             {
-                pGo->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_LOCKED);
+                pGo->RemoveGoFlag(GO_FLAG_LOCKED);
             }
             // Set Non Interactable or Set Interactable
             if (m_script->goLockState.lockState & 0x04)
             {
-                pGo->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
+                pGo->SetGoFlag(GO_FLAG_NO_INTERACT);
             }
             else if (m_script->goLockState.lockState & 0x08)
             {
-                pGo->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
+                pGo->RemoveGoFlag(GO_FLAG_NO_INTERACT);
             }
 
             break;
@@ -1454,11 +1454,11 @@ bool ScriptAction::HandleScriptStep()
 
             if (m_script->xpDisabled.flags)
             {
-                pPlayer->SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_XP_USER_DISABLED);
+                pPlayer->SetPlayerFlag(PLAYER_FLAGS_XP_USER_DISABLED);
             }
             else
             {
-                pPlayer->RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_XP_USER_DISABLED);
+                pPlayer->RemovePlayerFlag(PLAYER_FLAGS_XP_USER_DISABLED);
             }
             break;
         }

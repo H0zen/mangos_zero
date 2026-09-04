@@ -243,7 +243,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     SetUInt16Value(PLAYER_BYTES_3, 0, (m_drunk & 0xFFFE) | gender);
 
-    SetUInt32Value(PLAYER_FLAGS, fields[11].GetUInt32());
+    SetAllPlayerFlags(fields[11].GetUInt32());
     SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, fields[43].GetInt32());
 
     SetUInt32Value(PLAYER_AMMO_ID, fields[53].GetUInt32());
@@ -515,11 +515,11 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     m_resetTalentsTime = time_t(fields[25].GetUInt64());
 
     // reserve some flags
-    uint32 old_safe_flags = GetUInt32Value(PLAYER_FLAGS) & (PLAYER_FLAGS_HIDE_CLOAK | PLAYER_FLAGS_HIDE_HELM);
+    uint32 old_safe_flags = GetPlayerFlags() & (PLAYER_FLAGS_HIDE_CLOAK | PLAYER_FLAGS_HIDE_HELM);
 
-    if (HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GM))
+    if (HasPlayerFlag(PLAYER_FLAGS_GM))
     {
-        SetUInt32Value(PLAYER_FLAGS, 0 | old_safe_flags);
+        SetAllPlayerFlags(0 | old_safe_flags);
     }
 
     m_taxi.LoadTaxiMask(fields[17].GetString());            // must be before InitTaxiNodesForLevel
@@ -590,7 +590,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     _LoadAuras(holder->GetResult(PLAYER_LOGIN_QUERY_LOADAURAS), time_diff);
 
     // add ghost flag (must be after aura load: PLAYER_FLAGS_GHOST set in aura)
-    if (HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
+    if (HasPlayerFlag(PLAYER_FLAGS_GHOST))
     {
         m_deathState = DEAD;
     }

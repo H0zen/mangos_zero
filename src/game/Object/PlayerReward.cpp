@@ -159,7 +159,7 @@ void Player::RewardPlayerAndGroupAtEvent(uint32 creature_id, Presence* pRewardSo
             }
 
             // quest objectives updated only for alive group member or dead but with not released body
-            if (pGroupGuy->IsAlive() || !pGroupGuy->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
+            if (pGroupGuy->IsAlive() || !pGroupGuy->HasPlayerFlag(PLAYER_FLAGS_GHOST))
             {
                 pGroupGuy->KilledMonsterCredit(creature_id, creature_guid);
             }
@@ -196,7 +196,7 @@ void Player::RewardPlayerAndGroupAtCast(Presence* pRewardSource, uint32 spellid)
             }
 
             // quest objectives updated only for alive group member or dead but with not released body
-            if (pGroupGuy->IsAlive() || !pGroupGuy->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
+            if (pGroupGuy->IsAlive() || !pGroupGuy->HasPlayerFlag(PLAYER_FLAGS_GHOST))
             {
                 pGroupGuy->CastedCreatureOrGO(pRewardSource->GetEntry(), pRewardSource->GetObjectGuid(), spellid, pGroupGuy == this);
             }
