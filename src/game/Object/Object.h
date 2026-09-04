@@ -304,6 +304,12 @@ class Object
 
         void SetObjectScale(float newScale);
 
+        /// Grow or shrink by a percentage of what the object already is.
+        void ApplyScalePercent(float percent, bool apply)
+        {
+            ApplyPercentModFloatValue(OBJECT_FIELD_SCALE_X, percent, apply);
+        }
+
         /// Scale feeds the spatial extent of anything that has one. A hook, not a
         /// downcast: Object must not learn that Presence exists.
         virtual void OnScaleChanged() {}

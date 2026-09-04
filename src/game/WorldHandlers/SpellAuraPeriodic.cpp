@@ -1444,9 +1444,9 @@ void Aura::HandleModDamagePercentDone(bool apply, bool Real)
             // done in Player::_ApplyWeaponDependentAuraMods
         }
         // For show in client
-        if (target->GetTypeId() == TYPEID_PLAYER)
+        if (Player* player = ToPlayer(target))
         {
-            target->ApplyModSignedFloatValue(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT, m_modifier.m_amount / 100.0f, apply);
+            player->ApplyDamageDonePercent(SPELL_SCHOOL_NORMAL, m_modifier.m_amount / 100.0f, apply);
         }
     }
 
@@ -1467,11 +1467,11 @@ void Aura::HandleModDamagePercentDone(bool apply, bool Real)
 
     // Magic damage percent modifiers implemented in Unit::SpellDamageBonusDone
     // Send info to client
-    if (target->GetTypeId() == TYPEID_PLAYER)
+    if (Player* player = ToPlayer(target))
     {
         for (int i = SPELL_SCHOOL_HOLY; i < MAX_SPELL_SCHOOL; ++i)
         {
-            target->ApplyModSignedFloatValue(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + i, m_modifier.m_amount / 100.0f, apply);
+            player->ApplyDamageDonePercent(i, m_modifier.m_amount / 100.0f, apply);
         }
     }
 }
@@ -1508,7 +1508,7 @@ void Aura::HandleModPowerCostPCT(bool apply, bool Real)
     {
         if (m_modifier.m_miscvalue & (1 << i))
         {
-            GetTarget()->ApplyModSignedFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + i, amount, apply);
+            GetTarget()->ApplyPowerCostMultiplier(i, amount, apply);
         }
     }
 }

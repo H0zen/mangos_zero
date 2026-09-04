@@ -996,11 +996,11 @@ bool ChatHandler::HandleExploreCheatCommand(char* args)
     {
         if (flag != 0)
         {
-            m_session->GetPlayer()->SetFlag(PLAYER_EXPLORED_ZONES_1 + i, 0xFFFFFFFF);
+            m_session->GetPlayer()->SetExploredZones(i, 0xFFFFFFFF);
         }
         else
         {
-            m_session->GetPlayer()->SetFlag(PLAYER_EXPLORED_ZONES_1 + i, 0);
+            m_session->GetPlayer()->SetExploredZones(i, 0);
         }
     }
 
@@ -1100,8 +1100,8 @@ bool ChatHandler::HandleShowAreaCommand(char* args)
         return false;
     }
 
-    uint32 currFields = chr->GetUInt32Value(PLAYER_EXPLORED_ZONES_1 + offset);
-    chr->SetUInt32Value(PLAYER_EXPLORED_ZONES_1 + offset, (uint32)(currFields | val));
+    uint32 currFields = chr->GetExploredZones(offset);
+    chr->SetExploredZones(offset, (uint32)(currFields | val));
 
     SendSysMessage(LANG_EXPLORE_AREA);
     return true;
@@ -1139,8 +1139,8 @@ bool ChatHandler::HandleHideAreaCommand(char* args)
         return false;
     }
 
-    uint32 currFields = chr->GetUInt32Value(PLAYER_EXPLORED_ZONES_1 + offset);
-    chr->SetUInt32Value(PLAYER_EXPLORED_ZONES_1 + offset, (uint32)(currFields ^ val));
+    uint32 currFields = chr->GetExploredZones(offset);
+    chr->SetExploredZones(offset, (uint32)(currFields ^ val));
 
     SendSysMessage(LANG_UNEXPLORE_AREA);
     return true;
@@ -2607,7 +2607,7 @@ bool ChatHandler::HandleModifyGenderCommand(char* args)
 
     // Set gender
     player->SetGender(gender);
-    player->SetUInt16Value(PLAYER_BYTES_3, 0, uint16(gender) | (player->GetDrunkValue() & 0xFFFE));
+    player->SetDrunkAndGender(player->GetDrunkValue(), static_cast<uint8>(gender));
 
     // Change display ID
     player->InitDisplayIds();

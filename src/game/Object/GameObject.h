@@ -711,6 +711,18 @@ class GameObject : public Presence
         void SetGoType(GameobjectTypes type) { SetUInt32Value(GAMEOBJECT_TYPE_ID, type); }
         GOState GetGoState() const { return GOState(GetUInt32Value(GAMEOBJECT_STATE)); }
 
+        /// The position the object also carries in its own fields, which the
+        /// client reads rather than the movement block.
+        float GetGoPositionX() const { return GetFloatValue(GAMEOBJECT_POS_X); }
+        float GetGoPositionY() const { return GetFloatValue(GAMEOBJECT_POS_Y); }
+        float GetGoPositionZ() const { return GetFloatValue(GAMEOBJECT_POS_Z); }
+        void SetGoPosition(float x, float y, float z)
+        {
+            SetFloatValue(GAMEOBJECT_POS_X, x);
+            SetFloatValue(GAMEOBJECT_POS_Y, y);
+            SetFloatValue(GAMEOBJECT_POS_Z, z);
+        }
+
         /// What the client may do with this object: whether it is locked, in
         /// use, or refuses interaction at all.
         bool HasGoFlag(uint32 flag) const { return HasFlag(GAMEOBJECT_FLAGS, flag); }

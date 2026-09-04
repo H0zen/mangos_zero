@@ -155,11 +155,11 @@ void Player::CheckAreaExploreAndOutdoor()
     }
 
     uint32 val = (uint32)(1 << (areaFlag % 32));
-    uint32 currFields = GetUInt32Value(PLAYER_EXPLORED_ZONES_1 + offset);
+    uint32 currFields = GetExploredZones(offset);
 
     if (!(currFields & val))
     {
-        SetUInt32Value(PLAYER_EXPLORED_ZONES_1 + offset, (uint32)(currFields | val));
+        SetExploredZones(offset, (uint32)(currFields | val));
 
         AreaTableEntry const* p = GetAreaEntryByAreaFlagAndMap(areaFlag, GetMapId());
         if (!p)

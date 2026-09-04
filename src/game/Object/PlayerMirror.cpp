@@ -434,7 +434,7 @@ void Player::SetDrunkValue(uint16 newDrunkenValue, uint32 /*itemId*/)
 
     // Set the new drunk value
     m_drunk = newDrunkenValue;
-    SetUInt16Value(PLAYER_BYTES_3, 0, uint16(getGender()) | (m_drunk & 0xFFFE));
+    SetDrunkAndGender(m_drunk, getGender());
 
     // Get the new drunken state
     uint32 newDrunkenState = Player::GetDrunkenstateByValue(m_drunk);

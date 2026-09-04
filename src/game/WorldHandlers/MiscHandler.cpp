@@ -1074,7 +1074,7 @@ void WorldSession::HandleSetActionBarTogglesOpcode(WorldPacket& recv_data)
         return;
     }
 
-    GetPlayer()->SetByteValue(PLAYER_FIELD_BYTES, 2, ActionBar);
+    GetPlayer()->SetActionBars(ActionBar);
 }
 
 /**
@@ -1133,7 +1133,7 @@ void WorldSession::HandleInspectHonorStatsOpcode(WorldPacket& recv_data)
         WorldPacket data(MSG_INSPECT_HONOR_STATS, (8 + 1 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 1));
         data << guid;                                       // player guid
         // Rank, filling bar, PLAYER_BYTES_3, ??
-        data << (uint8)pl->GetByteValue(PLAYER_FIELD_BYTES2, 0);
+        data << (uint8)pl->GetHonorBar();
         // FIXME: below must be 8*uint16, 6*uint32, uint8
         // Today Honorable and Dishonorable Kills
         data << pl->GetUInt32Value(PLAYER_FIELD_SESSION_KILLS);

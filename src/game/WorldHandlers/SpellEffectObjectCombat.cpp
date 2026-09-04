@@ -374,8 +374,8 @@ void Spell::EffectDuel(SpellEffectIndex eff_idx)
     duel2->startTimer = 0;
     target->duel      = duel2;
 
-    caster->SetGuidValue(PLAYER_DUEL_ARBITER, pGameObj->GetObjectGuid());
-    target->SetGuidValue(PLAYER_DUEL_ARBITER, pGameObj->GetObjectGuid());
+    caster->SetDuelArbiterGuid(pGameObj->GetObjectGuid());
+    target->SetDuelArbiterGuid(pGameObj->GetObjectGuid());
 
 }
 

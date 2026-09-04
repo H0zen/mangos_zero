@@ -1013,7 +1013,7 @@ struct npc_deathstalker_vincent : public CreatureScript
 
         void Reset() override
         {
-            if (m_pInstance && m_pInstance->GetData(TYPE_INTRO) == DONE && !m_creature->GetByteValue(UNIT_FIELD_BYTES_1, 0))
+            if (m_pInstance && m_pInstance->GetData(TYPE_INTRO) == DONE && !m_creature->getStandState())
             {
                 m_creature->SetStandState(UNIT_STAND_STATE_DEAD);
             }

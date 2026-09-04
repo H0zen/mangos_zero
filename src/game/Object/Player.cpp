@@ -834,7 +834,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     InitDisplayIds();
 
     SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
-    SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f); // Fix cast time shown in spell tooltip on client
+    SetCastSpeedMod(1.0f); // Fix cast time shown in spell tooltip on client
 
     // Set default watched faction index
     SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, -1); // -1 is default value
@@ -848,8 +848,9 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     SetByteValue(PLAYER_BYTES_2, 3, REST_STATE_NORMAL);
 
     // Set player's gender and battlefield arena faction
-    SetUInt16Value(PLAYER_BYTES_3, 0, gender); // Only GENDER_MALE/GENDER_FEMALE (1 bit) allowed, drunk state = 0
-    SetByteValue(PLAYER_BYTES_3, 3, 0); // BattlefieldArenaFaction (0 or 1)
+    // Only GENDER_MALE/GENDER_FEMALE, one bit, and nothing drunk yet.
+    SetDrunkAndGender(0, gender);
+    SetShownHonorRank(0); // BattlefieldArenaFaction (0 or 1)
 
     // Initialize player's guild information
     SetUInt32Value(PLAYER_GUILDID, 0);
@@ -1713,7 +1714,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     // ObjectAccessor won't find the flag.
     if (duel && GetMapId() != mapid)
     {
-        if (GetMap()->GetGameObject(GetGuidValue(PLAYER_DUEL_ARBITER)))
+        if (GetMap()->GetGameObject(GetDuelArbiterGuid()))
         {
             DuelComplete(DUEL_FLED);
         }
@@ -2606,7 +2607,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     UpdateSkillsForLevel();
 
     // set default cast time multiplier
-    SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);
+    SetCastSpeedMod(1.0f);
 
     // save base values (bonuses already included in stored stats
     for (int i = STAT_STRENGTH; i < MAX_STATS; ++i)
@@ -2633,7 +2634,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     {
         SetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG + i, 0);
         SetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + i, 0);
-        SetFloatValue(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + i, 1.00f);
+        SetDamageDonePercent(i, 1.00f);
     }
 
     // reset attack power, damage and attack speed fields
@@ -2684,7 +2685,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     for (int i = 0; i < MAX_SPELL_SCHOOL; ++i)
     {
         SetUInt32Value(UNIT_FIELD_POWER_COST_MODIFIER + i, 0);
-        SetFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + i, 0.0f);
+        SetPowerCostMultiplier(i, 0.0f);
     }
     // Init data for form but skip reapply item mods for form
     InitDataForForm(reapplyMods);
@@ -3500,9 +3501,9 @@ void Player::UpdateHonor()
 
     // NEXT RANK BAR
     // PLAYER_FIELD_HONOR_BAR
-    SetByteValue(PLAYER_FIELD_BYTES2, 0, RP);
+    SetHonorBar(RP);
     // RANK (Patent)
-    SetByteValue(PLAYER_BYTES_3, 3, GetHonorRankInfo().rank);
+    SetShownHonorRank(GetHonorRankInfo().rank);
     // TODAY
     SetUInt16Value(PLAYER_FIELD_SESSION_KILLS, 0, today_honorableKills);
     SetUInt16Value(PLAYER_FIELD_SESSION_KILLS, 1, today_dishonorableKills);
@@ -3522,7 +3523,7 @@ void Player::UpdateHonor()
     // TODO: Into what field we need to set it? Fix it!
     // SetUInt32Value(PLAYER_FIELD_PVP_MEDALS/*???*/, (GetHonorHighestRankInfo().rank << 24) | 0x0F0001);
     // ITEM FIELD RANK REQUIRED
-    SetByteValue(PLAYER_FIELD_BYTES, 3, GetHonorHighestRankInfo().rank);
+    SetShownHighestHonorRank(GetHonorHighestRankInfo().rank);
 }
 
 /**
@@ -5207,7 +5208,7 @@ void Player::SetComboPoints()
     if (combotarget)
     {
         SetGuidValue(PLAYER_FIELD_COMBO_TARGET, combotarget->GetObjectGuid());
-        SetByteValue(PLAYER_FIELD_BYTES, 1, m_comboPoints);
+        SetShownComboPoints(m_comboPoints);
     }
     /*else
     {

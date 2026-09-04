@@ -218,9 +218,7 @@ bool ChatHandler::HandleGameObjectMoveCommand(char* args)
         map->Remove(obj, false);
 
         obj->Place().MoveTo(chr->Where().X(), chr->Where().Y(), chr->Where().Z(), obj->Where().Facing());
-        obj->SetFloatValue(GAMEOBJECT_POS_X, chr->Where().X());
-        obj->SetFloatValue(GAMEOBJECT_POS_Y, chr->Where().Y());
-        obj->SetFloatValue(GAMEOBJECT_POS_Z, chr->Where().Z());
+        obj->SetGoPosition(chr->Where().X(), chr->Where().Y(), chr->Where().Z());
 
         map->Add(obj);
     }
@@ -255,9 +253,7 @@ bool ChatHandler::HandleGameObjectMoveCommand(char* args)
         map->Remove(obj, false);
 
         obj->Place().MoveTo(x, y, z, obj->Where().Facing());
-        obj->SetFloatValue(GAMEOBJECT_POS_X, x);
-        obj->SetFloatValue(GAMEOBJECT_POS_Y, y);
-        obj->SetFloatValue(GAMEOBJECT_POS_Z, z);
+        obj->SetGoPosition(x, y, z);
 
         map->Add(obj);
     }

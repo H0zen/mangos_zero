@@ -838,7 +838,7 @@ bool Pet::CreateBaseAtCreature(Creature* creature)
         SetSheath(SHEATH_STATE_MELEE);
         SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE | UNIT_FLAG_RESTING | UNIT_FLAG_RENAME);
 
-        SetFloatValue(UNIT_MOD_CAST_SPEED, creature->GetFloatValue(UNIT_MOD_CAST_SPEED));
+        SetCastSpeedMod(creature->GetCastSpeedMod());
         SetLoyaltyLevel(REBELLIOUS);
     }
     return true;
@@ -900,7 +900,7 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
     SetAttackTime(OFF_ATTACK, cinfo->MeleeBaseAttackTime);
     SetAttackTime(RANGED_ATTACK, cinfo->RangedBaseAttackTime);
 
-    SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0);
+    SetCastSpeedMod(1.0);
 
     CreatureFamilyEntry const* cFamily = sCreatureFamilyStore.LookupEntry(cinfo->Family);
     if (cFamily && cFamily->MinScale > 0.0f && getPetType() == HUNTER_PET)

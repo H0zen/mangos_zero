@@ -260,7 +260,7 @@ bool ChatHandler::HandleModifyHonorCommand(char* args)
             return false;
         }
         // rank points is sent to client with same size of uint8(255) for each rank
-        target->SetByteValue(PLAYER_FIELD_BYTES2, 0, amount);
+        target->SetHonorBar(amount);
     }
     else if (hasStringAbbr(field, "rank"))
     {
@@ -268,7 +268,7 @@ bool ChatHandler::HandleModifyHonorCommand(char* args)
         {
             return false;
         }
-        target->SetByteValue(PLAYER_BYTES_3, 3, amount);
+        target->SetShownHonorRank(amount);
     }
     else if (hasStringAbbr(field, "todaykills"))
     {

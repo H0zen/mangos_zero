@@ -1252,6 +1252,76 @@ class Player : public Unit
         // Check if the player is a game master
         bool isGameMaster() const { return m_ExtraFlags & PLAYER_EXTRA_GM_ON; }
 
+        /// Which of the extra action bars the client shows.
+        uint8 GetActionBars() const { return GetByteValue(PLAYER_FIELD_BYTES, 2); }
+        void SetActionBars(uint8 bars) { SetByteValue(PLAYER_FIELD_BYTES, 2, bars); }
+
+        /// The combo points the client draws over the target.
+        void SetShownComboPoints(uint8 points) { SetByteValue(PLAYER_FIELD_BYTES, 1, points); }
+
+        /// Whether the client counts down to an automatic spirit release, and
+        /// whether tracking also picks out stealthed units.
+        void ShowReleaseTimer(bool on)
+        {
+            ApplyModByteFlag(PLAYER_FIELD_BYTES, 0, PLAYER_FIELD_BYTE_RELEASE_TIMER, on);
+        }
+        void TrackStealthed(bool on)
+        {
+            ApplyModByteFlag(PLAYER_FIELD_BYTES, 0, PLAYER_FIELD_BYTE_TRACK_STEALTHED, on);
+        }
+
+        /// The honour rank the PvP tab shows, the highest ever reached, and how
+        /// far the bar between ranks is filled, scaled to a byte.
+        void SetShownHonorRank(uint8 rank) { SetByteValue(PLAYER_BYTES_3, 3, rank); }
+        void SetShownHighestHonorRank(uint8 rank) { SetByteValue(PLAYER_FIELD_BYTES, 3, rank); }
+        uint8 GetHonorBar() const { return GetByteValue(PLAYER_FIELD_BYTES2, 0); }
+        void SetHonorBar(uint8 filled) { SetByteValue(PLAYER_FIELD_BYTES2, 0, filled); }
+
+        /// The client packs the drunkenness meter and the gender bit together.
+        uint16 GetDrunkAndGender() const { return GetUInt16Value(PLAYER_BYTES_3, 0); }
+        void SetDrunkAndGender(uint16 drunk, uint8 gender)
+        {
+            SetUInt16Value(PLAYER_BYTES_3, 0, (drunk & 0xFFFE) | gender);
+        }
+
+        /// What the minimap needle points at. The bit is the tracked kind, less
+        /// one, and the two words are searched separately by the client.
+        enum class Tracked { Creatures, Resources };
+        void ApplyTracking(Tracked what, uint32 bit, bool on)
+        {
+            ApplyModFlag(what == Tracked::Creatures ? PLAYER_TRACK_CREATURES : PLAYER_TRACK_RESOURCES,
+                         bit, on);
+        }
+        void ClearTracking()
+        {
+            SetUInt32Value(PLAYER_TRACK_CREATURES, 0);
+            SetUInt32Value(PLAYER_TRACK_RESOURCES, 0);
+        }
+
+        /// A bit per explored area, in as many words as there are areas.
+        uint32 GetExploredZones(uint16 slot) const
+        {
+            return GetUInt32Value(PLAYER_EXPLORED_ZONES_1 + slot);
+        }
+        void SetExploredZones(uint16 slot, uint32 mask)
+        {
+            SetUInt32Value(PLAYER_EXPLORED_ZONES_1 + slot, mask);
+        }
+
+        /// The flag both duellists are pointed at while the duel stands.
+        ObjectGuid const& GetDuelArbiterGuid() const { return GetGuidValue(PLAYER_DUEL_ARBITER); }
+        void SetDuelArbiterGuid(ObjectGuid const& guid) { SetGuidValue(PLAYER_DUEL_ARBITER, guid); }
+
+        /// How much more or less damage of a school the character sheet claims.
+        void ApplyDamageDonePercent(uint32 school, float percent, bool apply)
+        {
+            ApplyModSignedFloatValue(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + school, percent, apply);
+        }
+        void SetDamageDonePercent(uint32 school, float percent)
+        {
+            SetFloatValue(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + school, percent);
+        }
+
         /// What everyone around is told about the player: away, dead, resting,
         /// in a duel, hiding a helm. Distinct from the unit flags, which say
         /// what may be done to them.

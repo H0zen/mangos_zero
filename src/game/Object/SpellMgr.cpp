@@ -211,7 +211,7 @@ uint32 GetSpellCastTime(SpellEntry const* spellInfo, Spell const* spell)
 
         if (!spellInfo->HasAttribute(SPELL_ATTR_ABILITY) && !spellInfo->HasAttribute(SPELL_ATTR_TRADESPELL))
         {
-            castTime = int32(castTime * spell->GetCaster()->GetFloatValue(UNIT_MOD_CAST_SPEED));
+            castTime = int32(castTime * spell->GetCaster()->GetCastSpeedMod());
         }
         else
         {

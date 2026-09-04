@@ -806,24 +806,18 @@ void Aura::HandleFarSight(bool apply, bool /*Real*/)
  */
 void Aura::HandleAuraTrackCreatures(bool apply, bool /*Real*/)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    Player* player = ToPlayer(GetTarget());
+    if (!player)
     {
         return;
     }
 
     if (apply)
     {
-        GetTarget()->RemoveConflictingAuras(GetHolder());
+        player->RemoveConflictingAuras(GetHolder());
     }
 
-    if (apply)
-    {
-        GetTarget()->SetFlag(PLAYER_TRACK_CREATURES, uint32(1) << (m_modifier.m_miscvalue - 1));
-    }
-    else
-    {
-        GetTarget()->RemoveFlag(PLAYER_TRACK_CREATURES, uint32(1) << (m_modifier.m_miscvalue - 1));
-    }
+    player->ApplyTracking(Player::Tracked::Creatures, uint32(1) << (m_modifier.m_miscvalue - 1), apply);
 }
 
 /**
@@ -834,24 +828,18 @@ void Aura::HandleAuraTrackCreatures(bool apply, bool /*Real*/)
  */
 void Aura::HandleAuraTrackResources(bool apply, bool /*Real*/)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    Player* player = ToPlayer(GetTarget());
+    if (!player)
     {
         return;
     }
 
     if (apply)
     {
-        GetTarget()->RemoveConflictingAuras(GetHolder());
+        player->RemoveConflictingAuras(GetHolder());
     }
 
-    if (apply)
-    {
-        GetTarget()->SetFlag(PLAYER_TRACK_RESOURCES, uint32(1) << (m_modifier.m_miscvalue - 1));
-    }
-    else
-    {
-        GetTarget()->RemoveFlag(PLAYER_TRACK_RESOURCES, uint32(1) << (m_modifier.m_miscvalue - 1));
-    }
+    player->ApplyTracking(Player::Tracked::Resources, uint32(1) << (m_modifier.m_miscvalue - 1), apply);
 }
 
 /**
@@ -862,17 +850,18 @@ void Aura::HandleAuraTrackResources(bool apply, bool /*Real*/)
  */
 void Aura::HandleAuraTrackStealthed(bool apply, bool /*Real*/)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    Player* player = ToPlayer(GetTarget());
+    if (!player)
     {
         return;
     }
 
     if (apply)
     {
-        GetTarget()->RemoveConflictingAuras(GetHolder());
+        player->RemoveConflictingAuras(GetHolder());
     }
 
-    GetTarget()->ApplyModByteFlag(PLAYER_FIELD_BYTES, 0, PLAYER_FIELD_BYTE_TRACK_STEALTHED, apply);
+    player->TrackStealthed(apply);
 }
 
 /**
@@ -883,6 +872,6 @@ void Aura::HandleAuraTrackStealthed(bool apply, bool /*Real*/)
  */
 void Aura::HandleAuraModScale(bool apply, bool /*Real*/)
 {
-    GetTarget()->ApplyPercentModFloatValue(OBJECT_FIELD_SCALE_X, float(m_modifier.m_amount), apply);
+    GetTarget()->ApplyScalePercent(float(m_modifier.m_amount), apply);
     GetTarget()->UpdateModelData();
 }

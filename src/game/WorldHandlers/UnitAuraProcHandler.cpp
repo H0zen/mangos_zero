@@ -1096,11 +1096,11 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
                 // TODO: check if using offhand damage is correct and if it should be divided by 2
                 if (haveOffhandWeapon() && getAttackTimer(BASE_ATTACK) > getAttackTimer(OFF_ATTACK))
                 {
-                    weaponDamage = (GetFloatValue(UNIT_FIELD_MINOFFHANDDAMAGE) + GetFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE)) / 2;
+                    weaponDamage = (GetShownDamage(true, false) + GetShownDamage(true, true)) / 2;
                 }
                 else
                 {
-                    weaponDamage = (GetFloatValue(UNIT_FIELD_MINDAMAGE) + GetFloatValue(UNIT_FIELD_MAXDAMAGE)) / 2;
+                    weaponDamage = (GetShownDamage(false, false) + GetShownDamage(false, true)) / 2;
                 }
 
                 switch (auraSpellInfo->ID)

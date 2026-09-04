@@ -234,7 +234,7 @@ void Player::KillPlayer()
     // SetFlag( UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_IN_PVP );
 
     SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
-    ApplyModByteFlag(PLAYER_FIELD_BYTES, 0, PLAYER_FIELD_BYTE_RELEASE_TIMER, !sMapStore.LookupEntry(GetMapId())->Instanceable());
+    ShowReleaseTimer(!sMapStore.LookupEntry(GetMapId())->Instanceable());
 
     // 6 minutes until repop at graveyard
     m_deathTimer = 6 * MINUTE * IN_MILLISECONDS;

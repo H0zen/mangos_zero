@@ -149,7 +149,7 @@ struct spell_npc_kitten : public SpellScript
                 pCreatureTarget->SetEntry(pTemp->Entry);
                 pCreatureTarget->SetDisplayId(Creature::ChooseDisplayId(pTemp));
                 pCreatureTarget->SetName(pTemp->Name);
-                pCreatureTarget->SetFloatValue(OBJECT_FIELD_SCALE_X, pTemp->Scale);
+                pCreatureTarget->SetObjectScale(pTemp->Scale);
             }
 
             if (Unit* pOwner = pCreatureTarget->GetOwner())
@@ -575,8 +575,8 @@ struct npc_captured_arkonarin : public CreatureScript
                 {
                     pCage->Use(m_creature);
                 }
-                m_creature->RemoveFlag (UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                m_creature->RemoveFlag (UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+                m_creature->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+                m_creature->RemoveUnitFlag(UNIT_FLAG_PASSIVE);
             }
         }
 
@@ -634,8 +634,8 @@ struct npc_captured_arkonarin : public CreatureScript
                     SummonCreature(*m_creature, NPC_JAEDENAR_LEGIONNAIRE, 5038.018f, -545.729f, 297.801f, 0.84f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
                     break;
                 case 104:
-                    m_creature->SetFlag (UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                    m_creature->SetFlag (UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+                    m_creature->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+                    m_creature->SetUnitFlag(UNIT_FLAG_PASSIVE);
                     SummonCreature(*m_creature, NPC_SPIRT_TREY, 4844.839f, -395.763f, 350.603f, 6.25f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
                     DoScriptText(SAY_FRESH_AIR, m_creature);
                     break;
@@ -644,8 +644,8 @@ struct npc_captured_arkonarin : public CreatureScript
                     break;
                 case 106:
                     DoScriptText(SAY_TREY, m_creature);
-                    m_creature->RemoveFlag (UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                    m_creature->RemoveFlag (UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+                    m_creature->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+                    m_creature->RemoveUnitFlag(UNIT_FLAG_PASSIVE);
                     break;
                 case 107:
                     if (Creature* pTrey = m_creature->GetMap()->GetCreature(m_treyGuid))

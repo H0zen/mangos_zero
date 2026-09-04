@@ -94,8 +94,8 @@ static bool HandleResetStatsOrLevelHelper(Player* player)
         player->SetShapeshiftForm(FORM_NONE);
     }
 
-    player->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, DEFAULT_WORLD_OBJECT_SIZE);
-    player->SetFloatValue(UNIT_FIELD_COMBATREACH, 1.5f);
+    player->SetBoundingRadius(DEFAULT_WORLD_OBJECT_SIZE);
+    player->SetCombatReach(1.5f);
 
     player->setFactionForRace(player->getRace());
 

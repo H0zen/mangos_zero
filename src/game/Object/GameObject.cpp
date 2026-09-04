@@ -236,9 +236,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map,float x, float 
     SetQuaternion(q);
     SetGOInfo(goinfo);
     SetObjectScale(m_goInfo->size);
-    SetFloatValue(GAMEOBJECT_POS_X, x);
-    SetFloatValue(GAMEOBJECT_POS_Y, y);
-    SetFloatValue(GAMEOBJECT_POS_Z, z);
+    SetGoPosition(x, y, z);
     SetUInt32Value(GAMEOBJECT_FACTION, m_goInfo->faction);
     SetAllGoFlags(m_goInfo->flags);
     SetEntry(m_goInfo->id);
@@ -375,9 +373,9 @@ void GameObject::SaveToDB(uint32 mapid)
     // data->guid = guid don't must be update at save
     data.id = GetEntry();
     data.mapid = mapid;
-    data.posX = GetFloatValue(GAMEOBJECT_POS_X);
-    data.posY = GetFloatValue(GAMEOBJECT_POS_Y);
-    data.posZ = GetFloatValue(GAMEOBJECT_POS_Z);
+    data.posX = GetGoPositionX();
+    data.posY = GetGoPositionY();
+    data.posZ = GetGoPositionZ();
     data.orientation = GetFloatValue(GAMEOBJECT_FACING);
     data.rotation0 = GetFloatValue(GAMEOBJECT_ROTATION + 0);
     data.rotation1 = GetFloatValue(GAMEOBJECT_ROTATION + 1);
@@ -393,9 +391,9 @@ void GameObject::SaveToDB(uint32 mapid)
        << GetGUIDLow() << ", "
        << GetEntry() << ", "
        << mapid << ", "
-       << GetFloatValue(GAMEOBJECT_POS_X) << ", "
-       << GetFloatValue(GAMEOBJECT_POS_Y) << ", "
-       << GetFloatValue(GAMEOBJECT_POS_Z) << ", "
+       << GetGoPositionX() << ", "
+       << GetGoPositionY() << ", "
+       << GetGoPositionZ() << ", "
        << GetFloatValue(GAMEOBJECT_FACING) << ", "
        << GetFloatValue(GAMEOBJECT_ROTATION) << ", "
        << GetFloatValue(GAMEOBJECT_ROTATION + 1) << ", "

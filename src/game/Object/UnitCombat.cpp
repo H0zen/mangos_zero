@@ -371,12 +371,12 @@ uint32 Unit::CalculateDamage(WeaponAttackType attType, bool normalized)
                 max_damage = GetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE);
                 break;
             case BASE_ATTACK:
-                min_damage = GetFloatValue(UNIT_FIELD_MINDAMAGE);
-                max_damage = GetFloatValue(UNIT_FIELD_MAXDAMAGE);
+                min_damage = GetShownDamage(false, false);
+                max_damage = GetShownDamage(false, true);
                 break;
             case OFF_ATTACK:
-                min_damage = GetFloatValue(UNIT_FIELD_MINOFFHANDDAMAGE);
-                max_damage = GetFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE);
+                min_damage = GetShownDamage(true, false);
+                max_damage = GetShownDamage(true, true);
                 break;
             // Just for good manner
             default:

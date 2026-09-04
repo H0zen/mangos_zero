@@ -566,7 +566,7 @@ bool Creature::InitEntry(uint32 Entry, Team team, CreatureData const* data /*=NU
 
     SetName(normalInfo->Name);                              // at normal entry always
 
-    SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);
+    SetCastSpeedMod(1.0f);
 
     // update speed for the new CreatureInfo base speed mods
     UpdateSpeed(MOVE_WALK, false);

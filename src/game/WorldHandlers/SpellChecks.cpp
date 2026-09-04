@@ -2175,7 +2175,7 @@ uint32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spel
     }
 
     // PCT mod from user auras by school
-    powerCost = int32(powerCost * (1.0f + caster->GetFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + school)));
+    powerCost = int32(powerCost * (1.0f + caster->GetPowerCostMultiplier(school)));
     if (powerCost < 0)
     {
         powerCost = 0;

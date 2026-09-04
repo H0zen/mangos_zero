@@ -265,7 +265,7 @@ void Player::SaveToDB()
     // FIXME: at this moment send to DB as unsigned, including unit32(-1)
     uberInsert.addUInt32(GetUInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX));
 
-    uberInsert.addUInt16(uint16(GetUInt32Value(PLAYER_BYTES_3) & 0xFFFE));   // DrunkState
+    uberInsert.addUInt16(static_cast<uint16>(GetDrunkAndGender() & 0xFFFE));   // DrunkState
 
     uberInsert.addUInt32(GetHealth());
 
@@ -276,7 +276,7 @@ void Player::SaveToDB()
 
     for (uint32 i = 0; i < PLAYER_EXPLORED_ZONES_SIZE; ++i) // string
     {
-        ss << GetUInt32Value(PLAYER_EXPLORED_ZONES_1 + i) << " ";
+        ss << GetExploredZones(i) << " ";
     }
     uberInsert.addString(ss); // exploredZOnes
 
@@ -292,7 +292,7 @@ void Player::SaveToDB()
 
     uberInsert.addUInt32(GetUInt32Value(PLAYER_AMMO_ID));
 
-    uberInsert.addUInt32(uint32(GetByteValue(PLAYER_FIELD_BYTES, 2))); // actionbars
+    uberInsert.addUInt32(uint32(GetActionBars())); // actionbars
     uberInsert.addUInt32(GetCreatedDate());
 
     uberInsert.Execute();
@@ -834,8 +834,8 @@ void Player::outDebugStatsValues() const
     sLog.outDebug("HolyRes is: \t\t%u\t\tFireRes is: \t\t%u", GetResistance(SPELL_SCHOOL_HOLY), GetResistance(SPELL_SCHOOL_FIRE));
     sLog.outDebug("NatureRes is: \t\t%u\t\tFrostRes is: \t\t%u", GetResistance(SPELL_SCHOOL_NATURE), GetResistance(SPELL_SCHOOL_FROST));
     sLog.outDebug("ShadowRes is: \t\t%u\t\tArcaneRes is: \t\t%u", GetResistance(SPELL_SCHOOL_SHADOW), GetResistance(SPELL_SCHOOL_ARCANE));
-    sLog.outDebug("MIN_DAMAGE is: \t\t%f\tMAX_DAMAGE is: \t\t%f", GetFloatValue(UNIT_FIELD_MINDAMAGE), GetFloatValue(UNIT_FIELD_MAXDAMAGE));
-    sLog.outDebug("MIN_OFFHAND_DAMAGE is: \t%f\tMAX_OFFHAND_DAMAGE is: \t%f", GetFloatValue(UNIT_FIELD_MINOFFHANDDAMAGE), GetFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE));
+    sLog.outDebug("MIN_DAMAGE is: \t\t%f\tMAX_DAMAGE is: \t\t%f", GetShownDamage(false, false), GetShownDamage(false, true));
+    sLog.outDebug("MIN_OFFHAND_DAMAGE is: \t%f\tMAX_OFFHAND_DAMAGE is: \t%f", GetShownDamage(true, false), GetShownDamage(true, true));
     sLog.outDebug("MIN_RANGED_DAMAGE is: \t%f\tMAX_RANGED_DAMAGE is: \t%f", GetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE), GetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE));
     sLog.outDebug("ATTACK_TIME is: \t%u\t\tRANGE_ATTACK_TIME is: \t%u", GetAttackTime(BASE_ATTACK), GetAttackTime(RANGED_ATTACK));
 }

@@ -582,8 +582,8 @@ float CombatReachBetween(Unit const& attacker, Unit const& victim, bool forMelee
                          float flat_mod)
 {
     // The measured values show BASE_MELEE_OFFSET in (1.3224, 1.342)
-    float reach = attacker.GetFloatValue(UNIT_FIELD_COMBATREACH) +
-                  victim.GetFloatValue(UNIT_FIELD_COMBATREACH) +
+    float reach = attacker.GetCombatReachValue() +
+                  victim.GetCombatReachValue() +
                   BASE_MELEERANGE_OFFSET + flat_mod;
 
     if (forMeleeRange && reach < ATTACK_DISTANCE)
@@ -5636,16 +5636,16 @@ void Unit::UpdateModelData()
     if (CreatureModelInfo const* modelInfo = sObjectMgr.GetCreatureModelInfo(GetDisplayId()))
     {
         // we expect values in database to be relative to scale = 1.0
-        SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, GetObjectScale() * modelInfo->bounding_radius);
+        SetBoundingRadius(GetObjectScale() * modelInfo->bounding_radius);
 
         // never actually update combat_reach for player, it's always the same. Below player case is for initialization
         if (GetTypeId() == TYPEID_PLAYER)
         {
-            SetFloatValue(UNIT_FIELD_COMBATREACH, 1.5f);
+            SetCombatReach(1.5f);
         }
         else
         {
-            SetFloatValue(UNIT_FIELD_COMBATREACH, GetObjectScale() * modelInfo->combat_reach);
+            SetCombatReach(GetObjectScale() * modelInfo->combat_reach);
         }
     }
 }
@@ -6015,11 +6015,11 @@ void Unit::ApplyCastTimePercentMod(float val, bool apply)
 {
     if (val > 0)
     {
-        ApplyPercentModFloatValue(UNIT_MOD_CAST_SPEED, val, !apply);
+        ApplyCastSpeedMod(val, !apply);
     }
     else
     {
-        ApplyPercentModFloatValue(UNIT_MOD_CAST_SPEED, -val, apply);
+        ApplyCastSpeedMod(-val, apply);
     }
 }
 

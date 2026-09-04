@@ -80,7 +80,7 @@ void Player::CheckDuelDistance(time_t currTime)
         return;
     }
 
-    uint64 duelFlagGUID = GetUInt64Value(PLAYER_DUEL_ARBITER);
+    uint64 duelFlagGUID = GetDuelArbiterGuid();
     GameObject* obj = GetMap()->GetGameObject(duelFlagGUID);
     if (!obj)
     {
@@ -171,7 +171,7 @@ void Player::DuelComplete(DuelCompleteType type)
 
 
     // Remove Duel Flag object
-    GameObject* obj = GetMap()->GetGameObject(GetUInt64Value(PLAYER_DUEL_ARBITER));
+    GameObject* obj = GetMap()->GetGameObject(GetDuelArbiterGuid());
     if (obj)
     {
         duel->initiator->RemoveGameObject(obj, true);
@@ -230,9 +230,9 @@ void Player::DuelComplete(DuelCompleteType type)
     }
 
     // cleanups
-    SetGuidValue(PLAYER_DUEL_ARBITER, ObjectGuid());
+    SetDuelArbiterGuid(ObjectGuid());
     SetUInt32Value(PLAYER_DUEL_TEAM, 0);
-    duel->opponent->SetGuidValue(PLAYER_DUEL_ARBITER, ObjectGuid());
+    duel->opponent->SetDuelArbiterGuid(ObjectGuid());
     duel->opponent->SetUInt32Value(PLAYER_DUEL_TEAM, 0);
 
     delete duel->opponent->duel;

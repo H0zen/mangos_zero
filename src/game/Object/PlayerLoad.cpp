@@ -241,7 +241,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     m_drunk = fields[44].GetUInt16();
 
-    SetUInt16Value(PLAYER_BYTES_3, 0, (m_drunk & 0xFFFE) | gender);
+    SetDrunkAndGender(m_drunk, gender);
 
     SetAllPlayerFlags(fields[11].GetUInt32());
     SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, fields[43].GetInt32());
@@ -249,7 +249,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     SetUInt32Value(PLAYER_AMMO_ID, fields[53].GetUInt32());
 
     // Action bars state
-    SetByteValue(PLAYER_FIELD_BYTES, 2, fields[54].GetUInt8());
+    SetActionBars(fields[54].GetUInt8());
 
     // cleanup inventory related item value fields (its will be filled correctly in _LoadInventory)
     for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
@@ -563,7 +563,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     ClearInCombat();
 
     // make sure the unit is considered not in duel for proper loading
-    SetGuidValue(PLAYER_DUEL_ARBITER, ObjectGuid());
+    SetDuelArbiterGuid(ObjectGuid());
     SetUInt32Value(PLAYER_DUEL_TEAM, 0);
 
     // reset stats before loading any modifiers
@@ -1094,7 +1094,7 @@ void Player::LoadCorpse()
     {
         if (Corpse* corpse = GetCorpse())
         {
-            ApplyModByteFlag(PLAYER_FIELD_BYTES, 0, PLAYER_FIELD_BYTE_RELEASE_TIMER, corpse && !sMapStore.LookupEntry(corpse->GetMapId())->Instanceable());
+            ShowReleaseTimer(corpse && !sMapStore.LookupEntry(corpse->GetMapId())->Instanceable());
         }
         else
         {

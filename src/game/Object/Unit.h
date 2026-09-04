@@ -1619,6 +1619,50 @@ class Unit : public Presence
          */
         uint32 GetHealth()    const { return m_health; }
 
+        /// How much longer or shorter this unit's casts take than the spell
+        /// itself says, as a factor the client applies to every cast bar.
+        float GetCastSpeedMod() const { return GetFloatValue(UNIT_MOD_CAST_SPEED); }
+        void SetCastSpeedMod(float factor) { SetFloatValue(UNIT_MOD_CAST_SPEED, factor); }
+        void ApplyCastSpeedMod(float percent, bool apply)
+        {
+            ApplyPercentModFloatValue(UNIT_MOD_CAST_SPEED, percent, apply);
+        }
+
+        /// What a spell of a given school costs this unit beyond its base cost.
+        float GetPowerCostMultiplier(uint32 school) const
+        {
+            return GetFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + school);
+        }
+        void SetPowerCostMultiplier(uint32 school, float value)
+        {
+            SetFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + school, value);
+        }
+        void ApplyPowerCostMultiplier(uint32 school, float value, bool apply)
+        {
+            ApplyModSignedFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + school, value, apply);
+        }
+
+        /// How wide the unit is drawn and how far it reaches to swing.
+        void SetBoundingRadius(float radius) { SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, radius); }
+        void SetCombatReach(float reach) { SetFloatValue(UNIT_FIELD_COMBATREACH, reach); }
+        float GetCombatReachValue() const { return GetFloatValue(UNIT_FIELD_COMBATREACH); }
+
+        /// The swing the client is told about, which is not the swing that is
+        /// rolled: these are the numbers on the character sheet.
+        float GetShownDamage(bool offHand, bool maximum) const
+        {
+            uint16 const field = offHand ? (maximum ? UNIT_FIELD_MAXOFFHANDDAMAGE : UNIT_FIELD_MINOFFHANDDAMAGE)
+                                         : (maximum ? UNIT_FIELD_MAXDAMAGE : UNIT_FIELD_MINDAMAGE);
+            return GetFloatValue(field);
+        }
+
+        /// One of the weapons the client draws on this unit. The pair of dwords
+        /// per slot is described where a creature's virtual items are written.
+        uint8 GetVirtualItemInfo(uint8 slot, uint8 part) const
+        {
+            return GetByteValue(UNIT_VIRTUAL_ITEM_INFO + slot * 2, part);
+        }
+
         /// Attack power reaches the client as three numbers: a base, and a
         /// green one and a red one which live in the two signed halves of a
         /// single field. Only their sum matters on this side.
