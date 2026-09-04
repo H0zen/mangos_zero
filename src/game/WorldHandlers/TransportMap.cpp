@@ -64,17 +64,17 @@ std::string DescribeSpatially(Unit* u)
     }
 
     Map* on = u->FindMap();
-    Geometry::Frame const& f = u->Where().CurrentFrame();
+    Geometry::Placement const& at = u->Where();
 
     char buf[320];
     snprintf(buf, sizeof(buf),
-             "%s map=%u%s frame=%s/%llu pos=(%.2f %.2f %.2f) inworld=%d alive=%d gen=%u",
+             "%s map=%u%s measured=%s/%u pos=(%.2f %.2f %.2f) inworld=%d alive=%d gen=%u",
              u->GetGuidStr().c_str(),
              on ? on->GetId() : 0u,
              on && on->AsTransport() ? "[deck]" : "",
-             f.IsPlaced() ? (f.IsDeck() ? "deck" : "world") : "nowhere",
-             static_cast<unsigned long long>(f.Id()),
-             u->Where().X(), u->Where().Y(), u->Where().Z(),
+             at.IsPlaced() ? std::to_string(at.MapId()).c_str() : "nowhere",
+             at.InstanceId(),
+             at.X(), at.Y(), at.Z(),
              u->IsInWorld() ? 1 : 0, u->IsAlive() ? 1 : 0,
              unsigned(u->GetMotionMaster()->GetCurrentMovementGeneratorType()));
 

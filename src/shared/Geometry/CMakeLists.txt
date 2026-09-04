@@ -2,7 +2,6 @@ add_library(geometry INTERFACE)
 
 target_sources(geometry
     INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}/Frame.h
         ${CMAKE_CURRENT_SOURCE_DIR}/GeometryMath.h
         ${CMAKE_CURRENT_SOURCE_DIR}/Matrix4.h
         ${CMAKE_CURRENT_SOURCE_DIR}/Placement.h

@@ -37,7 +37,6 @@
 #include <cmath>
 #include <limits>
 
-using Geometry::Frame;
 using Geometry::Placement;
 using Geometry::Vector3;
 
@@ -46,13 +45,12 @@ namespace
     const float NOT_A_NUMBER = std::numeric_limits<float>::quiet_NaN();
     const float INFINITE = std::numeric_limits<float>::infinity();
 
-    Frame World() { return Frame::World(0, 0); }
 
     /// A viewer at the origin facing +X (orientation 0).
     Placement Viewer()
     {
         Placement p(0.f);
-        p.EnterFrame(World(), Vector3(0.f, 0.f, 0.f), 0.f);
+        p.EnterFrame(0, 0, Vector3(0.f, 0.f, 0.f), 0.f);
         return p;
     }
 
@@ -60,7 +58,7 @@ namespace
     Placement TargetAt(float angle)
     {
         Placement p(0.f);
-        p.EnterFrame(World(),
+        p.EnterFrame(0, 0,
                      Vector3(10.f * std::cos(angle), 10.f * std::sin(angle), 0.f), 0.f);
         return p;
     }
@@ -106,7 +104,7 @@ TEST_CASE("A half-circle arc is the front half")
 TEST_CASE("Facing rotates the arc with the viewer")
 {
     Placement viewer(0.f);
-    viewer.EnterFrame(World(), Vector3(0.f, 0.f, 0.f), Placement::Pi());  // facing -X
+    viewer.EnterFrame(0, 0, Vector3(0.f, 0.f, 0.f), Placement::Pi());  // facing -X
 
     const float pi = Placement::Pi();
 
@@ -223,7 +221,7 @@ TEST_CASE("Arc questions still fail closed across frames")
     const Placement here = Viewer();
 
     Placement elsewhere(0.f);
-    elsewhere.EnterFrame(Frame::World(1, 0), Vector3(10.f, 0.f, 0.f), 0.f);
+    elsewhere.EnterFrame(1, 0, Vector3(10.f, 0.f, 0.f), 0.f);
 
     CHECK_FALSE(here.HasInArc(elsewhere, pi));
     CHECK_FALSE(here.IsInFront(elsewhere, 20.f, pi));
@@ -231,7 +229,7 @@ TEST_CASE("Arc questions still fail closed across frames")
 
     // Same again for a deck, which is the case that matters in play.
     Placement aboard(0.f);
-    aboard.EnterFrame(Frame::Deck(0x1FC0000000000001ull), Vector3(10.f, 0.f, 0.f), 0.f);
+    aboard.EnterFrame(700, 0, Vector3(10.f, 0.f, 0.f), 0.f);
 
     CHECK_FALSE(here.HasInArc(aboard, pi));
     CHECK_FALSE(here.IsInFront(aboard, 20.f, pi));

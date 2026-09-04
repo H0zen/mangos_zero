@@ -3014,7 +3014,7 @@ void Creature::SetSpawn(CreatureCreatePos const& pos)
 
 void Creature::SetSpawn(Geometry::Vector3 const& at, float facing)
 {
-    m_spawn.EnterFrame(Where().CurrentFrame(), at, facing);
+    m_spawn.EnterFrameOf(Where(), at, facing);
 
     MANGOS_ASSERT(MaNGOS::IsValidMapCoord(at.x, at.y, at.z) ||
                   PrintCoordinatesError(at.x, at.y, at.z, "respawn"));

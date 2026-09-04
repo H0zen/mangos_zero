@@ -202,11 +202,11 @@ void Player::SaveToDB()
     }
     else
     {
-        uberInsert.addUInt32(GetTeleportDest().mapid);
-        uberInsert.addFloat(finiteAlways(GetTeleportDest().coord_x));
-        uberInsert.addFloat(finiteAlways(GetTeleportDest().coord_y));
-        uberInsert.addFloat(finiteAlways(GetTeleportDest().coord_z));
-        uberInsert.addFloat(finiteAlways(GetTeleportDest().orientation));
+        uberInsert.addUInt32(GetTeleportDest().MapId());
+        uberInsert.addFloat(finiteAlways(GetTeleportDest().X()));
+        uberInsert.addFloat(finiteAlways(GetTeleportDest().Y()));
+        uberInsert.addFloat(finiteAlways(GetTeleportDest().Z()));
+        uberInsert.addFloat(finiteAlways(GetTeleportDest().Facing()));
     }
 
     std::ostringstream ss;
@@ -1958,11 +1958,11 @@ void Player::_SaveBGData()
         stmt.addUInt32(GetGUIDLow());
         stmt.addUInt32(m_bgData.bgInstanceID);
         stmt.addUInt32(uint32(m_bgData.bgTeam));
-        stmt.addFloat(m_bgData.joinPos.coord_x);
-        stmt.addFloat(m_bgData.joinPos.coord_y);
-        stmt.addFloat(m_bgData.joinPos.coord_z);
-        stmt.addFloat(m_bgData.joinPos.orientation);
-        stmt.addUInt32(m_bgData.joinPos.mapid);
+        stmt.addFloat(m_bgData.joinPos.X());
+        stmt.addFloat(m_bgData.joinPos.Y());
+        stmt.addFloat(m_bgData.joinPos.Z());
+        stmt.addFloat(m_bgData.joinPos.Facing());
+        stmt.addUInt32(m_bgData.joinPos.MapId());
 
         stmt.Execute();
     }

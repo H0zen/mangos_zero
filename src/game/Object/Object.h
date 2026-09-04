@@ -84,38 +84,6 @@ struct Position
 };
 
 /**
- * @brief World location structure
- *
- * Stores map ID and position coordinates.
- */
-struct WorldLocation
-{
-    uint32 mapid; ///< Map ID
-    float coord_x; ///< X-coordinate
-    float coord_y; ///< Y-coordinate
-    float coord_z; ///< Z-coordinate
-    float orientation; ///< Orientation (radians)
-
-    /**
-     * @brief Constructor with parameters
-     * @param _mapid Map ID
-     * @param _x X-coordinate
-     * @param _y Y-coordinate
-     * @param _z Z-coordinate
-     * @param _o Orientation
-     */
-    explicit WorldLocation(uint32 _mapid = 0, float _x = 0, float _y = 0, float _z = 0, float _o = 0)
-        : mapid(_mapid), coord_x(_x), coord_y(_y), coord_z(_z), orientation(_o) {}
-
-    /**
-     * @brief Copy constructor
-     * @param loc Source location
-     */
-    WorldLocation(WorldLocation const& loc)
-        : mapid(loc.mapid), coord_x(loc.coord_x), coord_y(loc.coord_y), coord_z(loc.coord_z), orientation(loc.orientation) {}
-};
-
-/**
  * @brief Base class for all objects in the MaNGOS world
  *
  * The Object class is the fundamental base class for all entities that exist

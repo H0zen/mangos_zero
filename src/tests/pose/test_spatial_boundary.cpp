@@ -44,7 +44,6 @@
 
 #include <cmath>
 
-using Geometry::Frame;
 using Geometry::Placement;
 using Geometry::Vector3;
 
@@ -54,20 +53,27 @@ namespace
     const uint32_t MAP_KALIMDOR = 1;
     const uint32_t NO_INSTANCE = 0;
 
-    const uint64_t VESSEL_A = 0x1FC0000000000001ull;
-    const uint64_t VESSEL_B = 0x1FC0000000000002ull;
+    // A vessel is itself a map, so its deck is a map id like any other.
+    const uint32_t MAP_VESSEL_A = 700;
+    const uint32_t MAP_VESSEL_B = 701;
 
-    Placement At(const Frame& frame, float x, float y, float z, float facing = 0.f)
+    struct Space
+    {
+        uint32_t map;
+        uint32_t instance;
+    };
+
+    Placement At(Space where, float x, float y, float z, float facing = 0.f)
     {
         Placement p(0.f);
-        p.EnterFrame(frame, Vector3(x, y, z), facing);
+        p.EnterFrame(where.map, where.instance, Vector3(x, y, z), facing);
         return p;
     }
 }
 
 TEST_CASE("Two placements in the same frame measure normally")
 {
-    const Frame world = Frame::World(MAP_EASTERN_KINGDOMS, NO_INSTANCE);
+    const Space world{MAP_EASTERN_KINGDOMS, NO_INSTANCE};
 
     const Placement a = At(world, 0.f, 0.f, 0.f);
     const Placement b = At(world, 3.f, 4.f, 0.f);
@@ -82,8 +88,8 @@ TEST_CASE("Across two maps every measure fails closed")
 {
     // Same coordinates in both, so nothing but the frame can be telling them
     // apart. A composition bug would report zero distance here.
-    const Placement here  = At(Frame::World(MAP_EASTERN_KINGDOMS, NO_INSTANCE), 10.f, 10.f, 10.f);
-    const Placement there = At(Frame::World(MAP_KALIMDOR, NO_INSTANCE), 10.f, 10.f, 10.f);
+    const Placement here  = At(Space{MAP_EASTERN_KINGDOMS, NO_INSTANCE}, 10.f, 10.f, 10.f);
+    const Placement there = At(Space{MAP_KALIMDOR, NO_INSTANCE}, 10.f, 10.f, 10.f);
 
     CHECK_FALSE(here.ShareFrame(there));
 
@@ -103,8 +109,8 @@ TEST_CASE("Across two maps every measure fails closed")
 TEST_CASE("The same map in two instances is two frames")
 {
     // Instance isolation is the same mechanism, not a separate check bolted on.
-    const Placement one = At(Frame::World(MAP_EASTERN_KINGDOMS, 1), 0.f, 0.f, 0.f);
-    const Placement two = At(Frame::World(MAP_EASTERN_KINGDOMS, 2), 0.f, 0.f, 0.f);
+    const Placement one = At(Space{MAP_EASTERN_KINGDOMS, 1}, 0.f, 0.f, 0.f);
+    const Placement two = At(Space{MAP_EASTERN_KINGDOMS, 2}, 0.f, 0.f, 0.f);
 
     CHECK_FALSE(one.ShareFrame(two));
     CHECK(std::isinf(one.DistanceTo(two)));
@@ -114,14 +120,14 @@ TEST_CASE("The same map in two instances is two frames")
 TEST_CASE("A deck is a frame of its own, and the shore is not in it")
 {
     // The invariant in one case: aboard, the world does not exist.
-    const Frame deck = Frame::Deck(VESSEL_A);
-    const Frame shore = Frame::World(MAP_EASTERN_KINGDOMS, NO_INSTANCE);
+    const Space deck{MAP_VESSEL_A, NO_INSTANCE};
+    const Space shore{MAP_EASTERN_KINGDOMS, NO_INSTANCE};
 
     const Placement aboard = At(deck, 2.f, 0.f, 0.f);
     const Placement ashore = At(shore, 2.f, 0.f, 0.f);
 
-    CHECK(deck.IsDeck());
-    CHECK_FALSE(shore.IsDeck());
+    // Nothing marks the deck as special: it is a map, and that is the whole of it.
+    CHECK(deck.map != shore.map);
 
     CHECK_FALSE(aboard.ShareFrame(ashore));
     CHECK(std::isinf(aboard.DistanceTo(ashore)));
@@ -135,7 +141,7 @@ TEST_CASE("Two men on the same deck measure against each other normally")
     // The other half of the rule, and the half a too-eager fail-closed breaks:
     // within one vessel, deck coordinates ARE the coordinates, so melee reach and
     // spell range work exactly as they do on a continent.
-    const Frame deck = Frame::Deck(VESSEL_A);
+    const Space deck{MAP_VESSEL_A, NO_INSTANCE};
 
     const Placement bosun = At(deck, 0.f, 0.f, 0.f);
     const Placement cook  = At(deck, 3.f, 4.f, 0.f);
@@ -147,8 +153,8 @@ TEST_CASE("Two men on the same deck measure against each other normally")
 
 TEST_CASE("Two different vessels are two different frames")
 {
-    const Placement onA = At(Frame::Deck(VESSEL_A), 0.f, 0.f, 0.f);
-    const Placement onB = At(Frame::Deck(VESSEL_B), 0.f, 0.f, 0.f);
+    const Placement onA = At(Space{MAP_VESSEL_A, NO_INSTANCE}, 0.f, 0.f, 0.f);
+    const Placement onB = At(Space{MAP_VESSEL_B, NO_INSTANCE}, 0.f, 0.f, 0.f);
 
     CHECK_FALSE(onA.ShareFrame(onB));
     CHECK(std::isinf(onA.DistanceTo(onB)));
@@ -161,7 +167,7 @@ TEST_CASE("An unplaced placement shares a frame with nothing, including itself")
     // come out adjacent because their frames happen to compare equal.
     const Placement nowhere;
     const Placement alsoNowhere;
-    const Placement somewhere = At(Frame::World(MAP_EASTERN_KINGDOMS, NO_INSTANCE), 0.f, 0.f, 0.f);
+    const Placement somewhere = At(Space{MAP_EASTERN_KINGDOMS, NO_INSTANCE}, 0.f, 0.f, 0.f);
 
     CHECK_FALSE(nowhere.IsPlaced());
     CHECK_FALSE(nowhere.ShareFrame(alsoNowhere));
@@ -175,7 +181,7 @@ TEST_CASE("An unplaced placement shares a frame with nothing, including itself")
 
 TEST_CASE("Leaving a frame makes a placement unreachable again")
 {
-    const Frame world = Frame::World(MAP_EASTERN_KINGDOMS, NO_INSTANCE);
+    const Space world{MAP_EASTERN_KINGDOMS, NO_INSTANCE};
 
     Placement a = At(world, 0.f, 0.f, 0.f);
     const Placement b = At(world, 1.f, 0.f, 0.f);
@@ -192,15 +198,15 @@ TEST_CASE("Rebasing onto a deck moves an object out of the world's reach")
 {
     // Boarding, in one call: the coordinates are read from elsewhere, and the
     // frame changes. Nothing about the shore's distances survives it.
-    const Frame world = Frame::World(MAP_EASTERN_KINGDOMS, NO_INSTANCE);
+    const Space world{MAP_EASTERN_KINGDOMS, NO_INSTANCE};
 
     Placement sailor = At(world, 0.f, 0.f, 0.f);
     const Placement dockhand = At(world, 1.f, 0.f, 0.f);
     REQUIRE(sailor.WithinDist(dockhand, 2.f));
 
-    sailor.Rebase(Frame::Deck(VESSEL_A));
+    sailor.Rebase(MAP_VESSEL_A, NO_INSTANCE);
 
-    CHECK(sailor.CurrentFrame().IsDeck());
+    CHECK(sailor.MapId() == MAP_VESSEL_A);
     CHECK_FALSE(sailor.ShareFrame(dockhand));
     CHECK(std::isinf(sailor.DistanceTo(dockhand)));
 }
@@ -210,12 +216,12 @@ TEST_CASE("A candidate in another frame never wins a nearest-of comparison")
     // IsNearer picks between two candidates. Out-of-frame must lose whichever
     // side it is on, or a target-selection sweep starts preferring things on
     // other maps because their coordinates happen to be small.
-    const Frame world = Frame::World(MAP_EASTERN_KINGDOMS, NO_INSTANCE);
+    const Space world{MAP_EASTERN_KINGDOMS, NO_INSTANCE};
 
     const Placement viewer = At(world, 0.f, 0.f, 0.f);
     const Placement near_  = At(world, 1.f, 0.f, 0.f);
     const Placement far_   = At(world, 50.f, 0.f, 0.f);
-    const Placement other  = At(Frame::World(MAP_KALIMDOR, NO_INSTANCE), 0.f, 0.f, 0.f);
+    const Placement other  = At(Space{MAP_KALIMDOR, NO_INSTANCE}, 0.f, 0.f, 0.f);
 
     CHECK(viewer.IsNearer(near_, far_));
     CHECK_FALSE(viewer.IsNearer(far_, near_));
@@ -228,7 +234,7 @@ TEST_CASE("A candidate in another frame never wins a nearest-of comparison")
 
 TEST_CASE("Arc is measured only inside a shared frame")
 {
-    const Frame world = Frame::World(MAP_EASTERN_KINGDOMS, NO_INSTANCE);
+    const Space world{MAP_EASTERN_KINGDOMS, NO_INSTANCE};
 
     // Facing +X, with the target straight ahead.
     const Placement viewer = At(world, 0.f, 0.f, 0.f, 0.f);
@@ -261,13 +267,13 @@ TEST_CASE("Distance between two placements is body to body, not centre to centre
     // says so: it returns the GAP between the bodies, with both extents taken
     // out. Reading it as a centre separation and subtracting the extents again at
     // the call site is how melee reach ends up short by the size of the target.
-    const Frame world = Frame::World(MAP_EASTERN_KINGDOMS, NO_INSTANCE);
+    const Space world{MAP_EASTERN_KINGDOMS, NO_INSTANCE};
 
     Placement big(5.f);
-    big.EnterFrame(world, Vector3(0.f, 0.f, 0.f), 0.f);
+    big.EnterFrame(world.map, world.instance, Vector3(0.f, 0.f, 0.f), 0.f);
 
     Placement other(5.f);
-    other.EnterFrame(world, Vector3(11.f, 0.f, 0.f), 0.f);
+    other.EnterFrame(world.map, world.instance, Vector3(11.f, 0.f, 0.f), 0.f);
 
     CHECK(big.Extent() == doctest::Approx(5.f));
 
@@ -282,13 +288,13 @@ TEST_CASE("Overlapping bodies are at zero distance, never a negative one")
     // Gap() floors at zero, so two creatures standing inside each other compare
     // as touching rather than as "nearer than touching" -- which would sort ahead
     // of everything in a nearest-target sweep.
-    const Frame world = Frame::World(MAP_EASTERN_KINGDOMS, NO_INSTANCE);
+    const Space world{MAP_EASTERN_KINGDOMS, NO_INSTANCE};
 
     Placement big(5.f);
-    big.EnterFrame(world, Vector3(0.f, 0.f, 0.f), 0.f);
+    big.EnterFrame(world.map, world.instance, Vector3(0.f, 0.f, 0.f), 0.f);
 
     Placement inside(5.f);
-    inside.EnterFrame(world, Vector3(2.f, 0.f, 0.f), 0.f);
+    inside.EnterFrame(world.map, world.instance, Vector3(2.f, 0.f, 0.f), 0.f);
 
     CHECK(big.DistanceTo(inside) == doctest::Approx(0.f));
     CHECK(big.DistanceTo(inside) >= 0.f);
@@ -300,10 +306,10 @@ TEST_CASE("Distance to a bare point takes out only the asker's own extent")
     // A point has no body, so only one extent comes off. Passing a creature's
     // position as a Vector3 instead of its Placement therefore measures something
     // different, and the overload that does it is easy to reach by accident.
-    const Frame world = Frame::World(MAP_EASTERN_KINGDOMS, NO_INSTANCE);
+    const Space world{MAP_EASTERN_KINGDOMS, NO_INSTANCE};
 
     Placement big(5.f);
-    big.EnterFrame(world, Vector3(0.f, 0.f, 0.f), 0.f);
+    big.EnterFrame(world.map, world.instance, Vector3(0.f, 0.f, 0.f), 0.f);
 
     CHECK(big.DistanceTo(Vector3(11.f, 0.f, 0.f)) == doctest::Approx(6.f));
 }

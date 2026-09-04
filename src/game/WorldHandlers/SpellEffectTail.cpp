@@ -490,25 +490,25 @@ void Spell::EffectBind(SpellEffectIndex eff_idx)
     Player* player = (Player*)unitTarget;
 
     uint32 area_id;
-    WorldLocation loc;
-    loc = WorldLocation(player->GetMapId(), player->Where().X(), player->Where().Y(), player->Where().Z(), player->Where().Facing());
+    Geometry::Placement loc;
+    loc = Geometry::Placement::Somewhere(player->GetMapId(), Geometry::Vector3(player->Where().X(), player->Where().Y(), player->Where().Z()), player->Where().Facing());
     area_id = player->GetTerrain()->GetAreaId(player->Where().X(), player->Where().Y(), player->Where().Z());
 
     player->SetHomebindToLocation(loc, area_id);
 
     // binding
     WorldPacket data(SMSG_BINDPOINTUPDATE, (4 + 4 + 4 + 4 + 4));
-    data << float(loc.coord_x);
-    data << float(loc.coord_y);
-    data << float(loc.coord_z);
-    data << uint32(loc.mapid);
+    data << float(loc.X());
+    data << float(loc.Y());
+    data << float(loc.Z());
+    data << uint32(loc.MapId());
     data << uint32(area_id);
     player->SendDirectMessage(&data);
 
-    DEBUG_LOG("New Home Position X is %f", loc.coord_x);
-    DEBUG_LOG("New Home Position Y is %f", loc.coord_y);
-    DEBUG_LOG("New Home Position Z is %f", loc.coord_z);
-    DEBUG_LOG("New Home MapId is %u", loc.mapid);
+    DEBUG_LOG("New Home Position X is %f", loc.X());
+    DEBUG_LOG("New Home Position Y is %f", loc.Y());
+    DEBUG_LOG("New Home Position Z is %f", loc.Z());
+    DEBUG_LOG("New Home MapId is %u", loc.MapId());
     DEBUG_LOG("New Home AreaId is %u", area_id);
 
     // zone update

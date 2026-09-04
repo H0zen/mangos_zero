@@ -1752,7 +1752,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
             {
                 SetSemaphoreTeleportNear(true);
                 // lets save teleport destination for player
-                m_teleport_dest = WorldLocation(mapid, x, y, z, orientation);
+                m_teleport_dest = Geometry::Placement::Somewhere(mapid, Geometry::Vector3(x, y, z), orientation);
                 m_teleport_options = options;
                 return true;
             }
@@ -1784,7 +1784,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
         }
 
         // this will be used instead of the current location in SaveToDB
-        m_teleport_dest = WorldLocation(mapid, x, y, z, orientation);
+        m_teleport_dest = Geometry::Placement::Somewhere(mapid, Geometry::Vector3(x, y, z), orientation);
         SetFallInformation(0, z);
 
         // code for finish transfer called in WorldSession::HandleMovementOpcodes()
@@ -1821,7 +1821,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
                 {
                     SetSemaphoreTeleportFar(true);
                     // lets save teleport destination for player
-                    m_teleport_dest = WorldLocation(mapid, x, y, z, orientation);
+                    m_teleport_dest = Geometry::Placement::Somewhere(mapid, Geometry::Vector3(x, y, z), orientation);
                     m_teleport_options = options;
                     return true;
                 }
@@ -1911,7 +1911,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
                 final_o += transportPosition->o;
             }
 
-            m_teleport_dest = WorldLocation(mapid, final_x, final_y, final_z, final_o);
+            m_teleport_dest = Geometry::Placement::Somewhere(mapid, Geometry::Vector3(final_x, final_y, final_z), final_o);
             SetFallInformation(0, final_z);
             // if the player is saved before worldport ack (at logout for example)
             // this will be used instead of the current location in SaveToDB
@@ -6790,13 +6790,13 @@ bool Player::HasMovementFlag(MovementFlags f) const
  * @param loc The new home bind world location.
  * @param area_id The associated area identifier.
  */
-void Player::SetHomebindToLocation(WorldLocation const& loc, uint32 area_id)
+void Player::SetHomebindToLocation(Geometry::Placement const& loc, uint32 area_id)
 {
-    m_homebindMapId = loc.mapid;
+    m_homebindMapId = loc.MapId();
     m_homebindAreaId = area_id;
-    m_homebindX = loc.coord_x;
-    m_homebindY = loc.coord_y;
-    m_homebindZ = loc.coord_z;
+    m_homebindX = loc.X();
+    m_homebindY = loc.Y();
+    m_homebindZ = loc.Z();
 
     // update sql homebind
     CharacterDatabase.PExecute("UPDATE `character_homebind` SET `map` = '%u', `zone` = '%u', `position_x` = '%f', `position_y` = '%f', `position_z` = '%f' WHERE `guid` = '%u'",

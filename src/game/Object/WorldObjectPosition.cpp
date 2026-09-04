@@ -130,7 +130,7 @@ Geometry::Vector3 RandomGroundPointNear(Presence const& obj, Geometry::Vector3 c
     const float angle = ori ? *ori : (rand_norm_f() * Geometry::Placement::TwoPi());
 
     Geometry::Placement around;
-    around.EnterFrame(obj.Where().CurrentFrame(), centre, angle);
+    around.EnterFrameOf(obj.Where(), centre, angle);
 
     Geometry::Vector3 point = around.RandomPointAround(minDist, distance, angle, rand_norm_f());
     MaNGOS::NormalizeMapCoord(point.x);

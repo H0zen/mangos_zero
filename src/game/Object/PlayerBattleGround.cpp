@@ -101,7 +101,7 @@ void Player::SetBattleGroundEntryPoint(Player* leader /*= NULL*/)
         {
             if (const WorldSafeLocsEntry* entry = sObjectMgr.GetClosestGraveYard(leader->Where().X(), leader->Where().Y(), leader->Where().Z(), leader->GetMapId(), leader->GetTeam()))
             {
-                m_bgData.joinPos = WorldLocation(entry->map_id, entry->x, entry->y, entry->z, 0.0f);
+                m_bgData.joinPos = Geometry::Placement::Somewhere(entry->map_id, Geometry::Vector3(entry->x, entry->y, entry->z), 0.0f);
                 m_bgData.m_needSave = true;
                 return;
             }
@@ -113,14 +113,14 @@ void Player::SetBattleGroundEntryPoint(Player* leader /*= NULL*/)
         // If new entry point is not BG or arena set it
         else if (!leader->GetMap()->IsBattleGround())
         {
-            m_bgData.joinPos = WorldLocation(leader->GetMapId(), leader->Where().X(), leader->Where().Y(), leader->Where().Z(), leader->Where().Facing());
+            m_bgData.joinPos = Geometry::Placement::Somewhere(leader->GetMapId(), Geometry::Vector3(leader->Where().X(), leader->Where().Y(), leader->Where().Z()), leader->Where().Facing());
             m_bgData.m_needSave = true;
             return;
         }
     }
 
     // In error cases use homebind position
-    m_bgData.joinPos = WorldLocation(m_homebindMapId, m_homebindX, m_homebindY, m_homebindZ, 0.0f);
+    m_bgData.joinPos = Geometry::Placement::Somewhere(m_homebindMapId, Geometry::Vector3(m_homebindX, m_homebindY, m_homebindZ), 0.0f);
     m_bgData.m_needSave = true;
 }
 

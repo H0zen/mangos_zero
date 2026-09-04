@@ -44,7 +44,6 @@
 #include <cmath>
 #include <limits>
 
-using Geometry::Frame;
 using Geometry::Placement;
 using Geometry::Vector3;
 
@@ -53,7 +52,6 @@ namespace
     const float NOT_A_NUMBER = std::numeric_limits<float>::quiet_NaN();
     const float INFINITE = std::numeric_limits<float>::infinity();
 
-    Frame World() { return Frame::World(0, 0); }
 }
 
 TEST_CASE("wrap leaves a non-finite value alone instead of converting it to int")
@@ -82,7 +80,7 @@ TEST_CASE("A NaN orientation stays NaN rather than becoming a plausible facing")
     // Before the guard this came back 0.0f at -O2 -- due east, and indistinguishable
     // from a real answer. A NaN that survives makes every arc test below fail closed.
     Placement p(0.f);
-    p.EnterFrame(World(), Vector3(0.f, 0.f, 0.f), NOT_A_NUMBER);
+    p.EnterFrame(0, 0, Vector3(0.f, 0.f, 0.f), NOT_A_NUMBER);
 
     CHECK(std::isnan(p.Facing()));
     CHECK_FALSE(p.IsFinite());
@@ -91,10 +89,10 @@ TEST_CASE("A NaN orientation stays NaN rather than becoming a plausible facing")
 TEST_CASE("A placement with a NaN facing is in nobody's arc")
 {
     Placement viewer(0.f);
-    viewer.EnterFrame(World(), Vector3(0.f, 0.f, 0.f), NOT_A_NUMBER);
+    viewer.EnterFrame(0, 0, Vector3(0.f, 0.f, 0.f), NOT_A_NUMBER);
 
     Placement target(0.f);
-    target.EnterFrame(World(), Vector3(10.f, 0.f, 0.f), 0.f);
+    target.EnterFrame(0, 0, Vector3(10.f, 0.f, 0.f), 0.f);
 
     // Distance still works -- only the facing is corrupt.
     CHECK(viewer.DistanceTo(target) == doctest::Approx(10.f));
@@ -108,10 +106,10 @@ TEST_CASE("A NaN position fails every reach test closed")
 {
     // The predicates all reduce to a comparison against NaN, which is false.
     Placement here(0.f);
-    here.EnterFrame(World(), Vector3(0.f, 0.f, 0.f), 0.f);
+    here.EnterFrame(0, 0, Vector3(0.f, 0.f, 0.f), 0.f);
 
     Placement nowhere(0.f);
-    nowhere.EnterFrame(World(), Vector3(NOT_A_NUMBER, NOT_A_NUMBER, NOT_A_NUMBER), 0.f);
+    nowhere.EnterFrame(0, 0, Vector3(NOT_A_NUMBER, NOT_A_NUMBER, NOT_A_NUMBER), 0.f);
 
     CHECK_FALSE(nowhere.IsFinite());
 
@@ -139,10 +137,10 @@ TEST_CASE("Gap reports zero for a NaN separation, and DistanceTo inherits it")
     CHECK(Placement::Gap(NOT_A_NUMBER, 5.f) == doctest::Approx(0.f));
 
     Placement here(0.f);
-    here.EnterFrame(World(), Vector3(0.f, 0.f, 0.f), 0.f);
+    here.EnterFrame(0, 0, Vector3(0.f, 0.f, 0.f), 0.f);
 
     Placement nowhere(0.f);
-    nowhere.EnterFrame(World(), Vector3(NOT_A_NUMBER, 0.f, 0.f), 0.f);
+    nowhere.EnterFrame(0, 0, Vector3(NOT_A_NUMBER, 0.f, 0.f), 0.f);
 
     CHECK(here.DistanceTo(nowhere) == doctest::Approx(0.f));  // says "touching"
     CHECK_FALSE(here.WithinDist(nowhere, 1.f));               // says "not in reach"
@@ -163,10 +161,10 @@ TEST_CASE("A target standing exactly on you is reported dead ahead")
     // zero separation, so a behind-only effect cannot fire on something perfectly
     // on top of its caster.
     Placement viewer(0.f);
-    viewer.EnterFrame(World(), Vector3(0.f, 0.f, 0.f), 0.f);
+    viewer.EnterFrame(0, 0, Vector3(0.f, 0.f, 0.f), 0.f);
 
     Placement onTop(0.f);
-    onTop.EnterFrame(World(), Vector3(0.f, 0.f, 0.f), 0.f);
+    onTop.EnterFrame(0, 0, Vector3(0.f, 0.f, 0.f), 0.f);
 
     CHECK(viewer.BearingTo(onTop) == doctest::Approx(0.f));
     CHECK(viewer.HasInArc(onTop, Placement::Pi()));
@@ -181,10 +179,10 @@ TEST_CASE("BearingTo across frames answers zero, unlike its fail-closed siblings
     // ShareFrame before it asks, but a new caller reaching for BearingTo directly
     // gets a plausible answer about an object on another map.
     Placement here(0.f);
-    here.EnterFrame(World(), Vector3(0.f, 0.f, 0.f), 0.f);
+    here.EnterFrame(0, 0, Vector3(0.f, 0.f, 0.f), 0.f);
 
     Placement elsewhere(0.f);
-    elsewhere.EnterFrame(Frame::World(1, 0), Vector3(500.f, 500.f, 0.f), 0.f);
+    elsewhere.EnterFrame(1, 0, Vector3(500.f, 500.f, 0.f), 0.f);
 
     CHECK(here.BearingTo(elsewhere) == doctest::Approx(0.f));
     CHECK(std::isinf(here.DistanceTo(elsewhere)));

@@ -1007,7 +1007,7 @@ struct BGData
 
     Team bgTeam; // Team of the player in the battleground
 
-    WorldLocation joinPos; // Position where the player joined the battleground
+    Geometry::Placement joinPos; // Position where the player joined the battleground
 
     bool m_needSave; // Indicates if the data needs to be saved
 };
@@ -1142,10 +1142,10 @@ class Player : public Unit
 
         bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0, bool allowNoDelay = false);
 
-        // Teleport the player to a specific location using WorldLocation
-        bool TeleportTo(WorldLocation const& loc, uint32 options = 0)
+        // Teleport the player to a specific location using Destination
+        bool TeleportTo(Geometry::Placement const& loc, uint32 options = 0)
         {
-            return TeleportTo(loc.mapid, loc.coord_x, loc.coord_y, loc.coord_z, loc.orientation, options);
+            return TeleportTo(loc.MapId(), loc.X(), loc.Y(), loc.Z(), loc.Facing(), options);
         }
 
         bool TeleportToBGEntryPoint(); // Teleport the player to the battleground entry point
@@ -3000,7 +3000,7 @@ class Player : public Unit
         void learnSkillRewardedSpells(uint32 id, uint32 value);
 
         // Get the teleport destination
-        WorldLocation& GetTeleportDest()
+        Geometry::Placement& GetTeleportDest()
         {
             return m_teleport_dest;
         }
@@ -3433,7 +3433,7 @@ class Player : public Unit
         }
 
         // Get the battleground entry point
-        WorldLocation const& GetBattleGroundEntryPoint() const { return m_bgData.joinPos; }
+        Geometry::Placement const& GetBattleGroundEntryPoint() const { return m_bgData.joinPos; }
 
         // Set the battleground entry point
         void SetBattleGroundEntryPoint(Player* leader = NULL);
@@ -3583,7 +3583,7 @@ class Player : public Unit
         void SaveRecallPosition();
 
         // Set the homebind location
-        void SetHomebindToLocation(WorldLocation const& loc, uint32 area_id);
+        void SetHomebindToLocation(Geometry::Placement const& loc, uint32 area_id);
 
         // Relocate the player to the homebind location
         void RelocateToHomebind()
@@ -4130,7 +4130,7 @@ class Player : public Unit
         bool m_isInWater;
 
         // Current teleport data
-        WorldLocation m_teleport_dest; // Destination of the teleport
+        Geometry::Placement m_teleport_dest; // Destination of the teleport
         uint32 m_teleport_options; // Options for the teleport
         bool mSemaphoreTeleport_Near; // Semaphore for near teleport
         bool mSemaphoreTeleport_Far; // Semaphore for far teleport

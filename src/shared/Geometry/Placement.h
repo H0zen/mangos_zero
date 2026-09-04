@@ -1,7 +1,12 @@
 #pragma once
 
-// WHERE SOMETHING IS, as a value: a frame, a pose in it, and the room it takes up -- the
-// server's whole spatial vocabulary, over Vector3 and GeometryMath.
+// WHERE SOMETHING IS, as a value: which map instance the numbers are measured against, a
+// pose in it, and the room it takes up -- the server's whole spatial vocabulary, over
+// Vector3 and GeometryMath.
+//
+// A VESSEL IS ITSELF A MAP, so a passenger's deck-local coordinates are simply coordinates
+// on the vessel's map. The deck boundary needs no case of its own: it is a different map
+// id, and every rule below already refuses to measure across one.
 //
 // An object HAS one; it is not a bag of coordinates with geometry bolted on. An Item has
 // none, which is why it can be carried but never seen, ranged or faced.
@@ -13,13 +18,13 @@
 // CROSS-FRAME FAILS CLOSED -- infinitely far, never in reach, never in arc. Forgetting the
 // map check is the oldest bug in this tree; here it cannot be written.
 
-#include "Geometry/Frame.h"
 #include "Geometry/GeometryMath.h"
 #include "Geometry/Shapes.h"
 #include "Geometry/Vector2.h"
 #include "Geometry/Vector3.h"
 
 #include <cmath>
+#include <cstdint>
 #include <limits>
 
 namespace Geometry
@@ -27,8 +32,25 @@ namespace Geometry
     class Placement
     {
         public:
-            Placement() : m_facing(0.0f), m_extent(0.0f) {}
-            explicit Placement(float extent) : m_facing(0.0f), m_extent(extent) {}
+            Placement() : m_facing(0.0f), m_extent(0.0f), m_mapId(Nowhere()), m_instanceId(0) {}
+            explicit Placement(float extent)
+                : m_facing(0.0f), m_extent(extent), m_mapId(Nowhere()), m_instanceId(0) {}
+
+            Placement(uint32_t mapId, uint32_t instanceId, const Vector3& pos,
+                      float facing = 0.0f, float extent = 0.0f)
+                : m_pos(pos), m_facing(NormalizeOrientation(facing)), m_extent(extent),
+                  m_mapId(mapId), m_instanceId(instanceId) {}
+
+            /// Map zero is a real map, so being nowhere needs a value of its own.
+            static uint32_t Nowhere() { return 0xFFFFFFFFu; }
+
+            /// A place on a map that nobody is standing in yet: a teleport target, a
+            /// graveyard, the point a battleground was joined from. It takes up no room,
+            /// and which instance of the map it turns out to be is settled on arrival.
+            static Placement Somewhere(uint32_t mapId, const Vector3& at, float facing = 0.0f)
+            {
+                return Placement(mapId, 0, at, facing);
+            }
 
             static float Pi() { return pif(); }
             static float TwoPi() { return 2.0f * pif(); }
@@ -48,8 +70,9 @@ namespace Geometry
                 return a > pif() ? a - TwoPi() : a;
             }
 
-            const Frame& CurrentFrame() const { return m_frame; }
-            bool IsPlaced() const { return m_frame.IsPlaced(); }
+            uint32_t MapId() const { return m_mapId; }
+            uint32_t InstanceId() const { return m_instanceId; }
+            bool IsPlaced() const { return m_mapId != Nowhere(); }
 
             const Vector3& Pos() const { return m_pos; }
             float X() const { return m_pos.x; }
@@ -65,16 +88,26 @@ namespace Geometry
                 return Transform(m_pos, Mat3::fromEuler(0.0f, 0.0f, m_facing), scale);
             }
 
-            void EnterFrame(const Frame& frame, const Vector3& pos, float facing)
+            void EnterFrame(uint32_t mapId, uint32_t instanceId, const Vector3& pos, float facing)
             {
-                m_frame = frame;
+                Rebase(mapId, instanceId);
                 m_pos = pos;
                 Face(facing);
             }
 
-            void Rebase(const Frame& frame) { m_frame = frame; }
+            /// Wherever that one is measured against, measure this one there too.
+            void EnterFrameOf(const Placement& like, const Vector3& pos, float facing)
+            {
+                EnterFrame(like.m_mapId, like.m_instanceId, pos, facing);
+            }
 
-            void LeaveFrame() { m_frame = Frame(); }
+            void Rebase(uint32_t mapId, uint32_t instanceId)
+            {
+                m_mapId = mapId;
+                m_instanceId = instanceId;
+            }
+
+            void LeaveFrame() { Rebase(Nowhere(), 0); }
 
             void MoveTo(const Vector3& pos) { m_pos = pos; }
             void MoveTo(float x, float y, float z) { m_pos = Vector3(x, y, z); }
@@ -87,7 +120,7 @@ namespace Geometry
 
             bool ShareFrame(const Placement& other) const
             {
-                return m_frame.IsPlaced() && m_frame == other.m_frame;
+                return IsPlaced() && m_mapId == other.m_mapId && m_instanceId == other.m_instanceId;
             }
 
             float DistanceTo(const Placement& other, bool is3D = true) const
@@ -296,9 +329,10 @@ namespace Geometry
                 return separationSq < far_ * far_;
             }
 
-            Frame m_frame;
             Vector3 m_pos;
             float m_facing;
             float m_extent;
+            uint32_t m_mapId;
+            uint32_t m_instanceId;
     };
 }

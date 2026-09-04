@@ -103,11 +103,12 @@ void Player::_LoadBGData(QueryResult* result)
     /* bgInstanceID, bgTeam, x, y, z, o, map */
     m_bgData.bgInstanceID = fields[0].GetUInt32();
     m_bgData.bgTeam       = Team(fields[1].GetUInt32());
-    m_bgData.joinPos      = WorldLocation(fields[6].GetUInt32(),    // Map
-        fields[2].GetFloat(),     // X
-        fields[3].GetFloat(),     // Y
-        fields[4].GetFloat(),     // Z
-        fields[5].GetFloat());    // Orientation
+    m_bgData.joinPos      = Geometry::Placement::Somewhere(
+        fields[6].GetUInt32(),                                  // Map
+        Geometry::Vector3(fields[2].GetFloat(),                 // X
+                          fields[3].GetFloat(),                 // Y
+                          fields[4].GetFloat()),                // Z
+        fields[5].GetFloat());                                  // Orientation
 
     delete result;
 }
@@ -345,9 +346,9 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
             }
 
             // move to bg enter point
-            const WorldLocation& _loc = GetBattleGroundEntryPoint();
-            SetLocationMapId(_loc.mapid);
-            Place().MoveTo(_loc.coord_x, _loc.coord_y, _loc.coord_z, _loc.orientation);
+            const Geometry::Placement& _loc = GetBattleGroundEntryPoint();
+            SetLocationMapId(_loc.MapId());
+            Place().MoveTo(_loc.X(), _loc.Y(), _loc.Z(), _loc.Facing());
 
             // We are not in BG anymore
             SetBattleGroundId(0, BATTLEGROUND_TYPE_NONE);
@@ -362,9 +363,9 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         // player can have current coordinates in to BG map, fix this
         if (!mapEntry || mapEntry->IsBattleGround())
         {
-            const WorldLocation& _loc = GetBattleGroundEntryPoint();
-            SetLocationMapId(_loc.mapid);
-            Place().MoveTo(_loc.coord_x, _loc.coord_y, _loc.coord_z, _loc.orientation);
+            const Geometry::Placement& _loc = GetBattleGroundEntryPoint();
+            SetLocationMapId(_loc.MapId());
+            Place().MoveTo(_loc.X(), _loc.Y(), _loc.Z(), _loc.Facing());
 
             // We are not in BG anymore
             SetBattleGroundId(0, BATTLEGROUND_TYPE_NONE);

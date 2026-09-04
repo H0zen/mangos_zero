@@ -237,7 +237,7 @@ class Presence : public Object
         /// pose is untouched: this says where the numbers are measured, not what they are.
         void RefreshFrame()
         {
-            m_placement.Rebase(Geometry::Frame::World(m_mapId, m_InstanceId));
+            m_placement.Rebase(m_mapId, m_InstanceId);
         }
 
 
