@@ -53,6 +53,7 @@
 #include "Player.h"
 #include "GossipDef.h"
 #include "QuestDef.h"
+#include "QuestSource.h"
 #include "PlayerRegistry.h"
 #include "ScriptMgr.h"
 #include "Group.h"
@@ -169,7 +170,7 @@ void WorldSession::HandleQuestgiverAcceptQuestOpcode(WorldPacket& recv_data)
 
     // none or incorrect quest giver
     if (!pObject ||
-        (pObject->GetTypeId() != TYPEID_PLAYER && !pObject->HasQuest(quest)) ||
+        (pObject->GetTypeId() != TYPEID_PLAYER && !StartsQuest(*pObject, quest)) ||
         (pObject->GetTypeId() == TYPEID_PLAYER && !((Player*)pObject)->CanShareQuest(quest)))
     {
         _player->PlayerTalkClass->CloseGossip();
@@ -258,7 +259,7 @@ void WorldSession::HandleQuestgiverQueryQuestOpcode(WorldPacket& recv_data)
 
     // Verify that the guid is valid and is a questgiver or involved in the requested quest
     Object* pObject = _player->GetObjectByTypeMask(guid, TYPEMASK_CREATURE_GAMEOBJECT_OR_ITEM);
-    if (!pObject || (!pObject->HasQuest(quest) && !pObject->HasInvolvedQuest(quest)))
+    if (!pObject || (!StartsQuest(*pObject, quest) && !EndsQuest(*pObject, quest)))
     {
         _player->PlayerTalkClass->CloseGossip();
         return;
@@ -318,7 +319,7 @@ void WorldSession::HandleQuestgiverChooseRewardOpcode(WorldPacket& recv_data)
         return;
     }
 
-    if (!pObject->HasInvolvedQuest(quest))
+    if (!EndsQuest(*pObject, quest))
     {
         return;
     }
@@ -362,7 +363,7 @@ void WorldSession::HandleQuestgiverRequestRewardOpcode(WorldPacket& recv_data)
     DEBUG_LOG("WORLD: Received opcode CMSG_QUESTGIVER_REQUEST_REWARD - for %s to %s, quest = %u", _player->GetGuidStr().c_str(), guid.GetString().c_str(), quest);
 
     Object* pObject = _player->GetObjectByTypeMask(guid, TYPEMASK_CREATURE_OR_GAMEOBJECT);
-    if (!pObject || !pObject->HasInvolvedQuest(quest))
+    if (!pObject || !EndsQuest(*pObject, quest))
     {
         return;
     }

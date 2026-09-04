@@ -758,7 +758,8 @@ class GameObject : public WorldObject
 
         // Loot System
         Loot loot;
-        void StartGroupLoot(Group* group, uint32 timer) override;
+        void StartGroupLoot(Group* group, uint32 timer);
+        void StopGroupLoot();
 
         ObjectGuid GetLootRecipientGuid() const { return m_lootRecipientGuid; }
         uint32 GetLootGroupRecipientId() const { return m_lootGroupRecipientId; }
@@ -769,8 +770,8 @@ class GameObject : public WorldObject
         void SetLootRecipient(Unit* pUnit);
         Player* GetOriginalLootRecipient() const;           // ignore group changes/etc, not for looting
 
-        bool HasQuest(uint32 quest_id) const override;
-        bool HasInvolvedQuest(uint32 quest_id) const override;
+        bool OffersQuest(uint32 quest_id) const;
+        bool TakesQuest(uint32 quest_id) const;
         bool ActivateToQuest(Player* pTarget) const;
         void UseDoorOrButton(uint32 time_to_restore = 0, bool alternative = false);
         // 0 = use `gameobject`.`spawntimesecs`
@@ -832,7 +833,6 @@ class GameObject : public WorldObject
         // Loot System
         uint32 m_groupLootTimer;                            // (msecs)timer used for group loot
         uint32 m_groupLootId;                               // used to find group which is looting
-        void StopGroupLoot() override;
         ObjectGuid m_lootRecipientGuid;                     // player who will have rights for looting if m_lootGroupRecipient==0 or group disbanded
         uint32 m_lootGroupRecipientId;                      // group who will have rights for looting if set and exist
 

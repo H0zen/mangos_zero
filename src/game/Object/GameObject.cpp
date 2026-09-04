@@ -525,7 +525,7 @@ void GameObject::DeleteFromDB()
  * @param quest_id The quest identifier.
  * @return true if the quest is related to this game object; otherwise, false.
  */
-bool GameObject::HasQuest(uint32 quest_id) const
+bool GameObject::OffersQuest(uint32 quest_id) const
 {
     QuestRelationsMapBounds bounds = sObjectMgr.GetGOQuestRelationsMapBounds(GetEntry());
     for (QuestRelationsMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
@@ -544,7 +544,7 @@ bool GameObject::HasQuest(uint32 quest_id) const
  * @param quest_id The quest identifier.
  * @return true if the quest is an involved relation for this game object; otherwise, false.
  */
-bool GameObject::HasInvolvedQuest(uint32 quest_id) const
+bool GameObject::TakesQuest(uint32 quest_id) const
 {
     QuestRelationsMapBounds bounds = sObjectMgr.GetGOQuestInvolvedRelationsMapBounds(GetEntry());
     for (QuestRelationsMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)

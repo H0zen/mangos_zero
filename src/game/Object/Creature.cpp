@@ -1905,7 +1905,7 @@ void Creature::LoadEquipment(uint32 equip_entry, bool force)
  * @param quest_id The quest identifier.
  * @return true if the quest is related to this creature; otherwise, false.
  */
-bool Creature::HasQuest(uint32 quest_id) const
+bool Creature::OffersQuest(uint32 quest_id) const
 {
     QuestRelationsMapBounds bounds = sObjectMgr.GetCreatureQuestRelationsMapBounds(GetEntry());
     for (QuestRelationsMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
@@ -1924,7 +1924,7 @@ bool Creature::HasQuest(uint32 quest_id) const
  * @param quest_id The quest identifier.
  * @return true if the quest is an involved relation for this creature; otherwise, false.
  */
-bool Creature::HasInvolvedQuest(uint32 quest_id) const
+bool Creature::TakesQuest(uint32 quest_id) const
 {
     QuestRelationsMapBounds bounds = sObjectMgr.GetCreatureQuestInvolvedRelationsMapBounds(GetEntry());
     for (QuestRelationsMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)

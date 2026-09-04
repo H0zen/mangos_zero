@@ -550,8 +550,6 @@ class Object
 
         uint16 GetValuesCount() const { return m_valuesCount; }
 
-        virtual bool HasQuest(uint32 /* quest_id */) const { return false; }
-        virtual bool HasInvolvedQuest(uint32 /* quest_id */) const { return false; }
         void _ReCreate(uint32 entry);
         void SetAsNewObject(bool isNew) { m_isNewObject = isNew; }
 
@@ -731,7 +729,6 @@ class WorldObject : public Object
         // ASSERT print helper
         bool PrintCoordinatesError(float x, float y, float z, char const* descr) const;
 
-        virtual void StartGroupLoot(Group* /*group*/, uint32 /*timer*/) {}
 
 
 
@@ -755,7 +752,6 @@ class WorldObject : public Object
             m_placement.Rebase(Geometry::Frame::World(m_mapId, m_InstanceId));
         }
 
-        virtual void StopGroupLoot() {}
 
         std::string m_name;
 

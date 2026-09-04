@@ -62,6 +62,7 @@
 #include "MapManager.h"
 #include "MapPersistentStateMgr.h"
 #include "LootMgr.h"
+#include "QuestSource.h"
 #include "LFGMgr.h"
 #include "LFGHandler.h"
 
@@ -1267,7 +1268,7 @@ void Group::StartLootRoll(WorldObject* lootTarget, LootMethod method, Loot* loot
             SendLootStartRoll(LOOT_ROLL_TIMEOUT, *r);
             loot->items[itemSlot].is_blocked = true;
 
-            lootTarget->StartGroupLoot(this, LOOT_ROLL_TIMEOUT);
+            StartGroupLoot(*lootTarget, this, LOOT_ROLL_TIMEOUT);
         }
 
         RollId.push_back(r);

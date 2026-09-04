@@ -862,7 +862,8 @@ class Creature : public Unit
         static void AddToRemoveListInMaps(uint32 db_guid, CreatureData const* data);
         static void SpawnInMaps(uint32 db_guid, CreatureData const* data);
 
-        void StartGroupLoot(Group* group, uint32 timer) override;
+        void StartGroupLoot(Group* group, uint32 timer);
+        void StopGroupLoot();
 
         void SendZoneUnderAttackMessage(Player* attacker);
 
@@ -871,8 +872,8 @@ class Creature : public Unit
         Unit* SelectAttackingTarget(AttackingTarget target, uint32 position, uint32 uiSpellEntry, uint32 selectFlags = 0) const;
         Unit* SelectAttackingTarget(AttackingTarget target, uint32 position, SpellEntry const* pSpellInfo = NULL, uint32 selectFlags = 0) const;
 
-        bool HasQuest(uint32 quest_id) const override;
-        bool HasInvolvedQuest(uint32 quest_id)  const override;
+        bool OffersQuest(uint32 quest_id) const;
+        bool TakesQuest(uint32 quest_id) const;
 
         GridReference<Creature>& GetGridRef()
         {
@@ -942,7 +943,6 @@ class Creature : public Unit
 
         uint32 m_groupLootTimer;                            // (msecs)timer used for group loot
         uint32 m_groupLootId;                               // used to find group which is looting corpse
-        void StopGroupLoot() override;
 
         // vendor items
         VendorItemCounts m_vendorItemCounts;
