@@ -1190,7 +1190,7 @@ class Unit : public Presence
 
         float ComputeBoundingRadius() const override      // overwrite Presence version
         {
-            return m_floatValues[UNIT_FIELD_BOUNDINGRADIUS];
+            return GetFloatValue(UNIT_FIELD_BOUNDINGRADIUS);
         }
 
         /**

@@ -426,8 +426,6 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, Player* targe
     }
 
     Fields::Table const& table = Fields::For(m_objectTypeId);
-    MANGOS_ASSERT(table.count == m_valuesCount);
-
     uint32 admitted[Fields::MaxBlocks];
     Fields::MaskFor(table, Fields::AudienceFor(*this, *target), admitted);
 
@@ -442,12 +440,12 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, Player* targe
             continue;
         }
 
-        bool wanted = creating ? (m_uint32Values[index] != 0) : m_changedValues[index];
+        bool wanted = creating ? (m_mirror.Read(index) != 0) : m_mirror.Changed(index);
 
         if (!wanted && Fields::AlwaysResend(m_objectTypeId, index))
         {
             wanted = !creating
-                  || Fields::Project(*this, *target, index, m_uint32Values[index]) != 0;
+                  || Fields::Project(*this, *target, index, m_mirror.Read(index)) != 0;
         }
 
         if (wanted)
@@ -466,7 +464,7 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, Player* targe
     {
         if (send[index >> 5] & (1u << (index & 31)))
         {
-            *data << Fields::Project(*this, *target, index, m_uint32Values[index]);
+            *data << Fields::Project(*this, *target, index, m_mirror.Read(index));
         }
     }
 }
@@ -480,13 +478,7 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, Player* targe
  */
 void Object::ClearUpdateMask(bool remove)
 {
-    if (m_uint32Values)
-    {
-        for (uint16 index = 0; index < m_valuesCount; ++index)
-        {
-            m_changedValues[index] = false;
-        }
-    }
+    m_mirror.Settle();
 
     if (m_objectUpdated)
     {

@@ -292,7 +292,6 @@ Item::Item()
     m_objectTypeId = TYPEID_ITEM;
     m_updateFlag = UPDATEFLAG_ALL;
 
-    m_valuesCount = ITEM_END;
     m_slot = 0;
     uState = ITEM_NEW;
     uQueuePos = -1;

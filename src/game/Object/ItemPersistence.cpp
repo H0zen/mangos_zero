@@ -129,7 +129,7 @@ void Item::SaveToDB()
             stmt.PExecute(guid);
 
             stmt = CharacterDatabase.CreateStatement(insItem, "INSERT INTO `item_instance` (`guid`,`owner_guid`,`data`,`text`) VALUES (?, ?, ?, ?)");
-            stmt.PExecute(guid, GetOwnerGuid().GetCounter(), SaveFields(0, m_valuesCount).c_str(), m_text.c_str());
+            stmt.PExecute(guid, GetOwnerGuid().GetCounter(), SaveFields(0, GetValuesCount()).c_str(), m_text.c_str());
         } break;
         case ITEM_CHANGED:
         {
@@ -140,7 +140,7 @@ void Item::SaveToDB()
 
             SqlStatement stmt = CharacterDatabase.CreateStatement(updInstance, "UPDATE `item_instance` SET `data` = ?, `owner_guid` = ?, `text` = ? WHERE `guid` = ?");
 
-            stmt.PExecute(SaveFields(0, m_valuesCount).c_str(), GetOwnerGuid().GetCounter(), m_text.c_str(), guid);
+            stmt.PExecute(SaveFields(0, GetValuesCount()).c_str(), GetOwnerGuid().GetCounter(), m_text.c_str(), guid);
 
             if (HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_WRAPPED))
             {
@@ -250,7 +250,7 @@ bool Item::LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid)
     // and allow use "FSetState(ITEM_REMOVED); SaveToDB();" for deleting item from DB
     Object::_Create(guidLow, 0, HIGHGUID_ITEM);
 
-    if (!LoadFields(fields[0].GetString(), 0, m_valuesCount))
+    if (!LoadFields(fields[0].GetString(), 0, GetValuesCount()))
     {
         sLog.outError("Item #%d have broken data in `data` field. Can't be loaded.", guidLow);
         return false;
@@ -330,7 +330,7 @@ bool Item::LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid)
 
         SqlStatement stmt = CharacterDatabase.CreateStatement(updItem, "UPDATE `item_instance` SET `data` = ?, `owner_guid` = ? WHERE `guid` = ?");
 
-        stmt.addString(SaveFields(0, m_valuesCount));
+        stmt.addString(SaveFields(0, GetValuesCount()));
         stmt.addUInt32(GetOwnerGuid().GetCounter());
         stmt.addUInt32(guidLow);
         stmt.Execute();

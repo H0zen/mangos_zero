@@ -35,6 +35,7 @@
 #include <map>
 #include "ByteBuffer.h"
 #include "UpdateFields.h"
+#include "Mirror.h"
 #include "UpdateData.h"
 #include "ObjectGuid.h"
 #include "Camera.h"
@@ -297,7 +298,8 @@ class Object
 
         float GetObjectScale() const
         {
-            return m_floatValues[OBJECT_FIELD_SCALE_X] ? m_floatValues[OBJECT_FIELD_SCALE_X] : DEFAULT_OBJECT_SCALE;
+            float const scale = m_mirror.ReadFloat(OBJECT_FIELD_SCALE_X);
+            return scale ? scale : DEFAULT_OBJECT_SCALE;
         }
 
         void SetObjectScale(float newScale);
@@ -324,42 +326,44 @@ class Object
 
         virtual void DestroyForPlayer(Player* target) const;
 
-        const int32& GetInt32Value(uint16 index) const
+        int32 GetInt32Value(uint16 index) const
         {
-            MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index , false));
-            return m_int32Values[ index ];
+            MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index , false));
+            return int32(m_mirror.Read(index));
         }
 
-        const uint32& GetUInt32Value(uint16 index) const
+        uint32 GetUInt32Value(uint16 index) const
         {
-            MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index , false));
-            return m_uint32Values[ index ];
+            MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index , false));
+            return m_mirror.Read(index);
         }
 
+        /// A guid spans two dwords and is read in place, which is why this one
+        /// hands back a reference into the block rather than a copy.
         const uint64& GetUInt64Value(uint16 index) const
         {
-            MANGOS_ASSERT(index + 1 < m_valuesCount || PrintIndexError(index , false));
-            return *((uint64*) & (m_uint32Values[ index ]));
+            MANGOS_ASSERT(index + 1 < GetValuesCount() || PrintIndexError(index , false));
+            return *reinterpret_cast<uint64 const*>(m_mirror.At(index));
         }
 
-        const float& GetFloatValue(uint16 index) const
+        float GetFloatValue(uint16 index) const
         {
-            MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index , false));
-            return m_floatValues[ index ];
+            MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index , false));
+            return m_mirror.ReadFloat(index);
         }
 
         uint8 GetByteValue(uint16 index, uint8 offset) const
         {
-            MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index , false));
+            MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index , false));
             MANGOS_ASSERT(offset < 4);
-            return *(((uint8*)&m_uint32Values[ index ]) + offset);
+            return uint8(m_mirror.Read(index) >> (offset * 8));
         }
 
         uint16 GetUInt16Value(uint16 index, uint8 offset) const
         {
-            MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index , false));
+            MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index , false));
             MANGOS_ASSERT(offset < 2);
-            return *(((uint16*)&m_uint32Values[ index ]) + offset);
+            return uint16(m_mirror.Read(index) >> (offset * 16));
         }
 
         ObjectGuid const& GetGuidValue(uint16 index) const { return *reinterpret_cast<ObjectGuid const*>(&GetUInt64Value(index)); }
@@ -416,8 +420,8 @@ class Object
          */
         bool HasFlag(uint16 index, uint32 flag) const
         {
-            MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index , false));
-            return (m_uint32Values[ index ] & flag) != 0;
+            MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index , false));
+            return (m_mirror.Read(index) & flag) != 0;
         }
 
         void ApplyModFlag(uint16 index, uint32 flag, bool apply)
@@ -449,9 +453,9 @@ class Object
 
         bool HasByteFlag(uint16 index, uint8 offset, uint8 flag) const
         {
-            MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index , false));
+            MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index , false));
             MANGOS_ASSERT(offset < 4);
-            return (((uint8*)&m_uint32Values[index])[offset] & flag) != 0;
+            return (GetByteValue(index, offset) & flag) != 0;
         }
 
         void ApplyModByteFlag(uint16 index, uint8 offset, uint32 flag, bool apply)
@@ -483,8 +487,8 @@ class Object
 
         bool HasShortFlag(uint16 index, bool highpart, uint8 flag) const
         {
-            MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index , false));
-            return (((uint16*)&m_uint32Values[index])[highpart ? 1 : 0] & flag) != 0;
+            MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index , false));
+            return (GetUInt16Value(index, highpart ? 1 : 0) & flag) != 0;
         }
 
         void ApplyModShortFlag(uint16 index, bool highpart, uint32 flag, bool apply)
@@ -527,7 +531,7 @@ class Object
 
         bool HasFlag64(uint16 index, uint64 flag) const
         {
-            MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index , false));
+            MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index , false));
             return (GetUInt64Value(index) & flag) != 0;
         }
 
@@ -548,7 +552,7 @@ class Object
         bool LoadFields(char const* data, uint16 first, uint16 count);
         std::string SaveFields(uint16 first, uint16 count) const;
 
-        uint16 GetValuesCount() const { return m_valuesCount; }
+        uint16 GetValuesCount() const { return m_mirror.Count(); }
 
         void _ReCreate(uint32 entry);
         void SetAsNewObject(bool isNew) { m_isNewObject = isNew; }
@@ -568,16 +572,7 @@ class Object
         uint8 m_objectTypeId;
         uint8 m_updateFlag;
 
-        union
-        {
-            int32*  m_int32Values;
-            uint32* m_uint32Values;
-            float*  m_floatValues;
-        };
-
-        std::vector<bool> m_changedValues;
-
-        uint16 m_valuesCount;
+        Mirror m_mirror;
 
         bool m_objectUpdated;
 

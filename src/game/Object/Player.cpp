@@ -475,7 +475,6 @@ Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(this), m_
     m_objectType |= TYPEMASK_PLAYER;
     m_objectTypeId = TYPEID_PLAYER;
 
-    m_valuesCount = PLAYER_END;
 
     SetActiveObjectState(true);                             // player is always active object
 
@@ -740,7 +739,7 @@ void Player::CleanupsBeforeDelete()
     m_cinematicFlyover.reset();
 
     // Perform cleanup only if the object is fully created
-    if (m_uint32Values)
+    if (m_mirror.IsOpen())
     {
         // Cancel any ongoing trade
         TradeCancel(false);

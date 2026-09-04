@@ -81,9 +81,6 @@ Object::Object()
     m_objectTypeId      = TYPEID_OBJECT;
     m_objectType        = TYPEMASK_OBJECT;
 
-    m_uint32Values      = NULL;
-    m_valuesCount       = 0;
-
     m_inWorld           = false;
     m_objectUpdated     = false;
 }
@@ -115,7 +112,6 @@ Object::~Object()
         MANGOS_ASSERT(false);
     }
 
-    delete[] m_uint32Values;
 }
 
 /**
@@ -125,15 +121,11 @@ Object::~Object()
  * and initializes them to zero. Also initializes the changed values
  * tracking bitset.
  *
- * @note m_valuesCount must be set by derived class before calling
  * @note This should only be called once per object lifetime
  */
 void Object::_InitValues()
 {
-    m_uint32Values = new uint32[ m_valuesCount ];
-    memset(m_uint32Values, 0, m_valuesCount * sizeof(uint32));
-
-    m_changedValues.resize(m_valuesCount, false);
+    m_mirror.Open(m_objectTypeId);
 
     m_objectUpdated = false;
 }
@@ -152,7 +144,7 @@ void Object::_InitValues()
  */
 void Object::_Create(uint32 guidlow, uint32 entry, HighGuid guidhigh)
 {
-    if (!m_uint32Values)
+    if (!m_mirror.IsOpen())
     {
         _InitValues();
     }
@@ -175,7 +167,7 @@ void Object::_Create(uint32 guidlow, uint32 entry, HighGuid guidhigh)
  */
 void Object::_ReCreate(uint32 entry)
 {
-    if (!m_uint32Values)
+    if (!m_mirror.IsOpen())
     {
         _InitValues();
     }
@@ -230,9 +222,9 @@ void Object::SetObjectScale(float newScale)
  */
 void Object::ResendField(uint16 index)
 {
-    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
 
-    m_changedValues[index] = true;
+    m_mirror.Touch(index);
     MarkForClientUpdate();
 }
 

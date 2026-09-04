@@ -4557,7 +4557,7 @@ void Unit::RemoveFromWorld()
  */
 void Unit::CleanupsBeforeDelete()
 {
-    if (m_uint32Values)                                     // only for fully created object
+    if (m_mirror.IsOpen())                                     // only for fully created object
     {
         InterruptNonMeleeSpells(true);
         m_Events.KillAllEvents(false);                      // non-delatable (currently casted spells) will not deleted now but it will deleted at call in Map::RemoveAllObjectsInRemoveList

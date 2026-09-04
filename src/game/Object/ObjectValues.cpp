@@ -71,387 +71,181 @@
 #include "Chat.h"
 #include "GameTime.h"
 
-/**
- * @brief Set signed 32-bit value
- * @param index Field index
- * @param value Value to set
- *
- * Sets a signed 32-bit field value and marks it as changed.
- */
+/// Every write goes the same way: the mirror answers whether the value it now
+/// holds is different from the one it held, and only a difference is worth
+/// telling anybody about.
+
 void Object::SetInt32Value(uint16 index, int32 value)
 {
-    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
 
-    if (m_int32Values[index] != value)
+    if (m_mirror.Write(index, uint32(value)))
     {
-        m_int32Values[index] = value;
-        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
 
-/**
- * @brief Set unsigned 32-bit value
- * @param index Field index
- * @param value Value to set
- *
- * Sets an unsigned 32-bit field value and marks it as changed.
- */
 void Object::SetUInt32Value(uint16 index, uint32 value)
 {
-    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
 
-    if (m_uint32Values[index] != value)
+    if (m_mirror.Write(index, value))
     {
-        m_uint32Values[index] = value;
-        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
 
-/**
- * @brief Update unsigned 32-bit value
- * @param index Field index
- * @param value Value to set
- *
- * Sets an unsigned 32-bit field value and marks it as changed.
- * Does not check if value differs from current.
- */
+/// Stores without announcing. The caller takes on saying so.
 void Object::UpdateUInt32Value(uint16 index, uint32 value)
 {
-    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
 
-    m_uint32Values[index] = value;
-    m_changedValues[index] = true;
+    m_mirror.Write(index, value);
+    m_mirror.Touch(index);
 }
 
-/**
- * @brief Set unsigned 64-bit value
- * @param index Field index (uses two consecutive fields)
- * @param value Value to set
- *
- * Sets a 64-bit field value across two consecutive 32-bit fields
- * and marks both as changed.
- */
 void Object::SetUInt64Value(uint16 index, const uint64& value)
 {
-    MANGOS_ASSERT(index + 1 < m_valuesCount || PrintIndexError(index, true));
-    if (*((uint64*) & (m_uint32Values[index])) != value)
+    MANGOS_ASSERT(index + 1 < GetValuesCount() || PrintIndexError(index, true));
+
+    bool const low = m_mirror.Write(index, uint32(value));
+    bool const high = m_mirror.Write(index + 1, uint32(value >> 32));
+
+    if (low || high)
     {
-        m_uint32Values[index] = *((uint32*)&value);
-        m_uint32Values[index + 1] = *(((uint32*)&value) + 1);
-        m_changedValues[index] = true;
-        m_changedValues[index + 1] = true;
         MarkForClientUpdate();
     }
 }
 
-/**
- * @brief Set float value
- * @param index Field index
- * @param value Value to set
- *
- * Sets a floating-point field value and marks it as changed.
- */
 void Object::SetFloatValue(uint16 index, float value)
 {
-    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
 
-    if (m_floatValues[index] != value)
+    if (m_mirror.WriteFloat(index, value))
     {
-        m_floatValues[index] = value;
-        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
 
-/**
- * @brief Set byte value
- * @param index Field index
- * @param offset Byte offset within the field
- * @param value Value to set
- *
- * Sets a single byte within a 32-bit field and marks it as changed.
- */
 void Object::SetByteValue(uint16 index, uint8 offset, uint8 value)
 {
-    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
+    MANGOS_ASSERT(offset < 4);
 
-    if (offset > 4)
-    {
-        sLog.outError("Object::SetByteValue: wrong offset %u", offset);
-        return;
-    }
+    uint32 const shift = offset * 8;
+    uint32 const packed = (m_mirror.Read(index) & ~(uint32(0xFF) << shift)) | (uint32(value) << shift);
 
-    if (uint8(m_uint32Values[index] >> (offset * 8)) != value)
+    if (m_mirror.Write(index, packed))
     {
-        m_uint32Values[index] &= ~uint32(uint32(0xFF) << (offset * 8));
-        m_uint32Values[index] |= uint32(uint32(value) << (offset * 8));
-        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
 
-/**
- * @brief Set unsigned 16-bit value
- * @param index Field index
- * @param offset 16-bit offset within the field (0 or 1)
- * @param value Value to set
- *
- * Sets a 16-bit value within a 32-bit field and marks it as changed.
- */
 void Object::SetUInt16Value(uint16 index, uint8 offset, uint16 value)
 {
-    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
+    MANGOS_ASSERT(offset < 2);
 
-    if (offset > 2)
-    {
-        sLog.outError("Object::SetUInt16Value: wrong offset %u", offset);
-        return;
-    }
+    uint32 const shift = offset * 16;
+    uint32 const packed = (m_mirror.Read(index) & ~(uint32(0xFFFF) << shift)) | (uint32(value) << shift);
 
-    if (uint16(m_uint32Values[index] >> (offset * 16)) != value)
+    if (m_mirror.Write(index, packed))
     {
-        m_uint32Values[index] &= ~uint32(uint32(0xFFFF) << (offset * 16));
-        m_uint32Values[index] |= uint32(uint32(value) << (offset * 16));
-        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
 
-/**
- * @brief Set stat float value
- * @param index Field index
- * @param value Value to set
- *
- * Sets a floating-point stat value, clamping to minimum 0.
- */
+/// A stat never goes below nothing.
 void Object::SetStatFloatValue(uint16 index, float value)
 {
-    if (value < 0)
-    {
-        value = 0.0f;
-    }
-
-    SetFloatValue(index, value);
+    SetFloatValue(index, value < 0.0f ? 0.0f : value);
 }
 
-/**
- * @brief Set stat int32 value
- * @param index Field index
- * @param value Value to set
- *
- * Sets an integer stat value, clamping to minimum 0.
- */
 void Object::SetStatInt32Value(uint16 index, int32 value)
 {
-    if (value < 0)
-    {
-        value = 0;
-    }
-
-    SetUInt32Value(index, uint32(value));
+    SetUInt32Value(index, value < 0 ? 0 : uint32(value));
 }
 
-/**
- * @brief Apply modifier to unsigned 32-bit value
- * @param index Field index
- * @param val Modifier value
- * @param apply If true, add modifier; if false, subtract
- *
- * Applies a modifier to a field value, clamping to minimum 0.
- */
 void Object::ApplyModUInt32Value(uint16 index, int32 val, bool apply)
 {
-    int32 cur = GetUInt32Value(index);
-    cur += (apply ? val : -val);
-    if (cur < 0)
-    {
-        cur = 0;
-    }
-    SetUInt32Value(index, cur);
+    int32 cur = int32(GetUInt32Value(index)) + (apply ? val : -val);
+    SetUInt32Value(index, cur < 0 ? 0 : uint32(cur));
 }
 
-/**
- * @brief Apply modifier to signed 32-bit value
- * @param index Field index
- * @param val Modifier value
- * @param apply If true, add modifier; if false, subtract
- *
- * Applies a modifier to a signed field value.
- */
 void Object::ApplyModInt32Value(uint16 index, int32 val, bool apply)
 {
-    int32 cur = GetInt32Value(index);
-    cur += (apply ? val : -val);
-    SetInt32Value(index, cur);
+    SetInt32Value(index, GetInt32Value(index) + (apply ? val : -val));
 }
 
-/**
- * @brief Apply modifier to signed float value
- * @param index Field index
- * @param val Modifier value
- * @param apply If true, add modifier; if false, subtract
- *
- * Applies a modifier to a floating-point field value.
- */
-void Object::ApplyModSignedFloatValue(uint16 index, float  val, bool apply)
+void Object::ApplyModSignedFloatValue(uint16 index, float val, bool apply)
 {
-    float cur = GetFloatValue(index);
-    cur += (apply ? val : -val);
-    SetFloatValue(index, cur);
+    SetFloatValue(index, GetFloatValue(index) + (apply ? val : -val));
 }
 
-/**
- * @brief Apply modifier to positive float value
- * @param index Field index
- * @param val Modifier value
- * @param apply If true, add modifier; if false, subtract
- *
- * Applies a modifier to a floating-point field value,
- * clamping to minimum 0.
- */
-void Object::ApplyModPositiveFloatValue(uint16 index, float  val, bool apply)
+void Object::ApplyModPositiveFloatValue(uint16 index, float val, bool apply)
 {
-    float cur = GetFloatValue(index);
-    cur += (apply ? val : -val);
-    if (cur < 0)
-    {
-        cur = 0;
-    }
-    SetFloatValue(index, cur);
+    float cur = GetFloatValue(index) + (apply ? val : -val);
+    SetFloatValue(index, cur < 0.0f ? 0.0f : cur);
 }
 
-/**
- * @brief Set flag in field
- * @param index Field index
- * @param newFlag Flag to set
- *
- * Sets a flag bit in a field using OR operation.
- */
 void Object::SetFlag(uint16 index, uint32 newFlag)
 {
-    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
-    uint32 oldval = m_uint32Values[index];
-    uint32 newval = oldval | newFlag;
+    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
 
-    if (oldval != newval)
+    if (m_mirror.Write(index, m_mirror.Read(index) | newFlag))
     {
-        m_uint32Values[index] = newval;
-        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
 
-/**
- * @brief Remove flag from field
- * @param index Field index
- * @param oldFlag Flag to remove
- *
- * Removes a flag bit from a field using AND with inverted mask.
- */
 void Object::RemoveFlag(uint16 index, uint32 oldFlag)
 {
-    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
-    uint32 oldval = m_uint32Values[index];
-    uint32 newval = oldval & ~oldFlag;
+    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
 
-    if (oldval != newval)
+    if (m_mirror.Write(index, m_mirror.Read(index) & ~oldFlag))
     {
-        m_uint32Values[index] = newval;
-        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
 
-/**
- * @brief Set byte flag in field
- * @param index Field index
- * @param offset Byte offset within the field
- * @param newFlag Flag to set
- *
- * Sets a flag bit within a byte of a field.
- */
 void Object::SetByteFlag(uint16 index, uint8 offset, uint8 newFlag)
 {
-    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
+    MANGOS_ASSERT(offset < 4);
 
-    if (offset > 4)
+    if (m_mirror.Write(index, m_mirror.Read(index) | (uint32(newFlag) << (offset * 8))))
     {
-        sLog.outError("Object::SetByteFlag: wrong offset %u", offset);
-        return;
-    }
-
-    if (!(uint8(m_uint32Values[index] >> (offset * 8)) & newFlag))
-    {
-        m_uint32Values[index] |= uint32(uint32(newFlag) << (offset * 8));
-        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
 
-/**
- * @brief Remove byte flag from field
- * @param index Field index
- * @param offset Byte offset within the field
- * @param oldFlag Flag to remove
- *
- * Removes a flag bit within a byte of a field.
- */
 void Object::RemoveByteFlag(uint16 index, uint8 offset, uint8 oldFlag)
 {
-    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
+    MANGOS_ASSERT(offset < 4);
 
-    if (offset > 4)
+    if (m_mirror.Write(index, m_mirror.Read(index) & ~(uint32(oldFlag) << (offset * 8))))
     {
-        sLog.outError("Object::RemoveByteFlag: wrong offset %u", offset);
-        return;
-    }
-
-    if (uint8(m_uint32Values[index] >> (offset * 8)) & oldFlag)
-    {
-        m_uint32Values[index] &= ~uint32(uint32(oldFlag) << (offset * 8));
-        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
 
-/**
- * @brief Set short flag in field
- * @param index Field index
- * @param highpart If true, use high 16 bits; if false, use low 16 bits
- * @param newFlag Flag to set
- *
- * Sets a flag bit within a 16-bit portion of a field.
- */
 void Object::SetShortFlag(uint16 index, bool highpart, uint16 newFlag)
 {
-    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
 
-    if (!(uint16(m_uint32Values[index] >> (highpart ? 16 : 0)) & newFlag))
+    if (m_mirror.Write(index, m_mirror.Read(index) | (uint32(newFlag) << (highpart ? 16 : 0))))
     {
-        m_uint32Values[index] |= uint32(uint32(newFlag) << (highpart ? 16 : 0));
-        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
 
-/**
- * @brief Remove short flag from field
- * @param index Field index
- * @param highpart If true, use high 16 bits; if false, use low 16 bits
- * @param oldFlag Flag to remove
- *
- * Removes a flag bit within a 16-bit portion of a field.
- */
 void Object::RemoveShortFlag(uint16 index, bool highpart, uint16 oldFlag)
 {
-    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
 
-    if (uint16(m_uint32Values[index] >> (highpart ? 16 : 0)) & oldFlag)
+    if (m_mirror.Write(index, m_mirror.Read(index) & ~(uint32(oldFlag) << (highpart ? 16 : 0))))
     {
-        m_uint32Values[index] &= ~uint32(uint32(oldFlag) << (highpart ? 16 : 0));
-        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
@@ -482,12 +276,12 @@ bool Object::LoadFields(char const* data, uint16 first, uint16 count)
         return false;
     }
 
-    if (!m_uint32Values)
+    if (!m_mirror.IsOpen())
     {
         _InitValues();
     }
 
-    MANGOS_ASSERT(first + count <= m_valuesCount || PrintIndexError(first, true));
+    MANGOS_ASSERT(first + count <= GetValuesCount() || PrintIndexError(first, true));
 
     Tokens tokens = StrSplit(data, " ");
     if (tokens.size() != count)
@@ -498,7 +292,7 @@ bool Object::LoadFields(char const* data, uint16 first, uint16 count)
     uint16 index = first;
     for (const auto& token : tokens)
     {
-        m_uint32Values[index++] = std::strtoul(token.c_str(), nullptr, 10);
+        m_mirror.Write(index++, uint32(std::strtoul(token.c_str(), nullptr, 10)));
     }
 
     return true;
@@ -511,12 +305,12 @@ bool Object::LoadFields(char const* data, uint16 first, uint16 count)
  */
 std::string Object::SaveFields(uint16 first, uint16 count) const
 {
-    MANGOS_ASSERT(first + count <= m_valuesCount || PrintIndexError(first, false));
+    MANGOS_ASSERT(first + count <= GetValuesCount() || PrintIndexError(first, false));
 
     std::ostringstream out;
     for (uint16 index = first; index < first + count; ++index)
     {
-        out << m_uint32Values[index] << " ";
+        out << m_mirror.Read(index) << " ";
     }
 
     return out.str();
@@ -524,7 +318,7 @@ std::string Object::SaveFields(uint16 first, uint16 count) const
 
 bool Object::PrintIndexError(uint32 index, bool set) const
 {
-    sLog.outError("Attempt %s nonexistent value field: %u (count: %u) for object typeid: %u type mask: %u", (set ? "set value to" : "get value from"), index, m_valuesCount, GetTypeId(), m_objectType);
+    sLog.outError("Attempt %s nonexistent value field: %u (count: %u) for object typeid: %u type mask: %u", (set ? "set value to" : "get value from"), index, GetValuesCount(), GetTypeId(), m_objectType);
 
     // ASSERT must fail after function call
     return false;
@@ -575,7 +369,7 @@ void Object::BuildUpdateDataForPlayer(Player* pl, UpdateDataMapType& update_play
  */
 void Object::AddToClientUpdateList()
 {
-    sLog.outError("Unexpected call of Object::AddToClientUpdateList for object (TypeId: %u Update fields: %u)", GetTypeId(), m_valuesCount);
+    sLog.outError("Unexpected call of Object::AddToClientUpdateList for object (TypeId: %u Update fields: %u)", GetTypeId(), GetValuesCount());
     MANGOS_ASSERT(false);
 }
 
@@ -587,7 +381,7 @@ void Object::AddToClientUpdateList()
  */
 void Object::RemoveFromClientUpdateList()
 {
-    sLog.outError("Unexpected call of Object::RemoveFromClientUpdateList for object (TypeId: %u Update fields: %u)", GetTypeId(), m_valuesCount);
+    sLog.outError("Unexpected call of Object::RemoveFromClientUpdateList for object (TypeId: %u Update fields: %u)", GetTypeId(), GetValuesCount());
     MANGOS_ASSERT(false);
 }
 
@@ -600,7 +394,7 @@ void Object::RemoveFromClientUpdateList()
  */
 void Object::BuildUpdateData(UpdateDataMapType& /*update_players */)
 {
-    sLog.outError("Unexpected call of Object::BuildUpdateData for object (TypeId: %u Update fields: %u)", GetTypeId(), m_valuesCount);
+    sLog.outError("Unexpected call of Object::BuildUpdateData for object (TypeId: %u Update fields: %u)", GetTypeId(), GetValuesCount());
     MANGOS_ASSERT(false);
 }
 

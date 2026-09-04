@@ -251,7 +251,6 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
 
     m_killedTime = 0;
     m_regenTimer = 200;
-    m_valuesCount = UNIT_END;
 
     // Zero sentinel: lets waypoint evade tell "combat start never recorded"
     // apart from a real recorded position (set in Unit::Attack), so it can

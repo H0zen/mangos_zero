@@ -47,7 +47,6 @@ Corpse::Corpse(CorpseType type) : Presence(),
     m_objectTypeId = TYPEID_CORPSE;
     m_updateFlag = (UPDATEFLAG_TRANSPORT | UPDATEFLAG_ALL | UPDATEFLAG_HAS_POSITION);
 
-    m_valuesCount = CORPSE_END;
 
     m_type = type;
 

@@ -44,7 +44,6 @@ DynamicObject::DynamicObject() : Presence()
     m_objectTypeId = TYPEID_DYNAMICOBJECT;
     m_updateFlag = (UPDATEFLAG_ALL | UPDATEFLAG_HAS_POSITION);
 
-    m_valuesCount = DYNAMICOBJECT_END;
 
     m_transOffsetX = m_transOffsetY = m_transOffsetZ = 0.0f;
 }

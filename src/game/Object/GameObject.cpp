@@ -71,7 +71,6 @@ GameObject::GameObject() : Presence(),
     m_objectTypeId = TYPEID_GAMEOBJECT;
     m_updateFlag = (UPDATEFLAG_ALL | UPDATEFLAG_HAS_POSITION);
 
-    m_valuesCount = GAMEOBJECT_END;
     m_respawnTime = 0;
     m_respawnDelayTime = 25;
     m_lootState = GO_READY;
