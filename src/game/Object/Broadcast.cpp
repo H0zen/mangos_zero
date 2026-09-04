@@ -172,6 +172,21 @@ void BroadcastWithin(Presence const& from, WorldPacket* data, float dist, bool t
         reach.dist = dist;
         reach.ownTeamOnly = ownTeamOnly;
         from.GetMap()->DeliverPacket(data, reach);
+
+        // THE RELAY. The radius above applies among those who share the speaker's map.
+        // Whoever is on the other side of a vessel's boundary is not measured at all:
+        // the vessel is heard by the grid she sits in, and no distance between the two
+        // sides exists to filter on.
+        if (from.GetMap()->AsTransport())
+        {
+            for (Player* observer : from.GetMap()->ExternalObservers())
+            {
+                if (observer && observer->GetSession() && observer != ToPlayer(&from))
+                {
+                    observer->GetSession()->SendPacket(data);
+                }
+            }
+        }
     }
 
     if (toSubject)

@@ -258,6 +258,11 @@ struct Cell
     template<class T> static void VisitWorldObjects(const Presence* obj, T& visitor, float radius, bool dont_load = true);
     template<class T> static void VisitAllObjects(const Presence* obj, T& visitor, float radius, bool dont_load = true);
 
+    /// Everything in the one grid a point falls in, with no radius anywhere in it.
+    /// A grid is the unit of membership: a thing is in it or it is not, and how far
+    /// from the point it stands does not enter the question.
+    template<class T> static void VisitWorldObjectsInGrid(float x, float y, Map* map, T& visitor, bool dont_load = true);
+
     template<class T> static void VisitGridObjects(float x, float y, Map* map, T& visitor, float radius, bool dont_load = true);
     template<class T> static void VisitWorldObjects(float x, float y, Map* map, T& visitor, float radius, bool dont_load = true);
     template<class T> static void VisitAllObjects(float x, float y, Map* map, T& visitor, float radius, bool dont_load = true);

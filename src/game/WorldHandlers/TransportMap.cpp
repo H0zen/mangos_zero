@@ -929,30 +929,21 @@ void TransportMap::GatherObservers()
         return;
     }
 
-    const float reach = world->GetVisibilityDistance() + m_hullRadius + m_vessel->NodeSlack();
-
-    // FROM THE GRID, around the estimate. That approximate pose is what the estimate is FOR:
-    // it names the cells to look in. Sweeping the whole map's player list instead would
-    // answer the same question by reading every player on a continent.
-    //
-    // The check is written out rather than reusing InReach, which asks SharesWorld and brings
-    // phase and world-membership rules that do not belong in a cell sweep.
-    struct WatchingFromShore
+    // THE GRID IS THE AUDIENCE. The estimate names which grid the vessel is in and is
+    // used for nothing else: everyone in that grid hears her and she hears them, however
+    // far across it they stand. Measuring a distance here instead would be measuring
+    // against the estimate, which is a waypoint guess and not a position.
+    struct AnyoneInTheGrid
     {
         Presence const* focus;
-        float range;
         Presence const& GetFocusObject() const { return *focus; }
-        bool operator()(Player* watcher) const
-        {
-            return watcher->IsInWorld() &&
-                   focus->Where().WithinDist(watcher->Where(), range);
-        }
+        bool operator()(Player* watcher) const { return watcher->IsInWorld(); }
     };
 
     std::list<Player*> found;
-    WatchingFromShore check{m_vessel, reach};
-    MaNGOS::PlayerListSearcher<WatchingFromShore> searcher(found, check);
-    Cell::VisitWorldObjects(m_vessel, searcher, reach);
+    AnyoneInTheGrid check{m_vessel};
+    MaNGOS::PlayerListSearcher<AnyoneInTheGrid> searcher(found, check);
+    Cell::VisitWorldObjectsInGrid(m_vessel->Where().X(), m_vessel->Where().Y(), world, searcher);
 
     // For BROADCAST only -- a spline, an emote, a spell go, anything said aboard while
     // nobody's visibility pass happens to be running. Visibility itself is decided by each

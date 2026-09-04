@@ -220,6 +220,31 @@ template<class T>
 }
 
 template<class T>
+    inline void Cell::VisitWorldObjectsInGrid(float x, float y, Map* map, T& visitor, bool dont_load)
+{
+    CellPair p(MaNGOS::ComputeCellPair(x, y));
+    Cell cell(p);
+    if (dont_load)
+    {
+        cell.SetNoCreate();
+    }
+
+    const uint32 firstX = (p.x_coord / MAX_NUMBER_OF_CELLS) * MAX_NUMBER_OF_CELLS;
+    const uint32 firstY = (p.y_coord / MAX_NUMBER_OF_CELLS) * MAX_NUMBER_OF_CELLS;
+
+    TypeContainerVisitor<T, WorldTypeMapContainer > wnotifier(visitor);
+    for (uint32 cx = firstX; cx < firstX + MAX_NUMBER_OF_CELLS; ++cx)
+    {
+        for (uint32 cy = firstY; cy < firstY + MAX_NUMBER_OF_CELLS; ++cy)
+        {
+            Cell here(CellPair(cx, cy));
+            here.data.Part.nocreate = cell.data.Part.nocreate;
+            map->Visit(here, wnotifier);
+        }
+    }
+}
+
+template<class T>
     inline void Cell::VisitGridObjects(float x, float y, Map* map, T& visitor, float radius, bool dont_load)
 {
     CellPair p(MaNGOS::ComputeCellPair(x, y));

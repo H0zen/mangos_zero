@@ -314,22 +314,6 @@ bool CanBeSeen(Presence const& seen, Presence const& viewer)
     return false;
 }
 
-/// The object a proximity question must be asked from. A passenger has no pose the shore
-/// can measure against, so the vessel answers for him -- and its hull radius is added as
-/// slack, because he may stand anywhere on it.
-static Presence const& ProximityAnchor(Presence const& obj, float& slack)
-{
-    TransportMap* hull = obj.GetMap() ? obj.GetMap()->AsTransport() : NULL;
-    Transport* vessel = hull ? hull->Vessel() : NULL;
-
-    if (vessel)
-    {
-        slack += hull->HullRadius();
-        return *vessel;
-    }
-    return obj;
-}
-
 bool SeenWithin(Presence const& seen, Presence const& viewer, float dist, bool is3D)
 {
     if (!CanBeSeen(seen, viewer))
@@ -343,18 +327,12 @@ bool SeenWithin(Presence const& seen, Presence const& viewer, float dist, bool i
         return seen.Where().WithinDist(viewer.Where(), dist, is3D);
     }
 
-    // Across a vessel's boundary. Whatever is aboard answers with its hull.
-    float slack = 0.0f;
-    Presence const& a = ProximityAnchor(seen, slack);
-    Presence const& b = ProximityAnchor(viewer, slack);
-
-    // One of them IS the anchor: he is standing on the very thing he is looking at.
-    if (&a == &b)
-    {
-        return true;
-    }
-
-    return a.Where().WithinDist(b.Where(), dist + slack, is3D);
+    // Across a vessel's boundary there is nothing to measure. CanBeSeen has already
+    // established that the vessel and the other party share a world, and a vessel is
+    // heard by everyone she shares it with however far off they stand. Asking for a
+    // distance here would mean asking where the hull is, and the server only has a
+    // waypoint guess of that.
+    return true;
 }
 
 bool InReach(Presence const& a, Presence const& b, float dist, bool is3D)
