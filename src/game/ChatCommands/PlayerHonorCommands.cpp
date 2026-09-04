@@ -55,11 +55,11 @@ bool ChatHandler::HandleHonorShow(char* /*args*/)
     uint32 honorable_kills = target->GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS);
     uint32 today_honorable_kills = target->GetUInt16Value(PLAYER_FIELD_SESSION_KILLS, 0);
     uint32 today_dishonorable_kills = target->GetUInt16Value(PLAYER_FIELD_SESSION_KILLS, 1);
-    uint32 yesterday_kills = target->GetUInt32Value(PLAYER_FIELD_YESTERDAY_KILLS);
+    uint32 yesterday_kills = target->GetUInt16Value(PLAYER_FIELD_YESTERDAY_KILLS, 0);
     uint32 yesterday_honor = target->GetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION);
-    uint32 this_week_kills = target->GetUInt32Value(PLAYER_FIELD_THIS_WEEK_KILLS);
+    uint32 this_week_kills = target->GetUInt16Value(PLAYER_FIELD_THIS_WEEK_KILLS, 0);
     uint32 this_week_honor = target->GetUInt32Value(PLAYER_FIELD_THIS_WEEK_CONTRIBUTION);
-    uint32 last_week_kills = target->GetUInt32Value(PLAYER_FIELD_LAST_WEEK_KILLS);
+    uint32 last_week_kills = target->GetUInt16Value(PLAYER_FIELD_LAST_WEEK_KILLS, 0);
     uint32 last_week_honor = target->GetUInt32Value(PLAYER_FIELD_LAST_WEEK_CONTRIBUTION);
     uint32 last_week_standing = target->GetUInt32Value(PLAYER_FIELD_LAST_WEEK_RANK);
 
@@ -272,11 +272,11 @@ bool ChatHandler::HandleModifyHonorCommand(char* args)
     }
     else if (hasStringAbbr(field, "todaykills"))
     {
-        target->SetUInt16Value(PLAYER_FIELD_SESSION_KILLS, 0, (uint32)amount);
+        target->SetUInt16Value(PLAYER_FIELD_SESSION_KILLS, 0, static_cast<uint16>(amount));
     }
     else if (hasStringAbbr(field, "yesterdaykills"))
     {
-        target->SetUInt32Value(PLAYER_FIELD_YESTERDAY_KILLS, (uint32)amount);
+        target->SetUInt16Value(PLAYER_FIELD_YESTERDAY_KILLS, 0, static_cast<uint16>(amount));
     }
     else if (hasStringAbbr(field, "yesterdayhonor"))
     {
@@ -284,7 +284,7 @@ bool ChatHandler::HandleModifyHonorCommand(char* args)
     }
     else if (hasStringAbbr(field, "thisweekkills"))
     {
-        target->SetUInt32Value(PLAYER_FIELD_THIS_WEEK_KILLS, (uint32)amount);
+        target->SetUInt16Value(PLAYER_FIELD_THIS_WEEK_KILLS, 0, static_cast<uint16>(amount));
     }
     else if (hasStringAbbr(field, "thisweekhonor"))
     {
@@ -292,7 +292,7 @@ bool ChatHandler::HandleModifyHonorCommand(char* args)
     }
     else if (hasStringAbbr(field, "lastweekkills"))
     {
-        target->SetUInt32Value(PLAYER_FIELD_LAST_WEEK_KILLS, (uint32)amount);
+        target->SetUInt16Value(PLAYER_FIELD_LAST_WEEK_KILLS, 0, static_cast<uint16>(amount));
     }
     else if (hasStringAbbr(field, "lastweekhonor"))
     {

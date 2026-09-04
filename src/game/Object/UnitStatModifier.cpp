@@ -287,24 +287,13 @@ Powers Unit::GetPowerTypeByAuraGroup(UnitMods unitMod) const
  */
 float Unit::GetTotalAttackPowerValue(WeaponAttackType attType) const
 {
-    if (attType == RANGED_ATTACK)
+    bool const ranged = attType == RANGED_ATTACK;
+    int32 const ap = GetAttackPowerBase(ranged) + GetAttackPowerBonus(ranged);
+    if (ap < 0)
     {
-        int32 ap = GetInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER) + GetInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER_MODS);
-        if (ap < 0)
-        {
-            return 0.0f;
-        }
-        return ap * (1.0f + GetFloatValue(UNIT_FIELD_RANGED_ATTACK_POWER_MULTIPLIER));
+        return 0.0f;
     }
-    else
-    {
-        int32 ap = GetInt32Value(UNIT_FIELD_ATTACK_POWER) + GetInt32Value(UNIT_FIELD_ATTACK_POWER_MODS);
-        if (ap < 0)
-        {
-            return 0.0f;
-        }
-        return ap * (1.0f + GetFloatValue(UNIT_FIELD_ATTACK_POWER_MULTIPLIER));
-    }
+    return ap * (1.0f + GetAttackPowerMultiplier(ranged));
 }
 
 /**

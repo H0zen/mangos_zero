@@ -1328,7 +1328,7 @@ void GameObject::SetLootState(LootState state)
  */
 void GameObject::SetGoState(GOState state)
 {
-    SetByteValue(GAMEOBJECT_STATE, 0, state);
+    SetUInt32Value(GAMEOBJECT_STATE, state);
     UpdateCollisionState();
 }
 

@@ -594,28 +594,11 @@ uint32 Pet::GetStartLoyaltyPoints(uint32 level)
 void Pet::SetTP(int32 TP)
 {
     m_TrainingPoints = TP;
-    SetUInt32Value(UNIT_TRAINING_POINTS, (uint32)GetDispTP());
-}
 
-/**
- * @brief Gets the client-visible training point display value.
- *
- * @return The displayed training point value.
- */
-int32 Pet::GetDispTP()
-{
-    if (getPetType() != HUNTER_PET)
-    {
-        return(0);
-    }
-    if (m_TrainingPoints < 0)
-    {
-        return -m_TrainingPoints;
-    }
-    else
-    {
-        return -(m_TrainingPoints + 1);
-    }
+    // The client reads this as two halves, the points earned and the points
+    // spent, and shows the difference. Only that difference is tracked here.
+    SetUInt16Value(UNIT_TRAINING_POINTS, 1, static_cast<uint16>(TP > 0 ? TP : 0));
+    SetUInt16Value(UNIT_TRAINING_POINTS, 0, static_cast<uint16>(TP < 0 ? -TP : 0));
 }
 
 /**
@@ -855,7 +838,7 @@ bool Pet::CreateBaseAtCreature(Creature* creature)
         SetSheath(SHEATH_STATE_MELEE);
         SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE | UNIT_FLAG_RESTING | UNIT_FLAG_RENAME);
 
-        SetUInt32Value(UNIT_MOD_CAST_SPEED, creature->GetUInt32Value(UNIT_MOD_CAST_SPEED));
+        SetFloatValue(UNIT_MOD_CAST_SPEED, creature->GetFloatValue(UNIT_MOD_CAST_SPEED));
         SetLoyaltyLevel(REBELLIOUS);
     }
     return true;

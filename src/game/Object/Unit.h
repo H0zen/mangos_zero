@@ -1619,6 +1619,39 @@ class Unit : public Presence
          */
         uint32 GetHealth()    const { return m_health; }
 
+        /// Attack power reaches the client as three numbers: a base, and a
+        /// green one and a red one which live in the two signed halves of a
+        /// single field. Only their sum matters on this side.
+        void SetAttackPower(bool ranged, int32 base, int32 bonus, float multiplier)
+        {
+            uint16 const bonusField = ranged ? UNIT_FIELD_RANGED_ATTACK_POWER_MODS
+                                             : UNIT_FIELD_ATTACK_POWER_MODS;
+            SetInt32Value(ranged ? UNIT_FIELD_RANGED_ATTACK_POWER : UNIT_FIELD_ATTACK_POWER, base);
+            SetInt16Value(bonusField, 0, static_cast<int16>(bonus > 0 ? bonus : 0));
+            SetInt16Value(bonusField, 1, static_cast<int16>(bonus < 0 ? bonus : 0));
+            SetFloatValue(ranged ? UNIT_FIELD_RANGED_ATTACK_POWER_MULTIPLIER
+                                 : UNIT_FIELD_ATTACK_POWER_MULTIPLIER, multiplier);
+        }
+
+        int32 GetAttackPowerBase(bool ranged) const
+        {
+            return GetInt32Value(ranged ? UNIT_FIELD_RANGED_ATTACK_POWER : UNIT_FIELD_ATTACK_POWER);
+        }
+
+        int32 GetAttackPowerBonus(bool ranged) const
+        {
+            uint16 const field = ranged ? UNIT_FIELD_RANGED_ATTACK_POWER_MODS
+                                        : UNIT_FIELD_ATTACK_POWER_MODS;
+            return static_cast<int16>(GetUInt16Value(field, 0))
+                 + static_cast<int16>(GetUInt16Value(field, 1));
+        }
+
+        float GetAttackPowerMultiplier(bool ranged) const
+        {
+            return GetFloatValue(ranged ? UNIT_FIELD_RANGED_ATTACK_POWER_MULTIPLIER
+                                        : UNIT_FIELD_ATTACK_POWER_MULTIPLIER);
+        }
+
         /// The three flag words a unit carries. Asking one of these says what is
         /// being asked; where the bits are kept is the unit's own business.
         bool HasUnitFlag(uint32 flag) const { return HasFlag(UNIT_FIELD_FLAGS, flag); }

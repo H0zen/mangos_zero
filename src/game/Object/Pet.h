@@ -343,7 +343,6 @@ class Pet : public Creature
         uint32 resetTalentsCost() const;
 
         void  SetTP(int32 TP);
-        int32 GetDispTP();
 
         int32   m_TrainingPoints;
         uint32  m_resetTalentsCost;

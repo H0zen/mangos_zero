@@ -263,3 +263,39 @@ TEST_CASE("health: a stranger is told a percentage, and a living unit is never z
     CHECK(Fields::HealthAsPercent(0, 0) == 0);
     CHECK(Fields::HealthAsPercent(10, 0) == 0);
 }
+
+TEST_CASE("attack power and honour kills are pairs of halves, not single numbers")
+{
+    Fields::Table const& unit = Fields::For(TYPEID_UNIT);
+    Fields::Table const& player = Fields::For(TYPEID_PLAYER);
+
+    // The character sheet reads a base, then a green and a red number out of
+    // the two signed halves of the field beside it, then a float multiplier.
+    CHECK(unit.At(UNIT_FIELD_ATTACK_POWER).kind == Fields::Kind::Int);
+    CHECK(unit.At(UNIT_FIELD_ATTACK_POWER_MODS).kind == Fields::Kind::TwoShort);
+    CHECK(unit.At(UNIT_FIELD_ATTACK_POWER_MULTIPLIER).kind == Fields::Kind::Float);
+
+    CHECK(unit.At(UNIT_FIELD_RANGED_ATTACK_POWER).kind == Fields::Kind::Int);
+    CHECK(unit.At(UNIT_FIELD_RANGED_ATTACK_POWER_MODS).kind == Fields::Kind::TwoShort);
+    CHECK(unit.At(UNIT_FIELD_RANGED_ATTACK_POWER_MULTIPLIER).kind == Fields::Kind::Float);
+
+    // Each of the three is one dword, so the trio is contiguous and a caller
+    // that writes the middle one as a whole dword destroys the red number.
+    CHECK(UNIT_FIELD_ATTACK_POWER_MODS == UNIT_FIELD_ATTACK_POWER + 1);
+    CHECK(UNIT_FIELD_ATTACK_POWER_MULTIPLIER == UNIT_FIELD_ATTACK_POWER + 2);
+    CHECK(UNIT_FIELD_RANGED_ATTACK_POWER_MODS == UNIT_FIELD_RANGED_ATTACK_POWER + 1);
+    CHECK(UNIT_FIELD_RANGED_ATTACK_POWER_MULTIPLIER == UNIT_FIELD_RANGED_ATTACK_POWER + 2);
+
+    // A pet's training points are the points earned and the points spent.
+    CHECK(unit.At(UNIT_TRAINING_POINTS).kind == Fields::Kind::TwoShort);
+
+    // Every honour bucket carries honourable kills and dishonourable kills.
+    CHECK(player.At(PLAYER_FIELD_SESSION_KILLS).kind == Fields::Kind::TwoShort);
+    CHECK(player.At(PLAYER_FIELD_YESTERDAY_KILLS).kind == Fields::Kind::TwoShort);
+    CHECK(player.At(PLAYER_FIELD_LAST_WEEK_KILLS).kind == Fields::Kind::TwoShort);
+    CHECK(player.At(PLAYER_FIELD_THIS_WEEK_KILLS).kind == Fields::Kind::TwoShort);
+
+    // The lifetime totals are not: they are plain counts with room to grow.
+    CHECK(player.At(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS).kind == Fields::Kind::Int);
+    CHECK(player.At(PLAYER_FIELD_LIFETIME_DISHONORABLE_KILLS).kind == Fields::Kind::Int);
+}
