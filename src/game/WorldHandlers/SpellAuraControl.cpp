@@ -339,7 +339,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
                 if (cinfo && cinfo->CreatureType == CREATURE_TYPE_DEMON)
                 {
                     // creature with pet number expected have class set
-                    if (target->GetByteValue(UNIT_FIELD_BYTES_0, 1) == 0)
+                    if (target->getClass() == 0)
                     {
                         if (cinfo->UnitClass == 0)
                         {
@@ -350,7 +350,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
                             sLog.outError("Creature (Entry: %u) have UnitClass = %u but at charming have class 0!!! that will be result client crash.", cinfo->Entry, cinfo->UnitClass);
                         }
 
-                        target->SetByteValue(UNIT_FIELD_BYTES_0, 1, CLASS_MAGE);
+                        target->SetClass(CLASS_MAGE);
                     }
 
                     // just to enable stat window
@@ -404,7 +404,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
             if (cinfo && caster->GetTypeId() == TYPEID_PLAYER && caster->getClass() == CLASS_WARLOCK && cinfo->CreatureType == CREATURE_TYPE_DEMON)
             {
                 // DB must have proper class set in field at loading, not req. restore, including workaround case at apply
-                // m_target->SetByteValue(UNIT_FIELD_BYTES_0, 1, cinfo->unit_class);
+                // m_target->SetClass(cinfo->unit_class);
 
                 if (target->GetCharmInfo())
                 {

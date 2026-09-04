@@ -69,7 +69,7 @@
 void Unit::SetPowerType(Powers new_powertype)
 {
     // set power type
-    SetByteValue(UNIT_FIELD_BYTES_0, 3, new_powertype);
+    SetPowerKind(new_powertype);
 
     // group updates
     if (GetTypeId() == TYPEID_PLAYER)

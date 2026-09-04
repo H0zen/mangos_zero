@@ -1546,6 +1546,7 @@ class Unit : public Presence
          * \see Races
          */
         uint8 getRace() const { return GetByteValue(UNIT_FIELD_BYTES_0, 0); }
+        void SetRace(uint8 race) { SetByteValue(UNIT_FIELD_BYTES_0, 0, race); }
 
         /**
          * Returns a bitmask representation of the current race given by Races, not to be
@@ -1562,6 +1563,7 @@ class Unit : public Presence
          * \see Classes
          */
         uint8 getClass() const { return GetByteValue(UNIT_FIELD_BYTES_0, 1); }
+        void SetClass(uint8 unitClass) { SetByteValue(UNIT_FIELD_BYTES_0, 1, unitClass); }
 
         /**
          * Returns a bitmask representation of the current class given by Classes
@@ -1576,6 +1578,7 @@ class Unit : public Presence
          * \see Gender
          */
         uint8 getGender() const { return GetByteValue(UNIT_FIELD_BYTES_0, 2); }
+        void SetGender(uint8 gender) { SetByteValue(UNIT_FIELD_BYTES_0, 2, gender); }
 
         /**
          * Gets a stat for the current Unit
@@ -1710,6 +1713,11 @@ class Unit : public Presence
          * @return The type of power this Unit uses
          */
         Powers GetPowerType() const { return Powers(GetByteValue(UNIT_FIELD_BYTES_0, 3)); }
+
+        /// The kind of power alone. SetPowerType goes on to rebuild what
+        /// depends on it, which is not always wanted while a unit is being
+        /// put together.
+        void SetPowerKind(Powers kind) { SetByteValue(UNIT_FIELD_BYTES_0, 3, kind); }
         void SetPowerType(Powers power);
         uint32 GetPower(Powers power) const { return GetUInt32Value(UNIT_FIELD_POWER1 + power); }
         uint32 GetMaxPower(Powers power) const { return GetUInt32Value(UNIT_FIELD_MAXPOWER1 + power); }

@@ -495,10 +495,10 @@ bool Creature::InitEntry(uint32 Entry, Team team, CreatureData const* data /*=NU
     SetObjectScale(cinfo->Scale);
 
     // equal to player Race field, but creature does not have race
-    SetByteValue(UNIT_FIELD_BYTES_0, 0, 0);
+    SetRace(0);
 
     // known valid are: CLASS_WARRIOR,CLASS_PALADIN,CLASS_ROGUE,CLASS_MAGE
-    SetByteValue(UNIT_FIELD_BYTES_0, 1, uint8(cinfo->UnitClass));
+    SetClass(uint8(cinfo->UnitClass));
 
     uint32 display_id = ChooseDisplayId(GetCreatureInfo(), data, eventData);
     if (!display_id)                                        // Cancel load if no display id
@@ -528,7 +528,7 @@ bool Creature::InitEntry(uint32 Entry, Team team, CreatureData const* data /*=NU
     // normally the same as native, see above for the exeption
     SetDisplayId(display_id);
 
-    SetByteValue(UNIT_FIELD_BYTES_0, 2, minfo->gender);
+    SetGender(minfo->gender);
 
     // set PowerType based on unit class
     switch (cinfo->UnitClass)

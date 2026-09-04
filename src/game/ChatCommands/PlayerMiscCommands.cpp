@@ -99,7 +99,7 @@ static bool HandleResetStatsOrLevelHelper(Player* player)
 
     player->setFactionForRace(player->getRace());
 
-    player->SetByteValue(UNIT_FIELD_BYTES_0, 3, powertype);
+    player->SetPowerKind(Powers(powertype));
 
     // reset only if player not in some form;
     if (player->GetShapeshiftForm() == FORM_NONE)

@@ -825,10 +825,10 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     setFactionForRace(race);
 
     // Set player's race, class, gender, and power type
-    SetByteValue(UNIT_FIELD_BYTES_0, 0, race);
-    SetByteValue(UNIT_FIELD_BYTES_0, 1, class_);
-    SetByteValue(UNIT_FIELD_BYTES_0, 2, gender);
-    SetByteValue(UNIT_FIELD_BYTES_0, 3, powertype);
+    SetRace(race);
+    SetClass(class_);
+    SetGender(gender);
+    SetPowerKind(Powers(powertype));
 
     // Initialize player's display IDs (model, scale, and model data)
     InitDisplayIds();
