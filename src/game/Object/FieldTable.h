@@ -152,4 +152,10 @@ namespace Fields
     /// Fields that must go out on every update block, because what they mean to
     /// an observer can change while the stored value stands still.
     bool AlwaysResend(uint8 typeId, uint16 index);
+
+    /// Fields the mirror does not hold. The object keeps them as its own state,
+    /// the mirror slot stays zero, and Project is what reads them -- so a create
+    /// block asks the projection whether there is anything to send, rather than
+    /// looking at a slot nobody fills.
+    bool LivesOutside(uint8 typeId, uint16 index);
 }

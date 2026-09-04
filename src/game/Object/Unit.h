@@ -1627,7 +1627,7 @@ class Unit : public Presence
          * \see EUnitFields
          * \see GetUInt32Value
          */
-        uint32 GetHealth()    const { return GetUInt32Value(UNIT_FIELD_HEALTH); }
+        uint32 GetHealth()    const { return m_health; }
 
         /**
          * Gets the maximum health of this Unit
@@ -1636,7 +1636,7 @@ class Unit : public Presence
          * \see GetUInt32Value
          */
         bool HealthAbovePctHealed(int32 pct, uint32 heal) const { return uint64(GetHealth()) + uint64(heal) > CountPctFromMaxHealth(pct); }
-        uint32 GetMaxHealth() const { return GetUInt32Value(UNIT_FIELD_MAXHEALTH); }
+        uint32 GetMaxHealth() const { return m_maxHealth; }
         bool IsFullHealth() const { return GetHealth() == GetMaxHealth(); }
         bool HealthBelowPct(int32 pct) const { return GetHealth() < CountPctFromMaxHealth(pct); }
         bool HealthBelowPctDamaged(int32 pct, uint32 damage) const { return int64(GetHealth()) - int64(damage) < int64(CountPctFromMaxHealth(pct)); }
@@ -4078,6 +4078,11 @@ class Unit : public Presence
         uint32 m_reactiveTimer[MAX_REACTIVE];
         uint32 m_regenTimer;
         uint32 m_lastManaUseTimer;
+
+        /// Hit points are the unit's own; the client is told a figure derived
+        /// from them, which is not always the figure itself.
+        uint32 m_health;
+        uint32 m_maxHealth;
 
         void DisableSpline();
         bool m_isCreatureLinkingTrigger;

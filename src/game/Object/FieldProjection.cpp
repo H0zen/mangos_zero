@@ -161,11 +161,13 @@ namespace Fields
 
         switch (index)
         {
+            // Hit points are the unit's own state, so the stored slot has
+            // nothing to say and `raw` is ignored.
             case UNIT_FIELD_HEALTH:
-                return real ? raw : HealthAsPercent(raw, unit.GetMaxHealth());
+                return real ? unit.GetHealth() : HealthAsPercent(unit.GetHealth(), unit.GetMaxHealth());
 
             case UNIT_FIELD_MAXHEALTH:
-                return real ? raw : (raw ? 100 : 0);
+                return real ? unit.GetMaxHealth() : (unit.GetMaxHealth() ? 100 : 0);
 
             case UNIT_FIELD_FLAGS:
                 // A game master must be able to click anything.
@@ -287,6 +289,16 @@ namespace Fields
         }
 
         return raw;
+    }
+
+    bool LivesOutside(uint8 typeId, uint16 index)
+    {
+        if (typeId != TYPEID_UNIT && typeId != TYPEID_PLAYER)
+        {
+            return false;
+        }
+
+        return index == UNIT_FIELD_HEALTH || index == UNIT_FIELD_MAXHEALTH;
     }
 
     bool AlwaysResend(uint8 typeId, uint16 index)

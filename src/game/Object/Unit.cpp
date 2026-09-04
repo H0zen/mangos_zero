@@ -204,7 +204,9 @@ Unit::Unit()
     m_ThreatManager(this),
     m_HostileRefManager(this),
     m_schoolLockoutMask(SPELL_SCHOOL_MASK_NONE),
-    m_schoolLockoutExpire(0)
+    m_schoolLockoutExpire(0),
+    m_health(0),
+    m_maxHealth(0)
 {
     m_objectType |= TYPEMASK_UNIT;
     m_objectTypeId = TYPEID_UNIT;
@@ -4439,7 +4441,11 @@ void Unit::SetHealth(uint32 val)
         val = maxHealth;
     }
 
-    SetUInt32Value(UNIT_FIELD_HEALTH, val);
+    if (m_health != val)
+    {
+        m_health = val;
+        ResendField(UNIT_FIELD_HEALTH);
+    }
 
     // group update
     if (GetTypeId() == TYPEID_PLAYER)
@@ -4471,7 +4477,11 @@ void Unit::SetHealth(uint32 val)
 void Unit::SetMaxHealth(uint32 val)
 {
     uint32 health = GetHealth();
-    SetUInt32Value(UNIT_FIELD_MAXHEALTH, val);
+    if (m_maxHealth != val)
+    {
+        m_maxHealth = val;
+        ResendField(UNIT_FIELD_MAXHEALTH);
+    }
 
     // Observers other than this unit are told a percentage, so a pool that
     // changes under a steady hit-point count still changes what they must see.

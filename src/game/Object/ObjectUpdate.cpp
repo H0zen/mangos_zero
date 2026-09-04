@@ -440,7 +440,19 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, Player* targe
             continue;
         }
 
-        bool wanted = creating ? (m_mirror.Read(index) != 0) : m_mirror.Changed(index);
+        bool wanted;
+        if (!creating)
+        {
+            wanted = m_mirror.Changed(index);
+        }
+        else if (Fields::LivesOutside(m_objectTypeId, index))
+        {
+            wanted = Fields::Project(*this, *target, index, 0) != 0;
+        }
+        else
+        {
+            wanted = m_mirror.Read(index) != 0;
+        }
 
         if (!wanted && Fields::AlwaysResend(m_objectTypeId, index))
         {
