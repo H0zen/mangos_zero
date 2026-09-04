@@ -409,67 +409,6 @@ void ContactPointNear(WorldObject const& anchor, WorldObject const* obj, float& 
 }
 
 /**
- * @brief Plays a positional sound for one player or nearby players.
- *
- * @param sound_id The sound entry id.
- * @param target Optional single-player target.
- */
-void WorldObject::PlayDistanceSound(uint32 sound_id, Player const* target /*= NULL*/) const
-{
-    WorldPacket data(SMSG_PLAY_OBJECT_SOUND, 4 + 8);
-    data << uint32(sound_id);
-    data << GetObjectGuid();
-    if (target)
-    {
-        target->SendDirectMessage(&data);
-    }
-    else
-    {
-        Broadcast(*this, &data, true);
-    }
-}
-
-/**
- * @brief Plays a direct sound for one player or nearby players.
- *
- * @param sound_id The sound entry id.
- * @param target Optional single-player target.
- */
-void WorldObject::PlayDirectSound(uint32 sound_id, Player const* target /*= NULL*/) const
-{
-    WorldPacket data(SMSG_PLAY_SOUND, 4);
-    data << uint32(sound_id);
-    if (target)
-    {
-        target->SendDirectMessage(&data);
-    }
-    else
-    {
-        Broadcast(*this, &data, true);
-    }
-}
-
-/**
- * @brief Plays music for one player or nearby players.
- *
- * @param sound_id The music entry id.
- * @param target Optional single-player target.
- */
-void WorldObject::PlayMusic(uint32 sound_id, Player const* target /*= NULL*/) const
-{
-    WorldPacket data(SMSG_PLAY_MUSIC, 4);
-    data << uint32(sound_id);
-    if (target)
-    {
-        target->SendDirectMessage(&data);
-    }
-    else
-    {
-        Broadcast(*this, &data, true);
-    }
-}
-
-/**
  * @brief Refreshes both visibility and viewpoint-dependent visibility state.
  */
 void WorldObject::UpdateVisibilityAndView()

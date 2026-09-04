@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Utterance.h"
 #include "GameObject.h"
 #include "Geometry/Quat.h"
 #include "QuestDef.h"
@@ -322,7 +323,7 @@ void GameObject::AddUniqueUse(Player* player)
  */
 void GameObject::Delete()
 {
-    SendObjectDeSpawnAnim(GetObjectGuid());
+    SendDespawnAnimation(*this);
 
     SetGoState(GO_STATE_READY);
     SetUInt32Value(GAMEOBJECT_FLAGS, GetGOInfo()->flags);

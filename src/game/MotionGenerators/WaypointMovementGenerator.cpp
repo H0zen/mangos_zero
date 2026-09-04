@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Utterance.h"
 #include "Utilities/Errors.h"
 #include "Utilities/MathDefines.h"
 #include "WaypointMovementGenerator.h"
@@ -288,7 +289,7 @@ void WaypointMovementGenerator::OnArrived(Creature& creature)
 
             if (MangosStringLocale const* textData = sObjectMgr.GetMangosStringLocale(textId))
             {
-                creature.MonsterText(textData, nullptr);
+                Utter(creature, textData, nullptr);
             }
             else
             {

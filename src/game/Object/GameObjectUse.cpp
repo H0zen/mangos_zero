@@ -26,6 +26,7 @@
 
 
 #include <cmath>
+#include "Utterance.h"
 #include "Summoning.h"
 #include "Utilities/Errors.h"
 #include <sstream>
@@ -264,7 +265,7 @@ void GameObject::Use(Unit* user)
                     Creature* helper = SummonCreature(*player, 14496, x_i, y_i, Where().Z(), Where().Facing(), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 10000);
                     std::ostringstream output;
                     output << i << ": thisDist: " << thisDistance;
-                    helper->MonsterSay(output.str().c_str(), LANG_UNIVERSAL);
+                    Utter(*helper, CHAT_TYPE_SAY, output.str().c_str());
                     */
 
                     if (thisDistance <= lowestDist)

@@ -25,6 +25,7 @@
 
 
 
+#include "Utterance.h"
 #include "GameObject.h"
 #include "QuestDef.h"
 #include "ObjectMgr.h"
@@ -437,7 +438,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
             // burning flags in some battlegrounds, if you find better condition, just add it
             if (GetGOInfo()->IsDespawnAtAction() || GetGoAnimProgress() > 0)
             {
-                SendObjectDeSpawnAnim(GetObjectGuid());
+                SendDespawnAnimation(*this);
                 // reset flags
                 if (GetMap()->Instanceable())
                 {

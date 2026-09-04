@@ -48,6 +48,7 @@
 
 #include <algorithm>
 #include <vector>
+#include "Utterance.h"
 #include "Summoning.h"
 #include "Utilities/MathDefines.h"
 #include "ScriptMgr.h"
@@ -808,13 +809,13 @@ bool ScriptAction::HandleScriptStep()
 
             if (m_script->data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL)
             {
-                pSource->PlayMusic(m_script->playSound.soundId, pSoundTarget);
+                PlaySound(*pSource, SoundKind::Music, m_script->playSound.soundId, pSoundTarget);
             }
             else
             {
                 if (m_script->playSound.flags & 2)
                 {
-                    pSource->PlayDistanceSound(m_script->playSound.soundId, pSoundTarget);
+                    PlaySound(*pSource, SoundKind::AtObject, m_script->playSound.soundId, pSoundTarget);
                 }
                 else if (m_script->playSound.flags & (4 | 8))
                 {
@@ -822,7 +823,7 @@ bool ScriptAction::HandleScriptStep()
                 }
                 else
                 {
-                    pSource->PlayDirectSound(m_script->playSound.soundId, pSoundTarget);
+                    PlaySound(*pSource, SoundKind::Flat, m_script->playSound.soundId, pSoundTarget);
                 }
             }
             break;

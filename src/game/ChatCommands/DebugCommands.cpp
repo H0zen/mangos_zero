@@ -35,6 +35,7 @@
  */
 
 #include <cstdlib>
+#include "Utterance.h"
 #include "Platform/Define.h"
 #include <cstring>
 #include <string>
@@ -520,11 +521,11 @@ bool ChatHandler::HandleDebugPlaySoundCommand(char* args)
 
     if (m_session->GetPlayer()->GetSelectionGuid())
     {
-        unit->PlayDistanceSound(dwSoundId, m_session->GetPlayer());
+        PlaySound(*unit, SoundKind::AtObject, dwSoundId, m_session->GetPlayer());
     }
     else
     {
-        unit->PlayDirectSound(dwSoundId, m_session->GetPlayer());
+        PlaySound(*unit, SoundKind::Flat, dwSoundId, m_session->GetPlayer());
     }
 
     PSendSysMessage(LANG_YOU_HEAR_SOUND, dwSoundId);

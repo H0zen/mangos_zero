@@ -24,6 +24,7 @@
  */
 
 #include <cmath>
+#include "Utterance.h"
 #include "Totem.h"
 #include "Log.h"
 #include "Group.h"
@@ -172,7 +173,7 @@ void Totem::Summon(Unit* owner)
  */
 void Totem::UnSummon()
 {
-    SendObjectDeSpawnAnim(GetObjectGuid());
+    SendDespawnAnimation(*this);
 
     CombatStop();
     RemoveAuras(GetSpell());

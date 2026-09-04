@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Utterance.h"
 #include "Common/Locales.h"
 #include "Utilities/Errors.h"
 #include <algorithm>
@@ -3949,12 +3950,12 @@ bool DoDisplayText(WorldObject* source, int32 entry, Unit const* target /*=NULL*
             // An error will be displayed for the text
             if (target && target->GetTypeId() == TYPEID_PLAYER)
             {
-                source->PlayDirectSound(data->SoundId, (Player const*)target);
+                PlaySound(*source, SoundKind::Flat, data->SoundId, ToPlayer(target));
             }
         }
         else
         {
-            source->PlayDirectSound(data->SoundId);
+            PlaySound(*source, SoundKind::Flat, data->SoundId);
         }
     }
 
@@ -3977,6 +3978,6 @@ bool DoDisplayText(WorldObject* source, int32 entry, Unit const* target /*=NULL*
         return false;
     }
 
-    source->MonsterText(data, target);
+    Utter(*source, data, target);
     return true;
 }

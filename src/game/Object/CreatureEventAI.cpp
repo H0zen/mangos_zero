@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Utterance.h"
 #include "Summoning.h"
 #include "Utilities/Util.h"
 #include "Utilities/Errors.h"
@@ -801,7 +802,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
             break;
         }
         case ACTION_T_SOUND:                    //4
-            m_creature->PlayDirectSound(action.sound.soundId);
+            PlaySound(*m_creature, SoundKind::Flat, action.sound.soundId);
             break;
         case ACTION_T_EMOTE:                    //5
             m_creature->HandleEmote(action.emote.emoteId);
@@ -811,7 +812,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
             int32 temp = GetRandActionParam(rnd, action.random_sound.soundId1, action.random_sound.soundId2, action.random_sound.soundId3);
             if (temp >= 0)
             {
-                m_creature->PlayDirectSound(temp);
+                PlaySound(*m_creature, SoundKind::Flat, temp);
             }
             break;
         }

@@ -37,6 +37,7 @@
 #include <cmath>
 #include <sstream>
 #include <string>
+#include "Utterance.h"
 #include "Chat.h"
 #include "MapManager.h"
 #include "GameEventMgr.h"
@@ -390,7 +391,7 @@ bool ChatHandler::HandleGameObjectAnimationCommand(char* args)
     {
         if (type < 0)
         {
-            go->SendObjectDeSpawnAnim(go->GetObjectGuid());
+            SendDespawnAnimation(*go);
         }
         else
         {

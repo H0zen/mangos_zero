@@ -660,17 +660,8 @@ class WorldObject : public Object
         virtual void CleanupsBeforeDelete();                // used in destructor or explicitly before mass creature delete to remove cross-references to already deleted units
 
 
-        void MonsterSay(const char* text, uint32 language, Unit const* target = NULL) const;
-        void MonsterYell(const char* text, uint32 language, Unit const* target = NULL) const;
-        void MonsterTextEmote(const char* text, Unit const* target, bool IsBossEmote = false) const;
-        void MonsterWhisper(const char* text, Unit const* target, bool IsBossWhisper = false) const;
-        void MonsterText(MangosStringLocale const* textData, Unit const* target) const;
 
-        void PlayDistanceSound(uint32 sound_id, Player const* target = NULL) const;
-        void PlayDirectSound(uint32 sound_id, Player const* target = NULL) const;
-        void PlayMusic(uint32 sound_id, Player const* target = NULL) const;
 
-        void SendObjectDeSpawnAnim(ObjectGuid guid);
 
         virtual bool IsHostileTo(Unit const* unit) const = 0;
         virtual bool IsFriendlyTo(Unit const* unit) const = 0;

@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Utterance.h"
 #include "Platform/Define.h"
 #include "World.h"
 #include "ObjectLookup.h"
@@ -239,7 +240,7 @@ void DynamicObject::Update(uint32 /*update_diff*/, uint32 p_time)
  */
 void DynamicObject::Delete()
 {
-    SendObjectDeSpawnAnim(GetObjectGuid());
+    SendDespawnAnimation(*this);
     AddObjectToRemoveList();
 }
 

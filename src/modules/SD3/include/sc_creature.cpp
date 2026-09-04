@@ -24,6 +24,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Utterance.h"
 #include "Summoning.h"
 #include "precompiled.h"
 #include "Item.h"
@@ -256,7 +257,7 @@ void ScriptedAI::DoPlaySoundToSet(WorldObject* pSource, uint32 uiSoundId)
         return;
     }
 
-    pSource->PlayDirectSound(uiSoundId);
+    PlaySound(*pSource, SoundKind::Flat, uiSoundId);
 }
 
 /**

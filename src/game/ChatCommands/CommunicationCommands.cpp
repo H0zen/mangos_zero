@@ -34,6 +34,7 @@
  */
 
 #include <string>
+#include "Utterance.h"
 #include "Chat.h"
 
 #include "World.h"
@@ -300,7 +301,7 @@ bool ChatHandler::HandleNpcSayCommand(char* args)
         return false;
     }
 
-    pCreature->MonsterSay(args, LANG_UNIVERSAL, m_session->GetPlayer());
+    Utter(*pCreature, CHAT_TYPE_SAY, args, m_session->GetPlayer());
 
     return true;
 }
@@ -326,7 +327,7 @@ bool ChatHandler::HandleNpcYellCommand(char* args)
         return false;
     }
 
-    pCreature->MonsterYell(args, LANG_UNIVERSAL, m_session->GetPlayer());
+    Utter(*pCreature, CHAT_TYPE_YELL, args, m_session->GetPlayer());
 
     return true;
 }
@@ -353,7 +354,7 @@ bool ChatHandler::HandleNpcTextEmoteCommand(char* args)
         return false;
     }
 
-    pCreature->MonsterTextEmote(args, m_session->GetPlayer());
+    Utter(*pCreature, CHAT_TYPE_TEXT_EMOTE, args, m_session->GetPlayer());
 
     return true;
 }
@@ -391,7 +392,7 @@ bool ChatHandler::HandleNpcWhisperCommand(char* args)
         return false;
     }
 
-    pCreature->MonsterWhisper(args, target);
+    Utter(*pCreature, CHAT_TYPE_WHISPER, args, target);
 
     return true;
 }
