@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "gnomeregan.h"
 
@@ -296,7 +297,7 @@ struct boss_thermaplugg : public CreatureScript
                             fX = 0.35 * m_afSpawnPos[0] + 0.65 * pFace->Where().X();
                             fY = 0.35 * m_afSpawnPos[1] + 0.65 * pFace->Where().Y();
                         }
-                        m_creature->SummonCreature(NPC_WALKING_BOMB, fX, fY, fBombSpawnZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
+                        SummonCreature(*m_creature, NPC_WALKING_BOMB, fX, fY, fBombSpawnZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
                         m_asBombFaces[i].m_uiBombTimer = urand(10000, 25000);   // TODO
                     }
                     else

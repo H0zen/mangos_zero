@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "sunken_temple.h"
 
@@ -265,7 +266,7 @@ struct is_sunken_temple : public InstanceScript
                                 return;
                             }
 
-                            if (Creature* pShade = pPlayer->SummonCreature(NPC_SHADE_OF_HAKKAR, aSunkenTempleLocation[1].m_fX, aSunkenTempleLocation[1].m_fY, aSunkenTempleLocation[1].m_fZ, aSunkenTempleLocation[1].m_fO, TEMPSPAWN_MANUAL_DESPAWN, 0))
+                            if (Creature* pShade = SummonCreature(*pPlayer, NPC_SHADE_OF_HAKKAR, aSunkenTempleLocation[1].m_fX, aSunkenTempleLocation[1].m_fY, aSunkenTempleLocation[1].m_fZ, aSunkenTempleLocation[1].m_fO, TEMPSPAWN_MANUAL_DESPAWN, 0))
                             {
                                 //m_mNpcEntryGuidStore[NPC_SHADE_OF_HAKKAR] = pShade->GetObjectGuid();
                                 pShade->SetRespawnDelay(DAY);
@@ -371,14 +372,14 @@ struct is_sunken_temple : public InstanceScript
                             {
                                 if (GameObject* pCircle = instance->GetGameObject(*itr))
                                 {
-                                    pShade->SummonCreature(NPC_HAKKARI_MINION, pCircle->Where().X(), pCircle->Where().Y(), pCircle->Where().Z(), 0, TEMPSPAWN_DEAD_DESPAWN, 0);
+                                    SummonCreature(*pShade, NPC_HAKKARI_MINION, pCircle->Where().X(), pCircle->Where().Y(), pCircle->Where().Z(), 0, TEMPSPAWN_DEAD_DESPAWN, 0);
                                 }
                             }
 
                             // Summon Bloodkeeper at random circle
                             if (GameObject* pCircle = instance->GetGameObject(m_vuiCircleGUIDs[urand(0, m_vuiCircleGUIDs.size() - 1)]))
                             {
-                                pShade->SummonCreature(NPC_BLOODKEEPER, pCircle->Where().X(), pCircle->Where().Y(), pCircle->Where().Z(), 0, TEMPSPAWN_DEAD_DESPAWN, 0);
+                                SummonCreature(*pShade, NPC_BLOODKEEPER, pCircle->Where().X(), pCircle->Where().Y(), pCircle->Where().Z(), 0, TEMPSPAWN_DEAD_DESPAWN, 0);
                             }
 
                             m_bCanSummonBloodkeeper = false;
@@ -395,7 +396,7 @@ struct is_sunken_temple : public InstanceScript
                                 // Summon a Bloodkeeper
                                 if (GameObject* pCircle = instance->GetGameObject(m_vuiCircleGUIDs[urand(0, m_vuiCircleGUIDs.size() - 1)]))
                                 {
-                                    pShade->SummonCreature(NPC_BLOODKEEPER, pCircle->Where().X(), pCircle->Where().Y(), pCircle->Where().Z(), 0, TEMPSPAWN_DEAD_DESPAWN, 0);
+                                    SummonCreature(*pShade, NPC_BLOODKEEPER, pCircle->Where().X(), pCircle->Where().Y(), pCircle->Where().Z(), 0, TEMPSPAWN_DEAD_DESPAWN, 0);
                                 }
 
                                 m_bCanSummonBloodkeeper = false;
@@ -406,7 +407,7 @@ struct is_sunken_temple : public InstanceScript
                             {
                                 if (GameObject* pCircle = instance->GetGameObject(m_vuiCircleGUIDs[urand(0, m_vuiCircleGUIDs.size() - 1)]))
                                 {
-                                    pShade->SummonCreature(NPC_HAKKARI_MINION, pCircle->Where().X(), pCircle->Where().Y(), pCircle->Where().Z(), 0, TEMPSPAWN_DEAD_DESPAWN, 0);
+                                    SummonCreature(*pShade, NPC_HAKKARI_MINION, pCircle->Where().X(), pCircle->Where().Y(), pCircle->Where().Z(), 0, TEMPSPAWN_DEAD_DESPAWN, 0);
                                 }
                             }
                             m_uiAvatarSummonTimer = urand(3000, 15000);
@@ -432,7 +433,7 @@ struct is_sunken_temple : public InstanceScript
 
                         // Summon npc at random door; movement and script handled in DB
                         uint8 uiSummonLoc = urand(0, 1);
-                        pShade->SummonCreature(NPC_SUPPRESSOR, aHakkariDoorLocations[uiSummonLoc].m_fX, aHakkariDoorLocations[uiSummonLoc].m_fY, aHakkariDoorLocations[uiSummonLoc].m_fZ, 0, TEMPSPAWN_DEAD_DESPAWN, 0);
+                        SummonCreature(*pShade, NPC_SUPPRESSOR, aHakkariDoorLocations[uiSummonLoc].m_fX, aHakkariDoorLocations[uiSummonLoc].m_fY, aHakkariDoorLocations[uiSummonLoc].m_fZ, 0, TEMPSPAWN_DEAD_DESPAWN, 0);
 
                         // This timer is finished now
                         m_uiSupressorTimer = 0;
@@ -485,7 +486,7 @@ struct is_sunken_temple : public InstanceScript
                     return;
                 }
 
-                pPlayer->SummonCreature(NPC_ATALARION, aSunkenTempleLocation[0].m_fX, aSunkenTempleLocation[0].m_fY, aSunkenTempleLocation[0].m_fZ, aSunkenTempleLocation[0].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0);
+                SummonCreature(*pPlayer, NPC_ATALARION, aSunkenTempleLocation[0].m_fX, aSunkenTempleLocation[0].m_fY, aSunkenTempleLocation[0].m_fZ, aSunkenTempleLocation[0].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0);
                 // Spawn the idol of Hakkar
                 DoRespawnGameObject(GO_IDOL_OF_HAKKAR, 30 * MINUTE);
 

@@ -39,6 +39,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 
 /*######
@@ -239,14 +240,14 @@ struct npc_eris_havenfire : public CreatureScript
                         fX = randSpot2.x;
                         fY = randSpot2.y;
                         fZ = randSpot2.z;
-                        m_creature->SummonCreature(NPC_SCOURGE_FOOTSOLDIER, fX, fY, fZ, 0, TEMPSPAWN_DEAD_DESPAWN, 0);
+                        SummonCreature(*m_creature, NPC_SCOURGE_FOOTSOLDIER, fX, fY, fZ, 0, TEMPSPAWN_DEAD_DESPAWN, 0);
                     }
                     break;
                 }
                 case NPC_SCOURGE_ARCHER:
                     for (uint8 i = 0; i < MAX_ARCHERS; ++i)
                     {
-                        m_creature->SummonCreature(NPC_SCOURGE_ARCHER, aArcherSpawn[i][0], aArcherSpawn[i][1], aArcherSpawn[i][2], aArcherSpawn[i][3], TEMPSPAWN_DEAD_DESPAWN, 0);
+                        SummonCreature(*m_creature, NPC_SCOURGE_ARCHER, aArcherSpawn[i][0], aArcherSpawn[i][1], aArcherSpawn[i][2], aArcherSpawn[i][3], TEMPSPAWN_DEAD_DESPAWN, 0);
                     }
                     break;
                 default:
@@ -257,7 +258,7 @@ struct npc_eris_havenfire : public CreatureScript
                         fX = randSpot1.x;
                         fY = randSpot1.y;
                         fZ = randSpot1.z;
-                        if (Creature* pTemp = m_creature->SummonCreature(uiSummonEntry, fX, fY, fZ, 0, TEMPSPAWN_TIMED_OR_DEAD_DESPAWN, 10*MINUTE*IN_MILLISECONDS))
+                        if (Creature* pTemp = SummonCreature(*m_creature, uiSummonEntry, fX, fY, fZ, 0, TEMPSPAWN_TIMED_OR_DEAD_DESPAWN, 10*MINUTE*IN_MILLISECONDS))
                         {
                             // Only the first mob needs to yell
                             if (!i)

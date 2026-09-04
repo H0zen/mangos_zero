@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "zulgurub.h"
 
@@ -155,11 +156,11 @@ struct boss_arlokk : public CreatureScript
                 {
                     if (Creature* pTrigger = m_pInstance->instance->GetCreature(ObjectGuid(m_pInstance->GetData64(TYPE_SIGNAL_2))))
                     {
-                        m_creature->SummonCreature(NPC_ZULIAN_PROWLER, pTrigger->Where().X(), pTrigger->Where().Y(), pTrigger->Where().Z(), 0, TEMPSPAWN_TIMED_OOC_DESPAWN, 30000);
+                        SummonCreature(*m_creature, NPC_ZULIAN_PROWLER, pTrigger->Where().X(), pTrigger->Where().Y(), pTrigger->Where().Z(), 0, TEMPSPAWN_TIMED_OOC_DESPAWN, 30000);
                     }
                     if (Creature* pTrigger = m_pInstance->instance->GetCreature(ObjectGuid(m_pInstance->GetData64(TYPE_SIGNAL_3))))
                     {
-                        m_creature->SummonCreature(NPC_ZULIAN_PROWLER, pTrigger->Where().X(), pTrigger->Where().Y(), pTrigger->Where().Z(), 0, TEMPSPAWN_TIMED_OOC_DESPAWN, 30000);
+                        SummonCreature(*m_creature, NPC_ZULIAN_PROWLER, pTrigger->Where().X(), pTrigger->Where().Y(), pTrigger->Where().Z(), 0, TEMPSPAWN_TIMED_OOC_DESPAWN, 30000);
                     }
                 }
 

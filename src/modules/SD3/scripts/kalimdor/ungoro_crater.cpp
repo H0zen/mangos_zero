@@ -39,6 +39,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "escort_ai.h"
 #include "follower_ai.h"
@@ -535,7 +536,7 @@ struct npc_simone_the_seductressAI : public ScriptedAI
             if (!pPrecious->IsAlive())
             {
                 pPrecious->ForcedDespawn();
-                Creature* pPreciousNew = m_creature->SummonCreature(NPC_PRECIOUS_THE_DEVOURER,
+                Creature* pPreciousNew = SummonCreature(*m_creature, NPC_PRECIOUS_THE_DEVOURER,
                     m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z(), m_creature->Where().BearingTo(m_creature->Where()), TEMPSPAWN_DEAD_DESPAWN, 0, true);
 
                 if (pPreciousNew)
@@ -553,7 +554,7 @@ struct npc_simone_the_seductressAI : public ScriptedAI
         }
         else
         {
-            Creature* pPreciousNew = m_creature->SummonCreature(NPC_PRECIOUS_THE_DEVOURER,
+            Creature* pPreciousNew = SummonCreature(*m_creature, NPC_PRECIOUS_THE_DEVOURER,
                 m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z(), m_creature->Where().BearingTo(m_creature->Where()), TEMPSPAWN_DEAD_DESPAWN, 0, true);
 
             if (pPreciousNew)
@@ -618,7 +619,7 @@ struct npc_simone_the_seductressAI : public ScriptedAI
 
         if (triggered)
         {
-            Creature* pCleaner = m_creature->SummonCreature(NPC_THE_CLEANER, m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z(), m_creature->Where().BearingTo(m_creature->Where()), TEMPSPAWN_CORPSE_DESPAWN, 20 * MINUTE * IN_MILLISECONDS);
+            Creature* pCleaner = SummonCreature(*m_creature, NPC_THE_CLEANER, m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z(), m_creature->Where().BearingTo(m_creature->Where()), TEMPSPAWN_CORPSE_DESPAWN, 20 * MINUTE * IN_MILLISECONDS);
             if (pCleaner)
             {
                 ThreatList const& SimonetList = m_creature->GetThreatManager().getThreatList();
@@ -804,7 +805,7 @@ struct npc_simone_the_inconspicuousAI : public ScriptedAI
         }
         else
         {
-            pPrecious = m_creature->SummonCreature(NPC_PRECIOUS,
+            pPrecious = SummonCreature(*m_creature, NPC_PRECIOUS,
                 m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z(), m_creature->Where().Facing(), TEMPSPAWN_DEAD_DESPAWN, 0);
             pPrecious->GetMotionMaster()->MoveFollow(m_creature, PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);
         }
@@ -814,7 +815,7 @@ struct npc_simone_the_inconspicuousAI : public ScriptedAI
     {
         if (m_creature->GetMap()->GetPlayer(m_playerGuid))
         {
-            Creature* pDemon = m_creature->SummonCreature(NPC_SIMONE_THE_SEDUCTRESS,
+            Creature* pDemon = SummonCreature(*m_creature, NPC_SIMONE_THE_SEDUCTRESS,
                 m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z(), m_creature->Where().Facing(), TEMPSPAWN_DEAD_DESPAWN, 0);
             Creature* pPrecious = GetClosestCreatureWithEntry(m_creature, NPC_PRECIOUS, 100.0f);
 
@@ -831,7 +832,7 @@ struct npc_simone_the_inconspicuousAI : public ScriptedAI
 
             if (pDemon && pPrecious)
             {
-                Creature* pPreciousDevourer = m_creature->SummonCreature(NPC_PRECIOUS_THE_DEVOURER,
+                Creature* pPreciousDevourer = SummonCreature(*m_creature, NPC_PRECIOUS_THE_DEVOURER,
                     pPrecious->Where().X(), pPrecious->Where().Y(), pPrecious->Where().Z(), pPrecious->Where().BearingTo(pPrecious->Where()), TEMPSPAWN_DEAD_DESPAWN, 0, true);
 
                 if (pPreciousDevourer)

@@ -40,6 +40,7 @@
  * - what happens if raid fail, can they start the event as soon after as they want?
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "naxxramas.h"
 
@@ -319,7 +320,7 @@ struct boss_kelthuzad : public CreatureScript
                 fNewY = randSpot1.y;
                 fNewZ = randSpot1.z;
 
-                m_creature->SummonCreature(uiNpcEntry, fNewX, fNewY, fNewZ, fAngle + M_PI_F, TEMPSPAWN_CORPSE_DESPAWN, 5000);
+                SummonCreature(*m_creature, uiNpcEntry, fNewX, fNewY, fNewZ, fAngle + M_PI_F, TEMPSPAWN_CORPSE_DESPAWN, 5000);
             }
         }
 
@@ -349,7 +350,7 @@ struct boss_kelthuzad : public CreatureScript
             MaNGOS::NormalizeMapCoord(fX);
             MaNGOS::NormalizeMapCoord(fY);
 
-            m_creature->SummonCreature(uiType, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 5000);
+            SummonCreature(*m_creature, uiType, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 5000);
         }
 
         void JustSummoned(Creature* pSummoned) override

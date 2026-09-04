@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "blackfathom_deeps.h"
 
@@ -90,7 +91,7 @@ struct go_fathom_stone : public GameObjectScript
         }
         else
         {
-            pPlayer->SummonCreature(NPC_BARON_AQUANIS, -782.21f, -63.26f, -42.43f, 2.36f, TEMPSPAWN_TIMED_OOC_DESPAWN, 120000);
+            SummonCreature(*pPlayer, NPC_BARON_AQUANIS, -782.21f, -63.26f, -42.43f, 2.36f, TEMPSPAWN_TIMED_OOC_DESPAWN, 120000);
         }
 
         pInstance->SetData(TYPE_STONE, DONE);

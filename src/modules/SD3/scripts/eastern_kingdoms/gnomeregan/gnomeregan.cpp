@@ -40,6 +40,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "gnomeregan.h"
 #include "escort_ai.h"
@@ -190,7 +191,7 @@ struct npc_blastmaster_emi_shortfuse : public CreatureScript
                 }
                 if (asSummonInfo[i].uiPosition == uiIndex)
                 {
-                    m_creature->SummonCreature(asSummonInfo[i].uiEntry, asSummonInfo[i].fX, asSummonInfo[i].fY, asSummonInfo[i].fZ, asSummonInfo[i].fO, TEMPSPAWN_DEAD_DESPAWN, 0);
+                    SummonCreature(*m_creature, asSummonInfo[i].uiEntry, asSummonInfo[i].fX, asSummonInfo[i].fY, asSummonInfo[i].fZ, asSummonInfo[i].fO, TEMPSPAWN_DEAD_DESPAWN, 0);
                 }
             }
         }

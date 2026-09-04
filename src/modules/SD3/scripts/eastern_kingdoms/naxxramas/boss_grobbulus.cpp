@@ -41,6 +41,7 @@
  * Spell 26527: Enrages
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "naxxramas.h"
 
@@ -155,7 +156,7 @@ struct boss_grobbulus : public CreatureScript
         {
             if ((SD3_SpellId(pSpell) == SPELL_SLIME_SPRAY) && pTarget->GetTypeId() == TYPEID_PLAYER)
             {
-                m_creature->SummonCreature(NPC_FALLOUT_SLIME, pTarget->Where().X(), pTarget->Where().Y(), pTarget->Where().Z(), 0.0f, TEMPSPAWN_TIMED_OOC_DESPAWN, 10 * IN_MILLISECONDS);
+                SummonCreature(*m_creature, NPC_FALLOUT_SLIME, pTarget->Where().X(), pTarget->Where().Y(), pTarget->Where().Z(), 0.0f, TEMPSPAWN_TIMED_OOC_DESPAWN, 10 * IN_MILLISECONDS);
             }
         }
 

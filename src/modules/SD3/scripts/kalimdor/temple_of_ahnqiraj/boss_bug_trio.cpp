@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "temple_of_ahnqiraj.h"
 
@@ -346,7 +347,7 @@ struct boss_yauj : public CreatureScript
                 fX = randSpot1.x;
                 fY = randSpot1.y;
                 fZ = randSpot1.z;
-                m_creature->SummonCreature(NPC_YAUJ_BROOD, fX, fY, fZ, 0.0f, TEMPSPAWN_TIMED_OOC_DESPAWN, 30000);
+                SummonCreature(*m_creature, NPC_YAUJ_BROOD, fX, fY, fZ, 0.0f, TEMPSPAWN_TIMED_OOC_DESPAWN, 30000);
             }
 
             if (!m_pInstance)

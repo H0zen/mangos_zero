@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 
 enum
@@ -75,7 +76,7 @@ struct boss_general_angerforge : public CreatureScript
             fX = randSpot1.x;
             fY = randSpot1.y;
             fZ = randSpot1.z;
-            m_creature->SummonCreature(uiEntry, fX, fY, fZ, 0.0f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
+            SummonCreature(*m_creature, uiEntry, fX, fY, fZ, 0.0f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
         }
 
         void JustSummoned(Creature* pSummoned) override

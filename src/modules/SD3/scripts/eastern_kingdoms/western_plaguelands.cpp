@@ -42,6 +42,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "escort_ai.h"
 
@@ -84,7 +85,7 @@ struct npc_the_scourge_cauldron : public CreatureScript
                         if (((Player*)who)->GetQuestStatus(5216) == QUEST_STATUS_INCOMPLETE ||
                             ((Player*)who)->GetQuestStatus(5229) == QUEST_STATUS_INCOMPLETE)
                         {
-                            m_creature->SummonCreature(11075, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 600000);
+                            SummonCreature(*m_creature, 11075, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 600000);
                             DoDie();
                         }
                         break;
@@ -92,7 +93,7 @@ struct npc_the_scourge_cauldron : public CreatureScript
                         if (((Player*)who)->GetQuestStatus(5219) == QUEST_STATUS_INCOMPLETE ||
                             ((Player*)who)->GetQuestStatus(5231) == QUEST_STATUS_INCOMPLETE)
                         {
-                            m_creature->SummonCreature(11077, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 600000);
+                            SummonCreature(*m_creature, 11077, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 600000);
                             DoDie();
                         }
                         break;
@@ -100,7 +101,7 @@ struct npc_the_scourge_cauldron : public CreatureScript
                         if (((Player*)who)->GetQuestStatus(5225) == QUEST_STATUS_INCOMPLETE ||
                             ((Player*)who)->GetQuestStatus(5235) == QUEST_STATUS_INCOMPLETE)
                         {
-                            m_creature->SummonCreature(11078, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 600000);
+                            SummonCreature(*m_creature, 11078, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 600000);
                             DoDie();
                         }
                         break;
@@ -108,7 +109,7 @@ struct npc_the_scourge_cauldron : public CreatureScript
                         if (((Player*)who)->GetQuestStatus(5222) == QUEST_STATUS_INCOMPLETE ||
                             ((Player*)who)->GetQuestStatus(5233) == QUEST_STATUS_INCOMPLETE)
                         {
-                            m_creature->SummonCreature(11076, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 600000);
+                            SummonCreature(*m_creature, 11076, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 600000);
                             DoDie();
                         }
                         break;
@@ -357,7 +358,7 @@ struct npc_taelan_fordring : public CreatureScript
             else if (eventType == AI_EVENT_CUSTOM_B && pInvoker->GetEntry() == NPC_ISILLIEN)
             {
                 StartNextDialogueText(NPC_TIRION_FORDRING);
-                m_creature->SummonCreature(NPC_TIRION_FORDRING, 2620.273f, -1920.917f, 74.25f, 0, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 15 * MINUTE*IN_MILLISECONDS);
+                SummonCreature(*m_creature, NPC_TIRION_FORDRING, 2620.273f, -1920.917f, 74.25f, 0, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 15 * MINUTE*IN_MILLISECONDS);
             }
         }
 
@@ -387,9 +388,9 @@ struct npc_taelan_fordring : public CreatureScript
                     // summon additional crimson elites
                     float fX, fY, fZ;
                     FindFreeSpotNear(*pSummoned, pSummoned, fX, fY, fZ, 0, 5.0f, M_PI_F * 1.25f);
-                    pSummoned->SummonCreature(NPC_CRIMSON_ELITE, fX, fY, fZ, pSummoned->Where().Facing(), TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 15 * MINUTE*IN_MILLISECONDS);
+                    SummonCreature(*pSummoned, NPC_CRIMSON_ELITE, fX, fY, fZ, pSummoned->Where().Facing(), TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 15 * MINUTE*IN_MILLISECONDS);
                     FindFreeSpotNear(*pSummoned, pSummoned, fX, fY, fZ, 0, 5.0f, 0);
-                    pSummoned->SummonCreature(NPC_CRIMSON_ELITE, fX, fY, fZ, pSummoned->Where().Facing(), TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 15 * MINUTE*IN_MILLISECONDS);
+                    SummonCreature(*pSummoned, NPC_CRIMSON_ELITE, fX, fY, fZ, pSummoned->Where().Facing(), TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 15 * MINUTE*IN_MILLISECONDS);
                     break;
                 case NPC_TIRION_FORDRING:
                     m_tirionGuid = pSummoned->GetObjectGuid();
@@ -493,7 +494,7 @@ struct npc_taelan_fordring : public CreatureScript
                     break;
                 case SAY_REACH_TOWER:
                     // start fight event
-                    m_creature->SummonCreature(NPC_ISILLIEN, 2693.12f, -1943.04f, 72.04f, 2.11f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 15 * MINUTE*IN_MILLISECONDS);
+                    SummonCreature(*m_creature, NPC_ISILLIEN, 2693.12f, -1943.04f, 72.04f, 2.11f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 15 * MINUTE*IN_MILLISECONDS);
                     break;
                 case SAY_ISILLIEN_2:
                     if (Creature* pIsillien = m_creature->GetMap()->GetCreature(m_isillenGuid))
@@ -504,9 +505,9 @@ struct npc_taelan_fordring : public CreatureScript
                 case SPELL_CRUSADER_STRIKE:
                 {
                     // spawn additioinal elites
-                    m_creature->SummonCreature(NPC_CRIMSON_ELITE, 2711.32f, -1882.67f, 67.89f, 3.2f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 15 * MINUTE*IN_MILLISECONDS);
-                    m_creature->SummonCreature(NPC_CRIMSON_ELITE, 2710.93f, -1878.90f, 67.97f, 3.2f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 15 * MINUTE*IN_MILLISECONDS);
-                    m_creature->SummonCreature(NPC_CRIMSON_ELITE, 2710.53f, -1875.28f, 67.90f, 3.2f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 15 * MINUTE*IN_MILLISECONDS);
+                    SummonCreature(*m_creature, NPC_CRIMSON_ELITE, 2711.32f, -1882.67f, 67.89f, 3.2f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 15 * MINUTE*IN_MILLISECONDS);
+                    SummonCreature(*m_creature, NPC_CRIMSON_ELITE, 2710.93f, -1878.90f, 67.97f, 3.2f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 15 * MINUTE*IN_MILLISECONDS);
+                    SummonCreature(*m_creature, NPC_CRIMSON_ELITE, 2710.53f, -1875.28f, 67.90f, 3.2f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 15 * MINUTE*IN_MILLISECONDS);
 
                     std::list<Creature*> lElitesInRange;
                     Player* pPlayer = GetPlayerForEscort();

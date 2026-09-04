@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "blackrock_depths.h"
 
@@ -385,7 +386,7 @@ void instance_blackrock_depths::SetData(uint32 uiType, uint32 uiData)
                     }
 
                     // Summon doomgrip
-                    pConstruct->SummonCreature(NPC_WATCHER_DOOMGRIP, aVaultPositions[0], aVaultPositions[1], aVaultPositions[2], aVaultPositions[3], TEMPSPAWN_DEAD_DESPAWN, 0);
+                    SummonCreature(*pConstruct, NPC_WATCHER_DOOMGRIP, aVaultPositions[0], aVaultPositions[1], aVaultPositions[2], aVaultPositions[3], TEMPSPAWN_DEAD_DESPAWN, 0);
                 }
                 // No need to store in this case
                 return;
@@ -500,7 +501,7 @@ void instance_blackrock_depths::SetData(uint32 uiType, uint32 uiData)
                     if (Creature* pPlugger = GetSingleCreatureFromStorage(NPC_PLUGGER_SPAZZRING))
                     {
                         // Summon Hurley Blackbreath
-                        Creature* pHurley = pPlugger->SummonCreature(NPC_HURLEY_BLACKBREATH, aHurleyPositions[0], aHurleyPositions[1], aHurleyPositions[2], aHurleyPositions[3], TEMPSPAWN_DEAD_DESPAWN, 0);
+                        Creature* pHurley = SummonCreature(*pPlugger, NPC_HURLEY_BLACKBREATH, aHurleyPositions[0], aHurleyPositions[1], aHurleyPositions[2], aHurleyPositions[3], TEMPSPAWN_DEAD_DESPAWN, 0);
 
                         if (!pHurley)
                         {
@@ -515,7 +516,7 @@ void instance_blackrock_depths::SetData(uint32 uiType, uint32 uiData)
                             fX = randSpot3.x;
                             fY = randSpot3.y;
                             fZ = randSpot3.z;
-                            Creature* pSummoned = pPlugger->SummonCreature(NPC_BLACKBREATH_CRONY, fX, fY, fZ, aHurleyPositions[3], TEMPSPAWN_DEAD_DESPAWN, 0);
+                            Creature* pSummoned = SummonCreature(*pPlugger, NPC_BLACKBREATH_CRONY, fX, fY, fZ, aHurleyPositions[3], TEMPSPAWN_DEAD_DESPAWN, 0);
                             pSummoned->SetWalk(false);
                             // The cronies should not engage anyone until their boss does so
                             // the linking is done by DB
@@ -755,7 +756,7 @@ void instance_blackrock_depths::HandleBarPatrol(uint8 uiStep)
                     fX = randSpot2.x;
                     fY = randSpot2.y;
                     fZ = randSpot2.z;
-                    if (Creature* pSummoned = pPlugger->SummonCreature(aBarPatrolId[i], fX, fY, fZ, aBarPatrolPositions[0][3], TEMPSPAWN_DEAD_DESPAWN, 0))
+                    if (Creature* pSummoned = SummonCreature(*pPlugger, aBarPatrolId[i], fX, fY, fZ, aBarPatrolPositions[0][3], TEMPSPAWN_DEAD_DESPAWN, 0))
                     {
                         m_sBarPatrolGuids.insert(pSummoned->GetObjectGuid());
                         // move them to the Grim Guzzler

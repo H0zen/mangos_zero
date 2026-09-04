@@ -43,6 +43,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "../scripts/world/world_map_scripts.h"
 #include "escort_ai.h"
@@ -359,7 +360,7 @@ struct npc_squire_rowe : public CreatureScript
                     break;
                 case 3:
                     m_creature->SetStandState(UNIT_STAND_STATE_STAND);
-                    m_creature->SummonCreature(NPC_WINDSOR, aWindsorSpawnLoc[0], aWindsorSpawnLoc[1], aWindsorSpawnLoc[2], 0, TEMPSPAWN_CORPSE_DESPAWN, 0);
+                    SummonCreature(*m_creature, NPC_WINDSOR, aWindsorSpawnLoc[0], aWindsorSpawnLoc[1], aWindsorSpawnLoc[2], 0, TEMPSPAWN_CORPSE_DESPAWN, 0);
                     break;
                 case 6:
                     DoScriptText(SAY_SIGNAL_SENT, m_creature);
@@ -377,7 +378,7 @@ struct npc_squire_rowe : public CreatureScript
                     if (Creature* pWindsor = m_creature->GetMap()->GetCreature(m_windsorGuid))
                     {
                         pWindsor->Unmount();
-                        m_creature->SummonCreature(NPC_WINDSOR_MOUNT, pWindsor->Where().X() - 1.0f, pWindsor->Where().Y() + 1.0f, pWindsor->Where().Z(), pWindsor->Where().Facing(), TEMPSPAWN_TIMED_DESPAWN, 30000);
+                        SummonCreature(*m_creature, NPC_WINDSOR_MOUNT, pWindsor->Where().X() - 1.0f, pWindsor->Where().Y() + 1.0f, pWindsor->Where().Z(), pWindsor->Where().Facing(), TEMPSPAWN_TIMED_DESPAWN, 30000);
                     }
                     break;
                 case SAY_DISMOUNT:
@@ -710,7 +711,7 @@ struct npc_reginald_windsor : public CreatureScript
                         // Summon 3 guards on each side and move Jonathan in the middle
                         for (uint8 i = 0; i < MAX_ROYAL_GUARDS; ++i)
                         {
-                            if (Creature* pTemp = m_creature->SummonCreature(NPC_GUARD_ROYAL, aGuardLocations[i][0], aGuardLocations[i][1], aGuardLocations[i][2], aGuardLocations[i][3], TEMPSPAWN_TIMED_DESPAWN, 180000))
+                            if (Creature* pTemp = SummonCreature(*m_creature, NPC_GUARD_ROYAL, aGuardLocations[i][0], aGuardLocations[i][1], aGuardLocations[i][2], aGuardLocations[i][3], TEMPSPAWN_TIMED_DESPAWN, 180000))
                             {
                                 m_guardsGuid[i] = pTemp->GetObjectGuid();
                             }

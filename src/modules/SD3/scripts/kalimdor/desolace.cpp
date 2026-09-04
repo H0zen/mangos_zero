@@ -41,6 +41,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "escort_ai.h"
 
@@ -360,7 +361,7 @@ struct npc_melizza_brimbuzzle : public CreatureScript
                             fX = randSpot5.x;
                             fY = randSpot5.y;
                             fZ = randSpot5.z;
-                            m_creature->SummonCreature(NPC_MARAUDINE_MARAUDER, fX, fY, fZ, 0.0f, TEMPSPAWN_DEAD_DESPAWN, 0);
+                            SummonCreature(*m_creature, NPC_MARAUDINE_MARAUDER, fX, fY, fZ, 0.0f, TEMPSPAWN_DEAD_DESPAWN, 0);
                         }
                     }
                     break;
@@ -372,13 +373,13 @@ struct npc_melizza_brimbuzzle : public CreatureScript
                         fX = randSpot4.x;
                         fY = randSpot4.y;
                         fZ = randSpot4.z;
-                        m_creature->SummonCreature(NPC_MARAUDINE_BONEPAW, fX, fY, fZ, 0.0f, TEMPSPAWN_DEAD_DESPAWN, 0);
+                        SummonCreature(*m_creature, NPC_MARAUDINE_BONEPAW, fX, fY, fZ, 0.0f, TEMPSPAWN_DEAD_DESPAWN, 0);
 
                         const Geometry::Vector3 randSpot3 = RandomGroundPointNear(*m_creature, Geometry::Vector3(wranglerSpawn.m_fX, wranglerSpawn.m_fY, wranglerSpawn.m_fZ), 10.0f);
                         fX = randSpot3.x;
                         fY = randSpot3.y;
                         fZ = randSpot3.z;
-                        m_creature->SummonCreature(NPC_MARAUDINE_WRANGLER, fX, fY, fZ, 0.0f, TEMPSPAWN_DEAD_DESPAWN, 0);
+                        SummonCreature(*m_creature, NPC_MARAUDINE_WRANGLER, fX, fY, fZ, 0.0f, TEMPSPAWN_DEAD_DESPAWN, 0);
                     }
                     break;
                 case 12:
@@ -554,7 +555,7 @@ struct npc_cork_gizelton : public CreatureScript
                         fX = randSpot2.x;
                         fY = randSpot2.y;
                         fZ = randSpot2.z;
-                        m_creature->SummonCreature(AmbushersBodyguard[i], fX, fY, fZ, 0.0f, TEMPSPAWN_DEAD_DESPAWN, 0);
+                        SummonCreature(*m_creature, AmbushersBodyguard[i], fX, fY, fZ, 0.0f, TEMPSPAWN_DEAD_DESPAWN, 0);
                     }
                     break;
                 case QUEST_GIZELTON_CARAVAN:
@@ -566,7 +567,7 @@ struct npc_cork_gizelton : public CreatureScript
                         fX = randSpot1.x;
                         fY = randSpot1.y;
                         fZ = randSpot1.z;
-                        m_creature->SummonCreature(AmbushersGizleton[i], fX, fY, fZ, 0.0f, TEMPSPAWN_DEAD_DESPAWN, 0);
+                        SummonCreature(*m_creature, AmbushersGizleton[i], fX, fY, fZ, 0.0f, TEMPSPAWN_DEAD_DESPAWN, 0);
                     }
                     break;
 

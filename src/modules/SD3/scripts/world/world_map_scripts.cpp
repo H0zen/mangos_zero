@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "world_map_scripts.h"
 
@@ -117,7 +118,7 @@ struct map_kalimdor : public ZoneScript
                                 fY = randSpot4.y;
                                 fZ = randSpot4.z;
 
-                                if (Creature* pTemp = pCreature->SummonCreature(NPC_GREYMIST_WARRIOR, fX, fY, fZ, aSpawnLocations[POS_IDX_MURKDEEP_SPAWN][3], TEMPSPAWN_DEAD_DESPAWN, 0))
+                                if (Creature* pTemp = SummonCreature(*pCreature, NPC_GREYMIST_WARRIOR, fX, fY, fZ, aSpawnLocations[POS_IDX_MURKDEEP_SPAWN][3], TEMPSPAWN_DEAD_DESPAWN, 0))
                                 {
                                     pTemp->SetWalk(false);
                                     const Geometry::Vector3 randSpot3 = RandomGroundPointNear(*pTemp, Geometry::Vector3(aSpawnLocations[POS_IDX_MURKDEEP_MOVE][0], aSpawnLocations[POS_IDX_MURKDEEP_MOVE][1], aSpawnLocations[POS_IDX_MURKDEEP_MOVE][2]), 5.0f);
@@ -148,7 +149,7 @@ struct map_kalimdor : public ZoneScript
                                 fY = randSpot2.y;
                                 fZ = randSpot2.z;
 
-                                if (Creature* pTemp = pCreature->SummonCreature(!i ? NPC_MURKDEEP : NPC_GREYMIST_HUNTER, fX, fY, fZ, aSpawnLocations[POS_IDX_MURKDEEP_SPAWN][3], TEMPSPAWN_DEAD_DESPAWN, 0))
+                                if (Creature* pTemp = SummonCreature(*pCreature, !i ? NPC_MURKDEEP : NPC_GREYMIST_HUNTER, fX, fY, fZ, aSpawnLocations[POS_IDX_MURKDEEP_SPAWN][3], TEMPSPAWN_DEAD_DESPAWN, 0))
                                 {
                                     pTemp->SetWalk(false);
                                     const Geometry::Vector3 randSpot1 = RandomGroundPointNear(*pTemp, Geometry::Vector3(aSpawnLocations[POS_IDX_MURKDEEP_MOVE][0], aSpawnLocations[POS_IDX_MURKDEEP_MOVE][1], aSpawnLocations[POS_IDX_MURKDEEP_MOVE][2]), 5.0f);

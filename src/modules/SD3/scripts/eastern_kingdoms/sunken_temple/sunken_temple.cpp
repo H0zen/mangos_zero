@@ -44,6 +44,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "sunken_temple.h"
 
@@ -68,7 +69,7 @@ struct at_shade_of_eranikus : public AreaTriggerScript
             {
                 if (pInstance->GetData(TYPE_MALFURION) != DONE)
                 {
-                    pPlayer->SummonCreature(NPC_MALFURION, aSunkenTempleLocation[2].m_fX, aSunkenTempleLocation[2].m_fY, aSunkenTempleLocation[2].m_fZ, aSunkenTempleLocation[2].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0);
+                    SummonCreature(*pPlayer, NPC_MALFURION, aSunkenTempleLocation[2].m_fX, aSunkenTempleLocation[2].m_fY, aSunkenTempleLocation[2].m_fZ, aSunkenTempleLocation[2].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0);
                     pInstance->SetData(TYPE_MALFURION, DONE);
                 }
             }
@@ -297,7 +298,7 @@ struct spell_summon_hakkar : public SpellScript
             }
 
             // Actually summon the avatar of Hakkar and cast some visuals
-            if (Creature *pAvatar = pCaster->SummonCreature(NPC_AVATAR_OF_HAKKAR, pCaster->Where().X(), pCaster->Where().Y(), pCaster->Where().Z(), pCaster->Where().Facing(), TEMPSPAWN_CORPSE_TIMED_DESPAWN, 1 * DAY*IN_MILLISECONDS))
+            if (Creature *pAvatar = SummonCreature(*pCaster, NPC_AVATAR_OF_HAKKAR, pCaster->Where().X(), pCaster->Where().Y(), pCaster->Where().Z(), pCaster->Where().Facing(), TEMPSPAWN_CORPSE_TIMED_DESPAWN, 1 * DAY*IN_MILLISECONDS))
             {
                 pAvatar->CastSpell(pAvatar, SPELL_AVATAR_SUMMONED, true);
             }

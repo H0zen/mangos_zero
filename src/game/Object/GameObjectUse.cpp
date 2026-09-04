@@ -26,6 +26,7 @@
 
 
 #include <cmath>
+#include "Summoning.h"
 #include "Utilities/Errors.h"
 #include <sstream>
 #include "Utilities/MathDefines.h"
@@ -260,7 +261,7 @@ void GameObject::Use(Unit* user)
                     float thisDistance = player->Where().DistanceTo(Geometry::Vector2(x_i, y_i));
 
                     /* debug code. It will spawn a npc on each slot to visualize them.
-                    Creature* helper = player->SummonCreature(14496, x_i, y_i, Where().Z(), Where().Facing(), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 10000);
+                    Creature* helper = SummonCreature(*player, 14496, x_i, y_i, Where().Z(), Where().Facing(), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 10000);
                     std::ostringstream output;
                     output << i << ": thisDist: " << thisDistance;
                     helper->MonsterSay(output.str().c_str(), LANG_UNIVERSAL);

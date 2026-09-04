@@ -43,6 +43,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "stratholme.h"
 
@@ -166,7 +167,7 @@ struct go_stratholme_postbox : public GameObjectScript
             fX = randSpot2.x;
             fY = randSpot2.y;
             fZ = randSpot2.z;
-            pPlayer->SummonCreature(NPC_UNDEAD_POSTMAN, fX, fY, fZ, 0.0f, TEMPSPAWN_DEAD_DESPAWN, 0);
+            SummonCreature(*pPlayer, NPC_UNDEAD_POSTMAN, fX, fY, fZ, 0.0f, TEMPSPAWN_DEAD_DESPAWN, 0);
         }
 
         return false;
@@ -254,7 +255,7 @@ struct mob_restless_soul : public CreatureScript
         {
             if (m_bIsTagged)
             {
-                m_creature->SummonCreature(NPC_FREED_SOUL, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSPAWN_TIMED_DESPAWN, 300000);
+                SummonCreature(*m_creature, NPC_FREED_SOUL, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSPAWN_TIMED_DESPAWN, 300000);
             }
         }
 
@@ -334,7 +335,7 @@ struct mobs_spectral_ghostly_citizen : public CreatureScript
                     uint32 j = urand(0, i);
                     if (j == 0)
                     {
-                        m_creature->SummonCreature(NPC_RESTLESS_SOUL, x, y, z, 0, TEMPSPAWN_DEAD_DESPAWN, 0);
+                        SummonCreature(*m_creature, NPC_RESTLESS_SOUL, x, y, z, 0, TEMPSPAWN_DEAD_DESPAWN, 0);
                     }
                 }
             }

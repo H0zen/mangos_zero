@@ -43,6 +43,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "escort_ai.h"
 #include "shadowfang_keep.h"
@@ -616,7 +617,7 @@ struct boss_arugal : public CreatureScript
 
                             for (uint8 i = 0; i < 4; ++i)
                             {
-                                pVoidwalker = m_creature->SummonCreature(NPC_VOIDWALKER, VWSpawns[i].fX,
+                                pVoidwalker = SummonCreature(*m_creature, NPC_VOIDWALKER, VWSpawns[i].fX,
                                     VWSpawns[i].fY, VWSpawns[i].fZ, VWSpawns[i].fO, TEMPSPAWN_DEAD_DESPAWN, 1);
 
                                 if (!pVoidwalker)

@@ -24,6 +24,7 @@
  */
 
 #include <random>
+#include "Summoning.h"
 #include "Platform/Define.h"
 #include "Utilities/MathDefines.h"
 #include "Database/DatabaseEnv.h"
@@ -448,7 +449,7 @@ void Spell::EffectSummonWild(SpellEffectIndex eff_idx)
             }
         }
 
-        if (Creature* summon = m_caster->SummonCreature(creature_entry, px, py, pz, m_caster->Where().Facing(), summonType, duration))
+        if (Creature* summon = SummonCreature(*m_caster, creature_entry, px, py, pz, m_caster->Where().Facing(), summonType, duration))
         {
             summon->SetUInt32Value(UNIT_CREATED_BY_SPELL, m_spellInfo->ID);
 
@@ -736,7 +737,7 @@ void Spell::EffectSummonPossessed(SpellEffectIndex eff_idx)
         return;
     }
 
-    Creature* spawnCreature = m_caster->SummonCreature(creatureEntry, m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ, m_caster->Where().Facing(), TEMPSPAWN_CORPSE_DESPAWN, 0);
+    Creature* spawnCreature = SummonCreature(*m_caster, creatureEntry, m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ, m_caster->Where().Facing(), TEMPSPAWN_CORPSE_DESPAWN, 0);
     if (!spawnCreature)
     {
         sLog.outError("Spell::DoSummonPossessed: creature entry %u for spell %u could not be summoned.", creatureEntry, m_spellInfo->ID);
@@ -915,7 +916,7 @@ void Spell::EffectSummonDemon(SpellEffectIndex eff_idx)
     float py = m_targets.m_destY;
     float pz = m_targets.m_destZ;
 
-    Creature* Charmed = m_caster->SummonCreature(m_spellInfo->EffectMiscValue[eff_idx], px, py, pz, m_caster->Where().Facing(), TEMPSPAWN_TIMED_OR_DEAD_DESPAWN, 3600000);
+    Creature* Charmed = SummonCreature(*m_caster, m_spellInfo->EffectMiscValue[eff_idx], px, py, pz, m_caster->Where().Facing(), TEMPSPAWN_TIMED_OR_DEAD_DESPAWN, 3600000);
     if (!Charmed)
     {
         return;

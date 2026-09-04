@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "temple_of_ahnqiraj.h"
 
@@ -194,7 +195,7 @@ struct boss_fankriss : public CreatureScript
                             fX = randSpot1.x;
                             fY = randSpot1.y;
                             fZ = randSpot1.z;
-                            m_creature->SummonCreature(NPC_VEKNISS_HATCHLING, fX, fY, fZ, 0.0f, TEMPSPAWN_TIMED_OOC_DESPAWN, 10000);
+                            SummonCreature(*m_creature, NPC_VEKNISS_HATCHLING, fX, fY, fZ, 0.0f, TEMPSPAWN_TIMED_OOC_DESPAWN, 10000);
                         }
                         m_uiEntangleSummonTimer = 0;
                     }

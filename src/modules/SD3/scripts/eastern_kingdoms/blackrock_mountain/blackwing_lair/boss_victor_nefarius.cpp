@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "blackwing_lair.h"
 
@@ -372,11 +373,11 @@ struct boss_victor_nefarius : public CreatureScript
 
                     // 1 in 3 chance it will be a chromatic
                     uiCreatureId = urand(0, 2) ? m_uiDrakeTypeOne : uint32(NPC_CHROMATIC_DRAKANOID);
-                    m_creature->SummonCreature(uiCreatureId, aNefarianLocs[0].m_fX, aNefarianLocs[0].m_fY, aNefarianLocs[0].m_fZ, 5.000f, TEMPSPAWN_TIMED_OOC_OR_CORPSE_DESPAWN, 30000);
+                    SummonCreature(*m_creature, uiCreatureId, aNefarianLocs[0].m_fX, aNefarianLocs[0].m_fY, aNefarianLocs[0].m_fZ, 5.000f, TEMPSPAWN_TIMED_OOC_OR_CORPSE_DESPAWN, 30000);
 
                     // 1 in 3 chance it will be a chromatic
                     uiCreatureId = urand(0, 2) ? m_uiDrakeTypeTwo : uint32(NPC_CHROMATIC_DRAKANOID);
-                    m_creature->SummonCreature(uiCreatureId, aNefarianLocs[1].m_fX, aNefarianLocs[1].m_fY, aNefarianLocs[1].m_fZ, 5.000, TEMPSPAWN_TIMED_OOC_OR_CORPSE_DESPAWN, 30000);
+                    SummonCreature(*m_creature, uiCreatureId, aNefarianLocs[1].m_fX, aNefarianLocs[1].m_fY, aNefarianLocs[1].m_fZ, 5.000, TEMPSPAWN_TIMED_OOC_OR_CORPSE_DESPAWN, 30000);
 
                     // Begin phase 2 by spawning Nefarian
                     if (m_uiSpawnedAdds >= MAX_DRAKE_SUMMONS)
@@ -392,7 +393,7 @@ struct boss_victor_nefarius : public CreatureScript
 
                         // Spawn Nefarian
                         // Summon as active, to be able to work proper!
-                        m_creature->SummonCreature(NPC_NEFARIAN, aNefarianLocs[2].m_fX, aNefarianLocs[2].m_fY, aNefarianLocs[2].m_fZ, 0, TEMPSPAWN_DEAD_DESPAWN, 0, true);
+                        SummonCreature(*m_creature, NPC_NEFARIAN, aNefarianLocs[2].m_fX, aNefarianLocs[2].m_fY, aNefarianLocs[2].m_fZ, 0, TEMPSPAWN_DEAD_DESPAWN, 0, true);
                     }
 
                     m_uiAddSpawnTimer = 4000;

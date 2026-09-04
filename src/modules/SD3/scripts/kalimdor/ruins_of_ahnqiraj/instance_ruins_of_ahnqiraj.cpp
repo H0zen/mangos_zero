@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "ruins_of_ahnqiraj.h"
 
@@ -375,7 +376,7 @@ struct is_ruins_of_ahnqiraj : public InstanceScript
 
                 for (uint8 i = 0; i < MAX_HELPERS; ++i)
                 {
-                    pPlayer->SummonCreature(aAndorovSpawnLocs[i].m_uiEntry, aAndorovSpawnLocs[i].m_fX, aAndorovSpawnLocs[i].m_fY, aAndorovSpawnLocs[i].m_fZ, aAndorovSpawnLocs[i].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0);
+                    SummonCreature(*pPlayer, aAndorovSpawnLocs[i].m_uiEntry, aAndorovSpawnLocs[i].m_fX, aAndorovSpawnLocs[i].m_fY, aAndorovSpawnLocs[i].m_fZ, aAndorovSpawnLocs[i].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0);
                 }
             }
 

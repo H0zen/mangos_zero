@@ -24,6 +24,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "Item.h"
 #include "Spell.h"
@@ -271,7 +272,7 @@ void ScriptedAI::DoPlaySoundToSet(WorldObject* pSource, uint32 uiSoundId)
  */
 Creature* ScriptedAI::DoSpawnCreature(uint32 uiId, float fX, float fY, float fZ, float fAngle, uint32 uiType, uint32 uiDespawntime)
 {
-    return m_creature->SummonCreature(uiId, m_creature->Where().X() + fX, m_creature->Where().Y() + fY, m_creature->Where().Z() + fZ, fAngle, (TempSpawnType)uiType, uiDespawntime);
+    return SummonCreature(*m_creature, uiId, m_creature->Where().X() + fX, m_creature->Where().Y() + fY, m_creature->Where().Z() + fZ, fAngle, (TempSpawnType)uiType, uiDespawntime);
 }
 
 /**

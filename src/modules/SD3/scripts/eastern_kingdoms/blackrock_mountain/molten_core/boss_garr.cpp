@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "molten_core.h"
 
@@ -114,7 +115,7 @@ struct boss_garr : public CreatureScript
         {
             if (type == AI_EVENT_CUSTOM_B && pSender == m_creature)
             {
-                if (Creature* spawn = m_creature->SummonCreature(NPC_FIRESWORN, m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z(), m_creature->Where().Facing(), TEMPSPAWN_CORPSE_DESPAWN, true))
+                if (Creature* spawn = SummonCreature(*m_creature, NPC_FIRESWORN, m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z(), m_creature->Where().Facing(), TEMPSPAWN_CORPSE_DESPAWN, true))
                 {
                     spawn->SetOwnerGuid(ObjectGuid());  // trying to prevent despawn of the summon at Garr death
                 }

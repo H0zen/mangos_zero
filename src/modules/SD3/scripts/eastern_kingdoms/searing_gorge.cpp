@@ -39,6 +39,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "escort_ai.h"
 
@@ -91,7 +92,7 @@ struct npc_dorius_stonetender : public CreatureScript
                     for (uint8 i = 0; i < MAX_STEELSHIFTERS; ++i)
                     {
                         FindFreeSpotNear(*m_creature, m_creature, fX, fY, fZ, 0, 15.0f, i * M_PI_F / 2);
-                        m_creature->SummonCreature(NPC_DARK_IRON_STEELSHIFTER, fX, fY, fZ, 0, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
+                        SummonCreature(*m_creature, NPC_DARK_IRON_STEELSHIFTER, fX, fY, fZ, 0, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
                     }
                     break;
                 case 33:

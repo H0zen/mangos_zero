@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "zulgurub.h"
 
@@ -351,7 +352,7 @@ struct boss_jeklik : public CreatureScript
                         {
                             if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0))
                             {
-                                m_creature->SummonCreature(NPC_BAT_RIDER, pTarget->Where().X(), pTarget->Where().Y(), pTarget->Where().Z() + 15.0f, 0, TEMPSPAWN_DEAD_DESPAWN, 0);
+                                SummonCreature(*m_creature, NPC_BAT_RIDER, pTarget->Where().X(), pTarget->Where().Y(), pTarget->Where().Z() + 15.0f, 0, TEMPSPAWN_DEAD_DESPAWN, 0);
                             }
                         }
                         DoScriptText(SAY_RAIN_FIRE, m_creature);

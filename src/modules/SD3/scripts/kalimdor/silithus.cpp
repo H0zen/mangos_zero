@@ -39,6 +39,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "ObjectMgr.h"
 
@@ -499,7 +500,7 @@ struct npc_anachronos_the_ancient : public CreatureScript
         {
             for (uint8 i = 0; i < MAX_DRAGONS; ++i)
             {
-                m_creature->SummonCreature(aEternalBoardNPCs[i].m_uiEntry, aEternalBoardNPCs[i].m_fX, aEternalBoardNPCs[i].m_fY, aEternalBoardNPCs[i].m_fZ, aEternalBoardNPCs[i].m_fO, TEMPSPAWN_CORPSE_DESPAWN, 0);
+                SummonCreature(*m_creature, aEternalBoardNPCs[i].m_uiEntry, aEternalBoardNPCs[i].m_fX, aEternalBoardNPCs[i].m_fY, aEternalBoardNPCs[i].m_fZ, aEternalBoardNPCs[i].m_fO, TEMPSPAWN_CORPSE_DESPAWN, 0);
             }
 
             // Also summon the 3 anubisath conquerors
@@ -510,7 +511,7 @@ struct npc_anachronos_the_ancient : public CreatureScript
                 fX = randSpot5.x;
                 fY = randSpot5.y;
                 fZ = randSpot5.z;
-                m_creature->SummonCreature(NPC_ANUBISATH_CONQUEROR, fX, fY, fZ, 0, TEMPSPAWN_CORPSE_DESPAWN, 0);
+                SummonCreature(*m_creature, NPC_ANUBISATH_CONQUEROR, fX, fY, fZ, 0, TEMPSPAWN_CORPSE_DESPAWN, 0);
             }
         }
 
@@ -524,7 +525,7 @@ struct npc_anachronos_the_ancient : public CreatureScript
                 fX = randSpot4.x;
                 fY = randSpot4.y;
                 fZ = randSpot4.z;
-                m_creature->SummonCreature(NPC_KALDOREI_INFANTRY, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
+                SummonCreature(*m_creature, NPC_KALDOREI_INFANTRY, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
             }
 
             // Summon Qiraji warriors
@@ -534,19 +535,19 @@ struct npc_anachronos_the_ancient : public CreatureScript
                 fX = randSpot3.x;
                 fY = randSpot3.y;
                 fZ = randSpot3.z;
-                m_creature->SummonCreature(NPC_QIRAJI_WASP, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
+                SummonCreature(*m_creature, NPC_QIRAJI_WASP, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
 
                 const Geometry::Vector3 randSpot2 = RandomGroundPointNear(*m_creature, Geometry::Vector3(aEternalBoardMovement[10].m_fX, aEternalBoardMovement[10].m_fY, aEternalBoardMovement[10].m_fZ), 15.0f);
                 fX = randSpot2.x;
                 fY = randSpot2.y;
                 fZ = randSpot2.z;
-                m_creature->SummonCreature(NPC_QIRAJI_DRONE, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
+                SummonCreature(*m_creature, NPC_QIRAJI_DRONE, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
 
                 const Geometry::Vector3 randSpot1 = RandomGroundPointNear(*m_creature, Geometry::Vector3(aEternalBoardMovement[10].m_fX, aEternalBoardMovement[10].m_fY, aEternalBoardMovement[10].m_fZ), 15.0f);
                 fX = randSpot1.x;
                 fY = randSpot1.y;
                 fZ = randSpot1.z;
-                m_creature->SummonCreature(NPC_QIRAJI_TANK, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
+                SummonCreature(*m_creature, NPC_QIRAJI_TANK, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
             }
         }
 
@@ -747,7 +748,7 @@ struct go_crystalline_tear : public GameObjectScript
                 return true;
             }
 
-            if (Creature* pAnachronos = pPlayer->SummonCreature(NPC_ANACHRONOS_THE_ANCIENT, pGo->Where().X(), pGo->Where().Y(), pGo->Where().Z(), 3.75f, TEMPSPAWN_CORPSE_DESPAWN, 0))
+            if (Creature* pAnachronos = SummonCreature(*pPlayer, NPC_ANACHRONOS_THE_ANCIENT, pGo->Where().X(), pGo->Where().Y(), pGo->Where().Z(), 3.75f, TEMPSPAWN_CORPSE_DESPAWN, 0))
             {
                 // Send the player's guid in order to handle the quest complete
                 if (CreatureAI* pAnachronosAI = pAnachronos->AI())
@@ -940,7 +941,7 @@ struct npc_solenor_the_slayer : public CreatureScript
 
             if (triggered)
             {
-                Creature* creature_the_cleaner = m_creature->SummonCreature(NPC_THE_CLEANER, m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z(), m_creature->Where().BearingTo(playerFacing->Where()), TEMPSPAWN_CORPSE_DESPAWN, 20 * MINUTE * IN_MILLISECONDS);
+                Creature* creature_the_cleaner = SummonCreature(*m_creature, NPC_THE_CLEANER, m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z(), m_creature->Where().BearingTo(playerFacing->Where()), TEMPSPAWN_CORPSE_DESPAWN, 20 * MINUTE * IN_MILLISECONDS);
                 if (creature_the_cleaner)
                 {
                     DoScriptText(SAY_THE_CLEANER_AGGRO, creature_the_cleaner);

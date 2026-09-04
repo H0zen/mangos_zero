@@ -42,6 +42,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "world_map_scripts.h"
 
@@ -119,7 +120,7 @@ struct at_scent_larkorwi : public AreaTriggerScript
         {
             if (!GetClosestCreatureWithEntry(pPlayer, NPC_LARKORWI_MATE, 25.0f, false, false))
             {
-                pPlayer->SummonCreature(NPC_LARKORWI_MATE, SD3_AreaTriggerX(pAt), SD3_AreaTriggerY(pAt), SD3_AreaTriggerZ(pAt), 3.3f, TEMPSPAWN_TIMED_OOC_DESPAWN, 2 * MINUTE * IN_MILLISECONDS);
+                SummonCreature(*pPlayer, NPC_LARKORWI_MATE, SD3_AreaTriggerX(pAt), SD3_AreaTriggerY(pAt), SD3_AreaTriggerZ(pAt), 3.3f, TEMPSPAWN_TIMED_OOC_DESPAWN, 2 * MINUTE * IN_MILLISECONDS);
             }
         }
 
@@ -168,7 +169,7 @@ struct at_murkdeep : public AreaTriggerScript
                 fY = randSpot2.y;
                 fZ = randSpot2.z;
 
-                if (Creature* pTemp = pPlayer->SummonCreature(NPC_GREYMIST_COASTRUNNNER, fX, fY, fZ, aSpawnLocations[POS_IDX_MURKDEEP_SPAWN][3], TEMPSPAWN_DEAD_DESPAWN, 0))
+                if (Creature* pTemp = SummonCreature(*pPlayer, NPC_GREYMIST_COASTRUNNNER, fX, fY, fZ, aSpawnLocations[POS_IDX_MURKDEEP_SPAWN][3], TEMPSPAWN_DEAD_DESPAWN, 0))
                 {
                     pTemp->SetWalk(false);
                     const Geometry::Vector3 randSpot1 = RandomGroundPointNear(*pTemp, Geometry::Vector3(aSpawnLocations[POS_IDX_MURKDEEP_MOVE][0], aSpawnLocations[POS_IDX_MURKDEEP_MOVE][1], aSpawnLocations[POS_IDX_MURKDEEP_MOVE][2]), 5.0f);

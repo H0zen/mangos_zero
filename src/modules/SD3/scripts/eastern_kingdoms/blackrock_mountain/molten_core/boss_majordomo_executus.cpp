@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "molten_core.h"
 #include "TemporarySummon.h"
@@ -355,7 +356,7 @@ struct boss_majordomo : public CreatureScript
                             {
                                 if (GameObject* pGo = m_pInstance->GetSingleGameObjectFromStorage(GO_LAVA_STEAM))
                                 {
-                                    m_creature->SummonCreature(NPC_RAGNAROS, pGo->Where().X(), pGo->Where().Y(), pGo->Where().Z(), fmod(m_creature->Where().Facing() + M_PI, 2 * M_PI), TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 2 * HOUR * IN_MILLISECONDS);
+                                    SummonCreature(*m_creature, NPC_RAGNAROS, pGo->Where().X(), pGo->Where().Y(), pGo->Where().Z(), fmod(m_creature->Where().Facing() + M_PI, 2 * M_PI), TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 2 * HOUR * IN_MILLISECONDS);
                                 }
                             }
                             ++m_uiSpeech;

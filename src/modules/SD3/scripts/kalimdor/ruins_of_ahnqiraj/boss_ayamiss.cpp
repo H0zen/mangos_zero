@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "ruins_of_ahnqiraj.h"
 
@@ -197,7 +198,7 @@ struct boss_ayamiss : public CreatureScript
 
                     // Summon a larva
                     uint8 uiLoc = urand(0, 1);
-                    m_creature->SummonCreature(NPC_LARVA, aAyamissSpawnLocs[uiLoc].m_fX, aAyamissSpawnLocs[uiLoc].m_fY, aAyamissSpawnLocs[uiLoc].m_fZ, 0, TEMPSPAWN_TIMED_OOC_OR_CORPSE_DESPAWN, 30000);
+                    SummonCreature(*m_creature, NPC_LARVA, aAyamissSpawnLocs[uiLoc].m_fX, aAyamissSpawnLocs[uiLoc].m_fY, aAyamissSpawnLocs[uiLoc].m_fZ, 0, TEMPSPAWN_TIMED_OOC_OR_CORPSE_DESPAWN, 30000);
                 }
             }
             else
@@ -218,7 +219,7 @@ struct boss_ayamiss : public CreatureScript
                     fX = randSpot1.x;
                     fY = randSpot1.y;
                     fZ = randSpot1.z;
-                    m_creature->SummonCreature(NPC_SWARMER, fX, fY, aAyamissSpawnLocs[2].m_fZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
+                    SummonCreature(*m_creature, NPC_SWARMER, fX, fY, aAyamissSpawnLocs[2].m_fZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
                 }
                 m_uiSummonSwarmerTimer = 5000;
             }

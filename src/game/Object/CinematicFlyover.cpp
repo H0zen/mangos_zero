@@ -20,6 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "Summoning.h"
 #include "CinematicFlyover.h"
 #include "Player.h"
 #include "Creature.h"
@@ -122,7 +123,7 @@ void CinematicFlyover::Begin()
     // Despawn must outlast the flyover timeout so our Stop() despawns it first.
     uint32 despawnMs = m_route->durationMs + (CONFIG_TIMEOUT_SEC * 1000) +
                        60000; // +60s buffer
-    Creature* body = m_player->SummonCreature(m_bodyEntry, startKeyframe.x,
+    Creature* body = SummonCreature(*m_player, m_bodyEntry, startKeyframe.x,
                                               startKeyframe.y, startKeyframe.z,
                                               startKeyframe.orientation,
                                               TEMPSPAWN_TIMED_DESPAWN,

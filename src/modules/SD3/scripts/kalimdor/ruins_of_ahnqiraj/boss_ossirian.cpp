@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "ruins_of_ahnqiraj.h"
 
@@ -116,7 +117,7 @@ struct boss_ossirian : public CreatureScript
 
             for (uint8 i = 0; i < countof(aSandVortexSpawnPos); ++i)
             {
-                m_creature->SummonCreature(NPC_SAND_VORTEX, aSandVortexSpawnPos[i][0], aSandVortexSpawnPos[i][1], aSandVortexSpawnPos[i][2], aSandVortexSpawnPos[i][3], TEMPSPAWN_CORPSE_DESPAWN, 0);
+                SummonCreature(*m_creature, NPC_SAND_VORTEX, aSandVortexSpawnPos[i][0], aSandVortexSpawnPos[i][1], aSandVortexSpawnPos[i][2], aSandVortexSpawnPos[i][3], TEMPSPAWN_CORPSE_DESPAWN, 0);
             }
         }
 
@@ -156,7 +157,7 @@ struct boss_ossirian : public CreatureScript
                 fX = randSpot1.x;
                 fY = randSpot1.y;
                 fZ = randSpot1.z;
-                m_creature->SummonCreature(NPC_OSSIRIAN_TRIGGER, fX, fY, fZ, 0, TEMPSPAWN_CORPSE_DESPAWN, 0);
+                SummonCreature(*m_creature, NPC_OSSIRIAN_TRIGGER, fX, fY, fZ, 0, TEMPSPAWN_CORPSE_DESPAWN, 0);
             }
             if (!pOssirianTrigger)
             {

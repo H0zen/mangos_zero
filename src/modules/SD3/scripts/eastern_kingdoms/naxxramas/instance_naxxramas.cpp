@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "naxxramas.h"
 #include <unordered_map>
@@ -129,7 +130,7 @@ struct is_naxxramas : public InstanceScript
                     return;
                 }
 
-                pPlayer->SummonCreature(NPC_SAPPHIRON, aSapphPositions[0], aSapphPositions[1], aSapphPositions[2], aSapphPositions[3], TEMPSPAWN_DEAD_DESPAWN, 0);
+                SummonCreature(*pPlayer, NPC_SAPPHIRON, aSapphPositions[0], aSapphPositions[1], aSapphPositions[2], aSapphPositions[3], TEMPSPAWN_DEAD_DESPAWN, 0);
             }
 
             void OnCreatureCreate(Creature* pCreature) override
@@ -675,11 +676,11 @@ struct is_naxxramas : public InstanceScript
                                             uiNpcEntry = NPC_SPECT_RIDER;
                                         }
 
-                                        pGoth->SummonCreature(uiNpcEntry, pCreatureTarget->Where().X(), pCreatureTarget->Where().Y(), pCreatureTarget->Where().Z(), pCreatureTarget->Where().Facing(), TEMPSPAWN_DEAD_DESPAWN, 0);
+                                        SummonCreature(*pGoth, uiNpcEntry, pCreatureTarget->Where().X(), pCreatureTarget->Where().Y(), pCreatureTarget->Where().Z(), pCreatureTarget->Where().Facing(), TEMPSPAWN_DEAD_DESPAWN, 0);
 
                                         if (uiNpcEntry == NPC_SPECT_RIDER)
                                         {
-                                            pGoth->SummonCreature(NPC_SPECT_HORSE, pCreatureTarget->Where().X(), pCreatureTarget->Where().Y(), pCreatureTarget->Where().Z(), pCreatureTarget->Where().Facing(), TEMPSPAWN_DEAD_DESPAWN, 0);
+                                            SummonCreature(*pGoth, NPC_SPECT_HORSE, pCreatureTarget->Where().X(), pCreatureTarget->Where().Y(), pCreatureTarget->Where().Z(), pCreatureTarget->Where().Facing(), TEMPSPAWN_DEAD_DESPAWN, 0);
                                         }
                                         break;
                                     }
@@ -856,7 +857,7 @@ struct is_naxxramas : public InstanceScript
                     {
                         if (Player* pPlayer = GetPlayerInMap())
                         {
-                            pPlayer->SummonCreature(NPC_SAPPHIRON, aSapphPositions[0], aSapphPositions[1], aSapphPositions[2], aSapphPositions[3], TEMPSPAWN_DEAD_DESPAWN, 0);
+                            SummonCreature(*pPlayer, NPC_SAPPHIRON, aSapphPositions[0], aSapphPositions[1], aSapphPositions[2], aSapphPositions[3], TEMPSPAWN_DEAD_DESPAWN, 0);
                         }
 
                         m_uiSapphSpawnTimer = 0;

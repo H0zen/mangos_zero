@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "molten_core.h"
 
@@ -339,7 +340,7 @@ struct boss_ragnaros : public CreatureScript
                     fX = randSpot1.x;
                     fY = randSpot1.y;
                     fZ = randSpot1.z;
-                    m_creature->SummonCreature(NPC_SON_OF_FLAME, fX, fY, fZ, 0.0f, TEMPSPAWN_TIMED_OOC_DESPAWN, 1000);
+                    SummonCreature(*m_creature, NPC_SON_OF_FLAME, fX, fY, fZ, 0.0f, TEMPSPAWN_TIMED_OOC_DESPAWN, 1000);
                 }
 
                 return;

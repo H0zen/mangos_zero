@@ -40,6 +40,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "escort_ai.h"
 
@@ -102,7 +103,7 @@ struct npc_00x09hl : public CreatureScript
                         fY = randSpot2.y;
                         fZ = randSpot2.z;
 
-                        m_creature->SummonCreature(NPC_MARAUDING_OWL, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_TIMED_DESPAWN, 25000);
+                        SummonCreature(*m_creature, NPC_MARAUDING_OWL, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_TIMED_DESPAWN, 25000);
                     }
                     break;
                 case 44:
@@ -114,7 +115,7 @@ struct npc_00x09hl : public CreatureScript
                         fY = randSpot1.y;
                         fZ = randSpot1.z;
 
-                        m_creature->SummonCreature(NPC_VILE_AMBUSHER, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_TIMED_DESPAWN, 25000);
+                        SummonCreature(*m_creature, NPC_VILE_AMBUSHER, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_TIMED_DESPAWN, 25000);
                     }
                     break;
             }
@@ -254,13 +255,13 @@ struct npc_rinji : public CreatureScript
                 m_iSpawnId = 1;
             }
 
-            m_creature->SummonCreature(NPC_RANGER,
+            SummonCreature(*m_creature, NPC_RANGER,
                 m_afAmbushSpawn[m_iSpawnId].m_fX, m_afAmbushSpawn[m_iSpawnId].m_fY, m_afAmbushSpawn[m_iSpawnId].m_fZ, 0.0f,
                 TEMPSPAWN_TIMED_OOC_OR_CORPSE_DESPAWN, 60000);
 
             for (int i = 0; i < 2; ++i)
             {
-                m_creature->SummonCreature(NPC_OUTRUNNER,
+                SummonCreature(*m_creature, NPC_OUTRUNNER,
                     m_afAmbushSpawn[m_iSpawnId].m_fX, m_afAmbushSpawn[m_iSpawnId].m_fY, m_afAmbushSpawn[m_iSpawnId].m_fZ, 0.0f,
                     TEMPSPAWN_TIMED_OOC_OR_CORPSE_DESPAWN, 60000);
             }

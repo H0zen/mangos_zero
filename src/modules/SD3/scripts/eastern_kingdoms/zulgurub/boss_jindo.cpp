@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "zulgurub.h"
 
@@ -168,7 +169,7 @@ struct boss_jindo : public CreatureScript
                     fX = randSpot2.x;
                     fY = randSpot2.y;
                     fZ = randSpot2.z;
-                    if (Creature* pSummoned = m_creature->SummonCreature(NPC_SHADE_OF_JINDO, fX, fY, fZ, 0, TEMPSPAWN_TIMED_OOC_DESPAWN, 15000))
+                    if (Creature* pSummoned = SummonCreature(*m_creature, NPC_SHADE_OF_JINDO, fX, fY, fZ, 0, TEMPSPAWN_TIMED_OOC_DESPAWN, 15000))
                     {
                         pSummoned->AI()->AttackStart(pTarget);
                     }
@@ -196,7 +197,7 @@ struct boss_jindo : public CreatureScript
                         fX = randSpot1.x;
                         fY = randSpot1.y;
                         fZ = randSpot1.z;
-                        if (Creature* pSummoned = m_creature->SummonCreature(NPC_SACRIFICED_TROLL, fX, fY, fZ, 0.0f, TEMPSPAWN_TIMED_OOC_DESPAWN, 15000))
+                        if (Creature* pSummoned = SummonCreature(*m_creature, NPC_SACRIFICED_TROLL, fX, fY, fZ, 0.0f, TEMPSPAWN_TIMED_OOC_DESPAWN, 15000))
                         {
                             pSummoned->AI()->AttackStart(pTarget);
                         }

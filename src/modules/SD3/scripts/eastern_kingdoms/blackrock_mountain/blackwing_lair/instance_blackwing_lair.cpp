@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "blackwing_lair.h"
 #include <random>
@@ -435,7 +436,7 @@ struct is_blackwing_lair : public InstanceScript
                             return;
                         }
 
-                        pRazorgore->SummonCreature(aRazorgoreSpawns[i], pGenerator->Where().X(), pGenerator->Where().Y(), pGenerator->Where().Z(), pGenerator->Where().Facing(), TEMPSPAWN_DEAD_DESPAWN, 0);
+                        SummonCreature(*pRazorgore, aRazorgoreSpawns[i], pGenerator->Where().X(), pGenerator->Where().Y(), pGenerator->Where().Z(), pGenerator->Where().Facing(), TEMPSPAWN_DEAD_DESPAWN, 0);
                     }
 
                     m_uiDefenseTimer = 20000;

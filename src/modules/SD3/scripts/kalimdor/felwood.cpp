@@ -43,6 +43,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "follower_ai.h"
 #include "escort_ai.h"
@@ -622,20 +623,20 @@ struct npc_captured_arkonarin : public CreatureScript
                     break;
                 case 42:
                     DoScriptText(SAY_ESCAPE_DEMONS, m_creature);
-                    m_creature->SummonCreature(NPC_JAEDENAR_LEGIONNAIRE, 5083.989f, -495.566f, 296.677f, 5.43f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
-                    m_creature->SummonCreature(NPC_JAEDENAR_LEGIONNAIRE, 5087.030f, -492.886f, 296.677f, 5.43f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
-                    m_creature->SummonCreature(NPC_JAEDENAR_LEGIONNAIRE, 5082.929f, -492.193f, 296.677f, 5.43f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
+                    SummonCreature(*m_creature, NPC_JAEDENAR_LEGIONNAIRE, 5083.989f, -495.566f, 296.677f, 5.43f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
+                    SummonCreature(*m_creature, NPC_JAEDENAR_LEGIONNAIRE, 5087.030f, -492.886f, 296.677f, 5.43f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
+                    SummonCreature(*m_creature, NPC_JAEDENAR_LEGIONNAIRE, 5082.929f, -492.193f, 296.677f, 5.43f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
                     break;
                 case 50:
                     DoScriptText(SAY_ESCAPE_DEMONS, m_creature);
-                    m_creature->SummonCreature(NPC_JAEDENAR_LEGIONNAIRE, 5042.718f, -543.696f, 297.801f, 0.84f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
-                    m_creature->SummonCreature(NPC_JAEDENAR_LEGIONNAIRE, 5037.962f, -539.510f, 297.801f, 0.84f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
-                    m_creature->SummonCreature(NPC_JAEDENAR_LEGIONNAIRE, 5038.018f, -545.729f, 297.801f, 0.84f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
+                    SummonCreature(*m_creature, NPC_JAEDENAR_LEGIONNAIRE, 5042.718f, -543.696f, 297.801f, 0.84f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
+                    SummonCreature(*m_creature, NPC_JAEDENAR_LEGIONNAIRE, 5037.962f, -539.510f, 297.801f, 0.84f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
+                    SummonCreature(*m_creature, NPC_JAEDENAR_LEGIONNAIRE, 5038.018f, -545.729f, 297.801f, 0.84f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
                     break;
                 case 104:
                     m_creature->SetFlag (UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                     m_creature->SetFlag (UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
-                    m_creature->SummonCreature(NPC_SPIRT_TREY, 4844.839f, -395.763f, 350.603f, 6.25f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
+                    SummonCreature(*m_creature, NPC_SPIRT_TREY, 4844.839f, -395.763f, 350.603f, 6.25f, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
                     DoScriptText(SAY_FRESH_AIR, m_creature);
                     break;
                 case 105:
@@ -845,9 +846,9 @@ struct npc_arei : public CreatureScript
             {
                 SetEscortPaused(true);
 
-                m_creature->SummonCreature(NPC_IRONTREE_STOMPER, 6573.321f, -1195.213f, 442.489f, 0, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
-                m_creature->SummonCreature(NPC_IRONTREE_WANDERER, 6573.240f, -1213.475f, 443.643f, 0, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
-                m_creature->SummonCreature(NPC_IRONTREE_WANDERER, 6583.354f, -1209.811f, 444.769f, 0, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
+                SummonCreature(*m_creature, NPC_IRONTREE_STOMPER, 6573.321f, -1195.213f, 442.489f, 0, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
+                SummonCreature(*m_creature, NPC_IRONTREE_WANDERER, 6573.240f, -1213.475f, 443.643f, 0, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
+                SummonCreature(*m_creature, NPC_IRONTREE_WANDERER, 6583.354f, -1209.811f, 444.769f, 0, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
             }
         }
 
@@ -1045,28 +1046,28 @@ struct go_corrupted_plant : public GameObjectScript
             // despawn corrupted plant
             DespawnCorruptedPlant(pGo);
             // spawn cleansed plant
-            pPlayer->SummonGameObject(GO_CLEANSED_SONGFLOWER, fX, fY, fZ, 0.0f, PLANT_SPAWN_DURATION);
+            SummonGameObject(*pPlayer, GO_CLEANSED_SONGFLOWER, fX, fY, fZ, 0.0f, PLANT_SPAWN_DURATION);
         }
         else if (locateQuestId(QUEST_CORRUPTED_NIGHT_DRAGON, uQuestId) == QUEST_CORRUPTED_NIGHT_DRAGON)
         {
             // despawn corrupted plant
             DespawnCorruptedPlant(pGo);
             // spawn cleansed plant
-            pPlayer->SummonGameObject(GO_CLEANSED_NIGHT_DRAGON, fX, fY, fZ, 0.0f, PLANT_SPAWN_DURATION);
+            SummonGameObject(*pPlayer, GO_CLEANSED_NIGHT_DRAGON, fX, fY, fZ, 0.0f, PLANT_SPAWN_DURATION);
         }
         else if (locateQuestId(QUEST_CORRUPTED_WINDBLOSSOM, uQuestId) == QUEST_CORRUPTED_WINDBLOSSOM)
         {
             // despawn corrupted plant
             DespawnCorruptedPlant(pGo);
             // spawn cleansed plant
-            pPlayer->SummonGameObject(GO_CLEANSED_WINDBLOSSOM, fX, fY, fZ, 0.0f, PLANT_SPAWN_DURATION);
+            SummonGameObject(*pPlayer, GO_CLEANSED_WINDBLOSSOM, fX, fY, fZ, 0.0f, PLANT_SPAWN_DURATION);
         }
         else if (locateQuestId(QUEST_CORRUPTED_WHIPPER_ROOT, uQuestId) == QUEST_CORRUPTED_WHIPPER_ROOT)
         {
             // despawn corrupted plant
             DespawnCorruptedPlant(pGo);
             // spawn cleansed plant
-            pPlayer->SummonGameObject(GO_CLEANSED_WHIPPER_ROOT, fX, fY, fZ, 0.0f, PLANT_SPAWN_DURATION);
+            SummonGameObject(*pPlayer, GO_CLEANSED_WHIPPER_ROOT, fX, fY, fZ, 0.0f, PLANT_SPAWN_DURATION);
         }
         else
         {

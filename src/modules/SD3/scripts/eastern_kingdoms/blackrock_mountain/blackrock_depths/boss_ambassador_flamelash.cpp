@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 
 enum
@@ -69,7 +70,7 @@ struct boss_ambassador_flamelash : public CreatureScript
             fX = randSpot1.x;
             fY = randSpot1.y;
             fZ = randSpot1.z;
-            m_creature->SummonCreature(NPC_BURNING_SPIRIT, fX, fY, fZ, m_creature->Where().BearingTo(Geometry::Vector2(fX, fY)) + M_PI_F, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
+            SummonCreature(*m_creature, NPC_BURNING_SPIRIT, fX, fY, fZ, m_creature->Where().BearingTo(Geometry::Vector2(fX, fY)) + M_PI_F, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
         }
 
         void Aggro(Unit* /*pWho*/) override

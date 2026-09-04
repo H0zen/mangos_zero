@@ -41,6 +41,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "escort_ai.h"
 #include "ObjectMgr.h"
@@ -410,7 +411,7 @@ struct npc_keeper_remulos : public CreatureScript
                         // summon 3 shades inside the house
                         for (uint8 i = 0; i < MAX_SHADOWS; ++i)
                         {
-                            m_creature->SummonCreature(NPC_NIGHTMARE_PHANTASM, aShadowsLocations[i].m_fX, aShadowsLocations[i].m_fY, aShadowsLocations[i].m_fZ, 0, TEMPSPAWN_DEAD_DESPAWN, 0);
+                            SummonCreature(*m_creature, NPC_NIGHTMARE_PHANTASM, aShadowsLocations[i].m_fX, aShadowsLocations[i].m_fY, aShadowsLocations[i].m_fZ, 0, TEMPSPAWN_DEAD_DESPAWN, 0);
                         }
 
                         if (Creature* pEranikus = m_creature->GetMap()->GetCreature(m_eranikusGuid))
@@ -436,7 +437,7 @@ struct npc_keeper_remulos : public CreatureScript
                             fX = randSpot3.x;
                             fY = randSpot3.y;
                             fZ = randSpot3.z;
-                            m_creature->SummonCreature(NPC_NIGHTMARE_PHANTASM, fX, fY, fZ, 0.0f, TEMPSPAWN_DEAD_DESPAWN, 0);
+                            SummonCreature(*m_creature, NPC_NIGHTMARE_PHANTASM, fX, fY, fZ, 0.0f, TEMPSPAWN_DEAD_DESPAWN, 0);
                         }
 
                         ++m_uiSummonCount;
@@ -546,7 +547,7 @@ struct spell_conjure_rift : public SpellScript
         // always check spellid and effectindex
         if (uiSpellId == SPELL_CONJURE_RIFT && uiEffIndex == EFFECT_INDEX_0)
         {
-            pCaster->SummonCreature(NPC_ERANIKUS_TYRANT, aEranikusLocations[0].m_fX, aEranikusLocations[0].m_fY, aEranikusLocations[0].m_fZ, aEranikusLocations[0].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0);
+            SummonCreature(*pCaster, NPC_ERANIKUS_TYRANT, aEranikusLocations[0].m_fX, aEranikusLocations[0].m_fY, aEranikusLocations[0].m_fZ, aEranikusLocations[0].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0);
 
             // always return true when we are handling this spell and effect
             return true;
@@ -674,7 +675,7 @@ struct boss_eranikus : public CreatureScript
                 fX = randSpot2.x;
                 fY = randSpot2.y;
                 fZ = randSpot2.z;
-                m_creature->SummonCreature(NPC_ELUNE_PRIESTESS, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
+                SummonCreature(*m_creature, NPC_ELUNE_PRIESTESS, fX, fY, fZ, 0.0f, TEMPSPAWN_CORPSE_DESPAWN, 0);
             }
         }
 
@@ -866,7 +867,7 @@ struct boss_eranikus : public CreatureScript
                     case 85:
                         DoScriptText(SAY_ERANIKUS_ATTACK_3, m_creature);
                         // Here Tyrande only yells but she doesn't appear anywhere - we summon here for 1 second just to handle the yell
-                        if (Creature* pTyrande = m_creature->SummonCreature(NPC_TYRANDE_WHISPERWIND, aTyrandeLocations[0].m_fX, aTyrandeLocations[0].m_fY, aTyrandeLocations[0].m_fZ, 0, TEMPSPAWN_TIMED_DESPAWN, 1000))
+                        if (Creature* pTyrande = SummonCreature(*m_creature, NPC_TYRANDE_WHISPERWIND, aTyrandeLocations[0].m_fX, aTyrandeLocations[0].m_fY, aTyrandeLocations[0].m_fZ, 0, TEMPSPAWN_TIMED_DESPAWN, 1000))
                         {
                             DoScriptText(SAY_TYRANDE_APPEAR, pTyrande);
                         }
@@ -879,7 +880,7 @@ struct boss_eranikus : public CreatureScript
                         break;
                     case 50:
                         // Summon Tyrande - she enters the fight this time
-                        m_creature->SummonCreature(NPC_TYRANDE_WHISPERWIND, aTyrandeLocations[0].m_fX, aTyrandeLocations[0].m_fY, aTyrandeLocations[0].m_fZ, 0, TEMPSPAWN_CORPSE_DESPAWN, 0);
+                        SummonCreature(*m_creature, NPC_TYRANDE_WHISPERWIND, aTyrandeLocations[0].m_fX, aTyrandeLocations[0].m_fY, aTyrandeLocations[0].m_fZ, 0, TEMPSPAWN_CORPSE_DESPAWN, 0);
                         m_uiHealthCheck = 35;
                         break;
                     case 35:

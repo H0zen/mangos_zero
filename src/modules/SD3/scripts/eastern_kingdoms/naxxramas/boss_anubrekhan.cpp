@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "naxxramas.h"
 
@@ -249,7 +250,7 @@ struct boss_anubrekhan : public CreatureScript
                 if (m_uiSummonTimer <= uiDiff)
                 {
                     // Workaround for the not existing spell
-                    m_creature->SummonCreature(NPC_CRYPT_GUARD, aCryptGuardLoc[0], aCryptGuardLoc[1], aCryptGuardLoc[2], aCryptGuardLoc[3], TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 30000);
+                    SummonCreature(*m_creature, NPC_CRYPT_GUARD, aCryptGuardLoc[0], aCryptGuardLoc[1], aCryptGuardLoc[2], aCryptGuardLoc[3], TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 30000);
                     m_uiSummonTimer = 0;
                 }
                 else

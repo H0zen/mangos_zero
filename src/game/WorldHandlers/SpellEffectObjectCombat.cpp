@@ -27,6 +27,7 @@
 
 #include <cmath>
 #include <random>
+#include "Summoning.h"
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"
 #include "Utilities/MathDefines.h"
@@ -548,7 +549,7 @@ void Spell::EffectActivateObject(SpellEffectIndex eff_idx)
                         case 24790: npcEntry = 15305;                 break;
                     }
 
-                    gameObjTarget->SummonCreature(npcEntry, gameObjTarget->Where().X(), gameObjTarget->Where().Y(), gameObjTarget->Where().Z(), gameObjTarget->Where().BearingTo(m_caster->Where()), TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, MINUTE * IN_MILLISECONDS);
+                    SummonCreature(*gameObjTarget, npcEntry, gameObjTarget->Where().X(), gameObjTarget->Where().Y(), gameObjTarget->Where().Z(), gameObjTarget->Where().BearingTo(m_caster->Where()), TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, MINUTE * IN_MILLISECONDS);
                     gameObjTarget->SetLootState(GO_JUST_DEACTIVATED);
                     break;
                 }
@@ -1062,7 +1063,7 @@ void Spell::EffectLeapForward(SpellEffectIndex eff_idx)
             }
         }
 
-        //unitTarget->SummonCreature(VISUAL_WAYPOINT, nextPos.x, nextPos.y, nextPos.z, 0, TEMPSUMMON_TIMED_DESPAWN, 15000);
+        //SummonCreature(*unitTarget, VISUAL_WAYPOINT, nextPos.x, nextPos.y, nextPos.z, 0, TEMPSUMMON_TIMED_DESPAWN, 15000);
         float hitZ = nextPos.z + 1.5f;
         if (unitTarget->GetMap()->GetHitPosition(prevPos.x, prevPos.y, prevPos.z + 1.5f, nextPos.x, nextPos.y, hitZ, -1.0f))
         {

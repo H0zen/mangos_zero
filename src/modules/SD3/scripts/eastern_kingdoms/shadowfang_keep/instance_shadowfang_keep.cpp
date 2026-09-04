@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "shadowfang_keep.h"
 
@@ -143,7 +144,7 @@ struct is_shadowfang_keep : public InstanceScript
                         {
                             if (Creature* pFenrus = GetSingleCreatureFromStorage(NPC_FENRUS))
                             {
-                                pFenrus->SummonCreature(NPC_ARCHMAGE_ARUGAL, -136.89f, 2169.17f, 136.58f, 2.794f, TEMPSPAWN_TIMED_DESPAWN, 30000);
+                                SummonCreature(*pFenrus, NPC_ARCHMAGE_ARUGAL, -136.89f, 2169.17f, 136.58f, 2.794f, TEMPSPAWN_TIMED_DESPAWN, 30000);
                             }
                         }
                         m_auiEncounter[2] = uiData;

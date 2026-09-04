@@ -44,6 +44,7 @@
  * EndContentData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 
 /*######
@@ -320,7 +321,7 @@ struct boss_lethon : public CreatureScript
                 // Summon this way, to be able to cast the shade visual spell with player as original caster
                 // This might not be supported currently by core, but this spell's visual should be dependend on the player
                 // Also possible that this was no problem due to the special way these NPCs had been summoned in classic times
-                if (Creature* pSummoned = pTarget->SummonCreature(NPC_SPIRIT_SHADE, 0.0f, 0.0f, 0.0f, pTarget->Where().Facing(), TEMPSPAWN_DEAD_DESPAWN, 0))
+                if (Creature* pSummoned = SummonCreature(*pTarget, NPC_SPIRIT_SHADE, 0.0f, 0.0f, 0.0f, pTarget->Where().Facing(), TEMPSPAWN_DEAD_DESPAWN, 0))
                 {
                     pSummoned->CastSpell(pSummoned, SPELL_SPIRIT_SHAPE_VISUAL, true, nullptr, nullptr, pTarget->GetObjectGuid());
                 }

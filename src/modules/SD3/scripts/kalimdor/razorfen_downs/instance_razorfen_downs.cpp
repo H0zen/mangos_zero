@@ -33,6 +33,7 @@
  * EndScriptData
  */
 
+#include "Summoning.h"
 #include "precompiled.h"
 #include "razorfen_downs.h"
 
@@ -113,7 +114,7 @@ struct is_razorfen_downs : public InstanceScript
                                 default:
                                     // spawn boss (Tuten'kash). Last wave,so will never be set back to false, therefore this event cannot happen again
                                     //TODO anything with this "motion"...
-                                    if (Creature* pTutenkash = pPlayer->SummonCreature(NPC_TUTENKASH, aTutenkashLocation[0].fX, aTutenkashLocation[0].fY, aTutenkashLocation[0].fZ, aTutenkashLocation[0].fO, TEMPSPAWN_CORPSE_TIMED_DESPAWN, 7200000))
+                                    if (Creature* pTutenkash = SummonCreature(*pPlayer, NPC_TUTENKASH, aTutenkashLocation[0].fX, aTutenkashLocation[0].fY, aTutenkashLocation[0].fZ, aTutenkashLocation[0].fO, TEMPSPAWN_CORPSE_TIMED_DESPAWN, 7200000))
                                     {
                                         pTutenkash->GetMotionMaster()->MovePoint(0, 2488.502686f, 801.684021f, 42.731823f);
                                         pTutenkash->GetMotionMaster()->MovePoint(0, 2485.428955f, 815.734619f, 43.195621f);
@@ -145,7 +146,7 @@ struct is_razorfen_downs : public InstanceScript
 
                 for (int i = 0; i < iTotalToSpawn; i++)
                 {
-                    pTombCreature = pPlayer->SummonCreature(NPC_ID, aCreatureLocation[i].fX, aCreatureLocation[i].fY, aCreatureLocation[i].fZ, aCreatureLocation[i].fO, TEMPSPAWN_CORPSE_TIMED_DESPAWN, 7200000);
+                    pTombCreature = SummonCreature(*pPlayer, NPC_ID, aCreatureLocation[i].fX, aCreatureLocation[i].fY, aCreatureLocation[i].fZ, aCreatureLocation[i].fO, TEMPSPAWN_CORPSE_TIMED_DESPAWN, 7200000);
                     //TODO "motion"...
                     pTombCreature->GetMotionMaster()->MovePoint(0, 2547.565f, 904.983f, 46.776f);
                     pTombCreature->GetMotionMaster()->MovePoint(0, 2547.496f, 895.083f, 47.736f);
