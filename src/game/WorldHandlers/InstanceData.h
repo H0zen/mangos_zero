@@ -34,7 +34,7 @@ class Unit;
 class Player;
 class GameObject;
 class Creature;
-class Presence;
+class Occupant;
 
 enum InstanceConditionIDs                                   // Suggested values used with CONDITION_INSTANCE_SCRIPT for some generic uses
 {
@@ -124,5 +124,5 @@ class InstanceData
         // Condition criteria additional requirements check
         // This is used for such things are heroic loot
         // See ObjectMgr.h enum ConditionSource for possible values of conditionSourceType
-        virtual bool CheckConditionCriteriaMeet(Player const* source, uint32 instance_condition_id, Presence const* conditionSource, uint32 conditionSourceType) const;
+        virtual bool CheckConditionCriteriaMeet(Player const* source, uint32 instance_condition_id, Occupant const* conditionSource, uint32 conditionSourceType) const;
 };

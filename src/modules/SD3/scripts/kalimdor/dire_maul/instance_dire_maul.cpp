@@ -520,7 +520,7 @@ struct is_dire_maul : public InstanceScript
                 OUT_LOAD_INST_DATA_COMPLETE;
             }
 
-            bool CheckConditionCriteriaMeet(Player const* pPlayer, uint32 uiInstanceConditionId, Presence const* pConditionSource, uint32 conditionSourceType) const override
+            bool CheckConditionCriteriaMeet(Player const* pPlayer, uint32 uiInstanceConditionId, Occupant const* pConditionSource, uint32 conditionSourceType) const override
             {
                 switch (uiInstanceConditionId)
                 {

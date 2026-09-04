@@ -111,7 +111,7 @@ class Transport : public GameObject
 
         /// The vessel `obj` is aboard, or NULL. DERIVED, NEVER STORED: being aboard is what
         /// having that map MEANS.
-        static Transport* VesselOf(Presence const& obj);
+        static Transport* VesselOf(Occupant const& obj);
 
         /// The vessel of the given GUID on `map`, or NULL. For resolving a transport a client
         /// packet named by GUID when we do not already hold the object.

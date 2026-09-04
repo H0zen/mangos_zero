@@ -202,7 +202,7 @@ class Object
         }
 
         /// Scale feeds the spatial extent of anything that has one. A hook, not a
-        /// downcast: Object must not learn that Presence exists.
+        /// downcast: Object must not learn that Occupant exists.
         virtual void OnScaleChanged() {}
 
         uint8 GetTypeId() const { return m_objectTypeId; }
@@ -211,7 +211,7 @@ class Object
         virtual void BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) const;
         void SendCreateUpdateToPlayer(Player* player);
 
-        // must be overwrite in appropriate subclasses (Presence, Item currently), or will crash
+        // must be overwrite in appropriate subclasses (Occupant, Item currently), or will crash
         virtual void AddToClientUpdateList();
         virtual void RemoveFromClientUpdateList();
         virtual void BuildUpdateData(UpdateDataMapType& update_players);

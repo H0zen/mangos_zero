@@ -28,7 +28,7 @@
 #include <algorithm>
 #include "Utilities/MathDefines.h"
 #include "ObjectPosSelector.h"
-#include "Presence.h"
+#include "Occupant.h"
 
 // The bigger this value, the more space npcs require around their target
 #define OCCUPY_POS_ANGLE_ATAN_FACTOR                      1.8f
@@ -42,7 +42,7 @@
  * @param searchedForSize The size of the searching object.
  * @param searchPosFor Optional object whose occupied space may be ignored.
  */
-ObjectPosSelector::ObjectPosSelector(float x, float y, float dist, float searchedForSize, Presence const* searchPosFor)
+ObjectPosSelector::ObjectPosSelector(float x, float y, float dist, float searchedForSize, Occupant const* searchPosFor)
     : m_centerX(x), m_centerY(y), m_searcherDist(dist), m_searchPosFor(searchPosFor)
 {
     // if size == 0, m_anglestep will become 0 -> freeze
@@ -84,7 +84,7 @@ ObjectPosSelector::ObjectPosSelector(float x, float y, float dist, float searche
  * @param angle The angle of the occupied area relative to the search line.
  * @param dist The distance from the center point to the occupied area.
  */
-void ObjectPosSelector::AddUsedArea(Presence const* obj, float angle, float dist)
+void ObjectPosSelector::AddUsedArea(Occupant const* obj, float angle, float dist)
 {
     MANGOS_ASSERT(obj);
 

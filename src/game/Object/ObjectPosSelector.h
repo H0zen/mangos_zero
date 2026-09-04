@@ -30,7 +30,7 @@
 
 #include<map>
 
-class Presence;
+class Occupant;
 
 enum UsedAreaSide { USED_POS_PLUS, USED_POS_MINUS };
 
@@ -48,17 +48,17 @@ struct ObjectPosSelector
 {
     struct OccupiedArea
     {
-        OccupiedArea(float _angleOffset, Presence const* obj) : angleOffset(_angleOffset), occupyingObj(obj) {}
+        OccupiedArea(float _angleOffset, Occupant const* obj) : angleOffset(_angleOffset), occupyingObj(obj) {}
         float angleOffset;
-        Presence const* occupyingObj;
+        Occupant const* occupyingObj;
     };
     // angle pos -> OccupiedArea
     typedef std::multimap<float, OccupiedArea> UsedAreaList;
     typedef UsedAreaList::value_type UsedArea;
 
-    ObjectPosSelector(float x, float y, float dist, float searchedForSize, Presence const* searchPosFor);
+    ObjectPosSelector(float x, float y, float dist, float searchedForSize, Occupant const* searchPosFor);
 
-    void AddUsedArea(Presence const* obj, float angle, float dist);
+    void AddUsedArea(Occupant const* obj, float angle, float dist);
 
     bool CheckOriginalAngle() const;
 
@@ -82,5 +82,5 @@ struct ObjectPosSelector
 
     float m_stepAngle[2];                                   // current checked angle position at sides (less m_nextUsedArea), positive value
 
-    Presence const* m_searchPosFor;                      // For whom a position is searched (can be NULL)
+    Occupant const* m_searchPosFor;                      // For whom a position is searched (can be NULL)
 };

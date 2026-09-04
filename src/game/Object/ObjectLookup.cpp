@@ -28,13 +28,13 @@
 #include "Creature.h"
 #include "GameObject.h"
 #include "Map.h"
-#include "Presence.h"
+#include "Occupant.h"
 #include "Player.h"
 #include "PlayerRegistry.h"
 
 namespace ObjectLookup
 {
-    Unit* GetUnit(Presence const& obj, ObjectGuid guid)
+    Unit* GetUnit(Occupant const& obj, ObjectGuid guid)
     {
         if (!guid)
         {
@@ -56,7 +56,7 @@ namespace ObjectLookup
         return obj.GetMap()->GetAnyTypeCreature(guid);
     }
 
-    Creature* GetCreature(Presence const& obj, ObjectGuid guid)
+    Creature* GetCreature(Occupant const& obj, ObjectGuid guid)
     {
         if (!guid || !obj.IsInWorld())
         {
@@ -66,7 +66,7 @@ namespace ObjectLookup
         return obj.GetMap()->GetCreature(guid);
     }
 
-    GameObject* GetGameObject(Presence const& obj, ObjectGuid guid)
+    GameObject* GetGameObject(Occupant const& obj, ObjectGuid guid)
     {
         if (!guid || !obj.IsInWorld())
         {

@@ -109,7 +109,7 @@ bool ChatHandler::HandleRespawnCommand(char* /*args*/)
     }
 
     MaNGOS::RespawnDo u_do;
-    MaNGOS::PresenceWorker<MaNGOS::RespawnDo> worker(u_do);
+    MaNGOS::OccupantWorker<MaNGOS::RespawnDo> worker(u_do);
     Cell::VisitGridObjects(pl, worker, pl->GetMap()->GetVisibilityDistance());
     return true;
 }

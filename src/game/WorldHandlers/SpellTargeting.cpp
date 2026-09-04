@@ -89,16 +89,16 @@ template<typename T>
  * @tparam T The corpse search predicate type.
  * @return The first matching world object, or null if none are found.
  */
-Presence* Spell::FindCorpseUsing()
+Occupant* Spell::FindCorpseUsing()
 {
     // non-standard target selection
     SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->RangeIndex);
     float max_range = GetSpellMaxRange(srange);
 
-    Presence* result = NULL;
+    Occupant* result = NULL;
 
     T u_check(m_caster, max_range);
-    MaNGOS::PresenceSearcher<T> searcher(result, u_check);
+    MaNGOS::OccupantSearcher<T> searcher(result, u_check);
 
     Cell::VisitGridObjects(m_caster, searcher, max_range);
 
@@ -330,7 +330,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             else
             {
                 Unit* pUnitTarget = m_targets.getUnitTarget();
-                Presence* originalCaster = GetAffectiveCasterObject();
+                Occupant* originalCaster = GetAffectiveCasterObject();
                 if (!pUnitTarget || !originalCaster)
                 {
                     break;
@@ -630,7 +630,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         case TARGET_CASTER_COORDINATES:
         {
             // Check original caster is GO - set its coordinates as src cast
-            if (Presence* caster = GetCastingObject())
+            if (Occupant* caster = GetCastingObject())
             {
                 m_targets.setSource(caster->Where().X(), caster->Where().Y(), caster->Where().Z());
             }
@@ -1104,7 +1104,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     {
                         case 20577:                         // Cannibalize
                         {
-                            Presence* result = FindCorpseUsing<MaNGOS::CannibalizeObjectCheck> ();
+                            Occupant* result = FindCorpseUsing<MaNGOS::CannibalizeObjectCheck> ();
 
                             if (result)
                             {

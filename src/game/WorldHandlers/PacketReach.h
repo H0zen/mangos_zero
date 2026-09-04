@@ -28,7 +28,7 @@
 #include "Platform/Define.h"
 
 class Player;
-class Presence;
+class Occupant;
 
 /**
  * Who a packet reaches.
@@ -40,7 +40,7 @@ class Presence;
 struct PacketReach
 {
     /// Whose surroundings, and what the distance is measured from.
-    Presence const* subject = nullptr;
+    Occupant const* subject = nullptr;
 
     /// One viewer not to deliver to. For an ordinary broadcast this is the
     /// subject itself when the subject has a client, because a player is told

@@ -65,7 +65,7 @@
 #include "DBCStructure.h"
 #include "GridDefines.h"
 #include "Cell.h"
-#include "Presence.h"
+#include "Occupant.h"
 #include "SharedDefines.h"
 #include "GridMap.h"
 #include "GameSystem/GridRefManager.h"
@@ -307,9 +307,9 @@ class Map : public GridRefManager<NGridType>
         // can't be nullptr for loaded map
         MapPersistentState* GetPersistentState() const { return m_persistentState; }
 
-        void AddObjectToRemoveList(Presence* obj);
+        void AddObjectToRemoveList(Occupant* obj);
 
-        void UpdateObjectVisibility(Presence* obj, Cell cell, CellPair cellpair);
+        void UpdateObjectVisibility(Occupant* obj, Cell cell, CellPair cellpair);
 
         void resetMarkedCells()
         {
@@ -343,9 +343,9 @@ class Map : public GridRefManager<NGridType>
         void ScriptCommandStart(ScriptInfo const& script, uint32 delay, Object* source, Object* target);
 
         // must called with AddToWorld
-        void AddToActive(Presence* obj);
+        void AddToActive(Occupant* obj);
         // must called with RemoveFromWorld
-        void RemoveFromActive(Presence* obj);
+        void RemoveFromActive(Occupant* obj);
 
         Player* GetPlayer(ObjectGuid guid);
         Creature* GetCreature(ObjectGuid guid);
@@ -355,7 +355,7 @@ class Map : public GridRefManager<NGridType>
         DynamicObject* GetDynamicObject(ObjectGuid guid);
         Corpse* GetCorpse(ObjectGuid guid);                 // !!! find corpse can be not in world
         Unit* GetUnit(ObjectGuid guid);                     // only use if sure that need objects at current map, specially for player case
-        Presence* GetPresence(ObjectGuid guid);       // only use if sure that need objects at current map, specially for player case
+        Occupant* GetOccupant(ObjectGuid guid);       // only use if sure that need objects at current map, specially for player case
 
         using MapStoredObjectTypesContainer = TypeUnorderedMapContainer<ObjectGuid, TypeList<Creature, Pet, GameObject, DynamicObject>> ;
         MapStoredObjectTypesContainer& GetObjectsStore()
@@ -518,7 +518,7 @@ class Map : public GridRefManager<NGridType>
         void buildNGridLinkage(NGridType* pNGridType) { pNGridType->link(this); }
 
 
-        void VisitNearbyCellsOf(Presence* obj,
+        void VisitNearbyCellsOf(Occupant* obj,
             TypeContainerVisitor<MaNGOS::ObjectUpdater, GridTypeMapContainer> &gridVisitor,
             TypeContainerVisitor<MaNGOS::ObjectUpdater, WorldTypeMapContainer> &worldVisitor);
 
@@ -559,7 +559,7 @@ class Map : public GridRefManager<NGridType>
         MapRefManager m_mapRefManager;
         MapRefManager::iterator m_mapRefIter;
 
-        typedef std::set<Presence*> ActiveNonPlayers;
+        typedef std::set<Occupant*> ActiveNonPlayers;
         ActiveNonPlayers m_activeNonPlayers;
         ActiveNonPlayers::iterator m_activeNonPlayersIter;
         MapStoredObjectTypesContainer m_objectsStore;
@@ -593,7 +593,7 @@ class Map : public GridRefManager<NGridType>
 
         std::bitset<TOTAL_NUMBER_OF_CELLS_PER_MAP* TOTAL_NUMBER_OF_CELLS_PER_MAP> marked_cells;
 
-        std::set<Presence*> i_objectsToRemove;
+        std::set<Occupant*> i_objectsToRemove;
 
         typedef std::multimap<time_t, ScriptAction> ScriptScheduleMap;
         ScriptScheduleMap m_scriptSchedule;

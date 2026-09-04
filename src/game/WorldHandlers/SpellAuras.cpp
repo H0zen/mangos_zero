@@ -433,7 +433,7 @@ Aura* CreateAura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* curr
  * @param castItem The item used to cast the spell, if any.
  * @return A newly created spell aura holder.
  */
-SpellAuraHolder* CreateSpellAuraHolder(SpellEntry const* spellproto, Unit* target, Presence* caster, Item* castItem)
+SpellAuraHolder* CreateSpellAuraHolder(SpellEntry const* spellproto, Unit* target, Occupant* caster, Item* castItem)
 {
     return new SpellAuraHolder(spellproto, target, caster, castItem);
 }
@@ -939,7 +939,7 @@ void Aura::TriggerSpell()
     uint32 auraId = auraSpellInfo->ID;
     Unit* target = GetTarget();
     Unit* triggerCaster = triggerTarget;
-    Presence* triggerTargetObject = NULL;
+    Occupant* triggerTargetObject = NULL;
 
     // specific code for cases with no trigger spell provided in field
     if (triggeredSpellInfo == NULL)
@@ -1174,7 +1174,7 @@ void Aura::TriggerSpell()
             {
                 triggerCaster = target;
 
-                if (Presence* channelTarget = target->GetMap()->GetPresence(target->GetChannelObjectGuid()))
+                if (Occupant* channelTarget = target->GetMap()->GetOccupant(target->GetChannelObjectGuid()))
                 {
                     if (channelTarget->isType(TYPEMASK_UNIT))
                     {
@@ -2203,7 +2203,7 @@ void Aura::HandleInterruptRegen(bool apply, bool Real)
     GetTarget()->SetInDummyCombatState(apply);
 }
 
-SpellAuraHolder::SpellAuraHolder(SpellEntry const* spellproto, Unit* target, Presence* caster, Item* castItem)
+SpellAuraHolder::SpellAuraHolder(SpellEntry const* spellproto, Unit* target, Occupant* caster, Item* castItem)
     : m_spellProto(spellproto),
     m_target(target), m_castItemGuid(castItem ? castItem->GetObjectGuid() : ObjectGuid()),
     m_auraSlot(MAX_AURAS), m_auraLevel(1),

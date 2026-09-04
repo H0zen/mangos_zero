@@ -46,7 +46,7 @@
 #include <cmath>
 #include "Utilities/Errors.h"
 #include "Utilities/MathDefines.h"
-#include "Presence.h"
+#include "Occupant.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
 #include "Opcodes.h"
@@ -78,7 +78,7 @@
  *
  * @param map The map to assign.
  */
-void Presence::SetMap(Map* map)
+void Occupant::SetMap(Map* map)
 {
     MANGOS_ASSERT(map);
     m_currMap = map;
@@ -88,7 +88,7 @@ void Presence::SetMap(Map* map)
     RefreshFrame();
 }
 
-TerrainInfo const* Presence::GetTerrain() const
+TerrainInfo const* Occupant::GetTerrain() const
 {
     MANGOS_ASSERT(m_currMap);
     return m_currMap->GetTerrain();
@@ -97,7 +97,7 @@ TerrainInfo const* Presence::GetTerrain() const
 /**
  * @brief Schedules the object for removal from the map.
  */
-void Presence::AddObjectToRemoveList()
+void Occupant::AddObjectToRemoveList()
 {
     GetMap()->AddObjectToRemoveList(this);
 }
@@ -105,7 +105,7 @@ void Presence::AddObjectToRemoveList()
 /**
  * @brief Refreshes both visibility and viewpoint-dependent visibility state.
  */
-void Presence::UpdateVisibilityAndView()
+void Occupant::UpdateVisibilityAndView()
 {
     GetViewPoint().Call_UpdateVisibilityForOwner();
     UpdateObjectVisibility();
@@ -115,7 +115,7 @@ void Presence::UpdateVisibilityAndView()
 /**
  * @brief Recomputes this object's visibility for nearby clients.
  */
-void Presence::UpdateObjectVisibility()
+void Occupant::UpdateObjectVisibility()
 {
     CellPair p = MaNGOS::ComputeCellPair(Where().X(), Where().Y());
     Cell cell(p);
@@ -126,7 +126,7 @@ void Presence::UpdateObjectVisibility()
 /**
  * @brief Adds the world object to the map's update queue.
  */
-void Presence::AddToClientUpdateList()
+void Occupant::AddToClientUpdateList()
 {
     GetMap()->AddUpdateObject(this);
 }
@@ -136,7 +136,7 @@ void Presence::AddToClientUpdateList()
  *
  * Removes this object from the map's update list.
  */
-void Presence::RemoveFromClientUpdateList()
+void Occupant::RemoveFromClientUpdateList()
 {
     GetMap()->RemoveUpdateObject(this);
 }
@@ -146,17 +146,17 @@ void Presence::RemoveFromClientUpdateList()
  *
  * Accumulates update data for a world object and nearby players.
  */
-struct PresenceChangeAccumulator
+struct OccupantChangeAccumulator
 {
     UpdateDataMapType& i_updateDatas; ///< Update data map
-    Presence& i_object; ///< World object
+    Occupant& i_object; ///< World object
 
     /**
      * @brief Constructor
      * @param obj World object
      * @param d Update data map
      */
-    PresenceChangeAccumulator(Presence& obj, UpdateDataMapType& d) : i_updateDatas(d), i_object(obj)
+    OccupantChangeAccumulator(Occupant& obj, UpdateDataMapType& d) : i_updateDatas(d), i_object(obj)
     {
         // send self fields changes in another way, otherwise
         // with new camera system when player's camera too far from player, camera wouldn't receive packets and changes from player
@@ -196,9 +196,9 @@ struct PresenceChangeAccumulator
  *
  * Builds update data for all players who can see this object.
  */
-void Presence::BuildUpdateData(UpdateDataMapType& update_players)
+void Occupant::BuildUpdateData(UpdateDataMapType& update_players)
 {
-    PresenceChangeAccumulator notifier(*this, update_players);
+    OccupantChangeAccumulator notifier(*this, update_players);
     Cell::VisitWorldObjects(this, notifier, GetMap()->GetBroadcastRadius());
 
     ClearUpdateMask(false);
@@ -214,7 +214,7 @@ void Presence::BuildUpdateData(UpdateDataMapType& update_players)
  *
  * Logs an error when invalid coordinates are encountered.
  */
-bool Presence::PrintCoordinatesError(float x, float y, float z, char const* descr) const
+bool Occupant::PrintCoordinatesError(float x, float y, float z, char const* descr) const
 {
     sLog.outError("%s with invalid %s coordinates: mapid = %uu, x = %f, y = %f, z = %f", GetGuidStr().c_str(), descr, GetMapId(), x, y, z);
     return false;                                           // always false for continue assert fail
@@ -226,14 +226,14 @@ bool Presence::PrintCoordinatesError(float x, float y, float z, char const* desc
  *
  * Sets whether this object is an active object (updated even when no players nearby).
  */
-void Presence::SetActiveObjectState(bool active)
+void Occupant::SetActiveObjectState(bool active)
 {
     if (m_isActiveObject == active || (isType(TYPEMASK_PLAYER) && !active))  // player shouldn't became inactive, never
     {
         return;
     }
 
-    // player's update implemented in a different from other active presence's way
+    // player's update implemented in a different from other active occupant's way
     // it's considered to use generic way in future
     if (IsInWorld() && !isType(TYPEMASK_PLAYER))
     {

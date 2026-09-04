@@ -26,11 +26,11 @@
 #pragma once
 
 #include "Platform/Define.h"
-#include "Presence.h"
+#include "Occupant.h"
 
 class Creature;
 class GameObject;
-class Presence;
+class Occupant;
 
 /**
  * Putting a new thing on a map.
@@ -48,9 +48,9 @@ class Presence;
  * @param asActiveObject Keep the summon updating with no players nearby.
  * @param setRun    Move at a run rather than a walk.
  */
-Creature* SummonCreature(Presence& summoner, uint32 id, float x, float y, float z, float ang,
+Creature* SummonCreature(Occupant& summoner, uint32 id, float x, float y, float z, float ang,
                          TempSpawnType spwtype, uint32 despwtime,
                          bool asActiveObject = false, bool setRun = false);
 
-GameObject* SummonGameObject(Presence& summoner, uint32 id,
+GameObject* SummonGameObject(Occupant& summoner, uint32 id,
                              float x, float y, float z, float angle, uint32 despwtime);

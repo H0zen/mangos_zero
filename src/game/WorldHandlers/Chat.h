@@ -50,7 +50,7 @@ class WorldPacket;
 class GMTicket;
 class MailDraft;
 class Object;
-class Presence;
+class Occupant;
 class GameObject;
 class Creature;
 class Player;
@@ -424,7 +424,7 @@ class ChatHandler
 
         // The transport half of .gps: deck offsets and what the baked mesh says is under
         // them. No-op when the object is not aboard anything.
-        void ReportTransportPosition(Presence* obj);
+        void ReportTransportPosition(Occupant* obj);
         bool HandleNpcAddVendorItemCommand(char* args);
         bool HandleNpcAIInfoCommand(char* args);
         bool HandleNpcAllowMovementCommand(char* args);
@@ -843,4 +843,4 @@ class CliHandler : public ChatHandler
 /**
  * Applies an aura spell directly to the target using the provided caster context.
  */
-bool AddAuraToPlayer(const SpellEntry* spellInfo, Unit* target, Presence* caster);
+bool AddAuraToPlayer(const SpellEntry* spellInfo, Unit* target, Occupant* caster);

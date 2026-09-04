@@ -50,7 +50,7 @@
 #include "ObjectGuid.h"
 #include "WorldSession.h"
 #include "LootMgr.h"
-#include "Presence.h"
+#include "Occupant.h"
 #include "GameObject.h"
 #include "Group.h"
 #include "World.h"
@@ -147,7 +147,7 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
     /* Checking group conditions to be sure the player has the permissions to loot. */
     if (group)
     {
-        Presence * pObject = player->GetMap()->GetPresence(lguid);
+        Occupant * pObject = player->GetMap()->GetOccupant(lguid);
 
         switch (group->GetLootMethod())
         {

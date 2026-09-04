@@ -212,7 +212,7 @@ void Spell::FillTargetMap()
                             // triggered spells get dest point from default target set, ignore it
                             if (!(m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) || m_IsTriggeredSpell)
                             {
-                                if (Presence* castObject = GetCastingObject())
+                                if (Occupant* castObject = GetCastingObject())
                                 {
                                     m_targets.setDestination(castObject->Where().X(), castObject->Where().Y(), castObject->Where().Z());
                                 }
@@ -545,7 +545,7 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
     target.missCondition = m_caster->SpellHitResult(pVictim, m_spellInfo, m_canReflect);
 
     // spell fly from visual cast object
-    Presence* affectiveObject = GetAffectiveCasterObject();
+    Occupant* affectiveObject = GetAffectiveCasterObject();
 
     // Spell have speed (possible inherited from triggering spell) - need calculate incoming time
     float speed = m_spellInfo->Speed == 0.0f && m_triggeredBySpellInfo ? m_triggeredBySpellInfo->Speed : m_spellInfo->Speed;
@@ -656,7 +656,7 @@ void Spell::AddGOTarget(GameObject* pVictim, SpellEffectIndex effIndex)
     target.processed  = false;                              // Effects not apply on target
 
     // spell fly from visual cast object
-    Presence* affectiveObject = GetAffectiveCasterObject();
+    Occupant* affectiveObject = GetAffectiveCasterObject();
 
     // Spell can have speed - need calculate incoming time
     float speed = m_spellInfo->Speed == 0.0f && m_triggeredBySpellInfo ? m_triggeredBySpellInfo->Speed : m_spellInfo->Speed;

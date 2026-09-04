@@ -30,13 +30,13 @@
 #include "GridDefines.h"
 
 class ViewPoint;
-class Presence;
+class Occupant;
 class UpdateData;
 class WorldPacket;
 class Player;
 class InitialWorldUpdateBatch;
 
-/// Camera - object-receiver. Receives broadcast packets from nearby presences, object visibility changes and sends them to client
+/// Camera - object-receiver. Receives broadcast packets from nearby occupants, object visibility changes and sends them to client
 class Camera
 {
     friend class ViewPoint;
@@ -46,7 +46,7 @@ class Camera
         explicit Camera(Player* pl);
         ~Camera();
 
-        Presence* GetBody()
+        Occupant* GetBody()
         {
             return m_source;
         }
@@ -56,20 +56,20 @@ class Camera
             return &m_owner;
         }
 
-        // set camera's view to any presence
-        // Note: this presence must be in same map, in same phase with camera's owner(player)
+        // set camera's view to any occupant
+        // Note: this occupant must be in same map, in same phase with camera's owner(player)
         // client supports only unit and dynamic objects as farsight objects
-        void SetView(Presence* obj, bool update_far_sight_field = true);
+        void SetView(Occupant* obj, bool update_far_sight_field = true);
 
         // set view to camera's owner
         void ResetView(bool update_far_sight_field = true);
 
-        void UpdateVisibilityOf(Presence* obj, UpdateData& d, std::set<Presence*>& vis);
-        void UpdateVisibilityOf(Presence* obj);
+        void UpdateVisibilityOf(Occupant* obj, UpdateData& d, std::set<Occupant*>& vis);
+        void UpdateVisibilityOf(Occupant* obj);
 
         void ReceivePacket(WorldPacket* data);
 
-        // updates visibility of presences around viewpoint for camera's owner
+        // updates visibility of occupants around viewpoint for camera's owner
         void UpdateVisibilityForOwner();
 
     private:
@@ -80,7 +80,7 @@ class Camera
         void Event_ViewPointVisibilityChanged();
 
         Player& m_owner;
-        Presence* m_source;
+        Occupant* m_source;
 
         void UpdateForCurrentViewPoint();
         void UpdateVisibilityForOwnerInBatch(InitialWorldUpdateBatch* batch);

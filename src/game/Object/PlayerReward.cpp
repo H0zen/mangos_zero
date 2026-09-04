@@ -136,7 +136,7 @@ void Player::RewardSinglePlayerAtKill(Unit* pVictim)
  * @param creature_id The credited creature entry identifier.
  * @param pRewardSource The world object used for distance checks.
  */
-void Player::RewardPlayerAndGroupAtEvent(uint32 creature_id, Presence* pRewardSource)
+void Player::RewardPlayerAndGroupAtEvent(uint32 creature_id, Occupant* pRewardSource)
 {
     MANGOS_ASSERT((!GetGroup() || pRewardSource));              // Player::RewardPlayerAndGroupAtEvent called for Group-Case but no source for range searching provided
 
@@ -177,7 +177,7 @@ void Player::RewardPlayerAndGroupAtEvent(uint32 creature_id, Presence* pRewardSo
  * @param pRewardSource The credited creature or gameobject.
  * @param spellid The spell that granted the credit.
  */
-void Player::RewardPlayerAndGroupAtCast(Presence* pRewardSource, uint32 spellid)
+void Player::RewardPlayerAndGroupAtCast(Occupant* pRewardSource, uint32 spellid)
 {
     // prepare data for near group iteration
     if (Group* pGroup = GetGroup())
@@ -214,7 +214,7 @@ void Player::RewardPlayerAndGroupAtCast(Presence* pRewardSource, uint32 spellid)
  * @param pRewardSource The source object used for the distance check.
  * @return True if the player qualifies for group reward range; otherwise, false.
  */
-bool Player::IsAtGroupRewardDistance(Presence const* pRewardSource) const
+bool Player::IsAtGroupRewardDistance(Occupant const* pRewardSource) const
 {
     if (InReach(*pRewardSource, *this, sWorld.getConfig(CONFIG_FLOAT_GROUP_XP_DISTANCE)))
     {

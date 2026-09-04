@@ -6379,7 +6379,7 @@ bool Player::isTotalImmune()
  * @param bag The preferred destination bag.
  * @param slot The preferred destination slot.
  */
-void Player::AutoStoreLoot(Presence const* lootTarget, uint32 loot_id, LootStore const& store, bool broadcast, uint8 bag, uint8 slot)
+void Player::AutoStoreLoot(Occupant const* lootTarget, uint32 loot_id, LootStore const& store, bool broadcast, uint8 bag, uint8 slot)
 {
     Loot loot(lootTarget);
     loot.FillLoot(loot_id, store, this, true);

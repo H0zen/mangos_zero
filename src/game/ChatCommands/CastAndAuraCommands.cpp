@@ -43,7 +43,7 @@
  CommandTable : castCommandTable
  ***********************************************************************/
 
-bool AddAuraToPlayer(const SpellEntry* spellInfo, Unit* target, Presence* caster);
+bool AddAuraToPlayer(const SpellEntry* spellInfo, Unit* target, Occupant* caster);
 
 /**
  * @brief Handler for HandleCastCommand command.

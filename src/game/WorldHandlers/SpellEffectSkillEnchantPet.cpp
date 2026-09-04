@@ -100,7 +100,7 @@ void Spell::EffectLearnSpell(SpellEffectIndex eff_idx)
 
     player->learnSpell(spellToLearn, false);
 
-    if (Presence const* caster = GetCastingObject())
+    if (Occupant const* caster = GetCastingObject())
     {
         DEBUG_LOG("Spell: %s has learned spell %u from %s", player->GetGuidStr().c_str(), spellToLearn, caster->GetGuidStr().c_str());
     }
@@ -454,7 +454,7 @@ void Spell::EffectLearnSkill(SpellEffectIndex eff_idx)
     uint16 skillval = ((Player*)unitTarget)->GetPureSkillValue(skillid);
     ((Player*)unitTarget)->SetSkill(skillid, skillval ? skillval : 1, damage * 75, damage);
 
-    if (Presence const* caster = GetCastingObject())
+    if (Occupant const* caster = GetCastingObject())
     {
         DEBUG_LOG("Spell: %s has learned skill %u (to maxlevel %u) from %s", unitTarget->GetGuidStr().c_str(), skillid, damage * 75, caster->GetGuidStr().c_str());
     }
@@ -898,7 +898,7 @@ void Spell::EffectLearnPetSpell(SpellEffectIndex eff_idx)
     pet->SavePetToDB(PET_SAVE_AS_CURRENT);
     _player->PetSpellInitialize();
 
-    if (Presence const* caster = GetCastingObject())
+    if (Occupant const* caster = GetCastingObject())
     {
         DEBUG_LOG("Spell: %s has learned spell %u from %s", pet->GetGuidStr().c_str(), learn_spellproto->ID, caster->GetGuidStr().c_str());
     }

@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "Presence.h"
+#include "Occupant.h"
 #include "DBCEnums.h"
 #include "Unit.h"
 
@@ -38,7 +38,7 @@ enum DynamicObjectType
 
 struct SpellEntry;
 
-class DynamicObject : public Presence
+class DynamicObject : public Occupant
 {
     public:
         explicit DynamicObject();
@@ -62,7 +62,7 @@ class DynamicObject : public Presence
         void Delay(int32 delaytime);
 
 
-        float ComputeBoundingRadius() const override      // overwrite Presence version
+        float ComputeBoundingRadius() const override      // overwrite Occupant version
         {
             return 0.0f;                                    // dynamic object not have real interact size
         }
@@ -72,7 +72,7 @@ class DynamicObject : public Presence
             return GetCasterGuid().IsPlayer();
         }
 
-        bool IsVisibleForInState(Player const* u, Presence const* viewPoint, bool inVisibleList) const override;
+        bool IsVisibleForInState(Player const* u, Occupant const* viewPoint, bool inVisibleList) const override;
 
         /**
          * @brief Anchor this area effect to a DECK spot rather than a world point.

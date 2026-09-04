@@ -245,7 +245,7 @@ void ScriptedAI::DoCastSpell(Unit* pTarget, SpellEntry const* pSpellInfo, bool b
  * @param pSource Pointer to the source object.
  * @param uiSoundId ID of the sound to play.
  */
-void ScriptedAI::DoPlaySoundToSet(Presence* pSource, uint32 uiSoundId)
+void ScriptedAI::DoPlaySoundToSet(Occupant* pSource, uint32 uiSoundId)
 {
     if (!pSource)
     {

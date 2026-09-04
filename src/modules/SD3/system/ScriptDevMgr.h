@@ -44,7 +44,7 @@ class GameObjectAI;
 class SpellCastTargets;
 class Map;
 class Unit;
-class Presence;
+class Occupant;
 class Aura;
 class Object;
 class ObjectGuid;
@@ -396,7 +396,7 @@ struct AchievementScript : public Script
  * @param pSource Source of the text.
  * @param pTarget Target of the text (optional).
  */
-void DoScriptText(int32 iTextEntry, Presence* pSource, Unit* pTarget = nullptr);
+void DoScriptText(int32 iTextEntry, Occupant* pSource, Unit* pTarget = nullptr);
 
 /**
  * @brief Simulates script text for a map.

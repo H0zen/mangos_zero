@@ -50,7 +50,7 @@
 
 #include "Platform/Define.h"
 #include <ctime>
-#include "Presence.h"
+#include "Occupant.h"
 #include "Database/DatabaseEnv.h"
 #include "GridDefines.h"
 #include "LootMgr.h"
@@ -87,7 +87,7 @@ enum CorpseFlags
 ///
 /// Represents a player's remains after death. Corpses can be resurrected and
 /// contain the player's items for recovery or looting.
-class Corpse : public Presence
+class Corpse : public Occupant
 {
     public:
         explicit Corpse(CorpseType type = CORPSE_BONES);
@@ -125,7 +125,7 @@ class Corpse : public Presence
         GridPair const& GetGrid() const { return m_grid; }
         void SetGrid(GridPair const& grid) { m_grid = grid; }
 
-        bool IsVisibleForInState(Player const* u, Presence const* viewPoint, bool inVisibleList) const override;
+        bool IsVisibleForInState(Player const* u, Occupant const* viewPoint, bool inVisibleList) const override;
 
         Loot loot;                                          // remove insignia ONLY at BG
         Player* lootRecipient;

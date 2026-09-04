@@ -104,11 +104,11 @@ class WorldUpdateCounter
         uint32 m_tmStart; ///< Start time in milliseconds
 };
 
-struct PresenceChangeAccumulator;
+struct OccupantChangeAccumulator;
 
-class Presence : public Object
+class Occupant : public Object
 {
-    friend struct PresenceChangeAccumulator;
+    friend struct OccupantChangeAccumulator;
 
     public:
 
@@ -117,7 +117,7 @@ class Presence : public Object
         class UpdateHelper
         {
             public:
-                explicit UpdateHelper(Presence* obj) : m_obj(obj) {}
+                explicit UpdateHelper(Occupant* obj) : m_obj(obj) {}
                 ~UpdateHelper() {}
 
                 void Update(uint32 time_diff)
@@ -130,10 +130,10 @@ class Presence : public Object
                 UpdateHelper(const UpdateHelper&);
                 UpdateHelper& operator=(const UpdateHelper&);
 
-                Presence* const m_obj;
+                Occupant* const m_obj;
         };
 
-        virtual ~Presence();
+        virtual ~Occupant();
 
         virtual void Update(uint32 update_diff, uint32 /*time_diff*/);
 
@@ -179,10 +179,10 @@ class Presence : public Object
         virtual void UpdateVisibilityAndView();             // update visibility for object and object for all around
 
         // main visibility check function in normal case (ignore grey zone distance check)
-        bool IsVisibleFor(Player const* u, Presence const* viewPoint) const { return IsVisibleForInState(u, viewPoint, false); }
+        bool IsVisibleFor(Player const* u, Occupant const* viewPoint) const { return IsVisibleForInState(u, viewPoint, false); }
 
         // low level function for visibility change code, must be define in all main world object subclasses
-        virtual bool IsVisibleForInState(Player const* u, Presence const* viewPoint, bool inVisibleList) const = 0;
+        virtual bool IsVisibleForInState(Player const* u, Occupant const* viewPoint, bool inVisibleList) const = 0;
 
         void SetMap(Map* map);
         Map* GetMap() const { MANGOS_ASSERT(m_currMap); return m_currMap; }
@@ -221,7 +221,7 @@ class Presence : public Object
 
 
     protected:
-        explicit Presence();
+        explicit Occupant();
 
         /// The per-class spatial extent. Overridden where the object is not a default
         /// blob: a unit reads its model, a gameobject its geometry box.
@@ -264,38 +264,38 @@ class Presence : public Object
 // cells and the cameras, so it answers who; these add what the map must not
 // know -- the relay across a vessel's map boundary, and the subject's own
 // client when the subject has one.
-void Broadcast(Presence const& from, WorldPacket* data, bool toSubject);
-void BroadcastWithin(Presence const& from, WorldPacket* data, float dist,
+void Broadcast(Occupant const& from, WorldPacket* data, bool toSubject);
+void BroadcastWithin(Occupant const& from, WorldPacket* data, float dist,
                      bool toSubject, bool ownTeamOnly = false);
-void BroadcastExcept(Presence const& from, WorldPacket* data, Player const* skip);
+void BroadcastExcept(Occupant const& from, WorldPacket* data, Player const* skip);
 
 /// Can A reach B -- a common frame is required. Melee, spells, threat, aggro.
-bool CanInteract(Presence const& a, Presence const& b);
+bool CanInteract(Occupant const& a, Occupant const& b);
 
 /// Can B be shown A -- the wider question, and never the same one as reaching it.
-bool CanBeSeen(Presence const& seen, Presence const& viewer);
+bool CanBeSeen(Occupant const& seen, Occupant const& viewer);
 
 /// CanBeSeen plus "near enough to bother".
-bool SeenWithin(Presence const& seen, Presence const& viewer, float dist, bool is3D = true);
+bool SeenWithin(Occupant const& seen, Occupant const& viewer, float dist, bool is3D = true);
 
-bool InReach(Presence const& a, Presence const& b, float dist, bool is3D = true);
-bool InFrontPhased(Presence const& a, Presence const& b, float dist, float arc);
-bool InBackPhased(Presence const& a, Presence const& b, float dist, float arc);
-bool HasLineOfSight(Presence const& a, Presence const& b);
-bool HasLineOfSight(Presence const& a, Geometry::Vector3 const& point);
-bool IsPlaceable(Presence const& obj);
+bool InReach(Occupant const& a, Occupant const& b, float dist, bool is3D = true);
+bool InFrontPhased(Occupant const& a, Occupant const& b, float dist, float arc);
+bool InBackPhased(Occupant const& a, Occupant const& b, float dist, float arc);
+bool HasLineOfSight(Occupant const& a, Occupant const& b);
+bool HasLineOfSight(Occupant const& a, Geometry::Vector3 const& point);
+bool IsPlaceable(Occupant const& obj);
 
 // Terrain and grid answers about a position. The component supplies the geometry; the
 // height, the collision sweep and the map's bounds come from the engines that own them.
-Geometry::Vector3 PointNear(Presence const& anchor, float distance2d, float absAngle);
-void DropToGround(Presence const& obj, float x, float y, float& z);
-void ClampToAllowedZ(Presence const& obj, float x, float y, float& z, Map* atMap = NULL);
-Geometry::Vector3 RandomGroundPointNear(Presence const& obj, Geometry::Vector3 const& centre,
+Geometry::Vector3 PointNear(Occupant const& anchor, float distance2d, float absAngle);
+void DropToGround(Occupant const& obj, float x, float y, float& z);
+void ClampToAllowedZ(Occupant const& obj, float x, float y, float& z, Map* atMap = NULL);
+Geometry::Vector3 RandomGroundPointNear(Occupant const& obj, Geometry::Vector3 const& centre,
                                         float distance, float minDist = 0.0f, float const* ori = NULL);
-void FindFreeSpotNear(Presence const& anchor, Presence const* searcher, float& x, float& y, float& z,
+void FindFreeSpotNear(Occupant const& anchor, Occupant const* searcher, float& x, float& y, float& z,
                       float searcher_bounding_radius, float distance2d, float absAngle);
-void ClosePointNear(Presence const& anchor, float& x, float& y, float& z, float bounding_radius,
-                    float distance2d = 0.0f, float angle = 0.0f, Presence const* searcher = NULL);
-void ContactPointNear(Presence const& anchor, Presence const* obj, float& x, float& y, float& z,
+void ClosePointNear(Occupant const& anchor, float& x, float& y, float& z, float bounding_radius,
+                    float distance2d = 0.0f, float angle = 0.0f, Occupant const* searcher = NULL);
+void ContactPointNear(Occupant const& anchor, Occupant const* obj, float& x, float& y, float& z,
                       float distance2d = CONTACT_DISTANCE);
 

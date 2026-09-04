@@ -73,7 +73,7 @@
  * @param is3dDistance True to use 3D distance checks.
  * @return True if the unit should be seen or detected; otherwise, false.
  */
-bool Unit::IsVisibleForOrDetect(Unit const* u, Presence const* viewPoint, bool detect, bool inVisibleList, bool is3dDistance) const
+bool Unit::IsVisibleForOrDetect(Unit const* u, Occupant const* viewPoint, bool detect, bool inVisibleList, bool is3dDistance) const
 {
     if (!u || !CanBeSeen(*this, *u))
     {

@@ -37,7 +37,7 @@
 
 class Player;
 class LootStore;
-class Presence;
+class Occupant;
 
 #define MAX_NR_LOOT_ITEMS 16
 // note: the client can not show more than 16 items total
@@ -120,8 +120,8 @@ struct LootItem
     LootItem(uint32 itemid_, uint32 count_, int32 randomPropertyId_ = 0);
 
     // Basic checks for player/item compatibility - if false no chance to see the item in the loot
-    bool AllowedForPlayer(Player const* player, Presence const* lootTarget) const;
-    LootSlotType GetSlotTypeForSharedLoot(PermissionTypes permission, Player* viewer, Presence const* lootTarget, bool condition_ok = false) const;
+    bool AllowedForPlayer(Player const* player, Occupant const* lootTarget) const;
+    LootSlotType GetSlotTypeForSharedLoot(PermissionTypes permission, Player* viewer, Occupant const* lootTarget, bool condition_ok = false) const;
 };
 
 typedef std::vector<LootItem> LootItemList;
@@ -320,7 +320,7 @@ struct Loot
     uint8 unlootedCount;
     LootType loot_type;                                 // required for for proper item loot finish (store internal loot types in different from 3.x version, in fact this meaning that it send same loot types for interesting cases like 3.x version code, skip pre-3.x client loot type limitaitons)
 
-    Loot(Presence const* lootTarget, uint32 _gold = 0) : gold(_gold), unlootedCount(0), loot_type(LOOT_CORPSE), m_lootTarget(lootTarget) {}
+    Loot(Occupant const* lootTarget, uint32 _gold = 0) : gold(_gold), unlootedCount(0), loot_type(LOOT_CORPSE), m_lootTarget(lootTarget) {}
     ~Loot()
     {
         clear();
@@ -386,7 +386,7 @@ struct Loot
     LootItem* LootItemInSlot(uint32 lootslot, Player* player, QuestItem** qitem = NULL, QuestItem** ffaitem = NULL, QuestItem** conditem = NULL);
     uint32 GetMaxSlotInLootFor(Player* player) const;
 
-    Presence const* GetLootTarget() const { return m_lootTarget; }
+    Occupant const* GetLootTarget() const { return m_lootTarget; }
 
     private:
         void FillNotNormalLootFor(Player* player);
@@ -406,7 +406,7 @@ struct Loot
         LootValidatorRefManager m_LootValidatorRefManager;
 
         // What is looted
-        Presence const* m_lootTarget;
+        Occupant const* m_lootTarget;
 };
 
 struct LootView

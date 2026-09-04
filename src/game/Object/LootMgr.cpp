@@ -493,7 +493,7 @@ LootItem::LootItem(uint32 itemid_, uint32 count_, int32 randomPropertyId_)
 }
 
 // Basic checks for player/item compatibility - if false no chance to see the item in the loot
-bool LootItem::AllowedForPlayer(Player const* player, Presence const* lootTarget) const
+bool LootItem::AllowedForPlayer(Player const* player, Occupant const* lootTarget) const
 {
     // player check
     if (!player || !player->IsInWorld())
@@ -542,7 +542,7 @@ bool LootItem::AllowedForPlayer(Player const* player, Presence const* lootTarget
  * @param condition_ok true if loot conditions were already validated.
  * @return The slot type visible to the viewer.
  */
-LootSlotType LootItem::GetSlotTypeForSharedLoot(PermissionTypes permission, Player* viewer, Presence const* lootTarget, bool condition_ok /*= false*/) const
+LootSlotType LootItem::GetSlotTypeForSharedLoot(PermissionTypes permission, Player* viewer, Occupant const* lootTarget, bool condition_ok /*= false*/) const
 {
     // ignore looted, FFA (each player get own copy) and not allowed items
     if (is_looted || freeforall || (conditionId && !condition_ok) || !AllowedForPlayer(viewer, lootTarget))
@@ -558,7 +558,7 @@ LootSlotType LootItem::GetSlotTypeForSharedLoot(PermissionTypes permission, Play
         case GROUP_PERMISSION:
         {
             /// The roll for this item has been done.
-            if (is_underthreshold || winner || viewer->GetGroup()->IsRollDoneForItem((Presence *)lootTarget, this))
+            if (is_underthreshold || winner || viewer->GetGroup()->IsRollDoneForItem((Occupant *)lootTarget, this))
             {
                 return LOOT_SLOT_NORMAL;
             }

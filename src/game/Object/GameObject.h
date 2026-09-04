@@ -57,7 +57,7 @@
 #include <string>
 #include <vector>
 #include "SharedDefines.h"
-#include "Presence.h"
+#include "Occupant.h"
 #include "LootMgr.h"
 #include "Utilities/EventProcessor.h"
 #include <memory>
@@ -614,7 +614,7 @@ struct GameObjectDisplayInfoEntry;
 
 #define GO_ANIMPROGRESS_DEFAULT 100                         // in 3.x 0xFF
 
-class GameObject : public Presence
+class GameObject : public Occupant
 {
 
     public:
@@ -643,7 +643,7 @@ class GameObject : public Presence
 
         void SetDisplayId(uint32 model_id);
 
-        // overwrite Presence function for proper name localization
+        // overwrite Occupant function for proper name localization
         const char* GetNameForLocaleIdx(int32 locale_idx) const override;
 
         void SaveToDB();
@@ -742,7 +742,7 @@ class GameObject : public Presence
         void SendGameObjectCustomAnim(uint32 animId = 0);
         void SendGameObjectReset();
 
-        float ComputeBoundingRadius() const override;     // overwrite Presence version
+        float ComputeBoundingRadius() const override;     // overwrite Occupant version
 
         void Use(Unit* user);
 
@@ -802,7 +802,7 @@ class GameObject : public Presence
         void SummonLinkedTrapIfAny();
         void TriggerLinkedGameObject(Unit* target);
 
-        bool IsVisibleForInState(Player const* u, Presence const* viewPoint, bool inVisibleList) const override;
+        bool IsVisibleForInState(Player const* u, Occupant const* viewPoint, bool inVisibleList) const override;
 
         bool IsCollisionEnabled() const;                    // Check if a go should collide. Like if a door is closed
 

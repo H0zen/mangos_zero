@@ -1010,7 +1010,7 @@ void Group::SendLootAllPassed(Roll const& r)
  * @param pSource The looted world object.
  * @param loot The loot container being processed.
  */
-void Group::GroupLoot(Presence* pSource, Loot* loot)
+void Group::GroupLoot(Occupant* pSource, Loot* loot)
 {
     for (uint8 itemSlot = 0; itemSlot < loot->items.size(); ++itemSlot)
     {
@@ -1041,7 +1041,7 @@ void Group::GroupLoot(Presence* pSource, Loot* loot)
  * @param pSource The looted world object.
  * @param loot The loot container being processed.
  */
-void Group::NeedBeforeGreed(Presence* pSource, Loot* loot)
+void Group::NeedBeforeGreed(Occupant* pSource, Loot* loot)
 {
     for (uint8 itemSlot = 0; itemSlot < loot->items.size(); ++itemSlot)
     {
@@ -1072,7 +1072,7 @@ void Group::NeedBeforeGreed(Presence* pSource, Loot* loot)
  * @param pSource The looted world object.
  * @param loot The loot container being processed.
  */
-void Group::MasterLoot(Presence* pSource, Loot* loot)
+void Group::MasterLoot(Occupant* pSource, Loot* loot)
 {
     for (LootItemList::iterator i = loot->items.begin(); i != loot->items.end(); ++i)
     {
@@ -1219,7 +1219,7 @@ bool Group::CountRollVote(ObjectGuid const& playerGUID, Rolls::iterator& rollI, 
  * @param loot The loot container.
  * @param itemSlot The loot slot to roll on.
  */
-void Group::StartLootRoll(Presence* lootTarget, LootMethod method, Loot* loot, uint8 itemSlot)
+void Group::StartLootRoll(Occupant* lootTarget, LootMethod method, Loot* loot, uint8 itemSlot)
 {
     if (itemSlot >= loot->items.size())
     {
@@ -1333,7 +1333,7 @@ void Group::CountTheRoll(Rolls::iterator& rollI)
 
             if (Player* player = sObjectMgr.GetPlayer(maxguid))
             {
-                if (Presence* object = player->GetMap()->GetPresence(roll->lootedTargetGUID))
+                if (Occupant* object = player->GetMap()->GetOccupant(roll->lootedTargetGUID))
                 {
                     SendLootRollWon(maxguid, maxresul, ROLL_NEED, *roll);
                     won = true;
@@ -1397,7 +1397,7 @@ void Group::CountTheRoll(Rolls::iterator& rollI)
 
             if (Player* player = sObjectMgr.GetPlayer(maxguid))
             {
-                if (Presence* object = player->GetMap()->GetPresence(roll->lootedTargetGUID))
+                if (Occupant* object = player->GetMap()->GetOccupant(roll->lootedTargetGUID))
                 {
                     SendLootRollWon(maxguid, maxresul, ROLL_GREED, *roll);
                     won = true;
@@ -1457,7 +1457,7 @@ void Group::CountTheRoll(Rolls::iterator& rollI)
  * @param pItem The loot item being checked.
  * @return true if no active multi-player roll remains for the item; otherwise false.
  */
-bool Group::IsRollDoneForItem(Presence * pObject, const LootItem * pItem)
+bool Group::IsRollDoneForItem(Occupant * pObject, const LootItem * pItem)
 {
     if (RollId.empty())
     {

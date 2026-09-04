@@ -1847,7 +1847,7 @@ void Player::AreaExploredOrEventHappens(uint32 questId)
 }
 
 // not used in mangosd, function for external script library
-void Player::GroupEventHappens(uint32 questId, Presence const* pEventObject)
+void Player::GroupEventHappens(uint32 questId, Occupant const* pEventObject)
 {
     if (Group* pGroup = GetGroup())
     {

@@ -46,7 +46,7 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
-#include "Presence.h"
+#include "Occupant.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
 #include "Opcodes.h"
@@ -359,10 +359,10 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const
     }
     else if (updateFlags & UPDATEFLAG_HAS_POSITION)
     {
-        *data << ((Presence*)this)->Where().X();
-        *data << ((Presence*)this)->Where().Y();
-        *data << ((Presence*)this)->Where().Z();
-        *data << ((Presence*)this)->Where().Facing();
+        *data << ((Occupant*)this)->Where().X();
+        *data << ((Occupant*)this)->Where().Y();
+        *data << ((Occupant*)this)->Where().Z();
+        *data << ((Occupant*)this)->Where().Facing();
     }
 
     if (updateFlags & UPDATEFLAG_HIGHGUID)

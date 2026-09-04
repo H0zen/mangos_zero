@@ -65,7 +65,7 @@
 #include <set>
 #include <ctime>
 #include "ItemPrototype.h"
-#include "Presence.h"
+#include "Occupant.h"
 #include "Opcodes.h"
 #include "SpellAuraDefines.h"
 #include "AuraIndex.h"
@@ -1123,7 +1123,7 @@ float CombatReachBetween(Unit const& attacker, Unit const& victim, bool forMelee
 float CombatDistanceBetween(Unit const& attacker, Unit const& target, bool forMeleeRange);
 bool InMeleeReach(Unit const& attacker, Unit const& victim, float flat_mod = 0.0f);
 
-class Unit : public Presence
+class Unit : public Occupant
 {
     public:
         typedef std::set<Unit*> AttackerSet;
@@ -1175,7 +1175,7 @@ class Unit : public Presence
             return IsCharmerOrOwnerPlayerOrPlayerItself();
         }
 
-        float ComputeBoundingRadius() const override      // overwrite Presence version
+        float ComputeBoundingRadius() const override      // overwrite Occupant version
         {
             return GetFloatValue(UNIT_FIELD_BOUNDINGRADIUS);
         }
@@ -3225,7 +3225,7 @@ class Unit : public Presence
         /**
          * Turns this \ref Unit towards the given one.
          * @param target the \ref Unit we want to be turned towards
-         * \see Presence::SetOrientation
+         * \see Occupant::SetOrientation
          * \see WorldObejct::GetAngle
          */
         void SetInFront(Unit const* target);
@@ -3240,11 +3240,11 @@ class Unit : public Presence
         /**
          * Does pretty much the same thing as \ref Unit::SetInFront but calls \ref Unit::SetFacingTo
          * instead, which uses a \ref MoveSplineInit instead of just changing the angle.
-         * @param pObject the \ref Presence we should be facing
+         * @param pObject the \ref Occupant we should be facing
          * \todo What difference does it make to use \ref MoveSplineInit instead of just directly
          * changing the angle? Is it smoother?
          */
-        void SetFacingToObject(Presence* pObject);
+        void SetFacingToObject(Occupant* pObject);
 
         /**
          * Checks whether or not this \ref Unit is alive by checking the \ref Unit::m_deathState member
@@ -3830,14 +3830,14 @@ class Unit : public Presence
         // Visibility system
         UnitVisibility GetVisibility() const { return m_Visibility; }
         void SetVisibility(UnitVisibility x);
-        void UpdateVisibilityAndView() override;            // overwrite Presence::UpdateVisibilityAndView()
+        void UpdateVisibilityAndView() override;            // overwrite Occupant::UpdateVisibilityAndView()
 
         // common function for visibility checks for player/creatures with detection code
-        bool IsVisibleForOrDetect(Unit const* u, Presence const* viewPoint, bool detect, bool inVisibleList = false, bool is3dDistance = true) const;
+        bool IsVisibleForOrDetect(Unit const* u, Occupant const* viewPoint, bool detect, bool inVisibleList = false, bool is3dDistance = true) const;
         bool CanDetectInvisibilityOf(Unit const* u) const;
 
         // virtual functions for all world objects types
-        bool IsVisibleForInState(Player const* u, Presence const* viewPoint, bool inVisibleList) const override;
+        bool IsVisibleForInState(Player const* u, Occupant const* viewPoint, bool inVisibleList) const override;
         // function for low level grid visibility checks in player/creature cases
         virtual bool IsVisibleInGridForPlayer(Player* pl) const = 0;
         bool IsInvisibleForAlive() const;

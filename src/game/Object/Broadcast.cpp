@@ -43,7 +43,7 @@
 
 
 #include "Utilities/Errors.h"
-#include "Presence.h"
+#include "Occupant.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
 #include "Opcodes.h"
@@ -79,7 +79,7 @@
  * @param data The packet to send.
  * @param toSubject Also deliver to the subject's own client, if it has one.
  */
-void Broadcast(Presence const& from, WorldPacket* data, bool toSubject)
+void Broadcast(Occupant const& from, WorldPacket* data, bool toSubject)
 {
     if (from.IsInWorld())
     {
@@ -162,7 +162,7 @@ void Broadcast(Presence const& from, WorldPacket* data, bool toSubject)
  * @param toSubject Also deliver to the subject's own client, if it has one.
  * @param ownTeamOnly Deliver only to viewers on the subject's side.
  */
-void BroadcastWithin(Presence const& from, WorldPacket* data, float dist, bool toSubject, bool ownTeamOnly)
+void BroadcastWithin(Occupant const& from, WorldPacket* data, float dist, bool toSubject, bool ownTeamOnly)
 {
     if (from.IsInWorld())
     {
@@ -208,7 +208,7 @@ void BroadcastWithin(Presence const& from, WorldPacket* data, float dist, bool t
  * @param data The packet to send.
  * @param skip The viewer to leave out.
  */
-void BroadcastExcept(Presence const& from, WorldPacket* data, Player const* skip)
+void BroadcastExcept(Occupant const& from, WorldPacket* data, Player const* skip)
 {
     if (!from.IsInWorld())
     {

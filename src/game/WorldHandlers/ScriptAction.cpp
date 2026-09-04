@@ -129,9 +129,9 @@ bool ScriptAction::GetScriptCommandObject(const ObjectGuid guid, bool includeIte
 
 /// Select source and target for a script command
 /// Returns false iff an error happened
-bool ScriptAction::GetScriptProcessTargets(Presence* pOrigSource, Presence* pOrigTarget, Presence*& pFinalSource, Presence*& pFinalTarget)
+bool ScriptAction::GetScriptProcessTargets(Occupant* pOrigSource, Occupant* pOrigTarget, Occupant*& pFinalSource, Occupant*& pFinalTarget)
 {
-    Presence* pBuddy = NULL;
+    Occupant* pBuddy = NULL;
 
     if (m_script->buddyEntry)
     {
@@ -178,7 +178,7 @@ bool ScriptAction::GetScriptProcessTargets(Presence* pOrigSource, Presence* pOri
             }
 
             // Prefer non-players as searcher
-            Presence* pSearcher = pOrigSource ? pOrigSource : pOrigTarget;
+            Occupant* pSearcher = pOrigSource ? pOrigSource : pOrigTarget;
             if (pOrigSource && pOrigTarget &&
                 pOrigSource->GetTypeId() == TYPEID_PLAYER && pOrigTarget->GetTypeId() != TYPEID_PLAYER)
             {
@@ -263,9 +263,9 @@ bool ScriptAction::GetScriptProcessTargets(Presence* pOrigSource, Presence* pOri
 }
 
 /// Helper to log error information
-bool ScriptAction::LogIfNotCreature(Presence* pPresence)
+bool ScriptAction::LogIfNotCreature(Occupant* pOccupant)
 {
-    if (!pPresence || pPresence->GetTypeId() != TYPEID_UNIT)
+    if (!pOccupant || pOccupant->GetTypeId() != TYPEID_UNIT)
     {
         sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u call for non-creature, skipping.", m_type, m_script->id, m_script->command);
         return true;
@@ -276,12 +276,12 @@ bool ScriptAction::LogIfNotCreature(Presence* pPresence)
 /**
  * @brief Logs an error when the provided world object is not a unit.
  *
- * @param pPresence The world object to validate.
+ * @param pOccupant The world object to validate.
  * @return true if validation failed; otherwise false.
  */
-bool ScriptAction::LogIfNotUnit(Presence* pPresence)
+bool ScriptAction::LogIfNotUnit(Occupant* pOccupant)
 {
-    if (!pPresence || !pPresence->isType(TYPEMASK_UNIT))
+    if (!pOccupant || !pOccupant->isType(TYPEMASK_UNIT))
     {
         sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u call for non-unit, skipping.", m_type, m_script->id, m_script->command);
         return true;
@@ -292,12 +292,12 @@ bool ScriptAction::LogIfNotUnit(Presence* pPresence)
 /**
  * @brief Logs an error when the provided world object is not a game object.
  *
- * @param pPresence The world object to validate.
+ * @param pOccupant The world object to validate.
  * @return true if validation failed; otherwise false.
  */
-bool ScriptAction::LogIfNotGameObject(Presence* pPresence)
+bool ScriptAction::LogIfNotGameObject(Occupant* pOccupant)
 {
-    if (!pPresence || pPresence->GetTypeId() != TYPEID_GAMEOBJECT)
+    if (!pOccupant || pOccupant->GetTypeId() != TYPEID_GAMEOBJECT)
     {
         sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u call for non-gameobject, skipping.", m_type, m_script->id, m_script->command);
         return true;
@@ -308,12 +308,12 @@ bool ScriptAction::LogIfNotGameObject(Presence* pPresence)
 /**
  * @brief Logs an error when the provided world object is not a player.
  *
- * @param pPresence The world object to validate.
+ * @param pOccupant The world object to validate.
  * @return true if validation failed; otherwise false.
  */
-bool ScriptAction::LogIfNotPlayer(Presence* pPresence)
+bool ScriptAction::LogIfNotPlayer(Occupant* pOccupant)
 {
-    if (!pPresence || pPresence->GetTypeId() != TYPEID_PLAYER)
+    if (!pOccupant || pOccupant->GetTypeId() != TYPEID_PLAYER)
     {
         sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u call for non-player, skipping.", m_type, m_script->id, m_script->command);
         return true;
@@ -322,7 +322,7 @@ bool ScriptAction::LogIfNotPlayer(Presence* pPresence)
 }
 
 /// Helper to get a player if possible (target preferred)
-Player* ScriptAction::GetPlayerTargetOrSourceAndLog(Presence* pSource, Presence* pTarget)
+Player* ScriptAction::GetPlayerTargetOrSourceAndLog(Occupant* pSource, Occupant* pTarget)
 {
     if ((!pTarget || pTarget->GetTypeId() != TYPEID_PLAYER) && (!pSource || pSource->GetTypeId() != TYPEID_PLAYER))
     {
@@ -337,9 +337,9 @@ Player* ScriptAction::GetPlayerTargetOrSourceAndLog(Presence* pSource, Presence*
 // Return true if and only if further parts of this script shall be skipped
 bool ScriptAction::HandleScriptStep()
 {
-    Presence* pSource;
-    Presence* pTarget;
-    Object* pSourceOrItem;                                  // Stores a provided pSource (if exists as Presence) or source-item
+    Occupant* pSource;
+    Occupant* pTarget;
+    Object* pSourceOrItem;                                  // Stores a provided pSource (if exists as Occupant) or source-item
 
     {
         // Add scope for source & target variables so that they are not used below
@@ -358,8 +358,8 @@ bool ScriptAction::HandleScriptStep()
         DEBUG_FILTER_LOG(LOG_FILTER_DB_SCRIPTS, "DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u for source %s (%sin world), target %s (%sin world)", m_type, m_script->id, m_script->command, m_sourceGuid.GetString().c_str(), source ? "" : "not ", m_targetGuid.GetString().c_str(), target ? "" : "not ");
 
         // Get expected source and target (if defined with buddy)
-        pSource = source && source->isType(TYPEMASK_PRESENCE) ? static_cast<Presence*>(source) : nullptr;
-        pTarget = target && target->isType(TYPEMASK_PRESENCE) ? static_cast<Presence*>(target) : nullptr;
+        pSource = source && source->isType(TYPEMASK_PRESENCE) ? static_cast<Occupant*>(source) : nullptr;
+        pTarget = target && target->isType(TYPEMASK_PRESENCE) ? static_cast<Occupant*>(target) : nullptr;
         if (!GetScriptProcessTargets(pSource, pTarget, pSource, pTarget))
         {
             return false;
@@ -374,7 +374,7 @@ bool ScriptAction::HandleScriptStep()
         {
             if (!pSource)
             {
-                sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u found no presence as source, skipping.", m_type, m_script->id, m_script->command);
+                sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u found no occupant as source, skipping.", m_type, m_script->id, m_script->command);
                 break;
             }
 
@@ -520,30 +520,30 @@ bool ScriptAction::HandleScriptStep()
                 break;
             }
 
-            Presence* pPresence = NULL;
+            Occupant* pOccupant = NULL;
             if (pSource && pSource->isType(TYPEMASK_CREATURE_OR_GAMEOBJECT))
             {
-                pPresence = pSource;
+                pOccupant = pSource;
             }
             else if (pTarget && pTarget->isType(TYPEMASK_CREATURE_OR_GAMEOBJECT))
             {
-                pPresence = pTarget;
+                pOccupant = pTarget;
             }
 
-            // if we have a distance, we must have a presence
-            if (m_script->questExplored.distance != 0 && !pPresence)
+            // if we have a distance, we must have a occupant
+            if (m_script->questExplored.distance != 0 && !pOccupant)
             {
-                sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u called without source presence, skipping.", m_type, m_script->id, m_script->command);
+                sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u called without source occupant, skipping.", m_type, m_script->id, m_script->command);
                 break;
             }
 
             bool failQuest = false;
             // Creature must be alive for giving credit
-            if (pPresence && pPresence->GetTypeId() == TYPEID_UNIT && !((Creature*)pPresence)->IsAlive())
+            if (pOccupant && pOccupant->GetTypeId() == TYPEID_UNIT && !((Creature*)pOccupant)->IsAlive())
             {
                 failQuest = true;
             }
-            else if (m_script->questExplored.distance != 0 && !InReach(*pPresence, *pPlayer, float(m_script->questExplored.distance)))
+            else if (m_script->questExplored.distance != 0 && !InReach(*pOccupant, *pPlayer, float(m_script->questExplored.distance)))
             {
                 failQuest = true;
             }
@@ -569,7 +569,7 @@ bool ScriptAction::HandleScriptStep()
             }
 
             uint32 creatureEntry = m_script->killCredit.creatureEntry;
-            Presence* pRewardSource = pSource && pSource->GetTypeId() == TYPEID_UNIT ? pSource : (pTarget && pTarget->GetTypeId() == TYPEID_UNIT ? pTarget : NULL);
+            Occupant* pRewardSource = pSource && pSource->GetTypeId() == TYPEID_UNIT ? pSource : (pTarget && pTarget->GetTypeId() == TYPEID_UNIT ? pTarget : NULL);
 
             // dynamic effect, take entry of reward Source
             if (!creatureEntry)
@@ -587,7 +587,7 @@ bool ScriptAction::HandleScriptStep()
 
             if (m_script->killCredit.isGroupCredit)
             {
-                Presence* pSearcher = pRewardSource ? pRewardSource : (pSource ? pSource : pTarget);
+                Occupant* pSearcher = pRewardSource ? pRewardSource : (pSource ? pSource : pTarget);
                 if (pSearcher != pRewardSource)
                 {
                     sLog.outDebug(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, SCRIPT_COMMAND_KILL_CREDIT called for groupCredit without creature as searcher, script might need adjustment.", m_type, m_script->id);
@@ -654,7 +654,7 @@ bool ScriptAction::HandleScriptStep()
         {
             if (!pSource)
             {
-                sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u found no presence as source, skipping.", m_type, m_script->id, m_script->command);
+                sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u found no occupant as source, skipping.", m_type, m_script->id, m_script->command);
                 break;
             }
 
@@ -1112,7 +1112,7 @@ bool ScriptAction::HandleScriptStep()
             bool result = false;
             if (m_script->terminateScript.npcEntry)
             {
-                Presence* pSearcher = pSource ? pSource : pTarget;
+                Occupant* pSearcher = pSource ? pSource : pTarget;
                 if (!pSearcher)
                 {
                     sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u called without source or target for npc search %u in range %u, skipping.",
@@ -1186,7 +1186,7 @@ bool ScriptAction::HandleScriptStep()
         case SCRIPT_COMMAND_TERMINATE_COND:                 // 34
         {
             Player* player = NULL;
-            Presence* second = pSource;
+            Occupant* second = pSource;
             // First case: target is player
             if (pTarget && pTarget->GetTypeId() == TYPEID_PLAYER)
             {

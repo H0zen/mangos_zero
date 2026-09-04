@@ -1452,7 +1452,7 @@ void Unit::CastSpell(Unit* Victim, SpellEntry const* spellInfo, bool triggered, 
     }
     if (spellInfo->Targets & TARGET_FLAG_SOURCE_LOCATION)
     {
-        if (Presence* caster = spell->GetCastingObject())
+        if (Occupant* caster = spell->GetCastingObject())
         {
             targets.setSource(caster->Where().X(), caster->Where().Y(), caster->Where().Z());
         }
@@ -1578,7 +1578,7 @@ void Unit::CastCustomSpell(Unit* Victim, SpellEntry const* spellInfo, int32 cons
 
     if (spellInfo->Targets & TARGET_FLAG_SOURCE_LOCATION)
     {
-        if (Presence* caster = spell->GetCastingObject())
+        if (Occupant* caster = spell->GetCastingObject())
         {
             targets.setSource(caster->Where().X(), caster->Where().Y(), caster->Where().Z());
         }
@@ -2441,7 +2441,7 @@ void Unit::SetFacingTo(float ori)
  *
  * @param pObject The object to face.
  */
-void Unit::SetFacingToObject(Presence* pObject)
+void Unit::SetFacingToObject(Occupant* pObject)
 {
     // never face when already moving
     if (!IsStopped())
@@ -4357,7 +4357,7 @@ int32 Unit::CalculateSpellDamage(Unit const* target, SpellEntry const* spellProt
  * @param inVisibleList True when evaluating an existing visible-list entry.
  * @return True if the unit is visible; otherwise, false.
  */
-bool Unit::IsVisibleForInState(Player const* u, Presence const* viewPoint, bool inVisibleList) const
+bool Unit::IsVisibleForInState(Player const* u, Occupant const* viewPoint, bool inVisibleList) const
 {
     return IsVisibleForOrDetect(u, viewPoint, false, inVisibleList, false);
 }
@@ -4585,7 +4585,7 @@ void Unit::CleanupsBeforeDelete()
         }
         RemoveAllAuras(AURA_REMOVE_BY_DELETE);
     }
-    Presence::CleanupsBeforeDelete();
+    Occupant::CleanupsBeforeDelete();
 }
 
 /**

@@ -22,7 +22,7 @@
 
 #include "PerKind.h"
 
-#include "Presence.h"
+#include "Occupant.h"
 #include "Creature.h"
 #include "GameObject.h"
 #include "Item.h"
@@ -65,7 +65,7 @@ bool EndsQuest(Object const& object, uint32 questId)
     return false;
 }
 
-void StartGroupLoot(Presence& holder, Group* group, uint32 timer)
+void StartGroupLoot(Occupant& holder, Group* group, uint32 timer)
 {
     if (Creature* creature = ToCreature(&holder))
     {
@@ -77,7 +77,7 @@ void StartGroupLoot(Presence& holder, Group* group, uint32 timer)
     }
 }
 
-void StopGroupLoot(Presence& holder)
+void StopGroupLoot(Occupant& holder)
 {
     if (Creature* creature = ToCreature(&holder))
     {
@@ -89,7 +89,7 @@ void StopGroupLoot(Presence& holder)
     }
 }
 
-void SaveRespawnTime(Presence& what)
+void SaveRespawnTime(Occupant& what)
 {
     if (Creature* creature = ToCreature(&what))
     {

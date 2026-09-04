@@ -784,7 +784,7 @@ void Map::DeliverPacket(WorldPacket* msg, PacketReach const& reach)
 {
     MANGOS_ASSERT(reach.subject);
 
-    Presence const& subject = *reach.subject;
+    Occupant const& subject = *reach.subject;
     CellPair p = MaNGOS::ComputeCellPair(subject.Where().X(), subject.Where().Y());
 
     if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
@@ -819,7 +819,7 @@ bool Map::loaded(const GridPair& p) const
     return (getNGrid(p.x_coord, p.y_coord) && isGridObjectDataLoaded(p.x_coord, p.y_coord));
 }
 
-void Map::VisitNearbyCellsOf(Presence* obj,
+void Map::VisitNearbyCellsOf(Occupant* obj,
     TypeContainerVisitor<MaNGOS::ObjectUpdater, GridTypeMapContainer> &gridVisitor,
     TypeContainerVisitor<MaNGOS::ObjectUpdater, WorldTypeMapContainer> &worldVisitor)
 {
@@ -895,7 +895,7 @@ void Map::Update(const uint32& t_diff)
         Player* plr = m_mapRefIter->getSource();
         if (plr && plr->IsInWorld())
         {
-            Presence::UpdateHelper helper(plr);
+            Occupant::UpdateHelper helper(plr);
             helper.Update(t_diff);
         }
     }
@@ -965,7 +965,7 @@ void Map::Update(const uint32& t_diff)
     {
         for (m_activeNonPlayersIter = m_activeNonPlayers.begin(); m_activeNonPlayersIter != m_activeNonPlayers.end();)
         {
-            Presence* obj = *m_activeNonPlayersIter;
+            Occupant* obj = *m_activeNonPlayersIter;
 
             // step before processing, in this case if Map::Remove remove next object we correctly
             // step to next-next, and if we step to end() then newly added objects can wait next update.
@@ -1037,7 +1037,7 @@ void Map::Update(const uint32& t_diff)
         {
             if (vessel->GetMap() == this)
             {
-                Presence::UpdateHelper helper(vessel);
+                Occupant::UpdateHelper helper(vessel);
                 helper.Update(t_diff);
             }
         }
@@ -1518,7 +1518,7 @@ bool Map::IsCellAnchorProtected(uint32 gridX, uint32 gridY, uint32 cellX, uint32
 
     for (ActiveNonPlayers::const_iterator it = m_activeNonPlayers.begin(); it != m_activeNonPlayers.end(); ++it)
     {
-        Presence* obj = *it;
+        Occupant* obj = *it;
         if (!obj || !obj->IsInWorld())
         {
             continue;
@@ -1766,7 +1766,7 @@ const char* Map::GetMapName() const
  * @param cell The cell used as the visit origin.
  * @param cellpair The cell coordinates corresponding to the object.
  */
-void Map::UpdateObjectVisibility(Presence* obj, Cell cell, CellPair cellpair)
+void Map::UpdateObjectVisibility(Occupant* obj, Cell cell, CellPair cellpair)
 {
     cell.SetNoCreate();
     MaNGOS::VisibleChangesNotifier notifier(*obj);
@@ -1803,7 +1803,7 @@ void Map::SendInitSelf(Player* player, InitialWorldUpdateBatch* batch)
         }
     }
 
-    // build data for self presence in world at own client (one time for map)
+    // build data for self occupant in world at own client (one time for map)
     player->BuildCreateUpdateBlockForPlayer(&data, player);
 
     if (batch)
@@ -1927,7 +1927,7 @@ inline void Map::setNGrid(NGridType* grid, uint32 x, uint32 y)
  *
  * @param obj The object scheduled for cleanup and deletion.
  */
-void Map::AddObjectToRemoveList(Presence* obj)
+void Map::AddObjectToRemoveList(Occupant* obj)
 {
     MANGOS_ASSERT(obj->GetMapId() == GetId() && obj->GetInstanceId() == GetInstanceId());
 
@@ -1951,7 +1951,7 @@ void Map::RemoveAllObjectsInRemoveList()
     // DEBUG_LOG("Object remover 1 check.");
     while (!i_objectsToRemove.empty())
     {
-        Presence* obj = *i_objectsToRemove.begin();
+        Occupant* obj = *i_objectsToRemove.begin();
         i_objectsToRemove.erase(i_objectsToRemove.begin());
 
         switch (obj->GetTypeId())
@@ -2077,7 +2077,7 @@ bool Map::ActiveObjectsNearGrid(uint32 x, uint32 y) const
 
     for (ActiveNonPlayers::const_iterator iter = m_activeNonPlayers.begin(); iter != m_activeNonPlayers.end(); ++iter)
     {
-        Presence* obj = *iter;
+        Occupant* obj = *iter;
 
         CellPair p = MaNGOS::ComputeCellPair(obj->Where().X(), obj->Where().Y());
         if ((cell_min.x_coord <= p.x_coord && p.x_coord <= cell_max.x_coord) &&
@@ -2095,7 +2095,7 @@ bool Map::ActiveObjectsNearGrid(uint32 x, uint32 y) const
  *
  * @param obj The active object to register.
  */
-void Map::AddToActive(Presence* obj)
+void Map::AddToActive(Occupant* obj)
 {
     m_activeNonPlayers.insert(obj);
     Cell cell = Cell(MaNGOS::ComputeCellPair(obj->Where().X(), obj->Where().Y()));
@@ -2133,7 +2133,7 @@ void Map::AddToActive(Presence* obj)
  *
  * @param obj The active object to remove.
  */
-void Map::RemoveFromActive(Presence* obj)
+void Map::RemoveFromActive(Occupant* obj)
 {
     // Map::Update for active object in proccess
     if (m_activeNonPlayersIter != m_activeNonPlayers.end())
@@ -3041,7 +3041,7 @@ Unit* Map::GetUnit(ObjectGuid guid)
 /**
  * Function return world object in world at CURRENT map, so any except transports
  */
-Presence* Map::GetPresence(ObjectGuid guid)
+Occupant* Map::GetOccupant(ObjectGuid guid)
 {
     switch (guid.GetHigh())
     {

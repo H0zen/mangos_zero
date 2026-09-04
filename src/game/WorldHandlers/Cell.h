@@ -29,7 +29,7 @@
 #include "GridDefines.h"
 
 class Map;
-class Presence;
+class Occupant;
 
 /**
  * @brief Cell area structure
@@ -250,13 +250,13 @@ struct Cell
     } data;
 
     template<class T, class CONTAINER> void Visit(const CellPair& cellPair, TypeContainerVisitor<T, CONTAINER> &visitor, Map& m, float x, float y, float radius) const;
-    template<class T, class CONTAINER> void Visit(const CellPair& cellPair, TypeContainerVisitor<T, CONTAINER> &visitor, Map& m, const Presence& obj, float radius) const;
+    template<class T, class CONTAINER> void Visit(const CellPair& cellPair, TypeContainerVisitor<T, CONTAINER> &visitor, Map& m, const Occupant& obj, float radius) const;
 
     static CellArea CalculateCellArea(float x, float y, float radius);
 
-    template<class T> static void VisitGridObjects(const Presence* obj, T& visitor, float radius, bool dont_load = true);
-    template<class T> static void VisitWorldObjects(const Presence* obj, T& visitor, float radius, bool dont_load = true);
-    template<class T> static void VisitAllObjects(const Presence* obj, T& visitor, float radius, bool dont_load = true);
+    template<class T> static void VisitGridObjects(const Occupant* obj, T& visitor, float radius, bool dont_load = true);
+    template<class T> static void VisitWorldObjects(const Occupant* obj, T& visitor, float radius, bool dont_load = true);
+    template<class T> static void VisitAllObjects(const Occupant* obj, T& visitor, float radius, bool dont_load = true);
 
     /// Everything in the one grid a point falls in, with no radius anywhere in it.
     /// A grid is the unit of membership: a thing is in it or it is not, and how far

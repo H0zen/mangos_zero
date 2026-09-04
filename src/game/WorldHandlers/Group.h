@@ -283,7 +283,7 @@ class Group
         {
             m_looterGuid = guid;
         }
-        void   UpdateLooterGuid(Presence* pSource, bool ifneed = false);
+        void   UpdateLooterGuid(Occupant* pSource, bool ifneed = false);
         void   SetLootThreshold(ItemQualities threshold)
         {
             m_lootThreshold = threshold;
@@ -513,11 +513,11 @@ class Group
         void SendLootRoll(ObjectGuid const& targetGuid, uint8 rollNumber, uint8 rollType, const Roll& r);
         void SendLootRollWon(ObjectGuid const& targetGuid, uint8 rollNumber, RollVote rollType, const Roll& r);
         void SendLootAllPassed(const Roll& r);
-        void GroupLoot(Presence* pSource, Loot* loot);
-        void NeedBeforeGreed(Presence* pSource, Loot* loot);
-        void MasterLoot(Presence* pSource, Loot* loot);
+        void GroupLoot(Occupant* pSource, Loot* loot);
+        void NeedBeforeGreed(Occupant* pSource, Loot* loot);
+        void MasterLoot(Occupant* pSource, Loot* loot);
         bool CountRollVote(Player* player, ObjectGuid const& lootedTarget, uint32 itemSlot, RollVote vote);
-        void StartLootRoll(Presence* lootTarget, LootMethod method, Loot* loot, uint8 itemSlot);
+        void StartLootRoll(Occupant* lootTarget, LootMethod method, Loot* loot, uint8 itemSlot);
         void EndRoll();
 
         /**
@@ -526,7 +526,7 @@ class Group
          * \param Item pointer to the item to check.
          * \return bool true if the roll is done, false otherwise.
          */
-        bool IsRollDoneForItem(Presence * pObject, const LootItem * pItem);
+        bool IsRollDoneForItem(Occupant * pObject, const LootItem * pItem);
 
         void LinkMember(GroupReference* pRef)
         {

@@ -41,7 +41,7 @@
  */
 
 #include "Utilities/Errors.h"
-#include "Presence.h"
+#include "Occupant.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
 #include "Opcodes.h"
@@ -242,11 +242,11 @@ void Object::ResendField(uint16 index)
 
 
 /**
- * @brief Presence constructor
+ * @brief Occupant constructor
  *
- * Initializes a new Presence with default values.
+ * Initializes a new Occupant with default values.
  */
-Presence::Presence() :
+Occupant::Occupant() :
     m_currMap(NULL),
     m_mapId(0), m_InstanceId(0),
     m_isActiveObject(false),
@@ -255,11 +255,11 @@ Presence::Presence() :
 }
 
 /**
- * @brief Presence destructor
+ * @brief Occupant destructor
  *
  * Cleans up Eluna events if enabled.
  */
-Presence::~Presence()
+Occupant::~Occupant()
 {
 }
 

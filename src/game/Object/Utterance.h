@@ -31,7 +31,7 @@
 
 class Player;
 class Unit;
-class Presence;
+class Occupant;
 struct MangosStringLocale;
 
 /**
@@ -45,10 +45,10 @@ struct MangosStringLocale;
  * The literal form takes the text as given; the other reads it from the string
  * table in each listener's own locale, and takes the kind from the entry.
  */
-void Utter(Presence const& speaker, ChatType kind, char const* text,
+void Utter(Occupant const& speaker, ChatType kind, char const* text,
            Unit const* target = nullptr, Language language = LANG_UNIVERSAL);
 
-void Utter(Presence const& speaker, MangosStringLocale const* line, Unit const* target = nullptr);
+void Utter(Occupant const& speaker, MangosStringLocale const* line, Unit const* target = nullptr);
 
 /// How a sound reaches the listener: placed at the object so the client can
 /// attenuate it by distance, played flat wherever the listener is, or as music,
@@ -61,7 +61,7 @@ enum class SoundKind
 };
 
 /// One sound, to one client or to everyone who can see the source.
-void PlaySound(Presence const& source, SoundKind kind, uint32 soundId, Player const* target = nullptr);
+void PlaySound(Occupant const& source, SoundKind kind, uint32 soundId, Player const* target = nullptr);
 
 /// The puff of an object vanishing.
-void SendDespawnAnimation(Presence const& what);
+void SendDespawnAnimation(Occupant const& what);

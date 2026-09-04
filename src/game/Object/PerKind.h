@@ -29,7 +29,7 @@
 
 class Group;
 class Object;
-class Presence;
+class Occupant;
 
 /**
  * Questions only some kinds of object answer.
@@ -48,8 +48,8 @@ bool StartsQuest(Object const& object, uint32 questId);
 bool EndsQuest(Object const& object, uint32 questId);
 
 /// Begin the group's roll on what this object is holding, and end it.
-void StartGroupLoot(Presence& holder, Group* group, uint32 timer);
-void StopGroupLoot(Presence& holder);
+void StartGroupLoot(Occupant& holder, Group* group, uint32 timer);
+void StopGroupLoot(Occupant& holder);
 
 /// Persist when this object comes back, if it comes back at all.
-void SaveRespawnTime(Presence& what);
+void SaveRespawnTime(Occupant& what);

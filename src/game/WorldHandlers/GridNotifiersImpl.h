@@ -49,7 +49,7 @@ inline void MaNGOS::ObjectUpdater::Visit(CreatureMapType& m)
 {
     for (CreatureMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
     {
-        Presence::UpdateHelper helper(iter->getSource());
+        Occupant::UpdateHelper helper(iter->getSource());
         helper.Update(i_timeDiff);
     }
 }
@@ -257,10 +257,10 @@ template<>
 
 // SEARCHERS & LIST SEARCHERS & WORKERS
 
-// Presence searchers & workers
+// Occupant searchers & workers
 
 template<class Check>
-    void MaNGOS::PresenceSearcher<Check>::Visit(GameObjectMapType& m)
+    void MaNGOS::OccupantSearcher<Check>::Visit(GameObjectMapType& m)
 {
     // already found
     if (i_object)
@@ -279,7 +279,7 @@ template<class Check>
 }
 
 template<class Check>
-    void MaNGOS::PresenceSearcher<Check>::Visit(PlayerMapType& m)
+    void MaNGOS::OccupantSearcher<Check>::Visit(PlayerMapType& m)
 {
     // already found
     if (i_object)
@@ -298,7 +298,7 @@ template<class Check>
 }
 
 template<class Check>
-    void MaNGOS::PresenceSearcher<Check>::Visit(CreatureMapType& m)
+    void MaNGOS::OccupantSearcher<Check>::Visit(CreatureMapType& m)
 {
     // already found
     if (i_object)
@@ -317,7 +317,7 @@ template<class Check>
 }
 
 template<class Check>
-    void MaNGOS::PresenceSearcher<Check>::Visit(CorpseMapType& m)
+    void MaNGOS::OccupantSearcher<Check>::Visit(CorpseMapType& m)
 {
     // already found
     if (i_object)
@@ -336,7 +336,7 @@ template<class Check>
 }
 
 template<class Check>
-    void MaNGOS::PresenceSearcher<Check>::Visit(DynamicObjectMapType& m)
+    void MaNGOS::OccupantSearcher<Check>::Visit(DynamicObjectMapType& m)
 {
     // already found
     if (i_object)
@@ -355,7 +355,7 @@ template<class Check>
 }
 
 template<class Check>
-    void MaNGOS::PresenceLastSearcher<Check>::Visit(GameObjectMapType& m)
+    void MaNGOS::OccupantLastSearcher<Check>::Visit(GameObjectMapType& m)
 {
     for (GameObjectMapType::iterator itr=m.begin(); itr != m.end(); ++itr)
     {
@@ -368,7 +368,7 @@ template<class Check>
 }
 
 template<class Check>
-    void MaNGOS::PresenceLastSearcher<Check>::Visit(PlayerMapType& m)
+    void MaNGOS::OccupantLastSearcher<Check>::Visit(PlayerMapType& m)
 {
     for (PlayerMapType::iterator itr=m.begin(); itr != m.end(); ++itr)
     {
@@ -381,7 +381,7 @@ template<class Check>
 }
 
 template<class Check>
-    void MaNGOS::PresenceLastSearcher<Check>::Visit(CreatureMapType& m)
+    void MaNGOS::OccupantLastSearcher<Check>::Visit(CreatureMapType& m)
 {
     for (CreatureMapType::iterator itr=m.begin(); itr != m.end(); ++itr)
     {
@@ -394,7 +394,7 @@ template<class Check>
 }
 
 template<class Check>
-    void MaNGOS::PresenceLastSearcher<Check>::Visit(CorpseMapType& m)
+    void MaNGOS::OccupantLastSearcher<Check>::Visit(CorpseMapType& m)
 {
     for (CorpseMapType::iterator itr=m.begin(); itr != m.end(); ++itr)
     {
@@ -407,7 +407,7 @@ template<class Check>
 }
 
 template<class Check>
-    void MaNGOS::PresenceLastSearcher<Check>::Visit(DynamicObjectMapType& m)
+    void MaNGOS::OccupantLastSearcher<Check>::Visit(DynamicObjectMapType& m)
 {
     for (DynamicObjectMapType::iterator itr=m.begin(); itr != m.end(); ++itr)
     {
@@ -420,7 +420,7 @@ template<class Check>
 }
 
 template<class Check>
-    void MaNGOS::PresenceListSearcher<Check>::Visit(PlayerMapType& m)
+    void MaNGOS::OccupantListSearcher<Check>::Visit(PlayerMapType& m)
 {
     for (PlayerMapType::iterator itr = m.begin(); itr != m.end(); ++itr)
     {
@@ -432,7 +432,7 @@ template<class Check>
 }
 
 template<class Check>
-    void MaNGOS::PresenceListSearcher<Check>::Visit(CreatureMapType& m)
+    void MaNGOS::OccupantListSearcher<Check>::Visit(CreatureMapType& m)
 {
     for (CreatureMapType::iterator itr = m.begin(); itr != m.end(); ++itr)
     {
@@ -444,7 +444,7 @@ template<class Check>
 }
 
 template<class Check>
-    void MaNGOS::PresenceListSearcher<Check>::Visit(CorpseMapType& m)
+    void MaNGOS::OccupantListSearcher<Check>::Visit(CorpseMapType& m)
 {
     for (CorpseMapType::iterator itr = m.begin(); itr != m.end(); ++itr)
     {
@@ -456,7 +456,7 @@ template<class Check>
 }
 
 template<class Check>
-    void MaNGOS::PresenceListSearcher<Check>::Visit(GameObjectMapType& m)
+    void MaNGOS::OccupantListSearcher<Check>::Visit(GameObjectMapType& m)
 {
     for (GameObjectMapType::iterator itr = m.begin(); itr != m.end(); ++itr)
     {
@@ -468,7 +468,7 @@ template<class Check>
 }
 
 template<class Check>
-    void MaNGOS::PresenceListSearcher<Check>::Visit(DynamicObjectMapType& m)
+    void MaNGOS::OccupantListSearcher<Check>::Visit(DynamicObjectMapType& m)
 {
     for (DynamicObjectMapType::iterator itr = m.begin(); itr != m.end(); ++itr)
     {

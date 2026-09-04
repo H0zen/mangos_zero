@@ -79,7 +79,7 @@
  * @param pSource The gossip source object.
  * @param menuId The gossip menu identifier to prepare.
  */
-void Player::PrepareGossipMenu(Presence* pSource, uint32 menuId)
+void Player::PrepareGossipMenu(Occupant* pSource, uint32 menuId)
 {
     PlayerMenu* pMenu = PlayerTalkClass;
     pMenu->ClearMenus();
@@ -291,7 +291,7 @@ void Player::PrepareGossipMenu(Presence* pSource, uint32 menuId)
  *
  * @param pSource The source object whose prepared menu should be sent.
  */
-void Player::SendPreparedGossip(Presence* pSource)
+void Player::SendPreparedGossip(Occupant* pSource)
 {
     if (!pSource)
     {
@@ -336,7 +336,7 @@ void Player::SendPreparedGossip(Presence* pSource)
  * @param pSource The gossip source object.
  * @param gossipListId The selected menu item index.
  */
-void Player::OnGossipSelect(Presence* pSource, uint32 gossipListId)
+void Player::OnGossipSelect(Occupant* pSource, uint32 gossipListId)
 {
     GossipMenu& gossipmenu = PlayerTalkClass->GetGossipMenu();
 
@@ -479,7 +479,7 @@ void Player::OnGossipSelect(Presence* pSource, uint32 gossipListId)
  * @param pSource The gossip source object.
  * @return The gossip text identifier to display.
  */
-uint32 Player::GetGossipTextId(Presence* pSource)
+uint32 Player::GetGossipTextId(Occupant* pSource)
 {
     if (!pSource || pSource->GetTypeId() != TYPEID_UNIT)
     {
@@ -501,7 +501,7 @@ uint32 Player::GetGossipTextId(Presence* pSource)
  * @param pSource The gossip source object.
  * @return The resolved gossip text identifier.
  */
-uint32 Player::GetGossipTextId(uint32 menuId, Presence* pSource)
+uint32 Player::GetGossipTextId(uint32 menuId, Occupant* pSource)
 {
     uint32 textId = DEFAULT_GOSSIP_MESSAGE;
 
@@ -543,7 +543,7 @@ uint32 Player::GetGossipTextId(uint32 menuId, Presence* pSource)
  * @param pSource The gossip source object.
  * @return The default gossip menu identifier, or zero if none exists.
  */
-uint32 Player::GetDefaultGossipMenuForSource(Presence* pSource)
+uint32 Player::GetDefaultGossipMenuForSource(Occupant* pSource)
 {
     if (pSource->GetTypeId() == TYPEID_UNIT)
     {

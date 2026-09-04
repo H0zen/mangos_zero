@@ -613,7 +613,7 @@ bool ChatHandler::HandleRecallCommand(char* args)
  * else -- and the vessel's own world pose is shown only to say which water she is on, with
  * the reminder that it is an estimate nothing is allowed to decide anything from.
  */
-void ChatHandler::ReportTransportPosition(Presence* obj)
+void ChatHandler::ReportTransportPosition(Occupant* obj)
 {
     TransportMap* hull = obj->GetMap() ? obj->GetMap()->AsTransport() : NULL;
     Transport* vessel = hull ? hull->Vessel() : NULL;
@@ -681,12 +681,12 @@ void ChatHandler::ReportTransportPosition(Presence* obj)
  */
 bool ChatHandler::HandleGPSCommand(char* args)
 {
-    Presence* obj = NULL;
+    Occupant* obj = NULL;
     if (*args)
     {
         if (ObjectGuid guid = ExtractGuidFromLink(&args))
         {
-            obj = (Presence*)m_session->GetPlayer()->GetObjectByTypeMask(guid, TYPEMASK_CREATURE_OR_GAMEOBJECT);
+            obj = (Occupant*)m_session->GetPlayer()->GetObjectByTypeMask(guid, TYPEMASK_CREATURE_OR_GAMEOBJECT);
         }
 
         if (!obj)
@@ -834,13 +834,13 @@ bool ChatHandler::HandleGPSCommand(char* args)
  */
 bool ChatHandler::HandleGetDistanceCommand(char* args)
 {
-    Presence* obj = NULL;
+    Occupant* obj = NULL;
 
     if (*args)
     {
         if (ObjectGuid guid = ExtractGuidFromLink(&args))
         {
-            obj = (Presence*)m_session->GetPlayer()->GetObjectByTypeMask(guid, TYPEMASK_CREATURE_OR_GAMEOBJECT);
+            obj = (Occupant*)m_session->GetPlayer()->GetObjectByTypeMask(guid, TYPEMASK_CREATURE_OR_GAMEOBJECT);
         }
 
         if (!obj)

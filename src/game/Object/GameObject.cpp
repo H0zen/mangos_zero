@@ -61,7 +61,7 @@
 /**
  * @brief Creates a game object instance with default runtime state.
  */
-GameObject::GameObject() : Presence(),
+GameObject::GameObject() : Occupant(),
     loot(this),
     m_model(NULL),
     m_goInfo(NULL),
@@ -169,7 +169,7 @@ void GameObject::RemoveFromWorld()
  */
 void GameObject::CleanupsBeforeDelete()
 {
-    Presence::CleanupsBeforeDelete();
+    Occupant::CleanupsBeforeDelete();
 }
 
 /**
@@ -601,7 +601,7 @@ void GameObject::SaveRespawnTime()
  * @param inVisibleList true when evaluating an already-visible object.
  * @return true if the object should be visible; otherwise, false.
  */
-bool GameObject::IsVisibleForInState(Player const* u, Presence const* viewPoint, bool inVisibleList) const
+bool GameObject::IsVisibleForInState(Player const* u, Occupant const* viewPoint, bool inVisibleList) const
 {
     // Not in world
     if (!IsInWorld() || !u->IsInWorld())
@@ -1010,7 +1010,7 @@ void GameObject::SwitchDoorOrButton(bool activate, bool alternative /* = false *
 }
 
 
-// overwrite Presence function for proper name localization
+// overwrite Occupant function for proper name localization
 
 /**
  * @brief Gets the localized name for a locale index.

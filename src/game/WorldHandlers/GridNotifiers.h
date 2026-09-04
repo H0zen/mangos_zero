@@ -33,7 +33,7 @@
 #include "PacketReach.h"
 
 #include "Corpse.h"
-#include "Presence.h"
+#include "Occupant.h"
 #include "DynamicObject.h"
 #include "GameObject.h"
 #include "Player.h"
@@ -49,7 +49,7 @@ namespace MaNGOS
         InitialWorldUpdateBatch* i_initialBatch;
         UpdateData i_data;
         GuidSet i_clientGUIDs;
-        std::set<Presence*> i_visibleNow;
+        std::set<Occupant*> i_visibleNow;
 
         explicit VisibleNotifier(Camera& c, InitialWorldUpdateBatch* batch = NULL)
             : i_camera(c), i_initialBatch(batch), i_clientGUIDs(c.GetOwner()->m_clientGUIDs) {}
@@ -65,9 +65,9 @@ namespace MaNGOS
 
     struct VisibleChangesNotifier
     {
-        Presence& i_object;
+        Occupant& i_object;
 
-        explicit VisibleChangesNotifier(Presence& object) : i_object(object) {}
+        explicit VisibleChangesNotifier(Occupant& object) : i_object(object) {}
         template<class T> void Visit(GridRefManager<T>&) {}
         void Visit(CameraMapType&);
     };
@@ -174,15 +174,15 @@ namespace MaNGOS
      *  };
      */
 
-    // Presence searchers & workers
+    // Occupant searchers & workers
 
     template<class Check>
-        struct PresenceSearcher
+        struct OccupantSearcher
     {
-        Presence*& i_object;
+        Occupant*& i_object;
         Check& i_check;
 
-        PresenceSearcher(Presence*& result, Check& check) : i_object(result), i_check(check) {}
+        OccupantSearcher(Occupant*& result, Check& check) : i_object(result), i_check(check) {}
 
         void Visit(GameObjectMapType& m);
         void Visit(PlayerMapType& m);
@@ -194,12 +194,12 @@ namespace MaNGOS
     };
 
     template<class Check>
-        struct PresenceLastSearcher
+        struct OccupantLastSearcher
     {
-        Presence*& i_object;
+        Occupant*& i_object;
         Check& i_check;
 
-        PresenceLastSearcher(Presence* & result, Check& check) : i_object(result), i_check(check) {}
+        OccupantLastSearcher(Occupant* & result, Check& check) : i_object(result), i_check(check) {}
 
         void Visit(PlayerMapType& m);
         void Visit(CreatureMapType& m);
@@ -211,12 +211,12 @@ namespace MaNGOS
     };
 
     template<class Check>
-        struct PresenceListSearcher
+        struct OccupantListSearcher
     {
-        std::list<Presence*>& i_objects;
+        std::list<Occupant*>& i_objects;
         Check& i_check;
 
-        PresenceListSearcher(std::list<Presence*>& objects, Check& check) : i_objects(objects), i_check(check) {}
+        OccupantListSearcher(std::list<Occupant*>& objects, Check& check) : i_objects(objects), i_check(check) {}
 
         void Visit(PlayerMapType& m);
         void Visit(CreatureMapType& m);
@@ -228,11 +228,11 @@ namespace MaNGOS
     };
 
     template<class Do>
-        struct PresenceWorker
+        struct OccupantWorker
     {
         Do const& i_do;
 
-        explicit PresenceWorker(Do const& _do) : i_do(_do) {}
+        explicit OccupantWorker(Do const& _do) : i_do(_do) {}
 
         void Visit(GameObjectMapType& m)
         {
@@ -438,7 +438,7 @@ namespace MaNGOS
     {
         Do& i_do;
 
-        CreatureWorker(Presence const* searcher, Do& _do) : i_do(_do) {}
+        CreatureWorker(Occupant const* searcher, Do& _do) : i_do(_do) {}
 
         void Visit(CreatureMapType& m)
         {
@@ -501,11 +501,11 @@ namespace MaNGOS
     template<class Do>
         struct CameraDistWorker
     {
-        Presence const* i_searcher;
+        Occupant const* i_searcher;
         float i_dist;
         Do& i_do;
 
-        CameraDistWorker(Presence const* searcher, float _dist, Do& _do)
+        CameraDistWorker(Occupant const* searcher, float _dist, Do& _do)
             : i_searcher(searcher), i_dist(_dist), i_do(_do) {}
 
         void Visit(CameraMapType& m)
@@ -529,7 +529,7 @@ namespace MaNGOS
     {
         public:
             SomeCheck(SomeObjecType const* fobj, ..some other args) : i_fobj(fobj), ...other inits {}
-            Presence const& GetFocusObject() const { return *i_fobj; }
+            Occupant const& GetFocusObject() const { return *i_fobj; }
             bool operator()(Creature* u)                    and for other intresting typs (Player/GameObject/Camera
             {
                 return ..(code return true if Object fit to requirenment);
@@ -541,12 +541,12 @@ namespace MaNGOS
     };
     */
 
-    // Presence check classes
+    // Occupant check classes
     class CannibalizeObjectCheck
     {
         public:
-            CannibalizeObjectCheck(Presence const* fobj, float range) : i_fobj(fobj), i_range(range) {}
-            Presence const& GetFocusObject() const { return *i_fobj; }
+            CannibalizeObjectCheck(Occupant const* fobj, float range) : i_fobj(fobj), i_range(range) {}
+            Occupant const& GetFocusObject() const { return *i_fobj; }
             bool operator()(Player* u)
             {
                 if (IsFriendly(*i_fobj, *u) || u->IsAlive() || u->IsTaxiFlying())
@@ -569,11 +569,11 @@ namespace MaNGOS
             }
             template<class NOT_INTERESTED> bool operator()(NOT_INTERESTED*) { return false; }
         private:
-            Presence const* i_fobj;
+            Occupant const* i_fobj;
             float i_range;
     };
 
-    // Presence do classes
+    // Occupant do classes
 
     class RespawnDo
     {
@@ -581,7 +581,7 @@ namespace MaNGOS
             RespawnDo() {}
             void operator()(Creature* u) const;
             void operator()(GameObject* u) const;
-            void operator()(Presence*) const {}
+            void operator()(Occupant*) const {}
             void operator()(Corpse*) const {}
     };
 
@@ -591,7 +591,7 @@ namespace MaNGOS
     {
         public:
             GameObjectFocusCheck(Unit const* unit, uint32 focusId) : i_unit(unit), i_focusId(focusId) {}
-            Presence const& GetFocusObject() const { return *i_unit; }
+            Occupant const& GetFocusObject() const { return *i_unit; }
             bool operator()(GameObject* go) const
             {
                 GameObjectInfo const* goInfo = go->GetGOInfo();
@@ -618,8 +618,8 @@ namespace MaNGOS
     class NearestGameObjectFishingHoleCheck
     {
         public:
-            NearestGameObjectFishingHoleCheck(Presence const& obj, float range) : i_obj(obj), i_range(range) {}
-            Presence const& GetFocusObject() const { return i_obj; }
+            NearestGameObjectFishingHoleCheck(Occupant const& obj, float range) : i_obj(obj), i_range(range) {}
+            Occupant const& GetFocusObject() const { return i_obj; }
             bool operator()(GameObject* go)
             {
                 if (go->GetGOInfo()->type == GAMEOBJECT_TYPE_FISHINGHOLE && go->isSpawned() && InReach(i_obj, *go, i_range) && InReach(i_obj, *go, (float)go->GetGOInfo()->fishinghole.radius))
@@ -631,7 +631,7 @@ namespace MaNGOS
             }
             float GetLastRange() const { return i_range; }
         private:
-            Presence const& i_obj;
+            Occupant const& i_obj;
             float  i_range;
 
             // prevent clone
@@ -642,8 +642,8 @@ namespace MaNGOS
     class NearestGameObjectEntryInObjectRangeCheck
     {
         public:
-            NearestGameObjectEntryInObjectRangeCheck(Presence const& obj, uint32 entry, float range) : i_obj(obj), i_entry(entry), i_range(range) {}
-            Presence const& GetFocusObject() const { return i_obj; }
+            NearestGameObjectEntryInObjectRangeCheck(Occupant const& obj, uint32 entry, float range) : i_obj(obj), i_entry(entry), i_range(range) {}
+            Occupant const& GetFocusObject() const { return i_obj; }
             bool operator()(GameObject* go)
             {
                 if (go->GetEntry() == i_entry && InReach(i_obj, *go, i_range))
@@ -655,7 +655,7 @@ namespace MaNGOS
             }
             float GetLastRange() const { return i_range; }
         private:
-            Presence const& i_obj;
+            Occupant const& i_obj;
             uint32 i_entry;
             float  i_range;
 
@@ -667,10 +667,10 @@ namespace MaNGOS
     class NearestGameObjectEntryInPosRangeCheck
     {
         public:
-            NearestGameObjectEntryInPosRangeCheck(Presence const& obj, uint32 entry, float x, float y, float z, float range)
+            NearestGameObjectEntryInPosRangeCheck(Occupant const& obj, uint32 entry, float x, float y, float z, float range)
                 : i_obj(obj), i_entry(entry), i_x(x), i_y(y), i_z(z), i_range(range) {}
 
-            Presence const& GetFocusObject() const { return i_obj; }
+            Occupant const& GetFocusObject() const { return i_obj; }
 
             bool operator()(GameObject* go)
             {
@@ -687,7 +687,7 @@ namespace MaNGOS
             float GetLastRange() const { return i_range; }
 
         private:
-            Presence const& i_obj;
+            Occupant const& i_obj;
             uint32 i_entry;
             float i_x, i_y, i_z;
             float i_range;
@@ -700,10 +700,10 @@ namespace MaNGOS
     class GameObjectEntryInPosRangeCheck
     {
         public:
-            GameObjectEntryInPosRangeCheck(Presence const& obj, uint32 entry, float x, float y, float z, float range)
+            GameObjectEntryInPosRangeCheck(Occupant const& obj, uint32 entry, float x, float y, float z, float range)
                 : i_obj(obj), i_entry(entry), i_x(x), i_y(y), i_z(z), i_range(range) {}
 
-            Presence const& GetFocusObject() const { return i_obj; }
+            Occupant const& GetFocusObject() const { return i_obj; }
 
             bool operator()(GameObject* go)
             {
@@ -718,7 +718,7 @@ namespace MaNGOS
             float GetLastRange() const { return i_range; }
 
         private:
-            Presence const& i_obj;
+            Occupant const& i_obj;
             uint32 i_entry;
             float i_x, i_y, i_z;
             float i_range;
@@ -733,7 +733,7 @@ namespace MaNGOS
     {
         public:
             MostHPMissingInRangeCheck(Unit const* obj, float range, uint32 hp, bool percent = false) : i_obj(obj), i_range(range), i_hp(hp), i_percent(percent) {}
-            Presence const& GetFocusObject() const { return *i_obj; }
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
                 if (u->IsAlive() && u->IsInCombat() && IsFriendly(*i_obj, *u) && InReach(*i_obj, *u, i_range))
@@ -757,8 +757,8 @@ namespace MaNGOS
     class FriendlyCCedInRangeCheck
     {
         public:
-            FriendlyCCedInRangeCheck(Presence const* obj, float range) : i_obj(obj), i_range(range) {}
-            Presence const& GetFocusObject() const { return *i_obj; }
+            FriendlyCCedInRangeCheck(Occupant const* obj, float range) : i_obj(obj), i_range(range) {}
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
                 if (u->IsAlive() && u->IsInCombat() && !IsHostile(*i_obj, *u) && InReach(*i_obj, *u, i_range) &&
@@ -769,15 +769,15 @@ namespace MaNGOS
                 return false;
             }
         private:
-            Presence const* i_obj;
+            Occupant const* i_obj;
             float i_range;
     };
 
     class FriendlyMissingBuffInRangeCheck
     {
         public:
-            FriendlyMissingBuffInRangeCheck(Presence const* obj, float range, uint32 spellid) : i_obj(obj), i_range(range), i_spell(spellid) {}
-            Presence const& GetFocusObject() const { return *i_obj; }
+            FriendlyMissingBuffInRangeCheck(Occupant const* obj, float range, uint32 spellid) : i_obj(obj), i_range(range), i_spell(spellid) {}
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
                 if (u->IsAlive() && u->IsInCombat() && !IsHostile(*i_obj, *u) && InReach(*i_obj, *u, i_range) &&
@@ -788,7 +788,7 @@ namespace MaNGOS
                 return false;
             }
         private:
-            Presence const* i_obj;
+            Occupant const* i_obj;
             float i_range;
             uint32 i_spell;
     };
@@ -796,11 +796,11 @@ namespace MaNGOS
     class AnyUnfriendlyUnitInObjectRangeCheck
     {
         public:
-            AnyUnfriendlyUnitInObjectRangeCheck(Presence const* obj, float range) : i_obj(obj), i_range(range)
+            AnyUnfriendlyUnitInObjectRangeCheck(Occupant const* obj, float range) : i_obj(obj), i_range(range)
             {
                 i_controlledByPlayer = obj->IsControlledByPlayer();
             }
-            Presence const& GetFocusObject() const { return *i_obj; }
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
                 if (u->IsAlive() && (i_controlledByPlayer ? !IsFriendly(*i_obj, *u) : IsHostile(*i_obj, *u)) &&
@@ -814,7 +814,7 @@ namespace MaNGOS
                 }
             }
         private:
-            Presence const* i_obj;
+            Occupant const* i_obj;
             bool i_controlledByPlayer;
             float i_range;
     };
@@ -822,9 +822,9 @@ namespace MaNGOS
     class AnyUnfriendlyVisibleUnitInObjectRangeCheck
     {
         public:
-            AnyUnfriendlyVisibleUnitInObjectRangeCheck(Presence const* obj, Unit const* funit, float range)
+            AnyUnfriendlyVisibleUnitInObjectRangeCheck(Occupant const* obj, Unit const* funit, float range)
                 : i_obj(obj), i_funit(funit), i_range(range) {}
-            Presence const& GetFocusObject() const { return *i_obj; }
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
                 return u->IsAlive() &&
@@ -833,7 +833,7 @@ namespace MaNGOS
                     u->IsVisibleForOrDetect(i_funit, i_funit, false);
             }
         private:
-            Presence const* i_obj;
+            Occupant const* i_obj;
             Unit const* i_funit;
             float i_range;
     };
@@ -841,8 +841,8 @@ namespace MaNGOS
     class AnyFriendlyUnitInObjectRangeCheck
     {
         public:
-            AnyFriendlyUnitInObjectRangeCheck(Presence const* obj, float range) : i_obj(obj), i_range(range) {}
-            Presence const& GetFocusObject() const { return *i_obj; }
+            AnyFriendlyUnitInObjectRangeCheck(Occupant const* obj, float range) : i_obj(obj), i_range(range) {}
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
                 if (u->IsAlive() && InReach(*i_obj, *u, i_range) && IsFriendly(*i_obj, *u))
@@ -855,15 +855,15 @@ namespace MaNGOS
                 }
             }
         private:
-            Presence const* i_obj;
+            Occupant const* i_obj;
             float i_range;
     };
 
     class AnyUnitInObjectRangeCheck
     {
         public:
-            AnyUnitInObjectRangeCheck(Presence const* obj, float range) : i_obj(obj), i_range(range) {}
-            Presence const& GetFocusObject() const { return *i_obj; }
+            AnyUnitInObjectRangeCheck(Occupant const* obj, float range) : i_obj(obj), i_range(range) {}
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
                 if (u->IsAlive() && InReach(*i_obj, *u, i_range))
@@ -874,7 +874,7 @@ namespace MaNGOS
                 return false;
             }
         private:
-            Presence const* i_obj;
+            Occupant const* i_obj;
             float i_range;
     };
 
@@ -882,8 +882,8 @@ namespace MaNGOS
     class NearestAttackableUnitInObjectRangeCheck
     {
         public:
-            NearestAttackableUnitInObjectRangeCheck(Presence const* obj, Unit const* funit, float range) : i_obj(obj), i_funit(funit), i_range(range) {}
-            Presence const& GetFocusObject() const { return *i_obj; }
+            NearestAttackableUnitInObjectRangeCheck(Occupant const* obj, Unit const* funit, float range) : i_obj(obj), i_funit(funit), i_range(range) {}
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
                 if (u->IsTargetableForAttack() && InReach(*i_obj, *u, i_range) &&
@@ -896,7 +896,7 @@ namespace MaNGOS
                 return false;
             }
         private:
-            Presence const* i_obj;
+            Occupant const* i_obj;
             Unit const* i_funit;
             float i_range;
 
@@ -907,13 +907,13 @@ namespace MaNGOS
     class AnyAoEVisibleTargetUnitInObjectRangeCheck
     {
         public:
-            AnyAoEVisibleTargetUnitInObjectRangeCheck(Presence const* obj, Presence const* originalCaster, float range)
+            AnyAoEVisibleTargetUnitInObjectRangeCheck(Occupant const* obj, Occupant const* originalCaster, float range)
                 : i_obj(obj), i_originalCaster(originalCaster), i_range(range)
             {
                 i_targetForUnit = i_originalCaster->isType(TYPEMASK_UNIT);
                 i_targetForPlayer = (i_originalCaster->GetTypeId() == TYPEID_PLAYER);
             }
-            Presence const& GetFocusObject() const { return *i_obj; }
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
                 // Check contains checks for: live, non-selectable, non-attackable flags, flight check and GM check, ignore totems
@@ -942,8 +942,8 @@ namespace MaNGOS
                 return false;
             }
         private:
-            Presence const* i_obj;
-            Presence const* i_originalCaster;
+            Occupant const* i_obj;
+            Occupant const* i_originalCaster;
             float i_range;
             bool i_targetForUnit;
             bool i_targetForPlayer;
@@ -952,12 +952,12 @@ namespace MaNGOS
     class AnyAoETargetUnitInObjectRangeCheck
     {
         public:
-            AnyAoETargetUnitInObjectRangeCheck(Presence const* obj, float range)
+            AnyAoETargetUnitInObjectRangeCheck(Occupant const* obj, float range)
                 : i_obj(obj), i_range(range)
             {
                 i_targetForPlayer = i_obj->IsControlledByPlayer();
             }
-            Presence const& GetFocusObject() const { return *i_obj; }
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
                 // Check contains checks for: live, non-selectable, non-attackable flags, flight check and GM check, ignore totems
@@ -980,7 +980,7 @@ namespace MaNGOS
             }
 
         private:
-            Presence const* i_obj;
+            Occupant const* i_obj;
             float i_range;
             bool i_targetForPlayer;
     };
@@ -992,7 +992,7 @@ namespace MaNGOS
                 : i_obj(go), i_range(range), i_isFriendly(friendly)
             {
             }
-            Presence const& GetFocusObject() const { return *i_obj; }
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
                 // Check contains checks for: live, non-selectable, non-attackable flags, flight check and GM check, ignore totems
@@ -1026,7 +1026,7 @@ namespace MaNGOS
                 : i_obj(go), i_range(range), i_isFriendly(friendly)
             {
             }
-            Presence const& GetFocusObject() const { return *i_obj; }
+            Occupant const& GetFocusObject() const { return *i_obj; }
             void operator()(Unit* u)
             {
                 // Check contains checks for: live, non-selectable, non-attackable flags, flight check and GM check, ignore totems
@@ -1069,21 +1069,21 @@ namespace MaNGOS
     class AnyDeadUnitCheck
     {
         public:
-            explicit AnyDeadUnitCheck(Presence const* fobj) : i_fobj(fobj) {}
-            Presence const& GetFocusObject() const { return *i_fobj; }
+            explicit AnyDeadUnitCheck(Occupant const* fobj) : i_fobj(fobj) {}
+            Occupant const& GetFocusObject() const { return *i_fobj; }
             bool operator()(Unit* u) { return !u->IsAlive(); }
         private:
-            Presence const* i_fobj;
+            Occupant const* i_fobj;
     };
 
     class AnyStealthedCheck
     {
         public:
-            explicit AnyStealthedCheck(Presence const* fobj) : i_fobj(fobj) {}
-            Presence const& GetFocusObject() const { return *i_fobj; }
+            explicit AnyStealthedCheck(Occupant const* fobj) : i_fobj(fobj) {}
+            Occupant const& GetFocusObject() const { return *i_fobj; }
             bool operator()(Unit* u) { return u->GetVisibility() == VISIBILITY_GROUP_STEALTH; }
         private:
-            Presence const* i_fobj;
+            Occupant const* i_fobj;
     };
 
     // Creature checks
@@ -1092,7 +1092,7 @@ namespace MaNGOS
     {
         public:
             explicit InAttackDistanceFromAnyHostileCreatureCheck(Unit* funit) : i_funit(funit) {}
-            Presence const& GetFocusObject() const { return *i_funit; }
+            Occupant const& GetFocusObject() const { return *i_funit; }
             bool operator()(Creature* u)
             {
                 if (u->IsAlive() && IsHostile(*u, *i_funit) && InReach(*i_funit, *u, u->GetAttackDistance(i_funit)))
@@ -1113,7 +1113,7 @@ namespace MaNGOS
                 : i_funit(funit), i_enemy(enemy), i_range(range)
             {
             }
-            Presence const& GetFocusObject() const { return *i_funit; }
+            Occupant const& GetFocusObject() const { return *i_funit; }
             bool operator()(Creature* u);
 
         private:
@@ -1127,7 +1127,7 @@ namespace MaNGOS
         public:
             NearestAssistCreatureInCreatureRangeCheck(Creature* obj, Unit* enemy, float range)
                 : i_obj(obj), i_enemy(enemy), i_range(range) {}
-            Presence const& GetFocusObject() const { return *i_obj; }
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Creature* u)
             {
                 if (u == i_obj)
@@ -1166,9 +1166,9 @@ namespace MaNGOS
     class NearestCreatureEntryWithLiveStateInObjectRangeCheck
     {
         public:
-            NearestCreatureEntryWithLiveStateInObjectRangeCheck(Presence const& obj, uint32 entry, bool onlyAlive, bool onlyDead, float range, bool excludeSelf = false)
+            NearestCreatureEntryWithLiveStateInObjectRangeCheck(Occupant const& obj, uint32 entry, bool onlyAlive, bool onlyDead, float range, bool excludeSelf = false)
                 : i_obj(obj), i_entry(entry), i_onlyAlive(onlyAlive), i_onlyDead(onlyDead), i_excludeSelf(excludeSelf), i_range(range) {}
-            Presence const& GetFocusObject() const { return i_obj; }
+            Occupant const& GetFocusObject() const { return i_obj; }
             bool operator()(Creature* u)
             {
                 if (u->GetEntry() == i_entry && ((i_onlyAlive && u->IsAlive()) || (i_onlyDead && u->IsCorpse()) || (!i_onlyAlive && !i_onlyDead)) &&
@@ -1181,7 +1181,7 @@ namespace MaNGOS
             }
             float GetLastRange() const { return i_range; }
         private:
-            Presence const& i_obj;
+            Occupant const& i_obj;
             uint32 i_entry;
             bool   i_onlyAlive;
             bool   i_onlyDead;
@@ -1195,8 +1195,8 @@ namespace MaNGOS
     class AllCreaturesOfEntryInRangeCheck
     {
         public:
-            AllCreaturesOfEntryInRangeCheck(const Presence* pObject, uint32 uiEntry, float fMaxRange) : m_pObject(pObject), m_uiEntry(uiEntry), m_fRange(fMaxRange) {}
-            Presence const& GetFocusObject() const { return *m_pObject; }
+            AllCreaturesOfEntryInRangeCheck(const Occupant* pObject, uint32 uiEntry, float fMaxRange) : m_pObject(pObject), m_uiEntry(uiEntry), m_fRange(fMaxRange) {}
+            Occupant const& GetFocusObject() const { return *m_pObject; }
             bool operator()(Unit* pUnit)
             {
                 if (pUnit->GetEntry() == m_uiEntry && m_pObject->Where().WithinDist(pUnit->Where(), m_fRange, false))
@@ -1208,7 +1208,7 @@ namespace MaNGOS
             }
 
         private:
-            const Presence* m_pObject;
+            const Occupant* m_pObject;
             uint32 m_uiEntry;
             float m_fRange;
 
@@ -1221,8 +1221,8 @@ namespace MaNGOS
     class AnyPlayerInObjectRangeCheck
     {
         public:
-            AnyPlayerInObjectRangeCheck(Presence const* obj, float range) : i_obj(obj), i_range(range) {}
-            Presence const& GetFocusObject() const { return *i_obj; }
+            AnyPlayerInObjectRangeCheck(Occupant const* obj, float range) : i_obj(obj), i_range(range) {}
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Player* u)
             {
                 if (u->IsAlive() && InReach(*i_obj, *u, i_range))
@@ -1233,16 +1233,16 @@ namespace MaNGOS
                 return false;
             }
         private:
-            Presence const* i_obj;
+            Occupant const* i_obj;
             float i_range;
     };
 
     class AnyPlayerInObjectRangeWithAuraCheck
     {
         public:
-            AnyPlayerInObjectRangeWithAuraCheck(Presence const* obj, float range, uint32 spellId)
+            AnyPlayerInObjectRangeWithAuraCheck(Occupant const* obj, float range, uint32 spellId)
                 : i_obj(obj), i_range(range), i_spellId(spellId) {}
-            Presence const& GetFocusObject() const { return *i_obj; }
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Player* u)
             {
                 return u->IsAlive() &&
@@ -1250,7 +1250,7 @@ namespace MaNGOS
                     u->HasAura(i_spellId);
             }
         private:
-            Presence const* i_obj;
+            Occupant const* i_obj;
             float i_range;
             uint32 i_spellId;
     };
@@ -1258,16 +1258,16 @@ namespace MaNGOS
     class AnyPlayerInCapturePointRange
     {
         public:
-            AnyPlayerInCapturePointRange(Presence const* obj, float range)
+            AnyPlayerInCapturePointRange(Occupant const* obj, float range)
                 : i_obj(obj), i_range(range) {}
-            Presence const& GetFocusObject() const { return *i_obj; }
+            Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Player* u)
             {
                 return u->CanUseCapturePoint() &&
                     InReach(*i_obj, *u, i_range);
             }
         private:
-            Presence const* i_obj;
+            Occupant const* i_obj;
             float i_range;
     };
 

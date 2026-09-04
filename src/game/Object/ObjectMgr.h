@@ -35,7 +35,7 @@
 #include <set>
 #include <list>
 #include <string>
-#include "Presence.h"
+#include "Occupant.h"
 #include "Bag.h"
 #include "Creature.h"
 #include "Player.h"
@@ -425,10 +425,10 @@ class PlayerCondition
         //  - if function fails, entry will contain the first faulty condition
         //  - if function succeeds, entry will contain the last condition checked (if chained)
         // entry is only useful on failure case
-        bool Meets(Player const* pPlayer, Map const* map, Presence const* source, ConditionSource conditionSourceType, ConditionEntry* entry = NULL) const;
+        bool Meets(Player const* pPlayer, Map const* map, Occupant const* source, ConditionSource conditionSourceType, ConditionEntry* entry = NULL) const;
 
     private:
-        bool CheckParamRequirements(Player const* pPlayer, Map const* map, Presence const* source, ConditionSource conditionSourceType) const;
+        bool CheckParamRequirements(Player const* pPlayer, Map const* map, Occupant const* source, ConditionSource conditionSourceType) const;
         uint16 m_entry;                                     // entry of the condition
         ConditionType m_condition;                          // additional condition type
         uint32 m_value1;                                    // data for the condition - see ConditionType definition
@@ -1148,7 +1148,7 @@ class ObjectMgr
         LocaleConstant GetLocaleForIndex(int i);
 
         // Check if a player meets condition conditionId
-        bool IsPlayerMeetToCondition(uint16 conditionId, Player const* pPlayer, Map const* map, Presence const* source, ConditionSource conditionSourceType, ConditionEntry* entry = NULL) const;
+        bool IsPlayerMeetToCondition(uint16 conditionId, Player const* pPlayer, Map const* map, Occupant const* source, ConditionSource conditionSourceType, ConditionEntry* entry = NULL) const;
 
         GameTele const* GetGameTele(uint32 id) const
         {
@@ -1436,7 +1436,7 @@ class ObjectMgr
 #define sObjectMgr MaNGOS::Singleton<ObjectMgr>::Instance()
 
 /// generic text function
-bool DoDisplayText(Presence* source, int32 entry, Unit const* target = NULL);
+bool DoDisplayText(Occupant* source, int32 entry, Unit const* target = NULL);
 
 // scripting access functions
 bool LoadMangosStrings(DatabaseType& db, char const* table, int32 start_value = MAX_CREATURE_AI_TEXT_STRING_ID, int32 end_value = std::numeric_limits<int32>::min(), bool extra_content = false);

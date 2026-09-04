@@ -28,7 +28,7 @@
 #include "WorldPacket.h"
 #include "World.h"
 #include "ObjectMgr.h"
-#include "Presence.h"
+#include "Occupant.h"
 #include "Creature.h"
 #include "GameObject.h"
 #include "Player.h"
@@ -449,7 +449,7 @@ void OutdoorPvPEP::InitBanner(GameObject* go, uint32 towerId)
 }
 
 // Handle the unsummon of the spectral flight master when the Plaguewood tower is lost
-void OutdoorPvPEP::UnsummonFlightMaster(const Presence* objRef)
+void OutdoorPvPEP::UnsummonFlightMaster(const Occupant* objRef)
 {
     if (Creature* flightMaster = objRef->GetMap()->GetCreature(m_flightMaster))
     {
@@ -458,7 +458,7 @@ void OutdoorPvPEP::UnsummonFlightMaster(const Presence* objRef)
 }
 
 // Handle the unsummon of the soldiers when the Eastwall tower is lost
-void OutdoorPvPEP::UnsummonSoldiers(const Presence* objRef)
+void OutdoorPvPEP::UnsummonSoldiers(const Occupant* objRef)
 {
     for (GuidList::const_iterator itr = m_soldiers.begin(); itr != m_soldiers.end(); ++itr)
     {

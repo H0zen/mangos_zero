@@ -42,7 +42,7 @@
 
 
 
-#include "Presence.h"
+#include "Occupant.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
 #include "Opcodes.h"
@@ -75,7 +75,7 @@
  *
  * Removes the object from the world before deletion.
  */
-void Presence::CleanupsBeforeDelete()
+void Occupant::CleanupsBeforeDelete()
 {
     RemoveFromWorld();
 }
@@ -87,7 +87,7 @@ void Presence::CleanupsBeforeDelete()
  *
  * Updates Eluna events if enabled.
  */
-void Presence::Update(uint32 update_diff, uint32 /*time_diff*/)
+void Occupant::Update(uint32 update_diff, uint32 /*time_diff*/)
 {
 }
 
@@ -98,7 +98,7 @@ void Presence::Update(uint32 update_diff, uint32 /*time_diff*/)
  *
  * Creates the world object with the specified GUID.
  */
-void Presence::_Create(uint32 guidlow, HighGuid guidhigh)
+void Occupant::_Create(uint32 guidlow, HighGuid guidhigh)
 {
     Object::_Create(guidlow, 0, guidhigh);
 }
@@ -109,7 +109,7 @@ void Presence::_Create(uint32 guidlow, HighGuid guidhigh)
  *
  * Returns the instance data for the map this object is on.
  */
-InstanceData* Presence::GetInstanceData() const
+InstanceData* Occupant::GetInstanceData() const
 {
     return GetMap()->GetInstanceData();
 }
@@ -119,7 +119,7 @@ InstanceData* Presence::GetInstanceData() const
  *
  * The roll is injected rather than drawn here, so the pick stays pinnable in a test.
  */
-Geometry::Vector3 RandomGroundPointNear(Presence const& obj, Geometry::Vector3 const& centre,
+Geometry::Vector3 RandomGroundPointNear(Occupant const& obj, Geometry::Vector3 const& centre,
                                         float distance, float minDist, float const* ori)
 {
     if (distance == 0.0f)
@@ -145,7 +145,7 @@ Geometry::Vector3 RandomGroundPointNear(Presence const& obj, Geometry::Vector3 c
  * Nothing happens where the map has no floor to offer: an absent answer is absent, not a
  * sentinel height that arithmetic will happily consume.
  */
-void DropToGround(Presence const& obj, float x, float y, float& z)
+void DropToGround(Occupant const& obj, float x, float y, float& z)
 {
     if (auto floor = obj.GetMap()->Floor(x, y, z))
     {
@@ -156,7 +156,7 @@ void DropToGround(Presence const& obj, float x, float y, float& z)
 /**
  * @brief Hold z between the floor and the highest surface this object may occupy.
  */
-void ClampToAllowedZ(Presence const& obj, float x, float y, float& z, Map* atMap /*=NULL*/)
+void ClampToAllowedZ(Occupant const& obj, float x, float y, float& z, Map* atMap /*=NULL*/)
 {
     if (!atMap)
     {
@@ -220,7 +220,7 @@ void ClampToAllowedZ(Presence const& obj, float x, float y, float& z, Map* atMap
  * inlined at the call sites so that carrying the transport rework across changes this
  * function and nothing else.
  */
-static bool InCommonFrame(Presence const& a, Presence const& b,
+static bool InCommonFrame(Occupant const& a, Occupant const& b,
                           Geometry::Placement& outA, Geometry::Placement& outB)
 {
     // THE FRAME IS THE AUTHORITY, not the passenger registry. Two things on the same deck
@@ -268,7 +268,7 @@ static bool InCommonFrame(Presence const& a, Presence const& b,
  * It demands a COMMON FRAME. This is NOT the question "can B see A": seeing a crow
  * overhead is not being able to hit it. For that, ask CanBeSeen.
  */
-bool CanInteract(Presence const& a, Presence const& b)
+bool CanInteract(Occupant const& a, Occupant const& b)
 {
     Geometry::Placement pa, pb;
     return a.IsInWorld() && b.IsInWorld() &&
@@ -283,7 +283,7 @@ bool CanInteract(Presence const& a, Presence const& b)
  * they are kept apart all the same, because every caller means one or the other and the
  * distinction is what the transport rework needs already drawn.
  */
-bool CanBeSeen(Presence const& seen, Presence const& viewer)
+bool CanBeSeen(Occupant const& seen, Occupant const& viewer)
 {
     if (!seen.IsInWorld() || !viewer.IsInWorld())
     {
@@ -314,7 +314,7 @@ bool CanBeSeen(Presence const& seen, Presence const& viewer)
     return false;
 }
 
-bool SeenWithin(Presence const& seen, Presence const& viewer, float dist, bool is3D)
+bool SeenWithin(Occupant const& seen, Occupant const& viewer, float dist, bool is3D)
 {
     if (!CanBeSeen(seen, viewer))
     {
@@ -335,35 +335,35 @@ bool SeenWithin(Presence const& seen, Presence const& viewer, float dist, bool i
     return true;
 }
 
-bool InReach(Presence const& a, Presence const& b, float dist, bool is3D)
+bool InReach(Occupant const& a, Occupant const& b, float dist, bool is3D)
 {
     Geometry::Placement pa, pb;
     return CanInteract(a, b) && InCommonFrame(a, b, pa, pb) &&
            pa.WithinDist(pb, dist, is3D);
 }
 
-bool InFrontPhased(Presence const& a, Presence const& b, float dist, float arc)
+bool InFrontPhased(Occupant const& a, Occupant const& b, float dist, float arc)
 {
     Geometry::Placement pa, pb;
     return CanInteract(a, b) && InCommonFrame(a, b, pa, pb) &&
            pa.IsInFront(pb, dist, arc);
 }
 
-bool InBackPhased(Presence const& a, Presence const& b, float dist, float arc)
+bool InBackPhased(Occupant const& a, Occupant const& b, float dist, float arc)
 {
     Geometry::Placement pa, pb;
     return CanInteract(a, b) && InCommonFrame(a, b, pa, pb) &&
            pa.IsInBack(pb, dist, arc);
 }
 
-bool HasLineOfSight(Presence const& a, Geometry::Vector3 const& point)
+bool HasLineOfSight(Occupant const& a, Geometry::Vector3 const& point)
 {
     // The two-yard lift is eye height: a sight line is cast between heads, not feet.
     return a.GetMap()->IsInLineOfSight(a.Where().X(), a.Where().Y(), a.Where().Z() + 2.0f,
                                        point.x, point.y, point.z + 2.0f);
 }
 
-bool HasLineOfSight(Presence const& a, Presence const& b)
+bool HasLineOfSight(Occupant const& a, Occupant const& b)
 {
     if (!CanInteract(a, b))
     {
@@ -387,7 +387,7 @@ bool HasLineOfSight(Presence const& a, Presence const& b)
     return HasLineOfSight(a, b.Where().Pos());
 }
 
-bool IsPlaceable(Presence const& obj)
+bool IsPlaceable(Occupant const& obj)
 {
     return obj.Where().IsFinite() &&
            MaNGOS::IsValidMapCoord(obj.Where().X(), obj.Where().Y(),

@@ -71,7 +71,7 @@
 #include "ScriptMgr.h"
 #include "PlayerRegistry.h"
 #include "ObjectLookup.h"
-#include "Presence.h"
+#include "Occupant.h"
 #include "BattleGround/BattleGround.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Pet.h"
@@ -1323,7 +1323,7 @@ void WorldSession::HandleFarSightOpcode(WorldPacket& recv_data)
     uint8 op;
     recv_data >> op;
 
-    Presence* obj = _player->GetMap()->GetPresence(_player->GetFarSightGuid());
+    Occupant* obj = _player->GetMap()->GetOccupant(_player->GetFarSightGuid());
     if (!obj)
     {
         return;
