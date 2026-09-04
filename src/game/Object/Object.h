@@ -695,8 +695,6 @@ class WorldObject : public Object
         /// reached one -- a destructor after LoadFromDB failed, above all. GetMap() asserts
         /// there, so `if (GetMap())` is not a guard, it is the crash.
         Map* FindMap() const { return m_currMap; }
-        // used to check all object's GetMap() calls when object is not in world!
-        void ResetMap();
 
         TerrainInfo const* GetTerrain() const;
 

@@ -188,9 +188,6 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     // the other one exists.
     if (!GetPlayer()->BoardingMap()->Add(GetPlayer()))
     {
-        // if player wasn't added to map, reset his map pointer!
-        GetPlayer()->ResetMap();
-
         DETAIL_LOG("WorldSession::HandleMoveWorldportAckOpcode: %s was teleported far but couldn't be added to map "
             " (map:%u, x:%f, y:%f, z:%f) Trying to port him to his previous place..",
             GetPlayer()->GetGuidStr().c_str(), loc.mapid, loc.coord_x, loc.coord_y, loc.coord_z);

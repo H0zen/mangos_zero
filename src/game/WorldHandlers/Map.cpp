@@ -1080,7 +1080,6 @@ void Map::Remove(Player* player, bool remove)
     if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
     {
         // invalid coordinates
-        player->ResetMap();
 
         if (remove)
         {
@@ -1107,7 +1106,6 @@ void Map::Remove(Player* player, bool remove)
     SendRemoveTransports(player);
     UpdateObjectVisibility(player, cell, p);
 
-    player->ResetMap();
     if (remove)
     {
         DeleteFromWorld(player);
@@ -1151,7 +1149,6 @@ template<class T>
     UpdateObjectVisibility(obj, cell, p);                   // i think will be better to call this function while object still in grid, this changes nothing but logically is better(as for me)
     RemoveFromGrid(obj, grid, cell);
 
-    obj->ResetMap();
     if (remove)
     {
         // if option set then object already saved at this moment

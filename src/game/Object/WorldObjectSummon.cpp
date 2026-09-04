@@ -88,13 +88,6 @@ void WorldObject::SetMap(Map* map)
     RefreshFrame();
 }
 
-/**
- * @brief Resets the world object's map state.
- */
-void WorldObject::ResetMap()
-{
-}
-
 TerrainInfo const* WorldObject::GetTerrain() const
 {
     MANGOS_ASSERT(m_currMap);
