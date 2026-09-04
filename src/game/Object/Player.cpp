@@ -2321,7 +2321,7 @@ void Player::SetGameMaster(bool on)
 
     m_camera.UpdateVisibilityForOwner();
     UpdateObjectVisibility();
-    UpdateForQuestWorldObjects();
+    UpdateForQuestObjects();
 }
 
 /**
@@ -4280,7 +4280,7 @@ void Player::SetQuestRewarded(uint32 quest_id, bool rewarded)
         q_status.m_rewarded = rewarded;
     }
 
-    UpdateForQuestWorldObjects();
+    UpdateForQuestObjects();
 }
 
 
@@ -6390,7 +6390,7 @@ bool Player::isTotalImmune()
  * @param bag The preferred destination bag.
  * @param slot The preferred destination slot.
  */
-void Player::AutoStoreLoot(WorldObject const* lootTarget, uint32 loot_id, LootStore const& store, bool broadcast, uint8 bag, uint8 slot)
+void Player::AutoStoreLoot(Presence const* lootTarget, uint32 loot_id, LootStore const& store, bool broadcast, uint8 bag, uint8 slot)
 {
     Loot loot(lootTarget);
     loot.FillLoot(loot_id, store, this, true);

@@ -32,7 +32,7 @@
 #include "SharedDefines.h"
 #include "ObjectMgr.h"
 
-class WorldObject;
+class Presence;
 class GameObject;
 class Unit;
 class Creature;

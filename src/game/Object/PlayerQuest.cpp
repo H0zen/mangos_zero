@@ -820,7 +820,7 @@ void Player::AddQuest(Quest const* pQuest, Object* questGiver)
         itr->second->ApplyOrRemoveSpellIfCan(this, zone, area, true);
     }
 
-    UpdateForQuestWorldObjects();
+    UpdateForQuestObjects();
 
     if (sWorld.getConfig(CONFIG_BOOL_ENABLE_QUEST_TRACKER)) // check if Quest Tracker is enabled
     {
@@ -1744,7 +1744,7 @@ void Player::SetQuestStatus(uint32 quest_id, QuestStatus status)
         }
     }
 
-    UpdateForQuestWorldObjects();
+    UpdateForQuestObjects();
 }
 
 // not used in MaNGOS, but used in scripting code
@@ -1847,7 +1847,7 @@ void Player::AreaExploredOrEventHappens(uint32 questId)
 }
 
 // not used in mangosd, function for external script library
-void Player::GroupEventHappens(uint32 questId, WorldObject const* pEventObject)
+void Player::GroupEventHappens(uint32 questId, Presence const* pEventObject)
 {
     if (Group* pGroup = GetGroup())
     {
@@ -1917,18 +1917,18 @@ void Player::ItemAddedQuestCheck(uint32 entry, uint32 count)
                 }
                 if (CanCompleteQuest(questid))
                 {
-                    CompleteQuest(questid);     // UpdateForQuestWorldObjects() inside
+                    CompleteQuest(questid);     // UpdateForQuestObjects() inside
                     return;
                 }
                 if (reqitemcount == q_status.m_itemcount[j])    // only 1 of several conditions is met
                 {
-                    UpdateForQuestWorldObjects();
+                    UpdateForQuestObjects();
                 }
                 return;
             }
         }
     }
-    UpdateForQuestWorldObjects();   // TODO is it needed here?
+    UpdateForQuestObjects();   // TODO is it needed here?
 }
 
 /**
@@ -1982,13 +1982,13 @@ void Player::ItemRemovedQuestCheck(uint32 entry, uint32 count)
                         q_status.uState = QUEST_CHANGED;
                     }
 
-                    IncompleteQuest(questid);       // UpdateForQuestWorldObjects() inside
+                    IncompleteQuest(questid);       // UpdateForQuestObjects() inside
                 }
                 return;     // TODO what do we have here for the item required for 2 quests at once?
             }
         }
     }
-    UpdateForQuestWorldObjects();
+    UpdateForQuestObjects();
 }
 
 /**
@@ -2663,7 +2663,7 @@ bool Player::HasQuestForGO(int32 GOId) const
 /**
  * @brief Refreshes visible quest-related world objects for the player.
  */
-void Player::UpdateForQuestWorldObjects()
+void Player::UpdateForQuestObjects()
 {
     if (m_clientGUIDs.empty())
     {

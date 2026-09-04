@@ -34,7 +34,7 @@
 #include "Unit.h"
 
 class Player;
-class WorldObject;
+class Presence;
 
 #define EVENT_UPDATE_TIME               500
 #define MAX_ACTIONS                     3

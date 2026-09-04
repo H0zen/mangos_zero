@@ -142,12 +142,12 @@ class TransportMap : public Map
          * ship is small and cluttered and the one spot asked for is very often out over the
          * rail. Nothing when `master` is not aboard.
          */
-        std::optional<Position> FreeSpotNear(WorldObject const& master, float distance2d,
+        std::optional<Position> FreeSpotNear(Presence const& master, float distance2d,
                                              float angle) const;
 
         /// Where something aboard stands, or nothing when it is not on this ship. There is
         /// nothing to look up and nothing to convert: this map's coordinates are the answer.
-        std::optional<Geometry::Placement> PositionOf(WorldObject const& obj) const;
+        std::optional<Geometry::Placement> PositionOf(Presence const& obj) const;
 
         // --- Who is aboard ---------------------------------------------------------
 
@@ -234,7 +234,7 @@ class TransportMap : public Map
          * drops out across the boundary is destroyed by the ordinary sweep, with no ledger
          * and no special case anywhere.
          */
-        static void CollectRelaySources(WorldObject const* viewer, float visibility,
+        static void CollectRelaySources(Presence const* viewer, float visibility,
                                         std::vector<RelaySource>& out);
 
         /// One newly-arrived crew member, announced to everyone already watching. `.trans npc

@@ -126,19 +126,19 @@ namespace Motion
                     return world;
                 }
 
-                Vector3 ObjectPosition(Unit const& /*mover*/, WorldObject const& obj) const override
+                Vector3 ObjectPosition(Unit const& /*mover*/, Presence const& obj) const override
                 {
                     Vector3 p;
                     p.x = obj.Where().X(), p.y = obj.Where().Y(), p.z = obj.Where().Z();
                     return p;
                 }
 
-                float ObjectOrientation(Unit const& /*mover*/, WorldObject const& obj) const override
+                float ObjectOrientation(Unit const& /*mover*/, Presence const& obj) const override
                 {
                     return obj.Where().Facing();
                 }
 
-                Vector3 NearPoint(Unit const& mover, WorldObject const& target,
+                Vector3 NearPoint(Unit const& mover, Presence const& target,
                                   float searcherBounding, float distance2d,
                                   float absAngle) const override
                 {
@@ -319,7 +319,7 @@ namespace Motion
             public:
                 FrameKind Kind() const override { return FrameKind::Transport; }
 
-                Vector3 NearPoint(Unit const& mover, WorldObject const& target,
+                Vector3 NearPoint(Unit const& mover, Presence const& target,
                                   float /*searcherBounding*/, float distance2d,
                                   float absAngle) const override
                 {

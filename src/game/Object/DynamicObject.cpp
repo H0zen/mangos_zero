@@ -38,7 +38,7 @@
 /**
  * @brief Creates an empty dynamic object instance.
  */
-DynamicObject::DynamicObject() : WorldObject()
+DynamicObject::DynamicObject() : Presence()
 {
     m_objectType |= TYPEMASK_DYNAMICOBJECT;
     m_objectTypeId = TYPEID_DYNAMICOBJECT;
@@ -132,7 +132,7 @@ void DynamicObject::RemoveFromWorld()
  */
 bool DynamicObject::Create(uint32 guidlow, Unit* caster, uint32 spellId, SpellEffectIndex effIndex, float x, float y, float z, int32 duration, float radius, DynamicObjectType type)
 {
-    WorldObject::_Create(guidlow, HIGHGUID_DYNAMICOBJECT);
+    Presence::_Create(guidlow, HIGHGUID_DYNAMICOBJECT);
     SetMap(caster->GetMap());
     Place().MoveTo(x, y, z, 0);
 
@@ -298,7 +298,7 @@ void DynamicObject::Delay(int32 delaytime)
  * @param inVisibleList true when the object is already in the visible list.
  * @return true if the object should be visible; otherwise, false.
  */
-bool DynamicObject::IsVisibleForInState(Player const* u, WorldObject const* viewPoint, bool inVisibleList) const
+bool DynamicObject::IsVisibleForInState(Player const* u, Presence const* viewPoint, bool inVisibleList) const
 {
     if (!IsInWorld() || !u->IsInWorld())
     {

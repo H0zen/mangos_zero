@@ -614,7 +614,7 @@ struct GameObjectDisplayInfoEntry;
 
 #define GO_ANIMPROGRESS_DEFAULT 100                         // in 3.x 0xFF
 
-class GameObject : public WorldObject
+class GameObject : public Presence
 {
 
     public:
@@ -643,7 +643,7 @@ class GameObject : public WorldObject
 
         void SetDisplayId(uint32 model_id);
 
-        // overwrite WorldObject function for proper name localization
+        // overwrite Presence function for proper name localization
         const char* GetNameForLocaleIdx(int32 locale_idx) const override;
 
         void SaveToDB();
@@ -721,7 +721,7 @@ class GameObject : public WorldObject
         void SendGameObjectCustomAnim(uint32 animId = 0);
         void SendGameObjectReset();
 
-        float ComputeBoundingRadius() const override;     // overwrite WorldObject version
+        float ComputeBoundingRadius() const override;     // overwrite Presence version
 
         void Use(Unit* user);
 
@@ -783,7 +783,7 @@ class GameObject : public WorldObject
         void SummonLinkedTrapIfAny();
         void TriggerLinkedGameObject(Unit* target);
 
-        bool IsVisibleForInState(Player const* u, WorldObject const* viewPoint, bool inVisibleList) const override;
+        bool IsVisibleForInState(Player const* u, Presence const* viewPoint, bool inVisibleList) const override;
 
         bool IsCollisionEnabled() const;                    // Check if a go should collide. Like if a door is closed
 

@@ -152,7 +152,7 @@ void VisibleNotifier::Notify()
     // Now do operations that required done at object visibility change to visible
 
     // send data at target visibility change (adding to client)
-    for (std::set<WorldObject*>::const_iterator vItr = i_visibleNow.begin(); vItr != i_visibleNow.end(); ++vItr)
+    for (std::set<Presence*>::const_iterator vItr = i_visibleNow.begin(); vItr != i_visibleNow.end(); ++vItr)
     {
         // target aura duration for caster show only if target exist at caster client
         if ((*vItr) != &player && (*vItr)->isType(TYPEMASK_UNIT))
@@ -213,7 +213,7 @@ void ObjectUpdater::Visit(GridRefManager<T>& m)
 {
     for (typename GridRefManager<T>::iterator iter = m.begin(); iter != m.end(); ++iter)
     {
-        WorldObject::UpdateHelper helper(iter->getSource());
+        Presence::UpdateHelper helper(iter->getSource());
         helper.Update(i_timeDiff);
     }
 }

@@ -87,7 +87,7 @@ void InstanceData::SaveToDB() const
  * @brief Check if instance condition criteria are met
  * @param source Player to check conditions for
  * @param instance_condition_id Condition identifier from database
- * @param conditionSource WorldObject triggering the condition check
+ * @param conditionSource Presence triggering the condition check
  * @param conditionSourceType Type of the condition source
  * @return true if conditions are met, false otherwise
  *
@@ -97,7 +97,7 @@ void InstanceData::SaveToDB() const
  *
  * @warning Derived classes must override this for condition system support
  */
-bool InstanceData::CheckConditionCriteriaMeet(Player const* /*source*/, uint32 instance_condition_id, WorldObject const* /*conditionSource*/, uint32 conditionSourceType) const
+bool InstanceData::CheckConditionCriteriaMeet(Player const* /*source*/, uint32 instance_condition_id, Presence const* /*conditionSource*/, uint32 conditionSourceType) const
 {
     sLog.outError("Condition system call InstanceData::CheckConditionCriteriaMeet but instance script for map %u not have implementation for player condition criteria with internal id %u (called from %u)",
         instance->GetId(), instance_condition_id, uint32(conditionSourceType));

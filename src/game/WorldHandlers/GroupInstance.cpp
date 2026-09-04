@@ -73,7 +73,7 @@
  * @param pSource The looted world object.
  * @param ifneed True to keep the current looter when still eligible.
  */
-void Group::UpdateLooterGuid(WorldObject* pSource, bool ifneed)
+void Group::UpdateLooterGuid(Presence* pSource, bool ifneed)
 {
     switch (GetLootMethod())
     {

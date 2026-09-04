@@ -53,7 +53,7 @@ class Player;
 class Quest;
 class SpellCastTargets;
 class Unit;
-class WorldObject;
+class Presence;
 
 enum DBScriptType
 {
@@ -99,7 +99,7 @@ enum ScriptImplementation
 
 enum DBScriptCommand                                        // resSource, resTarget are the resulting Source/ Target after buddy search is done
 {
-    SCRIPT_COMMAND_TALK                     = 0,            // resSource = WorldObject, resTarget = Unit/none
+    SCRIPT_COMMAND_TALK                     = 0,            // resSource = Presence, resTarget = Unit/none
     //                                                         dataint = text entry from db_script_string -table. dataint2-4 optional for random selected texts.
     SCRIPT_COMMAND_EMOTE                    = 1,            // resSource = Unit, resTarget = Unit/none
     //                                                         datalong1 = emote_id, dataint1-4 optional for random selected emotes
@@ -123,7 +123,7 @@ enum DBScriptCommand                                        // resSource, resTar
     //                                                         datalong=spellid
     //                                                         dataint1-4 optional for random selected spell
     //                                                         data_flags &  SCRIPT_FLAG_COMMAND_ADDITIONAL = cast triggered
-    SCRIPT_COMMAND_PLAY_SOUND               = 16,           // resSource = WorldObject, target=any/player, datalong (sound_id), datalong2 (bitmask: 0/1=target-player, 0/2=with distance dependent, 0/4=map wide, 0/8=zone wide; so 1|2 = 3 is target with distance dependent)
+    SCRIPT_COMMAND_PLAY_SOUND               = 16,           // resSource = Presence, target=any/player, datalong (sound_id), datalong2 (bitmask: 0/1=target-player, 0/2=with distance dependent, 0/4=map wide, 0/8=zone wide; so 1|2 = 3 is target with distance dependent)
     SCRIPT_COMMAND_CREATE_ITEM              = 17,           // source or target must be player, datalong = item entry, datalong2 = amount
     SCRIPT_COMMAND_DESPAWN_SELF             = 18,           // resSource = Creature, datalong = despawn delay
     SCRIPT_COMMAND_PLAY_MOVIE               = 19,           // target can only be a player, datalog = movie id
@@ -162,13 +162,13 @@ enum DBScriptCommand                                        // resSource, resTar
     //                                                         datalong = AIEventType
     //                                                         datalong2 = radius
     SCRIPT_COMMAND_TURN_TO                  = 36,           // resSource = Unit, resTarget = Unit/none
-    SCRIPT_COMMAND_MOVE_DYNAMIC             = 37,           // resSource = Creature, resTarget Worldobject.
+    SCRIPT_COMMAND_MOVE_DYNAMIC             = 37,           // resSource = Creature, resTarget Presence.
     //                                                         datalong = 0: Move resSource towards resTarget
     //                                                         datalong != 0: Move resSource to a random point between datalong2..datalong around resTarget.
     //                                                         orientation != 0: Obtain a random point around resTarget in direction of orientation
     //                                                         data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL Obtain a random point around resTarget in direction of resTarget->GetOrientation + orientation
     //                                                         for resTarget == resSource and orientation == 0 this will mean resSource moving forward
-    SCRIPT_COMMAND_SEND_MAIL                = 38,           // resSource WorldObject, can be NULL, resTarget Player
+    SCRIPT_COMMAND_SEND_MAIL                = 38,           // resSource Presence, can be NULL, resTarget Player
     //                                                         datalong: Send mailTemplateId from resSource (if provided) to player resTarget
     //                                                         datalong2: AlternativeSenderEntry. Use as sender-Entry
     //                                                         dataint1: Delay (>= 0) in Seconds
@@ -600,12 +600,12 @@ class ScriptAction
 
         // Helper functions
         bool GetScriptCommandObject(const ObjectGuid guid, bool includeItem, Object*& resultObject);
-        bool GetScriptProcessTargets(WorldObject* pOrigSource, WorldObject* pOrigTarget, WorldObject*& pFinalSource, WorldObject*& pFinalTarget);
-        bool LogIfNotCreature(WorldObject* pWorldObject);
-        bool LogIfNotUnit(WorldObject* pWorldObject);
-        bool LogIfNotGameObject(WorldObject* pWorldObject);
-        bool LogIfNotPlayer(WorldObject* pWorldObject);
-        Player* GetPlayerTargetOrSourceAndLog(WorldObject* pSource, WorldObject* pTarget);
+        bool GetScriptProcessTargets(Presence* pOrigSource, Presence* pOrigTarget, Presence*& pFinalSource, Presence*& pFinalTarget);
+        bool LogIfNotCreature(Presence* pPresence);
+        bool LogIfNotUnit(Presence* pPresence);
+        bool LogIfNotGameObject(Presence* pPresence);
+        bool LogIfNotPlayer(Presence* pPresence);
+        Player* GetPlayerTargetOrSourceAndLog(Presence* pSource, Presence* pTarget);
 };
 
 enum ScriptLoadResult

@@ -34,7 +34,7 @@
 #include <optional>
 
 class Unit;
-class WorldObject;
+class Presence;
 
 /**
  * @brief The coordinate frame a movement leg lives in -- the seam that makes the
@@ -70,7 +70,7 @@ namespace Motion
 
     /**
      * @brief The 2D bearing from one FRAME point to another, normalised to [0, 2*PI)
-     *        exactly as WorldObject::GetAngle normalises.
+     *        exactly as Presence::GetAngle normalises.
      *
      * Generators need this because GetAngle itself reads world positions. Distances
      * survive a change of frame (a rigid transform preserves them); ANGLES do not.
@@ -149,14 +149,14 @@ namespace Motion
 
             /// Another object's position, in the MOVER's frame -- what lets chase and
             /// follow track a target without caring which frame either stands in.
-            virtual Vector3 ObjectPosition(Unit const& mover, WorldObject const& obj) const = 0;
+            virtual Vector3 ObjectPosition(Unit const& mover, Presence const& obj) const = 0;
 
             /// Another object's facing, in the mover's frame.
-            virtual float ObjectOrientation(Unit const& mover, WorldObject const& obj) const = 0;
+            virtual float ObjectOrientation(Unit const& mover, Presence const& obj) const = 0;
 
             /// The point `distance2d` yards from `target` at `absAngle`, dropped onto
             /// this frame's ground. The destination of every chase and follow leg.
-            virtual Vector3 NearPoint(Unit const& mover, WorldObject const& target,
+            virtual Vector3 NearPoint(Unit const& mover, Presence const& target,
                                       float searcherBounding, float distance2d,
                                       float absAngle) const = 0;
 

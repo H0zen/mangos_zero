@@ -65,7 +65,7 @@ bool EndsQuest(Object const& object, uint32 questId)
     return false;
 }
 
-void StartGroupLoot(WorldObject& holder, Group* group, uint32 timer)
+void StartGroupLoot(Presence& holder, Group* group, uint32 timer)
 {
     if (Creature* creature = ToCreature(&holder))
     {
@@ -77,7 +77,7 @@ void StartGroupLoot(WorldObject& holder, Group* group, uint32 timer)
     }
 }
 
-void StopGroupLoot(WorldObject& holder)
+void StopGroupLoot(Presence& holder)
 {
     if (Creature* creature = ToCreature(&holder))
     {
@@ -89,7 +89,7 @@ void StopGroupLoot(WorldObject& holder)
     }
 }
 
-void SaveRespawnTime(WorldObject& what)
+void SaveRespawnTime(Presence& what)
 {
     if (Creature* creature = ToCreature(&what))
     {

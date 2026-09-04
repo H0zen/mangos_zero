@@ -527,7 +527,7 @@ struct CreatureCreatePos
         CreatureCreatePos(Map* map, float x, float y, float z, float o)
             : m_map(map), m_closeObject(NULL), m_angle(0.0f), m_dist(0.0f) { m_pos.x = x; m_pos.y = y; m_pos.z = z; m_pos.o = o; }
         // if dist == 0.0f -> exactly object coordinates used, in other case close point to object (CONTACT_DIST can be used as minimal distances)
-        CreatureCreatePos(WorldObject* closeObject, float ori, float dist = 0.0f, float angle = 0.0f)
+        CreatureCreatePos(Presence* closeObject, float ori, float dist = 0.0f, float angle = 0.0f)
             : m_map(closeObject->GetMap()),
             m_closeObject(closeObject), m_angle(angle), m_dist(dist) { m_pos.o = ori; }
     public:
@@ -539,7 +539,7 @@ struct CreatureCreatePos
         Position m_pos;
     private:
         Map* m_map;
-        WorldObject* m_closeObject;
+        Presence* m_closeObject;
         float m_angle;
         float m_dist;
 };
@@ -719,7 +719,7 @@ class Creature : public Unit
         std::string GetScriptName() const;
         uint32 GetScriptId() const;
 
-        // overwrite WorldObject function for proper name localization
+        // overwrite Presence function for proper name localization
         const char* GetNameForLocaleIdx(int32 locale_idx) const override;
 
         void SetDeathState(DeathState s) override;          // overwrite virtual Unit::SetDeathState

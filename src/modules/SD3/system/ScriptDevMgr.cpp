@@ -68,7 +68,7 @@ struct TSpellSummary
  * @param pSource Source of the text.
  * @param pTarget Can be nullptr (depending on CHAT_TYPE of iTextEntry). Possible target for the text.
  */
-void DoScriptText(int32 iTextEntry, WorldObject* pSource, Unit* pTarget)
+void DoScriptText(int32 iTextEntry, Presence* pSource, Unit* pTarget)
 {
     if (!pSource)
     {

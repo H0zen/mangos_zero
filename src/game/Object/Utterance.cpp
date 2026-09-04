@@ -81,7 +81,7 @@ namespace
 
     /// Everyone in the speaker's zone, whatever map they are standing on.
     template<class Say>
-    void ToZone(WorldObject const& speaker, Say& say)
+    void ToZone(Presence const& speaker, Say& say)
     {
         uint32 const zone = speaker.GetTerrain()->GetZoneId(speaker.Where().X(), speaker.Where().Y(),
                                                             speaker.Where().Z());
@@ -99,7 +99,7 @@ namespace
     }
 }
 
-void Utter(WorldObject const& speaker, ChatType kind, char const* text, Unit const* target, Language language)
+void Utter(Presence const& speaker, ChatType kind, char const* text, Unit const* target, Language language)
 {
     Form const form = FormOf(kind);
 
@@ -138,7 +138,7 @@ namespace MaNGOS
     class MonsterChatBuilder
     {
         public:
-            MonsterChatBuilder(WorldObject const& obj, ChatMsg msgtype, MangosStringLocale const* textData,
+            MonsterChatBuilder(Presence const& obj, ChatMsg msgtype, MangosStringLocale const* textData,
                                Language language, Unit const* target)
                 : i_object(obj), i_msgtype(msgtype), i_textData(textData), i_language(language), i_target(target) {}
 
@@ -161,7 +161,7 @@ namespace MaNGOS
             }
 
         private:
-            WorldObject const& i_object;
+            Presence const& i_object;
             ChatMsg i_msgtype;
             MangosStringLocale const* i_textData;
             Language i_language;
@@ -169,7 +169,7 @@ namespace MaNGOS
     };
 }
 
-void Utter(WorldObject const& speaker, MangosStringLocale const* line, Unit const* target)
+void Utter(Presence const& speaker, MangosStringLocale const* line, Unit const* target)
 {
     MANGOS_ASSERT(line);
 
@@ -206,7 +206,7 @@ void Utter(WorldObject const& speaker, MangosStringLocale const* line, Unit cons
     }
 }
 
-void PlaySound(WorldObject const& source, SoundKind kind, uint32 soundId, Player const* target)
+void PlaySound(Presence const& source, SoundKind kind, uint32 soundId, Player const* target)
 {
     WorldPacket data(kind == SoundKind::AtObject ? SMSG_PLAY_OBJECT_SOUND
                    : kind == SoundKind::Music    ? SMSG_PLAY_MUSIC
@@ -229,7 +229,7 @@ void PlaySound(WorldObject const& source, SoundKind kind, uint32 soundId, Player
     }
 }
 
-void SendDespawnAnimation(WorldObject const& what)
+void SendDespawnAnimation(Presence const& what)
 {
     WorldPacket data(SMSG_GAMEOBJECT_DESPAWN_ANIM, 8);
     data << what.GetObjectGuid();

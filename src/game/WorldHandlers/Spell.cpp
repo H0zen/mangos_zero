@@ -1202,7 +1202,7 @@ SpellCastResult Spell::CanOpenLock(SpellEffectIndex effIndex, uint32 lockId, Ski
  *
  * @return The effective caster world object.
  */
-WorldObject* Spell::GetAffectiveCasterObject() const
+Presence* Spell::GetAffectiveCasterObject() const
 {
     if (!m_originalCasterGUID)
     {
@@ -1221,7 +1221,7 @@ WorldObject* Spell::GetAffectiveCasterObject() const
  *
  * @return The casting world object.
  */
-WorldObject* Spell::GetCastingObject() const
+Presence* Spell::GetCastingObject() const
 {
     if (m_originalCasterGUID.IsGameObject())
     {

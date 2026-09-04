@@ -94,7 +94,7 @@ namespace MaNGOS
              * @param absAngle Absolute angle
              * @param selector Position selector
              */
-            NearUsedPosDo(WorldObject const& obj, WorldObject const* searcher, float absAngle, ObjectPosSelector& selector)
+            NearUsedPosDo(Presence const& obj, Presence const* searcher, float absAngle, ObjectPosSelector& selector)
                 : i_object(obj), i_searcher(searcher), i_absAngle(Geometry::Placement::NormalizeOrientation(absAngle)), i_selector(selector) {}
 
             void operator()(Corpse*) const {}
@@ -152,7 +152,7 @@ namespace MaNGOS
              *
              * Adds a used position to the selector.
              */
-            void add(WorldObject* u, float x, float y) const
+            void add(Presence* u, float x, float y) const
             {
                 float dx = i_object.Where().X() - x;
                 float dy = i_object.Where().Y() - y;
@@ -188,8 +188,8 @@ namespace MaNGOS
                 i_selector.AddUsedArea(u, angle, dist2d);
             }
         private:
-            WorldObject const& i_object;
-            WorldObject const* i_searcher;
+            Presence const& i_object;
+            Presence const* i_searcher;
             float              i_absAngle;
             ObjectPosSelector& i_selector;
     };
@@ -197,7 +197,7 @@ namespace MaNGOS
 
 // A point the component constructed, pulled back inside the map's coordinate bounds --
 // which is the map's business, not the geometry's.
-Geometry::Vector3 PointNear(WorldObject const& anchor, float distance2d, float absAngle)
+Geometry::Vector3 PointNear(Presence const& anchor, float distance2d, float absAngle)
 {
     Geometry::Vector3 point = anchor.Where().PointAt(distance2d, absAngle);
     MaNGOS::NormalizeMapCoord(point.x);
@@ -216,7 +216,7 @@ Geometry::Vector3 PointNear(WorldObject const& anchor, float distance2d, float a
  * @param distance2d The desired distance from the anchor.
  * @param absAngle The preferred absolute angle.
  */
-void FindFreeSpotNear(WorldObject const& anchor, WorldObject const* searcher, float& x, float& y, float& z,
+void FindFreeSpotNear(Presence const& anchor, Presence const* searcher, float& x, float& y, float& z,
                       float searcher_bounding_radius, float distance2d, float absAngle)
 {
     const Geometry::Vector3 first = PointNear(anchor, distance2d, absAngle);
@@ -251,7 +251,7 @@ void FindFreeSpotNear(WorldObject const& anchor, WorldObject const* searcher, fl
     // adding used positions around object
     {
         MaNGOS::NearUsedPosDo u_do(anchor, searcher, absAngle, selector);
-        MaNGOS::WorldObjectWorker<MaNGOS::NearUsedPosDo> worker(u_do);
+        MaNGOS::PresenceWorker<MaNGOS::NearUsedPosDo> worker(u_do);
 
         Cell::VisitAllObjects(&anchor, worker, dist);
     }
@@ -362,15 +362,15 @@ void FindFreeSpotNear(WorldObject const& anchor, WorldObject const* searcher, fl
     }
 }
 
-void ClosePointNear(WorldObject const& anchor, float& x, float& y, float& z, float bounding_radius,
-                    float distance2d, float angle, WorldObject const* searcher)
+void ClosePointNear(Presence const& anchor, float& x, float& y, float& z, float bounding_radius,
+                    float distance2d, float angle, Presence const* searcher)
 {
     FindFreeSpotNear(anchor, searcher, x, y, z, bounding_radius,
                      Geometry::Placement::ContactSpread(distance2d, anchor.Where().Extent(), bounding_radius),
                      anchor.Where().Facing() + angle);
 }
 
-void ContactPointNear(WorldObject const& anchor, WorldObject const* obj, float& x, float& y, float& z,
+void ContactPointNear(Presence const& anchor, Presence const* obj, float& x, float& y, float& z,
                       float distance2d)
 {
     FindFreeSpotNear(anchor, obj, x, y, z, obj->Where().Extent(),

@@ -78,7 +78,7 @@
  *
  * @param map The map to assign.
  */
-void WorldObject::SetMap(Map* map)
+void Presence::SetMap(Map* map)
 {
     MANGOS_ASSERT(map);
     m_currMap = map;
@@ -88,7 +88,7 @@ void WorldObject::SetMap(Map* map)
     RefreshFrame();
 }
 
-TerrainInfo const* WorldObject::GetTerrain() const
+TerrainInfo const* Presence::GetTerrain() const
 {
     MANGOS_ASSERT(m_currMap);
     return m_currMap->GetTerrain();
@@ -97,7 +97,7 @@ TerrainInfo const* WorldObject::GetTerrain() const
 /**
  * @brief Schedules the object for removal from the map.
  */
-void WorldObject::AddObjectToRemoveList()
+void Presence::AddObjectToRemoveList()
 {
     GetMap()->AddObjectToRemoveList(this);
 }
@@ -105,7 +105,7 @@ void WorldObject::AddObjectToRemoveList()
 /**
  * @brief Refreshes both visibility and viewpoint-dependent visibility state.
  */
-void WorldObject::UpdateVisibilityAndView()
+void Presence::UpdateVisibilityAndView()
 {
     GetViewPoint().Call_UpdateVisibilityForOwner();
     UpdateObjectVisibility();
@@ -115,7 +115,7 @@ void WorldObject::UpdateVisibilityAndView()
 /**
  * @brief Recomputes this object's visibility for nearby clients.
  */
-void WorldObject::UpdateObjectVisibility()
+void Presence::UpdateObjectVisibility()
 {
     CellPair p = MaNGOS::ComputeCellPair(Where().X(), Where().Y());
     Cell cell(p);
@@ -126,7 +126,7 @@ void WorldObject::UpdateObjectVisibility()
 /**
  * @brief Adds the world object to the map's update queue.
  */
-void WorldObject::AddToClientUpdateList()
+void Presence::AddToClientUpdateList()
 {
     GetMap()->AddUpdateObject(this);
 }
@@ -136,7 +136,7 @@ void WorldObject::AddToClientUpdateList()
  *
  * Removes this object from the map's update list.
  */
-void WorldObject::RemoveFromClientUpdateList()
+void Presence::RemoveFromClientUpdateList()
 {
     GetMap()->RemoveUpdateObject(this);
 }
@@ -146,17 +146,17 @@ void WorldObject::RemoveFromClientUpdateList()
  *
  * Accumulates update data for a world object and nearby players.
  */
-struct WorldObjectChangeAccumulator
+struct PresenceChangeAccumulator
 {
     UpdateDataMapType& i_updateDatas; ///< Update data map
-    WorldObject& i_object; ///< World object
+    Presence& i_object; ///< World object
 
     /**
      * @brief Constructor
      * @param obj World object
      * @param d Update data map
      */
-    WorldObjectChangeAccumulator(WorldObject& obj, UpdateDataMapType& d) : i_updateDatas(d), i_object(obj)
+    PresenceChangeAccumulator(Presence& obj, UpdateDataMapType& d) : i_updateDatas(d), i_object(obj)
     {
         // send self fields changes in another way, otherwise
         // with new camera system when player's camera too far from player, camera wouldn't receive packets and changes from player
@@ -196,9 +196,9 @@ struct WorldObjectChangeAccumulator
  *
  * Builds update data for all players who can see this object.
  */
-void WorldObject::BuildUpdateData(UpdateDataMapType& update_players)
+void Presence::BuildUpdateData(UpdateDataMapType& update_players)
 {
-    WorldObjectChangeAccumulator notifier(*this, update_players);
+    PresenceChangeAccumulator notifier(*this, update_players);
     Cell::VisitWorldObjects(this, notifier, GetMap()->GetBroadcastRadius());
 
     ClearUpdateMask(false);
@@ -214,7 +214,7 @@ void WorldObject::BuildUpdateData(UpdateDataMapType& update_players)
  *
  * Logs an error when invalid coordinates are encountered.
  */
-bool WorldObject::PrintCoordinatesError(float x, float y, float z, char const* descr) const
+bool Presence::PrintCoordinatesError(float x, float y, float z, char const* descr) const
 {
     sLog.outError("%s with invalid %s coordinates: mapid = %uu, x = %f, y = %f, z = %f", GetGuidStr().c_str(), descr, GetMapId(), x, y, z);
     return false;                                           // always false for continue assert fail
@@ -226,14 +226,14 @@ bool WorldObject::PrintCoordinatesError(float x, float y, float z, char const* d
  *
  * Sets whether this object is an active object (updated even when no players nearby).
  */
-void WorldObject::SetActiveObjectState(bool active)
+void Presence::SetActiveObjectState(bool active)
 {
     if (m_isActiveObject == active || (isType(TYPEMASK_PLAYER) && !active))  // player shouldn't became inactive, never
     {
         return;
     }
 
-    // player's update implemented in a different from other active worldobject's way
+    // player's update implemented in a different from other active presence's way
     // it's considered to use generic way in future
     if (IsInWorld() && !isType(TYPEMASK_PLAYER))
     {

@@ -38,7 +38,7 @@ enum DynamicObjectType
 
 struct SpellEntry;
 
-class DynamicObject : public WorldObject
+class DynamicObject : public Presence
 {
     public:
         explicit DynamicObject();
@@ -64,7 +64,7 @@ class DynamicObject : public WorldObject
         bool IsHostileTo(Unit const* unit) const override;
         bool IsFriendlyTo(Unit const* unit) const override;
 
-        float ComputeBoundingRadius() const override      // overwrite WorldObject version
+        float ComputeBoundingRadius() const override      // overwrite Presence version
         {
             return 0.0f;                                    // dynamic object not have real interact size
         }
@@ -74,7 +74,7 @@ class DynamicObject : public WorldObject
             return GetCasterGuid().IsPlayer();
         }
 
-        bool IsVisibleForInState(Player const* u, WorldObject const* viewPoint, bool inVisibleList) const override;
+        bool IsVisibleForInState(Player const* u, Presence const* viewPoint, bool inVisibleList) const override;
 
         /**
          * @brief Anchor this area effect to a DECK spot rather than a world point.

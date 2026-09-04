@@ -30,7 +30,7 @@
 
 class Creature;
 class GameObject;
-class WorldObject;
+class Presence;
 
 /**
  * Putting a new thing on a map.
@@ -48,9 +48,9 @@ class WorldObject;
  * @param asActiveObject Keep the summon updating with no players nearby.
  * @param setRun    Move at a run rather than a walk.
  */
-Creature* SummonCreature(WorldObject& summoner, uint32 id, float x, float y, float z, float ang,
+Creature* SummonCreature(Presence& summoner, uint32 id, float x, float y, float z, float ang,
                          TempSpawnType spwtype, uint32 despwtime,
                          bool asActiveObject = false, bool setRun = false);
 
-GameObject* SummonGameObject(WorldObject& summoner, uint32 id,
+GameObject* SummonGameObject(Presence& summoner, uint32 id,
                              float x, float y, float z, float angle, uint32 despwtime);

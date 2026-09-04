@@ -353,13 +353,13 @@ class OutdoorPvPEP : public OutdoorPvP
          * @brief Unsummon flight master (Plaguewood bonus)
          * @param objRef Reference world object for context
          */
-        void UnsummonFlightMaster(const WorldObject* objRef);
+        void UnsummonFlightMaster(const Presence* objRef);
 
         /**
          * @brief Unsummon soldiers (Eastwall bonus)
          * @param objRef Reference world object for context
          */
-        void UnsummonSoldiers(const WorldObject* objRef);
+        void UnsummonSoldiers(const Presence* objRef);
 
         Team m_towerOwner[MAX_EP_TOWERS]; ///< Current owner of each tower
         uint32 m_towerWorldState[MAX_EP_TOWERS]; ///< World state for each tower

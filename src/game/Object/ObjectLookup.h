@@ -30,7 +30,7 @@
 class Creature;
 class GameObject;
 class Unit;
-class WorldObject;
+class Presence;
 
 /**
  * @brief Resolve a GUID relative to some object's map.
@@ -57,11 +57,11 @@ namespace ObjectLookup
      * @param guid GUID to resolve.
      * @return The unit, or nullptr.
      */
-    Unit* GetUnit(WorldObject const& obj, ObjectGuid guid);
+    Unit* GetUnit(Presence const& obj, ObjectGuid guid);
 
     /// Find a creature on the reference object's map.
-    Creature* GetCreature(WorldObject const& obj, ObjectGuid guid);
+    Creature* GetCreature(Presence const& obj, ObjectGuid guid);
 
     /// Find a game object on the reference object's map.
-    GameObject* GetGameObject(WorldObject const& obj, ObjectGuid guid);
+    GameObject* GetGameObject(Presence const& obj, ObjectGuid guid);
 }

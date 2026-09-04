@@ -147,7 +147,7 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
     /* Checking group conditions to be sure the player has the permissions to loot. */
     if (group)
     {
-        WorldObject * pObject = player->GetMap()->GetWorldObject(lguid);
+        Presence * pObject = player->GetMap()->GetPresence(lguid);
 
         switch (group->GetLootMethod())
         {

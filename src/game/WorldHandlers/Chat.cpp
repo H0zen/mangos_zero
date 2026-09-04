@@ -2045,7 +2045,7 @@ template std::string ChatHandler::PrepareStringNpcOrGoSpawnInformation<GameObjec
  * @param caster The world object treated as the aura caster.
  * @return true if the aura holder was created and applied; otherwise false.
  */
-bool AddAuraToPlayer(const SpellEntry* spellInfo, Unit* target, WorldObject* caster)
+bool AddAuraToPlayer(const SpellEntry* spellInfo, Unit* target, Presence* caster)
 {
     // We assume the spellInfo has been checked and the spell has aura effects
     /**

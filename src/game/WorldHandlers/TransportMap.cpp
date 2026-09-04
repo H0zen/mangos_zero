@@ -349,7 +349,7 @@ bool TransportMap::IsBlocked(Geometry::Vector3 const& from, Geometry::Vector3 co
     return !GetTerrain()->IsInLineOfSight(from.x, from.y, from.z, to.x, to.y, to.z);
 }
 
-std::optional<Geometry::Placement> TransportMap::PositionOf(WorldObject const& obj) const
+std::optional<Geometry::Placement> TransportMap::PositionOf(Presence const& obj) const
 {
     // ABOARD, ITS POSITION IS ITS POSITION. Nothing to look up and nothing to convert: this
     // map's coordinates are the answer for a crew member, a pet, a totem and a player alike.
@@ -361,7 +361,7 @@ std::optional<Geometry::Placement> TransportMap::PositionOf(WorldObject const& o
     return std::nullopt;
 }
 
-std::optional<Position> TransportMap::FreeSpotNear(WorldObject const& master, float distance2d,
+std::optional<Position> TransportMap::FreeSpotNear(Presence const& master, float distance2d,
                                                    float angle) const
 {
     const auto anchor = PositionOf(master);
@@ -873,7 +873,7 @@ void TransportMap::RetractVessel(Transport* vessel, Player* observer)
     observer->SendDirectMessage(&packet);
 }
 
-void TransportMap::CollectRelaySources(WorldObject const* viewer, float visibility,
+void TransportMap::CollectRelaySources(Presence const* viewer, float visibility,
                                        std::vector<RelaySource>& out)
 {
     if (!viewer || !viewer->GetMap())
@@ -939,9 +939,9 @@ void TransportMap::GatherObservers()
     // phase and world-membership rules that do not belong in a cell sweep.
     struct WatchingFromShore
     {
-        WorldObject const* focus;
+        Presence const* focus;
         float range;
-        WorldObject const& GetFocusObject() const { return *focus; }
+        Presence const& GetFocusObject() const { return *focus; }
         bool operator()(Player* watcher) const
         {
             return watcher->IsInWorld() &&

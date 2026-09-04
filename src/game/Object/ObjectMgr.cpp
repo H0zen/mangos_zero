@@ -2498,7 +2498,7 @@ const char* ObjectMgr::GetMangosString(int32 entry, int locale_idx) const
 
 
 // Check if a player meets condition conditionId
-bool ObjectMgr::IsPlayerMeetToCondition(uint16 conditionId, Player const* pPlayer, Map const* map, WorldObject const* source, ConditionSource conditionSourceType, ConditionEntry* entry) const
+bool ObjectMgr::IsPlayerMeetToCondition(uint16 conditionId, Player const* pPlayer, Map const* map, Presence const* source, ConditionSource conditionSourceType, ConditionEntry* entry) const
 {
     if (const PlayerCondition* condition = sConditionStorage.LookupEntry<PlayerCondition>(conditionId))
     {
@@ -2526,7 +2526,7 @@ char const* conditionSourceToStr[] =
 };
 
 // Checks if player meets the condition
-bool PlayerCondition::Meets(Player const* player, Map const* map, WorldObject const* source, ConditionSource conditionSourceType, ConditionEntry* entry) const
+bool PlayerCondition::Meets(Player const* player, Map const* map, Presence const* source, ConditionSource conditionSourceType, ConditionEntry* entry) const
 {
     DEBUG_LOG("Condition-System: Check condition %u, type %i - called from %s with params plr: %s, map %i, src %s",
         m_entry, m_condition, conditionSourceToStr[conditionSourceType], player ? player->GetGuidStr().c_str() : "<NULL>", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "<NULL>");
@@ -2565,7 +2565,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, WorldObject co
         case CONDITION_AREAID:
         {
             uint32 zone, area;
-            WorldObject const* searcher = source ? source : player;
+            Presence const* searcher = source ? source : player;
             searcher->GetTerrain()->GetZoneAndAreaId(zone, area, searcher->Where().X(), searcher->Where().Y(), searcher->Where().Z());
             return (zone == m_value1 || area == m_value1) == (m_value2 == 0);
         }
@@ -2609,7 +2609,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, WorldObject co
             return sGameEventMgr.IsActiveEvent(m_value1);
         case CONDITION_AREA_FLAG:
         {
-            WorldObject const* searcher = source ? source : player;
+            Presence const* searcher = source ? source : player;
             if (AreaTableEntry const* pAreaEntry = GetAreaEntryByAreaID(searcher->GetTerrain()->GetAreaId(searcher->Where().X(), searcher->Where().Y(), searcher->Where().Z())))
             {
                 if ((!m_value1 || (pAreaEntry->Flags & m_value1)) && (!m_value2 || !(pAreaEntry->Flags & m_value2)))
@@ -2874,7 +2874,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, WorldObject co
 }
 
 // Which params must be provided to a Condition
-bool PlayerCondition::CheckParamRequirements(Player const* pPlayer, Map const* map, WorldObject const* source, ConditionSource conditionSourceType) const
+bool PlayerCondition::CheckParamRequirements(Player const* pPlayer, Map const* map, Presence const* source, ConditionSource conditionSourceType) const
 {
     switch (m_condition)
     {
@@ -3929,7 +3929,7 @@ GameObjectDataPair const* FindGOData::GetResult() const
  * @param target The optional target unit for whispers.
  * @return true if the text was displayed successfully; otherwise false.
  */
-bool DoDisplayText(WorldObject* source, int32 entry, Unit const* target /*=NULL*/)
+bool DoDisplayText(Presence* source, int32 entry, Unit const* target /*=NULL*/)
 {
     MangosStringLocale const* data = sObjectMgr.GetMangosStringLocale(entry);
 

@@ -95,7 +95,7 @@ struct ReapplyAffectedPassiveAurasHelper;
 class SpellAuraHolder
 {
     public:
-        SpellAuraHolder(SpellEntry const* spellproto, Unit* target, WorldObject* caster, Item* castItem);
+        SpellAuraHolder(SpellEntry const* spellproto, Unit* target, Presence* caster, Item* castItem);
         Aura* m_auras[MAX_EFFECT_INDEX];
 
         void AddAura(Aura* aura, SpellEffectIndex index);
@@ -577,4 +577,4 @@ Aura* CreateAura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* curr
 /**
  * Creates the aura holder that owns aura effects for a spell application.
  */
-SpellAuraHolder* CreateSpellAuraHolder(SpellEntry const* spellproto, Unit* target, WorldObject* caster, Item* castItem = NULL);
+SpellAuraHolder* CreateSpellAuraHolder(SpellEntry const* spellproto, Unit* target, Presence* caster, Item* castItem = NULL);

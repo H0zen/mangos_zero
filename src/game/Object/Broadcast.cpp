@@ -79,7 +79,7 @@
  * @param data The packet to send.
  * @param toSubject Also deliver to the subject's own client, if it has one.
  */
-void Broadcast(WorldObject const& from, WorldPacket* data, bool toSubject)
+void Broadcast(Presence const& from, WorldPacket* data, bool toSubject)
 {
     if (from.IsInWorld())
     {
@@ -162,7 +162,7 @@ void Broadcast(WorldObject const& from, WorldPacket* data, bool toSubject)
  * @param toSubject Also deliver to the subject's own client, if it has one.
  * @param ownTeamOnly Deliver only to viewers on the subject's side.
  */
-void BroadcastWithin(WorldObject const& from, WorldPacket* data, float dist, bool toSubject, bool ownTeamOnly)
+void BroadcastWithin(Presence const& from, WorldPacket* data, float dist, bool toSubject, bool ownTeamOnly)
 {
     if (from.IsInWorld())
     {
@@ -193,7 +193,7 @@ void BroadcastWithin(WorldObject const& from, WorldPacket* data, float dist, boo
  * @param data The packet to send.
  * @param skip The viewer to leave out.
  */
-void BroadcastExcept(WorldObject const& from, WorldPacket* data, Player const* skip)
+void BroadcastExcept(Presence const& from, WorldPacket* data, Player const* skip)
 {
     if (!from.IsInWorld())
     {

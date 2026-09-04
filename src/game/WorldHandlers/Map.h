@@ -307,9 +307,9 @@ class Map : public GridRefManager<NGridType>
         // can't be nullptr for loaded map
         MapPersistentState* GetPersistentState() const { return m_persistentState; }
 
-        void AddObjectToRemoveList(WorldObject* obj);
+        void AddObjectToRemoveList(Presence* obj);
 
-        void UpdateObjectVisibility(WorldObject* obj, Cell cell, CellPair cellpair);
+        void UpdateObjectVisibility(Presence* obj, Cell cell, CellPair cellpair);
 
         void resetMarkedCells()
         {
@@ -343,9 +343,9 @@ class Map : public GridRefManager<NGridType>
         void ScriptCommandStart(ScriptInfo const& script, uint32 delay, Object* source, Object* target);
 
         // must called with AddToWorld
-        void AddToActive(WorldObject* obj);
+        void AddToActive(Presence* obj);
         // must called with RemoveFromWorld
-        void RemoveFromActive(WorldObject* obj);
+        void RemoveFromActive(Presence* obj);
 
         Player* GetPlayer(ObjectGuid guid);
         Creature* GetCreature(ObjectGuid guid);
@@ -355,7 +355,7 @@ class Map : public GridRefManager<NGridType>
         DynamicObject* GetDynamicObject(ObjectGuid guid);
         Corpse* GetCorpse(ObjectGuid guid);                 // !!! find corpse can be not in world
         Unit* GetUnit(ObjectGuid guid);                     // only use if sure that need objects at current map, specially for player case
-        WorldObject* GetWorldObject(ObjectGuid guid);       // only use if sure that need objects at current map, specially for player case
+        Presence* GetPresence(ObjectGuid guid);       // only use if sure that need objects at current map, specially for player case
 
         using MapStoredObjectTypesContainer = TypeUnorderedMapContainer<ObjectGuid, TypeList<Creature, Pet, GameObject, DynamicObject>> ;
         MapStoredObjectTypesContainer& GetObjectsStore()
@@ -518,7 +518,7 @@ class Map : public GridRefManager<NGridType>
         void buildNGridLinkage(NGridType* pNGridType) { pNGridType->link(this); }
 
 
-        void VisitNearbyCellsOf(WorldObject* obj,
+        void VisitNearbyCellsOf(Presence* obj,
             TypeContainerVisitor<MaNGOS::ObjectUpdater, GridTypeMapContainer> &gridVisitor,
             TypeContainerVisitor<MaNGOS::ObjectUpdater, WorldTypeMapContainer> &worldVisitor);
 
@@ -559,7 +559,7 @@ class Map : public GridRefManager<NGridType>
         MapRefManager m_mapRefManager;
         MapRefManager::iterator m_mapRefIter;
 
-        typedef std::set<WorldObject*> ActiveNonPlayers;
+        typedef std::set<Presence*> ActiveNonPlayers;
         ActiveNonPlayers m_activeNonPlayers;
         ActiveNonPlayers::iterator m_activeNonPlayersIter;
         MapStoredObjectTypesContainer m_objectsStore;
@@ -593,7 +593,7 @@ class Map : public GridRefManager<NGridType>
 
         std::bitset<TOTAL_NUMBER_OF_CELLS_PER_MAP* TOTAL_NUMBER_OF_CELLS_PER_MAP> marked_cells;
 
-        std::set<WorldObject*> i_objectsToRemove;
+        std::set<Presence*> i_objectsToRemove;
 
         typedef std::multimap<time_t, ScriptAction> ScriptScheduleMap;
         ScriptScheduleMap m_scriptSchedule;

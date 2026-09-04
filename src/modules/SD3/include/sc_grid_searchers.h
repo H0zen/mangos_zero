@@ -32,7 +32,7 @@ class Creature;
 
 /**
  * @struct ObjectDistanceOrder
- * @brief Comparator for sorting WorldObjects by distance from a source Unit.
+ * @brief Comparator for sorting presences by distance from a source Unit.
  */
 struct ObjectDistanceOrder
 {
@@ -45,12 +45,12 @@ struct ObjectDistanceOrder
     ObjectDistanceOrder(const Unit* pSource) : m_pSource(pSource) {}
 
     /**
-     * @brief Comparator function for sorting WorldObjects by distance.
-     * @param pLeft Pointer to the left WorldObject.
-     * @param pRight Pointer to the right WorldObject.
+     * @brief Comparator function for sorting presences by distance.
+     * @param pLeft Pointer to the left Presence.
+     * @param pRight Pointer to the right Presence.
      * @return True if pLeft is closer to the source than pRight, false otherwise.
      */
-    bool operator()(const WorldObject* pLeft, const WorldObject* pRight) const
+    bool operator()(const Presence* pLeft, const Presence* pRight) const
     {
         return m_pSource->Where().IsNearer(pLeft->Where(), pRight->Where());
     }
@@ -58,7 +58,7 @@ struct ObjectDistanceOrder
 
 /**
  * @struct ObjectDistanceOrderReversed
- * @brief Comparator for sorting WorldObjects by distance from a source Unit in reverse order.
+ * @brief Comparator for sorting presences by distance from a source Unit in reverse order.
  */
 struct ObjectDistanceOrderReversed
 {
@@ -71,12 +71,12 @@ struct ObjectDistanceOrderReversed
     ObjectDistanceOrderReversed(const Unit* pSource) : m_pSource(pSource) {}
 
     /**
-     * @brief Comparator function for sorting WorldObjects by distance in reverse order.
-     * @param pLeft Pointer to the left WorldObject.
-     * @param pRight Pointer to the right WorldObject.
+     * @brief Comparator function for sorting presences by distance in reverse order.
+     * @param pLeft Pointer to the left Presence.
+     * @param pRight Pointer to the right Presence.
      * @return True if pLeft is farther from the source than pRight, false otherwise.
      */
-    bool operator()(const WorldObject* pLeft, const WorldObject* pRight) const
+    bool operator()(const Presence* pLeft, const Presence* pRight) const
     {
         return !m_pSource->Where().IsNearer(pLeft->Where(), pRight->Where());
     }
@@ -84,16 +84,16 @@ struct ObjectDistanceOrderReversed
 
 /**
  * @brief Gets the closest GameObject with a specific entry within a given range.
- * @param pSource Pointer to the source WorldObject.
+ * @param pSource Pointer to the source Presence.
  * @param uiEntry Entry ID of the GameObject.
  * @param fMaxSearchRange Maximum search range.
  * @return Pointer to the closest GameObject, or nullptr if not found.
  */
-GameObject* GetClosestGameObjectWithEntry(WorldObject* pSource, uint32 uiEntry, float fMaxSearchRange);
+GameObject* GetClosestGameObjectWithEntry(Presence* pSource, uint32 uiEntry, float fMaxSearchRange);
 
 /**
  * @brief Gets the closest Creature with a specific entry within a given range.
- * @param pSource Pointer to the source WorldObject.
+ * @param pSource Pointer to the source Presence.
  * @param uiEntry Entry ID of the Creature.
  * @param fMaxSearchRange Maximum search range.
  * @param bOnlyAlive If true, only alive creatures will be considered.
@@ -101,22 +101,22 @@ GameObject* GetClosestGameObjectWithEntry(WorldObject* pSource, uint32 uiEntry, 
  * @param bExcludeSelf If true, the source creature will be excluded from the search.
  * @return Pointer to the closest Creature, or nullptr if not found.
  */
-Creature* GetClosestCreatureWithEntry(WorldObject* pSource, uint32 uiEntry, float fMaxSearchRange, bool bOnlyAlive = true, bool bOnlyDead = false, bool bExcludeSelf = false);
+Creature* GetClosestCreatureWithEntry(Presence* pSource, uint32 uiEntry, float fMaxSearchRange, bool bOnlyAlive = true, bool bOnlyDead = false, bool bExcludeSelf = false);
 
 /**
  * @brief Gets a list of GameObjects with a specific entry within a given range.
  * @param lList Reference to the list to store the found GameObjects.
- * @param pSource Pointer to the source WorldObject.
+ * @param pSource Pointer to the source Presence.
  * @param uiEntry Entry ID of the GameObject.
  * @param fMaxSearchRange Maximum search range.
  */
-void GetGameObjectListWithEntryInGrid(std::list<GameObject*>& lList , WorldObject* pSource, uint32 uiEntry, float fMaxSearchRange);
+void GetGameObjectListWithEntryInGrid(std::list<GameObject*>& lList , Presence* pSource, uint32 uiEntry, float fMaxSearchRange);
 
 /**
  * @brief Gets a list of Creatures with a specific entry within a given range.
  * @param lList Reference to the list to store the found Creatures.
- * @param pSource Pointer to the source WorldObject.
+ * @param pSource Pointer to the source Presence.
  * @param uiEntry Entry ID of the Creature.
  * @param fMaxSearchRange Maximum search range.
  */
-void GetCreatureListWithEntryInGrid(std::list<Creature*>& lList, WorldObject* pSource, uint32 uiEntry, float fMaxSearchRange);
+void GetCreatureListWithEntryInGrid(std::list<Creature*>& lList, Presence* pSource, uint32 uiEntry, float fMaxSearchRange);

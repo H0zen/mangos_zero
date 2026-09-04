@@ -38,7 +38,7 @@
  *
  * @param type The corpse type to initialize.
  */
-Corpse::Corpse(CorpseType type) : WorldObject(),
+Corpse::Corpse(CorpseType type) : Presence(),
     loot(this),
     lootRecipient(NULL),
     lootForBody(false)
@@ -112,7 +112,7 @@ bool Corpse::Create(uint32 guidlow, Player* owner)
 {
     MANGOS_ASSERT(owner);
 
-    WorldObject::_Create(guidlow, HIGHGUID_CORPSE);
+    Presence::_Create(guidlow, HIGHGUID_CORPSE);
     Place().MoveTo(owner->Where().X(), owner->Where().Y(), owner->Where().Z(), owner->Where().Facing());
 
     // we need to assign owner's map for corpse
@@ -319,7 +319,7 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
  * @param inVisibleList true when the corpse is already in the visible list.
  * @return true if the corpse should be visible; otherwise, false.
  */
-bool Corpse::IsVisibleForInState(Player const* u, WorldObject const* viewPoint, bool inVisibleList) const
+bool Corpse::IsVisibleForInState(Player const* u, Presence const* viewPoint, bool inVisibleList) const
 {
     return IsInWorld() && u->IsInWorld() && SeenWithin(*this, *viewPoint, GetMap()->GetVisibilityDistance() + (inVisibleList ? World::GetVisibleObjectGreyDistance() : 0.0f), false);
 }

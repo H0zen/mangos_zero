@@ -566,7 +566,7 @@ void Spell::SendChannelUpdate(uint32 time)
  */
 void Spell::SendChannelStart(uint32 duration)
 {
-    WorldObject* target = NULL;
+    Presence* target = NULL;
 
     // select dynobject created by first effect if any
     if (m_spellInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_PERSISTENT_AREA_AURA)

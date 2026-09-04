@@ -29,7 +29,7 @@
 #include "GridDefines.h"
 
 class Map;
-class WorldObject;
+class Presence;
 
 /**
  * @brief Cell area structure
@@ -250,13 +250,13 @@ struct Cell
     } data;
 
     template<class T, class CONTAINER> void Visit(const CellPair& cellPair, TypeContainerVisitor<T, CONTAINER> &visitor, Map& m, float x, float y, float radius) const;
-    template<class T, class CONTAINER> void Visit(const CellPair& cellPair, TypeContainerVisitor<T, CONTAINER> &visitor, Map& m, const WorldObject& obj, float radius) const;
+    template<class T, class CONTAINER> void Visit(const CellPair& cellPair, TypeContainerVisitor<T, CONTAINER> &visitor, Map& m, const Presence& obj, float radius) const;
 
     static CellArea CalculateCellArea(float x, float y, float radius);
 
-    template<class T> static void VisitGridObjects(const WorldObject* obj, T& visitor, float radius, bool dont_load = true);
-    template<class T> static void VisitWorldObjects(const WorldObject* obj, T& visitor, float radius, bool dont_load = true);
-    template<class T> static void VisitAllObjects(const WorldObject* obj, T& visitor, float radius, bool dont_load = true);
+    template<class T> static void VisitGridObjects(const Presence* obj, T& visitor, float radius, bool dont_load = true);
+    template<class T> static void VisitWorldObjects(const Presence* obj, T& visitor, float radius, bool dont_load = true);
+    template<class T> static void VisitAllObjects(const Presence* obj, T& visitor, float radius, bool dont_load = true);
 
     template<class T> static void VisitGridObjects(float x, float y, Map* map, T& visitor, float radius, bool dont_load = true);
     template<class T> static void VisitWorldObjects(float x, float y, Map* map, T& visitor, float radius, bool dont_load = true);

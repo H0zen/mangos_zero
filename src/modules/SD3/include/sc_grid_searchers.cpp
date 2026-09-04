@@ -37,12 +37,12 @@
  *
  * This function searches for the closest GameObject with the specified entry ID within the given range from the source object.
  *
- * @param pSource Pointer to the source WorldObject.
+ * @param pSource Pointer to the source Presence.
  * @param uiEntry Entry ID of the GameObject.
  * @param fMaxSearchRange Maximum search range.
  * @return Pointer to the closest GameObject, or nullptr if not found.
  */
-GameObject* GetClosestGameObjectWithEntry(WorldObject* pSource, uint32 uiEntry, float fMaxSearchRange)
+GameObject* GetClosestGameObjectWithEntry(Presence* pSource, uint32 uiEntry, float fMaxSearchRange)
 {
     GameObject* pGo = nullptr;
 
@@ -59,7 +59,7 @@ GameObject* GetClosestGameObjectWithEntry(WorldObject* pSource, uint32 uiEntry, 
  *
  * This function searches for the closest Creature with the specified entry ID within the given range from the source object.
  *
- * @param pSource Pointer to the source WorldObject.
+ * @param pSource Pointer to the source Presence.
  * @param uiEntry Entry ID of the Creature.
  * @param fMaxSearchRange Maximum search range.
  * @param bOnlyAlive If true, only alive creatures will be considered.
@@ -67,7 +67,7 @@ GameObject* GetClosestGameObjectWithEntry(WorldObject* pSource, uint32 uiEntry, 
  * @param bExcludeSelf If true, the source creature will be excluded from the search.
  * @return Pointer to the closest Creature, or nullptr if not found.
  */
-Creature* GetClosestCreatureWithEntry(WorldObject* pSource, uint32 uiEntry, float fMaxSearchRange, bool bOnlyAlive/*=true*/, bool bOnlyDead/*=false*/, bool bExcludeSelf/*=false*/)
+Creature* GetClosestCreatureWithEntry(Presence* pSource, uint32 uiEntry, float fMaxSearchRange, bool bOnlyAlive/*=true*/, bool bOnlyDead/*=false*/, bool bExcludeSelf/*=false*/)
 {
     Creature* pCreature = nullptr;
 
@@ -85,11 +85,11 @@ Creature* GetClosestCreatureWithEntry(WorldObject* pSource, uint32 uiEntry, floa
  * This function searches for all GameObjects with the specified entry ID within the given range from the source object and stores them in the provided list.
  *
  * @param lList Reference to the list to store the found GameObjects.
- * @param pSource Pointer to the source WorldObject.
+ * @param pSource Pointer to the source Presence.
  * @param uiEntry Entry ID of the GameObject.
  * @param fMaxSearchRange Maximum search range.
  */
-static void CheckPartialGridScanAnomaly(WorldObject* pSource, const char* tag)
+static void CheckPartialGridScanAnomaly(Presence* pSource, const char* tag)
 {
     if (!pSource || !pSource->GetMap())
     {
@@ -130,7 +130,7 @@ static void CheckPartialGridScanAnomaly(WorldObject* pSource, const char* tag)
                   cell.GridX(), cell.GridY(), pSource->GetMapId(), tag ? tag : "?");
 }
 
-void GetGameObjectListWithEntryInGrid(std::list<GameObject*>& lList , WorldObject* pSource, uint32 uiEntry, float fMaxSearchRange)
+void GetGameObjectListWithEntryInGrid(std::list<GameObject*>& lList , Presence* pSource, uint32 uiEntry, float fMaxSearchRange)
 {
     CheckPartialGridScanAnomaly(pSource, "GO");
 
@@ -146,11 +146,11 @@ void GetGameObjectListWithEntryInGrid(std::list<GameObject*>& lList , WorldObjec
  * This function searches for all Creatures with the specified entry ID within the given range from the source object and stores them in the provided list.
  *
  * @param lList Reference to the list to store the found Creatures.
- * @param pSource Pointer to the source WorldObject.
+ * @param pSource Pointer to the source Presence.
  * @param uiEntry Entry ID of the Creature.
  * @param fMaxSearchRange Maximum search range.
  */
-void GetCreatureListWithEntryInGrid(std::list<Creature*>& lList, WorldObject* pSource, uint32 uiEntry, float fMaxSearchRange)
+void GetCreatureListWithEntryInGrid(std::list<Creature*>& lList, Presence* pSource, uint32 uiEntry, float fMaxSearchRange)
 {
     CheckPartialGridScanAnomaly(pSource, "Creature");
 

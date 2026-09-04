@@ -35,7 +35,7 @@
 #include "Player.h"
 #include "TemporarySummon.h"
 
-Creature* SummonCreature(WorldObject& summoner, uint32 id, float x, float y, float z, float ang,
+Creature* SummonCreature(Presence& summoner, uint32 id, float x, float y, float z, float ang,
                          TempSpawnType spwtype, uint32 despwtime, bool asActiveObject, bool setRun)
 {
     CreatureInfo const* cinfo = ObjectMgr::GetCreatureTemplate(id);
@@ -96,7 +96,7 @@ Creature* SummonCreature(WorldObject& summoner, uint32 id, float x, float y, flo
     return pCreature;
 }
 
-GameObject* SummonGameObject(WorldObject& summoner, uint32 id,
+GameObject* SummonGameObject(Presence& summoner, uint32 id,
                              float x, float y, float z, float angle, uint32 despwtime)
 {
     Map* map = summoner.FindMap();

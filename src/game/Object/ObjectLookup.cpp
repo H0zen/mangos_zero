@@ -34,7 +34,7 @@
 
 namespace ObjectLookup
 {
-    Unit* GetUnit(WorldObject const& obj, ObjectGuid guid)
+    Unit* GetUnit(Presence const& obj, ObjectGuid guid)
     {
         if (!guid)
         {
@@ -56,7 +56,7 @@ namespace ObjectLookup
         return obj.GetMap()->GetAnyTypeCreature(guid);
     }
 
-    Creature* GetCreature(WorldObject const& obj, ObjectGuid guid)
+    Creature* GetCreature(Presence const& obj, ObjectGuid guid)
     {
         if (!guid || !obj.IsInWorld())
         {
@@ -66,7 +66,7 @@ namespace ObjectLookup
         return obj.GetMap()->GetCreature(guid);
     }
 
-    GameObject* GetGameObject(WorldObject const& obj, ObjectGuid guid)
+    GameObject* GetGameObject(Presence const& obj, ObjectGuid guid)
     {
         if (!guid || !obj.IsInWorld())
         {

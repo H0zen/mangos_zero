@@ -99,7 +99,7 @@ bool TargetedMovementGenerator::RequiresNewPosition(Unit& owner,
         distSq += dz * dz;
     }
 
-    // The bounding radius is folded into the tolerance exactly as WorldObject's own
+    // The bounding radius is folded into the tolerance exactly as Presence's own
     // IsWithinDist2d/3d fold it in, so this stays the same test it always was for the
     // (overwhelmingly common) world-frame case.
     const float maxdist = allowed + i_target->Where().Extent();

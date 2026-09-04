@@ -184,8 +184,8 @@ void MapManager::InitializeVisibilityDistanceInfo()
     }
 }
 
-/// @param id - MapId of the to be created map. @param obj WorldObject for which the map is to be created. Must be player for Instancable maps.
-Map* MapManager::CreateMap(uint32 id, const WorldObject* obj)
+/// @param id - MapId of the to be created map. @param obj Presence for which the map is to be created. Must be player for Instancable maps.
+Map* MapManager::CreateMap(uint32 id, const Presence* obj)
 {
     std::lock_guard<LOCK_TYPE> _guard(m_lock);
 

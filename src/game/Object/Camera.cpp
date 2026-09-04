@@ -92,7 +92,7 @@ void Camera::UpdateForCurrentViewPoint()
  * @param obj The new viewpoint object.
  * @param update_far_sight_field true to update the player's farsight field; otherwise, false.
  */
-void Camera::SetView(WorldObject* obj, bool update_far_sight_field /*= true*/)
+void Camera::SetView(Presence* obj, bool update_far_sight_field /*= true*/)
 {
     MANGOS_ASSERT(obj);
 
@@ -203,7 +203,7 @@ void Camera::Event_Moved()
  *
  * @param target The world object whose visibility should be updated.
  */
-void Camera::UpdateVisibilityOf(WorldObject* target)
+void Camera::UpdateVisibilityOf(Presence* target)
 {
     m_owner.UpdateVisibilityOf(m_source, target);
 }
@@ -215,7 +215,7 @@ void Camera::UpdateVisibilityOf(WorldObject* target)
  * @param data The update packet data being built.
  * @param vis The set of currently visible objects.
  */
-void Camera::UpdateVisibilityOf(WorldObject* target, UpdateData& data, std::set<WorldObject*>& vis)
+void Camera::UpdateVisibilityOf(Presence* target, UpdateData& data, std::set<Presence*>& vis)
 {
     m_owner.UpdateVisibilityOf(m_source, target, data, vis);
 }

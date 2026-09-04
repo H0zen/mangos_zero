@@ -152,7 +152,7 @@ void Spell::EffectSummonObjectWild(SpellEffectIndex eff_idx)
 
     GameObject* pGameObj = new GameObject;
 
-    WorldObject* target = focusObject;
+    Presence* target = focusObject;
     if (!target)
     {
         target = m_caster;

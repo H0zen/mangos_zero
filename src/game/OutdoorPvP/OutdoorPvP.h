@@ -34,7 +34,7 @@
 
 // forward declaration
 class WorldPacket;
-class WorldObject;
+class Presence;
 class Player;
 class GameObject;
 class Unit;
@@ -232,7 +232,7 @@ class OutdoorPvP
          * @param artKit Art kit to apply
          * @param animId Animation ID to play
          */
-        void SetBannerVisual(const WorldObject* objRef, ObjectGuid goGuid, uint32 artKit, uint32 animId);
+        void SetBannerVisual(const Presence* objRef, ObjectGuid goGuid, uint32 artKit, uint32 animId);
 
         /**
          * @brief Set banner visual directly on game object
@@ -248,7 +248,7 @@ class OutdoorPvP
          * @param goGuid GUID of the game object to respawn
          * @param respawn True to spawn, false to despawn
          */
-        void RespawnGO(const WorldObject* objRef, ObjectGuid goGuid, bool respawn);
+        void RespawnGO(const Presence* objRef, ObjectGuid goGuid, bool respawn);
 
         GuidZoneMap m_zonePlayers; ///< Map of players inside the area
 };

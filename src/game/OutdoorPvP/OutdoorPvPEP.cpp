@@ -449,7 +449,7 @@ void OutdoorPvPEP::InitBanner(GameObject* go, uint32 towerId)
 }
 
 // Handle the unsummon of the spectral flight master when the Plaguewood tower is lost
-void OutdoorPvPEP::UnsummonFlightMaster(const WorldObject* objRef)
+void OutdoorPvPEP::UnsummonFlightMaster(const Presence* objRef)
 {
     if (Creature* flightMaster = objRef->GetMap()->GetCreature(m_flightMaster))
     {
@@ -458,7 +458,7 @@ void OutdoorPvPEP::UnsummonFlightMaster(const WorldObject* objRef)
 }
 
 // Handle the unsummon of the soldiers when the Eastwall tower is lost
-void OutdoorPvPEP::UnsummonSoldiers(const WorldObject* objRef)
+void OutdoorPvPEP::UnsummonSoldiers(const Presence* objRef)
 {
     for (GuidList::const_iterator itr = m_soldiers.begin(); itr != m_soldiers.end(); ++itr)
     {

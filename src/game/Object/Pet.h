@@ -356,8 +356,8 @@ class Pet : public Creature
             m_auraUpdateMask = 0;
         }
 
-        // overwrite Creature function for name localization back to WorldObject version without localization
-        const char* GetNameForLocaleIdx(int32 locale_idx) const override { return WorldObject::GetNameForLocaleIdx(locale_idx); }
+        // overwrite Creature function for name localization back to Presence version without localization
+        const char* GetNameForLocaleIdx(int32 locale_idx) const override { return Presence::GetNameForLocaleIdx(locale_idx); }
 
         bool    m_removed;                                  // prevent overwrite pet state in DB at next Pet::Update if pet already removed(saved)
 

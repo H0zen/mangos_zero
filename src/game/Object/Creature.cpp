@@ -3141,7 +3141,7 @@ uint32 Creature::GetScriptId() const
 
 
 
-// overwrite WorldObject function for proper name localization
+// overwrite Presence function for proper name localization
 
 /**
  * @brief Gets the localized creature name for a locale index.
@@ -3567,7 +3567,7 @@ SpellCastResult Creature::TryToCast(Unit* pTarget, const SpellEntry* pSpellInfo,
     }
     if (pSpellInfo->Targets & TARGET_FLAG_SOURCE_LOCATION)
     {
-        if (WorldObject* caster = spell->GetCastingObject())
+        if (Presence* caster = spell->GetCastingObject())
         {
             targets.setSource(caster->Where().X(), caster->Where().Y(), caster->Where().Z());
         }

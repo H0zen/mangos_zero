@@ -425,7 +425,7 @@ class Spell
         void WriteSpellGoTargets(WorldPacket* data);
         void WriteAmmoToPacket(WorldPacket* data);
 
-        template<typename T> WorldObject* FindCorpseUsing();
+        template<typename T> Presence* FindCorpseUsing();
 
         bool CheckTarget(Unit* target, SpellEffectIndex eff);
         bool CanAutoCast(Unit* target);
@@ -495,11 +495,11 @@ class Spell
         // formal spell caster, in game source of spell affects cast
         Unit* GetCaster() const { return m_caster; }
         // real source of cast affects, explicit caster, or DoT/HoT applier, or GO owner, or wild GO itself. Can be NULL
-        WorldObject* GetAffectiveCasterObject() const;
+        Presence* GetAffectiveCasterObject() const;
         // limited version returning NULL in cases wild gameobject caster object, need for Aura (auras currently not support non-Unit caster)
         Unit* GetAffectiveCaster() const { return m_originalCasterGUID ? m_originalCaster : m_caster; }
         // m_originalCasterGUID can store GO guid, and in this case this is visual caster
-        WorldObject* GetCastingObject() const;
+        Presence* GetCastingObject() const;
 
         uint32 GetPowerCost() const { return m_powerCost; }
 
@@ -604,7 +604,7 @@ class Spell
         void FillTargetMap();
         void SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList& targetUnitMap);
 
-        void FillAreaTargets(UnitList& targetUnitMap, float radius, SpellNotifyPushType pushType, SpellTargets spellTargets, WorldObject* originalCaster = NULL);
+        void FillAreaTargets(UnitList& targetUnitMap, float radius, SpellNotifyPushType pushType, SpellTargets spellTargets, Presence* originalCaster = NULL);
         void FillRaidOrPartyTargets(UnitList& targetUnitMap, Unit* member, float radius, bool raid, bool withPets, bool withcaster);
 
         // Returns GUID either of the 1st target from the implicit target list, or of explicit one (selected victim)
@@ -704,7 +704,7 @@ namespace MaNGOS
         Spell& i_spell;
         const uint32& i_index;
         float i_radius;
-        WorldObject* i_originalCaster;
+        Presence* i_originalCaster;
 
         SpellNotifierPlayer(Spell& spell, Spell::UnitList& data, const uint32& i, float radius)
             : i_data(data), i_spell(spell), i_index(i), i_radius(radius)
@@ -748,8 +748,8 @@ namespace MaNGOS
         SpellNotifyPushType i_push_type;
         float i_radius;
         SpellTargets i_TargetType;
-        WorldObject* i_originalCaster;
-        WorldObject* i_castingObject;
+        Presence* i_originalCaster;
+        Presence* i_castingObject;
         bool i_playerControlled;
         float i_centerX;
         float i_centerY;
@@ -759,7 +759,7 @@ namespace MaNGOS
         float GetCenterY() const { return i_centerY; }
 
         SpellNotifierCreatureAndPlayer(Spell& spell, Spell::UnitList& data, float radius, SpellNotifyPushType type,
-            SpellTargets TargetType = SPELL_TARGETS_NOT_FRIENDLY, WorldObject* originalCaster = NULL)
+            SpellTargets TargetType = SPELL_TARGETS_NOT_FRIENDLY, Presence* originalCaster = NULL)
                 : i_data(&data), i_spell(spell), i_push_type(type), i_radius(radius), i_TargetType(TargetType),
             i_originalCaster(originalCaster), i_castingObject(i_spell.GetCastingObject())
         {

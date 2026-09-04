@@ -1322,7 +1322,7 @@ void WorldSession::HandleFarSightOpcode(WorldPacket& recv_data)
     uint8 op;
     recv_data >> op;
 
-    WorldObject* obj = _player->GetMap()->GetWorldObject(_player->GetFarSightGuid());
+    Presence* obj = _player->GetMap()->GetPresence(_player->GetFarSightGuid());
     if (!obj)
     {
         return;

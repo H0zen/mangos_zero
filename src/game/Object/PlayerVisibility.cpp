@@ -170,7 +170,7 @@ bool Player::IsVisibleGloballyFor(Player* u) const
  * @param o The world object about to be hidden.
  * @param p The player losing visibility of the object.
  */
-inline void BeforeVisibilityDestroy(WorldObject* o, Player* p)
+inline void BeforeVisibilityDestroy(Presence* o, Player* p)
 {
     if (Creature* t = ToCreature(o))
     {
@@ -187,7 +187,7 @@ inline void BeforeVisibilityDestroy(WorldObject* o, Player* p)
  * @param viewPoint The viewpoint used for visibility checks.
  * @param target The target object whose visibility is being updated.
  */
-void Player::UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* target)
+void Player::UpdateVisibilityOf(Presence const* viewPoint, Presence* target)
 {
     if (HaveAtClient(target))
     {
@@ -229,7 +229,7 @@ void Player::UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* targe
 }
 
 //4 params version (4p)
-void Player::UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* target, UpdateData& data, std::set<WorldObject*>& visibleNow)
+void Player::UpdateVisibilityOf(Presence const* viewPoint, Presence* target, UpdateData& data, std::set<Presence*>& visibleNow)
 {
     if (HaveAtClient(target))
     {

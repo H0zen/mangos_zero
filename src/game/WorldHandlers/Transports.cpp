@@ -422,7 +422,7 @@ bool Transport::IsVesselMapId(uint32 mapId)
     return s_vesselMapIds.find(mapId) != s_vesselMapIds.end();
 }
 
-Transport* Transport::VesselOf(WorldObject const& obj)
+Transport* Transport::VesselOf(Presence const& obj)
 {
     // DERIVED, NEVER STORED. Being aboard is not a fact anyone records: it is what having
     // this map means. A creature summoned at sea, a crew member read from `creature`, a

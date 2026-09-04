@@ -614,7 +614,7 @@ bool ChatHandler::HandleChangeWeatherCommand(char* args)
 }
 
 // Internal shortcut function to freeze a player
-bool freezePlayer(Player* player, WorldObject* caster)
+bool freezePlayer(Player* player, Presence* caster)
 {
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(SPELL_GM_FREEZE);
     return AddAuraToPlayer(spellInfo, player, caster);

@@ -1577,7 +1577,7 @@ class Player : public Unit
         Item* StoreNewItemInInventorySlot(uint32 itemEntry, uint32 amount);
 
         // Automatically store loot
-        void AutoStoreLoot(WorldObject const* lootTarget, uint32 loot_id, LootStore const& store, bool broadcast = false, uint8 bag = NULL_BAG, uint8 slot = NULL_SLOT);
+        void AutoStoreLoot(Presence const* lootTarget, uint32 loot_id, LootStore const& store, bool broadcast = false, uint8 bag = NULL_BAG, uint8 slot = NULL_SLOT);
 
         // Automatically store loot (overloaded)
         void AutoStoreLoot(Loot& loot, bool broadcast = false, uint8 bag = NULL_BAG, uint8 slot = NULL_SLOT);
@@ -1775,20 +1775,20 @@ class Player : public Unit
         /*********************************************************/
 
         // Prepare the gossip menu
-        void PrepareGossipMenu(WorldObject* pSource, uint32 menuId = 0);
+        void PrepareGossipMenu(Presence* pSource, uint32 menuId = 0);
 
         // Send the prepared gossip menu
-        void SendPreparedGossip(WorldObject* pSource);
-        void OnGossipSelect(WorldObject* pSource, uint32 gossipListId);
+        void SendPreparedGossip(Presence* pSource);
+        void OnGossipSelect(Presence* pSource, uint32 gossipListId);
 
         // Get the gossip text ID for a menu
-        uint32 GetGossipTextId(uint32 menuId, WorldObject* pSource);
+        uint32 GetGossipTextId(uint32 menuId, Presence* pSource);
 
         // Get the gossip text ID for a source
-        uint32 GetGossipTextId(WorldObject* pSource);
+        uint32 GetGossipTextId(Presence* pSource);
 
         // Get the default gossip menu for a source
-        uint32 GetDefaultGossipMenuForSource(WorldObject* pSource);
+        uint32 GetDefaultGossipMenuForSource(Presence* pSource);
 
         /*********************************************************/
         /***                    QUEST SYSTEM                   ***/
@@ -1952,7 +1952,7 @@ class Player : public Unit
         void AreaExploredOrEventHappens(uint32 questId);
 
         // Mark a group event as happened for a quest
-        void GroupEventHappens(uint32 questId, WorldObject const* pEventObject);
+        void GroupEventHappens(uint32 questId, Presence const* pEventObject);
 
         // Check if an item added satisfies a quest requirement
         void ItemAddedQuestCheck(uint32 entry, uint32 count);
@@ -1985,7 +1985,7 @@ class Player : public Unit
         bool HasQuestForGO(int32 GOId) const;
 
         // Update the world objects for quests
-        void UpdateForQuestWorldObjects();
+        void UpdateForQuestObjects();
 
         // Check if the player can share a quest
         bool CanShareQuest(uint32 quest_id) const;
@@ -2956,16 +2956,16 @@ class Player : public Unit
         void InitDisplayIds();
 
         // Check if the player is at group reward distance
-        bool IsAtGroupRewardDistance(WorldObject const* pRewardSource) const;
+        bool IsAtGroupRewardDistance(Presence const* pRewardSource) const;
 
         // Reward a single player at a kill
         void RewardSinglePlayerAtKill(Unit* pVictim);
 
         // Reward the player and group at an event
-        void RewardPlayerAndGroupAtEvent(uint32 creature_id, WorldObject* pRewardSource);
+        void RewardPlayerAndGroupAtEvent(uint32 creature_id, Presence* pRewardSource);
 
         // Reward the player and group at a cast
-        void RewardPlayerAndGroupAtCast(WorldObject* pRewardSource, uint32 spellid = 0);
+        void RewardPlayerAndGroupAtCast(Presence* pRewardSource, uint32 spellid = 0);
 
         // Check if the player is an honor or XP target
         bool isHonorOrXPTarget(Unit* pVictim) const;
@@ -3512,7 +3512,7 @@ class Player : public Unit
         GuidSet m_clientGUIDs;
 
         // Check if an object is visible to the client
-        bool HaveAtClient(WorldObject const* u) { return u == this || m_clientGUIDs.find(u->GetObjectGuid()) != m_clientGUIDs.end(); }
+        bool HaveAtClient(Presence const* u) { return u == this || m_clientGUIDs.find(u->GetObjectGuid()) != m_clientGUIDs.end(); }
 
         // Check if the player is visible in the grid for another player
         bool IsVisibleInGridForPlayer(Player* pl) const override;
@@ -3521,8 +3521,8 @@ class Player : public Unit
         bool IsVisibleGloballyFor(Player* pl) const;
 
         // Update the visibility of a target from a viewpoint
-        void UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* target);
-        void UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* target, UpdateData& data, std::set<WorldObject*>& visibleNow);
+        void UpdateVisibilityOf(Presence const* viewPoint, Presence* target);
+        void UpdateVisibilityOf(Presence const* viewPoint, Presence* target, UpdateData& data, std::set<Presence*>& visibleNow);
 
         // Handle detection of stealthed units
         void HandleStealthedUnitsDetection();

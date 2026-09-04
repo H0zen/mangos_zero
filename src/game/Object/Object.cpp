@@ -250,11 +250,11 @@ void Object::ResendField(uint16 index)
 
 
 /**
- * @brief WorldObject constructor
+ * @brief Presence constructor
  *
- * Initializes a new WorldObject with default values.
+ * Initializes a new Presence with default values.
  */
-WorldObject::WorldObject() :
+Presence::Presence() :
     m_currMap(NULL),
     m_mapId(0), m_InstanceId(0),
     m_isActiveObject(false),
@@ -263,11 +263,11 @@ WorldObject::WorldObject() :
 }
 
 /**
- * @brief WorldObject destructor
+ * @brief Presence destructor
  *
  * Cleans up Eluna events if enabled.
  */
-WorldObject::~WorldObject()
+Presence::~Presence()
 {
 }
 

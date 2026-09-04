@@ -69,7 +69,7 @@ class MapManager : public MaNGOS::Singleton<MapManager>
     public:
         typedef std::map<MapID, Map* > MapMapType;
 
-        Map* CreateMap(uint32, const WorldObject* obj);
+        Map* CreateMap(uint32, const Presence* obj);
         Map* CreateBgMap(uint32 mapid, BattleGround* bg);
         Map* FindMap(uint32 mapid, uint32 instanceId = 0) const;
         void UpdateGridState(grid_state_t state, Map& map, NGridType& ngrid, GridInfo& ginfo, const uint32& x, const uint32& y, const uint32& t_diff);

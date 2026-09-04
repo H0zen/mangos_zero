@@ -359,10 +359,10 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const
     }
     else if (updateFlags & UPDATEFLAG_HAS_POSITION)
     {
-        *data << ((WorldObject*)this)->Where().X();
-        *data << ((WorldObject*)this)->Where().Y();
-        *data << ((WorldObject*)this)->Where().Z();
-        *data << ((WorldObject*)this)->Where().Facing();
+        *data << ((Presence*)this)->Where().X();
+        *data << ((Presence*)this)->Where().Y();
+        *data << ((Presence*)this)->Where().Z();
+        *data << ((Presence*)this)->Where().Facing();
     }
 
     if (updateFlags & UPDATEFLAG_HIGHGUID)

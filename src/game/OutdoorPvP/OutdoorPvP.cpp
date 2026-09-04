@@ -211,7 +211,7 @@ uint32 OutdoorPvP::GetBannerArtKit(Team team, uint32 artKitAlliance /*= CAPTURE_
  * @param artKit The art kit to apply.
  * @param animId The animation id to play.
  */
-void OutdoorPvP::SetBannerVisual(const WorldObject* objRef, ObjectGuid goGuid, uint32 artKit, uint32 animId)
+void OutdoorPvP::SetBannerVisual(const Presence* objRef, ObjectGuid goGuid, uint32 artKit, uint32 animId)
 {
     if (GameObject* go = objRef->GetMap()->GetGameObject(goGuid))
     {
@@ -240,7 +240,7 @@ void OutdoorPvP::SetBannerVisual(GameObject* go, uint32 artKit, uint32 animId)
  * @param goGuid The game object guid.
  * @param respawn True to refresh the game object, false to despawn it.
  */
-void OutdoorPvP::RespawnGO(const WorldObject* objRef, ObjectGuid goGuid, bool respawn)
+void OutdoorPvP::RespawnGO(const Presence* objRef, ObjectGuid goGuid, bool respawn)
 {
     if (GameObject* go = objRef->GetMap()->GetGameObject(goGuid))
     {

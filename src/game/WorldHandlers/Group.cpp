@@ -280,7 +280,7 @@ void Group::ConvertToRaid()
 
         if (Player* player = sObjectMgr.GetPlayer(citr->guid))
         {
-            player->UpdateForQuestWorldObjects();
+            player->UpdateForQuestObjects();
         }
     }
 }
@@ -430,7 +430,7 @@ bool Group::AddMember(ObjectGuid guid, const char* name, uint8 joinMethod)
         // quest related GO state dependent from raid membership
         if (isRaidGroup())
         {
-            player->UpdateForQuestWorldObjects();
+            player->UpdateForQuestObjects();
         }
 
         if (isInLFG())
@@ -470,7 +470,7 @@ uint32 Group::RemoveMember(ObjectGuid guid, uint8 removeMethod)
             // quest related GO state dependent from raid membership
             if (isRaidGroup())
             {
-                player->UpdateForQuestWorldObjects();
+                player->UpdateForQuestObjects();
             }
 
             WorldPacket data;
@@ -604,7 +604,7 @@ void Group::Disband(bool hideDestroy)
         // quest related GO state dependent from raid membership
         if (isRaidGroup())
         {
-            player->UpdateForQuestWorldObjects();
+            player->UpdateForQuestObjects();
         }
 
         if (!player->GetSession())
@@ -1010,7 +1010,7 @@ void Group::SendLootAllPassed(Roll const& r)
  * @param pSource The looted world object.
  * @param loot The loot container being processed.
  */
-void Group::GroupLoot(WorldObject* pSource, Loot* loot)
+void Group::GroupLoot(Presence* pSource, Loot* loot)
 {
     for (uint8 itemSlot = 0; itemSlot < loot->items.size(); ++itemSlot)
     {
@@ -1041,7 +1041,7 @@ void Group::GroupLoot(WorldObject* pSource, Loot* loot)
  * @param pSource The looted world object.
  * @param loot The loot container being processed.
  */
-void Group::NeedBeforeGreed(WorldObject* pSource, Loot* loot)
+void Group::NeedBeforeGreed(Presence* pSource, Loot* loot)
 {
     for (uint8 itemSlot = 0; itemSlot < loot->items.size(); ++itemSlot)
     {
@@ -1072,7 +1072,7 @@ void Group::NeedBeforeGreed(WorldObject* pSource, Loot* loot)
  * @param pSource The looted world object.
  * @param loot The loot container being processed.
  */
-void Group::MasterLoot(WorldObject* pSource, Loot* loot)
+void Group::MasterLoot(Presence* pSource, Loot* loot)
 {
     for (LootItemList::iterator i = loot->items.begin(); i != loot->items.end(); ++i)
     {
@@ -1219,7 +1219,7 @@ bool Group::CountRollVote(ObjectGuid const& playerGUID, Rolls::iterator& rollI, 
  * @param loot The loot container.
  * @param itemSlot The loot slot to roll on.
  */
-void Group::StartLootRoll(WorldObject* lootTarget, LootMethod method, Loot* loot, uint8 itemSlot)
+void Group::StartLootRoll(Presence* lootTarget, LootMethod method, Loot* loot, uint8 itemSlot)
 {
     if (itemSlot >= loot->items.size())
     {
@@ -1333,7 +1333,7 @@ void Group::CountTheRoll(Rolls::iterator& rollI)
 
             if (Player* player = sObjectMgr.GetPlayer(maxguid))
             {
-                if (WorldObject* object = player->GetMap()->GetWorldObject(roll->lootedTargetGUID))
+                if (Presence* object = player->GetMap()->GetPresence(roll->lootedTargetGUID))
                 {
                     SendLootRollWon(maxguid, maxresul, ROLL_NEED, *roll);
                     won = true;
@@ -1397,7 +1397,7 @@ void Group::CountTheRoll(Rolls::iterator& rollI)
 
             if (Player* player = sObjectMgr.GetPlayer(maxguid))
             {
-                if (WorldObject* object = player->GetMap()->GetWorldObject(roll->lootedTargetGUID))
+                if (Presence* object = player->GetMap()->GetPresence(roll->lootedTargetGUID))
                 {
                     SendLootRollWon(maxguid, maxresul, ROLL_GREED, *roll);
                     won = true;
@@ -1457,7 +1457,7 @@ void Group::CountTheRoll(Rolls::iterator& rollI)
  * @param pItem The loot item being checked.
  * @return true if no active multi-player roll remains for the item; otherwise false.
  */
-bool Group::IsRollDoneForItem(WorldObject * pObject, const LootItem * pItem)
+bool Group::IsRollDoneForItem(Presence * pObject, const LootItem * pItem)
 {
     if (RollId.empty())
     {

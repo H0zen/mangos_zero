@@ -289,7 +289,7 @@ struct ScriptedAI : public CreatureAI
         void DoCastSpell(Unit* pTarget, SpellEntry const* pSpellInfo, bool bTriggered = false);
 
         // Plays a sound to all nearby players
-        void DoPlaySoundToSet(WorldObject* pSource, uint32 uiSoundId);
+        void DoPlaySoundToSet(Presence* pSource, uint32 uiSoundId);
 
         // Drops all threat to 0%. Does not remove enemies from the threat list
         void DoResetThreat();

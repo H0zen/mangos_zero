@@ -75,7 +75,7 @@
  *
  * Removes the object from the world before deletion.
  */
-void WorldObject::CleanupsBeforeDelete()
+void Presence::CleanupsBeforeDelete()
 {
     RemoveFromWorld();
 }
@@ -87,7 +87,7 @@ void WorldObject::CleanupsBeforeDelete()
  *
  * Updates Eluna events if enabled.
  */
-void WorldObject::Update(uint32 update_diff, uint32 /*time_diff*/)
+void Presence::Update(uint32 update_diff, uint32 /*time_diff*/)
 {
 }
 
@@ -98,7 +98,7 @@ void WorldObject::Update(uint32 update_diff, uint32 /*time_diff*/)
  *
  * Creates the world object with the specified GUID.
  */
-void WorldObject::_Create(uint32 guidlow, HighGuid guidhigh)
+void Presence::_Create(uint32 guidlow, HighGuid guidhigh)
 {
     Object::_Create(guidlow, 0, guidhigh);
 }
@@ -109,7 +109,7 @@ void WorldObject::_Create(uint32 guidlow, HighGuid guidhigh)
  *
  * Returns the instance data for the map this object is on.
  */
-InstanceData* WorldObject::GetInstanceData() const
+InstanceData* Presence::GetInstanceData() const
 {
     return GetMap()->GetInstanceData();
 }
@@ -119,7 +119,7 @@ InstanceData* WorldObject::GetInstanceData() const
  *
  * The roll is injected rather than drawn here, so the pick stays pinnable in a test.
  */
-Geometry::Vector3 RandomGroundPointNear(WorldObject const& obj, Geometry::Vector3 const& centre,
+Geometry::Vector3 RandomGroundPointNear(Presence const& obj, Geometry::Vector3 const& centre,
                                         float distance, float minDist, float const* ori)
 {
     if (distance == 0.0f)
@@ -145,7 +145,7 @@ Geometry::Vector3 RandomGroundPointNear(WorldObject const& obj, Geometry::Vector
  * Nothing happens where the map has no floor to offer: an absent answer is absent, not a
  * sentinel height that arithmetic will happily consume.
  */
-void DropToGround(WorldObject const& obj, float x, float y, float& z)
+void DropToGround(Presence const& obj, float x, float y, float& z)
 {
     if (auto floor = obj.GetMap()->Floor(x, y, z))
     {
@@ -156,7 +156,7 @@ void DropToGround(WorldObject const& obj, float x, float y, float& z)
 /**
  * @brief Hold z between the floor and the highest surface this object may occupy.
  */
-void ClampToAllowedZ(WorldObject const& obj, float x, float y, float& z, Map* atMap /*=NULL*/)
+void ClampToAllowedZ(Presence const& obj, float x, float y, float& z, Map* atMap /*=NULL*/)
 {
     if (!atMap)
     {
@@ -220,7 +220,7 @@ void ClampToAllowedZ(WorldObject const& obj, float x, float y, float& z, Map* at
  * inlined at the call sites so that carrying the transport rework across changes this
  * function and nothing else.
  */
-static bool InCommonFrame(WorldObject const& a, WorldObject const& b,
+static bool InCommonFrame(Presence const& a, Presence const& b,
                           Geometry::Placement& outA, Geometry::Placement& outB)
 {
     // THE FRAME IS THE AUTHORITY, not the passenger registry. Two things on the same deck
@@ -268,7 +268,7 @@ static bool InCommonFrame(WorldObject const& a, WorldObject const& b,
  * It demands a COMMON FRAME. This is NOT the question "can B see A": seeing a crow
  * overhead is not being able to hit it. For that, ask CanBeSeen.
  */
-bool CanInteract(WorldObject const& a, WorldObject const& b)
+bool CanInteract(Presence const& a, Presence const& b)
 {
     Geometry::Placement pa, pb;
     return a.IsInWorld() && b.IsInWorld() &&
@@ -283,7 +283,7 @@ bool CanInteract(WorldObject const& a, WorldObject const& b)
  * they are kept apart all the same, because every caller means one or the other and the
  * distinction is what the transport rework needs already drawn.
  */
-bool CanBeSeen(WorldObject const& seen, WorldObject const& viewer)
+bool CanBeSeen(Presence const& seen, Presence const& viewer)
 {
     if (!seen.IsInWorld() || !viewer.IsInWorld())
     {
@@ -317,7 +317,7 @@ bool CanBeSeen(WorldObject const& seen, WorldObject const& viewer)
 /// The object a proximity question must be asked from. A passenger has no pose the shore
 /// can measure against, so the vessel answers for him -- and its hull radius is added as
 /// slack, because he may stand anywhere on it.
-static WorldObject const& ProximityAnchor(WorldObject const& obj, float& slack)
+static Presence const& ProximityAnchor(Presence const& obj, float& slack)
 {
     TransportMap* hull = obj.GetMap() ? obj.GetMap()->AsTransport() : NULL;
     Transport* vessel = hull ? hull->Vessel() : NULL;
@@ -330,7 +330,7 @@ static WorldObject const& ProximityAnchor(WorldObject const& obj, float& slack)
     return obj;
 }
 
-bool SeenWithin(WorldObject const& seen, WorldObject const& viewer, float dist, bool is3D)
+bool SeenWithin(Presence const& seen, Presence const& viewer, float dist, bool is3D)
 {
     if (!CanBeSeen(seen, viewer))
     {
@@ -345,8 +345,8 @@ bool SeenWithin(WorldObject const& seen, WorldObject const& viewer, float dist, 
 
     // Across a vessel's boundary. Whatever is aboard answers with its hull.
     float slack = 0.0f;
-    WorldObject const& a = ProximityAnchor(seen, slack);
-    WorldObject const& b = ProximityAnchor(viewer, slack);
+    Presence const& a = ProximityAnchor(seen, slack);
+    Presence const& b = ProximityAnchor(viewer, slack);
 
     // One of them IS the anchor: he is standing on the very thing he is looking at.
     if (&a == &b)
@@ -357,35 +357,35 @@ bool SeenWithin(WorldObject const& seen, WorldObject const& viewer, float dist, 
     return a.Where().WithinDist(b.Where(), dist + slack, is3D);
 }
 
-bool InReach(WorldObject const& a, WorldObject const& b, float dist, bool is3D)
+bool InReach(Presence const& a, Presence const& b, float dist, bool is3D)
 {
     Geometry::Placement pa, pb;
     return CanInteract(a, b) && InCommonFrame(a, b, pa, pb) &&
            pa.WithinDist(pb, dist, is3D);
 }
 
-bool InFrontPhased(WorldObject const& a, WorldObject const& b, float dist, float arc)
+bool InFrontPhased(Presence const& a, Presence const& b, float dist, float arc)
 {
     Geometry::Placement pa, pb;
     return CanInteract(a, b) && InCommonFrame(a, b, pa, pb) &&
            pa.IsInFront(pb, dist, arc);
 }
 
-bool InBackPhased(WorldObject const& a, WorldObject const& b, float dist, float arc)
+bool InBackPhased(Presence const& a, Presence const& b, float dist, float arc)
 {
     Geometry::Placement pa, pb;
     return CanInteract(a, b) && InCommonFrame(a, b, pa, pb) &&
            pa.IsInBack(pb, dist, arc);
 }
 
-bool HasLineOfSight(WorldObject const& a, Geometry::Vector3 const& point)
+bool HasLineOfSight(Presence const& a, Geometry::Vector3 const& point)
 {
     // The two-yard lift is eye height: a sight line is cast between heads, not feet.
     return a.GetMap()->IsInLineOfSight(a.Where().X(), a.Where().Y(), a.Where().Z() + 2.0f,
                                        point.x, point.y, point.z + 2.0f);
 }
 
-bool HasLineOfSight(WorldObject const& a, WorldObject const& b)
+bool HasLineOfSight(Presence const& a, Presence const& b)
 {
     if (!CanInteract(a, b))
     {
@@ -409,7 +409,7 @@ bool HasLineOfSight(WorldObject const& a, WorldObject const& b)
     return HasLineOfSight(a, b.Where().Pos());
 }
 
-bool IsPlaceable(WorldObject const& obj)
+bool IsPlaceable(Presence const& obj)
 {
     return obj.Where().IsFinite() &&
            MaNGOS::IsValidMapCoord(obj.Where().X(), obj.Where().Y(),
