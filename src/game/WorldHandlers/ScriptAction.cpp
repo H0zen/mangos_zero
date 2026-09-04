@@ -1470,20 +1470,15 @@ bool ScriptAction::HandleScriptStep()
                 break;
             }
 
+            Creature* pFlier = ToCreature(pSource);
+
             // enable / disable the fly anim flag
             if (m_script->data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL)
             {
-                if (m_script->fly.enable)
-                {
-                    pSource->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND);
-                }
-                else
-                {
-                    pSource->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND);
-                }
+                pFlier->SetAlwaysStanding(m_script->fly.enable != 0);
             }
 
-            ((Creature*)pSource)->SetLevitate((m_script->fly.enable == 0) ? false : true);
+            pFlier->SetLevitate(m_script->fly.enable != 0);
             break;
         }
         default:

@@ -1925,6 +1925,28 @@ class Unit : public Presence
          */
         uint8 getStandState() const { return GetByteValue(UNIT_FIELD_BYTES_1, 0); }
 
+        /// Three things the client is told about how a unit carries itself: it
+        /// never sits, it moves in the crouched stalking pose, and it does not
+        /// appear to tracking. They share a byte and nothing else.
+        bool IsAlwaysStanding() const { return HasByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND); }
+        void SetAlwaysStanding(bool on) { ApplyModByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND, on); }
+
+        bool IsCreeping() const { return HasByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAGS_CREEP); }
+        void SetCreeping(bool on) { ApplyModByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAGS_CREEP, on); }
+
+        bool IsUntrackable() const { return HasByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_UNTRACKABLE); }
+        void SetUntrackable(bool on) { ApplyModByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_UNTRACKABLE, on); }
+
+        /// All three at once, for the two callers that carry the byte whole: a
+        /// creature template, and death, which settles every one of them.
+        uint8 GetBearing() const { return GetByteValue(UNIT_FIELD_BYTES_1, 3); }
+        void SetBearing(uint8 bits) { SetByteValue(UNIT_FIELD_BYTES_1, 3, bits); }
+
+        /// A pet keeps how loyal it is here. A player carries a fixed value in
+        /// the same byte, and what it stands for is not known.
+        uint8 GetLoyaltyByte() const { return GetByteValue(UNIT_FIELD_BYTES_1, 1); }
+        void SetLoyaltyByte(uint8 value) { SetByteValue(UNIT_FIELD_BYTES_1, 1, value); }
+
         /**
          * Is this Unit sitting down in some way?
          * @return true if the Unit is sitting down, false otherwise

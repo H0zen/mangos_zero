@@ -665,7 +665,7 @@ void Aura::HandleModStealth(bool apply, bool Real)
         // only at real aura add
         if (Real)
         {
-            target->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAGS_CREEP);
+            target->SetCreeping(true);
 
             if (target->GetTypeId() == TYPEID_PLAYER)
             {
@@ -706,7 +706,7 @@ void Aura::HandleModStealth(bool apply, bool Real)
             // if no GM invisibility
             if (target->GetVisibility() != VISIBILITY_OFF)
             {
-                target->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAGS_CREEP);
+                target->SetCreeping(false);
 
                 if (target->GetTypeId() == TYPEID_PLAYER)
                 {

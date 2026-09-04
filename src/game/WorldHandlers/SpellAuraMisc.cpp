@@ -254,11 +254,11 @@ void Aura::HandleAuraUntrackable(bool apply, bool /*Real*/)
 {
     if (apply)
     {
-        GetTarget()->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_UNTRACKABLE);
+        GetTarget()->SetUntrackable(true);
     }
     else
     {
-        GetTarget()->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_UNTRACKABLE);
+        GetTarget()->SetUntrackable(false);
     }
 }
 

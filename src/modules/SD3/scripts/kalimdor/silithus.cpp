@@ -326,7 +326,7 @@ struct npc_anachronos_the_ancient : public CreatureScript
                     // Move Merithra to the exit point
                     if (Creature* pMerithra = m_creature->GetMap()->GetCreature(m_merithraGuid))
                     {
-                        pMerithra->SetByteValue(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND);
+                        pMerithra->SetBearing(UNIT_BYTE1_FLAG_ALWAYS_STAND);
                         pMerithra->SetLevitate(true);
                         pMerithra->GetMotionMaster()->MovePoint(POINT_ID_EXIT, aEternalBoardMovement[0].m_fX, aEternalBoardMovement[0].m_fY, aEternalBoardMovement[0].m_fZ);
                         pMerithra->ForcedDespawn(9000);
@@ -348,7 +348,7 @@ struct npc_anachronos_the_ancient : public CreatureScript
                     // Move Arygos to the exit point
                     if (Creature* pArygos = m_creature->GetMap()->GetCreature(m_arygosGuid))
                     {
-                        pArygos->SetByteValue(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND);
+                        pArygos->SetBearing(UNIT_BYTE1_FLAG_ALWAYS_STAND);
                         pArygos->SetLevitate(true);
                         pArygos->GetMotionMaster()->MovePoint(POINT_ID_EXIT, aEternalBoardMovement[0].m_fX, aEternalBoardMovement[0].m_fY, aEternalBoardMovement[0].m_fZ);
                         pArygos->ForcedDespawn(9000);
@@ -381,7 +381,7 @@ struct npc_anachronos_the_ancient : public CreatureScript
                     // Send Caelestrasz on flight
                     if (Creature* pCaelestrasz = m_creature->GetMap()->GetCreature(m_CaelestraszGuid))
                     {
-                        pCaelestrasz->SetByteValue(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND);
+                        pCaelestrasz->SetBearing(UNIT_BYTE1_FLAG_ALWAYS_STAND);
                         pCaelestrasz->SetLevitate(true);
                         pCaelestrasz->GetMotionMaster()->MovePoint(POINT_ID_EXIT, aEternalBoardMovement[0].m_fX, aEternalBoardMovement[0].m_fY, aEternalBoardMovement[0].m_fZ);
                         pCaelestrasz->ForcedDespawn(9000);
@@ -710,7 +710,7 @@ struct npc_anachronos_the_ancient : public CreatureScript
                             break;
                         case 4:
                             // Take off and fly
-                            m_creature->SetByteValue(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND);
+                            m_creature->SetBearing(UNIT_BYTE1_FLAG_ALWAYS_STAND);
                             m_creature->SetLevitate(true);
                             m_creature->GetMotionMaster()->MovePoint(0, aEternalBoardMovement[9].m_fX, aEternalBoardMovement[9].m_fY, aEternalBoardMovement[9].m_fZ);
                             m_creature->ForcedDespawn(10000);

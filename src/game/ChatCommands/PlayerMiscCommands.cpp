@@ -110,7 +110,7 @@ static bool HandleResetStatsOrLevelHelper(Player* player)
     // is it need, only in pre-2.x used and field byte removed later?
     if (powertype == POWER_RAGE || powertype == POWER_MANA)
     {
-        player->SetByteValue(UNIT_FIELD_BYTES_1, 1, 0xEE);
+        player->SetLoyaltyByte(PLAYER_LOYALTY_BYTE);
     }
 
     player->SetByteValue(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_UNK3 | UNIT_BYTE2_FLAG_UNK5);

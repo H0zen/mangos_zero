@@ -573,7 +573,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     // is it need, only in pre-2.x used and field byte removed later?
     if (GetPowerType() == POWER_RAGE || GetPowerType() == POWER_MANA)
     {
-        SetByteValue(UNIT_FIELD_BYTES_1, 1, 0xEE);
+        SetLoyaltyByte(PLAYER_LOYALTY_BYTE);
     }
 
     // rest bonus can only be calculated after InitStatsForLevel()

@@ -433,7 +433,7 @@ struct npc_disciple_of_naralex : public CreatureScript
                                     {
                                         // ToDo: Make Naralex fly
                                         // sort of a hack, compare to boss_onyxia
-                                        pNaralex->SetByteValue(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND);
+                                        pNaralex->SetBearing(UNIT_BYTE1_FLAG_ALWAYS_STAND);
 
                                         // Set to flying
                                         pNaralex->SetLevitate(true);

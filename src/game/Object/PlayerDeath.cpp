@@ -144,7 +144,7 @@ void Player::BuildPlayerRepop()
     StopMirrorTimers();                                     // disable timers(bars)
 
     // set and clear other
-    SetByteValue(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND);
+    SetBearing(UNIT_BYTE1_FLAG_ALWAYS_STAND);
 }
 
 /**
@@ -156,7 +156,7 @@ void Player::BuildPlayerRepop()
 void Player::ResurrectPlayer(float restore_percent, bool applySickness)
 {
     // remove death flag + set aura
-    SetByteValue(UNIT_FIELD_BYTES_1, 3, 0x00);
+    SetBearing(0x00);
 
     SetDeathState(ALIVE);
 

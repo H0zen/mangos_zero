@@ -2692,7 +2692,7 @@ bool Creature::LoadCreatureAddon(bool reload)
         // 3 StandMiscFlags
 
         SetByteValue(UNIT_FIELD_BYTES_1, 0, uint8(cainfo->bytes1 & 0xFF));
-        SetByteValue(UNIT_FIELD_BYTES_1, 3, uint8((cainfo->bytes1 >> 24) & 0xFF));
+        SetBearing(uint8((cainfo->bytes1 >> 24) & 0xFF));
     }
 
     // UNIT_FIELD_BYTES_2

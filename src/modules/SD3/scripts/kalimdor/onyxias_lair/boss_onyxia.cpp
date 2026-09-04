@@ -198,7 +198,6 @@ struct boss_onyxia : public CreatureScript
         {
             // in case evade in phase 2, see comments for hack where phase 2 is set
             m_creature->SetLevitate(false);
-            m_creature->SetByteFlag(UNIT_FIELD_BYTES_1, 3, 0);
 
             if (m_pInstance)
             {
@@ -285,13 +284,13 @@ struct boss_onyxia : public CreatureScript
             {
                 case POINT_ID_IN_AIR:
                     // sort of a hack, it is unclear how this really work but the values are valid
-                    m_creature->SetByteValue(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND);
+                    m_creature->SetBearing(UNIT_BYTE1_FLAG_ALWAYS_STAND);
                     m_creature->SetLevitate(true);
                     m_uiPhaseTimer = 1000;                          // Movement to Initial North Position is delayed
                     return;
                 case POINT_ID_LAND:
                     // undo flying
-                    m_creature->SetByteValue(UNIT_FIELD_BYTES_1, 3, 0);
+                    m_creature->SetBearing(0);
                     m_creature->SetLevitate(false);
                     m_uiPhaseTimer = 500;                           // Start PHASE_END shortly delayed
                     return;

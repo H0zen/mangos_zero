@@ -836,7 +836,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     // is it need, only in pre-2.x used and field byte removed later?
     if (powertype == POWER_RAGE || powertype == POWER_MANA)
     {
-        SetByteValue(UNIT_FIELD_BYTES_1, 1, 0xEE);
+        SetLoyaltyByte(PLAYER_LOYALTY_BYTE);
     }
 
     SetByteValue(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_UNK3 | UNIT_BYTE2_FLAG_UNK5);
@@ -2724,7 +2724,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_AFK | PLAYER_FLAGS_DND | PLAYER_FLAGS_GM | PLAYER_FLAGS_GHOST | PLAYER_FLAGS_FFA_PVP);
 
     // one form stealth modified bytes
-    RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALL);
+    SetBearing(0);
 
     // restore if need some important flags
     SetUInt32Value(PLAYER_FIELD_BYTES2, 0);                 // flags empty by default

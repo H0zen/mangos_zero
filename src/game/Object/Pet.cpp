@@ -424,7 +424,7 @@ HappinessState Pet::GetHappinessState()
  */
 void Pet::SetLoyaltyLevel(LoyaltyLevel level)
 {
-    SetByteValue(UNIT_FIELD_BYTES_1, 1, level);
+    SetLoyaltyByte(level);
 }
 
 /**

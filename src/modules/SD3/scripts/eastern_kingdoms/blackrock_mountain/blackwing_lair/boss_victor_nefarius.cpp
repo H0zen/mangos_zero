@@ -202,7 +202,7 @@ struct boss_victor_nefarius : public CreatureScript
                 pSummoned->SetWalk(false);
 
                 // see boss_onyxia (also note the removal of this in boss_nefarian)
-                pSummoned->SetByteValue(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND);
+                pSummoned->SetBearing(UNIT_BYTE1_FLAG_ALWAYS_STAND);
                 pSummoned->SetLevitate(true);
 
                 // Let Nefarian fly towards combat area

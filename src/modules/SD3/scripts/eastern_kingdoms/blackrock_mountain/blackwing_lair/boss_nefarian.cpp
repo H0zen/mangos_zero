@@ -157,7 +157,7 @@ struct boss_nefarian : public CreatureScript
             // Remove flying in case Nefarian aggroes before his combat point was reached
             if (m_creature->IsLevitating())
             {
-                m_creature->SetByteValue(UNIT_FIELD_BYTES_1, 3, 0);
+                m_creature->SetBearing(0);
                 m_creature->SetLevitate(false);
             }
 

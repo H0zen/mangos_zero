@@ -225,7 +225,7 @@ struct npc_keeper_remulos : public CreatureScript
                     m_eranikusGuid = pSummoned->GetObjectGuid();
                     // Make Eranikus unattackable first
                     // ToDo: uncomment the fly effect when it will be possible to cancel it properly
-                    // pSummoned->SetByteValue(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_FLY_ANIM);
+                    // pSummoned->SetBearing(UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_FLY_ANIM);
                     pSummoned->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
                     pSummoned->SetLevitate(true);
                     break;
@@ -451,7 +451,6 @@ struct npc_keeper_remulos : public CreatureScript
 
                         if (Creature* pEranikus = m_creature->GetMap()->GetCreature(m_eranikusGuid))
                         {
-                            pEranikus->SetByteFlag(UNIT_FIELD_BYTES_1, 3, 0);
                             pEranikus->SetLevitate(false);
                             pEranikus->GetMotionMaster()->MovePoint(POINT_ID_ERANIKUS_COMBAT, aEranikusLocations[2].m_fX, aEranikusLocations[2].m_fY, aEranikusLocations[2].m_fZ);
                         }
