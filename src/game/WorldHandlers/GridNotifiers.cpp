@@ -44,6 +44,7 @@
  */
 
 #include <set>
+#include "Reaction.h"
 #include "GridNotifiers.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
@@ -234,7 +235,7 @@ bool CannibalizeObjectCheck::operator()(Corpse* u)
 
     Player* owner = sPlayerRegistry.Find(u->GetOwnerGuid());
 
-    if (!owner || i_fobj->IsFriendlyTo(owner))
+    if (!owner || IsFriendly(*i_fobj, *owner))
     {
         return false;
     }

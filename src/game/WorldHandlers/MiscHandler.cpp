@@ -49,6 +49,7 @@
  */
 
 #include <zlib.h>
+#include "Reaction.h"
 #include "Common/ServerDefines.h"
 #include "Platform/Define.h"
 #include <string>
@@ -1102,7 +1103,7 @@ void WorldSession::HandleInspectOpcode(WorldPacket& recv_data)
     DEBUG_LOG("Inspected guid is %s", guid.GetString().c_str());
 
     Player* plr = sObjectMgr.GetPlayer(guid);
-    if (plr && _player->IsFriendlyTo(plr) && InReach(*_player, *plr, TRADE_DISTANCE, false))  // why not 3D check?
+    if (plr && IsFriendly(*_player, *plr) && InReach(*_player, *plr, TRADE_DISTANCE, false))  // why not 3D check?
     {
         _player->SetSelectionGuid(guid);
 
@@ -1128,7 +1129,7 @@ void WorldSession::HandleInspectHonorStatsOpcode(WorldPacket& recv_data)
     recv_data >> guid;
 
     Player* pl = sObjectMgr.GetPlayer(guid);
-    if (pl && _player->IsFriendlyTo(pl) && InReach(*_player, *pl, TRADE_DISTANCE, false))
+    if (pl && IsFriendly(*_player, *pl) && InReach(*_player, *pl, TRADE_DISTANCE, false))
     {
         WorldPacket data(MSG_INSPECT_HONOR_STATS, (8 + 1 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 1));
         data << guid;                                       // player guid

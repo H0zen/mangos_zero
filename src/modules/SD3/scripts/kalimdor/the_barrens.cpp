@@ -46,6 +46,7 @@
  * EndContentData
  */
 
+#include "Reaction.h"
 #include "Summoning.h"
 #include "precompiled.h"
 #include "escort_ai.h"
@@ -1278,7 +1279,7 @@ struct horde_defender : public CreatureScript
         void MoveInLineOfSight(Unit* u) override
         {
             if (m_creature->CanInitiateAttack() && u->IsTargetableForAttack() &&
-                m_creature->IsHostileTo(u) && u->isInAccessablePlaceFor(m_creature))
+                IsHostile(*m_creature, *u) && u->isInAccessablePlaceFor(m_creature))
             {
                 float attackRadius = 38.0f;
                 if (InReach(*m_creature, *u, attackRadius) && HasLineOfSight(*m_creature, *u))
@@ -1361,7 +1362,7 @@ struct kolkar_invader : public CreatureScript
         void MoveInLineOfSight(Unit* u) override
         {
             if (m_creature->CanInitiateAttack() && u->IsTargetableForAttack() &&
-                m_creature->IsHostileTo(u) && u->isInAccessablePlaceFor(m_creature))
+                IsHostile(*m_creature, *u) && u->isInAccessablePlaceFor(m_creature))
             {
                 float attackRadius = 38.0f;
                 if (InReach(*m_creature, *u, attackRadius) && HasLineOfSight(*m_creature, *u))

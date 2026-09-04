@@ -40,6 +40,7 @@
  * EndContentData
  */
 
+#include "Reaction.h"
 #include "precompiled.h"
 #include "escort_ai.h"
 
@@ -101,7 +102,7 @@ struct npc_tapoke_slim_jahn : public CreatureScript
                 return;
             }
 
-            if (m_creature->IsFriendlyTo(pAttacker))
+            if (IsFriendly(*m_creature, *pAttacker))
             {
                 return;
             }

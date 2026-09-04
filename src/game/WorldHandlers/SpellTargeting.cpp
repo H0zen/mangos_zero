@@ -49,6 +49,7 @@
 #include <algorithm>
 #include <iterator>
 #include <list>
+#include "Reaction.h"
 #include "Utilities/MathDefines.h"
 #include "Spell.h"
 #include "Database/DatabaseEnv.h"
@@ -780,7 +781,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         {
             if (Unit* target = m_targets.getUnitTarget())
             {
-                if (m_caster->IsFriendlyTo(target))
+                if (IsFriendly(*m_caster, *target))
                 {
                     targetUnitMap.push_back(target);
                 }
@@ -873,7 +874,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     Player* Target = itr->getSource();
 
                     // IsHostileTo check duel and controlled by enemy
-                    if (Target && Target->GetSubGroup() == subgroup && !m_caster->IsHostileTo(Target))
+                    if (Target && Target->GetSubGroup() == subgroup && !IsHostile(*m_caster, *Target))
                     {
                         if (InReach(*pTarget, *Target, radius))
                         {
@@ -1024,7 +1025,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     // IsHostileTo check duel and controlled by enemy
                     if (Target && InReach(*targetPlayer, *Target, radius) &&
                         targetPlayer->getClass() == Target->getClass() &&
-                        !m_caster->IsHostileTo(Target))
+                        !IsHostile(*m_caster, *Target))
                     {
                         targetUnitMap.push_back(Target);
                     }

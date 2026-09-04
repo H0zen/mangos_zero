@@ -46,6 +46,7 @@
 
 
 
+#include "Reaction.h"
 #include "Utilities/MathDefines.h"
 #include "Spell.h"
 #include "Database/DatabaseEnv.h"
@@ -326,7 +327,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
                                     // do not remove positive auras if friendly target
                                     //               negative auras if non-friendly target
-                                    if (positive == target->IsFriendlyTo(m_caster))
+                                    if (positive == IsFriendly(*target, *m_caster))
                                     {
                                         continue;
                                     }
@@ -501,7 +502,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     if (!target_hostile_checked)
                     {
                         target_hostile_checked = true;
-                        target_hostile = m_caster->IsHostileTo(target);
+                        target_hostile = IsHostile(*m_caster, *target);
                     }
 
                     if (target_hostile)
@@ -516,7 +517,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     if (!target_friendly_checked)
                     {
                         target_friendly_checked = true;
-                        target_friendly = m_caster->IsFriendlyTo(target);
+                        target_friendly = IsFriendly(*m_caster, *target);
                     }
 
                     if (target_friendly)
@@ -536,7 +537,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 {
                     if (!target_hostile_checked)
                     {
-                        target_hostile = m_caster->IsHostileTo(target);
+                        target_hostile = IsHostile(*m_caster, *target);
                     }
 
                     if (target_hostile)
@@ -548,7 +549,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 {
                     if (!target_friendly_checked)
                     {
-                        target_friendly = m_caster->IsFriendlyTo(target);
+                        target_friendly = IsFriendly(*m_caster, *target);
                     }
 
                     if (target_friendly)
@@ -901,7 +902,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 {
                     // spell different for friends and enemies
                     // hart version required facing
-                    if (m_targets.getUnitTarget() && !m_caster->IsFriendlyTo(m_targets.getUnitTarget()) && !m_caster->Where().HasInArc(m_targets.getUnitTarget()->Where(), M_PI_F))
+                    if (m_targets.getUnitTarget() && !IsFriendly(*m_caster, *m_targets.getUnitTarget()) && !m_caster->Where().HasInArc(m_targets.getUnitTarget()->Where(), M_PI_F))
                     {
                         return SPELL_FAILED_UNIT_NOT_INFRONT;
                     }
@@ -1601,7 +1602,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 }
 
                 // can be casted at non-friendly unit or own pet/charm
-                if (m_caster->IsFriendlyTo(expectedTarget))
+                if (IsFriendly(*m_caster, *expectedTarget))
                 {
                     return SPELL_FAILED_TARGET_FRIENDLY;
                 }
@@ -1753,7 +1754,7 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
 
             if (IsPositiveSpell(m_spellInfo->ID))
             {
-                if (m_caster->IsHostileTo(_target))
+                if (IsHostile(*m_caster, *_target))
                 {
                     return SPELL_FAILED_BAD_TARGETS;
                 }
@@ -1766,7 +1767,7 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
                     // TARGET_DUELVSPLAYER is positive AND negative
                     duelvsplayertar |= (m_spellInfo->ImplicitTargetA[j] == TARGET_DUELVSPLAYER);
                 }
-                if (m_caster->IsFriendlyTo(target) && !duelvsplayertar)
+                if (IsFriendly(*m_caster, *target) && !duelvsplayertar)
                 {
                     return SPELL_FAILED_BAD_TARGETS;
                 }

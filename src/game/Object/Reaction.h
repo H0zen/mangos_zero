@@ -27,7 +27,12 @@
 
 #include "Platform/Define.h"
 
+class Corpse;
+class DynamicObject;
+class GameObject;
+class Object;
 class Player;
+class Unit;
 struct FactionTemplateEntry;
 
 /// What one side makes of another.
@@ -53,3 +58,55 @@ enum class Reaction
  * the caller falls back to comparing the faction templates.
  */
 Reaction OpinionOf(Player const& player, FactionTemplateEntry const* faction, bool byWarState);
+
+/**
+ * What two factions have declared about each other in the game's own data.
+ *
+ * This is the standing between the sides themselves, not between two particular
+ * creatures: nothing that has happened in the world is taken into account. A
+ * template can name another faction as both friend and enemy, or belong to
+ * groups named on both sides. Enmity is read first, because a caller who may not
+ * attack is worse served by a wrong yes than a caller who may not heal is by a
+ * wrong no.
+ */
+Reaction AsFactionsDeclare(FactionTemplateEntry const& who, FactionTemplateEntry const& whom);
+
+/**
+ * What one thing in the world makes of a unit.
+ *
+ * The relation belongs to neither of the two, so it is asked of the pair rather
+ * than of one of them. Three answers are possible and all three occur: two
+ * players of opposing sides, only one of whom is flagged for war, are neither
+ * friends nor enemies, and the client draws that name yellow.
+ *
+ * Ownership is followed first: a pet answers for its master, and a gameobject,
+ * a corpse and a spell's lingering effect answer for whoever put them there.
+ */
+Reaction ReactionOf(Unit const& who, Unit const& whom);
+Reaction ReactionOf(GameObject const& who, Unit const& whom);
+Reaction ReactionOf(Corpse const& who, Unit const& whom);
+Reaction ReactionOf(DynamicObject const& who, Unit const& whom);
+
+/// For a caller holding something it has not identified.
+Reaction ReactionOf(Object const& who, Unit const& whom);
+
+template <typename T>
+inline bool IsHostile(T const& who, Unit const& whom)
+{
+    return ReactionOf(who, whom) == Reaction::Hostile;
+}
+
+template <typename T>
+inline bool IsFriendly(T const& who, Unit const& whom)
+{
+    return ReactionOf(who, whom) == Reaction::Friendly;
+}
+
+/**
+ * What a unit's own faction says about everyone else, with no second party.
+ *
+ * A faction a player can hold a standing with is never either of these: the
+ * standing decides instead, so the template is not consulted.
+ */
+bool HostileToPlayers(Unit const& who);
+bool NeutralToAll(Unit const& who);

@@ -41,6 +41,7 @@
  * EndContentData
  */
 
+#include "Reaction.h"
 #include "Summoning.h"
 #include "precompiled.h"
 
@@ -140,7 +141,7 @@ struct npc_calvin_montague : public CreatureScript
 
         void AttackedBy(Unit* pAttacker) override
         {
-            if (m_creature->getVictim() || m_creature->IsFriendlyTo(pAttacker))
+            if (m_creature->getVictim() || IsFriendly(*m_creature, *pAttacker))
             {
                 return;
             }

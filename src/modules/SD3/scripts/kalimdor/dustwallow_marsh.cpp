@@ -46,6 +46,7 @@
  * EndContentData
  */
 
+#include "Reaction.h"
 #include "Summoning.h"
 #include "precompiled.h"
 #include "escort_ai.h"
@@ -108,7 +109,7 @@ struct npc_morokk : public CreatureScript
                 return;
             }
 
-            if (m_creature->IsFriendlyTo(pAttacker))
+            if (IsFriendly(*m_creature, *pAttacker))
             {
                 return;
             }
@@ -574,7 +575,7 @@ struct npc_private_hendel : public CreatureScript
                 return;
             }
 
-            if (m_creature->IsFriendlyTo(pAttacker))
+            if (IsFriendly(*m_creature, *pAttacker))
             {
                 return;
             }

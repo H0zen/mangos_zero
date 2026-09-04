@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Reaction.h"
 #include "Utilities/Errors.h"
 #include <string>
 #include <list>
@@ -5896,7 +5897,7 @@ Unit* Unit::FindLowestHpFriendlyUnit(float fRange, uint32 uiMinHPDiff, bool bPer
         {
             if (Unit* pTarget = pReference->getSourceUnit())
             {
-                if (pTarget->IsAlive() && IsFriendlyTo(pTarget) && InReach(*this, *pTarget, fRange) &&
+                if (pTarget->IsAlive() && IsFriendly(*this, *pTarget) && InReach(*this, *pTarget, fRange) &&
                     ((bPercent && (100 - pTarget->GetHealthPercent() > uiMinHPDiff)) || (!bPercent && (pTarget->GetMaxHealth() - pTarget->GetHealth() > uiMinHPDiff))))
                 {
                     targets.push_back(pTarget);

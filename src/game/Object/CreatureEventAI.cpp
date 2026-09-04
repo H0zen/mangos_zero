@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Reaction.h"
 #include "Utterance.h"
 #include "Summoning.h"
 #include "Utilities/Util.h"
@@ -1653,8 +1654,8 @@ void CreatureEventAI::MoveInLineOfSight(Unit* who)
                 float fMaxAllowedRange = (float)itr->Event.ooc_los.maxRange;
 
                 // if friendly event && who is not hostile OR hostile event && who is hostile
-                if ((itr->Event.ooc_los.noHostile && !m_creature->IsHostileTo(who)) ||
-                    ((!itr->Event.ooc_los.noHostile) && m_creature->IsHostileTo(who)))
+                if ((itr->Event.ooc_los.noHostile && !IsHostile(*m_creature, *who)) ||
+                    ((!itr->Event.ooc_los.noHostile) && IsHostile(*m_creature, *who)))
                 {
                     // if range is ok and we are actually in LOS
                     if (InReach(*m_creature, *who, fMaxAllowedRange) && HasLineOfSight(*m_creature, *who))
@@ -1666,13 +1667,13 @@ void CreatureEventAI::MoveInLineOfSight(Unit* who)
         }
     }
 
-    if ((m_creature->GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_NO_AGGRO) || m_creature->IsNeutralToAll())
+    if ((m_creature->GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_NO_AGGRO) || NeutralToAll(*m_creature))
     {
         return;
     }
 
     if (m_creature->CanInitiateAttack() && who->IsTargetableForAttack() &&
-        m_creature->IsHostileTo(who) && who->isInAccessablePlaceFor(m_creature))
+        IsHostile(*m_creature, *who) && who->isInAccessablePlaceFor(m_creature))
     {
         if (!m_creature->CanFly() && m_creature->Where().HeightGapTo(who->Where()) > CREATURE_Z_ATTACK_RANGE)
         {

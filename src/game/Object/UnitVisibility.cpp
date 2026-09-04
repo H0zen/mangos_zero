@@ -25,6 +25,7 @@
 
 
 
+#include "Reaction.h"
 #include "Utilities/MathDefines.h"
 #include "Unit.h"
 #include "Log.h"
@@ -201,7 +202,7 @@ bool Unit::IsVisibleForOrDetect(Unit const* u, Presence const* viewPoint, bool d
     // grouped players should always see stealthed party members
     if (GetTypeId() == TYPEID_PLAYER && u->GetTypeId() == TYPEID_PLAYER)
     {
-        if (((Player*)this)->IsGroupVisibleFor(((Player*)u)) && u->IsFriendlyTo(this))
+        if (((Player*)this)->IsGroupVisibleFor(((Player*)u)) && IsFriendly(*u, *this))
         {
             return true;
         }
@@ -225,7 +226,7 @@ bool Unit::IsVisibleForOrDetect(Unit const* u, Presence const* viewPoint, bool d
     // special cases for always overwrite invisibility/stealth
     if (invisible || m_Visibility == VISIBILITY_GROUP_STEALTH)
     {
-        if (u->IsHostileTo(this))
+        if (IsHostile(*u, *this))
         {
             // Hunter mark functionality
             const auto auras = GetAurasByType(SPELL_AURA_MOD_STALKED);

@@ -28,6 +28,7 @@
 #include <vector>
 #include <set>
 #include <list>
+#include "Reaction.h"
 #include "UpdateData.h"
 #include "PacketReach.h"
 
@@ -548,7 +549,7 @@ namespace MaNGOS
             Presence const& GetFocusObject() const { return *i_fobj; }
             bool operator()(Player* u)
             {
-                if (i_fobj->IsFriendlyTo(u) || u->IsAlive() || u->IsTaxiFlying())
+                if (IsFriendly(*i_fobj, *u) || u->IsAlive() || u->IsTaxiFlying())
                 {
                     return false;
                 }
@@ -558,7 +559,7 @@ namespace MaNGOS
             bool operator()(Corpse* u);
             bool operator()(Creature* u)
             {
-                if (i_fobj->IsFriendlyTo(u) || u->IsAlive() || u->IsTaxiFlying() ||
+                if (IsFriendly(*i_fobj, *u) || u->IsAlive() || u->IsTaxiFlying() ||
                     (u->GetCreatureTypeMask() & CREATURE_TYPEMASK_HUMANOID_OR_UNDEAD) == 0)
                 {
                     return false;
@@ -735,7 +736,7 @@ namespace MaNGOS
             Presence const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
-                if (u->IsAlive() && u->IsInCombat() && i_obj->IsFriendlyTo(u) && InReach(*i_obj, *u, i_range))
+                if (u->IsAlive() && u->IsInCombat() && IsFriendly(*i_obj, *u) && InReach(*i_obj, *u, i_range))
                 {
                     if (i_percent)
                     {
@@ -760,7 +761,7 @@ namespace MaNGOS
             Presence const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
-                if (u->IsAlive() && u->IsInCombat() && !i_obj->IsHostileTo(u) && InReach(*i_obj, *u, i_range) &&
+                if (u->IsAlive() && u->IsInCombat() && !IsHostile(*i_obj, *u) && InReach(*i_obj, *u, i_range) &&
                     (u->IsCharmed() || u->IsFrozen() || u->hasUnitState(UNIT_STAT_CAN_NOT_REACT)))
                 {
                     return true;
@@ -779,7 +780,7 @@ namespace MaNGOS
             Presence const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
-                if (u->IsAlive() && u->IsInCombat() && !i_obj->IsHostileTo(u) && InReach(*i_obj, *u, i_range) &&
+                if (u->IsAlive() && u->IsInCombat() && !IsHostile(*i_obj, *u) && InReach(*i_obj, *u, i_range) &&
                     !(u->HasAura(i_spell, EFFECT_INDEX_0) || u->HasAura(i_spell, EFFECT_INDEX_1) || u->HasAura(i_spell, EFFECT_INDEX_2)))
                 {
                     return true;
@@ -802,7 +803,7 @@ namespace MaNGOS
             Presence const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
-                if (u->IsAlive() && (i_controlledByPlayer ? !i_obj->IsFriendlyTo(u) : i_obj->IsHostileTo(u)) &&
+                if (u->IsAlive() && (i_controlledByPlayer ? !IsFriendly(*i_obj, *u) : IsHostile(*i_obj, *u)) &&
                     InReach(*i_obj, *u, i_range))
                 {
                     return true;
@@ -828,7 +829,7 @@ namespace MaNGOS
             {
                 return u->IsAlive() &&
                     InReach(*i_obj, *u, i_range) &&
-                    !i_funit->IsFriendlyTo(u) &&
+                    !IsFriendly(*i_funit, *u) &&
                     u->IsVisibleForOrDetect(i_funit, i_funit, false);
             }
         private:
@@ -844,7 +845,7 @@ namespace MaNGOS
             Presence const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
-                if (u->IsAlive() && InReach(*i_obj, *u, i_range) && i_obj->IsFriendlyTo(u))
+                if (u->IsAlive() && InReach(*i_obj, *u, i_range) && IsFriendly(*i_obj, *u))
                 {
                     return true;
                 }
@@ -886,7 +887,7 @@ namespace MaNGOS
             bool operator()(Unit* u)
             {
                 if (u->IsTargetableForAttack() && InReach(*i_obj, *u, i_range) &&
-                    !i_funit->IsFriendlyTo(u) && u->IsVisibleForOrDetect(i_funit, i_funit, false))
+                    !IsFriendly(*i_funit, *u) && u->IsVisibleForOrDetect(i_funit, i_funit, false))
                 {
                     i_range = i_obj->Where().DistanceTo(u->Where());        // use found unit range as new range limit for next check
                     return true;
@@ -933,7 +934,7 @@ namespace MaNGOS
                     return false;
                 }
 
-                if ((i_targetForPlayer ? !i_originalCaster->IsFriendlyTo(u) : i_originalCaster->IsHostileTo(u)) && InReach(*i_obj, *u, i_range))
+                if ((i_targetForPlayer ? !IsFriendly(*i_originalCaster, *u) : IsHostile(*i_originalCaster, *u)) && InReach(*i_obj, *u, i_range))
                 {
                     return true;
                 }
@@ -970,7 +971,7 @@ namespace MaNGOS
                     return false;
                 }
 
-                if ((i_targetForPlayer ? !i_obj->IsFriendlyTo(u) : i_obj->IsHostileTo(u)) && InReach(*i_obj, *u, i_range))
+                if ((i_targetForPlayer ? !IsFriendly(*i_obj, *u) : IsHostile(*i_obj, *u)) && InReach(*i_obj, *u, i_range))
                 {
                     return true;
                 }
@@ -1005,7 +1006,7 @@ namespace MaNGOS
                     return false;
                 }
 
-                if ((i_isFriendly ? i_obj->IsFriendlyTo(u) : i_obj->IsHostileTo(u)) && InReach(*i_obj, *u, i_range))
+                if ((i_isFriendly ? IsFriendly(*i_obj, *u) : IsHostile(*i_obj, *u)) && InReach(*i_obj, *u, i_range))
                 {
                     return true;
                 }
@@ -1039,7 +1040,7 @@ namespace MaNGOS
                     return;
                 }
 
-                if ((i_isFriendly ? i_obj->IsFriendlyTo(u) : i_obj->IsHostileTo(u)) && InReach(*i_obj, *u, i_range))
+                if ((i_isFriendly ? IsFriendly(*i_obj, *u) : IsHostile(*i_obj, *u)) && InReach(*i_obj, *u, i_range))
                 {
                     i_obj->Use(u);
                 }
@@ -1094,7 +1095,7 @@ namespace MaNGOS
             Presence const& GetFocusObject() const { return *i_funit; }
             bool operator()(Creature* u)
             {
-                if (u->IsAlive() && u->IsHostileTo(i_funit) && InReach(*i_funit, *u, u->GetAttackDistance(i_funit)))
+                if (u->IsAlive() && IsHostile(*u, *i_funit) && InReach(*i_funit, *u, u->GetAttackDistance(i_funit)))
                 {
                     return true;
                 }

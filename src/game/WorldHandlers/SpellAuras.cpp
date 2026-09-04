@@ -43,6 +43,7 @@
  * @see Spell for spell casting
  */
 
+#include "Reaction.h"
 #include "Geometry/Placement.h"
 #include <cmath>
 #include <iterator>
@@ -511,7 +512,7 @@ void AreaAura::Update(uint32 diff)
                         for (GroupReference* itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
                         {
                             Player* Target = itr->getSource();
-                            if (Target && Target->IsAlive() && Target->GetSubGroup() == subgroup && caster->IsFriendlyTo(Target))
+                            if (Target && Target->IsAlive() && Target->GetSubGroup() == subgroup && IsFriendly(*caster, *Target))
                             {
                                 if (InReach(*caster, *Target, m_radius))
                                 {
@@ -656,7 +657,7 @@ void AreaAura::Update(uint32 diff)
             caster->hasUnitState(UNIT_STAT_ISOLATED)               ||
             !caster->HasAura(originalRankSpellId, GetEffIndex())   ||
             !InReach(*caster, *target, m_radius)           ||
-            caster->IsFriendlyTo(target) != needFriendly)
+            IsFriendly(*caster, *target) != needFriendly)
         {
             target->RemoveAuraEffect(GetId(), GetEffIndex(), GetCasterGuid());
         }

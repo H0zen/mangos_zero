@@ -664,8 +664,6 @@ class Presence : public Object
 
 
 
-        virtual bool IsHostileTo(Unit const* unit) const = 0;
-        virtual bool IsFriendlyTo(Unit const* unit) const = 0;
         virtual bool IsControlledByPlayer() const { return false; }
 
         void AddObjectToRemoveList();
@@ -833,4 +831,14 @@ inline Player* ToPlayer(Object* object)
 inline Player const* ToPlayer(Object const* object)
 {
     return object && object->GetTypeId() == TYPEID_PLAYER ? reinterpret_cast<Player const*>(object) : nullptr;
+}
+
+inline Corpse const* ToCorpse(Object const* object)
+{
+    return object && object->GetTypeId() == TYPEID_CORPSE ? reinterpret_cast<Corpse const*>(object) : nullptr;
+}
+
+inline DynamicObject const* ToDynObject(Object const* object)
+{
+    return object && object->GetTypeId() == TYPEID_DYNAMICOBJECT ? reinterpret_cast<DynamicObject const*>(object) : nullptr;
 }

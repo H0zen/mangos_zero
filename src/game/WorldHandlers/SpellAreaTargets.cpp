@@ -46,6 +46,7 @@
 
 
 
+#include "Reaction.h"
 #include "Spell.h"
 #include "Database/DatabaseEnv.h"
 #include "WorldPacket.h"
@@ -117,7 +118,7 @@ void Spell::FillRaidOrPartyTargets(UnitList& targetUnitMap, Unit* member, float 
 
             // IsHostileTo check duel and controlled by enemy
             if (Target && (raid || subgroup == Target->GetSubGroup()) &&
-                !m_caster->IsHostileTo(Target))
+                !IsHostile(*m_caster, *Target))
             {
                 if ((Target == m_caster && withcaster) ||
                     (Target != m_caster && InReach(*m_caster, *Target, radius)))

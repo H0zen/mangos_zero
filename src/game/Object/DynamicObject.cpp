@@ -314,38 +314,3 @@ bool DynamicObject::IsVisibleForInState(Player const* u, Presence const* viewPoi
     return SeenWithin(*this, *viewPoint, GetMap()->GetVisibilityDistance() + (inVisibleList ? World::GetVisibleObjectGreyDistance() : 0.0f), false);
 }
 
-/**
- * @brief Checks whether the caster is hostile to a unit.
- *
- * @param unit The unit to test against.
- * @return true if the caster is hostile to the unit; otherwise, false.
- */
-bool DynamicObject::IsHostileTo(Unit const* unit) const
-{
-    if (Unit* owner = GetCaster())
-    {
-        return owner->IsHostileTo(unit);
-    }
-    else
-    {
-        return false;
-    }
-}
-
-/**
- * @brief Checks whether the caster is friendly to a unit.
- *
- * @param unit The unit to test against.
- * @return true if the caster is friendly to the unit; otherwise, false.
- */
-bool DynamicObject::IsFriendlyTo(Unit const* unit) const
-{
-    if (Unit* owner = GetCaster())
-    {
-        return owner->IsFriendlyTo(unit);
-    }
-    else
-    {
-        return true;
-    }
-}

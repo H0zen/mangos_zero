@@ -47,6 +47,7 @@
 
 
 #include <cmath>
+#include "Reaction.h"
 #include "Spell.h"
 #include "Database/DatabaseEnv.h"
 #include "WorldPacket.h"
@@ -164,7 +165,7 @@ void Spell::FillTargetMap()
                                 {
                                     if (Unit* target = ObjectLookup::GetUnit(*m_caster, ((Player*)m_caster)->GetSelectionGuid()))
                                     {
-                                        if (!m_caster->IsFriendlyTo(target))
+                                        if (!IsFriendly(*m_caster, *target))
                                         {
                                             tmpUnitLists[i /*==effToIndex[i]*/].push_back(target);
                                         }

@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Reaction.h"
 #include "GuardAI.h"
 #include "Creature.h"
 #include "Player.h"
@@ -71,7 +72,7 @@ void GuardAI::MoveInLineOfSight(Unit* u)
     }
 
     if (!m_creature->getVictim() && u->IsTargetableForAttack() &&
-        (u->IsHostileToPlayers() || m_creature->IsHostileTo(u) /*|| u->getVictim() && m_creature->IsFriendlyTo(u->getVictim())*/) &&
+        (HostileToPlayers(*u) || IsHostile(*m_creature, *u) /*|| u->getVictim() && IsFriendly(*m_creature, *u->getVictim())*/) &&
         u->isInAccessablePlaceFor(m_creature))
     {
         float attackRadius = m_creature->GetAttackDistance(u);

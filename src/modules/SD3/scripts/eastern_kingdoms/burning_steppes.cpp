@@ -39,6 +39,7 @@
  * EndContentData
  */
 
+#include "Reaction.h"
 #include "Summoning.h"
 #include "precompiled.h"
 #include "escort_ai.h"
@@ -66,7 +67,7 @@ struct npc_ragged_john : public CreatureScript
                 }
             }
 
-            if (!m_creature->getVictim() && who->IsTargetableForAttack() && (m_creature->IsHostileTo(who)) && who->isInAccessablePlaceFor(m_creature))
+            if (!m_creature->getVictim() && who->IsTargetableForAttack() && (IsHostile(*m_creature, *who)) && who->isInAccessablePlaceFor(m_creature))
             {
                 if (!m_creature->CanFly() && m_creature->Where().HeightGapTo(who->Where()) > CREATURE_Z_ATTACK_RANGE)
                 {

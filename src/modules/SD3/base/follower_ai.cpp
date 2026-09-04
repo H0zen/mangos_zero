@@ -31,6 +31,7 @@ SDComment: This AI is under development
 SDCategory: Npc
 EndScriptData */
 
+#include "Reaction.h"
 #include "precompiled.h"
 #include "follower_ai.h"
 
@@ -95,7 +96,7 @@ bool FollowerAI::AssistPlayerInCombat(Unit* pWho)
     }
 
     // never attack friendly
-    if (m_creature->IsFriendlyTo(pWho))
+    if (IsFriendly(*m_creature, *pWho))
     {
         return false;
     }
@@ -140,7 +141,7 @@ void FollowerAI::MoveInLineOfSight(Unit* pWho)
             return;
         }
 
-        if (m_creature->IsHostileTo(pWho))
+        if (IsHostile(*m_creature, *pWho))
         {
             float fAttackRadius = m_creature->GetAttackDistance(pWho);
             if (InReach(*m_creature, *pWho, fAttackRadius) && HasLineOfSight(*m_creature, *pWho))

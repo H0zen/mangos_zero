@@ -26,6 +26,7 @@
 
 
 #include <set>
+#include "Reaction.h"
 #include "Metrics/ServerMetrics.h"
 #include "Player.h"
 #include "Language.h"
@@ -101,7 +102,7 @@ bool Player::IsVisibleInGridForPlayer(Player* pl) const
     }
 
     // Ghost see other friendly ghosts, that's for sure
-    if (!(IsAlive() || m_deathTimer > 0) && IsFriendlyTo(pl))
+    if (!(IsAlive() || m_deathTimer > 0) && IsFriendly(*this, *pl))
     {
         return true;
     }

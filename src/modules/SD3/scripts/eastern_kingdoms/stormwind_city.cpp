@@ -43,6 +43,7 @@
  * EndContentData
  */
 
+#include "Reaction.h"
 #include "Summoning.h"
 #include "precompiled.h"
 #include "../scripts/world/world_map_scripts.h"
@@ -96,7 +97,7 @@ struct npc_bartleby : public CreatureScript
                 return;
             }
 
-            if (m_creature->IsFriendlyTo(pAttacker))
+            if (IsFriendly(*m_creature, *pAttacker))
             {
                 return;
             }
@@ -163,7 +164,7 @@ struct npc_dashel_stonefist : public CreatureScript
                 return;
             }
 
-            if (m_creature->IsFriendlyTo(pAttacker))
+            if (IsFriendly(*m_creature, *pAttacker))
             {
                 return;
             }

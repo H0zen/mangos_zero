@@ -25,6 +25,7 @@
 
 
 
+#include "Reaction.h"
 #include "Player.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -352,7 +353,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
                 return;
             }
 
-            if (loot_type == LOOT_PICKPOCKETING && IsFriendlyTo(creature))
+            if (loot_type == LOOT_PICKPOCKETING && IsFriendly(*this, *creature))
             {
                 SendLootRelease(guid);
                 return;

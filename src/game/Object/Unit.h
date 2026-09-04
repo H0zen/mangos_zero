@@ -1885,32 +1885,6 @@ class Unit : public Presence
         FactionTemplateEntry const* getFactionTemplateEntry() const;
 
         /**
-         * Are we hostile towards the given Unit?
-         * @param unit the unit we want to check against
-         * @return true if the Unit is considered hostile, false otherwise
-         */
-        bool IsHostileTo(Unit const* unit) const override;
-
-        /**
-         * Is this Unit hostile towards players?
-         * @return true if the Unit is hostile towards players, false otherwise
-         */
-        bool IsHostileToPlayers() const;
-
-        /**
-         * Is this Unit friendly towards the given Unit?
-         * @param unit the Unit to check against
-         * @return true if the Unit is considered friendly to us, false otherwise
-         */
-        bool IsFriendlyTo(Unit const* unit) const override;
-
-        /**
-         * Is this Unit neutral to everyone?
-         * @return True if considered neutral to everyone, false otherwise.
-         */
-        bool IsNeutralToAll() const;
-
-        /**
          * Check if this Unit is a guardian of a contested territory, this is
          * useful when we want to know if we should attack all players or only
          * players not belonging to our "side" ally/horde.

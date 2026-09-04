@@ -638,7 +638,7 @@ bool GameObject::IsVisibleForInState(Player const* u, Presence const* viewPoint,
 
                 Unit* owner = GetOwner();
 
-                if (!owner || u->IsHostileTo(owner))
+                if (!owner || IsHostile(*u, *owner))
                 {
 
                     visibleDistance = 10.5f;
@@ -1066,116 +1066,6 @@ void GameObject::GetQuaternion(Geometry::Quat& q) const
     q.y = GetFloatValue(GAMEOBJECT_ROTATION + 1);
     q.z = GetFloatValue(GAMEOBJECT_ROTATION + 2);
     q.w = GetFloatValue(GAMEOBJECT_ROTATION + 3);
-}
-
-/**
- * @brief Checks whether the game object is hostile to a unit.
- *
- * @param unit The unit to test.
- * @return true if hostile; otherwise, false.
- */
-bool GameObject::IsHostileTo(Unit const* unit) const
-{
-    // always non-hostile to GM in GM mode
-    if (unit->GetTypeId() == TYPEID_PLAYER && ((Player const*)unit)->isGameMaster())
-    {
-        return false;
-    }
-
-    // test owner instead if have
-    if (Unit const* owner = GetOwner())
-    {
-        return owner->IsHostileTo(unit);
-    }
-
-    if (Unit const* targetOwner = unit->GetCharmerOrOwner())
-    {
-        return IsHostileTo(targetOwner);
-    }
-
-    // for not set faction case: be hostile towards player, not hostile towards not-players
-    if (!GetGOInfo()->faction)
-    {
-        return unit->IsControlledByPlayer();
-    }
-
-    // faction base cases
-    FactionTemplateEntry const* tester_faction = sFactionTemplateStore.LookupEntry(GetGOInfo()->faction);
-    FactionTemplateEntry const* target_faction = unit->getFactionTemplateEntry();
-    if (!tester_faction || !target_faction)
-    {
-        return false;
-    }
-
-    if (Player const* judged = ToPlayer(unit))
-    {
-        Reaction const verdict = OpinionOf(*judged, tester_faction, false);
-    switch (verdict)
-    {
-        case Reaction::Hostile:   return true;
-        case Reaction::Friendly:
-        case Reaction::Neither:   return false;
-        case Reaction::NoOpinion: break;
-    }
-    }
-
-    // common faction based case (GvC,GvP)
-    return tester_faction->IsHostileTo(*target_faction);
-}
-
-/**
- * @brief Checks whether the game object is friendly to a unit.
- *
- * @param unit The unit to test.
- * @return true if friendly; otherwise, false.
- */
-bool GameObject::IsFriendlyTo(Unit const* unit) const
-{
-    // always friendly to GM in GM mode
-    if (unit->GetTypeId() == TYPEID_PLAYER && ((Player const*)unit)->isGameMaster())
-    {
-        return true;
-    }
-
-    // test owner instead if have
-    if (Unit const* owner = GetOwner())
-    {
-        return owner->IsFriendlyTo(unit);
-    }
-
-    if (Unit const* targetOwner = unit->GetCharmerOrOwner())
-    {
-        return IsFriendlyTo(targetOwner);
-    }
-
-    // for not set faction case (wild object) use hostile case
-    if (!GetGOInfo()->faction)
-    {
-        return false;
-    }
-
-    // faction base cases
-    FactionTemplateEntry const* tester_faction = sFactionTemplateStore.LookupEntry(GetGOInfo()->faction);
-    FactionTemplateEntry const* target_faction = unit->getFactionTemplateEntry();
-    if (!tester_faction || !target_faction)
-    {
-        return false;
-    }
-
-    if (Player const* judged = ToPlayer(unit))
-    {
-        Reaction const verdict = OpinionOf(*judged, tester_faction, false);
-    switch (verdict)
-    {
-        case Reaction::Friendly:  return true;
-        case Reaction::Hostile:
-        case Reaction::Neither:   return false;
-        case Reaction::NoOpinion: break;
-    }
-    }
-
-    // common faction based case (GvC,GvP)
-    return tester_faction->IsFriendlyTo(*target_faction);
 }
 
 /**

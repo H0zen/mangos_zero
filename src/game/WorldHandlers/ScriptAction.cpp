@@ -48,6 +48,7 @@
 
 #include <algorithm>
 #include <vector>
+#include "Reaction.h"
 #include "Utterance.h"
 #include "Summoning.h"
 #include "Utilities/MathDefines.h"
@@ -1008,7 +1009,7 @@ bool ScriptAction::HandleScriptStep()
             Creature* pAttacker = static_cast<Creature*>(pSource);
             Unit* unitTarget = static_cast<Unit*>(pTarget);
 
-            if (pAttacker->IsFriendlyTo(unitTarget))
+            if (IsFriendly(*pAttacker, *unitTarget))
             {
                 sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u attacker is friendly to target, can not attack (Attacker: %s, Target: %s)", m_type, m_script->id, m_script->command, pAttacker->GetGuidStr().c_str(), unitTarget->GetGuidStr().c_str());
                 break;

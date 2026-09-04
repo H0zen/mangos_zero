@@ -42,6 +42,7 @@
  * and distribute rewards.
  */
 
+#include "Reaction.h"
 #include "Utilities/Errors.h"
 #include "Platform/Define.h"
 #include "Log.h"
@@ -79,7 +80,7 @@ void WorldSession::HandleQuestgiverStatusQueryOpcode(WorldPacket& recv_data)
         {
             Creature* cr_questgiver = (Creature*)questgiver;
 
-            if (!cr_questgiver->IsHostileTo(_player))       // not show quest status to enemies
+            if (!IsHostile(*cr_questgiver, *_player))       // not show quest status to enemies
             {
                 dialogStatus = sScriptMgr.GetDialogStatus(_player, cr_questgiver);
 
@@ -807,7 +808,7 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             // need also pet quests case support
             Creature* questgiver = GetPlayer()->GetMap()->GetAnyTypeCreature(*itr);
 
-            if (!questgiver || questgiver->IsHostileTo(_player))
+            if (!questgiver || IsHostile(*questgiver, *_player))
             {
                 continue;
             }

@@ -798,8 +798,6 @@ class GameObject : public Presence
         // 0 = use `gameobject`.`spawntimesecs`
         void ResetDoorOrButton();
 
-        bool IsHostileTo(Unit const* unit) const override;
-        bool IsFriendlyTo(Unit const* unit) const override;
 
         void SummonLinkedTrapIfAny();
         void TriggerLinkedGameObject(Unit* target);

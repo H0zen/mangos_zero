@@ -47,6 +47,7 @@
 
 #pragma once
 
+#include "Reaction.h"
 #include "Utilities/Errors.h"
 #include "Platform/Define.h"
 #include "Utilities/MathDefines.h"
@@ -727,7 +728,7 @@ namespace MaNGOS
                     continue;
                 }
 
-                if (i_originalCaster->IsFriendlyTo(pPlayer))
+                if (IsFriendly(*i_originalCaster, *pPlayer))
                 {
                     continue;
                 }
@@ -832,25 +833,25 @@ namespace MaNGOS
                     switch (i_TargetType)
                     {
                         case SPELL_TARGETS_HOSTILE:
-                            if (!i_originalCaster->IsHostileTo(itr->getSource()))
+                            if (!IsHostile(*i_originalCaster, *itr->getSource()))
                             {
                                 continue;
                             }
                             break;
                         case SPELL_TARGETS_NOT_FRIENDLY:
-                            if (i_originalCaster->IsFriendlyTo(itr->getSource()))
+                            if (IsFriendly(*i_originalCaster, *itr->getSource()))
                             {
                                 continue;
                             }
                             break;
                         case SPELL_TARGETS_NOT_HOSTILE:
-                            if (i_originalCaster->IsHostileTo(itr->getSource()))
+                            if (IsHostile(*i_originalCaster, *itr->getSource()))
                             {
                                 continue;
                             }
                             break;
                         case SPELL_TARGETS_FRIENDLY:
-                            if (!i_originalCaster->IsFriendlyTo(itr->getSource()))
+                            if (!IsFriendly(*i_originalCaster, *itr->getSource()))
                             {
                                 continue;
                             }
@@ -864,14 +865,14 @@ namespace MaNGOS
 
                             if (i_playerControlled)
                             {
-                                if (i_originalCaster->IsFriendlyTo(itr->getSource()))
+                                if (IsFriendly(*i_originalCaster, *itr->getSource()))
                                 {
                                     continue;
                                 }
                             }
                             else
                             {
-                                if (!i_originalCaster->IsHostileTo(itr->getSource()))
+                                if (!IsHostile(*i_originalCaster, *itr->getSource()))
                                 {
                                     continue;
                                 }

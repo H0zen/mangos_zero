@@ -36,6 +36,7 @@
  * Actual combat calculations (damage, hit/miss) are handled elsewhere.
  */
 
+#include "Reaction.h"
 #include "Platform/Define.h"
 #include "Log.h"
 #include "WorldPacket.h"
@@ -81,7 +82,7 @@ void WorldSession::HandleAttackSwingOpcode(WorldPacket& recv_data)
         return;
     }
 
-    if (_player->IsFriendlyTo(pEnemy) || pEnemy->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE))
+    if (IsFriendly(*_player, *pEnemy) || pEnemy->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE))
     {
         sLog.outError("WORLD: Enemy %s is friendly", guid.GetString().c_str());
 

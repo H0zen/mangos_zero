@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "Reaction.h"
 #include "GridNotifiers.h"
 #include "WorldPacket.h"
 #include "Player.h"
@@ -177,14 +178,14 @@ inline void MaNGOS::DynamicObjectUpdater::VisitHelper(Unit* target)
     // for player casts use less strict negative and more stricted positive targeting
     if (i_check->GetTypeId() == TYPEID_PLAYER)
     {
-        if (i_check->IsFriendlyTo(target) != i_positive)
+        if (IsFriendly(*i_check, *target) != i_positive)
         {
             return;
         }
     }
     else
     {
-        if (i_check->IsHostileTo(target) == i_positive)
+        if (IsHostile(*i_check, *target) == i_positive)
         {
             return;
         }

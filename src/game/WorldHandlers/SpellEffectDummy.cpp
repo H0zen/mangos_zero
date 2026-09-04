@@ -26,6 +26,7 @@
 
 
 #include <iterator>
+#include "Reaction.h"
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"
 #include "Utilities/MathDefines.h"
@@ -1148,7 +1149,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                             return;
                     }
 
-                    if (m_caster->IsFriendlyTo(unitTarget))
+                    if (IsFriendly(*m_caster, *unitTarget))
                     {
                         m_caster->CastSpell(unitTarget, heal, true);
                     }

@@ -25,6 +25,7 @@
 
 
 
+#include "Reaction.h"
 #include "Utilities/Errors.h"
 #include <vector>
 #include "Player.h"
@@ -221,7 +222,7 @@ Player* Player::GetNextRandomRaidMember(float radius)
 
         // IsHostileTo check duel and controlled by enemy
         if (Target && Target != this && InReach(*this, *Target, radius) &&
-            !Target->HasInvisibilityAura() && !IsHostileTo(Target))
+            !Target->HasInvisibilityAura() && !IsHostile(*this, *Target))
         {
             nearMembers.push_back(Target);
         }

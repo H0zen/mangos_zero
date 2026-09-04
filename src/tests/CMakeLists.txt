@@ -27,6 +27,7 @@ set(TEST_SOURCES
     wire/test_fieldtable.cpp
 
     unit/test_diminishing.cpp
+    unit/test_sides.cpp
 
     combat/test_school.cpp
     combat/test_roll.cpp

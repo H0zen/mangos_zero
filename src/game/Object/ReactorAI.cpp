@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Reaction.h"
 #include "ReactorAI.h"
 #include "Creature.h"
 #include "Map.h"
@@ -38,7 +39,7 @@
  */
 int ReactorAI::Permissible(const Creature* creature)
 {
-    if ((creature->GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_NO_AGGRO) || creature->IsNeutralToAll())
+    if ((creature->GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_NO_AGGRO) || NeutralToAll(*creature))
     {
         return PERMIT_BASE_REACTIVE;
     }

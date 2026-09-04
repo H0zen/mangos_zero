@@ -61,8 +61,6 @@ class DynamicObject : public Presence
         void RemoveAffected(Unit* unit) { m_affected.erase(unit->GetObjectGuid()); }
         void Delay(int32 delaytime);
 
-        bool IsHostileTo(Unit const* unit) const override;
-        bool IsFriendlyTo(Unit const* unit) const override;
 
         float ComputeBoundingRadius() const override      // overwrite Presence version
         {

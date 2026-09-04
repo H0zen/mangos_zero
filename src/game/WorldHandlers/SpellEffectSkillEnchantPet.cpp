@@ -28,6 +28,7 @@
 #include <iterator>
 #include <random>
 #include <utility>
+#include "Reaction.h"
 #include "Common/ServerDefines.h"
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"
@@ -150,7 +151,7 @@ void Spell::EffectDispel(SpellEffectIndex eff_idx)
 
                 // do not remove positive auras if friendly target
                 //               negative auras if non-friendly target
-                if (positive == unitTarget->IsFriendlyTo(m_caster))
+                if (positive == IsFriendly(*unitTarget, *m_caster))
                 {
                     continue;
                 }
@@ -346,7 +347,7 @@ void Spell::EffectPickPocket(SpellEffectIndex /*eff_idx*/)
     }
 
     // victim must be creature and attackable
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT || m_caster->IsFriendlyTo(unitTarget))
+    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT || IsFriendly(*m_caster, *unitTarget))
     {
         return;
     }

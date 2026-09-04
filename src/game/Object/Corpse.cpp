@@ -324,42 +324,6 @@ bool Corpse::IsVisibleForInState(Player const* u, Presence const* viewPoint, boo
 }
 
 /**
- * @brief Checks whether the corpse owner is hostile to a unit.
- *
- * @param unit The unit to test against.
- * @return true if the owner is hostile to the unit; otherwise, false.
- */
-bool Corpse::IsHostileTo(Unit const* unit) const
-{
-    if (Player* owner = sObjectMgr.GetPlayer(GetOwnerGuid()))
-    {
-        return owner->IsHostileTo(unit);
-    }
-    else
-    {
-        return false;
-    }
-}
-
-/**
- * @brief Checks whether the corpse owner is friendly to a unit.
- *
- * @param unit The unit to test against.
- * @return true if the owner is friendly to the unit; otherwise, false.
- */
-bool Corpse::IsFriendlyTo(Unit const* unit) const
-{
-    if (Player* owner = sObjectMgr.GetPlayer(GetOwnerGuid()))
-    {
-        return owner->IsFriendlyTo(unit);
-    }
-    else
-    {
-        return true;
-    }
-}
-
-/**
  * @brief Checks whether the corpse has expired.
  *
  * @param t The reference time to compare against.

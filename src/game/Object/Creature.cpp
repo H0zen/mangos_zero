@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Reaction.h"
 #include "Utilities/Errors.h"
 #include <algorithm>
 #include <sstream>
@@ -2537,14 +2538,14 @@ bool Creature::CanAssistTo(const Unit* u, const Unit* enemy, bool checkfaction /
     }
     else
     {
-        if (!IsFriendlyTo(u))
+        if (!IsFriendly(*this, *u))
         {
             return false;
         }
     }
 
     // skip non hostile to caster enemy creatures
-    if (enemy && !IsHostileTo(enemy))
+    if (enemy && !IsHostile(*this, *enemy))
     {
         return false;
     }
@@ -2769,7 +2770,7 @@ void Creature::SetInCombatWithZone()
                 continue;
             }
 
-            if (pPlayer->IsAlive() && !IsFriendlyTo(pPlayer))
+            if (pPlayer->IsAlive() && !IsFriendly(*this, *pPlayer))
             {
                 pPlayer->SetInCombatWith(this);
                 AddThreat(pPlayer);

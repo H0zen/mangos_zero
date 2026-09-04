@@ -25,6 +25,7 @@
 
 #include <vector>
 #include <list>
+#include "Reaction.h"
 #include "Utilities/MathDefines.h"
 #include "PetAI.h"
 #include "Errors.h"
@@ -93,7 +94,7 @@ void PetAI::MoveInLineOfSight(Unit* u)
         return;
     }
 
-    if (u->IsTargetableForAttack() && m_creature->IsHostileTo(u) &&
+    if (u->IsTargetableForAttack() && IsHostile(*m_creature, *u) &&
         u->isInAccessablePlaceFor(m_creature))
     {
         float attackRadius = m_creature->GetAttackDistance(u);

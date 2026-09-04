@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Reaction.h"
 #include "AggressorAI.h"
 #include "Errors.h"
 #include "Creature.h"
@@ -42,7 +43,7 @@
 int AggressorAI::Permissible(const Creature* creature)
 {
     // have some hostile factions, it will be selected by IsHostileTo check at MoveInLineOfSight
-    if (!(creature->GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_NO_AGGRO) && !creature->IsNeutralToAll())
+    if (!(creature->GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_NO_AGGRO) && !NeutralToAll(*creature))
     {
         return PERMIT_BASE_PROACTIVE;
     }
@@ -76,7 +77,7 @@ void AggressorAI::MoveInLineOfSight(Unit* u)
     }
 
     if (m_creature->CanInitiateAttack() && u->IsTargetableForAttack() &&
-        m_creature->IsHostileTo(u) && u->isInAccessablePlaceFor(m_creature))
+        IsHostile(*m_creature, *u) && u->isInAccessablePlaceFor(m_creature))
     {
         float attackRadius = m_creature->GetAttackDistance(u);
         if (InReach(*m_creature, *u, attackRadius) && HasLineOfSight(*m_creature, *u))

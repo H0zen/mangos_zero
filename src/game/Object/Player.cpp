@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Reaction.h"
 #include "Utilities/Errors.h"
 #include <cassert>
 #include <sstream>
@@ -2142,7 +2143,7 @@ Creature* Player::GetNPCIfCanInteractWith(ObjectGuid guid, uint32 npcflagmask)
     }
 
     // not enemy
-    if (unit->IsHostileTo(this))
+    if (IsHostile(*unit, *this))
     {
         return NULL;
     }
@@ -5694,7 +5695,7 @@ float Player::GetReputationPriceDiscount(Creature const* pCreature) const
     {
         if (FactionTemplateEntry const* player_faction = getFactionTemplateEntry())
         {
-            if (player_faction->IsFriendlyTo(*vendor_faction))          // check if its friendly faction (not neutral)
+            if (AsFactionsDeclare(*player_faction, *vendor_faction) == Reaction::Friendly)
             {
                 discount -=10; // give 10% discount if grade is at least sergent
             }

@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "Reaction.h"
 #include "TotemAI.h"
 #include "Totem.h"
 #include "Creature.h"
@@ -113,7 +114,7 @@ void TotemAI::UpdateAI(const uint32 /*diff*/)
     // Search victim if no, not attackable, or out of range, or friendly (possible in case duel end)
     if (!victim ||
         !victim->IsTargetableForAttack() || !InReach(*m_creature, *victim, max_range) ||
-        m_creature->IsFriendlyTo(victim) || !victim->IsVisibleForOrDetect(m_creature, m_creature, false))
+        IsFriendly(*m_creature, *victim) || !victim->IsVisibleForOrDetect(m_creature, m_creature, false))
     {
         victim = NULL;
 

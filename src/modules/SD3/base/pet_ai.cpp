@@ -31,6 +31,7 @@ SDComment: Intended to be used with Guardian/Protector/Minipets. Little/no contr
 SDCategory: Npc
 EndScriptData */
 
+#include "Reaction.h"
 #include "precompiled.h"
 #include "pet_ai.h"
 
@@ -69,7 +70,7 @@ void ScriptedPetAI::MoveInLineOfSight(Unit* pWho)
     }
 
     if (m_creature->CanInitiateAttack() && pWho->IsTargetableForAttack() &&
-        m_creature->IsHostileTo(pWho) && pWho->isInAccessablePlaceFor(m_creature))
+        IsHostile(*m_creature, *pWho) && pWho->isInAccessablePlaceFor(m_creature))
     {
         if (!m_creature->CanFly() && m_creature->Where().HeightGapTo(pWho->Where()) > CREATURE_Z_ATTACK_RANGE)
         {

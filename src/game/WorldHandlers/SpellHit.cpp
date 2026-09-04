@@ -46,6 +46,7 @@
 
 
 
+#include "Reaction.h"
 #include "Spell.h"
 #include "Database/DatabaseEnv.h"
 #include "WorldPacket.h"
@@ -388,7 +389,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
             return;
         }
 
-        if (!realCaster->IsFriendlyTo(unit))
+        if (!IsFriendly(*realCaster, *unit))
         {
             // for delayed spells ignore not visible explicit target
             if (speed > 0.0f && unit == m_targets.getUnitTarget() &&
@@ -544,7 +545,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
             {
                 // A friendly caster's effect is not shortened, and neither is
                 // one that was reflected back.
-                if (m_diminishApplies && (isReflected || !m_caster->IsFriendlyTo(unit)))
+                if (m_diminishApplies && (isReflected || !IsFriendly(*m_caster, *unit)))
                 {
                     duration = unit::Diminishing::Shorten(duration, m_diminishLevel);
                 }

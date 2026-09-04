@@ -119,8 +119,6 @@ class Corpse : public Presence
         }
         CorpseType GetType() const { return m_type; }
 
-        bool IsHostileTo(Unit const* unit) const override;
-        bool IsFriendlyTo(Unit const* unit) const override;
 
         bool IsControlledByPlayer() const override { return true; }
 

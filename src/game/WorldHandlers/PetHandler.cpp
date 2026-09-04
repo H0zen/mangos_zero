@@ -41,6 +41,7 @@
  * Pet actions are validated and synchronized with the owner.
  */
 
+#include "Reaction.h"
 #include "Platform/Define.h"
 #include <cstring>
 #include <string>
@@ -147,7 +148,7 @@ void WorldSession::HandlePetAction(WorldPacket& recv_data)
                     }
 
                     // not let attack friendly units.
-                    if (GetPlayer()->IsFriendlyTo(TargetUnit))
+                    if (IsFriendly(*GetPlayer(), *TargetUnit))
                     {
                         return;
                     }
@@ -324,7 +325,7 @@ void WorldSession::HandlePetAction(WorldPacket& recv_data)
                     pet->SendPetAIReaction();
                 }
 
-                if (unit_target && !GetPlayer()->IsFriendlyTo(unit_target) && !pet->HasAuraType(SPELL_AURA_MOD_POSSESS))
+                if (unit_target && !IsFriendly(*GetPlayer(), *unit_target) && !pet->HasAuraType(SPELL_AURA_MOD_POSSESS))
                 {
                     // This is true if pet has no target or has target but targets differs.
                     if (pet->getVictim() != unit_target)
