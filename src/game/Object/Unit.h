@@ -261,19 +261,6 @@ enum SheathState
 
 #define MAX_SHEATH_STATE    3
 
-// byte flags value (UNIT_FIELD_BYTES_2,1)
-enum UnitBytes2_Flags
-{
-    UNIT_BYTE2_FLAG_UNK0        = 0x01,
-    UNIT_BYTE2_FLAG_UNK1        = 0x02,
-    UNIT_BYTE2_FLAG_UNK2        = 0x04,
-    UNIT_BYTE2_FLAG_UNK3        = 0x08,
-    UNIT_BYTE2_FLAG_AURAS       = 0x10,                     // show positive auras as positive, and allow its dispel
-    UNIT_BYTE2_FLAG_UNK5        = 0x20,
-    UNIT_BYTE2_FLAG_UNK6        = 0x40,
-    UNIT_BYTE2_FLAG_UNK7        = 0x80
-};
-
 #define CREATURE_MAX_SPELLS     4
 
 enum Swing
@@ -1634,26 +1621,26 @@ class Unit : public Presence
 
         /// The three flag words a unit carries. Asking one of these says what is
         /// being asked; where the bits are kept is the unit's own business.
-        bool HasUnitFlag(uint32 flag) const { return HasUnitFlag( flag); }
-        void SetUnitFlag(uint32 flag) { SetUnitFlag( flag); }
-        void RemoveUnitFlag(uint32 flag) { RemoveUnitFlag( flag); }
-        void ApplyUnitFlag(uint32 flag, bool apply) { ApplyUnitFlag( flag, apply); }
+        bool HasUnitFlag(uint32 flag) const { return HasFlag(UNIT_FIELD_FLAGS, flag); }
+        void SetUnitFlag(uint32 flag) { SetFlag(UNIT_FIELD_FLAGS, flag); }
+        void RemoveUnitFlag(uint32 flag) { RemoveFlag(UNIT_FIELD_FLAGS, flag); }
+        void ApplyUnitFlag(uint32 flag, bool apply) { ApplyModFlag(UNIT_FIELD_FLAGS, flag, apply); }
         uint32 GetUnitFlags() const { return GetUInt32Value(UNIT_FIELD_FLAGS); }
         void SetAllUnitFlags(uint32 flags) { SetUInt32Value(UNIT_FIELD_FLAGS, flags); }
 
         /// What a player may do with this unit at a distance: trade, train, heal
         /// a pet, take a quest.
-        bool HasNpcFlag(uint32 flag) const { return HasNpcFlag( flag); }
-        void SetNpcFlag(uint32 flag) { SetNpcFlag( flag); }
-        void RemoveNpcFlag(uint32 flag) { RemoveNpcFlag( flag); }
-        void ApplyNpcFlag(uint32 flag, bool apply) { ApplyNpcFlag( flag, apply); }
+        bool HasNpcFlag(uint32 flag) const { return HasFlag(UNIT_NPC_FLAGS, flag); }
+        void SetNpcFlag(uint32 flag) { SetFlag(UNIT_NPC_FLAGS, flag); }
+        void RemoveNpcFlag(uint32 flag) { RemoveFlag(UNIT_NPC_FLAGS, flag); }
+        void ApplyNpcFlag(uint32 flag, bool apply) { ApplyModFlag(UNIT_NPC_FLAGS, flag, apply); }
 
         /// Lootable, tapped, and the detail Beast Lore reveals. Rewritten for
         /// each observer on the way out, so what is stored is not what is sent.
-        bool HasDynFlag(uint32 flag) const { return HasDynFlag( flag); }
-        void SetDynFlag(uint32 flag) { SetDynFlag( flag); }
-        void RemoveDynFlag(uint32 flag) { RemoveDynFlag( flag); }
-        void ApplyDynFlag(uint32 flag, bool apply) { ApplyDynFlag( flag, apply); }
+        bool HasDynFlag(uint32 flag) const { return HasFlag(UNIT_DYNAMIC_FLAGS, flag); }
+        void SetDynFlag(uint32 flag) { SetFlag(UNIT_DYNAMIC_FLAGS, flag); }
+        void RemoveDynFlag(uint32 flag) { RemoveFlag(UNIT_DYNAMIC_FLAGS, flag); }
+        void ApplyDynFlag(uint32 flag, bool apply) { ApplyModFlag(UNIT_DYNAMIC_FLAGS, flag, apply); }
 
         /**
          * Gets the maximum health of this Unit
@@ -1942,8 +1929,9 @@ class Unit : public Presence
         uint8 GetBearing() const { return GetByteValue(UNIT_FIELD_BYTES_1, 3); }
         void SetBearing(uint8 bits) { SetByteValue(UNIT_FIELD_BYTES_1, 3, bits); }
 
-        /// A pet keeps how loyal it is here. A player carries a fixed value in
-        /// the same byte, and what it stands for is not known.
+        /// A pet keeps how loyal it is here: a row of PetLoyalty.dbc, which the
+        /// client turns into the word shown on the pet frame. Nothing else uses
+        /// the byte, and a unit that is not a pet leaves it at zero.
         uint8 GetLoyaltyByte() const { return GetByteValue(UNIT_FIELD_BYTES_1, 1); }
         void SetLoyaltyByte(uint8 value) { SetByteValue(UNIT_FIELD_BYTES_1, 1, value); }
 

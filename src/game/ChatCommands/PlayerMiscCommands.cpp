@@ -107,14 +107,6 @@ static bool HandleResetStatsOrLevelHelper(Player* player)
         player->InitDisplayIds();
     }
 
-    // is it need, only in pre-2.x used and field byte removed later?
-    if (powertype == POWER_RAGE || powertype == POWER_MANA)
-    {
-        player->SetLoyaltyByte(PLAYER_LOYALTY_BYTE);
-    }
-
-    player->SetByteValue(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_UNK3 | UNIT_BYTE2_FLAG_UNK5);
-
     player->SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
 
     //-1 is default value

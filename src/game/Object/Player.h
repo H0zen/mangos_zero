@@ -608,9 +608,6 @@ enum QuestSlotOffsets
     QUEST_TIME_OFFSET           = 2
 };
 
-/// What a player carries in the byte a pet keeps its loyalty in.
-#define PLAYER_LOYALTY_BYTE 0xEE
-
 #define MAX_QUEST_OFFSET 3
 
 // State mask for quest slots

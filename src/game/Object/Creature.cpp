@@ -606,7 +606,6 @@ bool Creature::UpdateEntry(uint32 Entry, Team team, const CreatureData* data /*=
 
     // creatures always have melee weapon ready if any
     SetSheath(SHEATH_STATE_MELEE);
-    SetByteValue(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_AURAS);
 
     if (preserveHPAndPower)
     {
@@ -2695,20 +2694,8 @@ bool Creature::LoadCreatureAddon(bool reload)
         SetBearing(uint8((cainfo->bytes1 >> 24) & 0xFF));
     }
 
-    // UNIT_FIELD_BYTES_2
-    // 0 SheathState
-    // 1 Bytes2Flags, in 3.x used UnitPVPStateFlags, that have different meaning
-    // 2 UnitRename         Pet only, so always 0 for default creature
-    // 3 ShapeshiftForm     Must be determined/set by shapeshift spell/aura
-    SetByteValue(UNIT_FIELD_BYTES_2, 0, cainfo->sheath_state);
-
-    if (cainfo->flags != 0)
-    {
-        SetByteValue(UNIT_FIELD_BYTES_2, 1, cainfo->flags);
-    }
-
-    // SetByteValue(UNIT_FIELD_BYTES_2, 2, 0);
-    // SetByteValue(UNIT_FIELD_BYTES_2, 3, 0);
+    // Of UNIT_FIELD_BYTES_2 the client reads byte 0 only, the sheath state.
+    SetSheath(SheathState(cainfo->sheath_state));
 
     if (cainfo->emote != 0)
     {

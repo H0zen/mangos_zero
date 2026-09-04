@@ -833,13 +833,6 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     // Initialize player's display IDs (model, scale, and model data)
     InitDisplayIds();
 
-    // is it need, only in pre-2.x used and field byte removed later?
-    if (powertype == POWER_RAGE || powertype == POWER_MANA)
-    {
-        SetLoyaltyByte(PLAYER_LOYALTY_BYTE);
-    }
-
-    SetByteValue(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_UNK3 | UNIT_BYTE2_FLAG_UNK5);
     SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
     SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f); // Fix cast time shown in spell tooltip on client
 

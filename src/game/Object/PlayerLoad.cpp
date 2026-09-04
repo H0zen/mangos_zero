@@ -212,7 +212,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     uint8 gender = fields[5].GetUInt8() & 0x01;             // allowed only 1 bit values male/female cases (for fit drunk gender part)
     SetGender(gender);            // gender
 
-    SetByteValue(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_UNK3 | UNIT_BYTE2_FLAG_UNK5);
 
     // check if race/class combination is valid
     PlayerInfo const* info = sObjectMgr.GetPlayerInfo(getRace(), getClass());
@@ -569,12 +568,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     // reset stats before loading any modifiers
     InitStatsForLevel();
-
-    // is it need, only in pre-2.x used and field byte removed later?
-    if (GetPowerType() == POWER_RAGE || GetPowerType() == POWER_MANA)
-    {
-        SetLoyaltyByte(PLAYER_LOYALTY_BYTE);
-    }
 
     // rest bonus can only be calculated after InitStatsForLevel()
     m_rest_bonus = fields[21].GetFloat();
