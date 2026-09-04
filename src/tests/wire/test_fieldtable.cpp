@@ -221,6 +221,29 @@ TEST_CASE("audience: an item tells a stranger what it is, not what it holds")
     CHECK(MaskHas(owner.data(), ITEM_FIELD_SPELL_CHARGES));
 }
 
+TEST_CASE("health: the unit and its owner read the real figure, nobody else does")
+{
+    ObjectGuid const hunter(HIGHGUID_PLAYER, uint32(1));
+    ObjectGuid const passerby(HIGHGUID_PLAYER, uint32(2));
+    ObjectGuid const pet(HIGHGUID_PET, uint32(300), uint32(3));
+    ObjectGuid const wildBoar(HIGHGUID_UNIT, uint32(301), uint32(4));
+    ObjectGuid const none;
+
+    // A hunter reads their own pool, and their pet's -- the pet frame shows
+    // exact figures and no other message carries them.
+    CHECK(Fields::ReadsRealHitPoints(hunter, none, hunter));
+    CHECK(Fields::ReadsRealHitPoints(pet, hunter, hunter));
+
+    // Nobody else does, whoever they are.
+    CHECK_FALSE(Fields::ReadsRealHitPoints(pet, hunter, passerby));
+    CHECK_FALSE(Fields::ReadsRealHitPoints(hunter, none, passerby));
+    CHECK_FALSE(Fields::ReadsRealHitPoints(wildBoar, none, hunter));
+
+    // An ownerless unit is nobody's to read, and an empty owner never matches
+    // an observer who simply has no guid of their own to compare.
+    CHECK_FALSE(Fields::ReadsRealHitPoints(wildBoar, none, none));
+}
+
 TEST_CASE("health: a stranger is told a percentage, and a living unit is never zero")
 {
     CHECK(Fields::HealthAsPercent(100, 100) == 100);

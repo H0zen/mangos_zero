@@ -149,17 +149,23 @@ namespace Fields
         return percent ? percent : 1;
     }
 
+    bool ReadsRealHitPoints(ObjectGuid const& unit, ObjectGuid const& owner, ObjectGuid const& observer)
+    {
+        return unit == observer || (!owner.IsEmpty() && owner == observer);
+    }
+
     static uint32 ProjectUnit(Unit const& unit, Player& observer, uint16 index, uint32 raw)
     {
-        bool const isSelf = static_cast<Object const*>(&unit) == static_cast<Object const*>(&observer);
+        bool const real = ReadsRealHitPoints(unit.GetObjectGuid(), unit.GetCharmerOrOwnerGuid(),
+                                             observer.GetObjectGuid());
 
         switch (index)
         {
             case UNIT_FIELD_HEALTH:
-                return isSelf ? raw : HealthAsPercent(raw, unit.GetMaxHealth());
+                return real ? raw : HealthAsPercent(raw, unit.GetMaxHealth());
 
             case UNIT_FIELD_MAXHEALTH:
-                return isSelf ? raw : (raw ? 100 : 0);
+                return real ? raw : (raw ? 100 : 0);
 
             case UNIT_FIELD_FLAGS:
                 // A game master must be able to click anything.

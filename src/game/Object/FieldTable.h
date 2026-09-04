@@ -27,6 +27,7 @@
 
 #include "Platform/Define.h"
 #include "Utilities/Errors.h"
+#include "ObjectGuid.h"
 
 class Object;
 class Player;
@@ -126,18 +127,27 @@ namespace Fields
     uint32 Project(Object const& object, Player& observer, uint16 index, uint32 raw);
 
     /**
-     * Hit points as anyone but the unit itself is told them.
-     *
-     * Established from captures of builds 1.10.0 and 1.12.1: across 282 create
-     * blocks every object that was not the observer carried MAXHEALTH exactly
-     * 100 -- a level 55 guard included -- while blocks flagged UPDATEFLAG_SELF
-     * carried the real pool. Power is never scaled; only health is. Reading a
-     * real hit-point count off someone else is a Burning Crusade feature.
+     * Hit points as an observer who may not read the real figure is told them.
      *
      * A unit that is alive never reads as zero, or a sliver of health on a big
      * pool would look dead.
      */
     uint32 HealthAsPercent(uint32 current, uint32 max);
+
+    /**
+     * Who is given a unit's real hit points, rather than a percentage of them.
+     *
+     * The unit itself, and whoever owns or charms it -- a hunter's pet frame
+     * shows exact figures, and the pet's own fields are the only channel that
+     * can carry them. Everyone else reads a percentage, party and raid
+     * included: their frames show numbers because SMSG_PARTY_MEMBER_STATS
+     * carries them separately.
+     *
+     * @param unit     The unit whose health is being sent.
+     * @param owner    Its owner or charmer, empty when it has none.
+     * @param observer Who is being told.
+     */
+    bool ReadsRealHitPoints(ObjectGuid const& unit, ObjectGuid const& owner, ObjectGuid const& observer);
 
     /// Fields that must go out on every update block, because what they mean to
     /// an observer can change while the stored value stands still.
