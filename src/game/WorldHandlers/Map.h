@@ -65,7 +65,7 @@
 #include "DBCStructure.h"
 #include "GridDefines.h"
 #include "Cell.h"
-#include "Object.h"
+#include "Presence.h"
 #include "SharedDefines.h"
 #include "GridMap.h"
 #include "GameSystem/GridRefManager.h"

@@ -41,7 +41,7 @@
  */
 
 #include "Utilities/Errors.h"
-#include "Object.h"
+#include "Presence.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
 #include "Opcodes.h"

@@ -50,7 +50,7 @@
 #include "ObjectGuid.h"
 #include "WorldSession.h"
 #include "LootMgr.h"
-#include "Object.h"
+#include "Presence.h"
 #include "GameObject.h"
 #include "Group.h"
 #include "World.h"

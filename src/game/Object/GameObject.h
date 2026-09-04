@@ -57,7 +57,7 @@
 #include <string>
 #include <vector>
 #include "SharedDefines.h"
-#include "Object.h"
+#include "Presence.h"
 #include "LootMgr.h"
 #include "Utilities/EventProcessor.h"
 #include <memory>

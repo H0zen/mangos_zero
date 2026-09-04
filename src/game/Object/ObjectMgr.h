@@ -35,7 +35,7 @@
 #include <set>
 #include <list>
 #include <string>
-#include "Object.h"
+#include "Presence.h"
 #include "Bag.h"
 #include "Creature.h"
 #include "Player.h"

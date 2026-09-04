@@ -40,7 +40,7 @@
  * the opposing team's flag to achieve victory points.
  */
 
-#include "Object.h"
+#include "Presence.h"
 #include "Player.h"
 #include "BattleGround.h"
 #include "BattleGroundWS.h"

@@ -25,7 +25,7 @@
 
 #include "OutdoorPvP.h"
 #include "ObjectMgr.h"
-#include "Object.h"
+#include "Presence.h"
 #include "GameObject.h"
 #include "Player.h"
 

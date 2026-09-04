@@ -46,7 +46,7 @@
 #include <cmath>
 #include "Utilities/Errors.h"
 #include "Utilities/MathDefines.h"
-#include "Object.h"
+#include "Presence.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
 #include "Opcodes.h"

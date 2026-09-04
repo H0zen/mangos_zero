@@ -65,7 +65,7 @@
 #include <set>
 #include <ctime>
 #include "ItemPrototype.h"
-#include "Object.h"
+#include "Presence.h"
 #include "Opcodes.h"
 #include "SpellAuraDefines.h"
 #include "AuraIndex.h"

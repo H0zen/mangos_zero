@@ -33,7 +33,7 @@
 #include "PacketReach.h"
 
 #include "Corpse.h"
-#include "Object.h"
+#include "Presence.h"
 #include "DynamicObject.h"
 #include "GameObject.h"
 #include "Player.h"

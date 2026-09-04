@@ -50,7 +50,7 @@
 
 #include "Platform/Define.h"
 #include <ctime>
-#include "Object.h"
+#include "Presence.h"
 #include "Database/DatabaseEnv.h"
 #include "GridDefines.h"
 #include "LootMgr.h"

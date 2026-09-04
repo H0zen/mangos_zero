@@ -31,7 +31,7 @@
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "Map.h"
-#include "Object.h"
+#include "Presence.h"
 #include "ObjectGuid.h"
 #include "ObjectMgr.h"
 #include "Opcodes.h"

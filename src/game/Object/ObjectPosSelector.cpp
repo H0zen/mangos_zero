@@ -28,7 +28,7 @@
 #include <algorithm>
 #include "Utilities/MathDefines.h"
 #include "ObjectPosSelector.h"
-#include "Object.h"
+#include "Presence.h"
 
 // The bigger this value, the more space npcs require around their target
 #define OCCUPY_POS_ANGLE_ATAN_FACTOR                      1.8f

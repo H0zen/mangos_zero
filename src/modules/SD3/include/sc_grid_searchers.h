@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Object.h"
+#include "Presence.h"
 class GameObject;
 class Creature;
 

@@ -71,7 +71,7 @@
 #include "ScriptMgr.h"
 #include "PlayerRegistry.h"
 #include "ObjectLookup.h"
-#include "Object.h"
+#include "Presence.h"
 #include "BattleGround/BattleGround.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Pet.h"

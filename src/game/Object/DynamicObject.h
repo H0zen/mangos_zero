@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "Object.h"
+#include "Presence.h"
 #include "DBCEnums.h"
 #include "Unit.h"
 

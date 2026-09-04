@@ -22,7 +22,7 @@
 
 #include "PerKind.h"
 
-#include "Object.h"
+#include "Presence.h"
 #include "Creature.h"
 #include "GameObject.h"
 #include "Item.h"
