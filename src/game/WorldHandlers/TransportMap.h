@@ -49,6 +49,11 @@ struct RelaySource
     Map* map;
     float x;
     float y;
+
+    /// Zero means the whole grid the point falls in. Across a vessel's boundary the
+    /// audience is everyone in her grid however far off they stand, and there is no
+    /// distance between the two sides to filter on anyway. A positive radius is an
+    /// ordinary sweep, measured inside one map's own frame.
     float radius;
 };
 

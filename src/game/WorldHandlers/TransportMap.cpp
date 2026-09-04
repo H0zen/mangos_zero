@@ -83,6 +83,17 @@ std::string DescribeSpatially(Unit* u)
 
 namespace
 {
+    /// Two points in one grid. A vessel's audience is the grid she sits in, so this is the
+    /// only question her pose is ever asked, and a wrong answer costs one grid either way
+    /// rather than a wrong distance.
+    bool InSameGrid(Geometry::Placement const& a, Geometry::Placement const& b)
+    {
+        uint32 ax = 0, ay = 0, bx = 0, by = 0;
+        Cell::GridOf(a.X(), a.Y(), ax, ay);
+        Cell::GridOf(b.X(), b.Y(), bx, by);
+        return ax == bx && ay == by;
+    }
+
     /// How far above and below a point to look for a surface when placing something on it.
     constexpr float HULL_SEARCH_UP = 3.0f;
     constexpr float HULL_SEARCH_DOWN = 6.0f;
@@ -881,15 +892,15 @@ void TransportMap::CollectRelaySources(Occupant const* viewer, float visibility,
         return;
     }
 
-    // Aboard: his own pass walks the ship, and the shore is reached from her estimate. That
-    // pose is a lie by up to NodeSlack, which is exactly why it is added.
+    // Aboard: his own pass walks the ship, and the shore he reaches is the whole grid she
+    // sits in. Her pose names that grid and is used for nothing else -- it is a waypoint
+    // guess, and measuring a radius around it would be measuring against the guess.
     if (TransportMap const* hull = viewer->GetMap()->AsTransport())
     {
         Transport* vessel = hull->Vessel();
         if (Map* sailed = vessel ? vessel->GetMap() : NULL)
         {
-            out.push_back({sailed, vessel->Where().X(), vessel->Where().Y(),
-                           visibility + hull->HullRadius() + vessel->NodeSlack()});
+            out.push_back({sailed, vessel->Where().X(), vessel->Where().Y(), 0.0f});
         }
         return;
     }
@@ -909,8 +920,9 @@ void TransportMap::CollectRelaySources(Occupant const* viewer, float visibility,
             continue;
         }
 
-        const float reach = visibility + hull->HullRadius() + vessel->NodeSlack();
-        if (!vessel->Where().WithinDist(viewer->Where(), reach, false))
+        // Ashore: the vessels that concern him are the ones sharing his grid. Which grid
+        // she is in is all her pose is asked for.
+        if (!InSameGrid(vessel->Where(), viewer->Where()))
         {
             continue;
         }

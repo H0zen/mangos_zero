@@ -254,7 +254,14 @@ void Camera::UpdateVisibilityForOwnerInBatch(InitialWorldUpdateBatch* batch)
     TransportMap::CollectRelaySources(m_source, visibilityDistance, relayed);
     for (RelaySource const& src : relayed)
     {
-        Cell::VisitAllObjects(src.x, src.y, src.map, notifier, src.radius, false);
+        if (src.radius > 0.0f)
+        {
+            Cell::VisitAllObjects(src.x, src.y, src.map, notifier, src.radius, false);
+        }
+        else
+        {
+            Cell::VisitAllObjectsInGrid(src.x, src.y, src.map, notifier, false);
+        }
     }
 
     notifier.Notify();
