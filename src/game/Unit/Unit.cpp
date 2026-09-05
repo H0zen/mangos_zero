@@ -4379,24 +4379,34 @@ bool Unit::IsInvisibleForAlive() const
  *
  * @return The creature type identifier.
  */
+CreatureRecord Unit::Record() const
+{
+    Creature const* creature = ToCreature(this);
+    return creature ? CreatureRecord(*creature->GetCreatureInfo()) : CreatureRecord();
+}
+
 uint32 Unit::GetCreatureType() const
 {
-    if (IsPlayer())
+    // THE SAME THREE ANSWERS THE CLIENT TRIES, IN THE SAME ORDER. Its
+    // UnitCreatureType reads the shapeshift form out of UNIT_FIELD_BYTES_1 and
+    // takes the creature type off that row of SpellShapeshiftForm.dbc; failing
+    // that it reads the cached creature record; failing that it falls back on
+    // the race, which for every playable one says humanoid.
+    //
+    // The form is asked of anything wearing one, not of players alone: a bear is
+    // a beast to the client whoever is inside it.
+    SpellShapeshiftFormEntry const* form = sSpellShapeshiftFormStore.LookupEntry(GetShapeshiftForm());
+    if (form && form->CreatureType > 0)
     {
-        SpellShapeshiftFormEntry const* ssEntry = sSpellShapeshiftFormStore.LookupEntry(GetShapeshiftForm());
-        if (ssEntry && ssEntry->CreatureType > 0)
-        {
-            return ssEntry->CreatureType;
-        }
-        else
-        {
-            return CREATURE_TYPE_HUMANOID;
-        }
+        return form->CreatureType;
     }
-    else
+
+    if (CreatureRecord const record = Record())
     {
-        return ((Creature*)this)->GetCreatureInfo()->CreatureType;
+        return record.Kind();
     }
+
+    return CREATURE_TYPE_HUMANOID;
 }
 
 /*#######################################

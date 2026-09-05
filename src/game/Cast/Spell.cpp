@@ -55,6 +55,7 @@
 #include "Log.h"
 #include "World.h"
 #include "ObjectMgr.h"
+#include "CreatureRecord.h"
 #include "SpellMgr.h"
 #include "Player.h"
 #include "Pet.h"
@@ -1394,7 +1395,7 @@ SpellCastResult Spell::CanTameUnit(bool isGM)
         return SPELL_FAILED_DONT_REPORT;
     }
 
-    if (!target->GetCreatureInfo()->isTameable())
+    if (!target->Record().IsTameable())
     {
         plrCaster->SendPetTameFailure(PETTAME_NOTTAMEABLE);
         return SPELL_FAILED_DONT_REPORT;

@@ -51,6 +51,7 @@
 #include "Log.h"
 #include "World.h"
 #include "ObjectMgr.h"
+#include "CreatureRecord.h"
 #include "ObjectGuid.h"
 #include "Player.h"
 #include "NPCHandler.h"
@@ -200,37 +201,34 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recv_data)
         sObjectMgr.GetCreatureLocaleStrings(entry, loc_idx, &name, &subName);
 
         DETAIL_LOG("WORLD: CMSG_CREATURE_QUERY '%s' - Entry: %u.", ci->Name, entry);
+
+        // THIS PACKET IS THE RECORD. What goes out here is what the client keeps
+        // about the kind, and CreatureRecord is that same thing read off the
+        // template, so the order below and its field list are one definition.
+        CreatureRecord const record(*ci);
+
         // guess size
         WorldPacket data(SMSG_CREATURE_QUERY_RESPONSE, 100);
         data << uint32(entry);                              // creature entry
         data << name;
         data << uint8(0) << uint8(0) << uint8(0);           // name2, name3, name4, always empty
         data << subName;
-        data << uint32(ci->CreatureTypeFlags);              // flags
-        if (unit)
-        {
-            data << uint32(((unit->IsPet()) ? 0 : ci->CreatureType));  // CreatureType.dbc   wdbFeild8
-        }
-        else
-        {
-            data << uint32(ci->CreatureType);
-        }
+        data << uint32(record.Flags());
+        // A pet is told to have no kind at all: what the client shows for one it
+        // takes from the family instead.
+        data << uint32(unit && unit->IsPet() ? 0 : record.Kind());
+        data << uint32(record.Family());                    // CreatureFamily.dbc
+        data << uint32(record.Rank());                      // normal, elite, rare elite, world boss, rare
+        data << uint32(0);                                  // sent and never read
+        data << uint32(record.PetSpells());                 // CreatureSpellData.dbc
 
-        data << uint32(ci->Family);                         // CreatureFamily.dbc
-        data << uint32(ci->Rank);                           // Creature Rank (elite, boss, etc)
-        data << uint32(0);                                  // unknown        wdbFeild11
-        data << uint32(ci->PetSpellDataId);                 // Id from CreatureSpellData.dbc    wdbField12
-        if (unit)
-        {
-            data << unit->GetUInt32Value(UNIT_FIELD_DISPLAYID);  // DisplayID      wdbFeild13
-        }
-        else
-        {
-            data << uint32(Creature::ChooseDisplayId(ci));   // workaround, way to manage models must be fixed
-        }
+        // The one field that is about this creature rather than its kind, which
+        // is why it is taken from the creature when there is one to ask.
+        data << uint32(unit ? unit->GetUInt32Value(UNIT_FIELD_DISPLAYID)
+                            : Creature::ChooseDisplayId(ci));
 
-        data << uint8(ci->civilian);                       // wdbFeild14
-        data << uint8(ci->RacialLeader);
+        data << uint8(record.IsCivilian() ? 1 : 0);
+        data << uint8(record.IsRacialLeader() ? 1 : 0);
         SendPacket(&data);
         DEBUG_LOG("WORLD: Sent SMSG_CREATURE_QUERY_RESPONSE");
     }

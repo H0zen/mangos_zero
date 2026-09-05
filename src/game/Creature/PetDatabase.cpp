@@ -32,6 +32,7 @@
 #include "Log.h"
 #include "WorldPacket.h"
 #include "ObjectMgr.h"
+#include "CreatureRecord.h"
 #include "SpellMgr.h"
 #include "Formulas.h"
 #include "SpellAuras.h"
@@ -128,7 +129,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
     PetType pet_type = PetType(fields[22].GetUInt8());
     if (pet_type == HUNTER_PET)
     {
-        if (!creatureInfo->isTameable())
+        if (!CreatureRecord(*creatureInfo).IsTameable())
         {
             delete result;
             return false;

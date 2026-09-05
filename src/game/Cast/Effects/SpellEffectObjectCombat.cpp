@@ -51,6 +51,7 @@
 #include "GameObject.h"
 #include "GossipDef.h"
 #include "Creature.h"
+#include "CreatureRecord.h"
 #include "Totem.h"
 #include "CreatureAI.h"
 #include "BattleGround/BattleGroundMgr.h"
@@ -1213,7 +1214,7 @@ void Spell::EffectSkinning(SpellEffectIndex /*eff_idx*/)
     Creature* creature = (Creature*) unitTarget;
     int32 targetLevel = creature->getLevel();
 
-    uint32 skill = creature->GetCreatureInfo()->GetRequiredLootSkill();
+    uint32 skill = creature->Record().RequiredLootSkill();
 
     ((Player*)m_caster)->SendLoot(creature->GetObjectGuid(), LOOT_SKINNING);
     creature->RemoveUnitFlag(UNIT_FLAG_SKINNABLE);

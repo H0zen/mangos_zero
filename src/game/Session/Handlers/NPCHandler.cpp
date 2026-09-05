@@ -65,6 +65,7 @@
 #include "GossipDef.h"
 #include "ScriptMgr.h"
 #include "Creature.h"
+#include "CreatureRecord.h"
 #include "Pet.h"
 #include "Guild.h"
 #include "Spell.h"
@@ -976,7 +977,7 @@ void WorldSession::HandleUnstablePet(WorldPacket& recv_data)
     }
 
     CreatureInfo const* creatureInfo = ObjectMgr::GetCreatureTemplate(creature_id);
-    if (!creatureInfo || !creatureInfo->isTameable())
+    if (!creatureInfo || !CreatureRecord(*creatureInfo).IsTameable())
     {
         SendStableResult(STABLE_ERR_STABLE);
         return;
@@ -1116,7 +1117,7 @@ void WorldSession::HandleStableSwapPet(WorldPacket& recv_data)
     }
 
     CreatureInfo const* creatureInfo = ObjectMgr::GetCreatureTemplate(creature_id);
-    if (!creatureInfo || !creatureInfo->isTameable())
+    if (!creatureInfo || !CreatureRecord(*creatureInfo).IsTameable())
     {
         SendStableResult(STABLE_ERR_STABLE);
         return;

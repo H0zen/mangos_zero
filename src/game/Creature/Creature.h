@@ -202,34 +202,6 @@ struct CreatureInfo
     /// @return ObjectGuid combining creature entry and low GUID
     ObjectGuid GetObjectGuid(uint32 lowguid) const { return ObjectGuid(GetHighGuid(), Entry, lowguid); }
 
-    /**
-     * @brief Which profession opens this corpse.
-     *
-     * Skinning, on everything this core has: the herbalism and mining answers are
-     * carried by flags no row in `creature_template` sets, because gathering from
-     * a corpse arrives with the expansions.
-     */
-    SkillType GetRequiredLootSkill() const
-    {
-        if (CreatureTypeFlags & CREATURE_TYPEFLAGS_HERBLOOT)
-        {
-            return SKILL_HERBALISM;
-        }
-
-        if (CreatureTypeFlags & CREATURE_TYPEFLAGS_MININGLOOT)
-        {
-            return SKILL_MINING;
-        }
-
-        return SKILL_SKINNING;
-    }
-
-    /// @brief Check if this creature can be tamed as a pet.
-    /// @return True if creature is tameable beast with valid family, false otherwise
-    bool isTameable() const
-    {
-        return CreatureType == CREATURE_TYPE_BEAST && Family != 0 && (CreatureTypeFlags & CREATURE_TYPEFLAGS_TAMEABLE);
-    }
 };
 
 /// @brief Creature spell list structure.
@@ -611,8 +583,8 @@ class Creature : public Unit
         bool IsDespawned() const { return GetDeathState() ==  DEAD; }
         void SetCorpseDelay(uint32 delay) { m_corpseDelay = delay; }
         uint32 GetCorpseDelay() const { return m_corpseDelay; }
-        bool IsRacialLeader() const { return GetCreatureInfo()->RacialLeader; }
-        bool IsCivilian() const { return GetCreatureInfo()->civilian; }
+        bool IsRacialLeader() const { return Record().IsRacialLeader(); }
+        bool IsCivilian() const { return Record().IsCivilian(); }
         bool IsGuard() const { return GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_GUARD; }
 
         bool CanWalk() const { return GetCreatureInfo()->InhabitType & INHABIT_GROUND; }
@@ -1018,7 +990,6 @@ class Creature : public Unit
         // Functions spawn/remove creature with DB guid in all loaded map copies (if point grid loaded in map)
         static void AddToRemoveListInMaps(uint32 db_guid, CreatureData const* data);
         static void SpawnInMaps(uint32 db_guid, CreatureData const* data);
-
 
         void SendZoneUnderAttackMessage(Player* attacker);
 

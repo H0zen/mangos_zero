@@ -58,6 +58,7 @@
 #include "Log.h"
 #include "World.h"
 #include "ObjectMgr.h"
+#include "CreatureRecord.h"
 #include "SpellMgr.h"
 #include "Player.h"
 #include "Pet.h"
@@ -1141,7 +1142,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     return SPELL_FAILED_TARGET_NOT_LOOTED;
                 }
 
-                uint32 skill = creature->GetCreatureInfo()->GetRequiredLootSkill();
+                uint32 skill = creature->Record().RequiredLootSkill();
 
                 int32 skillValue = ((Player*)m_caster)->GetSkillValue(skill);
                 int32 TargetLevel = m_targets.getUnitTarget()->getLevel();

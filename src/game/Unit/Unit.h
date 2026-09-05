@@ -81,6 +81,7 @@
 #include "Movement/MovementInfo.h"
 #include "GlobalCooldown.h"
 #include "CharmInfo.h"
+#include "Creature/CreatureRecord.h"
 #include "MotionMaster.h"
 #include "DBCStructure.h"
 #include "WorldPacket.h"
@@ -1650,6 +1651,14 @@ class Unit : public Occupant
          * Returns a bitmask representation of CreatureType for this Unit.
          * @return A bitmask representation of GetCreatureType()
          */
+        /**
+         * What the client is told when it asks what kind of thing this is.
+         *
+         * Empty for a player: nobody asks what kind of creature a player is,
+         * because his race answers it instead.
+         */
+        CreatureRecord Record() const;
+
         uint32 GetCreatureTypeMask() const
         {
             uint32 creatureType = GetCreatureType();
