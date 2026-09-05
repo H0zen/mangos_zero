@@ -102,6 +102,8 @@ set(SRC_GRP_THREAD
   Threading/ThreadLocalStore.h
   Threading/Threading.cpp
   Threading/Threading.h
+  Threading/WorkSentry.cpp
+  Threading/WorkSentry.h
 )
 source_group("Threading" FILES ${SRC_GRP_THREAD})
 

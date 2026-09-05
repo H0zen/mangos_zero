@@ -400,6 +400,8 @@ QueryNamedResult* Database::PQueryNamed(const char* format, ...)
 
 bool Database::Execute(const char* sql)
 {
+    WorkSentry::Reached("a write queued for the database");
+
     if (!m_pAsyncConn)
     {
         return false;
@@ -768,6 +770,8 @@ bool Database::CheckDatabaseVersion(DatabaseTypes database)
 
 bool Database::ExecuteStmt(const SqlStatementID& id, SqlStmtParameters* params)
 {
+    WorkSentry::Reached("a write queued for the database");
+
     if (!m_pAsyncConn)
     {
         return false;
@@ -796,6 +800,8 @@ bool Database::ExecuteStmt(const SqlStatementID& id, SqlStmtParameters* params)
 
 bool Database::DirectExecuteStmt(const SqlStatementID& id, SqlStmtParameters* params)
 {
+    WorkSentry::Reached("a write straight into the database");
+
     MANGOS_ASSERT(params);
     std::shared_ptr<SqlStmtParameters> p(params);
     // execute statement

@@ -34,6 +34,8 @@
 
 Player* PlayerRegistry::Find(ObjectGuid guid, bool inWorld /* = true */) const
 {
+    WorkSentry::Reached("the roster of everyone online");
+
     if (!guid)
     {
         return nullptr;
@@ -55,6 +57,8 @@ Player* PlayerRegistry::Find(ObjectGuid guid, bool inWorld /* = true */) const
 
 Player* PlayerRegistry::FindByName(const char* name) const
 {
+    WorkSentry::Reached("the roster of everyone online");
+
     if (!name)
     {
         return nullptr;

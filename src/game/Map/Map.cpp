@@ -56,6 +56,8 @@
 #include "Player.h"
 #include "GridNotifiers.h"
 #include "Log.h"
+#include "OpcodeTable.h"
+#include "Threading/WorkSentry.h"
 #include "CellImpl.h"
 #include "InstanceData.h"
 #include "GridNotifiersImpl.h"
@@ -865,6 +867,11 @@ void Map::Update(const uint32& t_diff)
     /// Each entry is re-checked first: the serial phase continued after the
     /// packet was posted and may have moved the player off this map, logged him
     /// out, or destroyed him.
+    ///
+    /// Everything that arrives here was marked thread-safe, which is a promise
+    /// that the answer touches nothing outside this map. A sentry stands over
+    /// each one, so a row whose promise is false says so in the log instead of
+    /// racing quietly.
     for (MapMailbox::Entry& entry : m_mailbox.Take())
     {
         WorldSession* session = entry.session;
@@ -884,6 +891,7 @@ void Map::Update(const uint32& t_diff)
             continue;   // left for another map after the packet was routed
         }
 
+        WorkSentry watch(LookupOpcodeName(entry.packet->GetOpcode()));
         session->HandlePacket(*entry.packet);
     }
 

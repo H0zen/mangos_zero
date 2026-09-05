@@ -26,6 +26,7 @@
 #pragma once
 
 #include <unordered_map>
+#include "Threading/WorkSentry.h"
 #include <functional>
 #include <vector>
 #include <string>
@@ -277,6 +278,7 @@ class Database
          */
         inline QueryResult* Query(const char* sql)
         {
+            WorkSentry::Reached("a question put to the database");
             SqlConnection::Lock guard(getQueryConnection());
             return guard->Query(sql);
         }
@@ -289,6 +291,7 @@ class Database
          */
         inline QueryNamedResult* QueryNamed(const char* sql)
         {
+            WorkSentry::Reached("a question put to the database");
             SqlConnection::Lock guard(getQueryConnection());
             return guard->QueryNamed(sql);
         }
@@ -316,6 +319,8 @@ class Database
          */
         inline bool DirectExecute(const char* sql)
         {
+            WorkSentry::Reached("a write straight into the database");
+
             if (!m_pAsyncConn)
             {
                 return false;

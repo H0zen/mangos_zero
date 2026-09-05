@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include "Threading/WorkSentry.h"
+
 #include <utility>
 #include "ObjectGuid.h"
 #include "Policies/Singleton.h"
@@ -75,6 +77,7 @@ class PlayerRegistry : public MaNGOS::Singleton<PlayerRegistry>
         template <typename F>
         void ForEach(F&& work) const
         {
+            WorkSentry::Reached("the roster of everyone online");
             m_players.ForEach(std::forward<F>(work));
         }
 
