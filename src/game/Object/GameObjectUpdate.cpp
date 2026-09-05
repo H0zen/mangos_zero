@@ -351,6 +351,14 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                 case GAMEOBJECT_TYPE_CHEST:
                 {
                     uint32 trapEntry = GetGOInfo()->GetLinkedGameObjectEntry();
+
+                    // <<TODO: the one hardcoded entry left in this file, and the shape is
+                    // wrong to move as it stands. The key is the chest's linkedTrapId,
+                    // which here names another chest rather than a trap and is being used
+                    // as a marker; what it does with it is despawn a separate visual
+                    // object standing on the same spot. Decide whether that is one chest's
+                    // patch or the case of a general rule -- a visual that belongs to an
+                    // object and goes when it goes -- before giving it a table.
                     if (trapEntry == 144064) // Special case for Gordunni Cobalt Visual
                     {
                         float range = 0.5f;
