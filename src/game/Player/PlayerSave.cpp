@@ -516,14 +516,14 @@ void Player::_SaveInventory()
     m_inventory.SettleClocks();
 
     // if no changes
-    if (m_itemSaves.IsEmpty())
+    if (m_inventory.Saves().IsEmpty())
     {
         return;
     }
 
     // do not save if the update queue is corrupt
     bool error = false;
-    for (Item* item : m_itemSaves.Waiting())
+    for (Item* item : m_inventory.Saves().Waiting())
     {
         if (!item || item->GetState() == ITEM_REMOVED)
         {
@@ -554,7 +554,7 @@ void Player::_SaveInventory()
     static SqlStatementID updateInventory ;
     static SqlStatementID deleteInventory ;
 
-    for (Item* item : m_itemSaves.Waiting())
+    for (Item* item : m_inventory.Saves().Waiting())
     {
         if (!item)
         {
@@ -600,7 +600,7 @@ void Player::_SaveInventory()
 
         item->SaveToDB();                                   // item have unchanged inventory record and can be save standalone
     }
-    m_itemSaves.Clear();
+    m_inventory.Saves().Clear();
 }
 
 /**

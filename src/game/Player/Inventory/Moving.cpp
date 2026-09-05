@@ -65,6 +65,7 @@
 #include "Mail.h"
 #include "SQLStorages.h"
 #include "DisableMgr.h"
+#include "Destination.h"
 
 // Return stored item (if stored to stack, it can diff. from pItem). And pItem ca be deleted in this case.
 Item* Player::StoreNewItem(ItemPosCountVec const& dest, uint32 item, bool update, int32 randomPropertyId)
@@ -216,7 +217,7 @@ void Player::MoveItemFromInventory(uint8 bag, uint8 slot, bool update)
     {
         ItemRemovedQuestCheck(it->GetEntry(), it->GetCount());
         RemoveItem(bag, slot, update);
-        m_itemSaves.Forget(it);
+        m_inventory.Saves().Forget(it);
         if (it->IsInWorld())
         {
             it->RemoveFromWorld();
@@ -821,14 +822,13 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
  */
 void Player::SwapItem(uint16 src, uint16 dst)
 {
-    uint8 srcbag = src >> 8;
-    uint8 srcslot = src & 255;
+    uint8 const srcbag = Inventory::Container(src);
+    uint8 const srcslot = Inventory::Slot(src);
+    uint8 const dstbag = Inventory::Container(dst);
+    uint8 const dstslot = Inventory::Slot(dst);
 
-    uint8 dstbag = dst >> 8;
-    uint8 dstslot = dst & 255;
-
-    Item* pSrcItem = GetItemByPos(srcbag, srcslot);
-    Item* pDstItem = GetItemByPos(dstbag, dstslot);
+    Item* pSrcItem = m_inventory.At(srcbag, srcslot);
+    Item* pDstItem = m_inventory.At(dstbag, dstslot);
 
     if (!pSrcItem)
     {
@@ -843,13 +843,16 @@ void Player::SwapItem(uint16 src, uint16 dst)
         return;
     }
 
-    // SRC checks
-
-    // check unequip potability for equipped items and bank bags
+    // A bag may be swapped into an empty bag slot, or against another bag that
+    // is empty; the contents are weighed further down. Anything else has to be
+    // able to come off where it stands.
     if (Inventory::IsWorn(src) || Inventory::HoldsBag(src))
     {
-        // bags can be swapped with empty bag slots, or with empty bag (items move possibility checked later)
-        InventoryResult msg = CanUnequipItem(src, !Inventory::HoldsBag(src) || Inventory::HoldsBag(dst) || (pDstItem && pDstItem->IsBag() && ((Bag*)pDstItem)->IsEmpty()));
+        bool const asBag = Inventory::HoldsBag(src)
+            && !Inventory::HoldsBag(dst)
+            && !(pDstItem && pDstItem->IsBag() && static_cast<Bag*>(pDstItem)->IsEmpty());
+
+        InventoryResult msg = CanUnequipItem(src, !asBag);
         if (msg != EQUIP_ERR_OK)
         {
             SendEquipError(msg, pSrcItem, pDstItem);
@@ -857,129 +860,80 @@ void Player::SwapItem(uint16 src, uint16 dst)
         }
     }
 
-    // prevent put equipped/bank bag in self
+    // A bag cannot be put inside itself.
     if (Inventory::HoldsBag(src) && srcslot == dstbag)
     {
         SendEquipError(EQUIP_ERR_NONEMPTY_BAG_OVER_OTHER_BAG, pSrcItem, pDstItem);
         return;
     }
 
-    // prevent put equipped/bank bag in self
     if (Inventory::HoldsBag(dst) && dstslot == srcbag)
     {
         SendEquipError(EQUIP_ERR_NONEMPTY_BAG_OVER_OTHER_BAG, pDstItem, pSrcItem);
         return;
     }
 
-    // DST checks
-
-    if (pDstItem)
+    if (pDstItem && (Inventory::IsWorn(dst) || Inventory::HoldsBag(dst)))
     {
-        // check unequip potability for equipped items and bank bags
-        if (Inventory::IsWorn(dst) || Inventory::HoldsBag(dst))
+        bool const asBag = Inventory::HoldsBag(dst)
+            && !Inventory::HoldsBag(src)
+            && !(pSrcItem->IsBag() && static_cast<Bag*>(pSrcItem)->IsEmpty());
+
+        InventoryResult msg = CanUnequipItem(dst, !asBag);
+        if (msg != EQUIP_ERR_OK)
         {
-            // bags can be swapped with empty bag slots, or with empty bag (items move possibility checked later)
-            InventoryResult msg = CanUnequipItem(dst, !Inventory::HoldsBag(dst) || Inventory::HoldsBag(src) || (pSrcItem->IsBag() && ((Bag*)pSrcItem)->IsEmpty()));
-            if (msg != EQUIP_ERR_OK)
-            {
-                SendEquipError(msg, pSrcItem, pDstItem);
-                return;
-            }
+            SendEquipError(msg, pSrcItem, pDstItem);
+            return;
         }
     }
 
-    // NOW this is or item move (swap with empty), or swap with another item (including bags in bag possitions)
-    // or swap empty bag with another empty or not empty bag (with items exchange)
+    Destination to(*this, dst);
 
-    // Move case
+    // Nothing is there: the item simply goes across.
     if (!pDstItem)
     {
-        if (Inventory::IsCarried(dst))
+        if (!to.Reachable())
         {
-            ItemPosCountVec dest;
-            InventoryResult msg = CanStoreItem(dstbag, dstslot, dest, pSrcItem, false);
-            if (msg != EQUIP_ERR_OK)
-            {
-                SendEquipError(msg, pSrcItem, nullptr);
-                return;
-            }
-
-            RemoveItem(srcbag, srcslot, true);
-            StoreItem(dest, pSrcItem, true);
+            return;
         }
-        else if (Inventory::IsBanked(dst))
-        {
-            ItemPosCountVec dest;
-            InventoryResult msg = CanBankItem(dstbag, dstslot, dest, pSrcItem, false);
-            if (msg != EQUIP_ERR_OK)
-            {
-                SendEquipError(msg, pSrcItem, nullptr);
-                return;
-            }
 
-            RemoveItem(srcbag, srcslot, true);
-            BankItem(dest, pSrcItem, true);
+        InventoryResult msg = to.Weigh(pSrcItem, false);
+        if (msg != EQUIP_ERR_OK)
+        {
+            SendEquipError(msg, pSrcItem, nullptr);
+            return;
         }
-        else if (Inventory::IsWorn(dst))
-        {
-            uint16 dest;
-            InventoryResult msg = CanEquipItem(dstslot, dest, pSrcItem, false);
-            if (msg != EQUIP_ERR_OK)
-            {
-                SendEquipError(msg, pSrcItem, nullptr);
-                return;
-            }
 
-            RemoveItem(srcbag, srcslot, true);
-            EquipItem(dest, pSrcItem, true);
+        RemoveItem(srcbag, srcslot, true);
+        to.Carry(pSrcItem);
+
+        if (Inventory::IsWorn(dst))
+        {
             AutoUnequipOffhandIfNeed();
         }
 
         return;
     }
 
-    // attempt merge to / fill target item
+    // The same thing is there: the two stacks join, or the one that is there is
+    // topped up to full and the rest stays behind.
     if (!pSrcItem->IsBag() && !pDstItem->IsBag())
     {
-        InventoryResult msg;
-        ItemPosCountVec sDest;
-        uint16 eDest;
-        if (Inventory::IsCarried(dst))
-        {
-            msg = CanStoreItem(dstbag, dstslot, sDest, pSrcItem, false);
-        }
-        else if (Inventory::IsBanked(dst))
-        {
-            msg = CanBankItem(dstbag, dstslot, sDest, pSrcItem, false);
-        }
-        else if (Inventory::IsWorn(dst))
-        {
-            msg = CanEquipItem(dstslot, eDest, pSrcItem, false);
-        }
-        else
+        if (!to.Reachable())
         {
             return;
         }
 
-        // can be merge/fill
-        if (msg == EQUIP_ERR_OK)
+        if (to.Weigh(pSrcItem, false) == EQUIP_ERR_OK)
         {
             ItemPrototype const* itemProto = pSrcItem->GetProto();
             if (pSrcItem->GetCount() + pDstItem->GetCount() <= itemProto->GetMaxStackSize())
             {
                 RemoveItem(srcbag, srcslot, true);
+                to.Carry(pSrcItem);
 
-                if (Inventory::IsCarried(dst))
+                if (Inventory::IsWorn(dst))
                 {
-                    StoreItem(sDest, pSrcItem, true);
-                }
-                else if (Inventory::IsBanked(dst))
-                {
-                    BankItem(sDest, pSrcItem, true);
-                }
-                else if (Inventory::IsWorn(dst))
-                {
-                    EquipItem(eDest, pSrcItem, true);
                     AutoUnequipOffhandIfNeed();
                 }
             }
@@ -992,166 +946,122 @@ void Player::SwapItem(uint16 src, uint16 dst)
                 m_inventory.Changed(pSrcItem, true);
                 m_inventory.Changed(pDstItem, true);
             }
+
             return;
         }
     }
 
-    // impossible merge/fill, do real swap
-    InventoryResult msg = EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM; // Initialize msg with a default value which will never be used
+    // Neither joining nor topping up will do, so the two change places. Both
+    // ways are weighed before either is carried out.
+    Destination back(*this, src);
 
-    // check src->dest move possibility
-    ItemPosCountVec sDest;
-    uint16 eDest = 0;
-    if (Inventory::IsCarried(dst))
-    {
-        msg = CanStoreItem(dstbag, dstslot, sDest, pSrcItem, true);
-    }
-    else if (Inventory::IsBanked(dst))
-    {
-        msg = CanBankItem(dstbag, dstslot, sDest, pSrcItem, true);
-    }
-    else if (Inventory::IsWorn(dst))
-    {
-        msg = CanEquipItem(dstslot, eDest, pSrcItem, true);
-        if (msg == EQUIP_ERR_OK)
-        {
-            msg = CanUnequipItem(eDest, true);
-        }
-    }
-
+    InventoryResult msg = to.Weigh(pSrcItem, true);
     if (msg != EQUIP_ERR_OK)
     {
         SendEquipError(msg, pSrcItem, pDstItem);
         return;
     }
 
-    // check dest->src move possibility
-    ItemPosCountVec sDest2;
-    uint16 eDest2 = 0;
-    if (Inventory::IsCarried(src))
-    {
-        msg = CanStoreItem(srcbag, srcslot, sDest2, pDstItem, true);
-    }
-    else if (Inventory::IsBanked(src))
-    {
-        msg = CanBankItem(srcbag, srcslot, sDest2, pDstItem, true);
-    }
-    else if (Inventory::IsWorn(src))
-    {
-        msg = CanEquipItem(srcslot, eDest2, pDstItem, true);
-        if (msg == EQUIP_ERR_OK)
-        {
-            msg = CanUnequipItem(eDest2, true);
-        }
-    }
-
+    msg = back.Weigh(pDstItem, true);
     if (msg != EQUIP_ERR_OK)
     {
         SendEquipError(msg, pDstItem, pSrcItem);
         return;
     }
 
-    // Check bag swap with item exchange (one from empty in not bag possition (equipped (not possible in fact) or store)
-    if (pSrcItem->IsBag() && pDstItem->IsBag())
+    // Two bags change places by pouring one into the other, which is only
+    // possible when the one being poured into is both empty and not hanging in a
+    // bag slot of its own.
+    if (pSrcItem->IsBag() && pDstItem->IsBag() && !PourBagInto(pSrcItem, src, pDstItem, dst))
     {
-        Bag* emptyBag = nullptr;
-        Bag* fullBag = nullptr;
-        if (((Bag*)pSrcItem)->IsEmpty() && !Inventory::HoldsBag(src))
-        {
-            emptyBag = (Bag*)pSrcItem;
-            fullBag  = (Bag*)pDstItem;
-        }
-        else if (((Bag*)pDstItem)->IsEmpty() && !Inventory::HoldsBag(dst))
-        {
-            emptyBag = (Bag*)pDstItem;
-            fullBag  = (Bag*)pSrcItem;
-        }
-
-        // bag swap (with items exchange) case
-        if (emptyBag && fullBag)
-        {
-            ItemPrototype const* emotyProto = emptyBag->GetProto();
-
-            uint32 count = 0;
-
-            for (uint32 i = 0; i < fullBag->GetBagSize(); ++i)
-            {
-                Item* bagItem = fullBag->GetItemByPos(i);
-                if (!bagItem)
-                {
-                    continue;
-                }
-
-                ItemPrototype const* bagItemProto = bagItem->GetProto();
-                if (!bagItemProto || !ItemCanGoIntoBag(bagItemProto, emotyProto))
-                {
-                    // one from items not go to empty target bag
-                    SendEquipError(EQUIP_ERR_NONEMPTY_BAG_OVER_OTHER_BAG, pSrcItem, pDstItem);
-                    return;
-                }
-
-                ++count;
-            }
-
-            if (count > emptyBag->GetBagSize())
-            {
-                // too small targeted bag
-                SendEquipError(EQUIP_ERR_ITEMS_CANT_BE_SWAPPED, pSrcItem, pDstItem);
-                return;
-            }
-
-            // Items swap
-            count = 0;                                      // will pos in new bag
-            for (uint32 i = 0; i < fullBag->GetBagSize(); ++i)
-            {
-                Item* bagItem = fullBag->GetItemByPos(i);
-                if (!bagItem)
-                {
-                    continue;
-                }
-
-                fullBag->RemoveItem(i);
-                emptyBag->StoreItem(count, bagItem);
-                bagItem->SetState(ITEM_CHANGED, this);
-
-                ++count;
-            }
-        }
+        return;
     }
 
-    // now do moves, remove...
     RemoveItem(dstbag, dstslot, false);
     RemoveItem(srcbag, srcslot, false);
 
-    // add to dest
-    if (Inventory::IsCarried(dst))
-    {
-        StoreItem(sDest, pSrcItem, true);
-    }
-    else if (Inventory::IsBanked(dst))
-    {
-        BankItem(sDest, pSrcItem, true);
-    }
-    else if (Inventory::IsWorn(dst))
-    {
-        EquipItem(eDest, pSrcItem, true);
-    }
-
-    // add to src
-    if (Inventory::IsCarried(src))
-    {
-        StoreItem(sDest2, pDstItem, true);
-    }
-    else if (Inventory::IsBanked(src))
-    {
-        BankItem(sDest2, pDstItem, true);
-    }
-    else if (Inventory::IsWorn(src))
-    {
-        EquipItem(eDest2, pDstItem, true);
-    }
+    to.Carry(pSrcItem);
+    back.Carry(pDstItem);
 
     AutoUnequipOffhandIfNeed();
+}
+
+/**
+ * @brief Empties one bag into the other so that two bags can change places.
+ *
+ * @param pSrcItem The bag being moved from src.
+ * @param src The packed position it is coming from.
+ * @param pDstItem The bag being moved from dst.
+ * @param dst The packed position it is coming from.
+ * @return False when the contents cannot be moved, having told him why.
+ */
+bool Player::PourBagInto(Item* pSrcItem, uint16 src, Item* pDstItem, uint16 dst)
+{
+    Bag* emptyBag = nullptr;
+    Bag* fullBag = nullptr;
+
+    if (static_cast<Bag*>(pSrcItem)->IsEmpty() && !Inventory::HoldsBag(src))
+    {
+        emptyBag = static_cast<Bag*>(pSrcItem);
+        fullBag = static_cast<Bag*>(pDstItem);
+    }
+    else if (static_cast<Bag*>(pDstItem)->IsEmpty() && !Inventory::HoldsBag(dst))
+    {
+        emptyBag = static_cast<Bag*>(pDstItem);
+        fullBag = static_cast<Bag*>(pSrcItem);
+    }
+
+    // Two bags that both hold something, or that both hang in bag slots, simply
+    // change places with what is in them.
+    if (!emptyBag || !fullBag)
+    {
+        return true;
+    }
+
+    ItemPrototype const* emptyProto = emptyBag->GetProto();
+    uint32 count = 0;
+
+    for (uint32 i = 0; i < fullBag->GetBagSize(); ++i)
+    {
+        Item* bagItem = fullBag->GetItemByPos(uint8(i));
+        if (!bagItem)
+        {
+            continue;
+        }
+
+        ItemPrototype const* bagItemProto = bagItem->GetProto();
+        if (!bagItemProto || !ItemCanGoIntoBag(bagItemProto, emptyProto))
+        {
+            SendEquipError(EQUIP_ERR_NONEMPTY_BAG_OVER_OTHER_BAG, pSrcItem, pDstItem);
+            return false;
+        }
+
+        ++count;
+    }
+
+    if (count > emptyBag->GetBagSize())
+    {
+        SendEquipError(EQUIP_ERR_ITEMS_CANT_BE_SWAPPED, pSrcItem, pDstItem);
+        return false;
+    }
+
+    count = 0;
+    for (uint32 i = 0; i < fullBag->GetBagSize(); ++i)
+    {
+        Item* bagItem = fullBag->GetItemByPos(uint8(i));
+        if (!bagItem)
+        {
+            continue;
+        }
+
+        fullBag->RemoveItem(uint8(i));
+        emptyBag->StoreItem(uint8(count), bagItem);
+        bagItem->SetState(ITEM_CHANGED, this);
+
+        ++count;
+    }
+
+    return true;
 }
 
 void Player::SendEquipError(InventoryResult msg, Item* pItem, Item* pItem2, uint32 itemid /*= 0*/) const

@@ -29,6 +29,7 @@
 #include "ObjectGuid.h"
 #include "Inventory/Slots.h"
 #include "Item.h"
+#include "ItemSaveQueue.h"
 
 #include <list>
 
@@ -244,6 +245,11 @@ class Inventory
         /// that whoever writes the item down records where it had got to.
         void SettleClocks();
 
+        /// The items he has changed and not yet written. An item notes itself
+        /// here when its state changes, so nothing has to remember to.
+        ItemSaveQueue& Saves() { return m_saves; }
+        ItemSaveQueue const& Saves() const { return m_saves; }
+
         /**
          * Puts an item away, in as many places as the plan says.
          *
@@ -370,6 +376,8 @@ class Inventory
         Player& m_owner;
         Item* m_place[PLAYER_SLOTS_COUNT];
         uint32 m_nextBuyback;
+
+        ItemSaveQueue m_saves;
 
         /// Items whose own life is running down. The remaining time is theirs,
         /// not this list's; the list only says which ones to ask.

@@ -762,7 +762,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
 
     // Create the player object with the given GUID
     Object::_Create(guidlow, 0, HIGHGUID_PLAYER);
-    m_itemSaves.Belongs(GetObjectGuid());
+    m_inventory.Saves().Belongs(GetObjectGuid());
 
     // Set the player's name
     m_name = name;

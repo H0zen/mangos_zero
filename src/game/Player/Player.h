@@ -1444,8 +1444,8 @@ class Player : public Unit
         Inventory const& Owns() const { return m_inventory; }
 
         /// The items this player has changed and not yet written.
-        ItemSaveQueue& ItemSaves() { return m_itemSaves; }
-        ItemSaveQueue const& ItemSaves() const { return m_itemSaves; }
+        ItemSaveQueue& ItemSaves() { return m_inventory.Saves(); }
+        ItemSaveQueue const& ItemSaves() const { return m_inventory.Saves(); }
 
         // Check if the position is valid
         bool IsValidPos(uint16 pos, bool explicit_pos) const { return m_inventory.Exists(Inventory::Container(pos), Inventory::Slot(pos), explicit_pos); }
@@ -1639,6 +1639,9 @@ class Player : public Unit
 
         // Swap two items
         void SwapItem(uint16 src, uint16 dst);
+
+        // Pour one bag into the other so that the two can change places
+        bool PourBagInto(Item* pSrcItem, uint16 src, Item* pDstItem, uint16 dst);
 
         // Add an item to the buyback slot
         void AddItemToBuyBackSlot(Item* pItem) { m_inventory.ToBuyback(pItem); }
@@ -3801,7 +3804,6 @@ class Player : public Unit
 
         Inventory m_inventory;
 
-        ItemSaveQueue m_itemSaves;
 
         uint32 m_ExtraFlags; // Extra flags
         ObjectGuid m_curSelectionGuid; // Current selection GUID
