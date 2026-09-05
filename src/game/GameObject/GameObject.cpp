@@ -582,81 +582,78 @@ bool GameObject::IsVisibleForInState(Player const* u, Occupant const* viewPoint,
 
     float visibleDistance = GetMap()->GetVisibilityDistance() + (inVisibleList ? World::GetVisibleObjectGreyDistance() : 0.0f);
 
-    // quick check visibility false cases for non-GM-mode
+    // A game master sees what is there, at the map's own range and whatever state it
+    // is in. Everything below is what the world hides from everyone else.
     if (!u->isGameMaster())
     {
-        // despawned and then not visible for non-GM in GM-mode
         if (!isSpawned())
         {
             return false;
         }
 
-        // special invisibility cases
-        switch (GetGOInfo()->type)
+        if (GetGOInfo()->IsServerOnly())
         {
-            case GAMEOBJECT_TYPE_TRAP:
+            return false;
+        }
+
+        if (IsTrapHidingFrom(u))
+        {
+            visibleDistance = TrapNoticedWithin(WatchedBy(u), float(GetGOInfo()->trap.radius));
+            if (visibleDistance < 0.0f)
             {
-                if (GetGOInfo()->trap.stealthed == 0 && GetGOInfo()->trap.stealthAffected == 0)
-                {
-                    break;
-                }
-
-                Unit* owner = GetOwner();
-
-                if (!owner || IsHostile(*u, *owner))
-                {
-
-                    visibleDistance = 10.5f;
-                    //2^3=8 and 300 - from spell 2836, EFFECT_INDEX_1 - SPELL_AURA_MOD_INVISIBILITY_DETECTION; TODO check 200 and improve
-                    if (u->GetMaxPositiveAuraModifierByMiscValue(SPELL_AURA_MOD_INVISIBILITY_DETECTION, 8) < 200)
-                    {
-                        if (u->getClass() != CLASS_ROGUE)
-                        {
-                            return false;       // a wild or enemy trap cannot be seen by non-rogues without proper invis detection
-                        }
-                        visibleDistance = 0.0f; // minimal detection distance, will be normalized below
-                    }
-
-                    if (owner)
-                    {
-                        // apply to the "owner" and "u" the rules for usual stealth detection; the fragment is taken from Unit::IsVisibleForOrDetect
-                        // Visible distance based on stealth value (stealth rank 4 300MOD, 10.5 - 3 = 7.5)
-                        visibleDistance -= (owner->getLevel() / 20.0f);  // for rogue stealth (4 spells): modifier = 5*level
-
-                        // Visible distance is modified by
-                        //-Level Diff (every level diff = 1.0f in visible distance)
-                        visibleDistance += int32(u->GetLevelForTarget(owner)) - int32(owner->GetLevelForTarget(u));
-                    }
-
-                    //-Stealth Detection(negative like paranoia)
-                    visibleDistance += (int32(u->GetTotalAuraModifier(SPELL_AURA_MOD_STEALTH_DETECT))) / 5.0f;
-
-                    // normalize visible distance
-                    if (visibleDistance > MAX_PLAYER_STEALTH_DETECT_RANGE)
-                    {
-                        visibleDistance = MAX_PLAYER_STEALTH_DETECT_RANGE;
-                    }
-                    else if (visibleDistance < GetGOInfo()->trap.radius + INTERACTION_DISTANCE)
-                    {
-                        visibleDistance = GetGOInfo()->trap.radius + INTERACTION_DISTANCE;
-                    }
-                }
-
-            }
-
-            case GAMEOBJECT_TYPE_SPELL_FOCUS:
-            {
-                if (GetGOInfo()->spellFocus.serverOnly == 1)
-                {
-                    return false;
-                }
-                break;
+                return false;
             }
         }
     }
 
-    // check distance
     return SeenWithin(*this, *viewPoint, visibleDistance, false);
+}
+
+/**
+ * @brief Whether this is a trap that is trying not to be noticed by this player.
+ *
+ * Hiding is not something a trap does at large: a trap laid by his own side is not
+ * hiding from him, and one whose data says nothing about stealth is not hiding from
+ * anybody.
+ */
+bool GameObject::IsTrapHidingFrom(Player const* watcher) const
+{
+    if (GetGoType() != GAMEOBJECT_TYPE_TRAP)
+    {
+        return false;
+    }
+
+    if (!GetGOInfo()->trap.stealthed && !GetGOInfo()->trap.stealthAffected)
+    {
+        return false;
+    }
+
+    Unit* owner = GetOwner();
+
+    // Laid by nobody, or laid against him.
+    return !owner || IsHostile(*watcher, *owner);
+}
+
+/**
+ * @brief What this player brings to noticing a hidden trap.
+ */
+TrapWatcher GameObject::WatchedBy(Player const* watcher) const
+{
+    TrapWatcher brought;
+    brought.isRogue = watcher->getClass() == CLASS_ROGUE;
+    brought.invisibilityDetection =
+        watcher->GetMaxPositiveAuraModifierByMiscValue(SPELL_AURA_MOD_INVISIBILITY_DETECTION, 8);
+    brought.stealthDetect = watcher->GetTotalAuraModifier(SPELL_AURA_MOD_STEALTH_DETECT);
+
+    if (Unit* owner = GetOwner())
+    {
+        brought.hasOwner = true;
+        brought.ownerLevel = owner->getLevel();
+        brought.levelGap = int32(watcher->GetLevelForTarget(owner)) -
+                           int32(owner->GetLevelForTarget(watcher));
+    }
+
+    return brought;
 }
 
 /**

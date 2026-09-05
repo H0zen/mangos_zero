@@ -63,6 +63,7 @@
 #include "LiftPath.h"
 #include "UserTally.h"
 #include "Chest.h"
+#include "TrapSight.h"
 #include "LootClaim.h"
 #include "LootMgr.h"
 #include "Utilities/EventProcessor.h"
@@ -529,6 +530,19 @@ struct GameObjectInfo
         }
     }
 
+    // Placed for the server's own use: the client is never told about it and has no
+    // model for it. Only these three kinds are ever marked that way.
+    bool IsServerOnly() const
+    {
+        switch (type)
+        {
+            case GAMEOBJECT_TYPE_GENERIC:     return _generic.serverOnly != 0;
+            case GAMEOBJECT_TYPE_TRAP:        return trap.serverOnly != 0;
+            case GAMEOBJECT_TYPE_SPELL_FOCUS: return spellFocus.serverOnly != 0;
+            default: return false;
+        }
+    }
+
     // The quest whose being in progress lights this object up for the player.
     // Only these four types carry one, and they are exactly the types
     // ObjectMgr::LoadGameObjectForQuests walks.
@@ -780,6 +794,10 @@ class GameObject : public Occupant
         // The two halves of the sparkle that need more than the template's quest id.
         bool HasQuestBusinessWith(Player* seeker) const;
         bool HoldsQuestLootFor(Player* seeker) const;
+
+        // Why a trap may be seen from closer than everything else is.
+        bool IsTrapHidingFrom(Player const* watcher) const;
+        TrapWatcher WatchedBy(Player const* watcher) const;
 
     public:
 
