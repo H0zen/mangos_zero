@@ -148,14 +148,14 @@ void MapManager::LoadTransports()
         }
 
         // THE LAP, computed the way the client computes it: the same DBC nodes, the same
-        // trapezoidal profile at the template's own speed, the same stop delays. The
-        // client works it out for itself and draws the hull by it, so a lap the two sides
-        // disagree on puts the hull where the server does not believe it is.
+        // profile at the template's own speed, the same berth delays. The client works it
+        // out for itself and draws the hull by it, so a lap the two sides disagree on puts
+        // the hull where the server does not believe it is.
         //
-        // The `period` column is a fallback for a vessel whose taxi path is missing, and
-        // nothing more: the eight classic routes run from 4500 to 23800 units of water
-        // while every one of their columns says between 295 and 357 seconds, so those
-        // numbers cannot have come from the routes at all.
+        // On the eight classic routes this lands on the `period` column to the
+        // millisecond, which is what says the arithmetic is right. The column stays as a
+        // fallback for a vessel whose taxi path is missing, and a custom vessel needs no
+        // column at all.
         float const speed = goinfo->moTransport.moveSpeed ? float(goinfo->moTransport.moveSpeed) : 30.0f;
         float const accel = goinfo->moTransport.accelRate ? float(goinfo->moTransport.accelRate) : 1.0f;
         VesselRoute const route = VesselRoute::Along(goinfo->moTransport.taxiPathId, speed, accel);

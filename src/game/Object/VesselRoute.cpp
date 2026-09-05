@@ -75,10 +75,15 @@ namespace
      * slow at every node: she runs berth to berth, so the stretch that a speed
      * profile is applied to is the water between one berth and the next. A leg
      * with no berth at all is crossed at a flat cruise, no acceleration at all.
+     *
+     * She also does not sail the whole node list. A leg of n nodes has n-3 spans:
+     * the first node and the last only lend the curve its tangents, and she runs
+     * from the second to the second-to-last. A leg of three nodes or fewer has no
+     * span at all and takes no time.
      */
     uint32 SailTime(Leg const& leg, Profile const& how)
     {
-        if (leg.points.size() < 2)
+        if (leg.points.size() < 4)
         {
             return 0;
         }
@@ -87,9 +92,10 @@ namespace
         spline.init_spline(leg.points.data(), Movement::SplineBase::index_type(leg.points.size()),
                            Movement::SplineBase::ModeCatmullrom);
 
-        // How far along the leg each node stands.
-        std::vector<float> reached(leg.points.size(), 0.0f);
-        for (size_t i = 1; i < leg.points.size(); ++i)
+        // How far along the leg each node stands. The first two stand at nothing:
+        // one only steers, and the other is where she starts.
+        std::vector<float> reached(leg.points.size() - 1, 0.0f);
+        for (size_t i = 2; i < reached.size(); ++i)
         {
             reached[i] = reached[i - 1] + spline.SegLength(Movement::SplineBase::index_type(i));
         }

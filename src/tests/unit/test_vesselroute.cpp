@@ -25,14 +25,16 @@
 
 // How long a vessel's lap takes.
 //
-// The routes here run in a straight line, so the Catmull-Rom spline through
-// them is that line and the water between two nodes is exactly the gap between
-// them. That makes the profile checkable by hand: at the speeds every classic
-// vessel carries, 30 units a second and one unit a second squared, she needs 30
-// seconds and 450 units of water to reach cruising speed.
+// The routes here run in a straight line, so the Catmull-Rom spline through them
+// is that line and the water between two nodes is exactly the gap between them.
+// That makes the profile checkable by hand: at the speeds every classic vessel
+// carries, 30 units a second and one unit a second squared, she needs 30 seconds
+// and 450 units of water to reach cruising speed.
 //
-// The thing these pin down is what a stretch is. It is berth to berth, not node
-// to node: a vessel does not stop at every waypoint on her way across the sea.
+// Two things these pin down. A stretch is berth to berth, not node to node: a
+// vessel does not stop at every waypoint on her way across the sea. And she does
+// not sail the whole node list -- the outermost node at each end only lends the
+// curve its tangent.
 
 #include "doctest.h"
 
@@ -60,15 +62,18 @@ namespace
         return node;
     }
 
-    /// Four nodes a kilometre apart on one map: three kilometres of open water.
+    /// Six nodes a kilometre apart on one map, of which she sails four: three
+    /// kilometres of open water between node 1 and node 4.
     struct StraightRun
     {
-        TaxiPathNodeEntry a = Node(0, 0, 0.0f);
-        TaxiPathNodeEntry b = Node(1, 0, 1000.0f);
-        TaxiPathNodeEntry c = Node(2, 0, 2000.0f);
-        TaxiPathNodeEntry d = Node(3, 0, 3000.0f);
+        TaxiPathNodeEntry n0 = Node(0, 0, 0.0f);
+        TaxiPathNodeEntry n1 = Node(1, 0, 1000.0f);
+        TaxiPathNodeEntry n2 = Node(2, 0, 2000.0f);
+        TaxiPathNodeEntry n3 = Node(3, 0, 3000.0f);
+        TaxiPathNodeEntry n4 = Node(4, 0, 4000.0f);
+        TaxiPathNodeEntry n5 = Node(5, 0, 5000.0f);
 
-        std::vector<TaxiPathNodeEntry const*> nodes{&a, &b, &c, &d};
+        std::vector<TaxiPathNodeEntry const*> nodes{&n0, &n1, &n2, &n3, &n4, &n5};
     };
 
     /// Pulling away from a berth, or coming into one.
@@ -93,17 +98,17 @@ TEST_CASE("vessel route: a path with nothing to sail takes no time")
     std::vector<TaxiPathNodeEntry const*> const none;
     CHECK(VesselRoute(none, SPEED, ACCEL).Period() == 0);
 
-    TaxiPathNodeEntry alone = Node(0, 0, 0.0f);
-    std::vector<TaxiPathNodeEntry const*> const one{&alone};
-    CHECK(VesselRoute(one, SPEED, ACCEL).Period() == 0);
+    // Three nodes are two tangents and a point, which is no water at all.
+    StraightRun run;
+    std::vector<TaxiPathNodeEntry const*> const three{&run.n0, &run.n1, &run.n2};
+    CHECK(VesselRoute(three, SPEED, ACCEL).Period() == 0);
 
     // A vessel that cannot move never finishes a lap either.
-    StraightRun run;
     CHECK(VesselRoute(run.nodes, 0.0f, ACCEL).Period() == 0);
     CHECK(VesselRoute(run.nodes, SPEED, 0.0f).Period() == 0);
 }
 
-TEST_CASE("vessel route: with nowhere to berth she never slows at all")
+TEST_CASE("vessel route: the outermost node at each end only steers")
 {
     StraightRun run;
     VesselRoute const route(run.nodes, SPEED, ACCEL);
@@ -111,31 +116,33 @@ TEST_CASE("vessel route: with nowhere to berth she never slows at all")
     CHECK(route.Legs() == 1);
     CHECK(route.Waiting() == 0);
 
-    // Three kilometres at a flat thirty, and not one node's worth of braking.
+    // Five kilometres of nodes, three kilometres of water, flat cruise throughout.
     CHECK(route.Period() == 100000);
+
+    // A seventh node adds a kilometre of water, not just a kilometre of curve.
+    TaxiPathNodeEntry n6 = Node(6, 0, 6000.0f);
+    std::vector<TaxiPathNodeEntry const*> longer(run.nodes);
+    longer.push_back(&n6);
+    CHECK(VesselRoute(longer, SPEED, ACCEL).Period() == 133333);
 }
 
 TEST_CASE("vessel route: a berth is what a stretch of water runs between")
 {
     StraightRun run;
-    run.c = Node(2, 0, 2000.0f, TAXI_NODE_STOP, 45);
+    run.n3 = Node(3, 0, 3000.0f, TAXI_NODE_STOP, 45);
     VesselRoute const route(run.nodes, SPEED, ACCEL);
 
     CHECK(route.Waiting() == 45u * 1000u);
 
-    // Out of the start to the berth, then out of the berth to the end.
+    // Two kilometres from node 1 to the berth at node 3, then one to node 4.
     CHECK(route.Period() == Once(2000.0f) + Once(1000.0f) + 45u * 1000u);
-
-    // Berthing costs more than the flat cruise it replaces, twice over.
-    StraightRun plain;
-    CHECK(route.Period() > VesselRoute(plain.nodes, SPEED, ACCEL).Period() + 45u * 1000u);
 }
 
 TEST_CASE("vessel route: the water between two berths is paid for at both ends")
 {
     StraightRun run;
-    run.b = Node(1, 0, 1000.0f, TAXI_NODE_STOP, 30);
-    run.c = Node(2, 0, 2000.0f, TAXI_NODE_STOP, 30);
+    run.n2 = Node(2, 0, 2000.0f, TAXI_NODE_STOP, 30);
+    run.n3 = Node(3, 0, 3000.0f, TAXI_NODE_STOP, 30);
     VesselRoute const route(run.nodes, SPEED, ACCEL);
 
     CHECK(route.Waiting() == 60u * 1000u);
@@ -145,7 +152,7 @@ TEST_CASE("vessel route: the water between two berths is paid for at both ends")
 TEST_CASE("vessel route: a berth she is already at is no stretch of water")
 {
     StraightRun run;
-    run.a = Node(0, 0, 0.0f, TAXI_NODE_STOP, 60);
+    run.n0 = Node(0, 0, 0.0f, TAXI_NODE_STOP, 60);
     VesselRoute const route(run.nodes, SPEED, ACCEL);
 
     // The first node of a leg is where she already lies, so it is not a stretch
@@ -157,22 +164,24 @@ TEST_CASE("vessel route: a berth she is already at is no stretch of water")
 TEST_CASE("vessel route: a teleport breaks the lap in two without changing map")
 {
     StraightRun run;
-    run.b = Node(1, 0, 1000.0f, TAXI_NODE_TELEPORT);
+    run.n1 = Node(1, 0, 1000.0f, TAXI_NODE_TELEPORT);
     VesselRoute const route(run.nodes, SPEED, ACCEL);
 
-    // A kilometre up to the jump and a kilometre after it; the water between the
-    // two is never sailed, so a third of the route costs nothing.
+    // Two nodes before the jump are not enough to sail on; the four after it
+    // carry one kilometre of water.
     CHECK(route.Legs() == 2);
-    CHECK(route.Period() == 2u * uint32(1000.0f / SPEED * 1000.0f));
+    CHECK(route.Period() == uint32(1000.0f / SPEED * 1000.0f));
 }
 
 TEST_CASE("vessel route: a change of map breaks it the same way")
 {
     StraightRun run;
-    run.c = Node(2, 1, 2000.0f);
-    run.d = Node(3, 1, 3000.0f);
+    run.n2 = Node(2, 1, 2000.0f);
+    run.n3 = Node(3, 1, 3000.0f);
+    run.n4 = Node(4, 1, 4000.0f);
+    run.n5 = Node(5, 1, 5000.0f);
     VesselRoute const route(run.nodes, SPEED, ACCEL);
 
     CHECK(route.Legs() == 2);
-    CHECK(route.Period() == 2u * uint32(1000.0f / SPEED * 1000.0f));
+    CHECK(route.Period() == uint32(1000.0f / SPEED * 1000.0f));
 }
