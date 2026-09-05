@@ -44,7 +44,7 @@ struct VesselLeg
     /// One run of water between berths, and when on the lap she sails it.
     struct Run
     {
-        uint32 startsAt = 0;                                // milliseconds into the lap
+        uint32 startsAt = 0;                                // milliseconds into the LEG
         uint32 sails = 0;                                   // spent crossing it
         uint32 waits = 0;                                   // spent lying at its far end
         float from = 0.0f;                                  // distance along the leg

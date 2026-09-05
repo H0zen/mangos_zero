@@ -61,6 +61,8 @@
 #include "MapManager.h"
 #include "TransportMap.h"
 #include "Transports.h"
+#include "VesselRoute.h"
+#include "CellImpl.h"
 
 /**
  * @brief Handler for HandleDebugSendSpellFailCommand command.
@@ -1759,6 +1761,109 @@ bool ChatHandler::HandleDebugMinionCommand(char* /*args*/)
                 }
             }
         }
+    }
+
+    return true;
+}
+
+/**
+ * @brief `.debug vessel` -- the numbers the relay across a deck boundary decides on.
+ *
+ * A vessel's world pose is asked exactly one question: which grid of the world she sits in.
+ * Everyone in that grid sees aboard and is seen from aboard. So what has to be read is the
+ * grid she reports, the grid the caller stands in, and whether the two agree -- printed for
+ * every vessel sailing the caller's map, or for the one he is standing on.
+ */
+bool ChatHandler::HandleDebugVesselCommand(char* /*args*/)
+{
+    Player* caller = m_session ? m_session->GetPlayer() : nullptr;
+    Map* on = caller ? caller->FindMap() : nullptr;
+    if (!on)
+    {
+        return true;
+    }
+
+    uint32 mx = 0, my = 0;
+    Cell::GridOf(caller->Where().X(), caller->Where().Y(), mx, my);
+    PSendSysMessage("caller   map %u  (%.1f %.1f)  grid %u,%u", on->GetId(),
+                    caller->Where().X(), caller->Where().Y(), mx, my);
+
+    std::vector<Transport*> vessels;
+
+    if (TransportMap* deck = on->AsTransport())
+    {
+        PSendSysMessage("aboard   deck map %u, hull radius %.1f", deck->GetId(), deck->HullRadius());
+        if (Transport* mine = deck->Vessel())
+        {
+            vessels.push_back(mine);
+        }
+    }
+    else
+    {
+        MapManager::TransportsByMapType::const_iterator sailing =
+            sMapMgr.m_TransportsByMap.find(on->GetId());
+        if (sailing != sMapMgr.m_TransportsByMap.end())
+        {
+            for (Transport* vessel : sailing->second)
+            {
+                vessels.push_back(vessel);
+            }
+        }
+    }
+
+    if (vessels.empty())
+    {
+        SendSysMessage("vessel   NONE registered for this map");
+        return true;
+    }
+
+    for (Transport* vessel : vessels)
+    {
+        uint32 vx = 0, vy = 0;
+        Cell::GridOf(vessel->Where().X(), vessel->Where().Y(), vx, vy);
+
+        uint32 const phase = vessel->GetPathProgress();
+        VesselLeg const* leg = vessel->m_route.LegAt(phase);
+        VesselPose const pose = vessel->m_route.PoseAt(phase);
+
+        PSendSysMessage("vessel   %u '%s' on map %u  (%.1f %.1f)  grid %u,%u%s",
+                        vessel->GetEntry(), vessel->GetName(),
+                        vessel->GetMapId(), vessel->Where().X(), vessel->Where().Y(),
+                        vx, vy,
+                        vessel->IsCrossing() ? "  CROSSING" : "");
+
+        PSendSysMessage("  route  phase %u of %u ms, %u legs, %u ms waiting",
+                        phase, vessel->m_period, uint32(vessel->m_route.Legs().size()),
+                        vessel->m_route.Waiting());
+
+        if (leg)
+        {
+            PSendSysMessage("  leg    map %u  [%u..%u]  %u nodes  %u runs",
+                            leg->mapId, leg->startsAt, leg->endsAt,
+                            uint32(leg->nodes.size()), uint32(leg->runs.size()));
+        }
+        else
+        {
+            SendSysMessage("  leg    NONE -- the phase falls in no leg");
+        }
+
+        if (pose.known)
+        {
+            uint32 px = 0, py = 0;
+            Cell::GridOf(pose.at.x, pose.at.y, px, py);
+            PSendSysMessage("  pose   map %u  (%.1f %.1f %.1f)  grid %u,%u%s",
+                            pose.mapId, pose.at.x, pose.at.y, pose.at.z, px, py,
+                            pose.mapId == vessel->GetMapId() ? "" : "  MAP MISMATCH: pose not applied");
+        }
+        else
+        {
+            SendSysMessage("  pose   UNKNOWN -- the world pose is frozen where it last was");
+        }
+
+        bool const shares = (vx == mx && vy == my);
+        PSendSysMessage("  relay   %s", on->AsTransport()
+                        ? "aboard: the whole of the vessel's grid is swept"
+                        : (shares ? "SAME GRID: the vessel is swept" : "DIFFERENT GRID: no relay"));
     }
 
     return true;

@@ -340,3 +340,56 @@ TEST_CASE("vessel route: the maps it touches are the maps its legs are on")
     crossing.n5 = Node(5, 1, 5000.0f);
     CHECK(VesselRoute(crossing.nodes, SPEED, ACCEL).Maps() == std::set<uint32>{0, 1});
 }
+
+TEST_CASE("vessel route: she sails a leg that is not the first one")
+{
+    // Two maps, four kilometres of water on each, and a berth in the middle of
+    // the second. What the second leg is asked is where she is INTO IT, so a run
+    // timed from the head of the lap instead leaves her pinned at its far end
+    // for the whole crossing -- ashore and aboard both see the wrong grid.
+    TaxiPathNodeEntry n[12];
+    std::vector<TaxiPathNodeEntry const*> nodes;
+    for (uint32 i = 0; i < 12; ++i)
+    {
+        n[i] = Node(i, i < 6 ? 0 : 1, 1000.0f * i);
+        nodes.push_back(&n[i]);
+    }
+    n[8] = Node(8, 1, 8000.0f, TAXI_NODE_STOP, 45);
+
+    VesselRoute const route(nodes, SPEED, ACCEL);
+
+    REQUIRE(route.Legs().size() == 2);
+    VesselLeg const& second = route.Legs()[1];
+    REQUIRE(second.mapId == 1);
+    REQUIRE(second.runs.size() == 2);
+
+    // The runs of a leg are timed from the head of THAT leg.
+    CHECK(second.runs[0].startsAt == 0);
+    CHECK(second.runs[1].startsAt == second.runs[0].sails + second.runs[0].waits);
+
+    // She starts the leg at its first sailed node.
+    CHECK(route.PoseAt(second.startsAt).at.x == doctest::Approx(7000.0f));
+
+    // She is somewhere between its ends in the middle of it, not at either.
+    uint32 const middle = second.startsAt + (second.endsAt - second.startsAt) / 2;
+    float const x = route.PoseAt(middle).at.x;
+    CHECK(x > 7000.0f);
+    CHECK(x < 10000.0f);
+
+    // And she moves: no two moments of the crossing put her in the same place.
+    float previous = -1.0f;
+    for (uint32 at = second.startsAt; at + 1 < second.endsAt; at += 2000)
+    {
+        VesselPose const pose = route.PoseAt(at);
+        REQUIRE(pose.known);
+        CHECK(pose.mapId == 1);
+        previous = pose.at.x;
+    }
+    CHECK(previous > 7000.0f);
+
+    // The berth is reached, and lain at.
+    uint32 const arrives = second.startsAt + second.runs[0].sails;
+    CHECK(route.PoseAt(arrives).at.x == doctest::Approx(8000.0f));
+    CHECK(route.PoseAt(arrives + 20000).at.x == doctest::Approx(8000.0f));
+    CHECK(route.PoseAt(arrives + 46000).at.x > 8000.0f);
+}

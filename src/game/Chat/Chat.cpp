@@ -217,6 +217,7 @@ ChatCommand* ChatHandler::getCommandTable()
         { "getitemvalue",   SEC_ADMINISTRATOR,  false, &ChatHandler::HandleDebugGetItemValueCommand,        "", nullptr },
         { "getvalue",       SEC_ADMINISTRATOR,  false, &ChatHandler::HandleDebugGetValueCommand,            "", nullptr },
         { "minion",         SEC_GAMEMASTER,     false, &ChatHandler::HandleDebugMinionCommand,              "", nullptr },
+        { "vessel",         SEC_GAMEMASTER,     false, &ChatHandler::HandleDebugVesselCommand,              "", nullptr },
         { "moditemvalue",   SEC_ADMINISTRATOR,  false, &ChatHandler::HandleDebugModItemValueCommand,        "", nullptr },
         { "modvalue",       SEC_ADMINISTRATOR,  false, &ChatHandler::HandleDebugModValueCommand,            "", nullptr },
         { "play",           SEC_MODERATOR,      false, nullptr,                                                "", debugPlayCommandTable },

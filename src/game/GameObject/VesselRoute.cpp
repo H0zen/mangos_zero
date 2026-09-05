@@ -178,7 +178,9 @@ namespace
             return;
         }
 
-        uint32 at = leg.startsAt;
+        // Measured from the head of the leg, like `from` and `to` beside it. What the lap
+        // clock reads is turned into a leg offset once, by the caller.
+        uint32 at = 0;
         float behind = 0.0f;
         size_t sailed = 0;
 
