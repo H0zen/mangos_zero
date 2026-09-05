@@ -179,7 +179,7 @@ void GameObject::Use(Unit* user)
 
             GameObjectInfo const* goInfo = GetGOInfo();
             float radius = float(goInfo->trap.radius);
-            bool IsBattleGroundTrap = !radius && goInfo->trap.cooldown == 3 && m_respawnTime == 0;
+            bool IsBattleGroundTrap = !radius && goInfo->trap.cooldown == 3 && m_spawn.Moment() == 0;
 
             // FIXME: when GO casting will be implemented trap must cast spell to target
             if (goInfo->trap.spellId)

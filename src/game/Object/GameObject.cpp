@@ -72,10 +72,8 @@ GameObject::GameObject() : Occupant(),
     m_objectTypeId = TYPEID_GAMEOBJECT;
     m_updateFlag = (UPDATEFLAG_ALL | UPDATEFLAG_HAS_POSITION);
 
-    m_respawnTime = 0;
-    m_respawnDelayTime = 25;
+    m_spawn.ComesBackAfter(25);
     m_lootState = GO_READY;
-    m_spawnedByDefault = true;
     m_spellId = 0;
     m_usableAt = 0;
     m_closesAt = 0;
@@ -286,7 +284,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map,float x, float 
 void GameObject::Refresh()
 {
     // not refresh despawned not casted GO (despawned casted GO destroyed in all cases anyway)
-    if (m_respawnTime > 0 && m_spawnedByDefault)
+    if (m_spawn.Moment() > 0 && m_spawn.IsPermanent())
     {
         return;
     }
@@ -362,7 +360,7 @@ void GameObject::SaveToDB(uint32 mapid)
     data.rotation1 = GetFloatValue(GAMEOBJECT_ROTATION + 1);
     data.rotation2 = GetFloatValue(GAMEOBJECT_ROTATION + 2);
     data.rotation3 = GetFloatValue(GAMEOBJECT_ROTATION + 3);
-    data.spawntimesecs = m_spawnedByDefault ? (int32)m_respawnDelayTime : -(int32)m_respawnDelayTime;
+    data.spawntimesecs = m_spawn.AsSpawnTimeSecs();
     data.animprogress = GetGoAnimProgress();
     data.go_state = GetGoState();
 
@@ -380,7 +378,7 @@ void GameObject::SaveToDB(uint32 mapid)
        << GetFloatValue(GAMEOBJECT_ROTATION + 1) << ", "
        << GetFloatValue(GAMEOBJECT_ROTATION + 2) << ", "
        << GetFloatValue(GAMEOBJECT_ROTATION + 3) << ", "
-       << m_respawnDelayTime << ", "
+       << m_spawn.AsSpawnTimeSecs() << ", "
        << uint32(GetGoAnimProgress()) << ", "
        << uint32(GetGoState()) << ")";
 
@@ -430,31 +428,22 @@ bool GameObject::LoadFromDB(uint32 guid, Map* map)
     if (!GetGOInfo()->GetDespawnPossibility() && !GetGOInfo()->IsDespawnAtAction() && data->spawntimesecs >= 0)
     {
         SetGoFlag(GO_FLAG_NODESPAWN);
-        m_spawnedByDefault = true;
-        m_respawnDelayTime = 0;
-        m_respawnTime = 0;
+        m_spawn.Never();
     }
     else
     {
-        if (data->spawntimesecs >= 0)
-        {
-            m_spawnedByDefault = true;
-            m_respawnDelayTime = data->spawntimesecs;
+        m_spawn.FromSpawnTimeSecs(data->spawntimesecs);
 
-            m_respawnTime  = map->GetPersistentState()->GetGORespawnTime(GetGUIDLow());
+        if (m_spawn.IsPermanent())
+        {
+            m_spawn.ChangesAt(map->GetPersistentState()->GetGORespawnTime(GetGUIDLow()));
 
             // ready to respawn
-            if (m_respawnTime && m_respawnTime <= time(nullptr))
+            if (m_spawn.Moment() && m_spawn.Moment() <= time(nullptr))
             {
-                m_respawnTime = 0;
+                m_spawn.ChangesAt(0);
                 map->GetPersistentState()->SaveGORespawnTime(GetGUIDLow(), 0);
             }
-        }
-        else
-        {
-            m_spawnedByDefault = false;
-            m_respawnDelayTime = -data->spawntimesecs;
-            m_respawnTime = 0;
         }
     }
 
@@ -579,9 +568,9 @@ Unit* GameObject::GetOwner() const
  */
 void GameObject::SaveRespawnTime()
 {
-    if (m_respawnTime > time(nullptr) && m_spawnedByDefault)
+    if (m_spawn.Moment() > time(nullptr) && m_spawn.IsPermanent())
     {
-        GetMap()->GetPersistentState()->SaveGORespawnTime(GetGUIDLow(), m_respawnTime);
+        GetMap()->GetPersistentState()->SaveGORespawnTime(GetGUIDLow(), m_spawn.Moment());
     }
 }
 
@@ -697,9 +686,9 @@ bool GameObject::IsVisibleForInState(Player const* u, Occupant const* viewPoint,
  */
 void GameObject::Respawn()
 {
-    if (m_spawnedByDefault && m_respawnTime > 0)
+    if (m_spawn.IsPermanent() && m_spawn.Moment() > 0)
     {
-        m_respawnTime = time(nullptr);
+        m_spawn.ChangesAt(time(nullptr));
         GetMap()->GetPersistentState()->SaveGORespawnTime(GetGUIDLow(), 0);
     }
 }

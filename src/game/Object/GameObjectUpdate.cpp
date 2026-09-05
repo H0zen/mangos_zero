@@ -95,7 +95,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                 case GAMEOBJECT_TYPE_FISHINGNODE:           // Keep not ready for some delay
                 {
                     // fishing code (bobber ready)
-                    if (time(nullptr) > m_respawnTime - FISHING_BOBBER_READY_TIME)
+                    if (time(nullptr) > m_spawn.Moment() - FISHING_BOBBER_READY_TIME)
                     {
                         // splash bobber (bobber ready now)
                         Unit* caster = GetOwner();
@@ -132,11 +132,11 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
         }
         case GO_READY:
         {
-            if (m_respawnTime > 0)                          // timer on
+            if (m_spawn.Moment() > 0)                          // timer on
             {
-                if (m_respawnTime <= time(nullptr))            // timer expired
+                if (m_spawn.Moment() <= time(nullptr))            // timer expired
                 {
-                    m_respawnTime = 0;
+                    m_spawn.ChangesAt(0);
                     ClearAllUsesData();
 
                     switch (GetGoType())
@@ -164,7 +164,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                             }
                             // flags in AB are type_button and we need to add them here so no break!
                         default:
-                            if (!m_spawnedByDefault)        // despawn timer
+                            if (!m_spawn.IsPermanent())        // despawn timer
                             {
                                 // can be despawned or destroyed
                                 SetLootState(GO_JUST_DEACTIVATED);
@@ -213,7 +213,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                         }
                         else
                         {
-                            if (m_respawnTime > 0)
+                            if (m_spawn.Moment() > 0)
                             {
                                 break;
                             }
@@ -430,13 +430,13 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
             Claim().StakedBy(nullptr);
             SetLootState(GO_READY);
 
-            if (!m_respawnDelayTime)
+            if (!m_spawn.Delay())
             {
                 return;
             }
 
             // since pool system can fail to roll unspawned object, this one can remain spawned, so must set respawn nevertheless
-            m_respawnTime = m_spawnedByDefault ? time(nullptr) + m_respawnDelayTime : 0;
+            m_spawn.ChangesAt(m_spawn.IsPermanent() ? time(nullptr) + m_spawn.Delay() : 0);
 
             // if option not set then object will be saved at grid unload
             if (sWorld.getConfig(CONFIG_BOOL_SAVE_RESPAWN_TIME_IMMEDIATELY))

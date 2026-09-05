@@ -59,6 +59,7 @@
 #include "SharedDefines.h"
 #include "Occupant.h"
 #include "CapturePoint.h"
+#include "SpawnClock.h"
 #include "LiftPath.h"
 #include "UserTally.h"
 #include "Chest.h"
@@ -653,7 +654,7 @@ class GameObject : public Occupant
 
         void SetOwnerGuid(ObjectGuid ownerGuid)
         {
-            m_spawnedByDefault = false;                     // all object with owner is despawned after delay
+            m_spawn.Permanent(false);                       // anything with an owner only goes away
             SetGuidValue(OBJECT_FIELD_CREATED_BY, ownerGuid);
         }
         ObjectGuid const& GetOwnerGuid() const { return GetGuidValue(OBJECT_FIELD_CREATED_BY); }
@@ -666,40 +667,24 @@ class GameObject : public Occupant
 
         void SetSpellId(uint32 id)
         {
-            m_spawnedByDefault = false;                     // all summoned object is despawned after delay
+            m_spawn.Permanent(false);                       // anything summoned only goes away
             m_spellId = id;
         }
         uint32 GetSpellId() const { return m_spellId;}
 
-        time_t GetRespawnTime() const { return m_respawnTime; }
-        time_t GetRespawnTimeEx() const
-        {
-            time_t now = time(nullptr);
-            if (m_respawnTime > now)
-            {
-                return m_respawnTime;
-            }
-            else
-            {
-                return now;
-            }
-        }
+        /// When it comes or goes, and which of the two it is.
+        SpawnClock& Clock() { return m_spawn; }
+        SpawnClock const& Clock() const { return m_spawn; }
 
-        void SetRespawnTime(time_t respawn)
-        {
-            m_respawnTime = respawn > 0 ? time(nullptr) + respawn : 0;
-            m_respawnDelayTime = respawn > 0 ? uint32(respawn) : 0;
-        }
+        time_t GetRespawnTime() const { return m_spawn.Moment(); }
+        time_t GetRespawnTimeEx() const { return m_spawn.NextUp(time(nullptr)); }
+
+        void SetRespawnTime(time_t respawn) { m_spawn.In(respawn > 0 ? uint32(respawn) : 0); }
         void Respawn();
-        bool isSpawned() const
-        {
-            return m_respawnDelayTime == 0 ||
-                (m_respawnTime > 0 && !m_spawnedByDefault) ||
-                (m_respawnTime == 0 && m_spawnedByDefault);
-        }
-        bool isSpawnedByDefault() const { return m_spawnedByDefault; }
-        void SetSpawnedByDefault(bool b) { m_spawnedByDefault = b; }
-        uint32 GetRespawnDelay() const { return m_respawnDelayTime; }
+        bool isSpawned() const { return m_spawn.IsUp(); }
+        bool isSpawnedByDefault() const { return m_spawn.IsPermanent(); }
+        void SetSpawnedByDefault(bool b) { m_spawn.Permanent(b); }
+        uint32 GetRespawnDelay() const { return m_spawn.Delay(); }
         void Refresh();
         void Delete();
 
@@ -818,10 +803,8 @@ class GameObject : public Occupant
 
     protected:
         uint32      m_spellId;
-        time_t      m_respawnTime;                          // (secs) time of next respawn (or despawn if GO have owner()),
-        uint32      m_respawnDelayTime;                     // (secs) if 0 then current GO state no dependent from timer
+        SpawnClock  m_spawn;
         LootState   m_lootState;
-        bool        m_spawnedByDefault;
         time_t      m_usableAt;                             // not to be used again before this moment
         time_t      m_closesAt;                             // shuts itself at this moment; 0 when it stays as it is
 
