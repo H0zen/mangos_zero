@@ -49,6 +49,7 @@
 #include "PlayerRegistry.h"
 #include "ObjectGuid.h"
 #include "WorldSession.h"
+#include "LootAnswers.h"
 #include "LootMgr.h"
 #include "Occupant.h"
 #include "GameObject.h"
@@ -58,10 +59,10 @@
 #include "Corpse.h"
 
 
-void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
+void spoils::AutostoreItem(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_AUTOSTORE_LOOT_ITEM");
-    Player*  player =   GetPlayer();
+    Player*  player =   &who;
     ObjectGuid lguid = player->GetLootGuid();
     Loot*    loot;
     uint8    lootSlot;
@@ -76,7 +77,7 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
             GameObject* go = player->GetMap()->GetGameObject(lguid);
 
             // not check distance for GO in case owned GO (fishing bobber case, for example) or Fishing hole GO
-            if (!go || ((go->GetOwnerGuid() != _player->GetObjectGuid() && go->GetGoType() != GAMEOBJECT_TYPE_FISHINGHOLE) && !InReach(*go, *_player, INTERACTION_DISTANCE)))
+            if (!go || ((go->GetOwnerGuid() != who.GetObjectGuid() && go->GetGoType() != GAMEOBJECT_TYPE_FISHINGHOLE) && !InReach(*go, who, INTERACTION_DISTANCE)))
             {
                 player->SendLootRelease(lguid);
                 return;
@@ -111,11 +112,11 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
         }
         case HIGHGUID_UNIT:
         {
-            Creature* pCreature = GetPlayer()->GetMap()->GetCreature(lguid);
+            Creature* pCreature = who.GetMap()->GetCreature(lguid);
 
             bool ok_loot = pCreature && pCreature->IsAlive() == (player->getClass() == CLASS_ROGUE && pCreature->lootForPickPocketed);
 
-            if (!ok_loot || !InReach(*pCreature, *_player, INTERACTION_DISTANCE))
+            if (!ok_loot || !InReach(*pCreature, who, INTERACTION_DISTANCE))
             {
                 player->SendLootRelease(lguid);
                 return;
@@ -248,11 +249,11 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The unused incoming packet.
  */
-void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
+void spoils::Money(Player& who, WorldPacket& /*recv_data*/)
 {
     DEBUG_LOG("WORLD: CMSG_LOOT_MONEY");
 
-    Player* player = GetPlayer();
+    Player* player = &who;
     ObjectGuid guid = player->GetLootGuid();
     if (!guid)
     {
@@ -266,10 +267,10 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
     {
         case HIGHGUID_GAMEOBJECT:
         {
-            GameObject* pGameObject = GetPlayer()->GetMap()->GetGameObject(guid);
+            GameObject* pGameObject = who.GetMap()->GetGameObject(guid);
 
             // not check distance for GO in case owned GO (fishing bobber case, for example)
-            if (pGameObject && (pGameObject->GetOwnerGuid() == _player->GetObjectGuid() || InReach(*pGameObject, *_player, INTERACTION_DISTANCE)))
+            if (pGameObject && (pGameObject->GetOwnerGuid() == who.GetObjectGuid() || InReach(*pGameObject, who, INTERACTION_DISTANCE)))
             {
                 pLoot = &pGameObject->loot;
             }
@@ -280,9 +281,9 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
         /* we have a special case here for the looting of player corpses in battlegrounds. */
         case HIGHGUID_CORPSE:
         {
-            Corpse* bones = _player->GetMap()->GetCorpse(guid);
+            Corpse* bones = who.GetMap()->GetCorpse(guid);
 
-            if (bones && InReach(*bones, *_player, INTERACTION_DISTANCE))
+            if (bones && InReach(*bones, who, INTERACTION_DISTANCE))
             {
                 pLoot = &bones->loot;
                 pLoot->NotifyMoneyRemoved();
@@ -296,7 +297,7 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
         }
         case HIGHGUID_ITEM:
         {
-            pItem = GetPlayer()->GetItemByGuid(guid);
+            pItem = who.GetItemByGuid(guid);
             if (!pItem || !pItem->HasGeneratedLoot())
             {
                 return;
@@ -307,11 +308,11 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
         }
         case HIGHGUID_UNIT:
         {
-            Creature* pCreature = GetPlayer()->GetMap()->GetCreature(guid);
+            Creature* pCreature = who.GetMap()->GetCreature(guid);
 
             bool ok_loot = pCreature && pCreature->IsAlive() == (player->getClass() == CLASS_ROGUE && pCreature->lootForPickPocketed);
 
-            if (ok_loot && InReach(*pCreature, *_player, INTERACTION_DISTANCE))
+            if (ok_loot && InReach(*pCreature, who, INTERACTION_DISTANCE))
             {
                 pLoot = &pCreature->loot ;
             }
@@ -329,7 +330,7 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
         if (!guid.IsItem() && player->GetGroup())
         {
             // Pickpocket case
-            if (player->getClass() == CLASS_ROGUE && GetPlayer()->GetMap()->GetCreature(guid)->lootForPickPocketed)
+            if (player->getClass() == CLASS_ROGUE && who.GetMap()->GetCreature(guid)->lootForPickPocketed)
             {
                 player->ModifyMoney(pLoot->gold);
             }
@@ -384,7 +385,7 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
  *
  * @param recv_data The incoming loot request packet.
  */
-void WorldSession::HandleLootOpcode(WorldPacket& recv_data)
+void spoils::Open(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_LOOT");
 
@@ -392,12 +393,12 @@ void WorldSession::HandleLootOpcode(WorldPacket& recv_data)
     recv_data >> guid;
 
     // Check possible cheat
-    if (!_player->IsAlive())
+    if (!who.IsAlive())
     {
         return;
     }
 
-    GetPlayer()->SendLoot(guid, LOOT_CORPSE);
+    who.SendLoot(guid, LOOT_CORPSE);
 }
 
 /**
@@ -405,7 +406,7 @@ void WorldSession::HandleLootOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The incoming loot release packet.
  */
-void WorldSession::HandleLootReleaseOpcode(WorldPacket& recv_data)
+void spoils::Release(WorldSession& session, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_LOOT_RELEASE");
 
@@ -413,9 +414,9 @@ void WorldSession::HandleLootReleaseOpcode(WorldPacket& recv_data)
     // use internal stored guid
     recv_data.read_skip<uint64>();                          // guid;
 
-    if (ObjectGuid lootGuid = GetPlayer()->GetLootGuid())
+    if (ObjectGuid lootGuid = session.GetPlayer()->GetLootGuid())
     {
-        DoLootRelease(lootGuid);
+        session.DoLootRelease(lootGuid);
     }
 }
 
@@ -672,7 +673,7 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
  *
  * @param recv_data The incoming master-loot packet.
  */
-void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recv_data)
+void spoils::MasterGive(Player& who, WorldPacket& recv_data)
 {
     uint8 slotid;
     ObjectGuid lootguid;
@@ -680,9 +681,9 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recv_data)
 
     recv_data >> lootguid >> slotid >> target_playerguid;
 
-    if (!_player->GetGroup() || _player->GetGroup()->GetLooterGuid() != _player->GetObjectGuid())
+    if (!who.GetGroup() || who.GetGroup()->GetLooterGuid() != who.GetObjectGuid())
     {
-        _player->SendLootRelease(GetPlayer()->GetLootGuid());
+        who.SendLootRelease(who.GetLootGuid());
         return;
     }
 
@@ -694,7 +695,7 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recv_data)
 
     DEBUG_LOG("WorldSession::HandleLootMasterGiveOpcode (CMSG_LOOT_MASTER_GIVE, 0x02A3) Target = %s [%s].", target_playerguid.GetString().c_str(), target->GetName());
 
-    if (_player->GetLootGuid() != lootguid)
+    if (who.GetLootGuid() != lootguid)
     {
         return;
     }
@@ -703,7 +704,7 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recv_data)
 
     if (lootguid.IsCreature())
     {
-        Creature* pCreature = GetPlayer()->GetMap()->GetCreature(lootguid);
+        Creature* pCreature = who.GetMap()->GetCreature(lootguid);
         if (!pCreature)
         {
             return;
@@ -713,7 +714,7 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recv_data)
     }
     else if (lootguid.IsGameObject())
     {
-        GameObject* pGO = GetPlayer()->GetMap()->GetGameObject(lootguid);
+        GameObject* pGO = who.GetMap()->GetGameObject(lootguid);
         if (!pGO)
         {
             return;
@@ -728,7 +729,7 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recv_data)
 
     if (slotid > pLoot->items.size())
     {
-        DEBUG_LOG("AutoLootItem: Player %s might be using a hack! (slot %d, size %zu)", GetPlayer()->GetName(), slotid, pLoot->items.size());
+        DEBUG_LOG("AutoLootItem: Player %s might be using a hack! (slot %d, size %zu)", who.GetName(), slotid, pLoot->items.size());
         return;
     }
 

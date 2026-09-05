@@ -49,6 +49,7 @@
 #include "Log.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include "GroupAnswers.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "Player.h"
@@ -91,7 +92,7 @@ void WorldSession::SendPartyResult(PartyOperation operation, const std::string& 
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleGroupInviteOpcode(WorldPacket& recv_data)
+void groups::GroupInvite(Player& who, WorldPacket& recv_data)
 {
     std::string membername;
     recv_data >> membername;
@@ -101,43 +102,43 @@ void WorldSession::HandleGroupInviteOpcode(WorldPacket& recv_data)
     // cheating
     if (!normalizePlayerName(membername))
     {
-        SendPartyResult(PARTY_OP_INVITE, membername, ERR_BAD_PLAYER_NAME_S);
+        who.GetSession()->SendPartyResult(PARTY_OP_INVITE, membername, ERR_BAD_PLAYER_NAME_S);
         return;
     }
 
     Player* player = sObjectMgr.GetPlayer(membername.c_str());
 
     // no player or cheat self-invite
-    if (!player || player == GetPlayer())
+    if (!player || player == &who)
     {
-        SendPartyResult(PARTY_OP_INVITE, membername, ERR_BAD_PLAYER_NAME_S);
+        who.GetSession()->SendPartyResult(PARTY_OP_INVITE, membername, ERR_BAD_PLAYER_NAME_S);
         return;
     }
 
     // can't group with
-    if (!sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_GROUP) && GetPlayer()->GetTeam() != player->GetTeam())
+    if (!sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_GROUP) && who.GetTeam() != player->GetTeam())
     {
-        SendPartyResult(PARTY_OP_INVITE, membername, ERR_PLAYER_WRONG_FACTION);
+        who.GetSession()->SendPartyResult(PARTY_OP_INVITE, membername, ERR_PLAYER_WRONG_FACTION);
         return;
     }
 
-    if (GetPlayer()->GetInstanceId() != 0 && player->GetInstanceId() != 0 && GetPlayer()->GetInstanceId() != player->GetInstanceId() && GetPlayer()->GetMapId() == player->GetMapId())
+    if (who.GetInstanceId() != 0 && player->GetInstanceId() != 0 && who.GetInstanceId() != player->GetInstanceId() && who.GetMapId() == player->GetMapId())
     {
-        SendPartyResult(PARTY_OP_INVITE, membername, ERR_ALREADY_IN_GROUP_S); // error message is not so appropriated but no other option for classic
+        who.GetSession()->SendPartyResult(PARTY_OP_INVITE, membername, ERR_ALREADY_IN_GROUP_S); // error message is not so appropriated but no other option for classic
         return;
     }
 
     // just ignore us
-    if (player->GetSocial()->HasIgnore(GetPlayer()->GetObjectGuid()))
+    if (player->GetSocial()->HasIgnore(who.GetObjectGuid()))
     {
-        SendPartyResult(PARTY_OP_INVITE, membername, ERR_IGNORING_YOU_S);
+        who.GetSession()->SendPartyResult(PARTY_OP_INVITE, membername, ERR_IGNORING_YOU_S);
         return;
     }
 
-    Group* group = GetPlayer()->GetGroup();
+    Group* group = who.GetGroup();
     if (group && group->isBGGroup())
     {
-        group = GetPlayer()->GetOriginalGroup();
+        group = who.GetOriginalGroup();
     }
 
     Group* group2 = player->GetGroup();
@@ -148,22 +149,22 @@ void WorldSession::HandleGroupInviteOpcode(WorldPacket& recv_data)
     // player already in another group or invited
     if (group2 || player->GetGroupInvite())
     {
-        SendPartyResult(PARTY_OP_INVITE, membername, ERR_ALREADY_IN_GROUP_S);
+        who.GetSession()->SendPartyResult(PARTY_OP_INVITE, membername, ERR_ALREADY_IN_GROUP_S);
         return;
     }
 
     if (group)
     {
         // not have permissions for invite
-        if (!group->IsLeader(GetPlayer()->GetObjectGuid()) && !group->IsAssistant(GetPlayer()->GetObjectGuid()))
+        if (!group->IsLeader(who.GetObjectGuid()) && !group->IsAssistant(who.GetObjectGuid()))
         {
-            SendPartyResult(PARTY_OP_INVITE, "", ERR_NOT_LEADER);
+            who.GetSession()->SendPartyResult(PARTY_OP_INVITE, "", ERR_NOT_LEADER);
             return;
         }
         // not have place
         if (group->IsFull())
         {
-            SendPartyResult(PARTY_OP_INVITE, "", ERR_GROUP_FULL);
+            who.GetSession()->SendPartyResult(PARTY_OP_INVITE, "", ERR_GROUP_FULL);
             return;
         }
     }
@@ -175,7 +176,7 @@ void WorldSession::HandleGroupInviteOpcode(WorldPacket& recv_data)
     {
         group = new Group;
         // new group: if can't add then delete
-        if (!group->AddLeaderInvite(GetPlayer()))
+        if (!group->AddLeaderInvite(&who))
         {
             delete group;
             return;
@@ -197,10 +198,10 @@ void WorldSession::HandleGroupInviteOpcode(WorldPacket& recv_data)
 
     // ok, we do it
     WorldPacket data(SMSG_GROUP_INVITE, 10);                // guess size
-    data << GetPlayer()->GetName();                         // max length: 48
+    data << who.GetName();                         // max length: 48
     player->GetSession()->SendPacket(&data);
 
-    SendPartyResult(PARTY_OP_INVITE, membername, ERR_PARTY_RESULT_OK);
+    who.GetSession()->SendPartyResult(PARTY_OP_INVITE, membername, ERR_PARTY_RESULT_OK);
 }
 
 /**
@@ -208,23 +209,23 @@ void WorldSession::HandleGroupInviteOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleGroupAcceptOpcode(WorldPacket& /*recv_data*/)
+void groups::GroupAccept(Player& who, WorldPacket& /*recv_data*/)
 {
-    Group* group = GetPlayer()->GetGroupInvite();
+    Group* group = who.GetGroupInvite();
     if (!group)
     {
         return;
     }
 
-    if (group->GetLeaderGuid() == GetPlayer()->GetObjectGuid())
+    if (group->GetLeaderGuid() == who.GetObjectGuid())
     {
         sLog.outError("HandleGroupAcceptOpcode: %s tried to accept an invite to his own group",
-            GetPlayer()->GetGuidStr().c_str());
+            who.GetGuidStr().c_str());
         return;
     }
 
     // remove in from invites in any case
-    group->RemoveInvite(GetPlayer());
+    group->RemoveInvite(&who);
 
     /** error handling **/
 
@@ -233,7 +234,7 @@ void WorldSession::HandleGroupAcceptOpcode(WorldPacket& /*recv_data*/)
     // not have place
     if (group->IsFull())
     {
-        SendPartyResult(PARTY_OP_INVITE, "", ERR_GROUP_FULL);
+        who.GetSession()->SendPartyResult(PARTY_OP_INVITE, "", ERR_GROUP_FULL);
         return;
     }
 
@@ -257,7 +258,7 @@ void WorldSession::HandleGroupAcceptOpcode(WorldPacket& /*recv_data*/)
     }
 
     // everything is fine, do it, PLAYER'S GROUP IS SET IN ADDMEMBER!!!
-    if (!group->AddMember(GetPlayer()->GetObjectGuid(), GetPlayer()->GetName()))
+    if (!group->AddMember(who.GetObjectGuid(), who.GetName()))
     {
         return;
     }
@@ -268,9 +269,9 @@ void WorldSession::HandleGroupAcceptOpcode(WorldPacket& /*recv_data*/)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleGroupDeclineOpcode(WorldPacket& /*recv_data*/)
+void groups::GroupDecline(Player& who, WorldPacket& /*recv_data*/)
 {
-    Group*  group  = GetPlayer()->GetGroupInvite();
+    Group*  group  = who.GetGroupInvite();
     if (!group)
     {
         return;
@@ -280,7 +281,7 @@ void WorldSession::HandleGroupDeclineOpcode(WorldPacket& /*recv_data*/)
     Player* leader = sObjectMgr.GetPlayer(group->GetLeaderGuid());
 
     // uninvite, group can be deleted
-    GetPlayer()->UninviteFromGroup();
+    who.UninviteFromGroup();
 
     if (!leader || !leader->GetSession())
     {
@@ -289,7 +290,7 @@ void WorldSession::HandleGroupDeclineOpcode(WorldPacket& /*recv_data*/)
 
     // report
     WorldPacket data(SMSG_GROUP_DECLINE, 10);               // guess size
-    data << GetPlayer()->GetName();
+    data << who.GetName();
     leader->GetSession()->SendPacket(&data);
 }
 
@@ -298,26 +299,26 @@ void WorldSession::HandleGroupDeclineOpcode(WorldPacket& /*recv_data*/)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleGroupUninviteGuidOpcode(WorldPacket& recv_data)
+void groups::GroupUninviteGuid(Player& who, WorldPacket& recv_data)
 {
     ObjectGuid guid;
     recv_data >> guid;
 
     // can't uninvite yourself
-    if (guid == GetPlayer()->GetObjectGuid())
+    if (guid == who.GetObjectGuid())
     {
-        sLog.outError("WorldSession::HandleGroupUninviteGuidOpcode: leader %s tried to uninvite himself from the group.", GetPlayer()->GetGuidStr().c_str());
+        sLog.outError("WorldSession::HandleGroupUninviteGuidOpcode: leader %s tried to uninvite himself from the group.", who.GetGuidStr().c_str());
         return;
     }
 
-    PartyResult res = GetPlayer()->CanUninviteFromGroup();
+    PartyResult res = who.CanUninviteFromGroup();
     if (res != ERR_PARTY_RESULT_OK)
     {
-        SendPartyResult(PARTY_OP_LEAVE, "", res);
+        who.GetSession()->SendPartyResult(PARTY_OP_LEAVE, "", res);
         return;
     }
 
-    Group* grp = GetPlayer()->GetGroup();
+    Group* grp = who.GetGroup();
     if (!grp)
     {
         return;
@@ -335,7 +336,7 @@ void WorldSession::HandleGroupUninviteGuidOpcode(WorldPacket& recv_data)
         return;
     }
 
-    SendPartyResult(PARTY_OP_LEAVE, "", ERR_TARGET_NOT_IN_GROUP_S);
+    who.GetSession()->SendPartyResult(PARTY_OP_LEAVE, "", ERR_TARGET_NOT_IN_GROUP_S);
 }
 
 /**
@@ -343,7 +344,7 @@ void WorldSession::HandleGroupUninviteGuidOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleGroupUninviteOpcode(WorldPacket& recv_data)
+void groups::GroupUninvite(Player& who, WorldPacket& recv_data)
 {
     std::string membername;
     recv_data >> membername;
@@ -355,20 +356,20 @@ void WorldSession::HandleGroupUninviteOpcode(WorldPacket& recv_data)
     }
 
     // can't uninvite yourself
-    if (GetPlayer()->GetName() == membername)
+    if (who.GetName() == membername)
     {
-        sLog.outError("WorldSession::HandleGroupUninviteOpcode: leader %s tried to uninvite himself from the group.", GetPlayer()->GetGuidStr().c_str());
+        sLog.outError("WorldSession::HandleGroupUninviteOpcode: leader %s tried to uninvite himself from the group.", who.GetGuidStr().c_str());
         return;
     }
 
-    PartyResult res = GetPlayer()->CanUninviteFromGroup();
+    PartyResult res = who.CanUninviteFromGroup();
     if (res != ERR_PARTY_RESULT_OK)
     {
-        SendPartyResult(PARTY_OP_LEAVE, "", res);
+        who.GetSession()->SendPartyResult(PARTY_OP_LEAVE, "", res);
         return;
     }
 
-    Group* grp = GetPlayer()->GetGroup();
+    Group* grp = who.GetGroup();
     if (!grp)
     {
         return;
@@ -386,7 +387,7 @@ void WorldSession::HandleGroupUninviteOpcode(WorldPacket& recv_data)
         return;
     }
 
-    SendPartyResult(PARTY_OP_LEAVE, membername, ERR_TARGET_NOT_IN_GROUP_S);
+    who.GetSession()->SendPartyResult(PARTY_OP_LEAVE, membername, ERR_TARGET_NOT_IN_GROUP_S);
 }
 
 /**
@@ -394,12 +395,12 @@ void WorldSession::HandleGroupUninviteOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleGroupSetLeaderOpcode(WorldPacket& recv_data)
+void groups::GroupSetLeader(Player& who, WorldPacket& recv_data)
 {
     ObjectGuid guid;
     recv_data >> guid;
 
-    Group* group = GetPlayer()->GetGroup();
+    Group* group = who.GetGroup();
     if (!group)
     {
         return;
@@ -408,7 +409,7 @@ void WorldSession::HandleGroupSetLeaderOpcode(WorldPacket& recv_data)
     Player* player = sObjectMgr.GetPlayer(guid);
 
     /** error handling **/
-    if (!player || !group->IsLeader(GetPlayer()->GetObjectGuid()) || player->GetGroup() != group)
+    if (!player || !group->IsLeader(who.GetObjectGuid()) || player->GetGroup() != group)
     {
         return;
     }
@@ -424,16 +425,16 @@ void WorldSession::HandleGroupSetLeaderOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleGroupDisbandOpcode(WorldPacket& /*recv_data*/)
+void groups::GroupDisband(Player& who, WorldPacket& /*recv_data*/)
 {
-    if (!GetPlayer()->GetGroup())
+    if (!who.GetGroup())
     {
         return;
     }
 
-    if (_player->InBattleGround())
+    if (who.InBattleGround())
     {
-        SendPartyResult(PARTY_OP_INVITE, "", ERR_NOT_LEADER);  // error message is not so appropriated but no other option for classic
+        who.GetSession()->SendPartyResult(PARTY_OP_INVITE, "", ERR_NOT_LEADER);  // error message is not so appropriated but no other option for classic
         return;
     }
 
@@ -442,9 +443,9 @@ void WorldSession::HandleGroupDisbandOpcode(WorldPacket& /*recv_data*/)
     /********************/
 
     // everything is fine, do it
-    SendPartyResult(PARTY_OP_LEAVE, GetPlayer()->GetName(), ERR_PARTY_RESULT_OK);
+    who.GetSession()->SendPartyResult(PARTY_OP_LEAVE, who.GetName(), ERR_PARTY_RESULT_OK);
 
-    GetPlayer()->RemoveFromGroup();
+    who.RemoveFromGroup();
 }
 
 /**
@@ -452,21 +453,21 @@ void WorldSession::HandleGroupDisbandOpcode(WorldPacket& /*recv_data*/)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleLootMethodOpcode(WorldPacket& recv_data)
+void groups::LootRules(Player& who, WorldPacket& recv_data)
 {
     uint32 lootMethod;
     ObjectGuid lootMaster;
     uint32 lootThreshold;
     recv_data >> lootMethod >> lootMaster >> lootThreshold;
 
-    Group* group = GetPlayer()->GetGroup();
+    Group* group = who.GetGroup();
     if (!group)
     {
         return;
     }
 
     /** error handling **/
-    if (!group->IsLeader(GetPlayer()->GetObjectGuid()))
+    if (!group->IsLeader(who.GetObjectGuid()))
     {
         return;
     }
@@ -485,7 +486,7 @@ void WorldSession::HandleLootMethodOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleLootRoll(WorldPacket& recv_data)
+void groups::LootRoll(Player& who, WorldPacket& recv_data)
 {
     ObjectGuid lootedTarget;
     uint32 itemSlot;
@@ -496,7 +497,7 @@ void WorldSession::HandleLootRoll(WorldPacket& recv_data)
 
     // DEBUG_LOG("WORLD RECIEVE CMSG_LOOT_ROLL, From:%u, Numberofplayers:%u, rollType:%u", (uint32)Guid, NumberOfPlayers, rollType);
 
-    Group* group = GetPlayer()->GetGroup();
+    Group* group = who.GetGroup();
     if (!group)
     {
         return;
@@ -508,7 +509,7 @@ void WorldSession::HandleLootRoll(WorldPacket& recv_data)
     }
 
     // everything is fine, do it, if false then some cheating problem found (result not used in pre-3.0)
-    group->CountRollVote(GetPlayer(), lootedTarget, itemSlot, RollVote(rollType));
+    group->CountRollVote(&who, lootedTarget, itemSlot, RollVote(rollType));
 }
 
 /**
@@ -516,13 +517,13 @@ void WorldSession::HandleLootRoll(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleMinimapPingOpcode(WorldPacket& recv_data)
+void groups::MinimapPing(Player& who, WorldPacket& recv_data)
 {
     float x, y;
     recv_data >> x;
     recv_data >> y;
 
-    if (!GetPlayer()->GetGroup())
+    if (!who.GetGroup())
     {
         return;
     }
@@ -535,10 +536,10 @@ void WorldSession::HandleMinimapPingOpcode(WorldPacket& recv_data)
 
     // everything is fine, do it
     WorldPacket data(MSG_MINIMAP_PING, (8 + 4 + 4));
-    data << GetPlayer()->GetObjectGuid();
+    data << who.GetObjectGuid();
     data << float(x);
     data << float(y);
-    GetPlayer()->GetGroup()->BroadcastPacket(&data, true, -1, GetPlayer()->GetObjectGuid());
+    who.GetGroup()->BroadcastPacket(&data, true, -1, who.GetObjectGuid());
 }
 
 /**
@@ -546,7 +547,7 @@ void WorldSession::HandleMinimapPingOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleRandomRollOpcode(WorldPacket& recv_data)
+void groups::RandomRoll(Player& who, WorldPacket& recv_data)
 {
     uint32 minimum, maximum, roll;
     recv_data >> minimum;
@@ -569,14 +570,14 @@ void WorldSession::HandleRandomRollOpcode(WorldPacket& recv_data)
     data << uint32(minimum);
     data << uint32(maximum);
     data << uint32(roll);
-    data << GetPlayer()->GetObjectGuid();
-    if (GetPlayer()->GetGroup())
+    data << who.GetObjectGuid();
+    if (who.GetGroup())
     {
-        GetPlayer()->GetGroup()->BroadcastPacket(&data, false);
+        who.GetGroup()->BroadcastPacket(&data, false);
     }
     else
     {
-        SendPacket(&data);
+        who.GetSession()->SendPacket(&data);
     }
 }
 
@@ -585,12 +586,12 @@ void WorldSession::HandleRandomRollOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleRaidTargetUpdateOpcode(WorldPacket& recv_data)
+void groups::RaidTargetUpdate(Player& who, WorldPacket& recv_data)
 {
     uint8  x;
     recv_data >> x;
 
-    Group* group = GetPlayer()->GetGroup();
+    Group* group = who.GetGroup();
     if (!group)
     {
         return;
@@ -603,12 +604,12 @@ void WorldSession::HandleRaidTargetUpdateOpcode(WorldPacket& recv_data)
     // everything is fine, do it
     if (x == 0xFF)                                          // target icon request
     {
-        group->SendTargetIconList(this);
+        group->SendTargetIconList(who.GetSession());
     }
     else                                                    // target icon update
     {
-        if (!group->IsLeader(GetPlayer()->GetObjectGuid()) &&
-            !group->IsAssistant(GetPlayer()->GetObjectGuid()))
+        if (!group->IsLeader(who.GetObjectGuid()) &&
+            !group->IsAssistant(who.GetObjectGuid()))
         {
             return;
         }
@@ -624,21 +625,21 @@ void WorldSession::HandleRaidTargetUpdateOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleGroupRaidConvertOpcode(WorldPacket& /*recv_data*/)
+void groups::GroupRaidConvert(Player& who, WorldPacket& /*recv_data*/)
 {
-    Group* group = GetPlayer()->GetGroup();
+    Group* group = who.GetGroup();
     if (!group)
     {
         return;
     }
 
-    if (_player->InBattleGround())
+    if (who.InBattleGround())
     {
         return;
     }
 
     /** error handling **/
-    if (!group->IsLeader(GetPlayer()->GetObjectGuid()) || group->GetMembersCount() < 2)
+    if (!group->IsLeader(who.GetObjectGuid()) || group->GetMembersCount() < 2)
     {
         return;
     }
@@ -646,7 +647,7 @@ void WorldSession::HandleGroupRaidConvertOpcode(WorldPacket& /*recv_data*/)
     /********************/
 
     // everything is fine, do it (is it 0 (PARTY_OP_INVITE) correct code)
-    SendPartyResult(PARTY_OP_INVITE, "", ERR_PARTY_RESULT_OK);
+    who.GetSession()->SendPartyResult(PARTY_OP_INVITE, "", ERR_PARTY_RESULT_OK);
     group->ConvertToRaid();
 }
 
@@ -655,7 +656,7 @@ void WorldSession::HandleGroupRaidConvertOpcode(WorldPacket& /*recv_data*/)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleGroupChangeSubGroupOpcode(WorldPacket& recv_data)
+void groups::GroupChangeSubGroup(Player& who, WorldPacket& recv_data)
 {
     std::string name;
     uint8 groupNr;
@@ -669,15 +670,15 @@ void WorldSession::HandleGroupChangeSubGroupOpcode(WorldPacket& recv_data)
     }
 
     // we will get correct pointer for group here, so we don't have to check if group is BG raid
-    Group* group = GetPlayer()->GetGroup();
+    Group* group = who.GetGroup();
     if (!group)
     {
         return;
     }
 
     /** error handling **/
-    if (!group->IsLeader(GetPlayer()->GetObjectGuid()) &&
-        !group->IsAssistant(GetPlayer()->GetObjectGuid()))
+    if (!group->IsLeader(who.GetObjectGuid()) &&
+        !group->IsAssistant(who.GetObjectGuid()))
     {
         return;
     }
@@ -708,21 +709,21 @@ void WorldSession::HandleGroupChangeSubGroupOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleGroupAssistantLeaderOpcode(WorldPacket& recv_data)
+void groups::GroupAssistantLeader(Player& who, WorldPacket& recv_data)
 {
     ObjectGuid guid;
     uint8 flag;
     recv_data >> guid;
     recv_data >> flag;
 
-    Group* group = GetPlayer()->GetGroup();
+    Group* group = who.GetGroup();
     if (!group)
     {
         return;
     }
 
     /** error handling **/
-    if (!group->IsLeader(GetPlayer()->GetObjectGuid()))
+    if (!group->IsLeader(who.GetObjectGuid()))
     {
         return;
     }
@@ -738,7 +739,7 @@ void WorldSession::HandleGroupAssistantLeaderOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandlePartyAssignmentOpcode(WorldPacket& recv_data)
+void groups::PartyAssignment(Player& who, WorldPacket& recv_data)
 {
     uint8 flag1, flag2;
     ObjectGuid guid;
@@ -747,7 +748,7 @@ void WorldSession::HandlePartyAssignmentOpcode(WorldPacket& recv_data)
 
     DEBUG_LOG("MSG_PARTY_ASSIGNMENT");
 
-    Group* group = GetPlayer()->GetGroup();
+    Group* group = who.GetGroup();
     if (!group)
     {
         return;
@@ -759,7 +760,7 @@ void WorldSession::HandlePartyAssignmentOpcode(WorldPacket& recv_data)
     //     0x2
 
     /** error handling **/
-    if (!group->IsLeader(GetPlayer()->GetObjectGuid()))
+    if (!group->IsLeader(who.GetObjectGuid()))
     {
         return;
     }
@@ -782,19 +783,19 @@ void WorldSession::HandlePartyAssignmentOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleRaidReadyCheckOpcode(WorldPacket& recv_data)
+void groups::RaidReadyCheck(Player& who, WorldPacket& recv_data)
 {
     if (recv_data.empty())                                  // request
     {
-        Group* group = GetPlayer()->GetGroup();
+        Group* group = who.GetGroup();
         if (!group)
         {
             return;
         }
 
         /** error handling **/
-        if (!group->IsLeader(GetPlayer()->GetObjectGuid()) &&
-            !group->IsAssistant(GetPlayer()->GetObjectGuid()))
+        if (!group->IsLeader(who.GetObjectGuid()) &&
+            !group->IsAssistant(who.GetObjectGuid()))
         {
             return;
         }
@@ -803,7 +804,7 @@ void WorldSession::HandleRaidReadyCheckOpcode(WorldPacket& recv_data)
 
         // everything is fine, do it
         WorldPacket data(MSG_RAID_READY_CHECK, 0);
-        group->BroadcastPacket(&data, false, -1, GetPlayer()->GetObjectGuid());
+        group->BroadcastPacket(&data, false, -1, who.GetObjectGuid());
 
         group->OfflineReadyCheck();
     }
@@ -812,7 +813,7 @@ void WorldSession::HandleRaidReadyCheckOpcode(WorldPacket& recv_data)
         uint8 state;
         recv_data >> state;
 
-        Group* group = GetPlayer()->GetGroup();
+        Group* group = who.GetGroup();
         if (!group)
         {
             return;
@@ -820,7 +821,7 @@ void WorldSession::HandleRaidReadyCheckOpcode(WorldPacket& recv_data)
 
         // everything is fine, do it
         WorldPacket data(MSG_RAID_READY_CHECK, 9);
-        data << GetPlayer()->GetObjectGuid();
+        data << who.GetObjectGuid();
         data << uint8(state);
         group->BroadcastReadyCheck(&data);
     }
@@ -831,13 +832,13 @@ void WorldSession::HandleRaidReadyCheckOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleRaidReadyCheckFinishedOpcode(WorldPacket& /*recv_data*/)
+void groups::RaidReadyCheckFinished(Player& who, WorldPacket& /*recv_data*/)
 {
-    // Group* group = GetPlayer()->GetGroup();
+    // Group* group = who.GetGroup();
     // if (!group)
     //    return;
 
-    // if (!group->IsLeader(GetPlayer()->GetGUID()) && !group->IsAssistant(GetPlayer()->GetGUID()))
+    // if (!group->IsLeader(who.GetGUID()) && !group->IsAssistant(who.GetGUID()))
     //    return;
 
     // Is any reaction need?
@@ -1063,7 +1064,7 @@ void WorldSession::BuildPartyMemberStatsChangedPacket(Player* player, WorldPacke
 }
 
 /*this procedure handles clients CMSG_REQUEST_PARTY_MEMBER_STATS request*/
-void WorldSession::HandleRequestPartyMemberStatsOpcode(WorldPacket& recv_data)
+void groups::RequestPartyMemberStats(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_REQUEST_PARTY_MEMBER_STATS");
     ObjectGuid guid;
@@ -1076,7 +1077,7 @@ void WorldSession::HandleRequestPartyMemberStatsOpcode(WorldPacket& recv_data)
         data << guid.WriteAsPacked();
         data << uint32(GROUP_UPDATE_FLAG_STATUS);
         data << uint8(MEMBER_STATUS_OFFLINE);
-        SendPacket(&data);
+        who.GetSession()->SendPacket(&data);
         return;
     }
 
@@ -1193,7 +1194,7 @@ void WorldSession::HandleRequestPartyMemberStatsOpcode(WorldPacket& recv_data)
         data.put<uint16>(petMaskPos, petauramask1);         // GROUP_UPDATE_FLAG_PET_AURAS_2
     }
 
-    SendPacket(&data);
+    who.GetSession()->SendPacket(&data);
 }
 
 /**
@@ -1201,10 +1202,10 @@ void WorldSession::HandleRequestPartyMemberStatsOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleRequestRaidInfoOpcode(WorldPacket& /*recv_data*/)
+void groups::RequestRaidInfo(Player& who, WorldPacket& /*recv_data*/)
 {
     // every time the player checks the character screen
-    _player->SendRaidInfo();
+    who.SendRaidInfo();
 }
 
 /**
@@ -1212,7 +1213,7 @@ void WorldSession::HandleRequestRaidInfoOpcode(WorldPacket& /*recv_data*/)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleOptOutOfLootOpcode(WorldPacket& recv_data)
+void groups::OptOutOfLoot(WorldSession& session, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_OPT_OUT_OF_LOOT");
 
@@ -1220,7 +1221,7 @@ void WorldSession::HandleOptOutOfLootOpcode(WorldPacket& recv_data)
     recv_data >> unkn;
 
     // ignore if player not loaded
-    if (!GetPlayer())                                       // needed because STATUS_AUTHED
+    if (!session.GetPlayer())                                       // needed because STATUS_AUTHED
     {
         if (unkn != 0)
         {

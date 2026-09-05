@@ -41,6 +41,7 @@
 #include "Log.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include "CombatAnswers.h"
 #include "ObjectGuid.h"
 #include "Player.h"
 
@@ -58,7 +59,7 @@
  *
  * On failure, sends SMSG_ATTACKSTOP to cancel the attack on client.
  */
-void WorldSession::HandleAttackSwingOpcode(WorldPacket& recv_data)
+void combat::AttackSwing(Player& who, WorldPacket& recv_data)
 {
     ObjectGuid guid;
     recv_data >> guid;
@@ -71,23 +72,23 @@ void WorldSession::HandleAttackSwingOpcode(WorldPacket& recv_data)
         return;
     }
 
-    Unit* pEnemy = _player->GetMap()->GetUnit(guid);
+    Unit* pEnemy = who.GetMap()->GetUnit(guid);
 
     if (!pEnemy)
     {
         sLog.outError("WORLD: Enemy %s not found", guid.GetString().c_str());
 
         // stop attack state at client
-        SendAttackStop(nullptr);
+        who.GetSession()->SendAttackStop(nullptr);
         return;
     }
 
-    if (IsFriendly(*_player, *pEnemy) || pEnemy->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE))
+    if (IsFriendly(who, *pEnemy) || pEnemy->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE))
     {
         sLog.outError("WORLD: Enemy %s is friendly", guid.GetString().c_str());
 
         // stop attack state at client
-        SendAttackStop(pEnemy);
+        who.GetSession()->SendAttackStop(pEnemy);
         return;
     }
 
@@ -95,11 +96,11 @@ void WorldSession::HandleAttackSwingOpcode(WorldPacket& recv_data)
     {
         // client can generate swing to known dead target if autoswitch between autoshot and autohit is enabled in client options
         // stop attack state at client
-        SendAttackStop(pEnemy);
+        who.GetSession()->SendAttackStop(pEnemy);
         return;
     }
 
-    _player->Attack(pEnemy, true);
+    who.Attack(pEnemy, true);
 }
 
 /**
@@ -109,9 +110,9 @@ void WorldSession::HandleAttackSwingOpcode(WorldPacket& recv_data)
  * Immediately stops the player's auto-attack. Called when player
  * releases the attack button or switches targets.
  */
-void WorldSession::HandleAttackStopOpcode(WorldPacket& /*recv_data*/)
+void combat::AttackStop(Player& who, WorldPacket& /*recv_data*/)
 {
-    GetPlayer()->AttackStop();
+    who.AttackStop();
 }
 
 /**
@@ -125,12 +126,12 @@ void WorldSession::HandleAttackStopOpcode(WorldPacket& /*recv_data*/)
  *
  * @note Invalid sheath values are logged but ignored
  */
-void WorldSession::HandleSetSheathedOpcode(WorldPacket& recv_data)
+void combat::SetSheathed(Player& who, WorldPacket& recv_data)
 {
     uint32 sheathed;
     recv_data >> sheathed;
 
-    DEBUG_LOG("WORLD: Received opcode CMSG_SETSHEATHED for %s - value: %u", GetPlayer()->GetGuidStr().c_str(), sheathed);
+    DEBUG_LOG("WORLD: Received opcode CMSG_SETSHEATHED for %s - value: %u", who.GetGuidStr().c_str(), sheathed);
 
     if (sheathed >= MAX_SHEATH_STATE)
     {
@@ -138,7 +139,7 @@ void WorldSession::HandleSetSheathedOpcode(WorldPacket& recv_data)
         return;
     }
 
-    GetPlayer()->SetSheath(SheathState(sheathed));
+    who.SetSheath(SheathState(sheathed));
 }
 
 /**

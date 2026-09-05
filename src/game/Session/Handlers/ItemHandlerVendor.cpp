@@ -50,6 +50,7 @@
 #include "Common/ServerDefines.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include "ItemVendorAnswers.h"
 #include "Opcodes.h"
 #include "Log.h"
 #include "ObjectMgr.h"
@@ -64,7 +65,7 @@
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleSellItemOpcode(WorldPacket& recv_data)
+void items::SellItem(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_SELL_ITEM");
 
@@ -84,41 +85,41 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recv_data)
         return;
     }
 
-    Creature* pCreature = GetPlayer()->GetNPCIfCanInteractWith(vendorGuid, UNIT_NPC_FLAG_VENDOR);
+    Creature* pCreature = who.GetNPCIfCanInteractWith(vendorGuid, UNIT_NPC_FLAG_VENDOR);
     if (!pCreature)
     {
         DEBUG_LOG("WORLD: HandleSellItemOpcode - %s not found or you can't interact with him.", vendorGuid.GetString().c_str());
-        _player->SendSellError(SELL_ERR_CANT_FIND_VENDOR, nullptr, itemGuid, 0);
+        who.SendSellError(SELL_ERR_CANT_FIND_VENDOR, nullptr, itemGuid, 0);
         return;
     }
 
     // remove fake death
-    if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
+    if (who.hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
+        who.RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
-    Item* pItem = _player->GetItemByGuid(itemGuid);
+    Item* pItem = who.GetItemByGuid(itemGuid);
     if (pItem)
     {
         // prevent sell not owner item
-        if (_player->GetObjectGuid() != pItem->GetOwnerGuid())
+        if (who.GetObjectGuid() != pItem->GetOwnerGuid())
         {
-            _player->SendSellError(SELL_ERR_CANT_SELL_ITEM, pCreature, itemGuid, 0);
+            who.SendSellError(SELL_ERR_CANT_SELL_ITEM, pCreature, itemGuid, 0);
             return;
         }
 
         // prevent sell non empty bag by drag-and-drop at vendor's item list
         if (pItem->IsBag() && !((Bag*)pItem)->IsEmpty())
         {
-            _player->SendSellError(SELL_ERR_CANT_SELL_ITEM, pCreature, itemGuid, 0);
+            who.SendSellError(SELL_ERR_CANT_SELL_ITEM, pCreature, itemGuid, 0);
             return;
         }
 
         // prevent sell currently looted item
-        if (_player->GetLootGuid() == pItem->GetObjectGuid())
+        if (who.GetLootGuid() == pItem->GetObjectGuid())
         {
-            _player->SendSellError(SELL_ERR_CANT_SELL_ITEM, pCreature, itemGuid, 0);
+            who.SendSellError(SELL_ERR_CANT_SELL_ITEM, pCreature, itemGuid, 0);
             return;
         }
 
@@ -132,7 +133,7 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recv_data)
             // prevent sell more items that exist in stack (possible only not from client)
             if (count > pItem->GetCount())
             {
-                _player->SendSellError(SELL_ERR_CANT_SELL_ITEM, pCreature, itemGuid, 0);
+                who.SendSellError(SELL_ERR_CANT_SELL_ITEM, pCreature, itemGuid, 0);
                 return;
             }
         }
@@ -144,48 +145,48 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recv_data)
             {
                 if (count < pItem->GetCount())              // need split items
                 {
-                    Item* pNewItem = pItem->CloneItem(count, _player);
+                    Item* pNewItem = pItem->CloneItem(count, &who);
                     if (!pNewItem)
                     {
                         sLog.outError("WORLD: HandleSellItemOpcode - could not create clone of item %u; count = %u", pItem->GetEntry(), count);
-                        _player->SendSellError(SELL_ERR_CANT_SELL_ITEM, pCreature, itemGuid, 0);
+                        who.SendSellError(SELL_ERR_CANT_SELL_ITEM, pCreature, itemGuid, 0);
                         return;
                     }
 
                     pItem->SetCount(pItem->GetCount() - count);
-                    _player->Journal().ItemLost(pItem->GetEntry(), count);
-                    if (_player->IsInWorld())
+                    who.Journal().ItemLost(pItem->GetEntry(), count);
+                    if (who.IsInWorld())
                     {
-                        pItem->SendCreateUpdateToPlayer(_player);
+                        pItem->SendCreateUpdateToPlayer(&who);
                     }
-                    pItem->SetState(ITEM_CHANGED, _player);
+                    pItem->SetState(ITEM_CHANGED, &who);
 
-                    _player->AddItemToBuyBackSlot(pNewItem);
-                    if (_player->IsInWorld())
+                    who.AddItemToBuyBackSlot(pNewItem);
+                    if (who.IsInWorld())
                     {
-                        pNewItem->SendCreateUpdateToPlayer(_player);
+                        pNewItem->SendCreateUpdateToPlayer(&who);
                     }
                 }
                 else
                 {
-                    _player->Journal().ItemLost(pItem->GetEntry(), pItem->GetCount());
-                    _player->RemoveItem(pItem->GetBagSlot(), pItem->GetSlot(), true);
-                    _player->ItemSaves().Forget(pItem);
-                    _player->AddItemToBuyBackSlot(pItem);
+                    who.Journal().ItemLost(pItem->GetEntry(), pItem->GetCount());
+                    who.RemoveItem(pItem->GetBagSlot(), pItem->GetSlot(), true);
+                    who.ItemSaves().Forget(pItem);
+                    who.AddItemToBuyBackSlot(pItem);
                 }
 
                 uint32 money = pProto->SellPrice * count;
 
-                _player->ModifyMoney(money);
+                who.ModifyMoney(money);
             }
             else
             {
-                _player->SendSellError(SELL_ERR_CANT_SELL_ITEM, pCreature, itemGuid, 0);
+                who.SendSellError(SELL_ERR_CANT_SELL_ITEM, pCreature, itemGuid, 0);
             }
             return;
         }
     }
-    _player->SendSellError(SELL_ERR_CANT_FIND_ITEM, pCreature, itemGuid, 0);
+    who.SendSellError(SELL_ERR_CANT_FIND_ITEM, pCreature, itemGuid, 0);
     return;
 }
 
@@ -194,7 +195,7 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleBuybackItem(WorldPacket& recv_data)
+void items::BuybackItem(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_BUYBACK_ITEM");
     ObjectGuid vendorGuid;
@@ -202,48 +203,48 @@ void WorldSession::HandleBuybackItem(WorldPacket& recv_data)
 
     recv_data >> vendorGuid >> slot;
 
-    Creature* pCreature = GetPlayer()->GetNPCIfCanInteractWith(vendorGuid, UNIT_NPC_FLAG_VENDOR);
+    Creature* pCreature = who.GetNPCIfCanInteractWith(vendorGuid, UNIT_NPC_FLAG_VENDOR);
     if (!pCreature)
     {
         DEBUG_LOG("WORLD: HandleBuybackItem - %s not found or you can't interact with him.", vendorGuid.GetString().c_str());
-        _player->SendSellError(SELL_ERR_CANT_FIND_VENDOR, nullptr, ObjectGuid(), 0);
+        who.SendSellError(SELL_ERR_CANT_FIND_VENDOR, nullptr, ObjectGuid(), 0);
         return;
     }
 
     // remove fake death
-    if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
+    if (who.hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
+        who.RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
-    Item* pItem = _player->GetItemFromBuyBackSlot(slot);
+    Item* pItem = who.GetItemFromBuyBackSlot(slot);
     if (pItem)
     {
-        uint32 price = _player->GetUInt32Value(PLAYER_FIELD_BUYBACK_PRICE_1 + slot - BUYBACK_SLOT_START);
-        if (_player->GetMoney() < price)
+        uint32 price = who.GetUInt32Value(PLAYER_FIELD_BUYBACK_PRICE_1 + slot - BUYBACK_SLOT_START);
+        if (who.GetMoney() < price)
         {
-            _player->SendBuyError(BUY_ERR_NOT_ENOUGHT_MONEY, pCreature, pItem->GetEntry(), 0);
+            who.SendBuyError(BUY_ERR_NOT_ENOUGHT_MONEY, pCreature, pItem->GetEntry(), 0);
             return;
         }
 
         ItemPosCountVec dest;
-        InventoryResult msg = _player->CanStoreItem(NULL_BAG, NULL_SLOT, dest, pItem, false);
+        InventoryResult msg = who.CanStoreItem(NULL_BAG, NULL_SLOT, dest, pItem, false);
         if (msg == EQUIP_ERR_OK)
         {
-            _player->ModifyMoney(-(int32)price);
-            _player->RemoveItemFromBuyBackSlot(slot, false);
-            _player->Journal().ItemGained(pItem->GetEntry(), pItem->GetCount());
-            _player->StoreItem(dest, pItem, true);
+            who.ModifyMoney(-(int32)price);
+            who.RemoveItemFromBuyBackSlot(slot, false);
+            who.Journal().ItemGained(pItem->GetEntry(), pItem->GetCount());
+            who.StoreItem(dest, pItem, true);
         }
         else
         {
-            _player->SendEquipError(msg, pItem, nullptr);
+            who.SendEquipError(msg, pItem, nullptr);
         }
         return;
     }
     else
     {
-        _player->SendBuyError(BUY_ERR_CANT_FIND_ITEM, pCreature, 0, 0);
+        who.SendBuyError(BUY_ERR_CANT_FIND_ITEM, pCreature, 0, 0);
     }
 }
 
@@ -252,7 +253,7 @@ void WorldSession::HandleBuybackItem(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleBuyItemOpcode(WorldPacket& recv_data)
+void items::BuyItem(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_BUY_ITEM");
     ObjectGuid vendorGuid;
@@ -261,7 +262,7 @@ void WorldSession::HandleBuyItemOpcode(WorldPacket& recv_data)
 
     recv_data >> vendorGuid >> item >> count >> unk1;
 
-    GetPlayer()->BuyItemFromVendor(vendorGuid, item, count, NULL_BAG, NULL_SLOT);
+    who.BuyItemFromVendor(vendorGuid, item, count, NULL_BAG, NULL_SLOT);
 }
 
 /**
@@ -269,20 +270,20 @@ void WorldSession::HandleBuyItemOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleListInventoryOpcode(WorldPacket& recv_data)
+void items::ListInventory(Player& who, WorldPacket& recv_data)
 {
     ObjectGuid guid;
 
     recv_data >> guid;
 
-    if (!GetPlayer()->IsAlive())
+    if (!who.IsAlive())
     {
         return;
     }
 
     DEBUG_LOG("WORLD: Received opcode CMSG_LIST_INVENTORY");
 
-    SendListInventory(guid);
+    who.GetSession()->SendListInventory(guid);
 }
 
 /**
@@ -492,7 +493,7 @@ void WorldSession::SendListInventory(ObjectGuid vendorguid)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleAutoStoreBagItemOpcode(WorldPacket& recv_data)
+void items::AutoStoreBagItem(Player& who, WorldPacket& recv_data)
 {
     // DEBUG_LOG("WORLD: CMSG_AUTOSTORE_BAG_ITEM");
     uint8 srcbag, srcslot, dstbag;
@@ -500,15 +501,15 @@ void WorldSession::HandleAutoStoreBagItemOpcode(WorldPacket& recv_data)
     recv_data >> srcbag >> srcslot >> dstbag;
     // DEBUG_LOG("STORAGE: receive srcbag = %u, srcslot = %u, dstbag = %u", srcbag, srcslot, dstbag);
 
-    Item* pItem = _player->GetItemByPos(srcbag, srcslot);
+    Item* pItem = who.GetItemByPos(srcbag, srcslot);
     if (!pItem)
     {
         return;
     }
 
-    if (!_player->IsValidPos(dstbag, NULL_SLOT, false))     // can be autostore pos
+    if (!who.IsValidPos(dstbag, NULL_SLOT, false))     // can be autostore pos
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, nullptr, nullptr);
+        who.SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, nullptr, nullptr);
         return;
     }
 
@@ -517,19 +518,19 @@ void WorldSession::HandleAutoStoreBagItemOpcode(WorldPacket& recv_data)
     // check unequip potability for equipped items and bank bags
     if (Inventory::IsWorn(src) || Inventory::HoldsBag(src))
     {
-        InventoryResult msg = _player->CanUnequipItem(src, !Inventory::HoldsBag(src));
+        InventoryResult msg = who.CanUnequipItem(src, !Inventory::HoldsBag(src));
         if (msg != EQUIP_ERR_OK)
         {
-            _player->SendEquipError(msg, pItem, nullptr);
+            who.SendEquipError(msg, pItem, nullptr);
             return;
         }
     }
 
     ItemPosCountVec dest;
-    InventoryResult msg = _player->CanStoreItem(dstbag, NULL_SLOT, dest, pItem, false);
+    InventoryResult msg = who.CanStoreItem(dstbag, NULL_SLOT, dest, pItem, false);
     if (msg != EQUIP_ERR_OK)
     {
-        _player->SendEquipError(msg, pItem, nullptr);
+        who.SendEquipError(msg, pItem, nullptr);
         return;
     }
 
@@ -537,12 +538,12 @@ void WorldSession::HandleAutoStoreBagItemOpcode(WorldPacket& recv_data)
     if (dest.size() == 1 && dest[0].pos == src)
     {
         // just remove gray item state
-        _player->SendEquipError(EQUIP_ERR_NONE, pItem, nullptr);
+        who.SendEquipError(EQUIP_ERR_NONE, pItem, nullptr);
         return;
     }
 
-    _player->RemoveItem(srcbag, srcslot, true);
-    _player->StoreItem(dest, pItem, true);
+    who.RemoveItem(srcbag, srcslot, true);
+    who.StoreItem(dest, pItem, true);
 }
 
 /**
@@ -581,7 +582,7 @@ bool WorldSession::CheckBanker(ObjectGuid guid)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleBuyBankSlotOpcode(WorldPacket& recvPacket)
+void items::BuyBankSlot(WorldSession& session, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: CMSG_BUY_BANK_SLOT");
 
@@ -590,14 +591,14 @@ void WorldSession::HandleBuyBankSlotOpcode(WorldPacket& recvPacket)
 
     WorldPacket data(SMSG_BUY_BANK_SLOT_RESULT, 4);
 
-    if (!CheckBanker(guid))
+    if (!session.CheckBanker(guid))
     {
         data << uint32(ERR_BANKSLOT_NOTBANKER);
-        SendPacket(&data);
+        session.SendPacket(&data);
         return;
     }
 
-    uint32 slot = _player->GetBankBagSlotCount();
+    uint32 slot = session.GetPlayer()->GetBankBagSlotCount();
 
     // next slot
     ++slot;
@@ -609,21 +610,21 @@ void WorldSession::HandleBuyBankSlotOpcode(WorldPacket& recvPacket)
     if (!slotEntry)
     {
         data << uint32(ERR_BANKSLOT_FAILED_TOO_MANY);
-        SendPacket(&data);
+        session.SendPacket(&data);
         return;
     }
 
     uint32 price = slotEntry->Price;
 
-    if (_player->GetMoney() < price)
+    if (session.GetPlayer()->GetMoney() < price)
     {
         data << uint32(ERR_BANKSLOT_INSUFFICIENT_FUNDS);
-        SendPacket(&data);
+        session.SendPacket(&data);
         return;
     }
 
-    _player->SetBankBagSlotCount(slot);
-    _player->ModifyMoney(-int32(price));
+    session.GetPlayer()->SetBankBagSlotCount(slot);
+    session.GetPlayer()->ModifyMoney(-int32(price));
 }
 
 /**
@@ -631,7 +632,7 @@ void WorldSession::HandleBuyBankSlotOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleAutoBankItemOpcode(WorldPacket& recvPacket)
+void items::AutoBankItem(Player& who, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: CMSG_AUTOBANK_ITEM");
     uint8 srcbag, srcslot;
@@ -639,17 +640,17 @@ void WorldSession::HandleAutoBankItemOpcode(WorldPacket& recvPacket)
     recvPacket >> srcbag >> srcslot;
     DEBUG_LOG("STORAGE: receive srcbag = %u, srcslot = %u", srcbag, srcslot);
 
-    Item* pItem = _player->GetItemByPos(srcbag, srcslot);
+    Item* pItem = who.GetItemByPos(srcbag, srcslot);
     if (!pItem)
     {
         return;
     }
 
     ItemPosCountVec dest;
-    InventoryResult msg = _player->CanBankItem(NULL_BAG, NULL_SLOT, dest, pItem, false);
+    InventoryResult msg = who.CanBankItem(NULL_BAG, NULL_SLOT, dest, pItem, false);
     if (msg != EQUIP_ERR_OK)
     {
-        _player->SendEquipError(msg, pItem, nullptr);
+        who.SendEquipError(msg, pItem, nullptr);
         return;
     }
 
@@ -657,12 +658,12 @@ void WorldSession::HandleAutoBankItemOpcode(WorldPacket& recvPacket)
     if (dest.size() == 1 && dest[0].pos == pItem->GetPos())
     {
         // just remove gray item state
-        _player->SendEquipError(EQUIP_ERR_NONE, pItem, nullptr);
+        who.SendEquipError(EQUIP_ERR_NONE, pItem, nullptr);
         return;
     }
 
-    _player->RemoveItem(srcbag, srcslot, true);
-    _player->BankItem(dest, pItem, true);
+    who.RemoveItem(srcbag, srcslot, true);
+    who.BankItem(dest, pItem, true);
 }
 
 /**
@@ -670,7 +671,7 @@ void WorldSession::HandleAutoBankItemOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleAutoStoreBankItemOpcode(WorldPacket& recvPacket)
+void items::AutoStoreBankItem(Player& who, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: CMSG_AUTOSTORE_BANK_ITEM");
     uint8 srcbag, srcslot;
@@ -678,7 +679,7 @@ void WorldSession::HandleAutoStoreBankItemOpcode(WorldPacket& recvPacket)
     recvPacket >> srcbag >> srcslot;
     DEBUG_LOG("STORAGE: receive srcbag = %u, srcslot = %u", srcbag, srcslot);
 
-    Item* pItem = _player->GetItemByPos(srcbag, srcslot);
+    Item* pItem = who.GetItemByPos(srcbag, srcslot);
     if (!pItem)
     {
         return;
@@ -687,28 +688,28 @@ void WorldSession::HandleAutoStoreBankItemOpcode(WorldPacket& recvPacket)
     if (Inventory::IsBanked(srcbag, srcslot))                // moving from bank to inventory
     {
         ItemPosCountVec dest;
-        InventoryResult msg = _player->CanStoreItem(NULL_BAG, NULL_SLOT, dest, pItem, false);
+        InventoryResult msg = who.CanStoreItem(NULL_BAG, NULL_SLOT, dest, pItem, false);
         if (msg != EQUIP_ERR_OK)
         {
-            _player->SendEquipError(msg, pItem, nullptr);
+            who.SendEquipError(msg, pItem, nullptr);
             return;
         }
 
-        _player->RemoveItem(srcbag, srcslot, true);
-        _player->StoreItem(dest, pItem, true);
+        who.RemoveItem(srcbag, srcslot, true);
+        who.StoreItem(dest, pItem, true);
     }
     else                                                    // moving from inventory to bank
     {
         ItemPosCountVec dest;
-        InventoryResult msg = _player->CanBankItem(NULL_BAG, NULL_SLOT, dest, pItem, false);
+        InventoryResult msg = who.CanBankItem(NULL_BAG, NULL_SLOT, dest, pItem, false);
         if (msg != EQUIP_ERR_OK)
         {
-            _player->SendEquipError(msg, pItem, nullptr);
+            who.SendEquipError(msg, pItem, nullptr);
             return;
         }
 
-        _player->RemoveItem(srcbag, srcslot, true);
-        _player->BankItem(dest, pItem, true);
+        who.RemoveItem(srcbag, srcslot, true);
+        who.BankItem(dest, pItem, true);
     }
 }
 
@@ -717,11 +718,11 @@ void WorldSession::HandleAutoStoreBankItemOpcode(WorldPacket& recvPacket)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleSetAmmoOpcode(WorldPacket& recv_data)
+void items::SetAmmo(Player& who, WorldPacket& recv_data)
 {
-    if (!GetPlayer()->IsAlive())
+    if (!who.IsAlive())
     {
-        GetPlayer()->SendEquipError(EQUIP_ERR_YOU_ARE_DEAD, nullptr, nullptr);
+        who.SendEquipError(EQUIP_ERR_YOU_ARE_DEAD, nullptr, nullptr);
         return;
     }
 
@@ -732,10 +733,10 @@ void WorldSession::HandleSetAmmoOpcode(WorldPacket& recv_data)
 
     if (!item)
     {
-        GetPlayer()->RemoveAmmo();
+        who.RemoveAmmo();
     }
     else
     {
-        GetPlayer()->SetAmmo(item);
+        who.SetAmmo(item);
     }
 }

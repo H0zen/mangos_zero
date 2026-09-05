@@ -48,6 +48,7 @@
 #include "Platform/Define.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include "ItemEnchantAnswers.h"
 #include "Opcodes.h"
 #include "Log.h"
 #include "ObjectMgr.h"
@@ -100,7 +101,7 @@ void WorldSession::SendItemEnchantTimeUpdate(ObjectGuid playerGuid, ObjectGuid i
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleWrapItemOpcode(WorldPacket& recv_data)
+void items::WrapItem(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("Received opcode CMSG_WRAP_ITEM");
 
@@ -112,69 +113,69 @@ void WorldSession::HandleWrapItemOpcode(WorldPacket& recv_data)
 
     DEBUG_LOG("WRAP: receive gift_bag = %u, gift_slot = %u, item_bag = %u, item_slot = %u", gift_bag, gift_slot, item_bag, item_slot);
 
-    Item* gift = _player->GetItemByPos(gift_bag, gift_slot);
+    Item* gift = who.GetItemByPos(gift_bag, gift_slot);
     if (!gift)
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, gift, nullptr);
+        who.SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, gift, nullptr);
         return;
     }
 
     // cheating: non-wrapper wrapper (all empty wrappers is stackable)
     if (!(gift->GetProto()->Flags & ITEM_FLAG_WRAPPER) || gift->GetMaxStackCount() == 1)
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, gift, nullptr);
+        who.SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, gift, nullptr);
         return;
     }
 
-    Item* item = _player->GetItemByPos(item_bag, item_slot);
+    Item* item = who.GetItemByPos(item_bag, item_slot);
 
     if (!item)
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, item, nullptr);
+        who.SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, item, nullptr);
         return;
     }
 
     if (item == gift)                                       // not possible with packet from real client
     {
-        _player->SendEquipError(EQUIP_ERR_WRAPPED_CANT_BE_WRAPPED, item, nullptr);
+        who.SendEquipError(EQUIP_ERR_WRAPPED_CANT_BE_WRAPPED, item, nullptr);
         return;
     }
 
     if (item->IsEquipped())
     {
-        _player->SendEquipError(EQUIP_ERR_EQUIPPED_CANT_BE_WRAPPED, item, nullptr);
+        who.SendEquipError(EQUIP_ERR_EQUIPPED_CANT_BE_WRAPPED, item, nullptr);
         return;
     }
 
     // HasItemFlag(ITEM_DYNFLAG_WRAPPED)
     if (item->GetGiftCreatorGuid())
     {
-        _player->SendEquipError(EQUIP_ERR_WRAPPED_CANT_BE_WRAPPED, item, nullptr);
+        who.SendEquipError(EQUIP_ERR_WRAPPED_CANT_BE_WRAPPED, item, nullptr);
         return;
     }
 
     if (item->IsBag())
     {
-        _player->SendEquipError(EQUIP_ERR_BAGS_CANT_BE_WRAPPED, item, nullptr);
+        who.SendEquipError(EQUIP_ERR_BAGS_CANT_BE_WRAPPED, item, nullptr);
         return;
     }
 
     if (item->IsSoulBound())
     {
-        _player->SendEquipError(EQUIP_ERR_BOUND_CANT_BE_WRAPPED, item, nullptr);
+        who.SendEquipError(EQUIP_ERR_BOUND_CANT_BE_WRAPPED, item, nullptr);
         return;
     }
 
     if (item->GetMaxStackCount() != 1)
     {
-        _player->SendEquipError(EQUIP_ERR_STACKABLE_CANT_BE_WRAPPED, item, nullptr);
+        who.SendEquipError(EQUIP_ERR_STACKABLE_CANT_BE_WRAPPED, item, nullptr);
         return;
     }
 
     // maybe not correct check  (it is better than nothing)
     if (item->GetProto()->MaxCount > 0)
     {
-        _player->SendEquipError(EQUIP_ERR_UNIQUE_CANT_BE_WRAPPED, item, nullptr);
+        who.SendEquipError(EQUIP_ERR_UNIQUE_CANT_BE_WRAPPED, item, nullptr);
         return;
     }
 
@@ -191,20 +192,20 @@ void WorldSession::HandleWrapItemOpcode(WorldPacket& recv_data)
         case 17307: item->SetEntry(17308); break;
         case 21830: item->SetEntry(21831); break;
     }
-    item->SetGiftCreatorGuid(_player->GetObjectGuid());
+    item->SetGiftCreatorGuid(who.GetObjectGuid());
     item->SetAllItemFlags(ITEM_DYNFLAG_WRAPPED);
-    item->SetState(ITEM_CHANGED, _player);
+    item->SetState(ITEM_CHANGED, &who);
 
     if (item->GetState() == ITEM_NEW)                       // save new item, to have alway for `character_gifts` record in `item_instance`
     {
         // after save it will be impossible to remove the item from the queue
-        _player->ItemSaves().Forget(item);
+        who.ItemSaves().Forget(item);
         item->SaveToDB();                                   // item gave inventory record unchanged and can be save standalone
     }
     CharacterDatabase.CommitTransaction();
 
     uint32 count = 1;
-    _player->DestroyItemCount(gift, count, true);
+    who.DestroyItemCount(gift, count, true);
 }
 
 /**
@@ -212,7 +213,7 @@ void WorldSession::HandleWrapItemOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleCancelTempEnchantmentOpcode(WorldPacket& recv_data)
+void items::CancelTempEnchantment(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CANCEL_TEMP_ENCHANTMENT");
 
@@ -226,7 +227,7 @@ void WorldSession::HandleCancelTempEnchantmentOpcode(WorldPacket& recv_data)
         return;
     }
 
-    Item* item = GetPlayer()->GetItemByPos(INVENTORY_SLOT_BAG_0, eslot);
+    Item* item = who.GetItemByPos(INVENTORY_SLOT_BAG_0, eslot);
 
     if (!item)
     {
@@ -238,6 +239,6 @@ void WorldSession::HandleCancelTempEnchantmentOpcode(WorldPacket& recv_data)
         return;
     }
 
-    GetPlayer()->ApplyEnchantment(item, TEMP_ENCHANTMENT_SLOT, false);
+    who.ApplyEnchantment(item, TEMP_ENCHANTMENT_SLOT, false);
     item->ClearEnchantment(TEMP_ENCHANTMENT_SLOT);
 }

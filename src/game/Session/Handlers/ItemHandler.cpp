@@ -47,6 +47,7 @@
 #include <string>
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include "ItemAnswers.h"
 #include "Opcodes.h"
 #include "Log.h"
 #include "ObjectMgr.h"
@@ -61,7 +62,7 @@
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleSplitItemOpcode(WorldPacket& recv_data)
+void items::SplitItem(Player& who, WorldPacket& recv_data)
 {
     // DEBUG_LOG("WORLD: CMSG_SPLIT_ITEM");
     uint8 srcbag, srcslot, dstbag, dstslot, count;
@@ -82,19 +83,19 @@ void WorldSession::HandleSplitItemOpcode(WorldPacket& recv_data)
         return;                                              // check count - if zero it's fake packet
     }
 
-    if (!_player->IsValidPos(srcbag, srcslot, true))
+    if (!who.IsValidPos(srcbag, srcslot, true))
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
+        who.SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
         return;
     }
 
-    if (!_player->IsValidPos(dstbag, dstslot, false))       // can be autostore pos
+    if (!who.IsValidPos(dstbag, dstslot, false))       // can be autostore pos
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, nullptr, nullptr);
+        who.SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, nullptr, nullptr);
         return;
     }
 
-    _player->SplitItem(src, dst, count);
+    who.SplitItem(src, dst, count);
 }
 
 /**
@@ -102,7 +103,7 @@ void WorldSession::HandleSplitItemOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleSwapInvItemOpcode(WorldPacket& recv_data)
+void items::SwapInvItem(Player& who, WorldPacket& recv_data)
 {
     // DEBUG_LOG("WORLD: CMSG_SWAP_INV_ITEM");
     uint8 srcslot, dstslot;
@@ -116,22 +117,22 @@ void WorldSession::HandleSwapInvItemOpcode(WorldPacket& recv_data)
         return;
     }
 
-    if (!_player->IsValidPos(INVENTORY_SLOT_BAG_0, srcslot, true))
+    if (!who.IsValidPos(INVENTORY_SLOT_BAG_0, srcslot, true))
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
+        who.SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
         return;
     }
 
-    if (!_player->IsValidPos(INVENTORY_SLOT_BAG_0, dstslot, true))
+    if (!who.IsValidPos(INVENTORY_SLOT_BAG_0, dstslot, true))
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, nullptr, nullptr);
+        who.SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, nullptr, nullptr);
         return;
     }
 
     uint16 src = ((INVENTORY_SLOT_BAG_0 << 8) | srcslot);
     uint16 dst = ((INVENTORY_SLOT_BAG_0 << 8) | dstslot);
 
-    _player->SwapItem(src, dst);
+    who.SwapItem(src, dst);
 }
 
 /**
@@ -139,7 +140,7 @@ void WorldSession::HandleSwapInvItemOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleAutoEquipItemSlotOpcode(WorldPacket& recv_data)
+void items::AutoEquipItemSlot(Player& who, WorldPacket& recv_data)
 {
     ObjectGuid itemGuid;
     uint8 dstslot;
@@ -151,7 +152,7 @@ void WorldSession::HandleAutoEquipItemSlotOpcode(WorldPacket& recv_data)
         return;
     }
 
-    Item* item = _player->GetItemByGuid(itemGuid);
+    Item* item = who.GetItemByGuid(itemGuid);
     uint16 dstpos = dstslot | (INVENTORY_SLOT_BAG_0 << 8);
 
     if (!item || item->GetPos() == dstpos)
@@ -159,7 +160,7 @@ void WorldSession::HandleAutoEquipItemSlotOpcode(WorldPacket& recv_data)
         return;
     }
 
-    _player->SwapItem(item->GetPos(), dstpos);
+    who.SwapItem(item->GetPos(), dstpos);
 }
 
 /**
@@ -167,7 +168,7 @@ void WorldSession::HandleAutoEquipItemSlotOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleSwapItem(WorldPacket& recv_data)
+void items::SwapItem(Player& who, WorldPacket& recv_data)
 {
     // DEBUG_LOG("WORLD: CMSG_SWAP_ITEM");
     uint8 dstbag, dstslot, srcbag, srcslot;
@@ -184,19 +185,19 @@ void WorldSession::HandleSwapItem(WorldPacket& recv_data)
         return;
     }
 
-    if (!_player->IsValidPos(srcbag, srcslot, true))
+    if (!who.IsValidPos(srcbag, srcslot, true))
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
+        who.SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
         return;
     }
 
-    if (!_player->IsValidPos(dstbag, dstslot, true))
+    if (!who.IsValidPos(dstbag, dstslot, true))
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, nullptr, nullptr);
+        who.SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, nullptr, nullptr);
         return;
     }
 
-    _player->SwapItem(src, dst);
+    who.SwapItem(src, dst);
 }
 
 /**
@@ -204,7 +205,7 @@ void WorldSession::HandleSwapItem(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recv_data)
+void items::AutoEquipItem(Player& who, WorldPacket& recv_data)
 {
     // DEBUG_LOG("WORLD: CMSG_AUTOEQUIP_ITEM");
     uint8 srcbag, srcslot;
@@ -212,17 +213,17 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recv_data)
     recv_data >> srcbag >> srcslot;
     // DEBUG_LOG("STORAGE: receive srcbag = %u, srcslot = %u", srcbag, srcslot);
 
-    Item* pSrcItem  = _player->GetItemByPos(srcbag, srcslot);
+    Item* pSrcItem  = who.GetItemByPos(srcbag, srcslot);
     if (!pSrcItem)
     {
         return;                                              // only at cheat
     }
 
     uint16 dest;
-    InventoryResult msg = _player->CanEquipItem(NULL_SLOT, dest, pSrcItem, !pSrcItem->IsBag());
+    InventoryResult msg = who.CanEquipItem(NULL_SLOT, dest, pSrcItem, !pSrcItem->IsBag());
     if (msg != EQUIP_ERR_OK)
     {
-        _player->SendEquipError(msg, pSrcItem, nullptr);
+        who.SendEquipError(msg, pSrcItem, nullptr);
         return;
     }
 
@@ -232,22 +233,22 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recv_data)
         return;
     }
 
-    Item* pDstItem = _player->GetItemByPos(dest);
+    Item* pDstItem = who.GetItemByPos(dest);
     if (!pDstItem)                                          // empty slot, simple case
     {
-        _player->RemoveItem(srcbag, srcslot, true);
-        _player->EquipItem(dest, pSrcItem, true);
-        _player->AutoUnequipOffhandIfNeed();
+        who.RemoveItem(srcbag, srcslot, true);
+        who.EquipItem(dest, pSrcItem, true);
+        who.AutoUnequipOffhandIfNeed();
     }
     else                                                    // have currently equipped item, not simple case
     {
         uint8 dstbag = pDstItem->GetBagSlot();
         uint8 dstslot = pDstItem->GetSlot();
 
-        msg = _player->CanUnequipItem(dest, !pSrcItem->IsBag());
+        msg = who.CanUnequipItem(dest, !pSrcItem->IsBag());
         if (msg != EQUIP_ERR_OK)
         {
-            _player->SendEquipError(msg, pDstItem, nullptr);
+            who.SendEquipError(msg, pDstItem, nullptr);
             return;
         }
 
@@ -256,65 +257,65 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recv_data)
         uint16 eSrc = 0;
         if (Inventory::IsCarried(src))
         {
-            msg = _player->CanStoreItem(srcbag, srcslot, sSrc, pDstItem, true);
+            msg = who.CanStoreItem(srcbag, srcslot, sSrc, pDstItem, true);
             if (msg != EQUIP_ERR_OK)
             {
-                msg = _player->CanStoreItem(srcbag, NULL_SLOT, sSrc, pDstItem, true);
+                msg = who.CanStoreItem(srcbag, NULL_SLOT, sSrc, pDstItem, true);
             }
             if (msg != EQUIP_ERR_OK)
             {
-                msg = _player->CanStoreItem(NULL_BAG, NULL_SLOT, sSrc, pDstItem, true);
+                msg = who.CanStoreItem(NULL_BAG, NULL_SLOT, sSrc, pDstItem, true);
             }
         }
         else if (Inventory::IsBanked(src))
         {
-            msg = _player->CanBankItem(srcbag, srcslot, sSrc, pDstItem, true);
+            msg = who.CanBankItem(srcbag, srcslot, sSrc, pDstItem, true);
             if (msg != EQUIP_ERR_OK)
             {
-                msg = _player->CanBankItem(srcbag, NULL_SLOT, sSrc, pDstItem, true);
+                msg = who.CanBankItem(srcbag, NULL_SLOT, sSrc, pDstItem, true);
             }
             if (msg != EQUIP_ERR_OK)
             {
-                msg = _player->CanBankItem(NULL_BAG, NULL_SLOT, sSrc, pDstItem, true);
+                msg = who.CanBankItem(NULL_BAG, NULL_SLOT, sSrc, pDstItem, true);
             }
         }
         else if (Inventory::IsWorn(src))
         {
-            msg = _player->CanEquipItem(srcslot, eSrc, pDstItem, true);
+            msg = who.CanEquipItem(srcslot, eSrc, pDstItem, true);
             if (msg == EQUIP_ERR_OK)
             {
-                msg = _player->CanUnequipItem(eSrc, true);
+                msg = who.CanUnequipItem(eSrc, true);
             }
         }
 
         if (msg != EQUIP_ERR_OK)
         {
-            _player->SendEquipError(msg, pDstItem, pSrcItem);
+            who.SendEquipError(msg, pDstItem, pSrcItem);
             return;
         }
 
         // now do moves, remove...
-        _player->RemoveItem(dstbag, dstslot, false);
-        _player->RemoveItem(srcbag, srcslot, false);
+        who.RemoveItem(dstbag, dstslot, false);
+        who.RemoveItem(srcbag, srcslot, false);
 
         // add to dest
-        _player->EquipItem(dest, pSrcItem, true);
+        who.EquipItem(dest, pSrcItem, true);
 
         // add to src
         if (Inventory::IsCarried(src))
         {
-            _player->StoreItem(sSrc, pDstItem, true);
+            who.StoreItem(sSrc, pDstItem, true);
         }
         else if (Inventory::IsBanked(src))
         {
-            _player->BankItem(sSrc, pDstItem, true);
+            who.BankItem(sSrc, pDstItem, true);
         }
         else if (Inventory::IsWorn(src))
         {
-            _player->EquipItem(eSrc, pDstItem, true);
+            who.EquipItem(eSrc, pDstItem, true);
         }
 
-        _player->AutoUnequipOffhandIfNeed();
+        who.AutoUnequipOffhandIfNeed();
     }
 }
 
@@ -323,7 +324,7 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleDestroyItemOpcode(WorldPacket& recv_data)
+void items::DestroyItem(Player& who, WorldPacket& recv_data)
 {
     // DEBUG_LOG("WORLD: CMSG_DESTROYITEM");
     uint8 bag, slot, count, data1, data2, data3;
@@ -336,41 +337,41 @@ void WorldSession::HandleDestroyItemOpcode(WorldPacket& recv_data)
     // prevent drop unequipable items (in combat, for example) and non-empty bags
     if (Inventory::IsWorn(pos) || Inventory::HoldsBag(pos))
     {
-        InventoryResult msg = _player->CanUnequipItem(pos, false);
+        InventoryResult msg = who.CanUnequipItem(pos, false);
         if (msg != EQUIP_ERR_OK)
         {
-            _player->SendEquipError(msg, _player->GetItemByPos(pos), nullptr);
+            who.SendEquipError(msg, who.GetItemByPos(pos), nullptr);
             return;
         }
     }
 
-    Item* pItem  = _player->GetItemByPos(bag, slot);
+    Item* pItem  = who.GetItemByPos(bag, slot);
     if (!pItem)
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
+        who.SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
         return;
     }
 
     // checked at client side and not have server side appropriate error output
     if (pItem->GetProto()->Flags & ITEM_FLAG_INDESTRUCTIBLE)
     {
-        _player->SendEquipError(EQUIP_ERR_CANT_DROP_SOULBOUND, nullptr, nullptr);
+        who.SendEquipError(EQUIP_ERR_CANT_DROP_SOULBOUND, nullptr, nullptr);
         return;
     }
 
     if (count)
     {
         uint32 i_count = count;
-        _player->DestroyItemCount(pItem, i_count, true);
+        who.DestroyItemCount(pItem, i_count, true);
     }
     else
     {
-        _player->DestroyItem(bag, slot, true);
+        who.DestroyItem(bag, slot, true);
     }
 }
 
 // Only _static_ data send in this packet !!!
-void WorldSession::HandleItemQuerySingleOpcode(WorldPacket& recv_data)
+void items::ItemQuerySingle(WorldSession& session, WorldPacket& recv_data)
 {
     // DEBUG_LOG("WORLD: CMSG_ITEM_QUERY_SINGLE");
     uint32 item;
@@ -382,7 +383,7 @@ void WorldSession::HandleItemQuerySingleOpcode(WorldPacket& recv_data)
     ItemPrototype const* pProto = ObjectMgr::GetItemPrototype(item);
     if (pProto)
     {
-        int loc_idx = GetSessionDbLocaleIndex();
+        int loc_idx = session.GetSessionDbLocaleIndex();
 
         std::string name = pProto->Name1;
         std::string description = pProto->Description;
@@ -577,14 +578,14 @@ void WorldSession::HandleItemQuerySingleOpcode(WorldPacket& recv_data)
         data << pProto->Area;
         data << pProto->Map;                                // Added in 1.12.x & 2.0.1 client branch
         data << pProto->BagFamily;
-        SendPacket(&data);
+        session.SendPacket(&data);
     }
     else
     {
         DEBUG_LOG("WORLD: CMSG_ITEM_QUERY_SINGLE - NO item INFO! (ENTRY: %u)", item);
         WorldPacket data(SMSG_ITEM_QUERY_SINGLE_RESPONSE, 4);
         data << uint32(item | 0x80000000);
-        SendPacket(&data);
+        session.SendPacket(&data);
     }
 }
 
@@ -593,7 +594,7 @@ void WorldSession::HandleItemQuerySingleOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleReadItemOpcode(WorldPacket& recv_data)
+void items::ReadItem(Player& who, WorldPacket& recv_data)
 {
     // DEBUG_LOG("WORLD: Received opcode CMSG_READ_ITEM");
 
@@ -601,13 +602,13 @@ void WorldSession::HandleReadItemOpcode(WorldPacket& recv_data)
     recv_data >> bag >> slot;
 
     // sLog.outDetail("STORAGE: Read bag = %u, slot = %u", bag, slot);
-    Item* pItem = _player->GetItemByPos(bag, slot);
+    Item* pItem = who.GetItemByPos(bag, slot);
 
     if (pItem && pItem->GetProto()->PageText)
     {
         WorldPacket data;
 
-        InventoryResult msg = _player->CanUseItem(pItem);
+        InventoryResult msg = who.CanUseItem(pItem);
         // TODO check player knowing GetProto()->LanguageID and handle both cases properly
         // now this requirement is ignored serverside, will get EQUIP_ERR_OK
         if (msg == EQUIP_ERR_OK)
@@ -623,13 +624,13 @@ void WorldSession::HandleReadItemOpcode(WorldPacket& recv_data)
             data << uint8(0);                       // 0..2, read failure reason? if == 1, use next command
             // data << uint32(0);                     // pItem->GetProto()->LanguageID or clientside delay in ms to "translate" item?
             DETAIL_LOG("STORAGE: Unable to read item");
-            _player->SendEquipError(msg, pItem, nullptr);
+            who.SendEquipError(msg, pItem, nullptr);
         }
-        SendPacket(&data);
+        who.GetSession()->SendPacket(&data);
     }
     else
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
+        who.SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
     }
 }
 
@@ -657,7 +658,7 @@ void WorldSession::HandlePageQuerySkippedOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleBuyItemInSlotOpcode(WorldPacket& recv_data)
+void items::BuyItemInSlot(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_BUY_ITEM_IN_SLOT");
     ObjectGuid vendorGuid;
@@ -670,7 +671,7 @@ void WorldSession::HandleBuyItemInSlotOpcode(WorldPacket& recv_data)
     uint8 bag = NULL_BAG;                                   // init for case invalid bagGUID
 
     // find bag slot by bag guid
-    if (bagGuid == _player->GetObjectGuid())
+    if (bagGuid == who.GetObjectGuid())
     {
         bag = INVENTORY_SLOT_BAG_0;
     }
@@ -678,7 +679,7 @@ void WorldSession::HandleBuyItemInSlotOpcode(WorldPacket& recv_data)
     {
         for (int i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; ++i)
         {
-            if (Bag* pBag = (Bag*)_player->GetItemByPos(INVENTORY_SLOT_BAG_0, i))
+            if (Bag* pBag = (Bag*)who.GetItemByPos(INVENTORY_SLOT_BAG_0, i))
             {
                 if (bagGuid == pBag->GetObjectGuid())
                 {
@@ -695,7 +696,7 @@ void WorldSession::HandleBuyItemInSlotOpcode(WorldPacket& recv_data)
         return;
     }
 
-    GetPlayer()->BuyItemFromVendor(vendorGuid, item, count, bag, bagslot);
+    who.BuyItemFromVendor(vendorGuid, item, count, bag, bagslot);
 }
 
 
@@ -714,7 +715,7 @@ void WorldSession::HandleBuyItemInSlotOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleItemNameQueryOpcode(WorldPacket& recv_data)
+void items::ItemNameQuery(WorldSession& session, WorldPacket& recv_data)
 {
     uint32 itemid;
     recv_data >> itemid;
@@ -723,7 +724,7 @@ void WorldSession::HandleItemNameQueryOpcode(WorldPacket& recv_data)
     DEBUG_LOG("WORLD: CMSG_ITEM_NAME_QUERY %u", itemid);
     if (ItemPrototype const *pProto = ObjectMgr::GetItemPrototype(itemid))
     {
-        int loc_idx = GetSessionDbLocaleIndex();
+        int loc_idx = session.GetSessionDbLocaleIndex();
 
         std::string name = pProto->Name1;
         sObjectMgr.GetItemLocaleStrings(pProto->ItemId, loc_idx, &name);
@@ -733,7 +734,7 @@ void WorldSession::HandleItemNameQueryOpcode(WorldPacket& recv_data)
         data << uint32(pProto->ItemId);
         data << name;
         //data << uint32(pProto->InventoryType);    [-ZERO]
-        SendPacket(&data);
+        session.SendPacket(&data);
         return;
     }
     else

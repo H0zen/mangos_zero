@@ -42,6 +42,7 @@
 #include <ctime>
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include "DuelAnswers.h"
 #include "Log.h"
 #include "Player.h"
 
@@ -55,17 +56,17 @@
  * On success, both players receive a 3-second countdown before the
  * duel officially begins.
  */
-void WorldSession::HandleDuelAcceptedOpcode(WorldPacket& recvPacket)
+void duels::DuelAccepted(Player& who, WorldPacket& recvPacket)
 {
     ObjectGuid guid;
     recvPacket >> guid;
 
-    if (!GetPlayer()->duel)                                 // ignore accept from duel-sender
+    if (!who.duel)                                 // ignore accept from duel-sender
     {
         return;
     }
 
-    Player* pl       = GetPlayer();
+    Player* pl       = &who;
     Player* plTarget = pl->duel->opponent;
 
     if (pl == pl->duel->initiator || !plTarget || pl == plTarget || pl->duel->startTime != 0 || plTarget->duel->startTime != 0)
@@ -96,27 +97,27 @@ void WorldSession::HandleDuelAcceptedOpcode(WorldPacket& recvPacket)
  *
  * @note /forfeit command also triggers this handler
  */
-void WorldSession::HandleDuelCancelledOpcode(WorldPacket& recvPacket)
+void duels::DuelCancelled(Player& who, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_DUEL_CANCELLED");
 
     // no duel requested
-    if (!GetPlayer()->duel)
+    if (!who.duel)
     {
         return;
     }
 
     // player surrendered in a duel using /forfeit
-    if (GetPlayer()->duel->startTime != 0)
+    if (who.duel->startTime != 0)
     {
-        GetPlayer()->CombatStopWithPets(true);
-        if (GetPlayer()->duel->opponent)
+        who.CombatStopWithPets(true);
+        if (who.duel->opponent)
         {
-            GetPlayer()->duel->opponent->CombatStopWithPets(true);
+            who.duel->opponent->CombatStopWithPets(true);
         }
 
-        GetPlayer()->CastSpell(GetPlayer(), 7267, true);    // beg
-        GetPlayer()->DuelComplete(DUEL_WON);
+        who.CastSpell(&who, 7267, true);    // beg
+        who.DuelComplete(DUEL_WON);
         return;
     }
 
@@ -125,5 +126,5 @@ void WorldSession::HandleDuelCancelledOpcode(WorldPacket& recvPacket)
     ObjectGuid guid;
     recvPacket >> guid;
 
-    GetPlayer()->DuelComplete(DUEL_INTERRUPTED);
+    who.DuelComplete(DUEL_INTERRUPTED);
 }

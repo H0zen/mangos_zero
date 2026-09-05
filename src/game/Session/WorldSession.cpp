@@ -63,6 +63,7 @@
 #include "SessionMailbox.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include "ProtocolAnswers.h"
 #include "Player.h"
 #include "ObjectMgr.h"
 #include "Group.h"
@@ -637,34 +638,32 @@ void WorldSession::KickPlayer()
     }
 }
 
-void WorldSession::HandlePingOpcode(WorldPacket& recvPacket)
+void protocol::Ping(WorldSession& session, WorldPacket& recvPacket)
 {
     uint32 ping = 0;
     uint32 latency = 0;
     recvPacket >> ping;
     recvPacket >> latency;
 
-    const uint32 fastRun = m_pingTracker.Record(SessionPingTracker::Clock::now());
-    if (m_pingTracker.ShouldKick(sWorld.getConfig(CONFIG_UINT32_MAX_OVERSPEED_PINGS),
-                                 GetSecurity() == SEC_PLAYER))
+    if (uint32 const fastRun = session.PingsTooFast())
     {
         sLog.outError(
             "WorldSession::HandlePingOpcode: account %u kicked for overspeeded "
             "pings (%u in a row), address = %s",
-            GetAccountId(), fastRun, GetRemoteAddress().c_str());
-        KickPlayer();
+            session.GetAccountId(), fastRun, session.GetRemoteAddress().c_str());
+        session.KickPlayer();
         return;
     }
 
-    SetLatency(latency);
-    SetClientTimeDelay(0);
+    session.SetLatency(latency);
+    session.SetClientTimeDelay(0);
 
     WorldPacket response(SMSG_PONG, 4);
     response << ping;
-    SendPacket(&response);
+    session.SendPacket(&response);
 }
 
-void WorldSession::HandleKeepAliveOpcode(WorldPacket& recvPacket)
+void protocol::KeepAlive(WorldSession& session, WorldPacket& recvPacket)
 {
     DEBUG_LOG("CMSG_KEEP_ALIVE ,size: %zu ", recvPacket.size());
 }
@@ -749,7 +748,7 @@ const char* WorldSession::GetMangosString(int32 entry) const
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::Handle_NULL(WorldPacket& recvPacket)
+void protocol::_NULL(WorldSession& session, WorldPacket& recvPacket)
 {
     DEBUG_LOG("SESSION: received unimplemented opcode %s (0x%.4X)",
         LookupOpcodeName(recvPacket.GetOpcode()),
@@ -761,7 +760,7 @@ void WorldSession::Handle_NULL(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::Handle_EarlyProccess(WorldPacket& recvPacket)
+void protocol::_EarlyProccess(WorldSession& session, WorldPacket& recvPacket)
 {
     sLog.outError("SESSION: received opcode %s (0x%.4X) that must be processed by the protocol layer",
         LookupOpcodeName(recvPacket.GetOpcode()),
@@ -773,7 +772,7 @@ void WorldSession::Handle_EarlyProccess(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::Handle_ServerSide(WorldPacket& recvPacket)
+void protocol::_ServerSide(WorldSession& session, WorldPacket& recvPacket)
 {
     sLog.outError("SESSION: received server-side opcode %s (0x%.4X)",
         LookupOpcodeName(recvPacket.GetOpcode()),
@@ -785,7 +784,7 @@ void WorldSession::Handle_ServerSide(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::Handle_Deprecated(WorldPacket& recvPacket)
+void protocol::_Deprecated(WorldSession& session, WorldPacket& recvPacket)
 {
     sLog.outError("SESSION: received deprecated opcode %s (0x%.4X)",
         LookupOpcodeName(recvPacket.GetOpcode()),
@@ -905,6 +904,19 @@ void WorldSession::SaveTutorialsData()
 }
 
 // Send chat information about aborted transfer (mostly used by Player::SendTransferAbortedByLockstatus())
+uint32 WorldSession::PingsTooFast()
+{
+    uint32 const fastRun = m_pingTracker.Record(SessionPingTracker::Clock::now());
+
+    if (!m_pingTracker.ShouldKick(sWorld.getConfig(CONFIG_UINT32_MAX_OVERSPEED_PINGS),
+                                  GetSecurity() == SEC_PLAYER))
+    {
+        return 0;
+    }
+
+    return fastRun;
+}
+
 void WorldSession::SendTransferAborted(uint32 mapid, uint8 reason, uint8 arg)
 {
     WorldPacket data(SMSG_TRANSFER_ABORTED, 1);
@@ -928,7 +940,14 @@ void WorldSession::ExecuteOpcode(OpcodeHandler const& opHandle, WorldPacket* pac
         _player->SetCanDelayTeleport(true);
     }
 
-    (this->*opHandle.handler)(*packet);
+    if (opHandle.answer)
+    {
+        opHandle.answer(*this, *packet);
+    }
+    else
+    {
+        (this->*opHandle.handler)(*packet);
+    }
 
     if (_player)
     {

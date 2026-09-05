@@ -62,6 +62,7 @@
 #include "GuildMgr.h"
 #include "ObjectMgr.h"
 #include "WorldSession.h"
+#include "InstanceAnswers.h"
 #include "Auth/BigNumber.h"
 #include "Auth/Sha1.h"
 #include "UpdateData.h"
@@ -81,19 +82,19 @@
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleResetInstancesOpcode(WorldPacket& /*recv_data*/)
+void instances::ResetInstances(Player& who, WorldPacket& /*recv_data*/)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_RESET_INSTANCES");
 
-    if (Group* pGroup = _player->GetGroup())
+    if (Group* pGroup = who.GetGroup())
     {
-        if (pGroup->IsLeader(_player->GetObjectGuid()))
+        if (pGroup->IsLeader(who.GetObjectGuid()))
         {
-            pGroup->ResetInstances(INSTANCE_RESET_ALL, _player);
+            pGroup->ResetInstances(INSTANCE_RESET_ALL, &who);
         }
     }
     else
     {
-        _player->ResetInstances(INSTANCE_RESET_ALL);
+        who.ResetInstances(INSTANCE_RESET_ALL);
     }
 }

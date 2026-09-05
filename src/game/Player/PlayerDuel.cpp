@@ -252,3 +252,15 @@ void Player::SendDuelCountdown(uint32 counter)
     data << uint32(counter);                                // seconds
     GetSession()->SendPacket(&data);
 }
+
+void Player::OpenTradeWith(Player* other)
+{
+    delete m_trade;
+    m_trade = new TradeData(this, other);
+}
+
+void Player::DropTrade()
+{
+    delete m_trade;
+    m_trade = nullptr;
+}

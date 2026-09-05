@@ -1,0 +1,51 @@
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the 1.12.x client.
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
+
+#pragma once
+
+class Player;
+class WorldPacket;
+class WorldSession;
+
+/// What the client asks about quests.
+namespace quests
+{
+    void QuestgiverStatusQuery(Player& who, WorldPacket& packet);
+    void QuestgiverHello(Player& who, WorldPacket& packet);
+    void QuestgiverAcceptQuest(Player& who, WorldPacket& packet);
+    void QuestgiverQueryQuest(Player& who, WorldPacket& packet);
+    void QuestQuery(Player& who, WorldPacket& packet);
+    void QuestgiverChooseReward(Player& who, WorldPacket& packet);
+    void QuestgiverRequestReward(Player& who, WorldPacket& packet);
+    void QuestgiverCancel(Player& who, WorldPacket& packet);
+    void QuestLogSwapQuest(Player& who, WorldPacket& packet);
+    void QuestLogRemoveQuest(Player& who, WorldPacket& packet);
+    void QuestConfirmAccept(Player& who, WorldPacket& packet);
+    void QuestgiverCompleteQuest(Player& who, WorldPacket& packet);
+    void QuestgiverQuestAutoLaunch(Player& who, WorldPacket& packet);
+    void PushQuestToParty(Player& who, WorldPacket& packet);
+    void QuestPushResult(Player& who, WorldPacket& packet);
+    void QuestgiverStatusMultipleQuery(Player& who, WorldPacket& packet);
+}

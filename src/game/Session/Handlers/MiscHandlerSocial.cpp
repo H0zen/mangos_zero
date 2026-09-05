@@ -64,6 +64,7 @@
 #include "GuildMgr.h"
 #include "ObjectMgr.h"
 #include "WorldSession.h"
+#include "SocialAnswers.h"
 #include "Auth/BigNumber.h"
 #include "Auth/Sha1.h"
 #include "UpdateData.h"
@@ -84,11 +85,11 @@
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleAddFriendOpcode(WorldPacket& recv_data)
+void social::AddFriend(WorldSession& session, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_ADD_FRIEND");
 
-    std::string friendName = GetMangosString(LANG_FRIEND_IGNORE_UNKNOWN);
+    std::string friendName = session.GetMangosString(LANG_FRIEND_IGNORE_UNKNOWN);
 
     recv_data >> friendName;
 
@@ -100,9 +101,9 @@ void WorldSession::HandleAddFriendOpcode(WorldPacket& recv_data)
     CharacterDatabase.escape_string(friendName);            // prevent SQL injection - normal name don't must changed by this call
 
     DEBUG_LOG("WORLD: %s asked to add friend : '%s'",
-        GetPlayer()->GetName(), friendName.c_str());
+        session.GetPlayer()->GetName(), friendName.c_str());
 
-    uint32 accountId = GetAccountId();
+    uint32 accountId = session.GetAccountId();
     CharacterDatabase.AsyncPQuery([accountId](QueryResult* result)
                                   {
                                       WorldSession::HandleAddFriendOpcodeCallBack(result, accountId);
@@ -185,7 +186,7 @@ void WorldSession::HandleAddFriendOpcodeCallBack(QueryResult* result, uint32 acc
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleDelFriendOpcode(WorldPacket& recv_data)
+void social::DelFriend(Player& who, WorldPacket& recv_data)
 {
     ObjectGuid friendGuid;
 
@@ -193,9 +194,9 @@ void WorldSession::HandleDelFriendOpcode(WorldPacket& recv_data)
 
     recv_data >> friendGuid;
 
-    _player->GetSocial()->RemoveFromSocialList(friendGuid, false);
+    who.GetSocial()->RemoveFromSocialList(friendGuid, false);
 
-    sSocialMgr.SendFriendStatus(GetPlayer(), FRIEND_REMOVED, friendGuid, false);
+    sSocialMgr.SendFriendStatus(&who, FRIEND_REMOVED, friendGuid, false);
 
     DEBUG_LOG("WORLD: Sent motd (SMSG_FRIEND_STATUS)");
 }
@@ -205,11 +206,11 @@ void WorldSession::HandleDelFriendOpcode(WorldPacket& recv_data)
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleAddIgnoreOpcode(WorldPacket& recv_data)
+void social::AddIgnore(WorldSession& session, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_ADD_IGNORE");
 
-    std::string IgnoreName = GetMangosString(LANG_FRIEND_IGNORE_UNKNOWN);
+    std::string IgnoreName = session.GetMangosString(LANG_FRIEND_IGNORE_UNKNOWN);
 
     recv_data >> IgnoreName;
 
@@ -221,9 +222,9 @@ void WorldSession::HandleAddIgnoreOpcode(WorldPacket& recv_data)
     CharacterDatabase.escape_string(IgnoreName);            // prevent SQL injection - normal name don't must changed by this call
 
     DEBUG_LOG("WORLD: %s asked to Ignore: '%s'",
-        GetPlayer()->GetName(), IgnoreName.c_str());
+        session.GetPlayer()->GetName(), IgnoreName.c_str());
 
-    uint32 accountId = GetAccountId();
+    uint32 accountId = session.GetAccountId();
     CharacterDatabase.AsyncPQuery([accountId](QueryResult* result)
                                   {
                                       WorldSession::HandleAddIgnoreOpcodeCallBack(result, accountId);
@@ -293,7 +294,7 @@ void WorldSession::HandleAddIgnoreOpcodeCallBack(QueryResult* result, uint32 acc
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleDelIgnoreOpcode(WorldPacket& recv_data)
+void social::DelIgnore(Player& who, WorldPacket& recv_data)
 {
     ObjectGuid ignoreGuid;
 
@@ -301,9 +302,9 @@ void WorldSession::HandleDelIgnoreOpcode(WorldPacket& recv_data)
 
     recv_data >> ignoreGuid;
 
-    _player->GetSocial()->RemoveFromSocialList(ignoreGuid, true);
+    who.GetSocial()->RemoveFromSocialList(ignoreGuid, true);
 
-    sSocialMgr.SendFriendStatus(GetPlayer(), FRIEND_IGNORE_REMOVED, ignoreGuid, false);
+    sSocialMgr.SendFriendStatus(&who, FRIEND_IGNORE_REMOVED, ignoreGuid, false);
 
     DEBUG_LOG("WORLD: Sent motd (SMSG_FRIEND_STATUS)");
 }

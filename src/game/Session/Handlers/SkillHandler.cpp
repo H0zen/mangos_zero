@@ -44,6 +44,7 @@
 #include "Player.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include "SkillAnswers.h"
 
 /**
  * @brief Handle talent learning (CMSG_LEARN_TALENT)
@@ -57,17 +58,17 @@
  * Validation and point deduction handled by Player::LearnTalent().
  * If player has an active pet, owner talent auras are recast on it.
  */
-void WorldSession::HandleLearnTalentOpcode(WorldPacket& recv_data)
+void skills::LearnTalent(Player& who, WorldPacket& recv_data)
 {
     uint32 talent_id, requested_rank;
     recv_data >> talent_id >> requested_rank;
 
-    _player->LearnTalent(talent_id, requested_rank);
+    who.LearnTalent(talent_id, requested_rank);
 
     // if player has a pet, update owner talent auras
-    if (_player->GetPet())
+    if (who.GetPet())
     {
-        _player->GetPet()->CastOwnerTalentAuras();
+        who.GetPet()->CastOwnerTalentAuras();
     }
 }
 
@@ -85,46 +86,46 @@ void WorldSession::HandleLearnTalentOpcode(WorldPacket& recv_data)
  *
  * @note Player cannot be feign death during the interaction
  */
-void WorldSession::HandleTalentWipeConfirmOpcode(WorldPacket& recv_data)
+void skills::TalentWipeConfirm(Player& who, WorldPacket& recv_data)
 {
     DETAIL_LOG("MSG_TALENT_WIPE_CONFIRM");
     ObjectGuid guid;
     recv_data >> guid;
 
-    Creature* unit = GetPlayer()->GetNPCIfCanInteractWith(guid, UNIT_NPC_FLAG_TRAINER);
+    Creature* unit = who.GetNPCIfCanInteractWith(guid, UNIT_NPC_FLAG_TRAINER);
     if (!unit)
     {
         DEBUG_LOG("WORLD: HandleTalentWipeConfirmOpcode - %s not found or you can't interact with him.", guid.GetString().c_str());
         return;
     }
 
-    if (!unit->CanTrainAndResetTalentsOf(_player))
+    if (!unit->CanTrainAndResetTalentsOf(&who))
     {
         return;
     }
 
     // Remove fake death to allow interaction
-    if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
+    if (who.hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
+        who.RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
-    if (!(_player->resetTalents()))
+    if (!(who.resetTalents()))
     {
         WorldPacket data(MSG_TALENT_WIPE_CONFIRM, 8 + 4);   // No talents to reset
         data << uint64(0);
         data << uint32(0);
-        SendPacket(&data);
+        who.GetSession()->SendPacket(&data);
         return;
     }
 
     // Visual effect: "Untalent Visual Effect"
-    unit->CastSpell(_player, 14867, true);
+    unit->CastSpell(&who, 14867, true);
 
     // Recast owner talent auras on pet if present
-    if (_player->GetPet())
+    if (who.GetPet())
     {
-        _player->GetPet()->CastOwnerTalentAuras();
+        who.GetPet()->CastOwnerTalentAuras();
     }
 }
 
@@ -138,9 +139,9 @@ void WorldSession::HandleTalentWipeConfirmOpcode(WorldPacket& recv_data)
  * @warning This action is permanent and removes all skill progress
  * @note Does not refund any costs or recipe purchases
  */
-void WorldSession::HandleUnlearnSkillOpcode(WorldPacket& recv_data)
+void skills::UnlearnSkill(Player& who, WorldPacket& recv_data)
 {
     uint32 skill_id;
     recv_data >> skill_id;
-    GetPlayer()->SetSkill(skill_id, 0, 0);
+    who.SetSkill(skill_id, 0, 0);
 }

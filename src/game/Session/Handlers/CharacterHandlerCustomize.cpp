@@ -49,6 +49,7 @@
 #include "WorldPacket.h"
 #include "SharedDefines.h"
 #include "WorldSession.h"
+#include "CharacterCustomizeAnswers.h"
 #include "Opcodes.h"
 #include "Log.h"
 #include "World.h"
@@ -73,7 +74,7 @@
  *
  * @param recv_data The received opcode packet.
  */
-void WorldSession::HandleCharRenameOpcode(WorldPacket& recv_data)
+void characters::CharRename(WorldSession& session, WorldPacket& recv_data)
 {
     ObjectGuid guid;
     std::string newname;
@@ -86,7 +87,7 @@ void WorldSession::HandleCharRenameOpcode(WorldPacket& recv_data)
     {
         WorldPacket data(SMSG_CHAR_RENAME, 1);
         data << uint8(CHAR_NAME_NO_NAME);
-        SendPacket(&data);
+        session.SendPacket(&data);
         return;
     }
 
@@ -95,16 +96,16 @@ void WorldSession::HandleCharRenameOpcode(WorldPacket& recv_data)
     {
         WorldPacket data(SMSG_CHAR_RENAME, 1);
         data << uint8(res);
-        SendPacket(&data);
+        session.SendPacket(&data);
         return;
     }
 
     // check name limitations
-    if (GetSecurity() == SEC_PLAYER && sObjectMgr.IsReservedName(newname))
+    if (session.GetSecurity() == SEC_PLAYER && sObjectMgr.IsReservedName(newname))
     {
         WorldPacket data(SMSG_CHAR_RENAME, 1);
         data << uint8(CHAR_NAME_RESERVED);
-        SendPacket(&data);
+        session.SendPacket(&data);
         return;
     }
 
@@ -113,13 +114,13 @@ void WorldSession::HandleCharRenameOpcode(WorldPacket& recv_data)
 
     // make sure that the character belongs to the current account, that rename at login is enabled
     // and that there is no character with the desired new name
-    uint32 accountId = GetAccountId();
+    uint32 accountId = session.GetAccountId();
     CharacterDatabase.AsyncPQuery([accountId, newname](QueryResult* result)
                                   {
                                       WorldSession::HandleChangePlayerNameOpcodeCallBack(result, accountId, newname);
                                   },
             "SELECT `guid`, `name` FROM `characters` WHERE `guid` = %u AND `account` = %u AND (`at_login` & %u) = %u AND NOT EXISTS (SELECT NULL FROM `characters` WHERE `name` = '%s')",
-        guid.GetCounter(), GetAccountId(), AT_LOGIN_RENAME, AT_LOGIN_RENAME, escaped_newname.c_str()
+        guid.GetCounter(), session.GetAccountId(), AT_LOGIN_RENAME, AT_LOGIN_RENAME, escaped_newname.c_str()
         );
 }
 

@@ -1632,6 +1632,12 @@ class Player : public Unit
         // Get the trade data
         TradeData* GetTradeData() const { return m_trade; }
 
+        /// Opens a trade with someone, dropping whatever trade he was in.
+        void OpenTradeWith(Player* other);
+
+        /// Ends the trade he is in.
+        void DropTrade();
+
         // Cancel the trade
         void TradeCancel(bool sendback);
 

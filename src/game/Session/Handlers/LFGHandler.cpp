@@ -49,6 +49,7 @@
 #include "Player.h"
 #include "ObjectMgr.h"
 #include "WorldSession.h"
+#include "MeetingstoneAnswers.h"
 #include "Object.h"
 #include "Chat.h"
 #include "Language.h"
@@ -73,7 +74,7 @@
  *
  * On success, adds player/group to LFGMgr queue for the stone's area.
  */
-void WorldSession::HandleMeetingStoneJoinOpcode(WorldPacket& recv_data)
+void meetingstones::MeetingStoneJoin(Player& who, WorldPacket& recv_data)
 {
     ObjectGuid guid;
 
@@ -82,12 +83,12 @@ void WorldSession::HandleMeetingStoneJoinOpcode(WorldPacket& recv_data)
     DEBUG_LOG("WORLD: Recvd CMSG_MEETINGSTONE_JOIN Message guid: %s", guid.GetString().c_str());
 
     // ignore for remote control state
-    if (!_player->IsSelfMover())
+    if (!who.IsSelfMover())
     {
         return;
     }
 
-    GameObject *obj = GetPlayer()->GetMap()->GetGameObject(guid);
+    GameObject *obj = who.GetMap()->GetGameObject(guid);
 
     if (!obj)
     {
@@ -101,24 +102,24 @@ void WorldSession::HandleMeetingStoneJoinOpcode(WorldPacket& recv_data)
         return;
     }
 
-    if (Group* grp = _player->GetGroup())
+    if (Group* grp = who.GetGroup())
     {
-        if (!grp->IsLeader(_player->GetObjectGuid()))
+        if (!grp->IsLeader(who.GetObjectGuid()))
         {
-            SendMeetingstoneFailed(MEETINGSTONE_FAIL_PARTYLEADER);
+            who.GetSession()->SendMeetingstoneFailed(MEETINGSTONE_FAIL_PARTYLEADER);
 
             return;
         }
 
         if (grp->isRaidGroup())
         {
-            SendMeetingstoneFailed(MEETINGSTONE_FAIL_RAID_GROUP);
+            who.GetSession()->SendMeetingstoneFailed(MEETINGSTONE_FAIL_RAID_GROUP);
             return;
         }
 
         if (grp->IsFull())
         {
-            SendMeetingstoneFailed(MEETINGSTONE_FAIL_FULL_GROUP);
+            who.GetSession()->SendMeetingstoneFailed(MEETINGSTONE_FAIL_FULL_GROUP);
             return;
         }
     }
@@ -126,7 +127,7 @@ void WorldSession::HandleMeetingStoneJoinOpcode(WorldPacket& recv_data)
     GameObjectInfo const* gInfo = ObjectMgr::GetGameObjectInfo(obj->GetEntry());
 
 
-    sLFGMgr.AddToQueue(_player, gInfo->meetingstone.areaID);
+    sLFGMgr.AddToQueue(&who, gInfo->meetingstone.areaID);
 }
 
 /**
@@ -138,23 +139,23 @@ void WorldSession::HandleMeetingStoneJoinOpcode(WorldPacket& recv_data)
  * - In group as member: Personal leave notification only
  * - Solo player: Removes from queue
  */
-void WorldSession::HandleMeetingStoneLeaveOpcode(WorldPacket& /*recv_data*/)
+void meetingstones::MeetingStoneLeave(Player& who, WorldPacket& /*recv_data*/)
 {
     DEBUG_LOG("WORLD: Recvd CMSG_MEETINGSTONE_LEAVE");
-    if (Group *grp = _player->GetGroup())
+    if (Group *grp = who.GetGroup())
     {
-        if (grp->IsLeader(_player->GetObjectGuid()) && grp->isInLFG())
+        if (grp->IsLeader(who.GetObjectGuid()) && grp->isInLFG())
         {
             sLFGMgr.RemoveGroupFromQueue(grp->GetId());
         }
         else
         {
-            SendMeetingstoneSetqueue(0, MEETINGSTONE_STATUS_NONE);
+            who.GetSession()->SendMeetingstoneSetqueue(0, MEETINGSTONE_STATUS_NONE);
         }
     }
     else
     {
-        sLFGMgr.RemovePlayerFromQueue(_player->GetObjectGuid());
+        sLFGMgr.RemovePlayerFromQueue(who.GetObjectGuid());
     }
 }
 

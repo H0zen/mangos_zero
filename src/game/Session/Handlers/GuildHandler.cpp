@@ -54,6 +54,7 @@
 #include <string>
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include "GuildAnswers.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "Log.h"
@@ -63,7 +64,7 @@
 #include "SocialMgr.h"
 #include "PlayerRegistry.h"
 
-void WorldSession::HandleGuildQueryOpcode(WorldPacket& recvPacket)
+void guilds::GuildQuery(WorldSession& session, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_QUERY");
 
@@ -72,11 +73,11 @@ void WorldSession::HandleGuildQueryOpcode(WorldPacket& recvPacket)
 
     if (Guild* guild = sGuildMgr.GetGuildById(guildId))
     {
-        guild->Query(this);
+        guild->Query(&session);
         return;
     }
 
-    SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+    session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
 }
 
 /**
@@ -84,20 +85,20 @@ void WorldSession::HandleGuildQueryOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildCreateOpcode(WorldPacket& recvPacket)
+void guilds::GuildCreate(Player& who, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_CREATE");
 
     std::string gname;
     recvPacket >> gname;
 
-    if (GetPlayer()->GetGuildId())                          // already in guild
+    if (who.GetGuildId())                          // already in guild
     {
         return;
     }
 
     Guild* guild = new Guild;
-    if (!guild->Create(GetPlayer(), gname))
+    if (!guild->Create(&who, gname))
     {
         delete guild;
         return;
@@ -128,7 +129,7 @@ void WorldSession::SendGuildInvite(Player* player, bool /*alreadyInGuild*/ /*= f
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildInviteOpcode(WorldPacket& recvPacket)
+void guilds::GuildInvite(WorldSession& session, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_INVITE");
 
@@ -144,58 +145,58 @@ void WorldSession::HandleGuildInviteOpcode(WorldPacket& recvPacket)
 
     if (!player)
     {
-        SendGuildCommandResult(GUILD_INVITE_S, Invitedname, ERR_GUILD_PLAYER_NOT_FOUND_S);
+        session.SendGuildCommandResult(GUILD_INVITE_S, Invitedname, ERR_GUILD_PLAYER_NOT_FOUND_S);
         return;
     }
 
-    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(session.GetPlayer()->GetGuildId());
     if (!guild)
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
 
     // OK result but not send invite
-    if (player->GetSocial()->HasIgnore(GetPlayer()->GetObjectGuid()))
+    if (player->GetSocial()->HasIgnore(session.GetPlayer()->GetObjectGuid()))
     {
         return;
     }
 
     // not let enemies sign guild charter
-    if (!sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_GUILD) && player->GetTeam() != GetPlayer()->GetTeam())
+    if (!sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_GUILD) && player->GetTeam() != session.GetPlayer()->GetTeam())
     {
-        SendGuildCommandResult(GUILD_INVITE_S, Invitedname, ERR_GUILD_NOT_ALLIED);
+        session.SendGuildCommandResult(GUILD_INVITE_S, Invitedname, ERR_GUILD_NOT_ALLIED);
         return;
     }
 
     if (player->GetGuildId())
     {
         plname = player->GetName();
-        SendGuildCommandResult(GUILD_INVITE_S, plname, ERR_ALREADY_IN_GUILD_S);
+        session.SendGuildCommandResult(GUILD_INVITE_S, plname, ERR_ALREADY_IN_GUILD_S);
         return;
     }
 
     if (player->GetGuildIdInvited())
     {
         plname = player->GetName();
-        SendGuildCommandResult(GUILD_INVITE_S, plname, ERR_ALREADY_INVITED_TO_GUILD_S);
+        session.SendGuildCommandResult(GUILD_INVITE_S, plname, ERR_ALREADY_INVITED_TO_GUILD_S);
         return;
     }
 
-    if (!guild->HasRankRight(GetPlayer()->GetRank(), GR_RIGHT_INVITE))
+    if (!guild->HasRankRight(session.GetPlayer()->GetRank(), GR_RIGHT_INVITE))
     {
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
         return;
     }
 
-    DEBUG_LOG("Player %s Invited %s to Join his Guild", GetPlayer()->GetName(), Invitedname.c_str());
+    DEBUG_LOG("Player %s Invited %s to Join his Guild", session.GetPlayer()->GetName(), Invitedname.c_str());
 
-    player->SetGuildIdInvited(GetPlayer()->GetGuildId());
+    player->SetGuildIdInvited(session.GetPlayer()->GetGuildId());
     // Put record into guildlog
-    guild->LogGuildEvent(GUILD_EVENT_LOG_INVITE_PLAYER, GetPlayer()->GetObjectGuid(), player->GetObjectGuid());
+    guild->LogGuildEvent(GUILD_EVENT_LOG_INVITE_PLAYER, session.GetPlayer()->GetObjectGuid(), player->GetObjectGuid());
 
     WorldPacket data(SMSG_GUILD_INVITE, (8 + 10));          // guess size
-    data << GetPlayer()->GetName();
+    data << session.GetPlayer()->GetName();
     data << guild->GetName();
     player->GetSession()->SendPacket(&data);
 
@@ -207,7 +208,7 @@ void WorldSession::HandleGuildInviteOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildRemoveOpcode(WorldPacket& recvPacket)
+void guilds::GuildRemove(WorldSession& session, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_REMOVE");
 
@@ -219,36 +220,36 @@ void WorldSession::HandleGuildRemoveOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(session.GetPlayer()->GetGuildId());
     if (!guild)
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
 
-    if (!guild->HasRankRight(GetPlayer()->GetRank(), GR_RIGHT_REMOVE))
+    if (!guild->HasRankRight(session.GetPlayer()->GetRank(), GR_RIGHT_REMOVE))
     {
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
         return;
     }
 
     MemberSlot* slot = guild->GetMemberSlot(plName);
     if (!slot)
     {
-        SendGuildCommandResult(GUILD_INVITE_S, plName, ERR_GUILD_PLAYER_NOT_IN_GUILD_S);
+        session.SendGuildCommandResult(GUILD_INVITE_S, plName, ERR_GUILD_PLAYER_NOT_IN_GUILD_S);
         return;
     }
 
     if (slot->RankId == GR_GUILDMASTER)
     {
-        SendGuildCommandResult(GUILD_QUIT_S, "", ERR_GUILD_LEADER_LEAVE);
+        session.SendGuildCommandResult(GUILD_QUIT_S, "", ERR_GUILD_LEADER_LEAVE);
         return;
     }
 
     // do not allow to kick player with same or higher rights
-    if (GetPlayer()->GetRank() >= slot->RankId)
+    if (session.GetPlayer()->GetRank() >= slot->RankId)
     {
-        SendGuildCommandResult(GUILD_QUIT_S, plName, ERR_GUILD_RANK_TOO_HIGH_S);
+        session.SendGuildCommandResult(GUILD_QUIT_S, plName, ERR_GUILD_RANK_TOO_HIGH_S);
         return;
     }
 
@@ -261,9 +262,9 @@ void WorldSession::HandleGuildRemoveOpcode(WorldPacket& recvPacket)
     }
 
     // Put record into guild log
-    guild->LogGuildEvent(GUILD_EVENT_LOG_UNINVITE_PLAYER, GetPlayer()->GetObjectGuid(), slot->guid);
+    guild->LogGuildEvent(GUILD_EVENT_LOG_UNINVITE_PLAYER, session.GetPlayer()->GetObjectGuid(), slot->guid);
 
-    guild->BroadcastEvent(GE_REMOVED, plName.c_str(), _player->GetName());
+    guild->BroadcastEvent(GE_REMOVED, plName.c_str(), session.GetPlayer()->GetName());
 }
 
 /**
@@ -271,10 +272,10 @@ void WorldSession::HandleGuildRemoveOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildAcceptOpcode(WorldPacket& /*recvPacket*/)
+void guilds::GuildAccept(Player& who, WorldPacket& /*recvPacket*/)
 {
     Guild* guild;
-    Player* player = GetPlayer();
+    Player* player = &who;
 
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_ACCEPT");
 
@@ -290,12 +291,12 @@ void WorldSession::HandleGuildAcceptOpcode(WorldPacket& /*recvPacket*/)
         return;
     }
 
-    if (!guild->AddMember(GetPlayer()->GetObjectGuid(), guild->GetLowestRank()))
+    if (!guild->AddMember(who.GetObjectGuid(), guild->GetLowestRank()))
     {
         return;
     }
     // Put record into guild log
-    guild->LogGuildEvent(GUILD_EVENT_LOG_JOIN_GUILD, GetPlayer()->GetObjectGuid());
+    guild->LogGuildEvent(GUILD_EVENT_LOG_JOIN_GUILD, who.GetObjectGuid());
 
     guild->BroadcastEvent(GE_JOINED, player->GetObjectGuid(), player->GetName());
 }
@@ -305,15 +306,15 @@ void WorldSession::HandleGuildAcceptOpcode(WorldPacket& /*recvPacket*/)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildDeclineOpcode(WorldPacket& /*recvPacket*/)
+void guilds::GuildDecline(Player& who, WorldPacket& /*recvPacket*/)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_DECLINE");
-    if (GetPlayer()->GetGuildId())
+    if (who.GetGuildId())
     {
         return;
     }
 
-    GetPlayer()->SetGuildIdInvited(0);
+    who.SetGuildIdInvited(0);
 }
 
 /**
@@ -321,14 +322,14 @@ void WorldSession::HandleGuildDeclineOpcode(WorldPacket& /*recvPacket*/)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildInfoOpcode(WorldPacket& /*recvPacket*/)
+void guilds::GuildInfo(WorldSession& session, WorldPacket& /*recvPacket*/)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_INFO");
 
-    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(session.GetPlayer()->GetGuildId());
     if (!guild)
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
 
@@ -339,7 +340,7 @@ void WorldSession::HandleGuildInfoOpcode(WorldPacket& /*recvPacket*/)
     data << uint32(guild->GetCreatedYear());
     data << uint32(guild->GetMemberSize());                 // amount of chars
     data << uint32(guild->GetAccountsNumber());             // amount of accounts
-    SendPacket(&data);
+    session.SendPacket(&data);
 }
 
 /**
@@ -347,13 +348,13 @@ void WorldSession::HandleGuildInfoOpcode(WorldPacket& /*recvPacket*/)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildRosterOpcode(WorldPacket& /*recvPacket*/)
+void guilds::GuildRoster(Player& who, WorldPacket& /*recvPacket*/)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_ROSTER");
 
-    if (Guild* guild = sGuildMgr.GetGuildById(_player->GetGuildId()))
+    if (Guild* guild = sGuildMgr.GetGuildById(who.GetGuildId()))
     {
-        guild->Roster(this);
+        guild->Roster(who.GetSession());
     }
 }
 
@@ -362,7 +363,7 @@ void WorldSession::HandleGuildRosterOpcode(WorldPacket& /*recvPacket*/)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildPromoteOpcode(WorldPacket& recvPacket)
+void guilds::GuildPromote(WorldSession& session, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_PROMOTE");
 
@@ -374,37 +375,37 @@ void WorldSession::HandleGuildPromoteOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(session.GetPlayer()->GetGuildId());
     if (!guild)
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
-    if (!guild->HasRankRight(GetPlayer()->GetRank(), GR_RIGHT_PROMOTE))
+    if (!guild->HasRankRight(session.GetPlayer()->GetRank(), GR_RIGHT_PROMOTE))
     {
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
         return;
     }
 
     MemberSlot* slot = guild->GetMemberSlot(plName);
     if (!slot)
     {
-        SendGuildCommandResult(GUILD_INVITE_S, plName, ERR_GUILD_PLAYER_NOT_IN_GUILD_S);
+        session.SendGuildCommandResult(GUILD_INVITE_S, plName, ERR_GUILD_PLAYER_NOT_IN_GUILD_S);
         return;
     }
 
-    if (slot->guid == GetPlayer()->GetObjectGuid())
+    if (slot->guid == session.GetPlayer()->GetObjectGuid())
     {
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_NAME_INVALID);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_NAME_INVALID);
         return;
     }
 
     // allow to promote only to lower rank than member's rank
     // guildmaster's rank = 0
-    // GetPlayer()->GetRank() + 1 is highest rank that current player can promote to
-    if (GetPlayer()->GetRank() + 1 >= slot->RankId)
+    // session.GetPlayer()->GetRank() + 1 is highest rank that current player can promote to
+    if (session.GetPlayer()->GetRank() + 1 >= slot->RankId)
     {
-        SendGuildCommandResult(GUILD_INVITE_S, plName, ERR_GUILD_RANK_TOO_HIGH_S);
+        session.SendGuildCommandResult(GUILD_INVITE_S, plName, ERR_GUILD_RANK_TOO_HIGH_S);
         return;
     }
 
@@ -412,9 +413,9 @@ void WorldSession::HandleGuildPromoteOpcode(WorldPacket& recvPacket)
 
     slot->ChangeRank(newRankId);
     // Put record into guild log
-    guild->LogGuildEvent(GUILD_EVENT_LOG_PROMOTE_PLAYER, GetPlayer()->GetObjectGuid(), slot->guid, newRankId);
+    guild->LogGuildEvent(GUILD_EVENT_LOG_PROMOTE_PLAYER, session.GetPlayer()->GetObjectGuid(), slot->guid, newRankId);
 
-    guild->BroadcastEvent(GE_PROMOTION, _player->GetName(), plName.c_str(), guild->GetRankName(newRankId).c_str());
+    guild->BroadcastEvent(GE_PROMOTION, session.GetPlayer()->GetName(), plName.c_str(), guild->GetRankName(newRankId).c_str());
 }
 
 /**
@@ -422,7 +423,7 @@ void WorldSession::HandleGuildPromoteOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildDemoteOpcode(WorldPacket& recvPacket)
+void guilds::GuildDemote(WorldSession& session, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_DEMOTE");
 
@@ -434,17 +435,17 @@ void WorldSession::HandleGuildDemoteOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(session.GetPlayer()->GetGuildId());
 
     if (!guild)
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
 
-    if (!guild->HasRankRight(GetPlayer()->GetRank(), GR_RIGHT_DEMOTE))
+    if (!guild->HasRankRight(session.GetPlayer()->GetRank(), GR_RIGHT_DEMOTE))
     {
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
         return;
     }
 
@@ -452,27 +453,27 @@ void WorldSession::HandleGuildDemoteOpcode(WorldPacket& recvPacket)
 
     if (!slot)
     {
-        SendGuildCommandResult(GUILD_INVITE_S, plName, ERR_GUILD_PLAYER_NOT_IN_GUILD_S);
+        session.SendGuildCommandResult(GUILD_INVITE_S, plName, ERR_GUILD_PLAYER_NOT_IN_GUILD_S);
         return;
     }
 
-    if (slot->guid == GetPlayer()->GetObjectGuid())
+    if (slot->guid == session.GetPlayer()->GetObjectGuid())
     {
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_NAME_INVALID);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_NAME_INVALID);
         return;
     }
 
     // do not allow to demote same or higher rank
-    if (GetPlayer()->GetRank() >= slot->RankId)
+    if (session.GetPlayer()->GetRank() >= slot->RankId)
     {
-        SendGuildCommandResult(GUILD_INVITE_S, plName, ERR_GUILD_RANK_TOO_HIGH_S);
+        session.SendGuildCommandResult(GUILD_INVITE_S, plName, ERR_GUILD_RANK_TOO_HIGH_S);
         return;
     }
 
     // do not allow to demote lowest rank
     if (slot->RankId >= guild->GetLowestRank())
     {
-        SendGuildCommandResult(GUILD_INVITE_S, plName, ERR_GUILD_RANK_TOO_LOW_S);
+        session.SendGuildCommandResult(GUILD_INVITE_S, plName, ERR_GUILD_RANK_TOO_LOW_S);
         return;
     }
 
@@ -480,9 +481,9 @@ void WorldSession::HandleGuildDemoteOpcode(WorldPacket& recvPacket)
 
     slot->ChangeRank(newRankId);
     // Put record into guild log
-    guild->LogGuildEvent(GUILD_EVENT_LOG_DEMOTE_PLAYER, GetPlayer()->GetObjectGuid(), slot->guid, newRankId);
+    guild->LogGuildEvent(GUILD_EVENT_LOG_DEMOTE_PLAYER, session.GetPlayer()->GetObjectGuid(), slot->guid, newRankId);
 
-    guild->BroadcastEvent(GE_DEMOTION, _player->GetName(), plName.c_str(), guild->GetRankName(slot->RankId).c_str());
+    guild->BroadcastEvent(GE_DEMOTION, session.GetPlayer()->GetName(), plName.c_str(), guild->GetRankName(slot->RankId).c_str());
 }
 
 /**
@@ -490,33 +491,33 @@ void WorldSession::HandleGuildDemoteOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildLeaveOpcode(WorldPacket& /*recvPacket*/)
+void guilds::GuildLeave(WorldSession& session, WorldPacket& /*recvPacket*/)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_LEAVE");
 
-    Guild* guild = sGuildMgr.GetGuildById(_player->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(session.GetPlayer()->GetGuildId());
     if (!guild)
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
 
-    if (_player->GetObjectGuid() == guild->GetLeaderGuid() && guild->GetMemberSize() > 1)
+    if (session.GetPlayer()->GetObjectGuid() == guild->GetLeaderGuid() && guild->GetMemberSize() > 1)
     {
-        SendGuildCommandResult(GUILD_QUIT_S, "", ERR_GUILD_LEADER_LEAVE);
+        session.SendGuildCommandResult(GUILD_QUIT_S, "", ERR_GUILD_LEADER_LEAVE);
         return;
     }
 
-    if (_player->GetObjectGuid() == guild->GetLeaderGuid())
+    if (session.GetPlayer()->GetObjectGuid() == guild->GetLeaderGuid())
     {
         guild->Disband();
         delete guild;
         return;
     }
 
-    SendGuildCommandResult(GUILD_QUIT_S, guild->GetName(), ERR_PLAYER_NO_MORE_IN_GUILD);
+    session.SendGuildCommandResult(GUILD_QUIT_S, guild->GetName(), ERR_PLAYER_NO_MORE_IN_GUILD);
 
-    if (guild->DelMember(_player->GetObjectGuid()))
+    if (guild->DelMember(session.GetPlayer()->GetObjectGuid()))
     {
         guild->Disband();
         delete guild;
@@ -524,9 +525,9 @@ void WorldSession::HandleGuildLeaveOpcode(WorldPacket& /*recvPacket*/)
     }
 
     // Put record into guild log
-    guild->LogGuildEvent(GUILD_EVENT_LOG_LEAVE_GUILD, _player->GetObjectGuid());
+    guild->LogGuildEvent(GUILD_EVENT_LOG_LEAVE_GUILD, session.GetPlayer()->GetObjectGuid());
 
-    guild->BroadcastEvent(GE_LEFT, _player->GetObjectGuid(), _player->GetName());
+    guild->BroadcastEvent(GE_LEFT, session.GetPlayer()->GetObjectGuid(), session.GetPlayer()->GetName());
 }
 
 /**
@@ -534,20 +535,20 @@ void WorldSession::HandleGuildLeaveOpcode(WorldPacket& /*recvPacket*/)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildDisbandOpcode(WorldPacket& /*recvPacket*/)
+void guilds::GuildDisband(WorldSession& session, WorldPacket& /*recvPacket*/)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_DISBAND");
 
-    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(session.GetPlayer()->GetGuildId());
     if (!guild)
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
 
-    if (GetPlayer()->GetObjectGuid() != guild->GetLeaderGuid())
+    if (session.GetPlayer()->GetObjectGuid() != guild->GetLeaderGuid())
     {
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
         return;
     }
 
@@ -562,14 +563,14 @@ void WorldSession::HandleGuildDisbandOpcode(WorldPacket& /*recvPacket*/)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildLeaderOpcode(WorldPacket& recvPacket)
+void guilds::GuildLeader(WorldSession& session, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_LEADER");
 
     std::string name;
     recvPacket >> name;
 
-    Player* oldLeader = GetPlayer();
+    Player* oldLeader = session.GetPlayer();
 
     if (!normalizePlayerName(name))
     {
@@ -580,27 +581,27 @@ void WorldSession::HandleGuildLeaderOpcode(WorldPacket& recvPacket)
 
     if (!guild)
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
 
     if (oldLeader->GetObjectGuid() != guild->GetLeaderGuid())
     {
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
         return;
     }
 
     MemberSlot* oldSlot = guild->GetMemberSlot(oldLeader->GetObjectGuid());
     if (!oldSlot)
     {
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
         return;
     }
 
     MemberSlot* slot = guild->GetMemberSlot(name);
     if (!slot)
     {
-        SendGuildCommandResult(GUILD_INVITE_S, name, ERR_GUILD_PLAYER_NOT_IN_GUILD_S);
+        session.SendGuildCommandResult(GUILD_INVITE_S, name, ERR_GUILD_PLAYER_NOT_IN_GUILD_S);
         return;
     }
 
@@ -615,7 +616,7 @@ void WorldSession::HandleGuildLeaderOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildMOTDOpcode(WorldPacket& recvPacket)
+void guilds::GuildMOTD(WorldSession& session, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_MOTD");
 
@@ -630,15 +631,15 @@ void WorldSession::HandleGuildMOTDOpcode(WorldPacket& recvPacket)
         MOTD.clear();
     }
 
-    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(session.GetPlayer()->GetGuildId());
     if (!guild)
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
-    if (!guild->HasRankRight(GetPlayer()->GetRank(), GR_RIGHT_SETMOTD))
+    if (!guild->HasRankRight(session.GetPlayer()->GetRank(), GR_RIGHT_SETMOTD))
     {
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
         return;
     }
 
@@ -652,7 +653,7 @@ void WorldSession::HandleGuildMOTDOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildSetPublicNoteOpcode(WorldPacket& recvPacket)
+void guilds::GuildSetPublicNote(WorldSession& session, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_SET_PUBLIC_NOTE");
 
@@ -664,24 +665,24 @@ void WorldSession::HandleGuildSetPublicNoteOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(session.GetPlayer()->GetGuildId());
 
     if (!guild)
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
 
-    if (!guild->HasRankRight(GetPlayer()->GetRank(), GR_RIGHT_EPNOTE))
+    if (!guild->HasRankRight(session.GetPlayer()->GetRank(), GR_RIGHT_EPNOTE))
     {
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
         return;
     }
 
     MemberSlot* slot = guild->GetMemberSlot(name);
     if (!slot)
     {
-        SendGuildCommandResult(GUILD_INVITE_S, name, ERR_GUILD_PLAYER_NOT_IN_GUILD_S);
+        session.SendGuildCommandResult(GUILD_INVITE_S, name, ERR_GUILD_PLAYER_NOT_IN_GUILD_S);
         return;
     }
 
@@ -689,7 +690,7 @@ void WorldSession::HandleGuildSetPublicNoteOpcode(WorldPacket& recvPacket)
 
     slot->SetPNOTE(PNOTE);
 
-    guild->Roster(this);
+    guild->Roster(&session);
 }
 
 /**
@@ -697,7 +698,7 @@ void WorldSession::HandleGuildSetPublicNoteOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildSetOfficerNoteOpcode(WorldPacket& recvPacket)
+void guilds::GuildSetOfficerNote(WorldSession& session, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_SET_OFFICER_NOTE");
 
@@ -709,23 +710,23 @@ void WorldSession::HandleGuildSetOfficerNoteOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(session.GetPlayer()->GetGuildId());
 
     if (!guild)
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
-    if (!guild->HasRankRight(GetPlayer()->GetRank(), GR_RIGHT_EOFFNOTE))
+    if (!guild->HasRankRight(session.GetPlayer()->GetRank(), GR_RIGHT_EOFFNOTE))
     {
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
         return;
     }
 
     MemberSlot* slot = guild->GetMemberSlot(plName);
     if (!slot)
     {
-        SendGuildCommandResult(GUILD_INVITE_S, plName, ERR_GUILD_PLAYER_NOT_IN_GUILD_S);
+        session.SendGuildCommandResult(GUILD_INVITE_S, plName, ERR_GUILD_PLAYER_NOT_IN_GUILD_S);
         return;
     }
 
@@ -733,7 +734,7 @@ void WorldSession::HandleGuildSetOfficerNoteOpcode(WorldPacket& recvPacket)
 
     slot->SetOFFNOTE(OFFNOTE);
 
-    guild->Roster(this);
+    guild->Roster(&session);
 }
 
 /**
@@ -741,7 +742,7 @@ void WorldSession::HandleGuildSetOfficerNoteOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildRankOpcode(WorldPacket& recvPacket)
+void guilds::GuildRank(WorldSession& session, WorldPacket& recvPacket)
 {
     std::string rankname;
     uint32 rankId;
@@ -749,18 +750,18 @@ void WorldSession::HandleGuildRankOpcode(WorldPacket& recvPacket)
 
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_RANK");
 
-    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(session.GetPlayer()->GetGuildId());
     if (!guild)
     {
         recvPacket.rpos(recvPacket.wpos());                 // set to end to avoid warnings spam
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
 
-    if (GetPlayer()->GetObjectGuid() != guild->GetLeaderGuid())
+    if (session.GetPlayer()->GetObjectGuid() != guild->GetLeaderGuid())
     {
         recvPacket.rpos(recvPacket.wpos());                 // set to end to avoid warnings spam
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
         return;
     }
 
@@ -778,7 +779,7 @@ void WorldSession::HandleGuildRankOpcode(WorldPacket& recvPacket)
 
     guild->SetRankRights(rankId, rights);
 
-    guild->Query(this);
+    guild->Query(&session);
     guild->Roster();                                        // broadcast for tab rights update
 }
 
@@ -787,23 +788,23 @@ void WorldSession::HandleGuildRankOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildAddRankOpcode(WorldPacket& recvPacket)
+void guilds::GuildAddRank(WorldSession& session, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_ADD_RANK");
 
     std::string rankname;
     recvPacket >> rankname;
 
-    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(session.GetPlayer()->GetGuildId());
     if (!guild)
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
 
-    if (GetPlayer()->GetObjectGuid() != guild->GetLeaderGuid())
+    if (session.GetPlayer()->GetObjectGuid() != guild->GetLeaderGuid())
     {
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
         return;
     }
 
@@ -814,7 +815,7 @@ void WorldSession::HandleGuildAddRankOpcode(WorldPacket& recvPacket)
 
     guild->CreateRank(rankname, GR_RIGHT_GCHATLISTEN | GR_RIGHT_GCHATSPEAK);
 
-    guild->Query(this);
+    guild->Query(&session);
     guild->Roster();                                        // broadcast for tab rights update
 }
 
@@ -823,26 +824,26 @@ void WorldSession::HandleGuildAddRankOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildDelRankOpcode(WorldPacket& /*recvPacket*/)
+void guilds::GuildDelRank(WorldSession& session, WorldPacket& /*recvPacket*/)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_DEL_RANK");
 
-    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(session.GetPlayer()->GetGuildId());
     if (!guild)
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
 
-    if (GetPlayer()->GetObjectGuid() != guild->GetLeaderGuid())
+    if (session.GetPlayer()->GetObjectGuid() != guild->GetLeaderGuid())
     {
-        SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
+        session.SendGuildCommandResult(GUILD_INVITE_S, "", ERR_GUILD_PERMISSIONS);
         return;
     }
 
     guild->DelRank();
 
-    guild->Query(this);
+    guild->Query(&session);
     guild->Roster();                                        // broadcast for tab rights update
 }
 
@@ -869,23 +870,23 @@ void WorldSession::SendGuildCommandResult(uint32 typecmd, const std::string& str
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildChangeInfoTextOpcode(WorldPacket& recvPacket)
+void guilds::GuildChangeInfoText(WorldSession& session, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_INFO_TEXT");
 
     std::string GINFO;
     recvPacket >> GINFO;
 
-    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(session.GetPlayer()->GetGuildId());
     if (!guild)
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
 
-    if (!guild->HasRankRight(GetPlayer()->GetRank(), GR_RIGHT_MODIFY_GUILD_INFO))
+    if (!guild->HasRankRight(session.GetPlayer()->GetRank(), GR_RIGHT_MODIFY_GUILD_INFO))
     {
-        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PERMISSIONS);
+        session.SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PERMISSIONS);
         return;
     }
 
@@ -897,7 +898,7 @@ void WorldSession::HandleGuildChangeInfoTextOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleSaveGuildEmblemOpcode(WorldPacket& recvPacket)
+void guilds::SaveGuildEmblem(Player& who, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode MSG_SAVE_GUILD_EMBLEM");
 
@@ -907,50 +908,50 @@ void WorldSession::HandleSaveGuildEmblemOpcode(WorldPacket& recvPacket)
     recvPacket >> vendorGuid;
     recvPacket >> EmblemStyle >> EmblemColor >> BorderStyle >> BorderColor >> BackgroundColor;
 
-    Creature* pCreature = GetPlayer()->GetNPCIfCanInteractWith(vendorGuid, UNIT_NPC_FLAG_TABARDDESIGNER);
+    Creature* pCreature = who.GetNPCIfCanInteractWith(vendorGuid, UNIT_NPC_FLAG_TABARDDESIGNER);
     if (!pCreature)
     {
         //[-ZERO] fails silently, not "That's not an emblem vendor!"
-        SendSaveGuildEmblem(ERR_GUILDEMBLEM_FAIL_NO_MESSAGE);
+        who.GetSession()->SendSaveGuildEmblem(ERR_GUILDEMBLEM_FAIL_NO_MESSAGE);
         DEBUG_LOG("WORLD: HandleSaveGuildEmblemOpcode - %s not found or you can't interact with him.", vendorGuid.GetString().c_str());
         return;
     }
 
     // remove fake death
-    if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
+    if (who.hasUnitState(UNIT_STAT_DIED))
     {
-        GetPlayer()->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
+        who.RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
-    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(who.GetGuildId());
     if (!guild)
     {
         //"You are not part of a guild!";
-        SendSaveGuildEmblem(ERR_GUILDEMBLEM_NOGUILD);
+        who.GetSession()->SendSaveGuildEmblem(ERR_GUILDEMBLEM_NOGUILD);
         return;
     }
 
-    if (guild->GetLeaderGuid() != GetPlayer()->GetObjectGuid())
+    if (guild->GetLeaderGuid() != who.GetObjectGuid())
     {
         //"Only guild leaders can create emblems."
-        SendSaveGuildEmblem(ERR_GUILDEMBLEM_NOTGUILDMASTER);
+        who.GetSession()->SendSaveGuildEmblem(ERR_GUILDEMBLEM_NOTGUILDMASTER);
         return;
     }
 
-    if (GetPlayer()->GetMoney() < 10 * GOLD)
+    if (who.GetMoney() < 10 * GOLD)
     {
         //"You can't afford to do that."
-        SendSaveGuildEmblem(ERR_GUILDEMBLEM_NOTENOUGHMONEY);
+        who.GetSession()->SendSaveGuildEmblem(ERR_GUILDEMBLEM_NOTENOUGHMONEY);
         return;
     }
 
-    GetPlayer()->ModifyMoney(-10 * GOLD);
+    who.ModifyMoney(-10 * GOLD);
     guild->SetEmblem(EmblemStyle, EmblemColor, BorderStyle, BorderColor, BackgroundColor);
 
     //"Guild Emblem saved."
-    SendSaveGuildEmblem(ERR_GUILDEMBLEM_SUCCESS);
+    who.GetSession()->SendSaveGuildEmblem(ERR_GUILDEMBLEM_SUCCESS);
 
-    guild->Query(this);
+    guild->Query(who.GetSession());
 }
 
 /**
@@ -958,16 +959,16 @@ void WorldSession::HandleSaveGuildEmblemOpcode(WorldPacket& recvPacket)
  *
  * @param recvPacket The received opcode packet.
  */
-void WorldSession::HandleGuildEventLogQueryOpcode(WorldPacket& /* recvPacket */)
+void guilds::GuildEventLogQuery(Player& who, WorldPacket& /* recvPacket */)
 {
     // empty
     DEBUG_LOG("WORLD: Received (MSG_GUILD_EVENT_LOG_QUERY)");
 
-    if (uint32 GuildId = GetPlayer()->GetGuildId())
+    if (uint32 GuildId = who.GetGuildId())
     {
         if (Guild* pGuild = sGuildMgr.GetGuildById(GuildId))
         {
-            pGuild->DisplayGuildEventLog(this);
+            pGuild->DisplayGuildEventLog(who.GetSession());
         }
     }
 }
