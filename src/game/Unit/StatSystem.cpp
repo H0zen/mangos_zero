@@ -26,6 +26,12 @@
 #include "Unit.h"
 #include "Stats/PetNumbers.h"
 #include "Stats/PlayerNumbers.h"
+#include "Stats/Chances.h"
+#include "Player.h"
+#include "Pet.h"
+#include "Creature.h"
+#include "SharedDefines.h"
+#include "SpellAuras.h"
 
 /// The talent that pays a druid per level for the shape it is in.
 uint32 const ICON_PREDATORY_STRIKES = 1563;
@@ -37,11 +43,6 @@ uint32 const ENTRY_IMP = 416;
 // here rather than by anyone remembering.
 static_assert(stats::PET_UNHAPPY == UNHAPPY && stats::PET_CONTENT == CONTENT &&
               stats::PET_HAPPY == HAPPY, "the pet moods have drifted apart");
-#include "Player.h"
-#include "Pet.h"
-#include "Creature.h"
-#include "SharedDefines.h"
-#include "SpellAuras.h"
 
 /*#######################################
 ########                         ########
@@ -402,18 +403,13 @@ void Player::UpdateDefenseBonusesMod()
  */
 void Player::UpdateBlockPercentage()
 {
-    // No block
-    float value = 0.0f;
-    if (CanBlock())
-    {
-        // Base value
-        value = 5.0f;
-        // Modify value from defense skill
-        value += (int32(GetDefenseSkillValue()) - int32(GetMaxSkillValueForLevel())) * 0.04f;
-        // Increase from SPELL_AURA_MOD_BLOCK_PERCENT aura
-        value += GetTotalAuraModifier(SPELL_AURA_MOD_BLOCK_PERCENT);
-        value = value < 0.0f ? 0.0f : value;
-    }
+    // Nothing at all for anyone holding no shield.
+    float const value = CanBlock()
+        ? stats::Chance(stats::GUARD_FROM_NOTHING,
+                        int32(GetDefenseSkillValue()), int32(GetMaxSkillValueForLevel()),
+                        float(GetTotalAuraModifier(SPELL_AURA_MOD_BLOCK_PERCENT)))
+        : 0.0f;
+
     SetStatFloatValue(PLAYER_BLOCK_PERCENTAGE, value);
 }
 
@@ -442,10 +438,11 @@ void Player::UpdateCritPercentage(WeaponAttackType attType)
             return;
     }
 
-    float value = GetTotalPercentageModValue(modGroup);
-    // Modify crit from weapon skill and maximized defense skill of same level victim difference
-    value += (int32(GetWeaponSkillValue(attType)) - int32(GetMaxSkillValueForLevel())) * 0.04f;
-    value = value < 0.0f ? 0.0f : value;
+    // A crit is governed by the skill of the weapon in hand, not by defence.
+    float const value = stats::Chance(GetTotalPercentageModValue(modGroup),
+                                      int32(GetWeaponSkillValue(attType)),
+                                      int32(GetMaxSkillValueForLevel()), 0.0f);
+
     SetStatFloatValue(index, value);
 }
 
@@ -470,18 +467,13 @@ void Player::UpdateAllCritPercentages()
  */
 void Player::UpdateParryPercentage()
 {
-    // No parry
-    float value = 0.0f;
-    if (CanParry())
-    {
-        // Base parry
-        value  = 5.0f;
-        // Modify value from defense skill
-        value += (int32(GetDefenseSkillValue()) - int32(GetMaxSkillValueForLevel())) * 0.04f;
-        // Parry from SPELL_AURA_MOD_PARRY_PERCENT aura
-        value += GetTotalAuraModifier(SPELL_AURA_MOD_PARRY_PERCENT);
-        value = value < 0.0f ? 0.0f : value;
-    }
+    // Nothing at all for anyone who cannot parry, which is most classes.
+    float const value = CanParry()
+        ? stats::Chance(stats::GUARD_FROM_NOTHING,
+                        int32(GetDefenseSkillValue()), int32(GetMaxSkillValueForLevel()),
+                        float(GetTotalAuraModifier(SPELL_AURA_MOD_PARRY_PERCENT)))
+        : 0.0f;
+
     SetStatFloatValue(PLAYER_PARRY_PERCENTAGE, value);
 }
 
@@ -490,13 +482,11 @@ void Player::UpdateParryPercentage()
  */
 void Player::UpdateDodgePercentage()
 {
-    // Dodge from agility
-    float value = GetDodgeFromAgility();
-    // Modify value from defense skill
-    value += (int32(GetDefenseSkillValue()) - int32(GetMaxSkillValueForLevel())) * 0.04f;
-    // Dodge from SPELL_AURA_MOD_DODGE_PERCENT aura
-    value += GetTotalAuraModifier(SPELL_AURA_MOD_DODGE_PERCENT);
-    value = value < 0.0f ? 0.0f : value;
+    // A dodge starts from agility rather than from a flat five.
+    float const value = stats::Chance(GetDodgeFromAgility(),
+                                      int32(GetDefenseSkillValue()), int32(GetMaxSkillValueForLevel()),
+                                      float(GetTotalAuraModifier(SPELL_AURA_MOD_DODGE_PERCENT)));
+
     SetStatFloatValue(PLAYER_DODGE_PERCENTAGE, value);
 }
 
@@ -542,24 +532,14 @@ void Player::UpdateAllSpellCritChances()
  */
 void Player::UpdateManaRegen()
 {
-    // Mana regen from spirit
-    float power_regen = OCTRegenMPPerSpirit();
-    // Apply PCT bonus from SPELL_AURA_MOD_POWER_REGEN_PERCENT aura on spirit base regen
-    power_regen *= GetTotalAuraMultiplierByMiscValue(SPELL_AURA_MOD_POWER_REGEN_PERCENT, POWER_MANA);
+    stats::ManaRegen const regen = stats::Regeneration(
+        OCTRegenMPPerSpirit(),
+        GetTotalAuraMultiplierByMiscValue(SPELL_AURA_MOD_POWER_REGEN_PERCENT, POWER_MANA),
+        float(GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, POWER_MANA)),
+        GetTotalAuraModifier(SPELL_AURA_MOD_MANA_REGEN_INTERRUPT));
 
-    // Mana regen from SPELL_AURA_MOD_POWER_REGEN aura
-    float power_regen_mp5 = GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, POWER_MANA) / 5.0f;
-
-    // Set regen rate in cast state apply only on spirit based regen
-    int32 modManaRegenInterrupt = GetTotalAuraModifier(SPELL_AURA_MOD_MANA_REGEN_INTERRUPT);
-    if (modManaRegenInterrupt > 100)
-    {
-        modManaRegenInterrupt = 100;
-    }
-
-    m_modManaRegenInterrupt = power_regen_mp5 + power_regen * modManaRegenInterrupt / 100.0f;
-
-    m_modManaRegen = power_regen_mp5 + power_regen;
+    m_modManaRegen = regen.standing;
+    m_modManaRegenInterrupt = regen.casting;
 }
 
 /**

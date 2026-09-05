@@ -40,6 +40,7 @@ set(TEST_SOURCES
     unit/test_creaturenumbers.cpp
     unit/test_petnumbers.cpp
     unit/test_playernumbers.cpp
+    unit/test_chances.cpp
 
     combat/test_school.cpp
     combat/test_roll.cpp
