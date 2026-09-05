@@ -735,6 +735,35 @@ class GameObject : public Occupant
 
         void Use(Unit* user);
 
+    private:
+        /// What using an object comes to: one spell, cast by someone, and whether
+        /// its cost is waived. A spell of nothing means the use was its own reward.
+        struct Casting
+        {
+            uint32 spellId = 0;
+            Unit* caster = nullptr;
+            bool triggered = false;
+        };
+
+        Casting UsedAsDoor(Unit* user, bool scriptReturnValue);
+        Casting UsedAsButton(Unit* user, bool scriptReturnValue);
+        Casting UsedAsQuestGiver(Unit* user, bool scriptReturnValue);
+        Casting UsedAsChest(Unit* user, bool scriptReturnValue);
+        Casting UsedAsGeneric(Unit* user, bool scriptReturnValue);
+        Casting UsedAsTrap(Unit* user, bool scriptReturnValue);
+        Casting UsedAsChair(Unit* user, bool scriptReturnValue);
+        Casting UsedAsSpellFocus(Unit* user, bool scriptReturnValue);
+        Casting UsedAsGoober(Unit* user, bool scriptReturnValue);
+        Casting UsedAsCamera(Unit* user, bool scriptReturnValue);
+        Casting UsedAsFishingNode(Unit* user, bool scriptReturnValue);
+        Casting UsedAsRitual(Unit* user, bool scriptReturnValue);
+        Casting UsedAsSpellCaster(Unit* user, bool scriptReturnValue);
+        Casting UsedAsFlagStand(Unit* user, bool scriptReturnValue);
+        Casting UsedAsFishingHole(Unit* user, bool scriptReturnValue);
+        Casting UsedAsDroppedFlag(Unit* user, bool scriptReturnValue);
+
+    public:
+
         /// Roll for what this vein has come up as, if it is one at all.
         void RollIfMineralVein();
 
