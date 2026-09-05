@@ -5393,13 +5393,13 @@ void Player::GetZoneAndAreaAboardOrHere(uint32& zone, uint32& area) const
 
 void Player::UpdateLiftMinions()
 {
-    // A ship sets Player::m_transport; a type-11 lift or tram sets only the ONTRANSPORT
-    // flag, with a GO guid that belongs to no vessel list. That, and only that, is a lift.
+    // A lift says what it is itself: the ONTRANSPORT flag names a gameobject, and that
+    // gameobject's type settles it. A vessel's guid never answers to this.
     GameObject* lift = nullptr;
-    if (!GetTransport() && m_movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
+    if (m_movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
     {
         lift = GetMap()->GetGameObject(m_movementInfo.GetTransportGuid());
-        if (lift && lift->GetGoType() != GAMEOBJECT_TYPE_TRANSPORT)
+        if (lift && !lift->IsLift())
         {
             lift = nullptr;
         }

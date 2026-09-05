@@ -163,7 +163,6 @@ ByteBuffer& operator>>(ByteBuffer& buf, PackedGuidReader const& guid)
 template uint32 ObjectGuidGenerator<HIGHGUID_ITEM>::Generate();
 template uint32 ObjectGuidGenerator<HIGHGUID_PLAYER>::Generate();
 template uint32 ObjectGuidGenerator<HIGHGUID_GAMEOBJECT>::Generate();
-template uint32 ObjectGuidGenerator<HIGHGUID_TRANSPORT>::Generate();
 template uint32 ObjectGuidGenerator<HIGHGUID_UNIT>::Generate();
 template uint32 ObjectGuidGenerator<HIGHGUID_PET>::Generate();
 template uint32 ObjectGuidGenerator<HIGHGUID_DYNAMICOBJECT>::Generate();

@@ -212,7 +212,7 @@ void Player::UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target)
         if (target->IsVisibleForInState(this, viewPoint, false))
         {
             target->SendCreateUpdateToPlayer(this);
-            if (target->GetTypeId() != TYPEID_GAMEOBJECT || !((GameObject*)target)->IsTransport())
+            if (target->GetTypeId() != TYPEID_GAMEOBJECT || !((GameObject*)target)->IsMovingPlatform())
             {
                 m_clientGUIDs.insert(target->GetObjectGuid());
             }
@@ -256,7 +256,7 @@ void Player::UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target, Upd
             metrics::Server().sightCreates.Add();
             if (GameObject* g = ToGameObject(target))
             {
-                if (!g->IsTransport())
+                if (!g->IsMovingPlatform())
                 {
                     m_clientGUIDs.insert(g->GetObjectGuid());
                 }

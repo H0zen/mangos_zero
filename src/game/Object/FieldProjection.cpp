@@ -246,7 +246,7 @@ namespace Fields
 
     static uint32 ProjectGameObject(GameObject const& go, Player& observer, uint16 index, uint32 raw)
     {
-        if (index != GAMEOBJECT_DYN_FLAGS || go.IsTransport())
+        if (index != GAMEOBJECT_DYN_FLAGS || go.IsMovingPlatform())
         {
             return raw;
         }

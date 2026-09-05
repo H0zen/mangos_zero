@@ -533,9 +533,11 @@ bool GameObject::TakesQuest(uint32 quest_id) const
  *
  * @return true if the game object is a transport type; otherwise, false.
  */
-bool GameObject::IsTransport() const
+bool GameObject::IsMovingPlatform() const
 {
-    // If something is marked as a transport, don't transmit an out of range packet for it.
+    // The client draws these two from its own animation data, so where the server thinks
+    // they are is not where the player sees them. They must never be culled by distance
+    // and must never be told they went out of range.
     GameObjectInfo const* gInfo = GetGOInfo();
     if (!gInfo)
     {
@@ -581,8 +583,8 @@ bool GameObject::IsVisibleForInState(Player const* u, Occupant const* viewPoint,
         return false;
     }
 
-    // Transport always visible at this step implementation
-    if (IsTransport() && CanBeSeen(*this, *u))
+    // a platform the client is animating stays visible however far the server puts it
+    if (IsMovingPlatform() && CanBeSeen(*this, *u))
     {
         return true;
     }

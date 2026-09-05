@@ -74,7 +74,7 @@ void GameObject::Use(Unit* user)
     uint32 spellId = 0;
     bool triggered = false;
 
-    // traps and gooberi are the only ones the template gives a use cooldown to
+    // traps and goobers are the only ones the template gives a use cooldown to
     if (uint32 cooldown = GetGOInfo()->GetCooldown())
     {
         if (m_usableAt > sWorld.GetGameTime())

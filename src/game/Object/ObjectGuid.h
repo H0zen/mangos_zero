@@ -147,7 +147,6 @@ class ObjectGuid
         bool IsGameObject()        const { return GetHigh() == HIGHGUID_GAMEOBJECT;           }
         bool IsDynamicObject()     const { return GetHigh() == HIGHGUID_DYNAMICOBJECT;        }
         bool IsCorpse()            const { return GetHigh() == HIGHGUID_CORPSE;               }
-        bool IsTransport()         const { return GetHigh() == HIGHGUID_TRANSPORT;            }
         bool IsMOTransport()       const { return GetHigh() == HIGHGUID_MO_TRANSPORT;         }
 
         static TypeID GetTypeId(HighGuid high)

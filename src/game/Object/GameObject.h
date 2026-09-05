@@ -254,11 +254,16 @@ struct GameObjectInfo
             uint32 gossipID;                                // 19
         } goober;
         // 11 GAMEOBJECT_TYPE_TRANSPORT
+        // A lift or a tram. The client's own type table declares no data fields at all for
+        // this type: the whole motion comes out of TransportAnimation.dbc, keyed by the
+        // display id. The three below are database columns. Nothing reads pause or
+        // startOpen, and autoCloseTime is only reachable down the door and goober paths,
+        // which a lift never takes.
         struct
         {
             uint32 pause;                                   // 0
             uint32 startOpen;                               // 1
-            uint32 autoCloseTime;                           //2 secs till autoclose = autoCloseTime / IN_MILLISECONDS (previous was 0x10000)
+            uint32 autoCloseTime;                           // 2 secs till autoclose = autoCloseTime / 0x10000
         } transport;
         // 12 GAMEOBJECT_TYPE_AREADAMAGE
         struct
@@ -619,7 +624,11 @@ class GameObject : public Occupant
         GameObjectInfo const* GetGOInfo() const { return m_goInfo; }
         void SetGOInfo(GameObjectInfo const* pg) { m_goInfo = pg; }
 
-        bool IsTransport() const;
+        /// A lift or a tram, which the client animates from TransportAnimation.dbc.
+        bool IsLift() const { return GetGoType() == GAMEOBJECT_TYPE_TRANSPORT; }
+
+        /// A lift or a vessel: something that carries players and moves itself on the client.
+        bool IsMovingPlatform() const;
 
         bool HasStaticDBSpawnData() const;                  // listed in `gameobject` table and have fixed in DB guid
 
