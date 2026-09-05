@@ -46,6 +46,13 @@
  * The regions run end to end with no gaps, which is why each one starts at the
  * previous one's end: a number tells you which region it is in only because the
  * bounds are kept in this order.
+ *
+ * The client lays the same regions out in the same order, one guid apiece, so a
+ * place number is also an index into the character's fields. It has room for a
+ * hundred and thirteen of them -- twenty-three worn, sixteen in the backpack,
+ * twenty-four in the bank, six bank bags, twelve of buyback and thirty-two of
+ * keyring -- and the game gives out ninety-seven of those, the last sixteen
+ * places of the keyring being room the client keeps but nothing fills.
  */
 
 /**
@@ -64,8 +71,9 @@ enum PlayerSlots
 {
     /// The lowest place number.
     PLAYER_SLOT_START           = 0,
-    /// One past the highest.
-    PLAYER_SLOT_END             = 118,
+    /// One past the highest. The regions below run from the first to this
+    /// without a gap, so a number outside them is not a place at all.
+    PLAYER_SLOT_END             = 97,
     PLAYER_SLOTS_COUNT          = (PLAYER_SLOT_END - PLAYER_SLOT_START)
 };
 

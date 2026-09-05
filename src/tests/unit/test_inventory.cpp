@@ -32,6 +32,7 @@
 
 #include "Inventory/Inventory.h"
 #include "Unit.h"
+#include "UpdateFields.h"
 
 TEST_CASE("place: a number belongs to the character himself only under bag 255")
 {
@@ -167,7 +168,41 @@ TEST_CASE("place: the regions run end to end with no gap between them")
     CHECK(BUYBACK_SLOT_END == KEYRING_SLOT_START);
 }
 
-TEST_CASE("place: every region a search can reach lies below the keyring's end")
+TEST_CASE("place: the places stop where the last region does")
 {
-    CHECK(KEYRING_SLOT_END <= PLAYER_SLOT_END);
+    CHECK(PLAYER_SLOT_END == KEYRING_SLOT_END);
+}
+
+// The client keeps one guid per place, in the same order and with no gap, so a
+// place number doubles as an index into the character's fields. That is what
+// lets a single base plus twice the slot address any of them, and it holds only
+// while each region's first place lands on the field the client names for it.
+
+TEST_CASE("field: each region's first place lands on the field the client names")
+{
+    auto const mirror = [](uint8 slot) { return PLAYER_FIELD_INV_SLOT_HEAD + slot * 2; };
+
+    CHECK(mirror(EQUIPMENT_SLOT_START) == PLAYER_FIELD_INV_SLOT_HEAD);
+    CHECK(mirror(INVENTORY_SLOT_ITEM_START) == PLAYER_FIELD_PACK_SLOT_1);
+    CHECK(mirror(BANK_SLOT_ITEM_START) == PLAYER_FIELD_BANK_SLOT_1);
+    CHECK(mirror(BANK_SLOT_BAG_START) == PLAYER_FIELD_BANKBAG_SLOT_1);
+    CHECK(mirror(BUYBACK_SLOT_START) == PLAYER_FIELD_VENDORBUYBACK_SLOT_1);
+    CHECK(mirror(KEYRING_SLOT_START) == PLAYER_FIELD_KEYRING_SLOT_1);
+}
+
+TEST_CASE("field: no place reaches past the guids into what follows them")
+{
+    uint16 const last = uint16(PLAYER_FIELD_INV_SLOT_HEAD + (PLAYER_SLOT_END - 1) * 2);
+
+    CHECK(last <= PLAYER_FIELD_KEYRING_SLOT_LAST);
+    CHECK(last + 2 <= PLAYER_FARSIGHT);
+}
+
+TEST_CASE("field: the client keeps more keyring room than the game gives out")
+{
+    // Thirty-two places of keyring in the layout, sixteen of them in use.
+    uint32 const room = (PLAYER_FARSIGHT - PLAYER_FIELD_KEYRING_SLOT_1) / 2;
+
+    CHECK(room == 32);
+    CHECK(KEYRING_SLOT_END - KEYRING_SLOT_START == 16);
 }

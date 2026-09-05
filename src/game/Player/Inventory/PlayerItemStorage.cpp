@@ -164,29 +164,20 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
         if (bag == INVENTORY_SLOT_BAG_0)
         {
             m_inventory.Own(slot, pItem);
-            SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), pItem->GetObjectGuid());
             pItem->SetGuidValue(ITEM_FIELD_CONTAINED, GetObjectGuid());
             pItem->SetGuidValue(ITEM_FIELD_OWNER, GetObjectGuid());
 
             pItem->SetSlot(slot);
             pItem->SetContainer(nullptr);
 
-            if (IsInWorld() && update)
-            {
-                pItem->AddToWorld();
-                pItem->SendCreateUpdateToPlayer(this);
-            }
+            m_inventory.Arrived(pItem, update);
 
             pItem->SetState(ITEM_CHANGED, this);
         }
         else if (Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, bag))
         {
             pBag->StoreItem(slot, pItem);
-            if (IsInWorld() && update)
-            {
-                pItem->AddToWorld();
-                pItem->SendCreateUpdateToPlayer(this);
-            }
+            m_inventory.Arrived(pItem, update);
             pItem->SetState(ITEM_CHANGED, this);
             pBag->SetState(ITEM_CHANGED, this);
         }
@@ -207,19 +198,12 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
         }
 
         pItem2->SetCount(pItem2->GetCount() + count);
-        if (IsInWorld() && update)
-        {
-            pItem2->SendCreateUpdateToPlayer(this);
-        }
+        m_inventory.Changed(pItem2, update);
 
         if (!clone)
         {
             // delete item (it not in any slot currently)
-            if (IsInWorld() && update)
-            {
-                pItem->RemoveFromWorld();
-                pItem->DestroyForPlayer(this);
-            }
+            m_inventory.Gone(pItem, update);
 
             RemoveEnchantmentDurations(pItem);
             RemoveItemDurations(pItem);
@@ -319,29 +303,18 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
             }
         }
 
-        if (IsInWorld() && update)
-        {
-            pItem->AddToWorld();
-            pItem->SendCreateUpdateToPlayer(this);
-        }
+        m_inventory.Arrived(pItem, update);
 
         ApplyEquipCooldown(pItem);
     }
     else
     {
         pItem2->SetCount(pItem2->GetCount() + pItem->GetCount());
-        if (IsInWorld() && update)
-        {
-            pItem2->SendCreateUpdateToPlayer(this);
-        }
+        m_inventory.Changed(pItem2, update);
 
         // delete item (it not in any slot currently)
         // pItem->DeleteFromDB();
-        if (IsInWorld() && update)
-        {
-            pItem->RemoveFromWorld();
-            pItem->DestroyForPlayer(this);
-        }
+        m_inventory.Gone(pItem, update);
 
         RemoveEnchantmentDurations(pItem);
         RemoveItemDurations(pItem);
@@ -375,11 +348,7 @@ void Player::QuickEquipItem(uint16 pos, Item* pItem)
         uint8 slot = pos & 255;
         VisualizeItem(slot, pItem);
 
-        if (IsInWorld())
-        {
-            pItem->AddToWorld();
-            pItem->SendCreateUpdateToPlayer(this);
-        }
+        m_inventory.Arrived(pItem, true);
     }
 }
 
@@ -447,7 +416,6 @@ void Player::VisualizeItem(uint8 slot, Item* pItem)
     DEBUG_LOG("STORAGE: EquipItem slot = %u, item = %u", slot, pItem->GetEntry());
 
     m_inventory.Own(slot, pItem);
-    SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), pItem->GetObjectGuid());
     pItem->SetGuidValue(ITEM_FIELD_CONTAINED, GetObjectGuid());
     pItem->SetGuidValue(ITEM_FIELD_OWNER, GetObjectGuid());
     pItem->SetSlot(slot);
@@ -511,7 +479,6 @@ void Player::RemoveItem(uint8 bag, uint8 slot, bool update)
             }
 
             m_inventory.Own(slot, nullptr);
-            SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), ObjectGuid());
 
             if (slot < EQUIPMENT_SLOT_END)
             {
@@ -529,10 +496,7 @@ void Player::RemoveItem(uint8 bag, uint8 slot, bool update)
         pItem->SetGuidValue(ITEM_FIELD_CONTAINED, ObjectGuid());
         // pItem->SetGuidValue(ITEM_FIELD_OWNER, ObjectGuid()); not clear owner at remove (it will be set at store). This used in mail and auction code
         pItem->SetSlot(NULL_SLOT);
-        if (IsInWorld() && update)
-        {
-            pItem->SendCreateUpdateToPlayer(this);
-        }
+        m_inventory.Changed(pItem, update);
     }
 }
 
@@ -614,7 +578,6 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
 
         if (bag == INVENTORY_SLOT_BAG_0)
         {
-            SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), ObjectGuid());
 
             // equipment and equipped bags can have applied bonuses
             if (slot < INVENTORY_SLOT_BAG_END)
@@ -646,11 +609,7 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
             pBag->RemoveItem(slot);
         }
 
-        if (IsInWorld() && update)
-        {
-            pItem->RemoveFromWorld();
-            pItem->DestroyForPlayer(this);
-        }
+        m_inventory.Gone(pItem, update);
 
         // pItem->SetOwnerGUID(0);
         pItem->SetGuidValue(ITEM_FIELD_CONTAINED, ObjectGuid());
@@ -697,10 +656,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                 {
                     ItemRemovedQuestCheck(pItem->GetEntry(), count - remcount);
                     pItem->SetCount(pItem->GetCount() - count + remcount);
-                    if (IsInWorld() && update)
-                    {
-                        pItem->SendCreateUpdateToPlayer(this);
-                    }
+                    m_inventory.Changed(pItem, update);
                     pItem->SetState(ITEM_CHANGED, this);
                     return remcount;
                 }
@@ -730,10 +686,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                 {
                     ItemRemovedQuestCheck(pItem->GetEntry(), count - remcount);
                     pItem->SetCount(pItem->GetCount() - count + remcount);
-                    if (IsInWorld() && update)
-                    {
-                        pItem->SendCreateUpdateToPlayer(this);
-                    }
+                    m_inventory.Changed(pItem, update);
                     pItem->SetState(ITEM_CHANGED, this);
                     return remcount;
                 }
@@ -767,10 +720,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                         {
                             ItemRemovedQuestCheck(pItem->GetEntry(), count - remcount);
                             pItem->SetCount(pItem->GetCount() - count + remcount);
-                            if (IsInWorld() && update)
-                            {
-                                pItem->SendCreateUpdateToPlayer(this);
-                            }
+                            m_inventory.Changed(pItem, update);
                             pItem->SetState(ITEM_CHANGED, this);
                             return remcount;
                         }
@@ -803,10 +753,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                 {
                     ItemRemovedQuestCheck(pItem->GetEntry(), count - remcount);
                     pItem->SetCount(pItem->GetCount() - count + remcount);
-                    if (IsInWorld() && update)
-                    {
-                        pItem->SendCreateUpdateToPlayer(this);
-                    }
+                    m_inventory.Changed(pItem, update);
                     pItem->SetState(ITEM_CHANGED, this);
                     return remcount;
                 }
@@ -839,10 +786,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                     {
                         ItemRemovedQuestCheck(pItem->GetEntry(), count - remcount);
                         pItem->SetCount(pItem->GetCount() - count + remcount);
-                        if (IsInWorld() && update)
-                        {
-                            pItem->SendCreateUpdateToPlayer(this);
-                        }
+                        m_inventory.Changed(pItem, update);
                         pItem->SetState(ITEM_CHANGED, this);
                         return remcount;
                     }
@@ -876,10 +820,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                             {
                                 ItemRemovedQuestCheck(pItem->GetEntry(), count - remcount);
                                 pItem->SetCount(pItem->GetCount() - count + remcount);
-                                if (IsInWorld() && update)
-                                {
-                                    pItem->SendCreateUpdateToPlayer(this);
-                                }
+                                m_inventory.Changed(pItem, update);
                                 pItem->SetState(ITEM_CHANGED, this);
                                 return remcount;
                             }
@@ -914,10 +855,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                     {
                         ItemRemovedQuestCheck(pItem->GetEntry(), count - remcount);
                         pItem->SetCount(pItem->GetCount() - count + remcount);
-                        if (IsInWorld() && update)
-                        {
-                            pItem->SendCreateUpdateToPlayer(this);
-                        }
+                        m_inventory.Changed(pItem, update);
                         pItem->SetState(ITEM_CHANGED, this);
                         return remcount;
                     }
@@ -1073,10 +1011,7 @@ void Player::DestroyItemCount(Item* pItem, uint32& count, bool update)
         ItemRemovedQuestCheck(pItem->GetEntry(), count);
         pItem->SetCount(pItem->GetCount() - count);
         count = 0;
-        if (IsInWorld() && update)
-        {
-            pItem->SendCreateUpdateToPlayer(this);
-        }
+        m_inventory.Changed(pItem, update);
         pItem->SetState(ITEM_CHANGED, this);
     }
 }
@@ -1147,10 +1082,7 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
             return;
         }
 
-        if (IsInWorld())
-        {
-            pSrcItem->SendCreateUpdateToPlayer(this);
-        }
+        m_inventory.Changed(pSrcItem, true);
         pSrcItem->SetState(ITEM_CHANGED, this);
         StoreItem(dest, pNewItem, true);
     }
@@ -1169,10 +1101,7 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
             return;
         }
 
-        if (IsInWorld())
-        {
-            pSrcItem->SendCreateUpdateToPlayer(this);
-        }
+        m_inventory.Changed(pSrcItem, true);
         pSrcItem->SetState(ITEM_CHANGED, this);
         BankItem(dest, pNewItem, true);
     }
@@ -1191,10 +1120,7 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
             return;
         }
 
-        if (IsInWorld())
-        {
-            pSrcItem->SendCreateUpdateToPlayer(this);
-        }
+        m_inventory.Changed(pSrcItem, true);
         pSrcItem->SetState(ITEM_CHANGED, this);
         EquipItem(dest, pNewItem, true);
         AutoUnequipOffhandIfNeed();
@@ -1377,11 +1303,8 @@ void Player::SwapItem(uint16 src, uint16 dst)
                 pDstItem->SetCount(itemProto->GetMaxStackSize());
                 pSrcItem->SetState(ITEM_CHANGED, this);
                 pDstItem->SetState(ITEM_CHANGED, this);
-                if (IsInWorld())
-                {
-                    pSrcItem->SendCreateUpdateToPlayer(this);
-                    pDstItem->SendCreateUpdateToPlayer(this);
-                }
+                m_inventory.Changed(pSrcItem, true);
+                m_inventory.Changed(pDstItem, true);
             }
             return;
         }

@@ -27,6 +27,7 @@
 
 #include "Bag.h"
 #include "Item.h"
+#include "Player.h"
 #include "Unit.h"
 
 Inventory::Inventory(Player& owner)
@@ -102,10 +103,50 @@ Item* Inventory::At(uint8 bag, uint8 slot) const
     return nullptr;
 }
 
+/**
+ * The client reads one guid per place out of the character's own fields, in the
+ * same order as the places themselves, so the field is the place said again on
+ * the wire. Writing both here is what keeps them from ever disagreeing.
+ */
 void Inventory::Own(uint8 slot, Item* item)
 {
     MANGOS_ASSERT(slot < PLAYER_SLOTS_COUNT);
+
     m_place[slot] = item;
+    m_owner.SetGuidValue(uint16(PLAYER_FIELD_INV_SLOT_HEAD + slot * 2),
+                         item ? item->GetObjectGuid() : ObjectGuid());
+}
+
+void Inventory::Arrived(Item* item, bool tell)
+{
+    if (!item || !tell || !m_owner.IsInWorld())
+    {
+        return;
+    }
+
+    item->AddToWorld();
+    item->SendCreateUpdateToPlayer(&m_owner);
+}
+
+void Inventory::Changed(Item* item, bool tell)
+{
+    if (!item || !tell || !m_owner.IsInWorld())
+    {
+        return;
+    }
+
+    item->SendCreateUpdateToPlayer(&m_owner);
+}
+
+void Inventory::Gone(Item* item, bool tell)
+{
+    if (!item || !tell || !m_owner.IsInWorld())
+    {
+        return;
+    }
+
+    item->RemoveFromWorld();
+    item->DestroyForPlayer(&m_owner);
 }
 
 Bag* Inventory::BagAt(uint8 slot) const

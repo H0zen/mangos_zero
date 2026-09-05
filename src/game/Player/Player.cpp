@@ -682,7 +682,7 @@ Player::~Player()
     // m_social = nullptr;
 
     // Delete all items in the player's inventory
-    for (int i = 0; i < PLAYER_SLOTS_COUNT; ++i)
+    for (uint8 i = 0; i < PLAYER_SLOTS_COUNT; ++i)
     {
         delete m_inventory.Own(i);
     }
@@ -802,7 +802,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     }
 
     // Initialize player items to nullptr
-    for (int i = 0; i < PLAYER_SLOTS_COUNT; ++i)
+    for (uint8 i = 0; i < PLAYER_SLOTS_COUNT; ++i)
     {
         m_inventory.Own(i, nullptr);
     }
@@ -2012,7 +2012,7 @@ void Player::AddToWorld()
     ///- The player should only be added when logging in
     Unit::AddToWorld();
 
-    for (int i = PLAYER_SLOT_START; i < PLAYER_SLOT_END; ++i)
+    for (uint8 i = PLAYER_SLOT_START; i < PLAYER_SLOT_END; ++i)
     {
         if (m_inventory.Own(i))
         {
@@ -2053,7 +2053,7 @@ void Player::RemoveFromWorld()
         m_session->SendPacket(&data);
     }
 
-    for (int i = PLAYER_SLOT_START; i < PLAYER_SLOT_END; ++i)
+    for (uint8 i = PLAYER_SLOT_START; i < PLAYER_SLOT_END; ++i)
     {
         if (m_inventory.Own(i))
         {

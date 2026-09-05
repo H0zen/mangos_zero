@@ -154,6 +154,25 @@ class Inventory
         uint32 NextBuyback() const { return m_nextBuyback; }
         void NextBuyback(uint32 slot) { m_nextBuyback = slot; }
 
+        /**
+         * What the client is told, as distinct from what actually moves.
+         *
+         * Every one of the character's own places is private on the wire, so an
+         * item he holds is an object only he is ever sent. It joins the world
+         * when he takes it and leaves when he loses it, and he is sent its block
+         * either way. What sits inside a bag is public instead, and reaches
+         * onlookers through the bag itself. A caller that is
+         * building state rather than playing it -- a character being loaded, a
+         * swap in the middle of itself -- passes false and nothing is sent.
+         *
+         * Nothing is sent either while the owner is out of the world: there is
+         * no one to send it to, and he will be given the whole of it when he
+         * arrives.
+         */
+        void Arrived(Item* item, bool tell);
+        void Changed(Item* item, bool tell);
+        void Gone(Item* item, bool tell);
+
     private:
         /// Hands every item in the wanted regions to the visitor and stops when
         /// the visitor returns false. Every search above is this walk with a
