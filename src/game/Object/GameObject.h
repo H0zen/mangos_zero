@@ -59,6 +59,7 @@
 #include "SharedDefines.h"
 #include "Occupant.h"
 #include "CapturePoint.h"
+#include "LiftPath.h"
 #include "UserTally.h"
 #include "Chest.h"
 #include "LootClaim.h"
@@ -627,6 +628,10 @@ class GameObject : public Occupant
         /// A lift or a tram, which the client animates from TransportAnimation.dbc.
         bool IsLift() const { return GetGoType() == GAMEOBJECT_TYPE_TRANSPORT; }
 
+        /// How far into its loop a lift stands now. Everyone is told the same
+        /// number, so every client draws the platform in the same place.
+        uint32 LiftPhase() const;
+
         /// A lift or a vessel: something that carries players and moves itself on the client.
         bool IsMovingPlatform() const;
 
@@ -711,12 +716,16 @@ class GameObject : public Occupant
         float GetGoPositionX() const { return GetFloatValue(GAMEOBJECT_POS_X); }
         float GetGoPositionY() const { return GetFloatValue(GAMEOBJECT_POS_Y); }
         float GetGoPositionZ() const { return GetFloatValue(GAMEOBJECT_POS_Z); }
+        float GetGoFacing() const { return GetFloatValue(GAMEOBJECT_FACING); }
         void SetGoPosition(float x, float y, float z)
         {
             SetFloatValue(GAMEOBJECT_POS_X, x);
             SetFloatValue(GAMEOBJECT_POS_Y, y);
             SetFloatValue(GAMEOBJECT_POS_Z, z);
         }
+        /// The yaw the client turns the model by. A lift is turned by this and by
+        /// nothing else; its quaternion only steers the path it slides along.
+        void SetGoFacing(float facing) { SetFloatValue(GAMEOBJECT_FACING, facing); }
 
         /// What the client may do with this object: whether it is locked, in
         /// use, or refuses interaction at all.

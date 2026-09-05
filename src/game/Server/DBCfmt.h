@@ -74,6 +74,7 @@ const char TalentTabEntryfmt[] = "nxxxxxxxxxxxiix";
 const char TaxiNodesEntryfmt[] = "nifffssssssssxii";
 const char TaxiPathEntryfmt[] = "niii";
 const char TaxiPathNodeEntryfmt[] = "diiifffii";
+const char TransportAnimationEntryfmt[] = "diifffi";
 const char WMOAreaTableEntryfmt[] = "niiixxxxxiixxxxxxxxx";
 const char WorldMapAreaEntryfmt[] = "xinxffff";
 const char WorldSafeLocsEntryfmt[] = "nifffxxxxxxxxx";

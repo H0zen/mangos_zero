@@ -32,6 +32,7 @@
 
 #include <map>
 #include <set>
+#include <unordered_map>
 #include <vector>
 
 // Structures using to access raw DBC data and required packing to portability
@@ -1463,6 +1464,31 @@ struct TaxiPathNodePtr
 
 typedef Path<TaxiPathNodePtr, TaxiPathNodeEntry const> TaxiPathNodeList;
 typedef std::vector<TaxiPathNodeList> TaxiPathNodesByPath;
+
+/**
+ * \struct TransportAnimationEntry
+ * \brief One keyframe of a lift's loop: where its platform stands at that
+ *        moment, as an offset from the gameobject's own anchor.
+ *
+ * The client takes the whole motion of a type-11 transport from here, keyed by
+ * the gameobject entry, and the last keyframe's TimeIndex is the length of one
+ * full loop.
+ */
+struct TransportAnimationEntry
+{
+    // 0        m_ID
+    uint32    TransportID;                                  // 1        the gameobject entry these keyframes belong to
+    uint32    TimeIndex;                                    // 2        milliseconds into the loop
+    float     PosX;                                         // 3        offset from the anchor, in the object's own frame
+    float     PosY;                                         // 4
+    float     PosZ;                                         // 5
+    uint32    SequenceID;                                   // 6        model animation played from here on
+};
+
+/// One lift's keyframes, in loop order.
+typedef std::vector<TransportAnimationEntry const*> TransportAnimation;
+/// Every lift's keyframes, by the gameobject entry that owns them.
+typedef std::unordered_map<uint32, TransportAnimation> TransportAnimationsByEntry;
 
 #define TaxiMaskSize 8
 typedef uint32 TaxiMask[TaxiMaskSize];

@@ -399,6 +399,10 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const
         {
             *data << uint32(((Transport*)this)->GetPathProgress());
         }
+        else if (isType(TYPEMASK_GAMEOBJECT) && ((GameObject*)this)->IsLift())
+        {
+            *data << uint32(((GameObject*)this)->LiftPhase());
+        }
         else
         {
             *data << uint32(GameTime::GetGameTimeMS());       // ms time

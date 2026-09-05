@@ -25,6 +25,7 @@
 
 #include "Utilities/MathDefines.h"
 #include "Common/Locales.h"
+#include <algorithm>
 #include <cmath>
 #include "Utilities/Errors.h"
 #include <sstream>
@@ -148,6 +149,11 @@ DBCStorage <TaxiPathEntry> sTaxiPathStore(TaxiPathEntryfmt);
 // DBC store data but sTaxiPathNodesByPath used for fast access to entries (it's not owner pointed data).
 TaxiPathNodesByPath sTaxiPathNodesByPath;
 static DBCStorage <TaxiPathNodeEntry> sTaxiPathNodeStore(TaxiPathNodeEntryfmt);
+
+// Same arrangement for lifts: the rows are read once and then only ever reached
+// through the by-entry index, which points into the store.
+TransportAnimationsByEntry sTransportAnimationsByEntry;
+static DBCStorage <TransportAnimationEntry> sTransportAnimationStore(TransportAnimationEntryfmt);
 
 DBCStorage <WMOAreaTableEntry>  sWMOAreaTableStore(WMOAreaTableEntryfmt);
 DBCStorage <WorldMapAreaEntry>  sWorldMapAreaStore(WorldMapAreaEntryfmt);
@@ -537,6 +543,24 @@ void LoadDBCStores(const std::string& dataPath)
         {
             sTaxiPathNodesByPath[entry->PathID].set(entry->NodeIndex, entry);
         }
+    }
+
+    //## TransportAnimation.dbc ## Loaded only to build the per-lift keyframe lists
+    LoadDBC(availableDbcLocales, bar, bad_dbc_files, sTransportAnimationStore, dbcPath, "TransportAnimation.dbc");
+    for (uint32 i = 1; i < sTransportAnimationStore.GetNumRows(); ++i)
+    {
+        if (TransportAnimationEntry const* frame = sTransportAnimationStore.LookupEntry(i))
+        {
+            sTransportAnimationsByEntry[frame->TransportID].push_back(frame);
+        }
+    }
+    // The client trusts the file to be in loop order and searches it linearly. We sort
+    // instead of trusting, because a lift read out of order would stutter rather than fail.
+    for (auto& lift : sTransportAnimationsByEntry)
+    {
+        std::sort(lift.second.begin(), lift.second.end(),
+                  [](TransportAnimationEntry const* a, TransportAnimationEntry const* b)
+                  { return a->TimeIndex < b->TimeIndex; });
     }
 
     // Initialize global taxinodes mask

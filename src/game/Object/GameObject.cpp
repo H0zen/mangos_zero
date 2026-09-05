@@ -202,6 +202,13 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map,float x, float 
 
     Object::_Create(guidlow, goinfo->id, HIGHGUID_GAMEOBJECT);
 
+    // A lift carries its phase in the create block, the way a vessel does: without it
+    // the client animates the platform from its own uptime and no two of them agree.
+    if (goinfo->type == GAMEOBJECT_TYPE_TRANSPORT)
+    {
+        m_updateFlag |= UPDATEFLAG_TRANSPORT;
+    }
+
     // let's make sure we don't send the client invalid quaternion
     if (r0 == 0.0f && r1 == 0.0f && r2 == 0.0f)
     {
@@ -226,6 +233,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map,float x, float 
     SetGOInfo(goinfo);
     SetObjectScale(m_goInfo->size);
     SetGoPosition(x, y, z);
+    SetGoFacing(o);
     SetUInt32Value(GAMEOBJECT_FACTION, m_goInfo->faction);
     SetAllGoFlags(m_goInfo->flags);
     SetEntry(m_goInfo->id);
@@ -533,6 +541,15 @@ bool GameObject::TakesQuest(uint32 quest_id) const
  *
  * @return true if the game object is a transport type; otherwise, false.
  */
+uint32 GameObject::LiftPhase() const
+{
+    uint32 const period = IsLift() ? LiftPath::Of(GetEntry()).Period() : 0;
+
+    // Wall clock, not uptime: a lift keyed off the time since boot would start its
+    // loop from the beginning at every restart.
+    return period != 0 ? uint32(GameTime::GetAbsoluteTimeMS() % period) : 0;
+}
+
 bool GameObject::IsMovingPlatform() const
 {
     // The client draws these two from its own animation data, so where the server thinks
