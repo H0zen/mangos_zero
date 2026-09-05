@@ -41,7 +41,6 @@
  */
 
 
-
 #include "Utilities/Errors.h"
 #include "Object.h"
 #include "SharedDefines.h"
@@ -361,42 +360,6 @@ void Object::BuildUpdateDataForPlayer(Player* pl, UpdateDataMapType& update_play
     BuildValuesUpdateBlockForPlayer(&iter->second, iter->first);
 }
 
-/**
- * @brief Add to client update list
- *
- * Base implementation logs error and asserts.
- * Derived classes should override this method.
- */
-void Object::AddToClientUpdateList()
-{
-    sLog.outError("Unexpected call of Object::AddToClientUpdateList for object (TypeId: %u Update fields: %u)", GetTypeId(), GetValuesCount());
-    MANGOS_ASSERT(false);
-}
-
-/**
- * @brief Remove from client update list
- *
- * Base implementation logs error and asserts.
- * Derived classes should override this method.
- */
-void Object::RemoveFromClientUpdateList()
-{
-    sLog.outError("Unexpected call of Object::RemoveFromClientUpdateList for object (TypeId: %u Update fields: %u)", GetTypeId(), GetValuesCount());
-    MANGOS_ASSERT(false);
-}
-
-/**
- * @brief Build update data
- * @param update_players Map of players to their update data
- *
- * Base implementation logs error and asserts.
- * Derived classes should override this method.
- */
-void Object::BuildUpdateData(UpdateDataMapType& /*update_players */)
-{
-    sLog.outError("Unexpected call of Object::BuildUpdateData for object (TypeId: %u Update fields: %u)", GetTypeId(), GetValuesCount());
-    MANGOS_ASSERT(false);
-}
 
 /**
  * @brief Mark object for client update

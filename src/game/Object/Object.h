@@ -211,10 +211,14 @@ class Object
         virtual void BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) const;
         void SendCreateUpdateToPlayer(Player* player);
 
-        // must be overwrite in appropriate subclasses (Occupant, Item currently), or will crash
-        virtual void AddToClientUpdateList();
-        virtual void RemoveFromClientUpdateList();
-        virtual void BuildUpdateData(UpdateDataMapType& update_players);
+        // KEEPING A CLIENT UP TO DATE IS SOMETHING ONLY THE TWO KINDS OF OBJECT KNOW
+        // HOW TO DO, and they do it in ways that have nothing in common: an item is
+        // told to its owner alone, and a thing standing in the world is told to
+        // whoever can see it. There is no third way and no sensible default, so
+        // there is no body here to inherit by accident.
+        virtual void AddToClientUpdateList() = 0;
+        virtual void RemoveFromClientUpdateList() = 0;
+        virtual void BuildUpdateData(UpdateDataMapType& update_players) = 0;
         void MarkForClientUpdate();
         void SendForcedObjectUpdate();
 
