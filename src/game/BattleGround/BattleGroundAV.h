@@ -511,13 +511,13 @@ class BattleGroundAV : public BattleGround
         void HandleQuestComplete(uint32 questid, Player* player);
 
         /**
-         * @brief Checks if a player can do a mine quest.
+         * @brief A mine is open only to the team that holds it.
          *
-         * @param GOId The ID of the game object.
-         * @param team The team of the player.
-         * @return true If the player can do the mine quest.
+         * @param entry The game object entry.
+         * @param team The team of the player looking at it.
+         * @return true if that team may take what the object holds.
          */
-        bool PlayerCanDoMineQuest(int32 GOId, Team team);
+        bool AllowsQuestObject(uint32 entry, Team team) const override;
 
         /**
          * @brief Ends the battleground.

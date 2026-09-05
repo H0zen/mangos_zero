@@ -401,7 +401,7 @@ std::string CreateDumpString(char const* tableName, char const* tableColumnNames
 
         if (fields[i].IsNULL())
         {
-            ss << "nullptr";
+            ss << "NULL";
         }
         else
         {

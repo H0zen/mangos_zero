@@ -696,21 +696,24 @@ void BattleGroundAV::ChangeMineOwner(uint8 mine, BattleGroundAVTeamIndex teamIdx
  * Validates ownership of the north or south mine against the player's team.
  * Non-mine objects are treated as valid.
  *
- * @param GOId The game object entry identifier.
+ * @param entry The game object entry identifier.
  * @param team The player's team.
  * @return true if the player can use the quest object; otherwise, false.
  */
-bool BattleGroundAV::PlayerCanDoMineQuest(int32 GOId, Team team)
+bool BattleGroundAV::AllowsQuestObject(uint32 entry, Team team) const
 {
-    if (GOId == BG_AV_OBJECTID_MINE_N)
+    if (entry == BG_AV_OBJECTID_MINE_N)
     {
-        return (m_Mine_Owner[BG_AV_NORTH_MINE] == GetAVTeamIndexByTeamId(team));
+        return m_Mine_Owner[BG_AV_NORTH_MINE] == GetAVTeamIndexByTeamId(team);
     }
-    if (GOId == BG_AV_OBJECTID_MINE_S)
+
+    if (entry == BG_AV_OBJECTID_MINE_S)
     {
-        return (m_Mine_Owner[BG_AV_SOUTH_MINE] == GetAVTeamIndexByTeamId(team));
+        return m_Mine_Owner[BG_AV_SOUTH_MINE] == GetAVTeamIndexByTeamId(team);
     }
-    return true;                                            // cause it's no mine'object it is ok if this is true
+
+    // Anything else here is nobody's to hold back.
+    return true;
 }
 
 /// will spawn and despawn creatures around a node

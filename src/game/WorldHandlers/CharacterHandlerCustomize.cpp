@@ -118,7 +118,7 @@ void WorldSession::HandleCharRenameOpcode(WorldPacket& recv_data)
                                   {
                                       WorldSession::HandleChangePlayerNameOpcodeCallBack(result, accountId, newname);
                                   },
-            "SELECT `guid`, `name` FROM `characters` WHERE `guid` = %u AND `account` = %u AND (`at_login` & %u) = %u AND NOT EXISTS (SELECT nullptr FROM `characters` WHERE `name` = '%s')",
+            "SELECT `guid`, `name` FROM `characters` WHERE `guid` = %u AND `account` = %u AND (`at_login` & %u) = %u AND NOT EXISTS (SELECT NULL FROM `characters` WHERE `name` = '%s')",
         guid.GetCounter(), GetAccountId(), AT_LOGIN_RENAME, AT_LOGIN_RENAME, escaped_newname.c_str()
         );
 }

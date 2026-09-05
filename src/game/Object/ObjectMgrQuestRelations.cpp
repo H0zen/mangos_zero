@@ -214,65 +214,31 @@ void ObjectMgr::LoadGameObjectForQuests()
     BarGoLink bar(sGOStorage.GetRecordCount());
     uint32 count = 0;
 
-    // collect GO entries for GO that must activated
+    // The entries that can light up for a quest. Three ways in: a questgiver
+    // that has any relation at all, a chest whose loot holds a quest item, or a
+    // template naming the quest that lights it up while in progress.
     for (SQLStorageBase::SQLSIterator<GameObjectInfo> itr = sGOStorage.getDataBegin<GameObjectInfo>(); itr < sGOStorage.getDataEnd<GameObjectInfo>(); ++itr)
     {
         bar.step();
-        switch (itr->type)
+
+        bool worthLighting = itr->GetQuestId() != 0;
+
+        if (itr->type == GAMEOBJECT_TYPE_QUESTGIVER)
         {
-            case GAMEOBJECT_TYPE_QUESTGIVER:
-            {
-                if (m_GOQuestRelations.find(itr->id) != m_GOQuestRelations.end() ||
-                    m_GOQuestInvolvedRelations.find(itr->id) != m_GOQuestInvolvedRelations.end())
-                {
-                    mGameObjectForQuestSet.insert(itr->id);
-                    ++count;
-                }
+            worthLighting = m_GOQuestRelations.find(itr->id) != m_GOQuestRelations.end() ||
+                            m_GOQuestInvolvedRelations.find(itr->id) != m_GOQuestInvolvedRelations.end();
+        }
+        else if (itr->type == GAMEOBJECT_TYPE_CHEST)
+        {
+            // A chest with no quest of its own still counts when what it holds
+            // is somebody's quest item.
+            worthLighting = worthLighting || LootTemplates_Gameobject.HaveQuestLootFor(itr->GetLootId());
+        }
 
-                break;
-            }
-            case GAMEOBJECT_TYPE_CHEST:
-            {
-                // scan GO chest with loot including quest items
-                uint32 loot_id = itr->GetLootId();
-
-                // always activate to quest, GO may not have loot, OR find if GO has loot for quest.
-                if (itr->chest.questId || LootTemplates_Gameobject.HaveQuestLootFor(loot_id))
-                {
-                    mGameObjectForQuestSet.insert(itr->id);
-                    ++count;
-                }
-                break;
-            }
-            case GAMEOBJECT_TYPE_GENERIC:
-            {
-                if (itr->_generic.questID)                  // quest related objects, has visual effects
-                {
-                    mGameObjectForQuestSet.insert(itr->id);
-                    ++count;
-                }
-                break;
-            }
-            case GAMEOBJECT_TYPE_SPELL_FOCUS:
-            {
-                if (itr->spellFocus.questID)                // quest related objects, has visual effect
-                {
-                    mGameObjectForQuestSet.insert(itr->id);
-                    ++count;
-                }
-                break;
-            }
-            case GAMEOBJECT_TYPE_GOOBER:
-            {
-                if (itr->goober.questId)                    // quests objects
-                {
-                    mGameObjectForQuestSet.insert(itr->id);
-                    ++count;
-                }
-                break;
-            }
-            default:
-                break;
+        if (worthLighting)
+        {
+            mGameObjectForQuestSet.insert(itr->id);
+            ++count;
         }
     }
 

@@ -168,7 +168,7 @@ struct GameObjectInfo
             uint32 maxSuccessOpens;                         // 5
             uint32 eventId;                                 // 6 lootedEvent
             uint32 linkedTrapId;                            // 7
-            uint32 questId;                                 // 8 not used currently but store quest required for GO activation for player
+            uint32 questId;                                 // 8 quest that lights the chest up while it is in progress
             uint32 level;                                   // 9
             uint32 losOK;                                   // 10
             uint32 leaveLoot;                               // 11
@@ -529,6 +529,21 @@ struct GameObjectInfo
         }
     }
 
+    // The quest whose being in progress lights this object up for the player.
+    // Only these four types carry one, and they are exactly the types
+    // ObjectMgr::LoadGameObjectForQuests walks.
+    uint32 GetQuestId() const
+    {
+        switch (type)
+        {
+            case GAMEOBJECT_TYPE_CHEST:       return chest.questId;
+            case GAMEOBJECT_TYPE_GENERIC:     return _generic.questID;
+            case GAMEOBJECT_TYPE_SPELL_FOCUS: return spellFocus.questID;
+            case GAMEOBJECT_TYPE_GOOBER:      return goober.questId;
+            default: return 0;
+        }
+    }
+
     uint32 GetGossipMenuId() const
     {
         switch (type)
@@ -762,6 +777,10 @@ class GameObject : public Occupant
         Casting UsedAsFishingHole(Unit* user, bool scriptReturnValue);
         Casting UsedAsDroppedFlag(Unit* user, bool scriptReturnValue);
 
+        // The two halves of the sparkle that need more than the template's quest id.
+        bool HasQuestBusinessWith(Player* seeker) const;
+        bool HoldsQuestLootFor(Player* seeker) const;
+
     public:
 
         /// Roll for what this vein has come up as, if it is one at all.
@@ -794,7 +813,8 @@ class GameObject : public Occupant
 
         bool OffersQuest(uint32 quest_id) const;
         bool TakesQuest(uint32 quest_id) const;
-        bool ActivateToQuest(Player* pTarget) const;
+        /// Whether the client should draw the quest sparkle on it for this player.
+        bool ActivateToQuest(Player* seeker) const;
         void UseDoorOrButton(uint32 time_to_restore = 0, bool alternative = false);
         // 0 = use `gameobject`.`spawntimesecs`
         void ResetDoorOrButton();

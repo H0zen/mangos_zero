@@ -1191,6 +1191,17 @@ class BattleGround
         virtual void EventPlayerCapturedFlag(Player* /*player*/) {}
 
         /**
+         * @brief Whether a quest object standing here is open to this team.
+         *
+         * A battleground that hands an object to whoever holds the ground says so
+         * here. Everywhere else a quest object is open to both sides.
+         *
+         * @param entry The game object entry.
+         * @param team The team of the player looking at it.
+         */
+        virtual bool AllowsQuestObject(uint32 /*entry*/, Team /*team*/) const { return true; }
+
+        /**
          * @brief Handles a player logging in.
          *
          * @param player The player that logged in.

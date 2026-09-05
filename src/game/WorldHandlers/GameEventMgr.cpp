@@ -1081,7 +1081,7 @@ void GameEventMgr::SendEventMails(int16 event_id)
             ss << "SELECT `characters`.`guid` FROM `characters`, `character_queststatus` "
                 "WHERE (1 << (`characters`.`race` - 1)) & "
                           << itr->raceMask
-                          << " AND `characters`.`deleteDate` IS nullptr AND `character_queststatus`.`guid` = `characters`.`guid` AND `character_queststatus`.`quest` = "
+                          << " AND `characters`.`deleteDate` IS NULL AND `character_queststatus`.`guid` = `characters`.`guid` AND `character_queststatus`.`quest` = "
                           << itr->questId
                           << " AND `character_queststatus`.`rewarded` <> 0";
 

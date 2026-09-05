@@ -29,6 +29,7 @@
 #include "Geometry/Quat.h"
 #include "MineralVein.h"
 #include "QuestDef.h"
+#include "QuestBond.h"
 #include "ObjectMgr.h"
 #include "PoolManager.h"
 #include "SpellMgr.h"
@@ -45,7 +46,6 @@
 #include "MapManager.h"
 #include "MapPersistentStateMgr.h"
 #include "BattleGround/BattleGround.h"
-#include "BattleGround/BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Util.h"
 #include "ScriptMgr.h"
@@ -496,15 +496,7 @@ void GameObject::DeleteFromDB()
  */
 bool GameObject::OffersQuest(uint32 quest_id) const
 {
-    QuestRelationsMapBounds bounds = sObjectMgr.GetGOQuestRelationsMapBounds(GetEntry());
-    for (QuestRelationsMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
-    {
-        if (itr->second == quest_id)
-        {
-            return true;
-        }
-    }
-    return false;
+    return NamesQuest(sObjectMgr.GetGOQuestRelationsMapBounds(GetEntry()), quest_id);
 }
 
 /**
@@ -515,15 +507,7 @@ bool GameObject::OffersQuest(uint32 quest_id) const
  */
 bool GameObject::TakesQuest(uint32 quest_id) const
 {
-    QuestRelationsMapBounds bounds = sObjectMgr.GetGOQuestInvolvedRelationsMapBounds(GetEntry());
-    for (QuestRelationsMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
-    {
-        if (itr->second == quest_id)
-        {
-            return true;
-        }
-    }
-    return false;
+    return NamesQuest(sObjectMgr.GetGOQuestInvolvedRelationsMapBounds(GetEntry()), quest_id);
 }
 
 /**
@@ -688,112 +672,87 @@ void GameObject::Respawn()
 }
 
 /**
+ * @brief Whether a questgiver still has business with this player.
+ *
+ * Either it holds a quest the player could pick up now, or the player is
+ * carrying one it takes back and has not been paid for.
+ */
+bool GameObject::HasQuestBusinessWith(Player* seeker) const
+{
+    auto const onOffer = sObjectMgr.GetGOQuestRelationsMapBounds(GetEntry());
+    for (auto itr = onOffer.first; itr != onOffer.second; ++itr)
+    {
+        if (seeker->CanTakeQuest(sObjectMgr.GetQuestTemplate(itr->second), false))
+        {
+            return true;
+        }
+    }
+
+    auto const toHandIn = sObjectMgr.GetGOQuestInvolvedRelationsMapBounds(GetEntry());
+    for (auto itr = toHandIn.first; itr != toHandIn.second; ++itr)
+    {
+        if (IsHandInPending(seeker->GetQuestStatus(itr->second), seeker->GetQuestRewardStatus(itr->second)))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * @brief Whether what this chest holds includes a quest item this player wants.
+ */
+bool GameObject::HoldsQuestLootFor(Player* seeker) const
+{
+    if (!LootTemplates_Gameobject.HaveQuestLootForPlayer(GetGOInfo()->GetLootId(), seeker))
+    {
+        return false;
+    }
+
+    // A battleground may hold its own objects back from one side: an Alterac
+    // Valley mine counts only for the team that holds it.
+    if (BattleGround* bg = seeker->GetBattleGround())
+    {
+        return bg->AllowsQuestObject(GetEntry(), seeker->GetTeam());
+    }
+
+    return true;
+}
+
+/**
  * @brief Checks whether this game object should activate for a player's quests.
  *
- * @param pTarget The player using the object.
+ * @param seeker The player looking at the object.
  * @return true if the object should be quest-active; otherwise, false.
  */
-bool GameObject::ActivateToQuest(Player* pTarget) const
+bool GameObject::ActivateToQuest(Player* seeker) const
 {
-    // if GO is ReqCreatureOrGoN for quest
-    if (pTarget->HasQuestForGO(GetEntry()))
+    // An objective in its own right: the player was told to go and click this.
+    if (seeker->HasQuestForGO(GetEntry()))
     {
         return true;
     }
 
+    // The rest reads a quest the template names, and the world data lists an
+    // entry here only when it has one. An unlisted entry has nothing to light up
+    // for.
     if (!sObjectMgr.IsGameObjectForQuests(GetEntry()))
     {
         return false;
     }
 
-    switch (GetGoType())
+    if (GetGoType() == GAMEOBJECT_TYPE_QUESTGIVER)
     {
-        case GAMEOBJECT_TYPE_QUESTGIVER:
-        {
-            // Not fully clear when GO's can activate/deactivate
-            // For cases where GO has additional (except quest itself),
-            // these conditions are not sufficient/will fail.
-            // Never expect flags|4 for these GO's? (NF-note: It doesn't appear it's expected)
-
-            QuestRelationsMapBounds bounds = sObjectMgr.GetGOQuestRelationsMapBounds(GetEntry());
-
-            for (QuestRelationsMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
-            {
-                const Quest* qInfo = sObjectMgr.GetQuestTemplate(itr->second);
-
-                if (pTarget->CanTakeQuest(qInfo, false))
-                {
-                    return true;
-                }
-            }
-
-            bounds = sObjectMgr.GetGOQuestInvolvedRelationsMapBounds(GetEntry());
-
-            for (QuestRelationsMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
-            {
-                if ((pTarget->GetQuestStatus(itr->second) == QUEST_STATUS_INCOMPLETE || pTarget->GetQuestStatus(itr->second) == QUEST_STATUS_COMPLETE) &&
-                    !pTarget->GetQuestRewardStatus(itr->second))
-                {
-                    return true;
-                }
-            }
-
-            break;
-        }
-        // scan GO chest with loot including quest items
-        case GAMEOBJECT_TYPE_CHEST:
-        {
-            if (pTarget->GetQuestStatus(GetGOInfo()->chest.questId) == QUEST_STATUS_INCOMPLETE)
-            {
-                return true;
-            }
-
-            if (LootTemplates_Gameobject.HaveQuestLootForPlayer(GetGOInfo()->GetLootId(), pTarget))
-            {
-                // look for battlegroundAV for some objects which are only activated after mine gots captured by own team
-                if (GetEntry() == BG_AV_OBJECTID_MINE_N || GetEntry() == BG_AV_OBJECTID_MINE_S)
-                {
-                    if (BattleGround* bg = pTarget->GetBattleGround())
-                    {
-                        if (bg->GetTypeID() == BATTLEGROUND_AV && !(((BattleGroundAV*)bg)->PlayerCanDoMineQuest(GetEntry(), pTarget->GetTeam())))
-                        {
-                            return false;
-                        }
-                    }
-                }
-                return true;
-            }
-            break;
-        }
-        case GAMEOBJECT_TYPE_GENERIC:
-        {
-            if (pTarget->GetQuestStatus(GetGOInfo()->_generic.questID) == QUEST_STATUS_INCOMPLETE)
-            {
-                return true;
-            }
-            break;
-        }
-        case GAMEOBJECT_TYPE_SPELL_FOCUS:
-        {
-            if (pTarget->GetQuestStatus(GetGOInfo()->spellFocus.questID) == QUEST_STATUS_INCOMPLETE)
-            {
-                return true;
-            }
-            break;
-        }
-        case GAMEOBJECT_TYPE_GOOBER:
-        {
-            if (pTarget->GetQuestStatus(GetGOInfo()->goober.questId) == QUEST_STATUS_INCOMPLETE)
-            {
-                return true;
-            }
-            break;
-        }
-        default:
-            break;
+        return HasQuestBusinessWith(seeker);
     }
 
-    return false;
+    if (seeker->GetQuestStatus(GetGOInfo()->GetQuestId()) == QUEST_STATUS_INCOMPLETE)
+    {
+        return true;
+    }
+
+    return GetGoType() == GAMEOBJECT_TYPE_CHEST && HoldsQuestLootFor(seeker);
 }
 
 /**

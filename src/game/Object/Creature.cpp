@@ -41,6 +41,7 @@
 #include "SQLStorages.h"
 #include "SpellMgr.h"
 #include "GossipDef.h"
+#include "QuestBond.h"
 #include "Player.h"
 #include "GameEventMgr.h"
 #include "PoolManager.h"
@@ -1769,15 +1770,7 @@ void Creature::LoadEquipment(uint32 equip_entry, bool force)
  */
 bool Creature::OffersQuest(uint32 quest_id) const
 {
-    QuestRelationsMapBounds bounds = sObjectMgr.GetCreatureQuestRelationsMapBounds(GetEntry());
-    for (QuestRelationsMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
-    {
-        if (itr->second == quest_id)
-        {
-            return true;
-        }
-    }
-    return false;
+    return NamesQuest(sObjectMgr.GetCreatureQuestRelationsMapBounds(GetEntry()), quest_id);
 }
 
 /**
@@ -1788,15 +1781,7 @@ bool Creature::OffersQuest(uint32 quest_id) const
  */
 bool Creature::TakesQuest(uint32 quest_id) const
 {
-    QuestRelationsMapBounds bounds = sObjectMgr.GetCreatureQuestInvolvedRelationsMapBounds(GetEntry());
-    for (QuestRelationsMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
-    {
-        if (itr->second == quest_id)
-        {
-            return true;
-        }
-    }
-    return false;
+    return NamesQuest(sObjectMgr.GetCreatureQuestInvolvedRelationsMapBounds(GetEntry()), quest_id);
 }
 
 struct CreatureRespawnDeleteWorker

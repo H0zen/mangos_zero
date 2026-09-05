@@ -178,18 +178,15 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
             if (go->getLootState() == GO_READY && go->isSpawned())
             {
                 uint32 lootid = goInfo->GetLootId();
-                if ((go->GetEntry() == BG_AV_OBJECTID_MINE_N || go->GetEntry() == BG_AV_OBJECTID_MINE_S))
+
+                // A battleground may keep its own objects for the side that holds
+                // the ground they stand on.
+                if (BattleGround* bg = GetBattleGround())
                 {
-                    if (BattleGround* bg = GetBattleGround())
+                    if (!bg->AllowsQuestObject(go->GetEntry(), GetTeam()))
                     {
-                        if (bg->GetTypeID() == BATTLEGROUND_AV)
-                        {
-                            if (!(((BattleGroundAV*)bg)->PlayerCanDoMineQuest(go->GetEntry(), GetTeam())))
-                            {
-                                SendLootRelease(guid);
-                                return;
-                            }
-                        }
+                        SendLootRelease(guid);
+                        return;
                     }
                 }
 
