@@ -116,7 +116,7 @@ void guilds::GuildCreate(Player& who, WorldPacket& recvPacket)
 void WorldSession::SendGuildInvite(Player* player, bool /*alreadyInGuild*/ /*= false*/)
 {
     Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
-    player->SetGuildIdInvited(GetPlayer()->GetGuildId());
+    player->Invites().ToGuild(GetPlayer()->GetGuildId());
 
     WorldPacket data(SMSG_GUILD_INVITE, (8 + 10));          // guess size
     data << GetPlayer()->GetName();
@@ -176,7 +176,7 @@ void guilds::GuildInvite(WorldSession& session, WorldPacket& recvPacket)
         return;
     }
 
-    if (player->GetGuildIdInvited())
+    if (player->Invites().ToGuild())
     {
         plname = player->GetName();
         session.SendGuildCommandResult(GUILD_INVITE_S, plname, ERR_ALREADY_INVITED_TO_GUILD_S);
@@ -191,7 +191,7 @@ void guilds::GuildInvite(WorldSession& session, WorldPacket& recvPacket)
 
     DEBUG_LOG("Player %s Invited %s to Join his Guild", session.GetPlayer()->GetName(), Invitedname.c_str());
 
-    player->SetGuildIdInvited(session.GetPlayer()->GetGuildId());
+    player->Invites().ToGuild(session.GetPlayer()->GetGuildId());
     // Put record into guildlog
     guild->LogGuildEvent(GUILD_EVENT_LOG_INVITE_PLAYER, session.GetPlayer()->GetObjectGuid(), player->GetObjectGuid());
 
@@ -279,7 +279,7 @@ void guilds::GuildAccept(Player& who, WorldPacket& /*recvPacket*/)
 
     DEBUG_LOG("WORLD: Received opcode CMSG_GUILD_ACCEPT");
 
-    guild = sGuildMgr.GetGuildById(player->GetGuildIdInvited());
+    guild = sGuildMgr.GetGuildById(player->Invites().ToGuild());
     if (!guild || player->GetGuildId())
     {
         return;
@@ -314,7 +314,7 @@ void guilds::GuildDecline(Player& who, WorldPacket& /*recvPacket*/)
         return;
     }
 
-    who.SetGuildIdInvited(0);
+    who.Invites().ToGuild(0);
 }
 
 /**

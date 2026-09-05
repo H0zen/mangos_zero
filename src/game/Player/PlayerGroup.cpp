@@ -110,7 +110,7 @@ bool Player::IsInSameGroupWith(Player const* p) const
 /// \todo Shouldn't we also check if there is no other invitees before disbanding the group?
 void Player::UninviteFromGroup()
 {
-    Group* group = GetGroupInvite();
+    Group* group = Invites().ToParty();
     if (!group)
     {
         return;

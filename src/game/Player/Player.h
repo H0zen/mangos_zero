@@ -75,6 +75,7 @@
 #include "Inventory/ItemSlots.h"
 #include "Inventory/Inventory.h"
 #include "Honor/HonorLedger.h"
+#include "Offers/Invitations.h"
 #include "Offers/PlayerOffers.h"
 #include "Teleport/TeleportOrder.h"
 
@@ -2417,12 +2418,6 @@ class Player : public Unit
             SetUInt32Value(PLAYER_GUILDRANK, rankId);
         }
 
-        // Set the guild ID the player is invited to
-        void SetGuildIdInvited(uint32 GuildId)
-        {
-            m_GuildIdInvited = GuildId;
-        }
-
         // Get the player's guild ID
         uint32 GetGuildId()
         {
@@ -2439,11 +2434,6 @@ class Player : public Unit
 
         // Get the player's guild rank from the database
 
-        // Get the guild ID the player is invited to
-        int GetGuildIdInvited()
-        {
-            return m_GuildIdInvited;
-        }
         static void RemovePetitionsAndSigns(ObjectGuid guid);
 
         // Update the player's skill
@@ -3456,13 +3446,8 @@ class Player : public Unit
         /*********************************************************/
 
         // Get the group invite
-        Group* GetGroupInvite()
-        {
-            return m_groupInvite;
-        }
 
         // Set the group invite
-        void SetGroupInvite(Group* group) { m_groupInvite = group; }
 
         // Get the group
         Group* GetGroup()
@@ -3472,6 +3457,10 @@ class Player : public Unit
 
         // Get the group (const version)
         const Group* GetGroup() const { return (const Group*)m_group.getTarget(); }
+
+        /// What has been put to him and is waiting on an answer.
+        Invitations& Invites() { return m_invitations; }
+        Invitations const& Invites() const { return m_invitations; }
 
         // Get the group reference
         GroupReference& GetGroupRef()
@@ -3690,8 +3679,6 @@ class Player : public Unit
 
         SkillStatusMap mSkillStatus; // Skill status map
 
-        uint32 m_GuildIdInvited; // Guild ID invited
-        uint32 m_ArenaTeamIdInvited; // Arena team ID invited
 
         PlayerMails m_mail; // Player mails
         PlayerSpellMap m_spells; // Player spells
@@ -3758,8 +3745,9 @@ class Player : public Unit
 
         // Groups
         GroupReference m_group; // Group reference
+
+        Invitations m_invitations;
         GroupReference m_originalGroup; // Original group reference
-        Group* m_groupInvite; // Group invite
         uint32 m_groupUpdateMask; // Group update mask
         uint64 m_auraUpdateMask; // Aura update mask
 

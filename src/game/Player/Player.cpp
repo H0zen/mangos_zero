@@ -482,7 +482,7 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
     m_social = nullptr;
 
     // group is initialized in the reference constructor
-    SetGroupInvite(nullptr);
+    Invites().ToParty(nullptr);
     m_groupUpdateMask = 0;
     m_auraUpdateMask = 0;
 
@@ -490,7 +490,6 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
 
     duel = nullptr;
 
-    m_GuildIdInvited = 0;
 
     m_atLoginFlags = AT_LOGIN_NONE;
 

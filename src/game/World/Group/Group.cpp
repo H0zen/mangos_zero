@@ -293,7 +293,7 @@ void Group::ConvertToRaid()
  */
 bool Group::AddInvite(Player* player)
 {
-    if (!player || player->GetGroupInvite())
+    if (!player || player->Invites().ToParty())
     {
         return false;
     }
@@ -311,7 +311,7 @@ bool Group::AddInvite(Player* player)
 
     m_invitees.insert(player);
 
-    player->SetGroupInvite(this);
+    player->Invites().ToParty(this);
 
 
     return true;
@@ -345,7 +345,7 @@ uint32 Group::RemoveInvite(Player* player)
 {
     m_invitees.erase(player);
 
-    player->SetGroupInvite(nullptr);
+    player->Invites().ToParty(nullptr);
     return GetMembersCount();
 }
 
@@ -356,7 +356,7 @@ void Group::RemoveAllInvites()
 {
     for (InvitesList::iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
     {
-        (*itr)->SetGroupInvite(nullptr);
+        (*itr)->Invites().ToParty(nullptr);
     }
 
     m_invitees.clear();

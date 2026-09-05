@@ -430,7 +430,7 @@ void petitions::PetitionSign(WorldSession& session, WorldPacket& recv_data)
         session.SendGuildCommandResult(GUILD_INVITE_S, session.GetPlayer()->GetName(), ERR_ALREADY_IN_GUILD_S);
         return;
     }
-    if (session.GetPlayer()->GetGuildIdInvited())
+    if (session.GetPlayer()->Invites().ToGuild())
     {
         session.SendGuildCommandResult(GUILD_INVITE_S, session.GetPlayer()->GetName(), ERR_ALREADY_INVITED_TO_GUILD_S);
         return;
@@ -560,7 +560,7 @@ void petitions::OfferPetition(WorldSession& session, WorldPacket& recv_data)
         return;
     }
 
-    if (player->GetGuildIdInvited())
+    if (player->Invites().ToGuild())
     {
         session.SendGuildCommandResult(GUILD_INVITE_S, session.GetPlayer()->GetName(), ERR_ALREADY_INVITED_TO_GUILD_S);
         return;

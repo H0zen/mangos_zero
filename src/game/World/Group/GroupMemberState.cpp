@@ -133,7 +133,7 @@ bool Group::_addMember(ObjectGuid guid, const char* name, bool isAssistant, uint
 
     if (player)
     {
-        player->SetGroupInvite(nullptr);
+        player->Invites().ToParty(nullptr);
         // if player is in group and he is being added to BG raid group, then call SetBattleGroundRaid()
         if (player->GetGroup() && isBGGroup())
         {

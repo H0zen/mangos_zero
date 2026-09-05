@@ -304,7 +304,7 @@ bool Guild::AddMember(ObjectGuid plGuid, uint32 plRank)
     {
         pl->SetInGuild(m_Id);
         pl->SetRank(newmember.RankId);
-        pl->SetGuildIdInvited(0);
+        pl->Invites().ToGuild(0);
     }
 
     UpdateAccountsNumber();

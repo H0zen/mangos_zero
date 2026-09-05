@@ -147,7 +147,7 @@ void groups::GroupInvite(Player& who, WorldPacket& recv_data)
         group2 = player->GetOriginalGroup();
     }
     // player already in another group or invited
-    if (group2 || player->GetGroupInvite())
+    if (group2 || player->Invites().ToParty())
     {
         who.GetSession()->SendPartyResult(PARTY_OP_INVITE, membername, ERR_ALREADY_IN_GROUP_S);
         return;
@@ -211,7 +211,7 @@ void groups::GroupInvite(Player& who, WorldPacket& recv_data)
  */
 void groups::GroupAccept(Player& who, WorldPacket& /*recv_data*/)
 {
-    Group* group = who.GetGroupInvite();
+    Group* group = who.Invites().ToParty();
     if (!group)
     {
         return;
@@ -271,7 +271,7 @@ void groups::GroupAccept(Player& who, WorldPacket& /*recv_data*/)
  */
 void groups::GroupDecline(Player& who, WorldPacket& /*recv_data*/)
 {
-    Group*  group  = who.GetGroupInvite();
+    Group*  group  = who.Invites().ToParty();
     if (!group)
     {
         return;
