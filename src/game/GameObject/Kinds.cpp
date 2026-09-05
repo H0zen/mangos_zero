@@ -203,7 +203,7 @@ GameObjectBehaviour::Casting TrapBehaviour::UsedBy(Unit* user, bool scriptSaidYe
     // count charges
     if (goInfo->trap.charges > 0)
     {
-        It().Users().Used();
+        m_tally.Used();
     }
 
     if (IsBattleGroundTrap && user->GetTypeId() == TYPEID_PLAYER)
@@ -602,7 +602,7 @@ GameObjectBehaviour::Casting RitualBehaviour::UsedBy(Unit* user, bool scriptSaid
     }
     else
     {
-        ObjectGuid const& firstUser = It().Users().First();
+        ObjectGuid const& firstUser = m_tally.First();
         if (firstUser && player->GetObjectGuid() != firstUser && info->summoningRitual.castersGrouped)
         {
             if (Group* group = player->GetGroup())
@@ -621,7 +621,7 @@ GameObjectBehaviour::Casting RitualBehaviour::UsedBy(Unit* user, bool scriptSaid
         cast.caster = player;
     }
 
-    It().Users().UsedBy(player->GetObjectGuid());
+    m_tally.UsedBy(player->GetObjectGuid());
 
     if (info->summoningRitual.animSpell)
     {
@@ -632,7 +632,7 @@ GameObjectBehaviour::Casting RitualBehaviour::UsedBy(Unit* user, bool scriptSaid
     }
 
     // full amount unique participants including original summoner, need more
-    if (It().Users().Distinct() < info->summoningRitual.reqParticipants)
+    if (m_tally.Distinct() < info->summoningRitual.reqParticipants)
     {
         return Casting();
     }
@@ -640,7 +640,7 @@ GameObjectBehaviour::Casting RitualBehaviour::UsedBy(Unit* user, bool scriptSaid
     // owner is first user for non-wild GO objects, if it offline value already set to current user
     if (!It().GetOwnerGuid())
     {
-        if (Player* opener = It().GetMap()->GetPlayer(It().Users().First()))
+        if (Player* opener = It().GetMap()->GetPlayer(m_tally.First()))
         {
             cast.caster = opener;
         }
@@ -704,7 +704,7 @@ GameObjectBehaviour::Casting SpellCasterBehaviour::UsedBy(Unit* user, bool scrip
 
     cast.spellId = info->spellcaster.spellId;
 
-    It().Users().Used();
+    m_tally.Used();
     return cast;
 }
 /**
@@ -988,9 +988,9 @@ void ChestBehaviour::InUse(uint32 /*elapsed*/)
     // TODO : Missing Loot::Update() method found in CMangos
     if (!It().loot.empty())
     {
-        It().AsChest().EmptyAt(time(nullptr) + CHEST_LINGER);
+        m_lock.EmptyAt(time(nullptr) + CHEST_LINGER);
     }
-    else if (It().AsChest().IsEmptyingDue(time(nullptr)))
+    else if (m_lock.IsEmptyingDue(time(nullptr)))
     {
         It().SetLootState(GO_JUST_DEACTIVATED);
     }
@@ -1009,14 +1009,6 @@ void GooberBehaviour::InUse(uint32 /*elapsed*/)
     It().ClosesAt(0);
 }
 
-/// The bar moves on its own clock while anybody is standing in the circle.
-void CapturePointBehaviour::InUse(uint32 elapsed)
-{
-    if (It().AsCapturePoint().IsTickDue(elapsed))
-    {
-        It().TickCapturePoint();
-    }
-}
 
 /* ****************************** Finished with **************************** */
 
@@ -1027,7 +1019,7 @@ GameObjectBehaviour::Tick GooberBehaviour::Spent()
 {
     if (uint32 spellId = Data().goober.spellId)
     {
-        for (auto const& guid : It().Users().Everyone())
+        for (auto const& guid : m_tally.Everyone())
         {
             if (Player* owner = It().GetMap()->GetPlayer(guid))
             {
@@ -1043,29 +1035,6 @@ GameObjectBehaviour::Tick GooberBehaviour::Spent()
     return Tick::Carry;
 }
 
-/**
- * @brief A capture point is never spent, only locked and reopened.
- *
- * It goes straight back to ready rather than through the tail, because the tail
- * despawns anything showing full progress -- which, for a tower being taken, is
- * every tower at the moment it changes hands.
- */
-GameObjectBehaviour::Tick CapturePointBehaviour::Spent()
-{
-    // The bar is not drawn for a locked point, so nobody is left standing in it.
-    for (auto const& guid : It().AsCapturePoint().Standing())
-    {
-        if (Player* owner = It().GetMap()->GetPlayer(guid))
-        {
-            owner->SendUpdateWorldState(Data().capturePoint.worldState1, WORLD_STATE_REMOVE);
-        }
-    }
-
-    It().AsCapturePoint().Desert();
-    It().SetLootState(GO_READY);
-
-    return Tick::Stop;
-}
 
 /**
  * @brief An opened chest springs whatever was linked to it.

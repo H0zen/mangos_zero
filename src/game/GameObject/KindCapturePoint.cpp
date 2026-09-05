@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <list>
+#include "Kinds.h"
 #include "GameObject.h"
 #include "QuestDef.h"
 #include "ObjectMgr.h"
@@ -57,43 +58,43 @@
 #include "Geometry/Quat.h"
 
 /**
- * @brief Opens the capture point at a given slider value.
+ * @brief Puts the bar where a saved game left it.
  *
  * @param value The slider value the point is left at.
  * @param isLocked true when the point is not to be contested yet.
  */
-void GameObject::SetCapturePointSlider(float value, bool isLocked)
+void CapturePointBehaviour::Restore(float value, bool isLocked)
 {
-    m_capture.SliderAt(value, GetGOInfo()->capturePoint.neutralPercent);
+    m_bar.SliderAt(value, It().GetGOInfo()->capturePoint.neutralPercent);
 
     // only activate non-locked capture point
     if (!isLocked)
     {
-        SetLootState(GO_ACTIVATED);
+        It().SetLootState(GO_ACTIVATED);
     }
 }
 
 /**
  * @brief Pushes the bar toward whichever side has more players by the point.
  */
-void GameObject::TickCapturePoint()
+void CapturePointBehaviour::Tick()
 {
     // TODO: On retail: Ticks every 5.2 seconds. slider value increase when new player enters on tick
 
-    GameObjectInfo const* info = GetGOInfo();
+    GameObjectInfo const* info = It().GetGOInfo();
     float const radius = info->capturePoint.radius;
 
     std::list<Player*> capturingPlayers;
-    MaNGOS::AnyPlayerInCapturePointRange u_check(this, radius);
+    MaNGOS::AnyPlayerInCapturePointRange u_check(&It(), radius);
     MaNGOS::PlayerListSearcher<MaNGOS::AnyPlayerInCapturePointRange> checker(capturingPlayers, u_check);
-    Cell::VisitWorldObjects(this, checker, radius);
+    Cell::VisitWorldObjects(&It(), checker, radius);
 
     uint32 const neutralPercent = info->capturePoint.neutralPercent;
-    int const oldValue = static_cast<int>(m_capture.Slider());
+    int const oldValue = static_cast<int>(m_bar.Slider());
 
     // Alliance counts up and horde counts down, so what is left is by how much
     // one side outnumbers the other, and its sign says which side that is.
-    GuidSet gone(m_capture.Standing());
+    GuidSet gone(m_bar.Standing());
     int superiority = 0;
 
     for (auto* player : capturingPlayers)
@@ -103,7 +104,7 @@ void GameObject::TickCapturePoint()
         ObjectGuid const guid = player->GetObjectGuid();
         gone.erase(guid);
 
-        if (m_capture.Arrived(guid))
+        if (m_bar.Arrived(guid))
         {
             player->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
             player->SendUpdateWorldState(info->capturePoint.worldState2, oldValue);
@@ -115,27 +116,27 @@ void GameObject::TickCapturePoint()
 
     for (auto const& guid : gone)
     {
-        if (Player* owner = GetMap()->GetPlayer(guid))
+        if (Player* owner = It().GetMap()->GetPlayer(guid))
         {
             owner->SendUpdateWorldState(info->capturePoint.worldState1, WORLD_STATE_REMOVE);
         }
 
-        m_capture.Left(guid);
+        m_bar.Left(guid);
     }
 
     // nobody outnumbers anybody, so the bar stays where it is (works because minSuperiority is always 1)
     if (superiority == 0)
     {
-        if (m_capture.IsDeserted())
+        if (m_bar.IsDeserted())
         {
-            SetActiveObjectState(false);
+            It().SetActiveObjectState(false);
         }
         return;
     }
 
     // keeps the object loaded while anyone stands by it, so that an idle grid
     // cannot freeze the list of who is there
-    SetActiveObjectState(true);
+    It().SetActiveObjectState(true);
 
     int const maxSuperiority = info->capturePoint.maxSuperiority;
     superiority = std::max(-maxSuperiority, std::min(superiority, maxSuperiority));
@@ -150,10 +151,10 @@ void GameObject::TickCapturePoint()
     Team const pushing = superiority > 0 ? ALLIANCE : HORDE;
 
     // the share of the whole bar that one tick is worth
-    m_capture.SliderTowards(pushing, 100.0f * (CAPTURE_TICK / 1000.0f) / seconds);
+    m_bar.SliderTowards(pushing, 100.0f * (CAPTURE_TICK / 1000.0f) / seconds);
 
     // the bar is read in whole percents, so a smaller move says nothing yet
-    if (static_cast<int>(m_capture.Slider()) == oldValue)
+    if (static_cast<int>(m_bar.Slider()) == oldValue)
     {
         return;
     }
@@ -161,10 +162,10 @@ void GameObject::TickCapturePoint()
     // on retail this is also sent to newly added players even though they already received a slider value
     for (auto* player : capturingPlayers)
     {
-        player->SendUpdateWorldState(info->capturePoint.worldState2, static_cast<uint32>(m_capture.Slider()));
+        player->SendUpdateWorldState(info->capturePoint.worldState2, static_cast<uint32>(m_bar.Slider()));
     }
 
-    CaptureShift const shift = m_capture.Shift(pushing, *info);
+    CaptureShift const shift = m_bar.Shift(pushing, *info);
 
     if (shift.objectiveTaken)
     {
@@ -176,6 +177,39 @@ void GameObject::TickCapturePoint()
 
     if (shift.eventId)
     {
-        StartEvents_Event(GetMap(), shift.eventId, this, this, true, capturingPlayers.front());
+        StartEvents_Event(It().GetMap(), shift.eventId, &It(), &It(), true, capturingPlayers.front());
     }
+}
+
+/// The bar moves on its own clock while anybody is standing in the circle.
+void CapturePointBehaviour::InUse(uint32 elapsed)
+{
+    if (m_bar.IsTickDue(elapsed))
+    {
+        Tick();
+    }
+}
+
+/**
+ * @brief A capture point is never spent, only locked and reopened.
+ *
+ * It goes straight back to ready rather than through the tail, because the tail
+ * despawns anything showing full progress -- which, for a tower being taken, is
+ * every tower at the moment it changes hands.
+ */
+GameObjectBehaviour::Tick CapturePointBehaviour::Spent()
+{
+    // The bar is not drawn for a locked point, so nobody is left standing in it.
+    for (auto const& guid : m_bar.Standing())
+    {
+        if (Player* owner = It().GetMap()->GetPlayer(guid))
+        {
+            owner->SendUpdateWorldState(Data().capturePoint.worldState1, WORLD_STATE_REMOVE);
+        }
+    }
+
+    m_bar.Desert();
+    It().SetLootState(GO_READY);
+
+    return Tick::Stop;
 }

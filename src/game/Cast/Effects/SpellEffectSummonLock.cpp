@@ -47,6 +47,7 @@
 #include "SharedDefines.h"
 #include "Pet.h"
 #include "GameObject.h"
+#include "Kinds.h"
 #include "GossipDef.h"
 #include "Creature.h"
 #include "Totem.h"
@@ -208,10 +209,12 @@ void Spell::EffectOpenLock(SpellEffectIndex eff_idx)
             if (gameObjTarget)
             {
                 // Allow one skill-up until respawned
-                if (!gameObjTarget->AsChest().HasTaught(player->GetObjectGuid()) &&
+                Chest& lock = gameObjTarget->Behaves<ChestBehaviour>()->Lock();
+
+                if (!lock.HasTaught(player->GetObjectGuid()) &&
                     player->UpdateGatherSkill(skillId, pureSkillValue, reqSkillValue))
                 {
-                    gameObjTarget->AsChest().Taught(player->GetObjectGuid());
+                    lock.Taught(player->GetObjectGuid());
                 }
             }
             else if (itemTarget)

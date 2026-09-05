@@ -52,6 +52,7 @@
 #include "LootMgr.h"
 #include "Occupant.h"
 #include "GameObject.h"
+#include "Kinds.h"
 #include "Group.h"
 #include "World.h"
 #include "Corpse.h"
@@ -472,8 +473,9 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
                         float min_amount = go_min * amount_rate;
                         float max_amount = go_max * amount_rate;
 
-                        go->Users().Used();
-                        float uses = float(go->Users().Uses());
+                        UserTally& tally = go->Behaves<ChestBehaviour>()->Tally();
+                        tally.Used();
+                        float uses = float(tally.Uses());
 
                         if (uses < max_amount)
                         {
@@ -516,8 +518,9 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
                 else if (go->GetGoType() == GAMEOBJECT_TYPE_FISHINGHOLE)
                 {
                     // The fishing hole used once more
-                    go->Users().Used();                     // if the max usage is reached, will be despawned at next tick
-                    if (go->Users().Uses() >= urand(go->GetGOInfo()->fishinghole.minSuccessOpens, go->GetGOInfo()->fishinghole.maxSuccessOpens))
+                    UserTally& tally = go->Behaves<FishingHoleBehaviour>()->Tally();
+                    tally.Used();                           // if the max usage is reached, will be despawned at next tick
+                    if (tally.Uses() >= urand(go->GetGOInfo()->fishinghole.minSuccessOpens, go->GetGOInfo()->fishinghole.maxSuccessOpens))
                     {
                         go->SetLootState(GO_JUST_DEACTIVATED);
                     }

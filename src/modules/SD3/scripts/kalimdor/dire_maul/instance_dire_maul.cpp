@@ -37,6 +37,7 @@
 #include "precompiled.h"
 #include "dire_maul.h"
 #include "GameObjectAI.h"
+#include "Kinds.h"
 
 struct is_dire_maul : public InstanceScript
 {
@@ -686,7 +687,7 @@ struct go_fixed_trap : public GameObjectScript
         DoScriptText(SAY_SLIPKIK_TRAP, slipkik);
         if (pGo->GetGOInfo()->trap.charges > 0)
         {
-            pGo->Users().Used();
+            pGo->Behaves<TrapBehaviour>()->Tally().Used();
         }
 
         pGo->SetLootState(GO_JUST_DEACTIVATED);    // Despawn the trap

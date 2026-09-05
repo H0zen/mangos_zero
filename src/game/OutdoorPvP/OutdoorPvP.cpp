@@ -27,6 +27,7 @@
 #include "ObjectMgr.h"
 #include "Occupant.h"
 #include "GameObject.h"
+#include "Kinds.h"
 #include "Player.h"
 
 /**
@@ -89,17 +90,17 @@ void OutdoorPvP::SendUpdateWorldState(uint32 field, uint32 value)
 void OutdoorPvP::HandleGameObjectCreate(GameObject* go)
 {
     // set initial data and activate capture points
-    if (go->GetGOInfo()->type == GAMEOBJECT_TYPE_CAPTURE_POINT)
+    if (CapturePointBehaviour* point = go->Behaves<CapturePointBehaviour>())
     {
         CapturePointSliderMap const* capturePoints = sOutdoorPvPMgr.GetCapturePointSliderMap();
         CapturePointSliderMap::const_iterator itr = capturePoints->find(go->GetEntry());
         if (itr != capturePoints->end())
         {
-            go->SetCapturePointSlider(itr->second.Value, itr->second.IsLocked);
+            point->Restore(itr->second.Value, itr->second.IsLocked);
         }
         else
         {
-            go->SetCapturePointSlider(CAPTURE_SLIDER_MIDDLE, false);
+            point->Restore(CAPTURE_SLIDER_MIDDLE, false);
         }
     }
 }
@@ -112,9 +113,9 @@ void OutdoorPvP::HandleGameObjectCreate(GameObject* go)
 void OutdoorPvP::HandleGameObjectRemove(GameObject* go)
 {
     // save capture point slider value (negative value if locked)
-    if (go->GetGOInfo()->type == GAMEOBJECT_TYPE_CAPTURE_POINT)
+    if (CapturePointBehaviour* point = go->Behaves<CapturePointBehaviour>())
     {
-        CapturePointSlider value(go->AsCapturePoint().Slider(), go->getLootState() != GO_ACTIVATED);
+        CapturePointSlider value(point->Bar().Slider(), go->getLootState() != GO_ACTIVATED);
         sOutdoorPvPMgr.SetCapturePointSlider(go->GetEntry(), value);
     }
 }

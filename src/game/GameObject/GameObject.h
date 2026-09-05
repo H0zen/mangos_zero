@@ -659,6 +659,11 @@ class GameObject : public Occupant
         /// What this kind of object does. Never null once the template is set.
         GameObjectBehaviour& Behaves() const { return *m_behaviour; }
 
+        /// Its behaviour if it is of that kind, and null if it is not. This is how
+        /// anything outside reaches state that only one kind of object has.
+        template <typename Kind>
+        Kind* Behaves() const { return dynamic_cast<Kind*>(m_behaviour.get()); }
+
         /// A lift or a tram, which the client animates from TransportAnimation.dbc.
         bool IsLift() const { return GetGoType() == GAMEOBJECT_TYPE_TRANSPORT; }
 
@@ -796,18 +801,8 @@ class GameObject : public Occupant
         void ClosesAt(time_t when) { m_closesAt = when; }
         void SetLootState(LootState s);
 
-        /// What is left of a chest once players have started taking from it.
-        Chest& AsChest() { return m_chest; }
-        Chest const& AsChest() const { return m_chest; }
-        void ClearAllUsesData()
-        {
-            m_chest.ForgetLearners();
-            m_users.Forget();
-        }
-
-        /// How often this has been used, and by whom when that matters.
-        UserTally& Users() { return m_users; }
-        UserTally const& Users() const { return m_users; }
+        /// Forget everyone who has used it, whatever the kind was counting.
+        void ClearAllUsesData();
 
         void SaveRespawnTime();
 
@@ -836,14 +831,8 @@ class GameObject : public Occupant
 
         GameObject* LookupFishingHoleAround(float range);
 
-        void SetCapturePointSlider(float value, bool isLocked);
 
         /// The bar two sides push at each other, and who is standing by it.
-        CapturePoint& AsCapturePoint() { return m_capture; }
-        CapturePoint const& AsCapturePoint() const { return m_capture; }
-
-        /// Move the bar one step towards whoever is standing in it.
-        void TickCapturePoint();
 
         float GetInteractionDistance() const;              // Get the maximum distance for a GO to interact with
 
@@ -867,15 +856,12 @@ class GameObject : public Occupant
         time_t      m_usableAt;                             // not to be used again before this moment
         time_t      m_closesAt;                             // shuts itself at this moment; 0 when it stays as it is
 
-        UserTally m_users;
 
         GameObjectInfo const* m_goInfo;
 
         // Loot System
         LootClaim m_claim;
 
-        CapturePoint m_capture;
-        Chest m_chest;
 
         /// One per object, made from its template and never chosen again.
         std::unique_ptr<GameObjectBehaviour> m_behaviour;

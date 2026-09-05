@@ -50,6 +50,7 @@
 #include "SharedDefines.h"
 #include "Pet.h"
 #include "GameObject.h"
+#include "Kinds.h"
 #include "GossipDef.h"
 #include "Creature.h"
 #include "Totem.h"
@@ -383,7 +384,7 @@ void Spell::EffectTransmitted(SpellEffectIndex eff_idx)
         {
             if (m_caster->GetTypeId() == TYPEID_PLAYER)
             {
-                pGameObj->Users().UsedBy(m_caster->GetObjectGuid());
+                pGameObj->Behaves<RitualBehaviour>()->Tally().UsedBy(m_caster->GetObjectGuid());
                 m_caster->AddGameObject(pGameObj);          // will removed at spell cancel
             }
             break;

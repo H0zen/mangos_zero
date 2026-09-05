@@ -27,6 +27,29 @@
 #pragma once
 
 #include "Behaviour.h"
+#include "UserTally.h"
+#include "Chest.h"
+#include "CapturePoint.h"
+
+/**
+ * A kind that keeps count of who has used it.
+ *
+ * Six kinds do, for four different reasons: a trap and a spellcaster spend
+ * charges, a vein and a fishing hole are used up, a ritual needs a quorum, and a
+ * goober pays out to everyone who took part. Asking a chair the same question
+ * has no answer, which is why the count is here and not on every gameobject.
+ */
+class CountingBehaviour : public GameObjectBehaviour
+{
+    public:
+        using GameObjectBehaviour::GameObjectBehaviour;
+
+        UserTally& Tally() { return m_tally; }
+        UserTally const& Tally() const { return m_tally; }
+
+    protected:
+        UserTally m_tally;
+};
 
 /**
  * The sixteen kinds of gameobject a player can click, one class each.
@@ -67,16 +90,22 @@ class QuestGiverBehaviour : public GameObjectBehaviour
 };
 
 /// A container with loot in it, and sometimes a trap under it.
-class ChestBehaviour : public GameObjectBehaviour
+class ChestBehaviour : public CountingBehaviour
 {
     public:
-        using GameObjectBehaviour::GameObjectBehaviour;
+        using CountingBehaviour::CountingBehaviour;
 
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
         void Arming() override;
         void InUse(uint32 elapsed) override;
         Tick Spent() override;
         void Respawning() override;
+
+        /// What it has taught, and how long it lingers once emptied.
+        Chest& Lock() { return m_lock; }
+
+    private:
+        Chest m_lock;
 };
 
 /// A thing with no behaviour of its own beyond being clicked.
@@ -89,10 +118,10 @@ class GenericBehaviour : public GameObjectBehaviour
 };
 
 /// Something laid to go off when it is touched.
-class TrapBehaviour : public GameObjectBehaviour
+class TrapBehaviour : public CountingBehaviour
 {
     public:
-        using GameObjectBehaviour::GameObjectBehaviour;
+        using CountingBehaviour::CountingBehaviour;
 
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
         void Arming() override;
@@ -118,10 +147,10 @@ class SpellFocusBehaviour : public GameObjectBehaviour
 };
 
 /// The catch-all clickable: levers, orbs, the odd quest prop.
-class GooberBehaviour : public GameObjectBehaviour
+class GooberBehaviour : public CountingBehaviour
 {
     public:
-        using GameObjectBehaviour::GameObjectBehaviour;
+        using CountingBehaviour::CountingBehaviour;
 
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
         void InUse(uint32 elapsed) override;
@@ -149,19 +178,19 @@ class FishingNodeBehaviour : public GameObjectBehaviour
 };
 
 /// A circle that needs several people standing in it.
-class RitualBehaviour : public GameObjectBehaviour
+class RitualBehaviour : public CountingBehaviour
 {
     public:
-        using GameObjectBehaviour::GameObjectBehaviour;
+        using CountingBehaviour::CountingBehaviour;
 
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
 };
 
 /// A thing that casts one spell at whoever uses it.
-class SpellCasterBehaviour : public GameObjectBehaviour
+class SpellCasterBehaviour : public CountingBehaviour
 {
     public:
-        using GameObjectBehaviour::GameObjectBehaviour;
+        using CountingBehaviour::CountingBehaviour;
 
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
 };
@@ -176,10 +205,10 @@ class FlagStandBehaviour : public GameObjectBehaviour
 };
 
 /// A patch of water with more in it than the rest.
-class FishingHoleBehaviour : public GameObjectBehaviour
+class FishingHoleBehaviour : public CountingBehaviour
 {
     public:
-        using GameObjectBehaviour::GameObjectBehaviour;
+        using CountingBehaviour::CountingBehaviour;
 
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
 };
@@ -201,4 +230,17 @@ class CapturePointBehaviour : public GameObjectBehaviour
 
         void InUse(uint32 elapsed) override;
         Tick Spent() override;
+
+        /// Where the bar stands, and which way it is going.
+        CapturePoint& Bar() { return m_bar; }
+        CapturePoint const& Bar() const { return m_bar; }
+
+        /// Put the bar where a saved game left it.
+        void Restore(float value, bool isLocked);
+
+        /// Move it one step towards whoever is standing in the circle.
+        void Tick();
+
+    private:
+        CapturePoint m_bar;
 };

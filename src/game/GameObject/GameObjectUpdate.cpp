@@ -27,6 +27,7 @@
 
 #include "Utterance.h"
 #include "GameObject.h"
+#include "Kinds.h"
 #include "QuestDef.h"
 #include "ObjectMgr.h"
 #include "PoolManager.h"
@@ -129,9 +130,11 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                 // count of zero is not "no uses left", it is "this one is never used
                 // up", which is why nothing with a zero here is ever despawned.
                 uint32 const charges = GetGOInfo()->GetCharges();
-                if (charges > 0 && m_users.Uses() >= charges)
+                CountingBehaviour* counted = Behaves<CountingBehaviour>();
+
+                if (charges > 0 && counted && counted->Tally().Uses() >= charges)
                 {
-                    m_users.Forget();
+                    counted->Tally().Forget();
                     SetLootState(GO_JUST_DEACTIVATED);
                 }
             }

@@ -30,6 +30,7 @@
 #include "MineralVein.h"
 #include "QuestDef.h"
 #include "QuestBond.h"
+#include "Kinds.h"
 #include "ObjectMgr.h"
 #include "PoolManager.h"
 #include "SpellMgr.h"
@@ -665,6 +666,25 @@ void GameObject::Respawn()
     {
         m_spawn.ChangesAt(time(nullptr));
         GetMap()->GetPersistentState()->SaveGORespawnTime(GetGUIDLow(), 0);
+    }
+}
+
+/**
+ * @brief Forget everyone who has used it.
+ *
+ * What that means depends on what the kind was keeping: a count of uses, a list
+ * of who has been taught, or nothing at all.
+ */
+void GameObject::ClearAllUsesData()
+{
+    if (ChestBehaviour* chest = Behaves<ChestBehaviour>())
+    {
+        chest->Lock().ForgetLearners();
+    }
+
+    if (CountingBehaviour* counted = Behaves<CountingBehaviour>())
+    {
+        counted->Tally().Forget();
     }
 }
 
