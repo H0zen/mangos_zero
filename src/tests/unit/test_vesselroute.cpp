@@ -113,7 +113,7 @@ TEST_CASE("vessel route: the outermost node at each end only steers")
     StraightRun run;
     VesselRoute const route(run.nodes, SPEED, ACCEL);
 
-    CHECK(route.Legs() == 1);
+    CHECK(route.Legs().size() == 1);
     CHECK(route.Waiting() == 0);
 
     // Five kilometres of nodes, three kilometres of water, flat cruise throughout.
@@ -169,7 +169,7 @@ TEST_CASE("vessel route: a teleport breaks the lap in two without changing map")
 
     // Two nodes before the jump are not enough to sail on; the four after it
     // carry one kilometre of water.
-    CHECK(route.Legs() == 2);
+    CHECK(route.Legs().size() == 2);
     CHECK(route.Period() == uint32(1000.0f / SPEED * 1000.0f));
 }
 
@@ -182,6 +182,85 @@ TEST_CASE("vessel route: a change of map breaks it the same way")
     run.n5 = Node(5, 1, 5000.0f);
     VesselRoute const route(run.nodes, SPEED, ACCEL);
 
-    CHECK(route.Legs() == 2);
+    CHECK(route.Legs().size() == 2);
     CHECK(route.Period() == uint32(1000.0f / SPEED * 1000.0f));
+}
+
+TEST_CASE("vessel route: the legs tile the lap end to end")
+{
+    StraightRun run;
+    run.n3 = Node(3, 0, 3000.0f, TAXI_NODE_TELEPORT);
+    VesselRoute const route(run.nodes, SPEED, ACCEL);
+
+    REQUIRE(route.Legs().size() == 2);
+
+    uint32 next = 0;
+    for (VesselLeg const& leg : route.Legs())
+    {
+        CHECK(leg.startsAt == next);
+        CHECK(leg.endsAt >= leg.startsAt);
+        next = leg.endsAt;
+    }
+
+    CHECK(next == route.Period());
+}
+
+TEST_CASE("vessel route: the leg she is on names the map she sails")
+{
+    // Five nodes on one map and five on the next: two kilometres of water each.
+    TaxiPathNodeEntry n[10];
+    std::vector<TaxiPathNodeEntry const*> nodes;
+    for (uint32 i = 0; i < 10; ++i)
+    {
+        n[i] = Node(i, i < 5 ? 0 : 1, 1000.0f * i);
+        nodes.push_back(&n[i]);
+    }
+
+    VesselRoute const route(nodes, SPEED, ACCEL);
+
+    REQUIRE(route.Legs().size() == 2);
+    CHECK(route.Period() == 133334);
+
+    CHECK(route.Legs()[0].mapId == 0);
+    CHECK(route.Legs()[0].startsAt == 0);
+    CHECK(route.Legs()[0].endsAt == 66667);
+    CHECK(route.Legs()[0].from.x == doctest::Approx(1000.0f));
+
+    CHECK(route.Legs()[1].mapId == 1);
+    CHECK(route.Legs()[1].startsAt == 66667);
+    CHECK(route.Legs()[1].from.x == doctest::Approx(6000.0f));
+
+    // And that is what the moment of the transfer is read off.
+    CHECK(route.LegAt(0)->mapId == 0);
+    CHECK(route.LegAt(66666)->mapId == 0);
+    CHECK(route.LegAt(66667)->mapId == 1);
+    CHECK(route.LegAt(133333)->mapId == 1);
+
+    // The lap comes round again.
+    CHECK(route.LegAt(133334)->mapId == 0);
+    CHECK(route.LegAt(5 * 133334 + 66667)->mapId == 1);
+}
+
+TEST_CASE("vessel route: a leg crossed in no time is a leg she is never on")
+{
+    StraightRun run;
+    run.n1 = Node(1, 0, 1000.0f, TAXI_NODE_TELEPORT);
+    VesselRoute const route(run.nodes, SPEED, ACCEL);
+
+    REQUIRE(route.Legs().size() == 2);
+    CHECK(route.Legs()[0].startsAt == route.Legs()[0].endsAt);
+
+    // Every moment of the lap belongs to the leg that has water on it.
+    for (uint32 at = 0; at < route.Period(); at += 1000)
+    {
+        REQUIRE(route.LegAt(at) != nullptr);
+        CHECK(route.LegAt(at) == &route.Legs()[1]);
+    }
+}
+
+TEST_CASE("vessel route: a route with no lap has no leg to be on")
+{
+    std::vector<TaxiPathNodeEntry const*> const none;
+    CHECK(VesselRoute(none, SPEED, ACCEL).LegAt(0) == nullptr);
+    CHECK(VesselRoute().LegAt(1234) == nullptr);
 }

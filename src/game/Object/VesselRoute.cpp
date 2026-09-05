@@ -63,6 +63,7 @@ namespace
     /// One stretch of water the vessel sails without jumping, and where she berths on it.
     struct Leg
     {
+        uint32 map = 0;
         std::vector<Geometry::Vector3> points;
         /// Index of the node she berths at, and how long she stays, in milliseconds.
         std::vector<std::pair<uint32, uint32>> berths;
@@ -136,6 +137,7 @@ VesselRoute::VesselRoute(std::vector<TaxiPathNodeEntry const*> const& nodes, flo
     Profile const how{speed, accel, speed / accel, 0.5f * speed * (speed / accel)};
 
     std::vector<Leg> legs(1);
+    legs.back().map = nodes.front()->ContinentID;
     uint32 lastMap = nodes.front()->ContinentID;
     bool jumped = false;
 
@@ -144,6 +146,7 @@ VesselRoute::VesselRoute(std::vector<TaxiPathNodeEntry const*> const& nodes, flo
         if (node->ContinentID != lastMap || jumped)
         {
             legs.emplace_back();
+            legs.back().map = node->ContinentID;
             lastMap = node->ContinentID;
         }
 
@@ -169,14 +172,44 @@ VesselRoute::VesselRoute(std::vector<TaxiPathNodeEntry const*> const& nodes, flo
         perLeg += berth.second;
     }
 
-    m_legs = uint32(legs.size());
-    m_waiting = perLeg * m_legs;
-    m_period = m_waiting;
+    m_legs.reserve(legs.size());
 
     for (Leg const& leg : legs)
     {
-        m_period += SailTime(leg, how);
+        VesselLeg boundary;
+        boundary.mapId = leg.map;
+        boundary.startsAt = m_period;
+        // She lies at the second node of a leg: the first one only steers.
+        boundary.from = leg.points.size() > 1 ? leg.points[1]
+                      : leg.points.empty() ? Geometry::Vector3() : leg.points[0];
+
+        m_period += SailTime(leg, how) + perLeg;
+        boundary.endsAt = m_period;
+
+        m_legs.push_back(boundary);
     }
+
+    m_waiting = perLeg * uint32(legs.size());
+}
+
+VesselLeg const* VesselRoute::LegAt(uint32 phaseMs) const
+{
+    if (m_period == 0)
+    {
+        return nullptr;
+    }
+
+    phaseMs %= m_period;
+
+    for (VesselLeg const& leg : m_legs)
+    {
+        if (phaseMs >= leg.startsAt && phaseMs < leg.endsAt)
+        {
+            return &leg;
+        }
+    }
+
+    return nullptr;
 }
 
 VesselRoute VesselRoute::Along(uint32 pathId, float speed, float accel)

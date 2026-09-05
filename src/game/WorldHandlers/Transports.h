@@ -26,6 +26,7 @@
 #pragma once
 
 #include "GameObject.h"
+#include "VesselRoute.h"
 
 #include <map>
 #include <set>
@@ -171,6 +172,9 @@ class Transport : public GameObject
         WayPointMap m_WayPoints;
         uint32 m_nextNodeTime;
         uint32 m_period;
+
+        /// The lap she sails, and where on it she changes map.
+        VesselRoute m_route;
 
     private:
         void TeleportTransport(uint32 newMapid, float x, float y, float z);

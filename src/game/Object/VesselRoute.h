@@ -26,6 +26,7 @@
 #pragma once
 
 #include "DBCStructure.h"
+#include "Geometry/Vector3.h"
 
 #include <vector>
 
@@ -35,8 +36,19 @@ uint32 const TAXI_NODE_TELEPORT = 0x01;
 /// A taxi node the vessel waits at, for the node's own delay.
 uint32 const TAXI_NODE_STOP     = 0x02;
 
+/// One stretch of the lap the vessel sails without jumping, and when in the lap
+/// she is on it. A leg she crosses in no time at all is one she is never on.
+struct VesselLeg
+{
+    uint32 mapId = 0;
+    uint32 startsAt = 0;                                    // milliseconds into the lap
+    uint32 endsAt = 0;
+    Geometry::Vector3 from;                                 // where she lies as it starts
+};
+
 /**
- * How long a vessel takes to sail one lap of her taxi path.
+ * How long a vessel takes to sail one lap of her taxi path, and when on that lap
+ * she changes the map she sails.
  *
  * The route is a run of nodes that breaks into legs wherever the vessel jumps:
  * at a change of map, and at a node flagged as a teleport, which happens within
@@ -60,6 +72,7 @@ uint32 const TAXI_NODE_STOP     = 0x02;
 class VesselRoute
 {
     public:
+        VesselRoute() {}
         VesselRoute(std::vector<TaxiPathNodeEntry const*> const& nodes, float speed, float accel);
 
         /// The taxi path of that id, sailed at that speed.
@@ -68,14 +81,16 @@ class VesselRoute
         /// One full lap, in milliseconds; 0 when there is nothing to sail.
         uint32 Period() const { return m_period; }
 
-        /// How much of the lap is spent standing at the stops.
+        /// How much of the lap is spent berthed.
         uint32 Waiting() const { return m_waiting; }
 
-        /// How many stretches of open water the jumps break the lap into.
-        uint32 Legs() const { return m_legs; }
+        std::vector<VesselLeg> const& Legs() const { return m_legs; }
+
+        /// The leg she is on that far into the lap; nullptr when there is no lap.
+        VesselLeg const* LegAt(uint32 phaseMs) const;
 
     private:
         uint32 m_period = 0;
         uint32 m_waiting = 0;
-        uint32 m_legs = 0;
+        std::vector<VesselLeg> m_legs;
 };

@@ -160,10 +160,11 @@ void MapManager::LoadTransports()
         float const accel = goinfo->moTransport.accelRate ? float(goinfo->moTransport.accelRate) : 1.0f;
         VesselRoute const route = VesselRoute::Along(goinfo->moTransport.taxiPathId, speed, accel);
 
+        t->m_route = route;
         t->m_period = route.Period() ? route.Period() : storedPeriod;
 
         DETAIL_LOG("Transport %u (%s): lap %u ms over %u legs, %u ms of it waiting; `transports`.`period` says %u",
-                   entry, name.c_str(), route.Period(), route.Legs(), route.Waiting(), storedPeriod);
+                   entry, name.c_str(), route.Period(), uint32(route.Legs().size()), route.Waiting(), storedPeriod);
 
         std::set<uint32> mapsUsed;
 
@@ -894,18 +895,29 @@ void Transport::Update(uint32 update_diff, uint32 /*p_time*/)
         const uint32 mapBefore = GetMapId();
 
         m_timer = uint32(GameTime::GetAbsoluteTimeMS() % m_period);
+
+        // THE TIME OF THE TRANSFER, and the one thing the route has to decide. The leg she
+        // is on at this moment names the map she sails; when that changes she moves, and
+        // everyone aboard follows. It is read off the same lap the client works out for
+        // itself, so the hull the player sees arrives when we say it does.
+        //
+        // The waypoint walk below runs on a clock of its own, shorter than the lap because
+        // it measures the water in straight lines. It may say what it likes about maps: all
+        // that is asked of it is which grid of the world to sweep.
+        if (VesselLeg const* leg = m_route.LegAt(m_timer))
+        {
+            if (leg->mapId != GetMapId())
+            {
+                TeleportTransport(leg->mapId, leg->from.x, leg->from.y, leg->from.z);
+                return;
+            }
+        }
+
         while (((m_timer - m_curr->first) % m_pathTime) > ((m_next->first - m_curr->first) % m_pathTime))
         {
             MoveToNextWayPoint();
 
-            // THE TIME OF THE TRANSFER. The one thing the route has to decide: this node
-            // belongs to another world map, so the ship changes which map she sails, and
-            // everyone aboard follows.
-            if (m_curr->second.mapid != GetMapId() || m_curr->second.teleport)
-            {
-                TeleportTransport(m_curr->second.mapid, m_curr->second.x, m_curr->second.y, m_curr->second.z);
-            }
-            else
+            if (m_curr->second.mapid == GetMapId())
             {
                 Place().MoveTo(m_curr->second.x, m_curr->second.y, m_curr->second.z);
             }
