@@ -24,7 +24,15 @@
  */
 
 #include "Unit.h"
-#include "Stats/CreatureNumbers.h"
+#include "Stats/PetNumbers.h"
+
+/// The one pet whose attack power is not doubled.
+uint32 const ENTRY_IMP = 416;
+
+// The pure part mirrors HappinessState by value, so the two are held together
+// here rather than by anyone remembering.
+static_assert(stats::PET_UNHAPPY == UNHAPPY && stats::PET_CONTENT == CONTENT &&
+              stats::PET_HAPPY == HAPPY, "the pet moods have drifted apart");
 #include "Player.h"
 #include "Pet.h"
 #include "Creature.h"
@@ -869,15 +877,15 @@ bool Pet::UpdateAllStats()
  */
 void Pet::UpdateResistances(uint32 school)
 {
-    if (school > SPELL_SCHOOL_NORMAL)
-    {
-        float value  = GetTotalAuraModValue(UnitMods(UNIT_MOD_RESISTANCE_START + school));
-        SetResistance(SpellSchools(school), int32(value));
-    }
-    else
+    // The normal school is armour, and armour is kept in its own field.
+    if (school == SPELL_SCHOOL_NORMAL)
     {
         UpdateArmor();
+        return;
     }
+
+    SetResistance(SpellSchools(school),
+                  int32(stats::Simple(ModifiersOf(UnitMods(UNIT_MOD_RESISTANCE_START + school)))));
 }
 
 /**
@@ -885,16 +893,7 @@ void Pet::UpdateResistances(uint32 school)
  */
 void Pet::UpdateArmor()
 {
-    float value = 0.0f;
-    UnitMods unitMod = UNIT_MOD_ARMOR;
-
-    value  = GetModifierValue(unitMod, BASE_VALUE);
-    value *= GetModifierValue(unitMod, BASE_PCT);
-    value += GetStat(STAT_AGILITY) * 2.0f;
-    value += GetModifierValue(unitMod, TOTAL_VALUE);
-    value *= GetModifierValue(unitMod, TOTAL_PCT);
-
-    SetArmor(int32(value));
+    SetArmor(int32(stats::PetArmour(ModifiersOf(UNIT_MOD_ARMOR), GetStat(STAT_AGILITY))));
 }
 
 /**
@@ -902,15 +901,9 @@ void Pet::UpdateArmor()
  */
 void Pet::UpdateMaxHealth()
 {
-    UnitMods unitMod = UNIT_MOD_HEALTH;
-    float stamina = GetStat(STAT_STAMINA) - GetCreateStat(STAT_STAMINA);
+    float const gained = GetStat(STAT_STAMINA) - GetCreateStat(STAT_STAMINA);
 
-    float value   = GetModifierValue(unitMod, BASE_VALUE) + GetCreateHealth();
-    value  *= GetModifierValue(unitMod, BASE_PCT);
-    value  += GetModifierValue(unitMod, TOTAL_VALUE) + stamina * 10.0f;
-    value  *= GetModifierValue(unitMod, TOTAL_PCT);
-
-    SetMaxHealth((uint32)value);
+    SetMaxHealth(uint32(stats::PetMaxHealth(ModifiersOf(UNIT_MOD_HEALTH), GetCreateHealth(), gained)));
 }
 
 /**
@@ -920,16 +913,13 @@ void Pet::UpdateMaxHealth()
  */
 void Pet::UpdateMaxPower(Powers power)
 {
-    UnitMods unitMod = UnitMods(UNIT_MOD_POWER_START + power);
+    // Only mana grows from a stat, and only from intellect gained since creation.
+    float const gained = power == POWER_MANA
+                             ? GetStat(STAT_INTELLECT) - GetCreateStat(STAT_INTELLECT)
+                             : 0.0f;
 
-    float addValue = (power == POWER_MANA) ? GetStat(STAT_INTELLECT) - GetCreateStat(STAT_INTELLECT) : 0.0f;
-
-    float value  = GetModifierValue(unitMod, BASE_VALUE) + GetCreatePowers(power);
-    value *= GetModifierValue(unitMod, BASE_PCT);
-    value += GetModifierValue(unitMod, TOTAL_VALUE) +  addValue * 15.0f;
-    value *= GetModifierValue(unitMod, TOTAL_PCT);
-
-    SetMaxPower(power, uint32(value));
+    UnitMods const unitMod = UnitMods(UNIT_MOD_POWER_START + power);
+    SetMaxPower(power, uint32(stats::PetMaxPower(ModifiersOf(unitMod), GetCreatePowers(power), gained)));
 }
 
 /**
@@ -947,23 +937,12 @@ void Pet::UpdateAttackPowerAndDamage(bool ranged)
     float val = 0.0f;
     UnitMods unitMod = UNIT_MOD_ATTACK_POWER;
 
-    if (GetEntry() == 416)                                  // imp's attack power
-    {
-        val = GetStat(STAT_STRENGTH) - 10.0f;
-    }
-    else
-    {
-        val = 2 * GetStat(STAT_STRENGTH) - 20.0f;
-    }
+    val = stats::PetAttackPowerFromStrength(GetStat(STAT_STRENGTH), GetEntry() == ENTRY_IMP);
 
     SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, val);
-    // in BASE_VALUE of UNIT_MOD_ATTACK_POWER for creatures we store data of meleeattackpower field in DB
-    float base_attPower  = GetModifierValue(unitMod, BASE_VALUE) * GetModifierValue(unitMod, BASE_PCT);
-    float attPowerMod = GetModifierValue(unitMod, TOTAL_VALUE);
-    float attPowerMultiplier = GetModifierValue(unitMod, TOTAL_PCT) - 1.0f;
 
-    SetAttackPower(false, static_cast<int32>(base_attPower), static_cast<int32>(attPowerMod),
-                   attPowerMultiplier);
+    stats::AttackPower const power = stats::CreatureAttackPower(ModifiersOf(unitMod));
+    SetAttackPower(false, power.base, power.added, power.share);
 
     // automatically update weapon damage after attack power modification
     UpdateDamagePhysical(BASE_ATTACK);
@@ -981,41 +960,23 @@ void Pet::UpdateDamagePhysical(WeaponAttackType attType)
         return;
     }
 
-    UnitMods unitMod = UNIT_MOD_DAMAGE_MAINHAND;
+    stats::Swing swing = stats::PetSwing(
+        ModifiersOf(UNIT_MOD_DAMAGE_MAINHAND),
+        GetWeaponDamageRange(BASE_ATTACK, MINDAMAGE),
+        GetWeaponDamageRange(BASE_ATTACK, MAXDAMAGE),
+        GetTotalAttackPowerValue(attType),
+        float(GetAttackTime(BASE_ATTACK)) / 1000.0f);
 
-    float att_speed = float(GetAttackTime(BASE_ATTACK)) / 1000.0f;
-
-    float base_value  = GetModifierValue(unitMod, BASE_VALUE) + GetTotalAttackPowerValue(attType) / 14.0f * att_speed;
-    float base_pct    = GetModifierValue(unitMod, BASE_PCT);
-    float total_value = GetModifierValue(unitMod, TOTAL_VALUE);
-    float total_pct   = GetModifierValue(unitMod, TOTAL_PCT);
-
-    float weapon_mindamage = GetWeaponDamageRange(BASE_ATTACK, MINDAMAGE);
-    float weapon_maxdamage = GetWeaponDamageRange(BASE_ATTACK, MAXDAMAGE);
-
-    float mindamage = ((base_value + weapon_mindamage) * base_pct + total_value) * total_pct;
-    float maxdamage = ((base_value + weapon_maxdamage) * base_pct + total_value) * total_pct;
-
-    //  Pet's base damage changes depending on happiness
-    if (getPetType() == HUNTER_PET && attType == BASE_ATTACK)
+    // A hunter's pet hits as well as it feels.
+    if (getPetType() == HUNTER_PET)
     {
-        switch (GetHappinessState())
-        {
-            case HAPPY:
-                // 125% of normal damage
-                mindamage = mindamage * 1.25f;
-                maxdamage = maxdamage * 1.25f;
-                break;
-            case CONTENT:
-                // 100% of normal damage, nothing to modify
-                break;
-            case UNHAPPY:
-                // 75% of normal damage
-                mindamage = mindamage * 0.75f;
-                maxdamage = maxdamage * 0.75f;
-                break;
-        }
+        float const mood = stats::HappinessScale(GetHappinessState());
+        swing.least *= mood;
+        swing.most *= mood;
     }
+
+    float mindamage = swing.least;
+    float maxdamage = swing.most;
 
     SetStatFloatValue(UNIT_FIELD_MINDAMAGE, mindamage);
     SetStatFloatValue(UNIT_FIELD_MAXDAMAGE, maxdamage);
