@@ -80,6 +80,7 @@
 
 #include "Database/DatabaseEnv.h"
 #include "QuestDef.h"
+#include "Journal/QuestSlots.h"
 #include "Group.h"
 #include "Bag.h"
 #include "WorldSession.h"
@@ -548,24 +549,6 @@ enum AtLoginFlags
 };
 
 typedef std::map<uint32, QuestStatusData> QuestStatusMap;
-
-// Offsets for quest slots
-enum QuestSlotOffsets
-{
-    QUEST_ID_OFFSET             = 0,
-    QUEST_COUNT_STATE_OFFSET    = 1,                        // including counters 6bits+6bits+6bits+6bits + state 8bits
-    QUEST_TIME_OFFSET           = 2
-};
-
-#define MAX_QUEST_OFFSET 3
-
-// State mask for quest slots
-enum QuestSlotStateMask
-{
-    QUEST_STATE_NONE            = 0x0000, // No state
-    QUEST_STATE_COMPLETE        = 0x0001, // Quest complete
-    QUEST_STATE_FAIL            = 0x0002  // Quest failed
-};
 
 // States for skill updates
 enum SkillUpdateState
@@ -1808,38 +1791,55 @@ class Player : public Unit
         uint16 FindQuestSlot(uint32 quest_id) const;
 
         // Get the quest ID from a quest slot
-        uint32 GetQuestSlotQuestId(uint16 slot) const { return GetUInt32Value(PLAYER_QUEST_LOG_1_1 + slot * MAX_QUEST_OFFSET + QUEST_ID_OFFSET); }
+        uint32 GetQuestSlotQuestId(uint16 slot) const
+        {
+            return GetUInt32Value(quests::FieldOf(slot, QUEST_ID_OFFSET));
+        }
 
         // Set the quest slot
         void SetQuestSlot(uint16 slot, uint32 quest_id, uint32 timer = 0)
         {
-            SetUInt32Value(PLAYER_QUEST_LOG_1_1 + slot * MAX_QUEST_OFFSET + QUEST_ID_OFFSET, quest_id);
-            SetUInt32Value(PLAYER_QUEST_LOG_1_1 + slot * MAX_QUEST_OFFSET + QUEST_COUNT_STATE_OFFSET, 0);
-            SetUInt32Value(PLAYER_QUEST_LOG_1_1 + slot * MAX_QUEST_OFFSET + QUEST_TIME_OFFSET, timer);
+            SetUInt32Value(quests::FieldOf(slot, QUEST_ID_OFFSET), quest_id);
+            SetUInt32Value(quests::FieldOf(slot, QUEST_COUNT_STATE_OFFSET), 0);
+            SetUInt32Value(quests::FieldOf(slot, QUEST_TIME_OFFSET), timer);
         }
 
         // Set the quest slot counter
         void SetQuestSlotCounter(uint16 slot, uint8 counter, uint8 count)
         {
-            uint32 val = GetUInt32Value(PLAYER_QUEST_LOG_1_1 + slot * MAX_QUEST_OFFSET + QUEST_COUNT_STATE_OFFSET);
-            val &= ~(0x3F << (counter * 6));
-            val |= ((uint32)count << (counter * 6));
-            SetUInt32Value(PLAYER_QUEST_LOG_1_1 + slot * MAX_QUEST_OFFSET + QUEST_COUNT_STATE_OFFSET, val);
+            uint16 const field = quests::FieldOf(slot, QUEST_COUNT_STATE_OFFSET);
+            SetUInt32Value(field, quests::WithCounter(GetUInt32Value(field), counter, count));
         }
-        void SetQuestSlotState(uint16 slot, uint8 state) { SetByteFlag(PLAYER_QUEST_LOG_1_1 + slot * MAX_QUEST_OFFSET + QUEST_COUNT_STATE_OFFSET, 3, state); }
-        void RemoveQuestSlotState(uint16 slot, uint8 state) { RemoveByteFlag(PLAYER_QUEST_LOG_1_1 + slot * MAX_QUEST_OFFSET + QUEST_COUNT_STATE_OFFSET, 3, state); }
-        void SetQuestSlotTimer(uint16 slot, uint32 timer) { SetUInt32Value(PLAYER_QUEST_LOG_1_1 + slot * MAX_QUEST_OFFSET + QUEST_TIME_OFFSET, timer); }
+
+        // Get the quest slot counter
+        uint8 GetQuestSlotCounter(uint16 slot, uint8 counter) const
+        {
+            return quests::CounterIn(GetUInt32Value(quests::FieldOf(slot, QUEST_COUNT_STATE_OFFSET)), counter);
+        }
+
+        void SetQuestSlotState(uint16 slot, uint8 state)
+        {
+            SetByteFlag(quests::FieldOf(slot, QUEST_COUNT_STATE_OFFSET), quests::STATE_BYTE, state);
+        }
+        void RemoveQuestSlotState(uint16 slot, uint8 state)
+        {
+            RemoveByteFlag(quests::FieldOf(slot, QUEST_COUNT_STATE_OFFSET), quests::STATE_BYTE, state);
+        }
+        void SetQuestSlotTimer(uint16 slot, uint32 timer)
+        {
+            SetUInt32Value(quests::FieldOf(slot, QUEST_TIME_OFFSET), timer);
+        }
 
         // Swap two quest slots
         void SwapQuestSlot(uint16 slot1, uint16 slot2)
         {
-            for (int i = 0; i < MAX_QUEST_OFFSET; ++i)
+            for (uint16 word = 0; word < MAX_QUEST_OFFSET; ++word)
             {
-                uint32 temp1 = GetUInt32Value(PLAYER_QUEST_LOG_1_1 + MAX_QUEST_OFFSET * slot1 + i);
-                uint32 temp2 = GetUInt32Value(PLAYER_QUEST_LOG_1_1 + MAX_QUEST_OFFSET * slot2 + i);
+                uint32 const first = GetUInt32Value(quests::FieldOf(slot1, word));
+                uint32 const second = GetUInt32Value(quests::FieldOf(slot2, word));
 
-                SetUInt32Value(PLAYER_QUEST_LOG_1_1 + MAX_QUEST_OFFSET * slot1 + i, temp2);
-                SetUInt32Value(PLAYER_QUEST_LOG_1_1 + MAX_QUEST_OFFSET * slot2 + i, temp1);
+                SetUInt32Value(quests::FieldOf(slot1, word), second);
+                SetUInt32Value(quests::FieldOf(slot2, word), first);
             }
         }
 
