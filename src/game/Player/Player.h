@@ -75,6 +75,7 @@
 #include "Inventory/ItemSlots.h"
 #include "Inventory/Inventory.h"
 #include "Honor/HonorLedger.h"
+#include "Offers/PlayerOffers.h"
 
 #include "Database/DatabaseEnv.h"
 #include "QuestDef.h"
@@ -703,7 +704,6 @@ enum ReputationSource
 };
 
 // Player summoning auto-decline time (in seconds)
-#define MAX_PLAYER_SUMMON_DELAY (2*MINUTE)
 #define MAX_MONEY_AMOUNT        (0x7FFFFFFF-1) // Maximum money amount
 
 // Structure to hold instance player bind information
@@ -1005,11 +1005,7 @@ class Player : public Unit
         // Set the summon point for the player
         void SetSummonPoint(uint32 mapid, float x, float y, float z)
         {
-            m_summon_expire = time(nullptr) + MAX_PLAYER_SUMMON_DELAY;
-            m_summon_mapid = mapid;
-            m_summon_x = x;
-            m_summon_y = y;
-            m_summon_z = z;
+            m_summon.Offer(mapid, x, y, z, time(nullptr));
         }
         void SummonIfPossible(bool agree); // Summon the player if possible
 
@@ -2337,29 +2333,26 @@ class Player : public Unit
         // Set resurrect request data
         void setResurrectRequestData(ObjectGuid guid, uint32 mapId, float X, float Y, float Z, uint32 health, uint32 mana)
         {
-            m_resurrectGuid = guid;
-            m_resurrectMap = mapId;
-            m_resurrectX = X;
-            m_resurrectY = Y;
-            m_resurrectZ = Z;
-            m_resurrectHealth = health;
-            m_resurrectMana = mana;
+            m_resurrect.from = guid;
+            m_resurrect.at = Geometry::Placement::Somewhere(mapId, Geometry::Vector3(X, Y, Z));
+            m_resurrect.health = health;
+            m_resurrect.mana = mana;
         }
 
         // Clear resurrect request data
-        void clearResurrectRequestData()
-        {
-            setResurrectRequestData(ObjectGuid(), 0, 0.0f, 0.0f, 0.0f, 0, 0);
-        }
+        void clearResurrectRequestData() { m_resurrect.Withdraw(); }
 
         // Check if resurrect is requested by a specific GUID
-        bool isRessurectRequestedBy(ObjectGuid guid) const { return m_resurrectGuid == guid; }
+        bool isRessurectRequestedBy(ObjectGuid guid) const { return m_resurrect.StandsFrom(guid); }
 
         // Check if resurrect is requested
-        bool isRessurectRequested() const { return !m_resurrectGuid.IsEmpty(); }
+        bool isRessurectRequested() const { return m_resurrect.Stands(); }
 
         // Resurrect using request data
         void ResurectUsingRequestData();
+
+        // Bring him back on the terms of the offer standing over him
+        void RaiseOnOffer();
 
         // Get the cinematic ID
         uint32 getCinematic()
@@ -3404,11 +3397,9 @@ class Player : public Unit
         void SetSaveTimer(uint32 timer) { m_nextSave = timer; }
 
         // Recall position
-        uint32 m_recallMap; // Map ID of the recall position
-        float  m_recallX;   // X coordinate of the recall position
-        float  m_recallY;   // Y coordinate of the recall position
-        float  m_recallZ;   // Z coordinate of the recall position
-        float  m_recallO;   // Orientation of the recall position
+        /// Where he stood when a command last bookmarked him, so that the same
+        /// command can put him back.
+        Geometry::Placement m_recall;
 
         // Save the recall position
         void SaveRecallPosition();
@@ -3786,10 +3777,7 @@ class Player : public Unit
         SpellModList m_spellMods[MAX_SPELLMOD]; // Spell modifiers
         int32 m_SpellModRemoveCount; // Spell modifier remove count
 
-        ObjectGuid m_resurrectGuid; // Resurrect GUID
-        uint32 m_resurrectMap; // Resurrect map ID
-        float m_resurrectX, m_resurrectY, m_resurrectZ; // Resurrect coordinates
-        uint32 m_resurrectHealth, m_resurrectMana; // Resurrect health and mana
+        ResurrectOffer m_resurrect;
 
         WorldSession* m_session; // Player session
 
@@ -3850,11 +3838,7 @@ class Player : public Unit
         ObjectGuid m_miniPetGuid; // Mini pet GUID
 
         // Player summoning
-        time_t m_summon_expire; // Summon expire time
-        uint32 m_summon_mapid; // Summon map ID
-        float m_summon_x; // Summon X coordinate
-        float m_summon_y; // Summon Y coordinate
-        float m_summon_z; // Summon Z coordinate
+        SummonOffer m_summon;
 
     private:
         uint32 m_created_date = 0;

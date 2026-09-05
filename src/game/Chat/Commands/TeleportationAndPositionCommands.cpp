@@ -602,7 +602,8 @@ bool ChatHandler::HandleRecallCommand(char* args)
         return false;
     }
 
-    return HandleGoHelper(target, target->m_recallMap, target->m_recallX, target->m_recallY, target->m_recallZ, target->m_recallO);
+    Geometry::Placement const& back = target->m_recall;
+    return HandleGoHelper(target, back.MapId(), back.X(), back.Y(), back.Z(), back.Facing());
 }
 
 /**

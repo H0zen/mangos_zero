@@ -643,13 +643,8 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
 
     // Player summoning
     // Initialize summon expire time to 0
-    m_summon_expire = 0;
     // Initialize summon map ID to 0
-    m_summon_mapid = 0;
     // Initialize summon coordinates to (0.0f, 0.0f, 0.0f)
-    m_summon_x = 0.0f;
-    m_summon_y = 0.0f;
-    m_summon_z = 0.0f;
 
     // Initialize contested PvP timer to 0
     m_contestedPvPTimer = 0;
@@ -1940,30 +1935,7 @@ void Player::ProcessDelayedOperations()
 
     if (m_DelayedOperations & DELAYED_RESURRECT_PLAYER)
     {
-        ResurrectPlayer(0.0f, false);
-
-        if (GetMaxHealth() > m_resurrectHealth)
-        {
-            SetHealth(m_resurrectHealth);
-        }
-        else
-        {
-            SetHealth(GetMaxHealth());
-        }
-
-        if (GetMaxPower(POWER_MANA) > m_resurrectMana)
-        {
-            SetPower(POWER_MANA, m_resurrectMana);
-        }
-        else
-        {
-            SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
-        }
-
-        SetPower(POWER_RAGE, 0);
-        SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
-
-        SpawnCorpseBones();
+        RaiseOnOffer();
     }
 
     if (m_DelayedOperations & DELAYED_SAVE_PLAYER)
@@ -3203,11 +3175,7 @@ bool Player::SetPosition(float x, float y, float z, float orientation, bool tele
  */
 void Player::SaveRecallPosition()
 {
-    m_recallMap = GetMapId();
-    m_recallX = Where().X();
-    m_recallY = Where().Y();
-    m_recallZ = Where().Z();
-    m_recallO = Where().Facing();
+    m_recall = Geometry::Placement::Somewhere(GetMapId(), Where().Pos(), Where().Facing());
 }
 
 /**
@@ -5143,12 +5111,11 @@ void Player::SummonIfPossible(bool agree)
 {
     if (!agree)
     {
-        m_summon_expire = 0;
+        m_summon.Withdraw();
         return;
     }
 
-    // expire and auto declined
-    if (m_summon_expire < time(nullptr))
+    if (!m_summon.Stands(time(nullptr)))
     {
         return;
     }
@@ -5167,9 +5134,10 @@ void Player::SummonIfPossible(bool agree)
         bg->EventPlayerDroppedFlag(this);
     }
 
-    m_summon_expire = 0;
+    Geometry::Placement const to = m_summon.at;
+    m_summon.Withdraw();
 
-    TeleportTo(m_summon_mapid, m_summon_x, m_summon_y, m_summon_z, Where().Facing());
+    TeleportTo(to.MapId(), to.X(), to.Y(), to.Z(), Where().Facing());
 }
 
 void Player::AutoUnequipOffhandIfNeed()
@@ -5413,9 +5381,10 @@ uint32 Player::GetBaseWeaponSkillValue(WeaponAttackType attType) const
 void Player::ResurectUsingRequestData()
 {
     /// Teleport before resurrecting by player, otherwise the player might get attacked from creatures near his corpse
-    if (m_resurrectGuid.IsPlayer())
+    if (m_resurrect.MovesHim())
     {
-        TeleportTo(m_resurrectMap, m_resurrectX, m_resurrectY, m_resurrectZ, Where().Facing());
+        TeleportTo(m_resurrect.at.MapId(), m_resurrect.at.X(), m_resurrect.at.Y(),
+                   m_resurrect.at.Z(), Where().Facing());
     }
 
     // we can not resurrect player when we triggered far teleport
@@ -5426,28 +5395,22 @@ void Player::ResurectUsingRequestData()
         return;
     }
 
+    RaiseOnOffer();
+}
+
+/**
+ * @brief Brings the player back on the terms of the offer standing over him.
+ *
+ * @remark Health and mana are ceilings: one with less to give comes back full
+ *         rather than over. Rage always starts empty and energy always full.
+ */
+void Player::RaiseOnOffer()
+{
     ResurrectPlayer(0.0f, false);
 
-    if (GetMaxHealth() > m_resurrectHealth)
-    {
-        SetHealth(m_resurrectHealth);
-    }
-    else
-    {
-        SetHealth(GetMaxHealth());
-    }
-
-    if (GetMaxPower(POWER_MANA) > m_resurrectMana)
-    {
-        SetPower(POWER_MANA, m_resurrectMana);
-    }
-    else
-    {
-        SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
-    }
-
+    SetHealth(std::min(m_resurrect.health, GetMaxHealth()));
+    SetPower(POWER_MANA, std::min(m_resurrect.mana, GetMaxPower(POWER_MANA)));
     SetPower(POWER_RAGE, 0);
-
     SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
 
     SpawnCorpseBones();

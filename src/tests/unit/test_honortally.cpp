@@ -33,6 +33,7 @@
 
 #include "Honor/HonorTally.h"
 #include "ObjectGuid.h"
+#include "ObjectGuid.h"
 
 namespace
 {
