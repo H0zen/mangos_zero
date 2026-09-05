@@ -29,6 +29,7 @@ set(TEST_SOURCES
     unit/test_diminishing.cpp
     unit/test_sides.cpp
     unit/test_itemsavequeue.cpp
+    unit/test_capturepoint.cpp
 
     combat/test_school.cpp
     combat/test_roll.cpp

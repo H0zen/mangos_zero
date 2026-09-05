@@ -58,6 +58,7 @@
 #include <vector>
 #include "SharedDefines.h"
 #include "Occupant.h"
+#include "CapturePoint.h"
 #include "Chest.h"
 #include "LootClaim.h"
 #include "LootMgr.h"
@@ -583,24 +584,6 @@ enum LootState
     GO_JUST_DEACTIVATED
 };
 
-enum CapturePointState
-{
-    CAPTURE_STATE_NEUTRAL = 0,
-    CAPTURE_STATE_PROGRESS_ALLIANCE,
-    CAPTURE_STATE_PROGRESS_HORDE,
-    CAPTURE_STATE_CONTEST_ALLIANCE,
-    CAPTURE_STATE_CONTEST_HORDE,
-    CAPTURE_STATE_WIN_ALLIANCE,
-    CAPTURE_STATE_WIN_HORDE
-};
-
-enum CapturePointSliderValue
-{
-    CAPTURE_SLIDER_ALLIANCE         = 100,                  // full alliance
-    CAPTURE_SLIDER_HORDE            = 0,                    // full horde
-    CAPTURE_SLIDER_MIDDLE           = 50                    // middle
-};
-
 class Unit;
 class GameObjectModel;
 
@@ -801,7 +784,10 @@ class GameObject : public Occupant
         GameObject* LookupFishingHoleAround(float range);
 
         void SetCapturePointSlider(float value, bool isLocked);
-        float GetCapturePointSliderValue() const { return m_captureSlider; }
+
+        /// The bar two sides push at each other, and who is standing by it.
+        CapturePoint& AsCapturePoint() { return m_capture; }
+        CapturePoint const& AsCapturePoint() const { return m_capture; }
 
         float GetInteractionDistance() const;              // Get the maximum distance for a GO to interact with
 
@@ -827,11 +813,6 @@ class GameObject : public Occupant
         time_t      m_cooldownTime;                         // used as internal reaction delay time store (not state change reaction).
         // For traps/goober this: spell casting cooldown, for doors/buttons: reset time.
 
-        uint32      m_captureTimer;                         // (msecs) timer used for capture points
-        float       m_captureSlider;                        // capture point slider value in range of [0..100]
-        CapturePointState m_captureState;
-
-
         uint32 m_useTimes;                                  // how many times the object has been used, or charges spent
 
         // collected only for GAMEOBJECT_TYPE_SUMMONING_RITUAL
@@ -846,6 +827,7 @@ class GameObject : public Occupant
         // Used for trap type
         time_t m_rearmTimer;                                // timer to rearm the trap once disarmed
 
+        CapturePoint m_capture;
         Chest m_chest;
 
         bool m_AI_locked;

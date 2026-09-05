@@ -114,7 +114,7 @@ void OutdoorPvP::HandleGameObjectRemove(GameObject* go)
     // save capture point slider value (negative value if locked)
     if (go->GetGOInfo()->type == GAMEOBJECT_TYPE_CAPTURE_POINT)
     {
-        CapturePointSlider value(go->GetCapturePointSliderValue(), go->getLootState() != GO_ACTIVATED);
+        CapturePointSlider value(go->AsCapturePoint().Slider(), go->getLootState() != GO_ACTIVATED);
         sOutdoorPvPMgr.SetCapturePointSlider(go->GetEntry(), value);
     }
 }

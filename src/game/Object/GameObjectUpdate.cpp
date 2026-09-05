@@ -315,11 +315,9 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     }
                     break;
                 case GAMEOBJECT_TYPE_CAPTURE_POINT:
-                    m_captureTimer += p_time;
-                    if (m_captureTimer >= 5000)
+                    if (m_capture.IsTickDue(p_time))
                     {
                         TickCapturePoint();
-                        m_captureTimer -= 5000;
                     }
                     break;
                 default:
@@ -335,9 +333,9 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     // if gameobject should cast spell, then this, but some GOs (type = 10) should be destroyed
                     if (uint32 spellId = GetGOInfo()->goober.spellId)
                     {
-                        for (GuidSet::const_iterator itr = m_UniqueUsers.begin(); itr != m_UniqueUsers.end(); ++itr)
+                        for (auto const& guid : m_UniqueUsers)
                         {
-                            if (Player* owner = GetMap()->GetPlayer(*itr))
+                            if (Player* owner = GetMap()->GetPlayer(guid))
                             {
                                 owner->CastSpell(owner, spellId, false, nullptr, nullptr, GetObjectGuid());
                             }
@@ -353,15 +351,15 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
 
                 case GAMEOBJECT_TYPE_CAPTURE_POINT:
                     // remove capturing players because slider wont be displayed if capture point is being locked
-                    for (GuidSet::const_iterator itr = m_UniqueUsers.begin(); itr != m_UniqueUsers.end(); ++itr)
+                    for (auto const& guid : m_capture.Standing())
                     {
-                        if (Player* owner = GetMap()->GetPlayer(*itr))
+                        if (Player* owner = GetMap()->GetPlayer(guid))
                         {
                             owner->SendUpdateWorldState(GetGOInfo()->capturePoint.worldState1, WORLD_STATE_REMOVE);
                         }
                     }
 
-                    m_UniqueUsers.clear();
+                    m_capture.Desert();
                     SetLootState(GO_READY);
                     return; // SetLootState and return because go is treated as "burning flag" due to GetGoAnimProgress() being 100 and would be removed on the client
                 case GAMEOBJECT_TYPE_CHEST:

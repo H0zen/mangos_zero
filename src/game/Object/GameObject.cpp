@@ -79,9 +79,6 @@ GameObject::GameObject() : Occupant(),
     m_spellId = 0;
     m_cooldownTime = 0;
 
-    m_captureTimer = 0;
-
-
     m_rearmTimer = 0;
 }
 
