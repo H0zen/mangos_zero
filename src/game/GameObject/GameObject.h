@@ -64,6 +64,7 @@
 #include "UserTally.h"
 #include "Chest.h"
 #include "TrapSight.h"
+#include "Behaviour.h"
 #include "LootClaim.h"
 #include "LootMgr.h"
 #include "Utilities/EventProcessor.h"
@@ -653,7 +654,10 @@ class GameObject : public Occupant
         void Update(uint32 update_diff, uint32 p_time) override;
 
         GameObjectInfo const* GetGOInfo() const { return m_goInfo; }
-        void SetGOInfo(GameObjectInfo const* pg) { m_goInfo = pg; }
+        void SetGOInfo(GameObjectInfo const* pg);
+
+        /// What this kind of object does. Never null once the template is set.
+        GameObjectBehaviour& Behaves() const { return *m_behaviour; }
 
         /// A lift or a tram, which the client animates from TransportAnimation.dbc.
         bool IsLift() const { return GetGoType() == GAMEOBJECT_TYPE_TRANSPORT; }
@@ -767,29 +771,6 @@ class GameObject : public Occupant
     private:
         /// What using an object comes to: one spell, cast by someone, and whether
         /// its cost is waived. A spell of nothing means the use was its own reward.
-        struct Casting
-        {
-            uint32 spellId = 0;
-            Unit* caster = nullptr;
-            bool triggered = false;
-        };
-
-        Casting UsedAsDoor(Unit* user, bool scriptReturnValue);
-        Casting UsedAsButton(Unit* user, bool scriptReturnValue);
-        Casting UsedAsQuestGiver(Unit* user, bool scriptReturnValue);
-        Casting UsedAsChest(Unit* user, bool scriptReturnValue);
-        Casting UsedAsGeneric(Unit* user, bool scriptReturnValue);
-        Casting UsedAsTrap(Unit* user, bool scriptReturnValue);
-        Casting UsedAsChair(Unit* user, bool scriptReturnValue);
-        Casting UsedAsSpellFocus(Unit* user, bool scriptReturnValue);
-        Casting UsedAsGoober(Unit* user, bool scriptReturnValue);
-        Casting UsedAsCamera(Unit* user, bool scriptReturnValue);
-        Casting UsedAsFishingNode(Unit* user, bool scriptReturnValue);
-        Casting UsedAsRitual(Unit* user, bool scriptReturnValue);
-        Casting UsedAsSpellCaster(Unit* user, bool scriptReturnValue);
-        Casting UsedAsFlagStand(Unit* user, bool scriptReturnValue);
-        Casting UsedAsFishingHole(Unit* user, bool scriptReturnValue);
-        Casting UsedAsDroppedFlag(Unit* user, bool scriptReturnValue);
 
         // The two halves of the sparkle that need more than the template's quest id.
         bool HasQuestBusinessWith(Player* seeker) const;
@@ -805,6 +786,14 @@ class GameObject : public Occupant
         void RollIfMineralVein();
 
         LootState getLootState() const { return m_lootState; }
+
+        /// It cannot be used again before this moment.
+        time_t UsableAt() const { return m_usableAt; }
+        void UsableAt(time_t when) { m_usableAt = when; }
+
+        /// It shuts itself at this moment; zero while it stays as it is.
+        time_t ClosesAt() const { return m_closesAt; }
+        void ClosesAt(time_t when) { m_closesAt = when; }
         void SetLootState(LootState s);
 
         /// What is left of a chest once players have started taking from it.
@@ -884,6 +873,9 @@ class GameObject : public Occupant
 
         CapturePoint m_capture;
         Chest m_chest;
+
+        /// One per object, made from its template and never chosen again.
+        std::unique_ptr<GameObjectBehaviour> m_behaviour;
 
         bool m_AI_locked;
 

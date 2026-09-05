@@ -669,6 +669,18 @@ void GameObject::Respawn()
 }
 
 /**
+ * @brief Fixes the template to this object, and with it what kind of thing it is.
+ *
+ * The kind is a column of the template, so this is the one moment it is read: the
+ * behaviour it names is made here and answers for the object from then on.
+ */
+void GameObject::SetGOInfo(GameObjectInfo const* pg)
+{
+    m_goInfo = pg;
+    m_behaviour = BehaviourOf(*this);
+}
+
+/**
  * @brief Whether a questgiver still has business with this player.
  *
  * Either it holds a quest the player could pick up now, or the player is
