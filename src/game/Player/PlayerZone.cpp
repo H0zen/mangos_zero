@@ -364,7 +364,7 @@ void Player::UpdateHomebindTime(uint32 time)
     // GMs never get homebind timer online
     if (m_InstanceValid || isGameMaster())
     {
-        if (m_HomebindTimer)                                // instance valid, but timer not reset
+        if (Home().Countdown())                                // instance valid, but timer not reset
         {
             // hide reminder
             WorldPacket data(SMSG_RAID_GROUP_ONLY, 4 + 4);
@@ -373,27 +373,27 @@ void Player::UpdateHomebindTime(uint32 time)
             GetSession()->SendPacket(&data);
         }
         // instance is valid, reset homebind timer
-        m_HomebindTimer = 0;
+        Home().Countdown(0);
     }
-    else if (m_HomebindTimer > 0)
+    else if (Home().Countdown() > 0)
     {
-        if (time >= m_HomebindTimer)
+        if (time >= Home().Countdown())
         {
             // teleport to homebind location
-            TeleportTo(m_homebindMapId, m_homebindX, m_homebindY, m_homebindZ, Where().Facing());
+            TeleportTo(Home().MapId(), Home().X(), Home().Y(), Home().Z(), Where().Facing());
         }
         else
         {
-            m_HomebindTimer -= time;
+            Home().Countdown(Home().Countdown() - time);
         }
     }
     else
     {
         // instance is invalid, start homebind timer
-        m_HomebindTimer = 60000;
+        Home().Countdown(60000);
         // send message to player
         WorldPacket data(SMSG_RAID_GROUP_ONLY, 4 + 4);
-        data << uint32(m_HomebindTimer);
+        data << uint32(Home().Countdown());
         data << uint32(ERR_RAID_GROUP_REQUIRED);        // error used only when timer = 0
         GetSession()->SendPacket(&data);
         DEBUG_LOG("PLAYER: Player '%s' (GUID: %u) will be teleported to homebind in 60 seconds", GetName(), GetGUIDLow());

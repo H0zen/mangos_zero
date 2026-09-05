@@ -77,6 +77,7 @@
 #include "Honor/HonorLedger.h"
 #include "Offers/Invitations.h"
 #include "Drink.h"
+#include "Hearth.h"
 #include "Perils/Perils.h"
 #include "Offers/PlayerOffers.h"
 #include "Teleport/TeleportOrder.h"
@@ -3287,11 +3288,19 @@ class Player : public Unit
         // Relocate the player to the homebind location
         void RelocateToHomebind()
         {
-            SetLocationMapId(m_homebindMapId); Place().MoveTo(m_homebindX, m_homebindY, m_homebindZ);
+            SetLocationMapId(m_hearth.MapId());
+            Place().MoveTo(m_hearth.X(), m_hearth.Y(), m_hearth.Z());
         }
 
         // Teleport the player to the homebind location
-        bool TeleportToHomebind(uint32 options = 0) { return TeleportTo(m_homebindMapId, m_homebindX, m_homebindY, m_homebindZ, Where().Facing(), options); }
+        bool TeleportToHomebind(uint32 options = 0)
+        {
+            return TeleportTo(m_hearth.MapId(), m_hearth.X(), m_hearth.Y(), m_hearth.Z(), Where().Facing(), options);
+        }
+
+        /// The inn he is bound to.
+        Hearth& Home() { return m_hearth; }
+        Hearth const& Home() const { return m_hearth; }
 
         // Get an object by type mask
         Object* GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask);
@@ -3365,7 +3374,6 @@ class Player : public Unit
         // Update the homebind time
         void UpdateHomebindTime(uint32 time);
 
-        uint32 m_HomebindTimer;
         bool m_InstanceValid;
         // permanent binds and solo binds
         BoundInstancesMap m_boundInstances;
@@ -3754,11 +3762,6 @@ class Player : public Unit
 
 
         // Homebind coordinates
-        uint32 m_homebindMapId; // Map ID of the homebind location
-        uint16 m_homebindAreaId; // Area ID of the homebind location
-        float m_homebindX; // X coordinate of the homebind location
-        float m_homebindY; // Y coordinate of the homebind location
-        float m_homebindZ; // Z coordinate of the homebind location
 
         // Last fall time and Z coordinate
         uint32 m_lastFallTime;
@@ -3774,6 +3777,8 @@ class Player : public Unit
         Perils m_perils;
 
         Drink m_drink;
+
+        Hearth m_hearth;
 
         // Detect invisibility timer
         uint32 m_DetectInvTimer;

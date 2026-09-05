@@ -571,8 +571,6 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
     // Stable-slot count now initialized by m_petMgr's constructor.
 
     /////////////////// Instance System /////////////////////
-    // Initialize homebind timer to 0
-    m_HomebindTimer = 0;
     // Initialize instance validity to true
     m_InstanceValid = true;
 
@@ -4039,9 +4037,9 @@ void Player::SendInitialPacketsBeforeAddToMap(bool deferLoginTimeSpeed)
 
     /* Send information about player's home binding */
     data.Initialize(SMSG_BINDPOINTUPDATE, 5 * 4);
-    data << m_homebindX << m_homebindY << m_homebindZ;
-    data << (uint32) m_homebindMapId;
-    data << (uint32) m_homebindAreaId;
+    data << Home().X() << Home().Y() << Home().Z();
+    data << (uint32) Home().MapId();
+    data << (uint32) Home().AreaId();
     GetSession()->SendPacket(&data);
 
     /* Tutorial data */
@@ -5419,15 +5417,11 @@ bool Player::HasMovementFlag(MovementFlags f) const
  */
 void Player::SetHomebindToLocation(Geometry::Placement const& loc, uint32 area_id)
 {
-    m_homebindMapId = loc.MapId();
-    m_homebindAreaId = area_id;
-    m_homebindX = loc.X();
-    m_homebindY = loc.Y();
-    m_homebindZ = loc.Z();
+    m_hearth.SetTo(loc.MapId(), uint16(area_id), loc.X(), loc.Y(), loc.Z());
 
     // update sql homebind
     CharacterDatabase.PExecute("UPDATE `character_homebind` SET `map` = '%u', `zone` = '%u', `position_x` = '%f', `position_y` = '%f', `position_z` = '%f' WHERE `guid` = '%u'",
-        m_homebindMapId, m_homebindAreaId, m_homebindX, m_homebindY, m_homebindZ, GetGUIDLow());
+        Home().MapId(), Home().AreaId(), Home().X(), Home().Y(), Home().Z(), GetGUIDLow());
 }
 
 /**

@@ -120,7 +120,7 @@ void Player::SetBattleGroundEntryPoint(Player* leader /*= nullptr*/)
     }
 
     // In error cases use homebind position
-    m_bgData.joinPos = Geometry::Placement::Somewhere(m_homebindMapId, Geometry::Vector3(m_homebindX, m_homebindY, m_homebindZ), 0.0f);
+    m_bgData.joinPos = Geometry::Placement::Somewhere(Home().MapId(), Geometry::Vector3(Home().X(), Home().Y(), Home().Z()), 0.0f);
     m_bgData.m_needSave = true;
 }
 
