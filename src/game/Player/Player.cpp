@@ -531,15 +531,6 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
 
     m_atLoginFlags = AT_LOGIN_NONE;
 
-    mSemaphoreTeleport_Near = false;
-    mSemaphoreTeleport_Far = false;
-
-    m_DelayedOperations = 0;
-    m_bCanDelayTeleport = false;
-    m_bHasDelayedTeleport = false;
-    m_bHasBeenAliveAtDelayedTeleport = true;                // overwrite always at setup teleport data, so not used infact
-    m_teleport_options = 0;
-
     m_trade = nullptr;
 
     m_cinematic = 0;
@@ -1347,7 +1338,7 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     SendUpdateToOutOfRangeGroupMembers();
     if (IsHasDelayedTeleport())
     {
-        TeleportTo(m_teleport_dest, m_teleport_options);
+        TeleportTo(m_teleport.To(), m_teleport.Options());
     }
 
 }
@@ -1723,8 +1714,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
             {
                 SetSemaphoreTeleportNear(true);
                 // lets save teleport destination for player
-                m_teleport_dest = Geometry::Placement::Somewhere(mapid, Geometry::Vector3(x, y, z), orientation);
-                m_teleport_options = options;
+                m_teleport.Aim(Geometry::Placement::Somewhere(mapid, Geometry::Vector3(x, y, z), orientation), options);
                 return true;
             }
         }
@@ -1755,7 +1745,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
         }
 
         // this will be used instead of the current location in SaveToDB
-        m_teleport_dest = Geometry::Placement::Somewhere(mapid, Geometry::Vector3(x, y, z), orientation);
+        m_teleport.To() = Geometry::Placement::Somewhere(mapid, Geometry::Vector3(x, y, z), orientation);
         SetFallInformation(0, z);
 
         // code for finish transfer called in WorldSession::HandleMovementOpcodes()
@@ -1792,8 +1782,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
                 {
                     SetSemaphoreTeleportFar(true);
                     // lets save teleport destination for player
-                    m_teleport_dest = Geometry::Placement::Somewhere(mapid, Geometry::Vector3(x, y, z), orientation);
-                    m_teleport_options = options;
+                    m_teleport.Aim(Geometry::Placement::Somewhere(mapid, Geometry::Vector3(x, y, z), orientation), options);
                     return true;
                 }
             }
@@ -1882,7 +1871,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
                 final_o += transportPosition->o;
             }
 
-            m_teleport_dest = Geometry::Placement::Somewhere(mapid, Geometry::Vector3(final_x, final_y, final_z), final_o);
+            m_teleport.To() = Geometry::Placement::Somewhere(mapid, Geometry::Vector3(final_x, final_y, final_z), final_o);
             SetFallInformation(0, final_z);
             // if the player is saved before worldport ack (at logout for example)
             // this will be used instead of the current location in SaveToDB
@@ -1928,28 +1917,27 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
  */
 void Player::ProcessDelayedOperations()
 {
-    if (m_DelayedOperations == 0)
+    if (m_teleport.Owed() == 0)
     {
         return;
     }
 
-    if (m_DelayedOperations & DELAYED_RESURRECT_PLAYER)
+    if (m_teleport.Owes(DELAYED_RESURRECT_PLAYER))
     {
         RaiseOnOffer();
     }
 
-    if (m_DelayedOperations & DELAYED_SAVE_PLAYER)
+    if (m_teleport.Owes(DELAYED_SAVE_PLAYER))
     {
         SaveToDB();
     }
 
-    if (m_DelayedOperations & DELAYED_SPELL_CAST_DESERTER)
+    if (m_teleport.Owes(DELAYED_SPELL_CAST_DESERTER))
     {
         CastSpell(this, 26013, true);               // Deserter
     }
 
-    // we have executed ALL delayed ops, so clear the flag
-    m_DelayedOperations = 0;
+    m_teleport.Settled();
 }
 
 /**

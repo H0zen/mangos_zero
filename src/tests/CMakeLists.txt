@@ -37,6 +37,7 @@ set(TEST_SOURCES
     unit/test_inventory.cpp
     unit/test_honortally.cpp
     unit/test_playeroffers.cpp
+    unit/test_teleportorder.cpp
 
     combat/test_school.cpp
     combat/test_roll.cpp

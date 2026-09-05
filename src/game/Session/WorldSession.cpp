@@ -939,7 +939,7 @@ void WorldSession::ExecuteOpcode(OpcodeHandler const& opHandle, WorldPacket* pac
         // because we don't want player's ghost teleported from graveyard
         if (_player->IsHasDelayedTeleport())
         {
-            _player->TeleportTo(_player->m_teleport_dest, _player->m_teleport_options);
+            _player->TeleportTo(_player->GetTeleportDest(), _player->GetTeleportOptions());
         }
     }
 

@@ -76,6 +76,7 @@
 #include "Inventory/Inventory.h"
 #include "Honor/HonorLedger.h"
 #include "Offers/PlayerOffers.h"
+#include "Teleport/TeleportOrder.h"
 
 #include "Database/DatabaseEnv.h"
 #include "QuestDef.h"
@@ -684,15 +685,6 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOADMAILEDITEMS,
 
     MAX_PLAYER_LOGIN_QUERY
-};
-
-// Delayed operations for players
-enum PlayerDelayedOperations
-{
-    DELAYED_SAVE_PLAYER         = 0x01, // Delayed save player
-    DELAYED_RESURRECT_PLAYER    = 0x02, // Delayed resurrect player
-    DELAYED_SPELL_CAST_DESERTER = 0x04, // Delayed spell cast deserter
-    DELAYED_END                         // End of delayed operations
 };
 
 // Sources of reputation
@@ -2815,25 +2807,25 @@ class Player : public Unit
         void learnSkillRewardedSpells(uint32 id, uint32 value);
 
         // Get the teleport destination
-        Geometry::Placement& GetTeleportDest()
-        {
-            return m_teleport_dest;
-        }
+        Geometry::Placement& GetTeleportDest() { return m_teleport.To(); }
+
+        // Terms the pending teleport was ordered on
+        uint32 GetTeleportOptions() const { return m_teleport.Options(); }
 
         // Check if the player is being teleported
-        bool IsBeingTeleported() const { return mSemaphoreTeleport_Near || mSemaphoreTeleport_Far; }
+        bool IsBeingTeleported() const { return m_teleport.InFlight(); }
 
         // Check if the player is being teleported near
-        bool IsBeingTeleportedNear() const { return mSemaphoreTeleport_Near; }
+        bool IsBeingTeleportedNear() const { return m_teleport.InFlightNear(); }
 
         // Check if the player is being teleported far
-        bool IsBeingTeleportedFar() const { return mSemaphoreTeleport_Far; }
+        bool IsBeingTeleportedFar() const { return m_teleport.InFlightFar(); }
 
         // Set the semaphore for near teleportation
-        void SetSemaphoreTeleportNear(bool semphsetting) { mSemaphoreTeleport_Near = semphsetting; }
+        void SetSemaphoreTeleportNear(bool semphsetting) { m_teleport.FlyingNear(semphsetting); }
 
         // Set the semaphore for far teleportation
-        void SetSemaphoreTeleportFar(bool semphsetting) { mSemaphoreTeleport_Far = semphsetting; }
+        void SetSemaphoreTeleportFar(bool semphsetting) { m_teleport.FlyingFar(semphsetting); }
 
         // Process delayed operations
         void ProcessDelayedOperations();
@@ -3859,32 +3851,16 @@ class Player : public Unit
         void AdjustQuestReqItemCount(Quest const* pQuest, QuestStatusData& questStatusData);
 
         // Set the ability to delay teleport
-        void SetCanDelayTeleport(bool setting) { m_bCanDelayTeleport = setting; }
+        void SetCanDelayTeleport(bool setting) { m_teleport.MayWait(setting); }
 
         // Check if the player has a delayed teleport
-        bool IsHasDelayedTeleport() const
-        {
-            // We should not execute delayed teleports for now dead players but has been alive at teleport
-            // because we don't want player's ghost teleported from graveyard
-            return m_bHasDelayedTeleport && (IsAlive() || !m_bHasBeenAliveAtDelayedTeleport);
-        }
+        bool IsHasDelayedTeleport() const { return m_teleport.Waits(IsAlive()); }
 
         // Set the delayed teleport flag if possible
-        bool SetDelayedTeleportFlagIfCan()
-        {
-            m_bHasDelayedTeleport = m_bCanDelayTeleport;
-            m_bHasBeenAliveAtDelayedTeleport = IsAlive();
-            return m_bHasDelayedTeleport;
-        }
+        bool SetDelayedTeleportFlagIfCan() { return m_teleport.WaitIfItMay(IsAlive()); }
 
         // Schedule a delayed operation
-        void ScheduleDelayedOperation(uint32 operation)
-        {
-            if (operation < DELAYED_END)
-            {
-                m_DelayedOperations |= operation;
-            }
-        }
+        void ScheduleDelayedOperation(uint32 operation) { m_teleport.OnArrival(operation); }
 
         // The unit that is currently moving the player
         Unit* m_mover;
@@ -3927,17 +3903,8 @@ class Player : public Unit
         uint8 m_MirrorTimerFlagsLast;
         bool m_isInWater;
 
-        // Current teleport data
-        Geometry::Placement m_teleport_dest; // Destination of the teleport
-        uint32 m_teleport_options; // Options for the teleport
-        bool mSemaphoreTeleport_Near; // Semaphore for near teleport
-        bool mSemaphoreTeleport_Far; // Semaphore for far teleport
-
-        // Delayed operations
-        uint32 m_DelayedOperations;
-        bool m_bCanDelayTeleport; // Can delay teleport flag
-        bool m_bHasDelayedTeleport; // Has delayed teleport flag
-        bool m_bHasBeenAliveAtDelayedTeleport; // Has been alive at delayed teleport flag
+        /// Where he has been sent, and what is owed when he lands.
+        TeleportOrder m_teleport;
 
         // Detect invisibility timer
         uint32 m_DetectInvTimer;
