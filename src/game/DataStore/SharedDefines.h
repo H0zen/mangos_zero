@@ -1754,6 +1754,10 @@ enum CreatureFamily
     CREATURE_FAMILY_REMOTE_CONTROL = 28,
 };
 
+/// How many spells one row of `creature_template` may list, and so how wide
+/// the bar of a unit driven by somebody else is.
+#define CREATURE_MAX_SPELLS     4
+
 /**
  * What the client is told about a kind of creature, one bit at a time.
  *
