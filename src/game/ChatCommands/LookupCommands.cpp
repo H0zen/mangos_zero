@@ -115,7 +115,7 @@ bool ChatHandler::LookupPlayerSearchCommand(QueryResult* result, uint32* limit)
  * @param loc_idx The locale index used for localized strings.
  * @param target Optional player used to show quest progress status.
  */
-void ChatHandler::ShowQuestListHelper(uint32 questId, int32 loc_idx, Player* target /*= NULL*/)
+void ChatHandler::ShowQuestListHelper(uint32 questId, int32 loc_idx, Player* target /*= nullptr*/)
 {
     Quest const* qinfo = sObjectMgr.GetQuestTemplate(questId);
     if (!qinfo)
@@ -166,7 +166,7 @@ void ChatHandler::ShowQuestListHelper(uint32 questId, int32 loc_idx, Player* tar
  * @param loc_idx The locale index used for localized strings.
  * @param target Optional player used to evaluate item usability.
  */
-void ChatHandler::ShowItemListHelper(uint32 itemId, int loc_idx, Player* target /*=NULL*/)
+void ChatHandler::ShowItemListHelper(uint32 itemId, int loc_idx, Player* target /*=nullptr*/)
 {
     ItemPrototype const* itemProto = sItemStorage.LookupEntry<ItemPrototype >(itemId);
     if (!itemProto)
@@ -353,7 +353,7 @@ bool ChatHandler::HandleLookupFactionCommand(char* args)
         return false;
     }
 
-    // Can be NULL at console call
+    // Can be nullptr at console call
     Player* target = getSelectedPlayer();
 
     std::string namepart = args;
@@ -406,7 +406,7 @@ bool ChatHandler::HandleLookupFactionCommand(char* args)
 
             if (loc < MAX_LOCALE)
             {
-                FactionState const* repState = target ? target->GetReputationMgr().GetState(factionEntry) : NULL;
+                FactionState const* repState = target ? target->GetReputationMgr().GetState(factionEntry) : nullptr;
                 ShowFactionListHelper(factionEntry, LocaleConstant(loc), repState, target);
                 ++counter;
             }
@@ -620,7 +620,7 @@ bool ChatHandler::ShowAccountListHelper(QueryResult* result, uint32* limit, bool
         uint32 account = fields[0].GetUInt32();
 
         WorldSession* session = sWorld.FindSession(account);
-        Player* player = session ? session->GetPlayer() : NULL;
+        Player* player = session ? session->GetPlayer() : nullptr;
         char const* char_name = player ? player->GetName() : " - ";
 
         if (m_session)
@@ -802,7 +802,7 @@ bool ChatHandler::HandleLookupItemCommand(char* args)
 
     wstrToLower(wnamepart);
 
-    Player* pl = m_session ? m_session->GetPlayer() : NULL;
+    Player* pl = m_session ? m_session->GetPlayer() : nullptr;
 
     uint32 counter = 0;
 
@@ -933,7 +933,7 @@ bool ChatHandler::HandleLookupSkillCommand(char* args)
         return false;
     }
 
-    // can be NULL in console call
+    // can be nullptr in console call
     Player* target = getSelectedPlayer();
 
     std::string namepart = args;
@@ -1035,7 +1035,7 @@ bool ChatHandler::HandleLookupSpellCommand(char* args)
         return false;
     }
 
-    // can be NULL at console call
+    // can be nullptr at console call
     Player* target = getSelectedPlayer();
 
     std::string namepart = args;
@@ -1114,7 +1114,7 @@ bool ChatHandler::HandleLookupQuestCommand(char* args)
         return false;
     }
 
-    // can be NULL at console call
+    // can be nullptr at console call
     Player* target = getSelectedPlayer();
 
     std::string namepart = args;

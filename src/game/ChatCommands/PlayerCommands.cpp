@@ -145,7 +145,7 @@ bool ChatHandler::HandleCharacterLevelCommand(char* args)
 
     HandleCharacterLevel(target, target_guid, oldlevel, newlevel);
 
-    if (!m_session || m_session->GetPlayer() != target)     // including player==NULL
+    if (!m_session || m_session->GetPlayer() != target)     // including player==nullptr
     {
         std::string nameLink = playerLink(target_name);
         PSendSysMessage(LANG_YOU_CHANGE_LVL, nameLink.c_str(), newlevel);
@@ -185,7 +185,7 @@ bool ChatHandler::HandleCharacterRenameCommand(char* args)
     else
     {
         // check offline security
-        if (HasLowerSecurity(NULL, target_guid))
+        if (HasLowerSecurity(nullptr, target_guid))
         {
             return false;
         }
@@ -245,7 +245,7 @@ bool ChatHandler::GetDeletedCharacterInfoList(DeletedInfoList& foundList, std::s
         // search by GUID
         if (isNumeric(searchString))
         {
-            resultChar = CharacterDatabase.PQuery("SELECT `guid`, `deleteInfos_Name`, `deleteInfos_Account`, `deleteDate` FROM `characters` WHERE `deleteDate` IS NOT NULL AND `guid` = %u", uint32(atoi(searchString.c_str())));
+            resultChar = CharacterDatabase.PQuery("SELECT `guid`, `deleteInfos_Name`, `deleteInfos_Account`, `deleteDate` FROM `characters` WHERE `deleteDate` IS NOT nullptr AND `guid` = %u", uint32(atoi(searchString.c_str())));
         }
         // search by name
         else
@@ -255,12 +255,12 @@ bool ChatHandler::GetDeletedCharacterInfoList(DeletedInfoList& foundList, std::s
                 return false;
             }
 
-            resultChar = CharacterDatabase.PQuery("SELECT `guid`, `deleteInfos_Name`, `deleteInfos_Account`, `deleteDate` FROM `characters` WHERE `deleteDate` IS NOT NULL AND `deleteInfos_Name` " _LIKE_ " " _CONCAT3_("'%%'", "'%s'", "'%%'"), searchString.c_str());
+            resultChar = CharacterDatabase.PQuery("SELECT `guid`, `deleteInfos_Name`, `deleteInfos_Account`, `deleteDate` FROM `characters` WHERE `deleteDate` IS NOT nullptr AND `deleteInfos_Name` " _LIKE_ " " _CONCAT3_("'%%'", "'%s'", "'%%'"), searchString.c_str());
         }
     }
     else
     {
-        resultChar = CharacterDatabase.Query("SELECT `guid`, `deleteInfos_Name`, `deleteInfos_Account`, `deleteDate` FROM `characters` WHERE `deleteDate` IS NOT NULL");
+        resultChar = CharacterDatabase.Query("SELECT `guid`, `deleteInfos_Name`, `deleteInfos_Account`, `deleteDate` FROM `characters` WHERE `deleteDate` IS NOT nullptr");
     }
 
     if (resultChar)
@@ -397,7 +397,7 @@ void ChatHandler::HandleCharacterDeletedRestoreHelper(DeletedInfo const& delInfo
         return;
     }
 
-    CharacterDatabase.PExecute("UPDATE `characters` SET `name`='%s', `account`='%u', `deleteDate`=NULL, `deleteInfos_Name`=NULL, `deleteInfos_Account`=NULL WHERE `deleteDate` IS NOT NULL AND `guid` = %u",
+    CharacterDatabase.PExecute("UPDATE `characters` SET `name`='%s', `account`='%u', `deleteDate`=nullptr, `deleteInfos_Name`=nullptr, `deleteInfos_Account`=nullptr WHERE `deleteDate` IS NOT nullptr AND `guid` = %u",
         delInfo.name.c_str(), delInfo.accountId, delInfo.lowguid);
 }
 
@@ -754,7 +754,7 @@ bool ChatHandler::HandleItemMoveCommand(char* args)
         return false;
     }
 
-    char* pParam2 = strtok(NULL, " ");
+    char* pParam2 = strtok(nullptr, " ");
     if (!pParam2)
     {
         return false;
@@ -968,7 +968,7 @@ bool ChatHandler::HandleExploreCheatCommand(char* args)
     int flag = atoi(args);
 
     Player* chr = getSelectedPlayer();
-    if (chr == NULL)
+    if (chr == nullptr)
     {
         SendSysMessage(LANG_NO_CHAR_SELECTED);
         SetSentErrorMessage(true);
@@ -1016,7 +1016,7 @@ bool ChatHandler::HandleExploreCheatCommand(char* args)
 bool ChatHandler::HandleLevelUpCommand(char* args)
 {
     int32 addlevel = 1;
-    char* nameStr = NULL;
+    char* nameStr = nullptr;
 
     if (*args)
     {
@@ -1059,7 +1059,7 @@ bool ChatHandler::HandleLevelUpCommand(char* args)
 
     HandleCharacterLevel(target, target_guid, oldlevel, newlevel);
 
-    if (!m_session || m_session->GetPlayer() != target)     // including chr==NULL
+    if (!m_session || m_session->GetPlayer() != target)     // including chr==nullptr
     {
         std::string nameLink = playerLink(target_name);
         PSendSysMessage(LANG_YOU_CHANGE_LVL, nameLink.c_str(), newlevel);
@@ -1082,7 +1082,7 @@ bool ChatHandler::HandleShowAreaCommand(char* args)
     }
 
     Player* chr = getSelectedPlayer();
-    if (chr == NULL)
+    if (chr == nullptr)
     {
         SendSysMessage(LANG_NO_CHAR_SELECTED);
         SetSentErrorMessage(true);
@@ -1121,7 +1121,7 @@ bool ChatHandler::HandleHideAreaCommand(char* args)
     }
 
     Player* chr = getSelectedPlayer();
-    if (chr == NULL)
+    if (chr == nullptr)
     {
         SendSysMessage(LANG_NO_CHAR_SELECTED);
         SetSentErrorMessage(true);
@@ -1348,7 +1348,7 @@ bool ChatHandler::HandleAddItemSetCommand(char* args)
             }
             else
             {
-                pl->SendEquipError(msg, NULL, NULL, pProto->ItemId);
+                pl->SendEquipError(msg, nullptr, nullptr, pProto->ItemId);
                 PSendSysMessage(LANG_ITEM_CANNOT_CREATE, pProto->ItemId, 1);
             }
         }
@@ -1540,7 +1540,7 @@ bool ChatHandler::HandleModifyHPCommand(char* args)
     }
 
     Player* chr = getSelectedPlayer();
-    if (chr == NULL)
+    if (chr == nullptr)
     {
         SendSysMessage(LANG_NO_CHAR_SELECTED);
         SetSentErrorMessage(true);
@@ -1598,7 +1598,7 @@ bool ChatHandler::HandleModifyManaCommand(char* args)
     }
 
     Player* chr = getSelectedPlayer();
-    if (chr == NULL)
+    if (chr == nullptr)
     {
         SendSysMessage(LANG_NO_CHAR_SELECTED);
         SetSentErrorMessage(true);
@@ -1707,7 +1707,7 @@ bool ChatHandler::HandleModifyRageCommand(char* args)
     int32 rage = rageRaw * 10;
 
     Player* chr = getSelectedPlayer();
-    if (chr == NULL)
+    if (chr == nullptr)
     {
         SendSysMessage(LANG_NO_CHAR_SELECTED);
         SetSentErrorMessage(true);
@@ -1797,7 +1797,7 @@ bool ChatHandler::HandleModifyASpeedCommand(char* args)
     }
 
     Player* chr = getSelectedPlayer();
-    if (chr == NULL)
+    if (chr == nullptr)
     {
         SendSysMessage(LANG_NO_CHAR_SELECTED);
         SetSentErrorMessage(true);
@@ -1855,7 +1855,7 @@ bool ChatHandler::HandleModifySpeedCommand(char* args)
     }
 
     Player* chr = getSelectedPlayer();
-    if (chr == NULL)
+    if (chr == nullptr)
     {
         SendSysMessage(LANG_NO_CHAR_SELECTED);
         SetSentErrorMessage(true);
@@ -1911,7 +1911,7 @@ bool ChatHandler::HandleModifySwimCommand(char* args)
     }
 
     Player* chr = getSelectedPlayer();
-    if (chr == NULL)
+    if (chr == nullptr)
     {
         SendSysMessage(LANG_NO_CHAR_SELECTED);
         SetSentErrorMessage(true);
@@ -1967,7 +1967,7 @@ bool ChatHandler::HandleModifyBWalkCommand(char* args)
     }
 
     Player* chr = getSelectedPlayer();
-    if (chr == NULL)
+    if (chr == nullptr)
     {
         SendSysMessage(LANG_NO_CHAR_SELECTED);
         SetSentErrorMessage(true);
@@ -2022,7 +2022,7 @@ bool ChatHandler::HandleModifyScaleCommand(char* args)
     }
 
     Unit* target = getSelectedUnit();
-    if (target == NULL)
+    if (target == nullptr)
     {
         SendSysMessage(LANG_SELECT_CHAR_OR_CREATURE);
         SetSentErrorMessage(true);
@@ -2333,7 +2333,7 @@ bool ChatHandler::HandleModifyMoneyCommand(char* args)
     }
 
     Player* chr = getSelectedPlayer();
-    if (chr == NULL)
+    if (chr == nullptr)
     {
         SendSysMessage(LANG_NO_CHAR_SELECTED);
         SetSentErrorMessage(true);

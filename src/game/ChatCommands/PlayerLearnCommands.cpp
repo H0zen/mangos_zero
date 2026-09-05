@@ -60,7 +60,7 @@ bool ChatHandler::HandleUnLearnCommand(char* args)
         return false;
     }
 
-    bool allRanks = ExtractLiteralArg(&args, "all") != NULL;
+    bool allRanks = ExtractLiteralArg(&args, "all") != nullptr;
     if (!allRanks && *args)                                 // can be fail also at syntax error
     {
         return false;
@@ -706,7 +706,7 @@ bool ChatHandler::HandleLearnAllCommand(char* /*args*/)
     int loop = 0;
     while (strcmp(allSpellList[loop], "0"))
     {
-        uint32 spell = std::strtoul((char*)allSpellList[loop++], NULL, 10);
+        uint32 spell = std::strtoul((char*)allSpellList[loop++], nullptr, 10);
 
         if (m_session->GetPlayer()->HasSpell(spell))
         {
@@ -757,7 +757,7 @@ bool ChatHandler::HandleLearnAllGMCommand(char* /*args*/)
     uint16 gmSpellIter = 0;
     while (strcmp(gmSpellList[gmSpellIter], "0"))
     {
-        uint32 spell = std::strtoul((char*)gmSpellList[gmSpellIter++], NULL, 10);
+        uint32 spell = std::strtoul((char*)gmSpellList[gmSpellIter++], nullptr, 10);
 
         SpellEntry const* spellInfo = sSpellStore.LookupEntry(spell);
         if (!spellInfo || !SpellMgr::IsSpellValid(spellInfo, m_session->GetPlayer()))
@@ -981,7 +981,7 @@ bool ChatHandler::HandleLearnCommand(char* args)
         return false;
     }
 
-    bool allRanks = ExtractLiteralArg(&args, "all") != NULL;
+    bool allRanks = ExtractLiteralArg(&args, "all") != nullptr;
     if (!allRanks && *args)                                 // can be fail also at syntax error
     {
         return false;
@@ -1143,7 +1143,7 @@ bool ChatHandler::HandleLearnAllRecipesCommand(char* args)
 
     std::string name;
 
-    SkillLineEntry const* targetSkillInfo = NULL;
+    SkillLineEntry const* targetSkillInfo = nullptr;
     for (uint32 i = 1; i < sSkillLineStore.GetNumRows(); ++i)
     {
         SkillLineEntry const* skillInfo = sSkillLineStore.LookupEntry(i);

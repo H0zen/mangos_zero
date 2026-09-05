@@ -145,11 +145,11 @@ void Aura::HandleShapeshiftBoosts(bool apply)
     {
         if (spellId1)
         {
-            target->CastSpell(target, spellId1, true, NULL, this);
+            target->CastSpell(target, spellId1, true, nullptr, this);
         }
         if (spellId2)
         {
-            target->CastSpell(target, spellId2, true, NULL, this);
+            target->CastSpell(target, spellId2, true, nullptr, this);
         }
 
         if (target->GetTypeId() == TYPEID_PLAYER)
@@ -170,7 +170,7 @@ void Aura::HandleShapeshiftBoosts(bool apply)
                 {
                     continue;
                 }
-                target->CastSpell(target, itr->first, true, NULL, this);
+                target->CastSpell(target, itr->first, true, nullptr, this);
             }
 
             // Leader of the Pack
@@ -179,7 +179,7 @@ void Aura::HandleShapeshiftBoosts(bool apply)
                 SpellEntry const* spellInfo = sSpellStore.LookupEntry(24932);
                 if (spellInfo && spellInfo->ShapeshiftMask & (1 << (form - 1)))
                 {
-                    target->CastSpell(target, 24932, true, NULL, this);
+                    target->CastSpell(target, 24932, true, nullptr, this);
                 }
             }
 
@@ -192,7 +192,7 @@ void Aura::HandleShapeshiftBoosts(bool apply)
                     if (aura->GetSpellProto()->SpellIconID == 240 && aura->GetModifier()->m_miscvalue == 3)
                     {
                         int32 HotWMod = aura->GetModifier()->m_amount;
-                        target->CastCustomSpell(target, HotWSpellId, &HotWMod, NULL, NULL, true, NULL, this);
+                        target->CastCustomSpell(target, HotWSpellId, &HotWMod, nullptr, nullptr, true, nullptr, this);
                         break;
                     }
                 }
@@ -398,7 +398,7 @@ void Aura::HandleSpiritOfRedemption(bool apply, bool Real)
     // die at aura end
     else
     {
-        target->DealDamage(target, target->GetHealth(), NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, GetSpellProto(), false);
+        target->DealDamage(target, target->GetHealth(), nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, GetSpellProto(), false);
     }
 }
 

@@ -128,7 +128,7 @@ bool ChatHandler::HandleServerShutDownCommand(char* args)
     }
 
     char* timeStr = strtok((char*)args, " ");
-    char* exitCodeStr = strtok(NULL, "");
+    char* exitCodeStr = strtok(nullptr, "");
 
     int32 time = atoi(timeStr);
 
@@ -180,7 +180,7 @@ bool ChatHandler::HandleServerRestartCommand(char* args)
     }
 
     char* timeStr = strtok((char*)args, " ");
-    char* exitCodeStr = strtok(NULL, "");
+    char* exitCodeStr = strtok(nullptr, "");
 
     int32 time = atoi(timeStr);
 
@@ -232,7 +232,7 @@ bool ChatHandler::HandleServerIdleRestartCommand(char* args)
     }
 
     char* timeStr = strtok((char*)args, " ");
-    char* exitCodeStr = strtok(NULL, "");
+    char* exitCodeStr = strtok(nullptr, "");
 
     int32 time = atoi(timeStr);
 
@@ -284,7 +284,7 @@ bool ChatHandler::HandleServerIdleShutDownCommand(char* args)
     }
 
     char* timeStr = strtok((char*)args, " ");
-    char* exitCodeStr = strtok(NULL, "");
+    char* exitCodeStr = strtok(nullptr, "");
 
     int32 time = atoi(timeStr);
 

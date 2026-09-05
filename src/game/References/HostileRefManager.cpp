@@ -108,7 +108,7 @@ void HostileRefManager::addThreatPercent(int32 pValue)
     HostileReference* ref;
 
     ref = getFirst();
-    while (ref != NULL)
+    while (ref != nullptr)
     {
         ref->addThreatPercent(pValue);
         ref = ref->next();
@@ -129,7 +129,7 @@ void HostileRefManager::setOnlineOfflineState(bool pIsOnline)
     HostileReference* ref;
 
     ref = getFirst();
-    while (ref != NULL)
+    while (ref != nullptr)
     {
         ref->setOnlineOfflineState(pIsOnline);
         ref = ref->next();

@@ -314,7 +314,7 @@ Quest const* Player::GetNextQuest(ObjectGuid guid, Quest const* pQuest)
         }
         else
         {
-            return NULL;
+            return nullptr;
         }
     }
 
@@ -327,7 +327,7 @@ Quest const* Player::GetNextQuest(ObjectGuid guid, Quest const* pQuest)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -577,7 +577,7 @@ bool Player::CanRewardQuest(Quest const* pQuest, bool msg) const
             {
                 if (msg)
                 {
-                    SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, NULL, NULL, pQuest->ReqItemId[i]);
+                    SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr, pQuest->ReqItemId[i]);
                 }
 
                 return false;
@@ -731,7 +731,7 @@ void Player::AddQuest(Quest const* pQuest, Object* questGiver)
 
         AddTimedQuest(quest_id);
         questStatusData.m_timer = limittime * IN_MILLISECONDS;
-        qtime = static_cast<uint32>(time(NULL)) + limittime;
+        qtime = static_cast<uint32>(time(nullptr)) + limittime;
     }
     else
     {
@@ -973,7 +973,7 @@ void Player::RewardQuest(Quest const* pQuest, uint32 reward, Object* questGiver,
 
     if (getLevel() < sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
     {
-        GiveXP(xp , NULL);
+        GiveXP(xp , nullptr);
     }
     else
     {
@@ -1591,7 +1591,7 @@ bool Player::CanGiveQuestSourceItemIfNeed(Quest const* pQuest, ItemPosCountVec* 
         }
         else
         {
-            SendEquipError(msg, NULL, NULL, srcitem);
+            SendEquipError(msg, nullptr, nullptr, srcitem);
         }
         return false;
     }
@@ -1648,7 +1648,7 @@ bool Player::TakeQuestSourceItem(uint32 quest_id, bool msg)
             {
                 if (msg)
                 {
-                    SendEquipError(res, NULL, NULL, srcitem);
+                    SendEquipError(res, nullptr, nullptr, srcitem);
                 }
                 return false;
             }
@@ -1851,7 +1851,7 @@ void Player::GroupEventHappens(uint32 questId, Occupant const* pEventObject)
 {
     if (Group* pGroup = GetGroup())
     {
-        for (GroupReference* itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+        for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
         {
             Player* pGroupGuy = itr->getSource();
 

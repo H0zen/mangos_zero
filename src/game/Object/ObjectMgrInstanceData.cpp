@@ -119,7 +119,7 @@ void ObjectMgr::LoadGroups()
     }
     else
     {
-        Group* group = NULL;                                // used as cached pointer for avoid relookup group for each member
+        Group* group = nullptr;                                // used as cached pointer for avoid relookup group for each member
 
         BarGoLink bar2(result->GetRowCount());
         do
@@ -191,7 +191,7 @@ void ObjectMgr::LoadGroups()
     }
     else
     {
-        Group* group = NULL;                                // used as cached pointer for avoid relookup group for each member
+        Group* group = nullptr;                                // used as cached pointer for avoid relookup group for each member
 
         BarGoLink bar2(result->GetRowCount());
         do

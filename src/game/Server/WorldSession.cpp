@@ -80,7 +80,7 @@ WorldSession::WorldSession(uint32 id, std::shared_ptr<proto::IClientLink> link,
                            std::shared_ptr<SessionMailbox> mailbox, AccountTypes sec,
                            time_t mute_time, LocaleConstant locale)
     : m_muteTime(mute_time),
-    _player(NULL), m_link(std::move(link)),
+    _player(nullptr), m_link(std::move(link)),
     m_mailbox(mailbox ? std::move(mailbox) : std::make_shared<SessionMailbox>()),
     _security(sec), _accountId(id), _logoutTime(0),
     m_inQueue(false), m_playerLoading(false), m_playerLogout(false), m_playerRecentlyLogout(false), m_playerSave(false),
@@ -154,13 +154,13 @@ void WorldSession::SendPacket(WorldPacket const* packet)
     static uint64 sendPacketCount = 0;
     static uint64 sendPacketBytes = 0;
 
-    static time_t firstTime = time(NULL);
+    static time_t firstTime = time(nullptr);
     static time_t lastTime = firstTime;                     // next 60 secs start time
 
     static uint64 sendLastPacketCount = 0;
     static uint64 sendLastPacketBytes = 0;
 
-    time_t cur_time = time(NULL);
+    time_t cur_time = time(nullptr);
 
     if ((cur_time - lastTime) < 60)
     {
@@ -228,7 +228,7 @@ void WorldSession::LogUnprocessedTail(WorldPacket* packet)
 }
 
 /**
- * @brief The map that runs this packet, or NULL to answer it in the serial phase.
+ * @brief The map that runs this packet, or nullptr to answer it in the serial phase.
  *
  * A packet is a map's when its handler is thread-safe and the player is in the
  * world. PROCESS_INPLACE owes an immediate reply and PROCESS_THREADUNSAFE
@@ -399,7 +399,7 @@ bool WorldSession::Update()
 
     ///- If necessary, log the player out. Only the serial phase calls this,
     ///  which is what keeps logout off the map threads.
-    time_t currTime = time(NULL);
+    time_t currTime = time(nullptr);
     if (!m_link || (ShouldLogOut(currTime) && !m_playerLoading))
     {
         LogoutPlayer(true);
@@ -606,7 +606,7 @@ void WorldSession::LogoutPlayer(bool Save)
         }
 
         ClearNpcWatchLastGuid();
-        SetPlayer(NULL);                                    // deleted in Remove/DeleteFromWorld call
+        SetPlayer(nullptr);                                    // deleted in Remove/DeleteFromWorld call
 
         ///- Send the 'logout complete' packet to the client
         WorldPacket data(SMSG_LOGOUT_COMPLETE, 0);

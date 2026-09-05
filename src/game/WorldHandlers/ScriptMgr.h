@@ -168,7 +168,7 @@ enum DBScriptCommand                                        // resSource, resTar
     //                                                         orientation != 0: Obtain a random point around resTarget in direction of orientation
     //                                                         data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL Obtain a random point around resTarget in direction of resTarget->GetOrientation + orientation
     //                                                         for resTarget == resSource and orientation == 0 this will mean resSource moving forward
-    SCRIPT_COMMAND_SEND_MAIL                = 38,           // resSource Occupant, can be NULL, resTarget Player
+    SCRIPT_COMMAND_SEND_MAIL                = 38,           // resSource Occupant, can be nullptr, resTarget Player
     //                                                         datalong: Send mailTemplateId from resSource (if provided) to player resTarget
     //                                                         datalong2: AlternativeSenderEntry. Use as sender-Entry
     //                                                         dataint1: Delay (>= 0) in Seconds
@@ -738,7 +738,7 @@ class ScriptMgr
 };
 
 // Starters for events
-bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool isStart = true, Unit* forwardToPvp = NULL);
+bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool isStart = true, Unit* forwardToPvp = nullptr);
 
 #define sScriptMgr MaNGOS::Singleton<ScriptMgr>::Instance()
 

@@ -138,7 +138,7 @@ void MotionMaster::UpdateMotion(uint32 diff)
         }
 
         delete m_expList;
-        m_expList = NULL;
+        m_expList = nullptr;
 
         if (empty())
         {
@@ -242,7 +242,7 @@ void MotionMaster::DirectExpire(bool reset)
     }
 
     // Store current top MMGen, as Finalize might push a new MMGen
-    MovementGenerator* nowTop = empty() ? NULL : top();
+    MovementGenerator* nowTop = empty() ? nullptr : top();
     // It can add another motions instead
     curr->Finalize(*m_owner);
 

@@ -35,7 +35,7 @@
  * @brief Wrapper for database field values
  *
  * Field provides type-safe access to database query result values.
- * It handles NULL values and converts between string representations
+ * It handles nullptr values and converts between string representations
  * and various C++ types (int, float, bool, string, etc.).
  */
 class Field
@@ -55,9 +55,9 @@ class Field
         };
 
         /**
-         * @brief Default constructor - creates NULL field
+         * @brief Default constructor - creates nullptr field
          */
-        Field() : mValue(NULL), mType(MYSQL_TYPE_NULL) {}
+        Field() : mValue(nullptr), mType(MYSQL_TYPE_NULL) {}
         /**
          * @brief Constructor with value and type
          * @param value Pointer to string value
@@ -76,19 +76,19 @@ class Field
          */
         enum enum_field_types GetType() const { return mType; }
         /**
-         * @brief Check if field value is NULL
-         * @return True if NULL, false otherwise
+         * @brief Check if field value is nullptr
+         * @return True if nullptr, false otherwise
          */
-        bool IsNULL() const { return mValue == NULL; }
+        bool IsNULL() const { return mValue == nullptr; }
 
         /**
          * @brief Get raw string value
-         * @return Pointer to string value (may be NULL)
+         * @return Pointer to string value (may be nullptr)
          */
         const char* GetString() const { return mValue; }
         /**
          * @brief Get C++ string value
-         * @return String value (empty if NULL)
+         * @return String value (empty if nullptr)
          */
         std::string GetCppString() const
         {
@@ -96,54 +96,54 @@ class Field
         }
         /**
          * @brief Get float value
-         * @return Float value (0.0 if NULL)
+         * @return Float value (0.0 if nullptr)
          */
         float GetFloat() const { return mValue ? static_cast<float>(atof(mValue)) : 0.0f; }
         /**
          * @brief Get boolean value
-         * @return Boolean value (false if NULL or 0)
+         * @return Boolean value (false if nullptr or 0)
          */
         bool GetBool() const { return mValue ? atoi(mValue) > 0 : false; }
         /**
          * @brief Get double value
-         * @return Double value (0.0 if NULL)
+         * @return Double value (0.0 if nullptr)
          */
         double GetDouble() const { return mValue ? static_cast<double>(atof(mValue)) : 0.0f; }
         /**
          * @brief Get 8-bit signed integer value
-         * @return 8-bit signed integer (0 if NULL)
+         * @return 8-bit signed integer (0 if nullptr)
          */
         // strtol/strtoul, not atol: MSVC's long is 32 bits even on x64, so a DB
         // value above 2^31 overflows atol -- undefined, LONG_MAX in practice.
-        int8 GetInt8() const { return mValue ? static_cast<int8>(std::strtol(mValue, NULL, 10)) : int8(0); }
+        int8 GetInt8() const { return mValue ? static_cast<int8>(std::strtol(mValue, nullptr, 10)) : int8(0); }
         /**
          * @brief Get 32-bit signed integer value
-         * @return 32-bit signed integer (0 if NULL)
+         * @return 32-bit signed integer (0 if nullptr)
          */
-        int32 GetInt32() const { return mValue ? static_cast<int32>(std::strtol(mValue, NULL, 10)) : int32(0); }
+        int32 GetInt32() const { return mValue ? static_cast<int32>(std::strtol(mValue, nullptr, 10)) : int32(0); }
         /**
          * @brief Get 8-bit unsigned integer value
-         * @return 8-bit unsigned integer (0 if NULL)
+         * @return 8-bit unsigned integer (0 if nullptr)
          */
-        uint8 GetUInt8() const { return mValue ? static_cast<uint8>(std::strtoul(mValue, NULL, 10)) : uint8(0); }
+        uint8 GetUInt8() const { return mValue ? static_cast<uint8>(std::strtoul(mValue, nullptr, 10)) : uint8(0); }
         /**
          * @brief Get 16-bit unsigned integer value
-         * @return 16-bit unsigned integer (0 if NULL)
+         * @return 16-bit unsigned integer (0 if nullptr)
          */
-        uint16 GetUInt16() const { return mValue ? static_cast<uint16>(std::strtoul(mValue, NULL, 10)) : uint16(0); }
+        uint16 GetUInt16() const { return mValue ? static_cast<uint16>(std::strtoul(mValue, nullptr, 10)) : uint16(0); }
         /**
          * @brief Get 16-bit signed integer value
-         * @return 16-bit signed integer (0 if NULL)
+         * @return 16-bit signed integer (0 if nullptr)
          */
-        int16 GetInt16() const { return mValue ? static_cast<int16>(std::strtol(mValue, NULL, 10)) : int16(0); }
+        int16 GetInt16() const { return mValue ? static_cast<int16>(std::strtol(mValue, nullptr, 10)) : int16(0); }
         /**
          * @brief Get 32-bit unsigned integer value
-         * @return 32-bit unsigned integer (0 if NULL)
+         * @return 32-bit unsigned integer (0 if nullptr)
          */
-        uint32 GetUInt32() const { return mValue ? static_cast<uint32>(std::strtoul(mValue, NULL, 10)) : uint32(0); }
+        uint32 GetUInt32() const { return mValue ? static_cast<uint32>(std::strtoul(mValue, nullptr, 10)) : uint32(0); }
         /**
          * @brief Get 64-bit unsigned integer value
-         * @return 64-bit unsigned integer (0 if NULL)
+         * @return 64-bit unsigned integer (0 if nullptr)
          */
         uint64 GetUInt64() const
         {
@@ -157,7 +157,7 @@ class Field
         }
         /**
          * @brief Get 64-bit signed integer value
-         * @return 64-bit signed integer (0 if NULL)
+         * @return 64-bit signed integer (0 if nullptr)
          */
         // TODO: should this be int64 not uint64
         uint64 GetInt64() const

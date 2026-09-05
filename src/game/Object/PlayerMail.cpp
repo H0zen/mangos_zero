@@ -130,7 +130,7 @@ void Player::UpdateNextMailTimeAndUnreads()
 {
     // calculate next delivery time (min. from non-delivered mails
     // and recalculate unReadMail
-    time_t cTime = time(NULL);
+    time_t cTime = time(nullptr);
     m_nextMailDelivereTime = 0;
     unReadMails = 0;
     for (PlayerMails::iterator itr = m_mail.begin(); itr != m_mail.end(); ++itr)
@@ -156,7 +156,7 @@ void Player::UpdateNextMailTimeAndUnreads()
  */
 void Player::AddNewMailDeliverTime(time_t deliver_time)
 {
-    if (deliver_time <= time(NULL))                         // ready now
+    if (deliver_time <= time(nullptr))                         // ready now
     {
         ++unReadMails;
         SendNewMail();

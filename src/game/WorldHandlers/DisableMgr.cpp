@@ -539,7 +539,7 @@ namespace DisableMgr
      */
     bool IsVMAPDisabledFor(uint32 entry, uint8 flags)
     {
-        return IsDisabledFor(DISABLE_TYPE_VMAP, entry, NULL, flags);
+        return IsDisabledFor(DISABLE_TYPE_VMAP, entry, nullptr, flags);
     }
 
     /**

@@ -66,7 +66,7 @@ static char const* const creatureKeys[] =
 {
         "Hcreature",
         "Hcreature_entry",
-    NULL
+    nullptr
 };
 
 enum GameobjectLinkType
@@ -80,14 +80,14 @@ static char const* const gameobjectKeys[] =
 {
         "Hgameobject",
         "Hgameobject_entry",
-    NULL
+    nullptr
 };
 
 static char const* const areatriggerKeys[] =
 {
         "Hareatrigger",
         "Hareatrigger_target",
-    NULL
+    nullptr
 };
 
 /**
@@ -281,7 +281,7 @@ bool ChatHandler::HandleSummonCommand(char* args)
     else
     {
         // check offline security
-        if (HasLowerSecurity(NULL, target_guid))
+        if (HasLowerSecurity(nullptr, target_guid))
         {
             return false;
         }
@@ -395,7 +395,7 @@ bool ChatHandler::HandleAppearCommand(char* args)
             {
                 Group* group = _player->GetGroup();
                 // if no bind exists, create a solo bind
-                InstanceGroupBind* gBind = group ? group->GetBoundInstance(target->GetMapId()) : NULL;
+                InstanceGroupBind* gBind = group ? group->GetBoundInstance(target->GetMapId()) : nullptr;
                 // if no bind exists, create a solo bind
                 if (!gBind)
                 {
@@ -441,7 +441,7 @@ bool ChatHandler::HandleAppearCommand(char* args)
     else
     {
         // check offline security
-        if (HasLowerSecurity(NULL, target_guid))
+        if (HasLowerSecurity(nullptr, target_guid))
         {
             return false;
         }
@@ -511,7 +511,7 @@ bool ChatHandler::HandleGroupgoCommand(char* args)
         return false;
     }
 
-    for (GroupReference* itr = grp->GetFirstMember(); itr != NULL; itr = itr->next())
+    for (GroupReference* itr = grp->GetFirstMember(); itr != nullptr; itr = itr->next())
     {
         Player* pl = itr->getSource();
 
@@ -615,8 +615,8 @@ bool ChatHandler::HandleRecallCommand(char* args)
  */
 void ChatHandler::ReportTransportPosition(Occupant* obj)
 {
-    TransportMap* hull = obj->GetMap() ? obj->GetMap()->AsTransport() : NULL;
-    Transport* vessel = hull ? hull->Vessel() : NULL;
+    TransportMap* hull = obj->GetMap() ? obj->GetMap()->AsTransport() : nullptr;
+    Transport* vessel = hull ? hull->Vessel() : nullptr;
 
     if (!vessel)
     {
@@ -681,7 +681,7 @@ void ChatHandler::ReportTransportPosition(Occupant* obj)
  */
 bool ChatHandler::HandleGPSCommand(char* args)
 {
-    Occupant* obj = NULL;
+    Occupant* obj = nullptr;
     if (*args)
     {
         if (ObjectGuid guid = ExtractGuidFromLink(&args))
@@ -834,7 +834,7 @@ bool ChatHandler::HandleGPSCommand(char* args)
  */
 bool ChatHandler::HandleGetDistanceCommand(char* args)
 {
-    Occupant* obj = NULL;
+    Occupant* obj = nullptr;
 
     if (*args)
     {
@@ -1291,7 +1291,7 @@ bool ChatHandler::HandleGoCreatureCommand(char* args)
         crType = CREATURE_LINK_ENTRY;
     }
 
-    CreatureData const* data = NULL;
+    CreatureData const* data = nullptr;
 
     switch (crType)
     {
@@ -1315,7 +1315,7 @@ bool ChatHandler::HandleGoCreatureCommand(char* args)
                 return false;
             }
 
-            FindCreatureData worker(tEntry, m_session ? m_session->GetPlayer() : NULL);
+            FindCreatureData worker(tEntry, m_session ? m_session->GetPlayer() : nullptr);
 
             sObjectMgr.DoCreatureData(worker);
 
@@ -1380,7 +1380,7 @@ bool ChatHandler::HandleGoCreatureCommand(char* args)
                     return false;
                 }
 
-                FindCreatureData worker(0, m_session ? m_session->GetPlayer() : NULL);
+                FindCreatureData worker(0, m_session ? m_session->GetPlayer() : nullptr);
 
                 do
                 {
@@ -1463,7 +1463,7 @@ bool ChatHandler::HandleGoObjectCommand(char* args)
         goType = GAMEOBJECT_LINK_ENTRY;
     }
 
-    GameObjectData const* data = NULL;
+    GameObjectData const* data = nullptr;
 
     switch (goType)
     {
@@ -1487,7 +1487,7 @@ bool ChatHandler::HandleGoObjectCommand(char* args)
                 return false;
             }
 
-            FindGOData worker(tEntry, m_session ? m_session->GetPlayer() : NULL);
+            FindGOData worker(tEntry, m_session ? m_session->GetPlayer() : nullptr);
 
             sObjectMgr.DoGOData(worker);
 
@@ -1547,7 +1547,7 @@ bool ChatHandler::HandleGoObjectCommand(char* args)
                     return false;
                 }
 
-                FindGOData worker(0, m_session ? m_session->GetPlayer() : NULL);
+                FindGOData worker(0, m_session ? m_session->GetPlayer() : nullptr);
 
                 do
                 {
@@ -1733,8 +1733,8 @@ bool ChatHandler::HandleTeleAddCommand(char* args)
     // deck's map id, which is the vessel's identity -- minted from her game object entry, so
     // it is the same number after a restart. Player::TeleportTo reads it back as "put him
     // aboard her", wherever she has sailed to by then.
-    TransportMap* hull = player->GetMap() ? player->GetMap()->AsTransport() : NULL;
-    Transport* vessel = hull ? hull->Vessel() : NULL;
+    TransportMap* hull = player->GetMap() ? player->GetMap()->AsTransport() : nullptr;
+    Transport* vessel = hull ? hull->Vessel() : nullptr;
 
     GameTele tele;
     tele.position_x = player->Where().X();
@@ -1902,7 +1902,7 @@ bool ChatHandler::HandleTeleNameCommand(char* args)
             else
             {
                 // offline player
-                if (HasLowerSecurity(NULL, target_guid))
+                if (HasLowerSecurity(nullptr, target_guid))
                 {
                     return false;
                 }
@@ -1955,7 +1955,7 @@ bool ChatHandler::HandleTeleNameCommand(char* args)
     else
     {
         // check offline security
-        if (HasLowerSecurity(NULL, target_guid))
+        if (HasLowerSecurity(nullptr, target_guid))
         {
             return false;
         }
@@ -2045,7 +2045,7 @@ bool ChatHandler::HandleTeleGroupCommand(char* args)
         return false;
     }
 
-    for (GroupReference* itr = grp->GetFirstMember(); itr != NULL; itr = itr->next())
+    for (GroupReference* itr = grp->GetFirstMember(); itr != nullptr; itr = itr->next())
     {
         Player* pl = itr->getSource();
 

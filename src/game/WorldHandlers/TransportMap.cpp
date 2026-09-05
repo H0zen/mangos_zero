@@ -155,7 +155,7 @@ namespace
     void ForgetMinion(Creature* minion, Unit* watcher)
     {
         Player* client = watcher && watcher->GetTypeId() == TYPEID_PLAYER
-                             ? static_cast<Player*>(watcher) : NULL;
+                             ? static_cast<Player*>(watcher) : nullptr;
         if (!client)
         {
             return;
@@ -286,7 +286,7 @@ namespace
 
 bool TransportMap::Commission()
 {
-    GameObjectInfo const* goinfo = m_vessel ? m_vessel->GetGOInfo() : NULL;
+    GameObjectInfo const* goinfo = m_vessel ? m_vessel->GetGOInfo() : nullptr;
     if (!goinfo)
     {
         return false;
@@ -473,7 +473,7 @@ bool TransportMap::Add(Player* passenger, InitialWorldEntryHook* initialEntry)
     //
     // Never while she is between two maps: she would name the one she is leaving, and he
     // would be handed a continent's worth of ships that are not on the water he can see.
-    if (Map* sailed = m_vessel->IsCrossing() ? NULL : m_vessel->GetMap())
+    if (Map* sailed = m_vessel->IsCrossing() ? nullptr : m_vessel->GetMap())
     {
         MapManager::TransportsByMapType::const_iterator vessels =
             sMapMgr.m_TransportsByMap.find(sailed->GetId());
@@ -544,7 +544,7 @@ void TransportMap::Embark(Player* passenger)
 
 bool TransportMap::Board(Player* passenger, float x, float y, float z, float o, uint32 options)
 {
-    Map* sailed = m_vessel ? m_vessel->GetMap() : NULL;
+    Map* sailed = m_vessel ? m_vessel->GetMap() : nullptr;
 
     if (!m_commissioned || !sailed || !MaNGOS::IsValidMapCoord(x, y, z, o))
     {
@@ -603,7 +603,7 @@ void TransportMap::Disembark(Player* passenger, float x, float y, float z, float
         return;
     }
 
-    Map* sailed = m_vessel ? m_vessel->GetMap() : NULL;
+    Map* sailed = m_vessel ? m_vessel->GetMap() : nullptr;
     if (!sailed)
     {
         return;
@@ -620,7 +620,7 @@ void TransportMap::Disembark(Player* passenger, float x, float y, float z, float
     // through SendInitSelf. Stepping ashore is the one case where that is false: leave the
     // pointer set and the ship he just left is the single vessel never announced to him, so
     // it vanishes the instant he is off it.
-    passenger->SetTransport(NULL);
+    passenger->SetTransport(nullptr);
 
     sailed->Add(passenger);
 
@@ -898,7 +898,7 @@ void TransportMap::CollectRelaySources(Occupant const* viewer, float visibility,
     if (TransportMap const* hull = viewer->GetMap()->AsTransport())
     {
         Transport* vessel = hull->Vessel();
-        if (Map* sailed = vessel ? vessel->GetMap() : NULL)
+        if (Map* sailed = vessel ? vessel->GetMap() : nullptr)
         {
             out.push_back({sailed, vessel->Where().X(), vessel->Where().Y(), 0.0f});
         }
@@ -935,7 +935,7 @@ void TransportMap::CollectRelaySources(Occupant const* viewer, float visibility,
 
 void TransportMap::GatherObservers()
 {
-    Map* world = m_vessel ? m_vessel->GetMap() : NULL;
+    Map* world = m_vessel ? m_vessel->GetMap() : nullptr;
     if (!world)
     {
         return;

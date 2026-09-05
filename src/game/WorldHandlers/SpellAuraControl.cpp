@@ -151,10 +151,10 @@ void Aura::HandleModPossess(bool apply, bool Real)
     }
     else
     {
-        p_caster->SetCharm(NULL);
+        p_caster->SetCharm(nullptr);
 
         p_caster->SetClientControl(target, 0);
-        p_caster->SetMover(NULL);
+        p_caster->SetMover(nullptr);
 
         // there is a possibility that target became invisible for client\p_caster at ResetView call:
         // it must be called after movement control unapplying, not before! the reason is same as at aura applying
@@ -247,9 +247,9 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
     }
     else
     {
-        p_caster->SetCharm(NULL);
+        p_caster->SetCharm(nullptr);
         p_caster->SetClientControl(pet, 0);
-        p_caster->SetMover(NULL);
+        p_caster->SetMover(nullptr);
 
         // there is a possibility that target became invisible for client\p_caster at ResetView call:
         // it must be called after movement control unapplying, not before! the reason is same as at aura applying
@@ -356,7 +356,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
                     // just to enable stat window
                     charmInfo->SetPetNumber(sObjectMgr.GeneratePetNumber(), true);
                     // if charmed two demons the same session, the 2nd gets the 1st one's name
-                    target->SetUInt32Value(UNIT_FIELD_PET_NAME_TIMESTAMP, uint32(time(NULL)));
+                    target->SetUInt32Value(UNIT_FIELD_PET_NAME_TIMESTAMP, uint32(time(nullptr)));
                 }
             }
         }
@@ -417,7 +417,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
             }
         }
 
-        caster->SetCharm(NULL);
+        caster->SetCharm(nullptr);
 
         if (caster->GetTypeId() == TYPEID_PLAYER)
         {
@@ -631,7 +631,7 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
                 return;
             }
 
-            caster->CastSpell(target, spellInfo, true, NULL, this);
+            caster->CastSpell(target, spellInfo, true, nullptr, this);
             return;
         }
     }
@@ -682,7 +682,7 @@ void Aura::HandleModStealth(bool apply, bool Real)
             // for RACE_NIGHTELF stealth
             if (target->GetTypeId() == TYPEID_PLAYER && GetId() == 20580)
             {
-                target->CastSpell(target, 21009, true, NULL, this);
+                target->CastSpell(target, 21009, true, nullptr, this);
             }
         }
     }

@@ -399,7 +399,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                         target->SetPower(POWER_ENERGY, 0);
                         if (irand(1, 100) <= furorChance)
                         {
-                            target->CastSpell(target, 17099, true, NULL, this);
+                            target->CastSpell(target, 17099, true, nullptr, this);
                         }
                     }
                     else
@@ -407,7 +407,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                         target->SetPower(POWER_RAGE, 0);
                         if (irand(1, 100) <= furorChance)
                         {
-                            target->CastSpell(target, 17057, true, NULL, this);
+                            target->CastSpell(target, 17057, true, nullptr, this);
                         }
                     }
                     break;
@@ -736,7 +736,7 @@ void Aura::HandleChannelDeathItem(bool apply, bool Real)
         if (msg != EQUIP_ERR_OK)
         {
             count -= noSpaceForCount;
-            ((Player*)caster)->SendEquipError(msg, NULL, NULL, createdItemId);
+            ((Player*)caster)->SendEquipError(msg, nullptr, nullptr, createdItemId);
             if (count == 0)
             {
                 return;

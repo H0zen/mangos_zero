@@ -40,7 +40,7 @@
  */
 Corpse::Corpse(CorpseType type) : Occupant(),
     loot(this),
-    lootRecipient(NULL),
+    lootRecipient(nullptr),
     lootForBody(false)
 {
     m_objectType |= TYPEMASK_CORPSE;
@@ -50,7 +50,7 @@ Corpse::Corpse(CorpseType type) : Occupant(),
 
     m_type = type;
 
-    m_time = time(NULL);
+    m_time = time(nullptr);
 }
 
 /**

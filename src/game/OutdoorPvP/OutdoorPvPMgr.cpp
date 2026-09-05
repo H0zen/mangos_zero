@@ -72,7 +72,7 @@ void OutdoorPvPMgr::InitOutdoorPvP()
  * @brief Returns the outdoor PvP script that directly owns a zone.
  *
  * @param zoneId The zone identifier.
- * @return OutdoorPvP* The matching outdoor PvP script, or NULL if none exists.
+ * @return OutdoorPvP* The matching outdoor PvP script, or nullptr if none exists.
  */
 OutdoorPvP* OutdoorPvPMgr::GetScript(uint32 zoneId)
 {
@@ -83,7 +83,7 @@ OutdoorPvP* OutdoorPvPMgr::GetScript(uint32 zoneId)
         case ZONE_ID_EASTERN_PLAGUELANDS:
             return m_scripts[OPVP_ID_EP];
         default:
-            return NULL;
+            return nullptr;
     }
 }
 
@@ -91,7 +91,7 @@ OutdoorPvP* OutdoorPvPMgr::GetScript(uint32 zoneId)
  * @brief Returns the outdoor PvP script that affects an indirectly related zone.
  *
  * @param zoneId The affected zone identifier.
- * @return OutdoorPvP* The matching outdoor PvP script, or NULL if none exists.
+ * @return OutdoorPvP* The matching outdoor PvP script, or nullptr if none exists.
  */
 OutdoorPvP* OutdoorPvPMgr::GetScriptOfAffectedZone(uint32 zoneId)
 {
@@ -105,7 +105,7 @@ OutdoorPvP* OutdoorPvPMgr::GetScriptOfAffectedZone(uint32 zoneId)
         case ZONE_ID_SCHOLOMANCE:
             return m_scripts[OPVP_ID_EP];
         default:
-            return NULL;
+            return nullptr;
     }
 }
 

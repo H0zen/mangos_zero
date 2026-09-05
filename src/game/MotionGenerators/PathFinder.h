@@ -247,7 +247,7 @@ class PathFinder
          * @param distance The distance to the polygon.
          * @return The path polygon reference.
          */
-        dtPolyRef getPathPolyByPosition(const dtPolyRef* polyPath, uint32 polyPathSize, const float* point, float* distance = NULL) const;
+        dtPolyRef getPathPolyByPosition(const dtPolyRef* polyPath, uint32 polyPathSize, const float* point, float* distance = nullptr) const;
 
         /**
          * @brief Get the polygon by location.

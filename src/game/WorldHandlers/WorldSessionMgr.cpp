@@ -102,10 +102,10 @@ WorldSession* World::FindSession(uint32 id) const
     if (itr != m_sessions.end())
     {
         return itr->second;
-    }                                 // also can return NULL for kicked session
+    }                                 // also can return nullptr for kicked session
     else
     {
-        return NULL;
+        return nullptr;
     }
 }
 

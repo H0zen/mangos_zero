@@ -106,7 +106,7 @@ void GuildMgr::RemoveGuild(uint32 guildId)
 /**
  * @brief Look up guild by ID
  * @param guildId Guild identifier
- * @return Guild pointer, or NULL if not found
+ * @return Guild pointer, or nullptr if not found
  *
  * Fast O(log n) lookup of a guild by its ID.
  */
@@ -118,13 +118,13 @@ Guild* GuildMgr::GetGuildById(uint32 guildId) const
         return itr->second;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**
  * @brief Look up guild by name
  * @param name Guild name (exact match, case-sensitive)
- * @return Guild pointer, or NULL if not found
+ * @return Guild pointer, or nullptr if not found
  *
  * Linear search through all guilds for exact name match.
  * Slower than ID lookup; use GetGuildById() when possible.
@@ -138,13 +138,13 @@ Guild* GuildMgr::GetGuildByName(std::string const& name) const
             return itr->second;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /**
  * @brief Look up guild by leader
  * @param guid ObjectGuid of the guild leader
- * @return Guild pointer, or NULL if not found
+ * @return Guild pointer, or nullptr if not found
  *
  * Linear search through all guilds to find the one led by the
  * specified character. Used for GM commands and validation.
@@ -158,7 +158,7 @@ Guild* GuildMgr::GetGuildByLeader(ObjectGuid const& guid) const
             return itr->second;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /**

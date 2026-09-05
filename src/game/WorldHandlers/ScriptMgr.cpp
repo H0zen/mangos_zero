@@ -231,7 +231,7 @@ void ScriptMgr::CollectPossibleEventIds(std::set<uint32>& eventIds)
 }
 
 // Starters for events
-bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool isStart/*=true*/, Unit* forwardToPvp/*=NULL*/)
+bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool isStart/*=true*/, Unit* forwardToPvp/*=nullptr*/)
 {
     MANGOS_ASSERT(source);
 
@@ -244,8 +244,8 @@ bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool
     // Handle PvP Calls
     if (forwardToPvp && source->GetTypeId() == TYPEID_GAMEOBJECT)
     {
-        BattleGround* bg = NULL;
-        OutdoorPvP* opvp = NULL;
+        BattleGround* bg = nullptr;
+        OutdoorPvP* opvp = nullptr;
         if (forwardToPvp->GetTypeId() == TYPEID_PLAYER)
         {
             bg = ((Player*)forwardToPvp)->GetBattleGround();

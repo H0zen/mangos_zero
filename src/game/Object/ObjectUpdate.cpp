@@ -245,7 +245,7 @@ void Object::DestroyForPlayer(Player* target) const
  */
 void Object::BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const
 {
-    Unit const* unit = NULL;
+    Unit const* unit = nullptr;
     uint32 highGuid = 0;
     MovementFlags moveflags = MOVEFLAG_NONE;
 

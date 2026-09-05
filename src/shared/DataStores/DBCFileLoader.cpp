@@ -43,8 +43,8 @@ static const uint64 MAX_DBC_TABLE_BYTES = 512u * 1024u * 1024u;
 
 DBCFileLoader::DBCFileLoader()
 {
-    data = NULL;
-    fieldsOffset = NULL;
+    data = nullptr;
+    fieldsOffset = nullptr;
 }
 
 bool DBCFileLoader::Load(const char* filename, const char* fmt)
@@ -82,9 +82,9 @@ bool DBCFileLoader::Load(const char* filename, const char* fmt)
 bool DBCFileLoader::LoadFromMemory(const void* bytes, size_t size, const char* fmt)
 {
     delete[] data;
-    data = NULL;
+    data = nullptr;
     delete[] fieldsOffset;
-    fieldsOffset = NULL;
+    fieldsOffset = nullptr;
 
     if (!bytes || size < 20)
     {
@@ -216,7 +216,7 @@ char* DBCFileLoader::AutoProduceData(const char* format, uint32& records, char**
     typedef char* ptr;
     if (strlen(format) != fieldCount)
     {
-        return NULL;
+        return nullptr;
     }
 
     // get struct size and index pos
@@ -241,7 +241,7 @@ char* DBCFileLoader::AutoProduceData(const char* format, uint32& records, char**
         // is 0, which would allocate nothing and then be written through by every row.
         if (maxi == 0xFFFFFFFFu || uint64(maxi) + 1 > MAX_DBC_INDEX)
         {
-            return NULL;
+            return nullptr;
         }
 
         ++maxi;
@@ -262,8 +262,8 @@ char* DBCFileLoader::AutoProduceData(const char* format, uint32& records, char**
     if (tableBytes > MAX_DBC_TABLE_BYTES)
     {
         delete[] indexTable;
-        indexTable = NULL;
-        return NULL;
+        indexTable = nullptr;
+        return nullptr;
     }
 
     char* dataTable = new char[size_t(tableBytes)];
@@ -299,7 +299,7 @@ char* DBCFileLoader::AutoProduceData(const char* format, uint32& records, char**
                     offset += sizeof(uint8);
                     break;
                 case DBC_FF_STRING:
-                    *((char**)(&dataTable[offset])) = NULL; // will replace non-empty or "" strings in AutoProduceStrings
+                    *((char**)(&dataTable[offset])) = nullptr; // will replace non-empty or "" strings in AutoProduceStrings
                     offset += sizeof(char*);
                     break;
                 case DBC_FF_LOGIC:
@@ -323,7 +323,7 @@ char* DBCFileLoader::AutoProduceStrings(const char* format, char* dataTable)
 {
     if (strlen(format) != fieldCount)
     {
-        return NULL;
+        return nullptr;
     }
 
     char* stringPool = new char[stringSize];

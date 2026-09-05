@@ -95,7 +95,7 @@ void ObjectMgr::LoadGameObjects()
         uint32 guid         = fields[ 0].GetUInt32();
         uint32 entry        = fields[ 1].GetUInt32();
 
-        if (DisableMgr::IsDisabledFor(DISABLE_TYPE_GAMEOBJECT_SPAWN, entry, NULL, 0, guid))
+        if (DisableMgr::IsDisabledFor(DISABLE_TYPE_GAMEOBJECT_SPAWN, entry, nullptr, 0, guid))
         {
             sLog.outDebug("Gameobject guid %u (entry %u) spawning is disabled.", guid, entry);
             continue;

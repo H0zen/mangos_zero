@@ -352,7 +352,7 @@ int32 Config::GetIntDefault(const char* name, int32 def)
 int64 Config::GetInt64Default(const char* name, int64 def)
 {
     std::string val;
-    return GetValue(name, val) ? int64(std::strtoll(val.c_str(), NULL, 10)) : def;
+    return GetValue(name, val) ? int64(std::strtoll(val.c_str(), nullptr, 10)) : def;
 }
 
 /**

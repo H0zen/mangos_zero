@@ -63,8 +63,8 @@
  */
 GameObject::GameObject() : Occupant(),
     loot(this),
-    m_model(NULL),
-    m_goInfo(NULL),
+    m_model(nullptr),
+    m_goInfo(nullptr),
     m_AI_locked(false)
 {
     m_objectType |= TYPEMASK_GAMEOBJECT;
@@ -155,7 +155,7 @@ void GameObject::RemoveFromWorld()
             GetMap()->RemoveGameObjectModel(*m_model);
         }
 
-        GetMap()->GetObjectsStore().erase<GameObject>(GetObjectGuid(), (GameObject*)NULL);
+        GetMap()->GetObjectsStore().erase<GameObject>(GetObjectGuid(), (GameObject*)nullptr);
     }
 
     Object::RemoveFromWorld();
@@ -460,7 +460,7 @@ bool GameObject::LoadFromDB(uint32 guid, Map* map)
             m_respawnTime  = map->GetPersistentState()->GetGORespawnTime(GetGUIDLow());
 
             // ready to respawn
-            if (m_respawnTime && m_respawnTime <= time(NULL))
+            if (m_respawnTime && m_respawnTime <= time(nullptr))
             {
                 m_respawnTime = 0;
                 map->GetPersistentState()->SaveGORespawnTime(GetGUIDLow(), 0);
@@ -584,7 +584,7 @@ Unit* GameObject::GetOwner() const
  */
 void GameObject::SaveRespawnTime()
 {
-    if (m_respawnTime > time(NULL) && m_spawnedByDefault)
+    if (m_respawnTime > time(nullptr) && m_spawnedByDefault)
     {
         GetMap()->GetPersistentState()->SaveGORespawnTime(GetGUIDLow(), m_respawnTime);
     }
@@ -704,7 +704,7 @@ void GameObject::Respawn()
 {
     if (m_spawnedByDefault && m_respawnTime > 0)
     {
-        m_respawnTime = time(NULL);
+        m_respawnTime = time(nullptr);
         GetMap()->GetPersistentState()->SaveGORespawnTime(GetGUIDLow(), 0);
     }
 }
@@ -883,7 +883,7 @@ void GameObject::TriggerLinkedGameObject(Unit* target)
     }
 
     // search nearest linked GO
-    GameObject* trapGO = NULL;
+    GameObject* trapGO = nullptr;
 
     {
         // search closest with base of used GO, using max range of trap spell as search radius (why? See above)
@@ -908,7 +908,7 @@ void GameObject::TriggerLinkedGameObject(Unit* target)
  */
 GameObject* GameObject::LookupFishingHoleAround(float range)
 {
-    GameObject* ok = NULL;
+    GameObject* ok = nullptr;
 
     MaNGOS::NearestGameObjectFishingHoleCheck u_check(*this, range);
     MaNGOS::GameObjectSearcher<MaNGOS::NearestGameObjectFishingHoleCheck> checker(ok, u_check);
@@ -976,7 +976,7 @@ void GameObject::UseDoorOrButton(uint32 time_to_restore, bool alternative /* = f
     SwitchDoorOrButton(true, alternative);
     SetLootState(GO_ACTIVATED);
 
-    m_cooldownTime = time(NULL) + time_to_restore;
+    m_cooldownTime = time(nullptr) + time_to_restore;
 }
 
 /**
@@ -1367,7 +1367,7 @@ void GameObject::SpawnInMaps(uint32 db_guid, GameObjectData const* data)
  */
 bool GameObject::HasStaticDBSpawnData() const
 {
-    return sObjectMgr.GetGOData(GetGUIDLow()) != NULL;
+    return sObjectMgr.GetGOData(GetGUIDLow()) != nullptr;
 }
 
 

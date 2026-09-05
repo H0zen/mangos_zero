@@ -98,7 +98,7 @@ inline float GetSpellRadius(SpellRadiusEntry const* radius) { return (radius ? r
 /**
  * Returns the effective cast time for the specified spell.
  */
-uint32 GetSpellCastTime(SpellEntry const* spellInfo, Spell const* spell = NULL);
+uint32 GetSpellCastTime(SpellEntry const* spellInfo, Spell const* spell = nullptr);
 
 /**
  * Returns the cast time used when calculating spell coefficient bonuses.
@@ -132,7 +132,7 @@ int32 GetSpellMaxDuration(SpellEntry const* spellInfo);
 /**
  * Calculates the spell duration after caster-based modifiers are applied.
  */
-int32 CalculateSpellDuration(SpellEntry const* spellInfo, Unit const* caster = NULL);
+int32 CalculateSpellDuration(SpellEntry const* spellInfo, Unit const* caster = nullptr);
 
 /**
  * Returns the maximum number of aura ticks produced by the specified spell.
@@ -1244,7 +1244,7 @@ class SpellMgr
                 return &itr->second;
             }
 
-            return NULL;
+            return nullptr;
         }
 
         float GetSpellThreatMultiplier(SpellEntry const* spellInfo) const
@@ -1270,7 +1270,7 @@ class SpellMgr
             {
                 return &itr->second;
             }
-            return NULL;
+            return nullptr;
         }
 
         // Spell procs from item enchants
@@ -1297,7 +1297,7 @@ class SpellMgr
                 return &itr->second;
             }
 
-            return NULL;
+            return nullptr;
         }
 
         uint32 GetSpellFacingFlag(uint32 spellId) const
@@ -1318,7 +1318,7 @@ class SpellMgr
             {
                 return &itr->second;
             }
-            return NULL;
+            return nullptr;
         }
 
         // Spell ranks chains
@@ -1327,7 +1327,7 @@ class SpellMgr
             SpellChainMap::const_iterator itr = mSpellChains.find(spell_id);
             if (itr == mSpellChains.end())
             {
-                return NULL;
+                return nullptr;
             }
 
             return &itr->second;
@@ -1421,7 +1421,7 @@ class SpellMgr
             }
             else
             {
-                return NULL;
+                return nullptr;
             }
         }
 
@@ -1456,7 +1456,7 @@ class SpellMgr
         bool IsSkillBonusSpell(uint32 spellId) const;
 
         // Spell correctness for client using
-        static bool IsSpellValid(SpellEntry const* spellInfo, Player* pl = NULL, bool msg = true);
+        static bool IsSpellValid(SpellEntry const* spellInfo, Player* pl = nullptr, bool msg = true);
 
         SkillLineAbilityMapBounds GetSkillLineAbilityMapBounds(uint32 spell_id) const
         {
@@ -1477,11 +1477,11 @@ class SpellMgr
             }
             else
             {
-                return NULL;
+                return nullptr;
             }
         }
 
-        SpellCastResult GetSpellAllowedInLocationError(SpellEntry const* spellInfo, uint32 map_id, uint32 zone_id, uint32 area_id, Player const* player = NULL);
+        SpellCastResult GetSpellAllowedInLocationError(SpellEntry const* spellInfo, uint32 map_id, uint32 zone_id, uint32 area_id, Player const* player = nullptr);
 
         SpellAreaMapBounds GetSpellAreaMapBounds(uint32 spell_id) const
         {

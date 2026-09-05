@@ -184,10 +184,10 @@ void GameObject::Use(Unit* user)
             // FIXME: when GO casting will be implemented trap must cast spell to target
             if (goInfo->trap.spellId)
             {
-                caster->CastSpell(user, goInfo->trap.spellId, true, NULL, NULL, GetObjectGuid());
+                caster->CastSpell(user, goInfo->trap.spellId, true, nullptr, nullptr, GetObjectGuid());
             }
             // use template cooldown if provided
-            m_cooldownTime = time(NULL) + (goInfo->trap.cooldown ? goInfo->trap.cooldown : uint32(4));
+            m_cooldownTime = time(nullptr) + (goInfo->trap.cooldown ? goInfo->trap.cooldown : uint32(4));
 
             // count charges
             if (goInfo->trap.charges > 0)
@@ -322,7 +322,7 @@ void GameObject::Use(Unit* user)
                 SetGoState(GO_STATE_ACTIVE);
             }
 
-            m_cooldownTime = time(NULL) + info->GetAutoCloseTime();
+            m_cooldownTime = time(nullptr) + info->GetAutoCloseTime();
 
             if (user->GetTypeId() == TYPEID_PLAYER)
             {
@@ -449,7 +449,7 @@ void GameObject::Use(Unit* user)
 
                     // normal chance
                     bool success = skill >= zone_skill && chance >= roll;
-                    GameObject* fishingHole = NULL;
+                    GameObject* fishingHole = nullptr;
 
                     // overwrite fail in case fishhole if allowed (after 3.3.0)
                     if (!success)

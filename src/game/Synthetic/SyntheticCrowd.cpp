@@ -145,7 +145,7 @@ namespace synthetic
 
             if (!map->Add(bot))
             {
-                session->SetPlayer(NULL);
+                session->SetPlayer(nullptr);
                 delete bot;
                 delete session;
                 error = "the map refused the player";
@@ -201,7 +201,7 @@ namespace synthetic
             {
                 // With no player left on it the session's logout is a no-op,
                 // which is the point: nothing of this reaches the database.
-                bot.session->SetPlayer(NULL);
+                bot.session->SetPlayer(nullptr);
                 bot.session->KickPlayer();
             }
 

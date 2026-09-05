@@ -111,25 +111,25 @@ void Player::SetSheath(SheathState sheathed)
     switch (sheathed)
     {
         case SHEATH_STATE_UNARMED:                          // no prepared weapon
-            SetVirtualItemSlot(0, NULL);
-            SetVirtualItemSlot(1, NULL);
-            SetVirtualItemSlot(2, NULL);
+            SetVirtualItemSlot(0, nullptr);
+            SetVirtualItemSlot(1, nullptr);
+            SetVirtualItemSlot(2, nullptr);
             break;
         case SHEATH_STATE_MELEE:                            // prepared melee weapon
         {
             SetVirtualItemSlot(0, GetWeaponForAttack(BASE_ATTACK, true, true));
             SetVirtualItemSlot(1, GetWeaponForAttack(OFF_ATTACK, true, true));
-            SetVirtualItemSlot(2, NULL);
+            SetVirtualItemSlot(2, nullptr);
         };  break;
         case SHEATH_STATE_RANGED:                           // prepared ranged weapon
-            SetVirtualItemSlot(0, NULL);
-            SetVirtualItemSlot(1, NULL);
+            SetVirtualItemSlot(0, nullptr);
+            SetVirtualItemSlot(1, nullptr);
             SetVirtualItemSlot(2, GetWeaponForAttack(RANGED_ATTACK, true, true));
             break;
         default:
-            SetVirtualItemSlot(0, NULL);
-            SetVirtualItemSlot(1, NULL);
-            SetVirtualItemSlot(2, NULL);
+            SetVirtualItemSlot(0, nullptr);
+            SetVirtualItemSlot(1, nullptr);
+            SetVirtualItemSlot(2, nullptr);
             break;
     }
     Unit::SetSheath(sheathed);                              // this must visualize Sheath changing for other players...
@@ -492,7 +492,7 @@ Item* Player::GetItemByEntry(uint32 item) const
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -570,7 +570,7 @@ Item* Player::GetItemByGuid(ObjectGuid guid) const
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -611,7 +611,7 @@ Item* Player::GetItemByPos(uint8 bag, uint8 slot) const
             return pBag->GetItemByPos(slot);
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -630,23 +630,23 @@ Item* Player::GetWeaponForAttack(WeaponAttackType attackType, bool nonbroken, bo
         case BASE_ATTACK:   slot = EQUIPMENT_SLOT_MAINHAND; break;
         case OFF_ATTACK:    slot = EQUIPMENT_SLOT_OFFHAND;  break;
         case RANGED_ATTACK: slot = EQUIPMENT_SLOT_RANGED;   break;
-        default: return NULL;
+        default: return nullptr;
     }
 
     Item* item = GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
     if (!item || item->GetProto()->Class != ITEM_CLASS_WEAPON)
     {
-        return NULL;
+        return nullptr;
     }
 
     if (useable && !CanUseEquippedWeapon(attackType))
     {
-        return NULL;
+        return nullptr;
     }
 
     if (nonbroken && item->IsBroken())
     {
-        return NULL;
+        return nullptr;
     }
 
     return item;
@@ -663,7 +663,7 @@ Item* Player::GetShield(bool useable) const
     Item* item = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
     if (!item || item->GetProto()->Class != ITEM_CLASS_ARMOR)
     {
-        return NULL;
+        return nullptr;
     }
 
     if (!useable)
@@ -673,7 +673,7 @@ Item* Player::GetShield(bool useable) const
 
     if (item->IsBroken() || !CanUseEquippedWeapon(OFF_ATTACK))
     {
-        return NULL;
+        return nullptr;
     }
 
     return item;

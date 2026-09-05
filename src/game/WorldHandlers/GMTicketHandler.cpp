@@ -61,7 +61,7 @@
  * Constructs and sends SMSG_GMTICKET_GETTICKET with ticket information.
  * When status is 0x06, includes ticket text and queue position info.
  */
-void WorldSession::SendGMTicketGetTicket(uint32 status, GMTicket* ticket /*= NULL*/)
+void WorldSession::SendGMTicketGetTicket(uint32 status, GMTicket* ticket /*= nullptr*/)
 {
     std::string text = ticket ? ticket->GetText() : "";
 

@@ -543,7 +543,7 @@ void BattleGroundWS::EventPlayerClickedOnFlag(Player* source, GameObject* target
  * Ensures that any flag carried by the leaving or disconnected player is dropped
  * or respawned correctly before the player is fully removed from the battleground.
  *
- * @param plr Pointer to the player, or NULL if the player is offline.
+ * @param plr Pointer to the player, or nullptr if the player is offline.
  * @param guid The GUID of the player being removed.
  */
 void BattleGroundWS::RemovePlayer(Player* plr, ObjectGuid guid)
@@ -795,7 +795,7 @@ void BattleGroundWS::UpdatePlayerScore(Player* source, uint32 type, uint32 value
  * the main graveyards.
  *
  * @param player Pointer to the player.
- * @return Pointer to the closest graveyard entry, or NULL if none found.
+ * @return Pointer to the closest graveyard entry, or nullptr if none found.
  */
 WorldSafeLocsEntry const* BattleGroundWS::GetClosestGraveYard(Player* player)
 {

@@ -138,7 +138,7 @@ InventoryResult Player::_CanStoreItem_InSpecificSlot(uint8 bag, uint8 slot, Item
     // ignore move item (this slot will be empty at move)
     if (pItem2 == pSrcItem)
     {
-        pItem2 = NULL;
+        pItem2 = nullptr;
     }
 
     uint32 need_space;
@@ -274,11 +274,11 @@ InventoryResult Player::_CanStoreItem_InBag(uint8 bag, ItemPosCountVec& dest, It
         // ignore move item (this slot will be empty at move)
         if (pItem2 == pSrcItem)
         {
-            pItem2 = NULL;
+            pItem2 = nullptr;
         }
 
         // if merge skip empty, if !merge skip non-empty
-        if ((pItem2 != NULL) != merge)
+        if ((pItem2 != nullptr) != merge)
         {
             continue;
         }
@@ -347,11 +347,11 @@ InventoryResult Player::_CanStoreItem_InInventorySlots(uint8 slot_begin, uint8 s
         // ignore move item (this slot will be empty at move)
         if (pItem2 == pSrcItem)
         {
-            pItem2 = NULL;
+            pItem2 = nullptr;
         }
 
         // if merge skip empty, if !merge skip non-empty
-        if ((pItem2 != NULL) != merge)
+        if ((pItem2 != nullptr) != merge)
         {
             continue;
         }
@@ -1869,7 +1869,7 @@ void Player::SetAmmo(uint32 item)
         InventoryResult msg = CanUseAmmo(item);
         if (msg != EQUIP_ERR_OK)
         {
-            SendEquipError(msg, NULL, NULL, item);
+            SendEquipError(msg, nullptr, nullptr, item);
             return;
         }
     }

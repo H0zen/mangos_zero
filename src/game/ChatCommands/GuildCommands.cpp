@@ -99,7 +99,7 @@ bool ChatHandler::HandleGuildInviteCommand(char* args)
 
     // if not guild name only (in "") then player name
     ObjectGuid target_guid;
-    if (!ExtractPlayerTarget(&nameStr, NULL, &target_guid))
+    if (!ExtractPlayerTarget(&nameStr, nullptr, &target_guid))
     {
         return false;
     }

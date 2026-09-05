@@ -188,7 +188,7 @@ struct SpellModifier
     /**
      * @brief Constructor
      */
-    SpellModifier() : op(SpellModOp()), type(SPELLMOD_FLAT), charges(0), value(0), spellId(0), lastAffected(NULL) {}
+    SpellModifier() : op(SpellModOp()), type(SPELLMOD_FLAT), charges(0), value(0), spellId(0), lastAffected(nullptr) {}
 
     /**
      * @brief Constructor with uint64 mask
@@ -200,7 +200,7 @@ struct SpellModifier
      * @param _charges Number of charges
      */
     SpellModifier(SpellModOp _op, SpellModType _type, int32 _value, uint32 _spellId, uint64 _mask, int16 _charges = 0)
-        : op(_op), type(_type), charges(_charges), value(_value), mask(_mask), spellId(_spellId), lastAffected(NULL)
+        : op(_op), type(_type), charges(_charges), value(_value), mask(_mask), spellId(_spellId), lastAffected(nullptr)
     {}
 
     /**
@@ -213,7 +213,7 @@ struct SpellModifier
      * @param _charges Number of charges
      */
     SpellModifier(SpellModOp _op, SpellModType _type, int32 _value, uint32 _spellId, ClassFamilyMask _mask, int16 _charges = 0)
-        : op(_op), type(_type), charges(_charges), value(_value), mask(_mask), spellId(_spellId), lastAffected(NULL)
+        : op(_op), type(_type), charges(_charges), value(_value), mask(_mask), spellId(_spellId), lastAffected(nullptr)
     {}
 
     /**
@@ -352,7 +352,7 @@ struct PlayerClassLevelInfo
 // Structure to hold player class info
 struct PlayerClassInfo
 {
-    PlayerClassInfo() : levelInfo(NULL) {}
+    PlayerClassInfo() : levelInfo(nullptr) {}
 
     PlayerClassLevelInfo* levelInfo; // Level info array [level-1] 0..MaxPlayerLevel-1
 };
@@ -390,7 +390,7 @@ typedef std::list<PlayerCreateInfoAction> PlayerCreateInfoActions;
 struct PlayerInfo
 {
     // existence checked by displayId != 0             // existence checked by displayId != 0
-    PlayerInfo() : displayId_m(0), displayId_f(0), levelInfo(NULL), areaId(0), mapId(0), orientation(0.0f), positionX(0.0f), positionY(0.0f), positionZ(0.0f) {}
+    PlayerInfo() : displayId_m(0), displayId_f(0), levelInfo(nullptr), areaId(0), mapId(0), orientation(0.0f), positionX(0.0f), positionY(0.0f), positionZ(0.0f) {}
 
     uint32 mapId;             // Map ID
     uint32 areaId;            // Area ID
@@ -419,7 +419,7 @@ struct PvPInfo
 // Structure to hold duel info
 struct DuelInfo
 {
-    DuelInfo() : initiator(NULL), opponent(NULL), startTimer(0), startTime(0), outOfBound(0) {}
+    DuelInfo() : initiator(nullptr), opponent(nullptr), startTimer(0), startTime(0), outOfBound(0) {}
 
     Player* initiator; // Initiator player
     Player* opponent;  // Opponent player
@@ -442,7 +442,7 @@ struct Areas
 // Structure to hold enchant duration information
 struct EnchantDuration
 {
-    EnchantDuration() : item(NULL), slot(MAX_ENCHANTMENT_SLOT), leftduration(0) {};
+    EnchantDuration() : item(nullptr), slot(MAX_ENCHANTMENT_SLOT), leftduration(0) {};
     EnchantDuration(Item* _item, EnchantmentSlot _slot, uint32 _leftduration) : item(_item), slot(_slot), leftduration(_leftduration) { MANGOS_ASSERT(item); };
 
     Item* item;             // Item pointer
@@ -862,7 +862,7 @@ struct InstancePlayerBind
     /**  permanent PlayerInstanceBinds are created in Raid instances for players
      *   that aren't already permanently bound when they are inside when a boss is killed
      *   or when they enter an instance that the group leader is permanently bound to. */
-    InstancePlayerBind() : state(NULL), perm(false) {}
+    InstancePlayerBind() : state(nullptr), perm(false) {}
 };
 
 // Enum to represent player rest states
@@ -1090,7 +1090,7 @@ class TradeData
         void SetItem(TradeSlots slot, Item* item);
 
         // Set the spell applied to the trade
-        void SetSpell(uint32 spell_id, Item* castItem = NULL);
+        void SetSpell(uint32 spell_id, Item* castItem = nullptr);
 
         // Set the money placed in the trade
         void SetMoney(uint32 money);
@@ -1153,7 +1153,7 @@ class Player : public Unit
         // Set the summon point for the player
         void SetSummonPoint(uint32 mapid, float x, float y, float z)
         {
-            m_summon_expire = time(NULL) + MAX_PLAYER_SUMMON_DELAY;
+            m_summon_expire = time(nullptr) + MAX_PLAYER_SUMMON_DELAY;
             m_summon_mapid = mapid;
             m_summon_x = x;
             m_summon_y = y;
@@ -1228,7 +1228,7 @@ class Player : public Unit
         }
 
         // Activate taxi path to specified nodes
-        bool ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc = NULL, uint32 spellid = 0);
+        bool ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc = nullptr, uint32 spellid = 0);
 
         // Activate taxi path to specified taxi path ID
         bool ActivateTaxiPathTo(uint32 taxi_path_id, uint32 spellid = 0);
@@ -1511,7 +1511,7 @@ class Player : public Unit
         uint8 FindEquipSlot(ItemPrototype const* proto, uint32 slot, bool swap) const;
 
         // Get the count of the specified item
-        uint32 GetItemCount(uint32 item, bool inBankAlso = false, Item* skipItem = NULL) const;
+        uint32 GetItemCount(uint32 item, bool inBankAlso = false, Item* skipItem = nullptr) const;
 
         // Get the item by its GUID
         Item* GetItemByGuid(ObjectGuid guid) const;
@@ -1579,7 +1579,7 @@ class Player : public Unit
         bool HasItemCount(uint32 item, uint32 count, bool inBankAlso = false) const;
 
         // Check if the player has an item that fits the spell requirements
-        bool HasItemFitToSpellReqirements(SpellEntry const* spellInfo, Item const* ignoreItem = NULL);
+        bool HasItemFitToSpellReqirements(SpellEntry const* spellInfo, Item const* ignoreItem = nullptr);
 
         // Check if the player can cast the spell without reagents
         bool CanNoReagentCast(SpellEntry const* spellInfo) const;
@@ -1587,12 +1587,12 @@ class Player : public Unit
         InventoryResult CanTakeMoreSimilarItems(Item* pItem) const { return _CanTakeMoreSimilarItems(pItem->GetEntry(), pItem->GetCount(), pItem); }
 
         // Check if the player can take more similar items (overloaded)
-        InventoryResult CanTakeMoreSimilarItems(uint32 entry, uint32 count) const { return _CanTakeMoreSimilarItems(entry, count, NULL); }
+        InventoryResult CanTakeMoreSimilarItems(uint32 entry, uint32 count) const { return _CanTakeMoreSimilarItems(entry, count, nullptr); }
 
         // Check if the player can store a new item
-        InventoryResult CanStoreNewItem(uint8 bag, uint8 slot, ItemPosCountVec& dest, uint32 item, uint32 count, uint32* no_space_count = NULL) const
+        InventoryResult CanStoreNewItem(uint8 bag, uint8 slot, ItemPosCountVec& dest, uint32 item, uint32 count, uint32* no_space_count = nullptr) const
         {
-            return _CanStoreItem(bag, slot, dest, item, count, NULL, false, no_space_count);
+            return _CanStoreItem(bag, slot, dest, item, count, nullptr, false, no_space_count);
         }
 
         // Check if the player can store an item
@@ -1603,7 +1603,7 @@ class Player : public Unit
                 return EQUIP_ERR_ITEM_NOT_FOUND;
             }
             uint32 count = pItem->GetCount();
-            return _CanStoreItem(bag, slot, dest, pItem->GetEntry(), count, pItem, swap, NULL);
+            return _CanStoreItem(bag, slot, dest, pItem->GetEntry(), count, pItem, swap, nullptr);
         }
 
         // Check if the player can store multiple items
@@ -1675,8 +1675,8 @@ class Player : public Unit
         Item* ConvertItem(Item* item, uint32 newItemId);
 
         // Internal methods for storing items
-        InventoryResult _CanTakeMoreSimilarItems(uint32 entry, uint32 count, Item* pItem, uint32* no_space_count = NULL) const;
-        InventoryResult _CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec& dest, uint32 entry, uint32 count, Item* pItem = NULL, bool swap = false, uint32* no_space_count = NULL) const;
+        InventoryResult _CanTakeMoreSimilarItems(uint32 entry, uint32 count, Item* pItem, uint32* no_space_count = nullptr) const;
+        InventoryResult _CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec& dest, uint32 entry, uint32 count, Item* pItem = nullptr, bool swap = false, uint32* no_space_count = nullptr) const;
 
         // Apply equipment cooldown
         void ApplyEquipCooldown(Item* pItem);
@@ -1759,7 +1759,7 @@ class Player : public Unit
         }
 
         // Send an equipment error message
-        void SendEquipError(InventoryResult msg, Item* pItem, Item* pItem2 = NULL, uint32 itemid = 0) const;
+        void SendEquipError(InventoryResult msg, Item* pItem, Item* pItem2 = nullptr, uint32 itemid = 0) const;
 
         // Send a buy error message
         void SendBuyError(BuyResult msg, Creature* pCreature, uint32 item, uint32 param);
@@ -1807,7 +1807,7 @@ class Player : public Unit
         float GetReputationPriceDiscount(Creature const* pCreature) const;
 
         // Get the trader
-        Player* GetTrader() const { return m_trade ? m_trade->GetTrader() : NULL; }
+        Player* GetTrader() const { return m_trade ? m_trade->GetTrader() : nullptr; }
 
         // Get the trade data
         TradeData* GetTradeData() const { return m_trade; }
@@ -1976,7 +1976,7 @@ class Player : public Unit
 
         // Check if the player satisfies the previous chain requirements for a quest
         bool SatisfyQuestPrevChain(Quest const* qInfo, bool msg) const;
-        bool CanGiveQuestSourceItemIfNeed(Quest const* pQuest, ItemPosCountVec* dest = NULL) const;
+        bool CanGiveQuestSourceItemIfNeed(Quest const* pQuest, ItemPosCountVec* dest = nullptr) const;
 
         // Give the quest source item if needed
         void GiveQuestSourceItemIfNeed(Quest const* pQuest);
@@ -2325,7 +2325,7 @@ class Player : public Unit
         Item* GetMItem(uint32 id)
         {
             ItemMap::const_iterator itr = mMitems.find(id);
-            return itr != mMitems.end() ? itr->second : NULL;
+            return itr != mMitems.end() ? itr->second : nullptr;
         }
 
         // Add a mailed item
@@ -2364,7 +2364,7 @@ class Player : public Unit
         TrainerSpellState GetTrainerSpellState(TrainerSpell const* trainer_spell, uint32 reqLevel) const;
 
         // Check if a spell fits the player's class and race
-        bool IsSpellFitByClassAndRace(uint32 spell_id, uint32* pReqlevel = NULL) const;
+        bool IsSpellFitByClassAndRace(uint32 spell_id, uint32* pReqlevel = nullptr) const;
 
         // Check if a passive-like spell needs to be cast when learned
         bool IsNeedCastPassiveLikeSpellAtLearn(SpellEntry const* spellInfo) const;
@@ -2462,10 +2462,10 @@ class Player : public Unit
         void AddSpellMod(SpellModifier* mod, bool apply);
 
         // Check if the player is affected by a spell modifier
-        bool IsAffectedBySpellmod(SpellEntry const* spellInfo, SpellModifier* mod, Spell const* spell = NULL);
+        bool IsAffectedBySpellmod(SpellEntry const* spellInfo, SpellModifier* mod, Spell const* spell = nullptr);
 
         // Apply a spell modifier to a value
-        template <class T> T ApplySpellMod(uint32 spellId, SpellModOp op, T& basevalue, Spell const* spell = NULL);
+        template <class T> T ApplySpellMod(uint32 spellId, SpellModOp op, T& basevalue, Spell const* spell = nullptr);
 
         // Get a spell modifier for a specific operation and spell ID
         SpellModifier* GetSpellMod(SpellModOp op, uint32 spellId) const;
@@ -2484,11 +2484,11 @@ class Player : public Unit
 
         time_t GetSpellCooldownDelay(uint32 spell_id) const { return m_spellCooldownMgr.GetSpellCooldownDelay(spell_id); }
 
-        void AddSpellAndCategoryCooldowns(SpellEntry const* spellInfo, uint32 itemId, Spell* spell = NULL, bool infinityCooldown = false) { m_spellCooldownMgr.AddSpellAndCategoryCooldowns(spellInfo, itemId, spell, infinityCooldown); }
+        void AddSpellAndCategoryCooldowns(SpellEntry const* spellInfo, uint32 itemId, Spell* spell = nullptr, bool infinityCooldown = false) { m_spellCooldownMgr.AddSpellAndCategoryCooldowns(spellInfo, itemId, spell, infinityCooldown); }
 
         void AddSpellCooldown(uint32 spell_id, uint32 itemid, time_t end_time) { m_spellCooldownMgr.AddSpellCooldown(spell_id, itemid, end_time); }
 
-        void SendCooldownEvent(SpellEntry const* spellInfo, uint32 itemId = 0, Spell* spell = NULL) { m_spellCooldownMgr.SendCooldownEvent(spellInfo, itemId, spell); }
+        void SendCooldownEvent(SpellEntry const* spellInfo, uint32 itemId = 0, Spell* spell = nullptr) { m_spellCooldownMgr.SendCooldownEvent(spellInfo, itemId, spell); }
 
         // Prohibit a spell school for a specific duration
         void ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs) override;
@@ -2641,7 +2641,7 @@ class Player : public Unit
         // Check if the player is in the same raid with another player
         bool IsInSameRaidWith(Player const* p) const
         {
-            return p == this || (GetGroup() != NULL && GetGroup() == p->GetGroup());
+            return p == this || (GetGroup() != nullptr && GetGroup() == p->GetGroup());
         }
 
         // Uninvite the player from the group
@@ -3436,7 +3436,7 @@ class Player : public Unit
         Geometry::Placement const& GetBattleGroundEntryPoint() const { return m_bgData.joinPos; }
 
         // Set the battleground entry point
-        void SetBattleGroundEntryPoint(Player* leader = NULL);
+        void SetBattleGroundEntryPoint(Player* leader = nullptr);
 
         // Set the battleground team
         void SetBGTeam(Team team) { m_bgData.bgTeam = team; m_bgData.m_needSave = true; }
@@ -3687,7 +3687,7 @@ class Player : public Unit
         void SendSavedInstances();
 
         // Convert instances to group
-        static void ConvertInstancesToGroup(Player* player, Group* group = NULL, ObjectGuid player_guid = ObjectGuid());
+        static void ConvertInstancesToGroup(Player* player, Group* group = nullptr, ObjectGuid player_guid = ObjectGuid());
 
         // Get the bound instance save for self or group
         DungeonPersistentState* GetBoundInstanceSaveForSelfOrGroup(uint32 mapid);

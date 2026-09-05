@@ -145,12 +145,12 @@ AreaTrigger const* ObjectMgr::GetGoBackTrigger(uint32 map_id) const
     InstanceTemplate const* temp = GetInstanceTemplate(map_id);
     if (!temp)
     {
-        return NULL;
+        return nullptr;
     }
 
     // Try to find one that teleports to the map we want to enter
     std::list<AreaTrigger const*> ghostTrigger;
-    AreaTrigger const* compareTrigger = NULL;
+    AreaTrigger const* compareTrigger = nullptr;
     for (AreaTriggerMap::const_iterator itr = mAreaTriggers.begin(); itr != mAreaTriggers.end(); ++itr)
     {
         if (itr->second.target_mapId == uint32(temp->ghostEntranceMap))
@@ -194,7 +194,7 @@ AreaTrigger const* ObjectMgr::GetGoBackTrigger(uint32 map_id) const
  */
 AreaTrigger const* ObjectMgr::GetMapEntranceTrigger(uint32 Map) const
 {
-    AreaTrigger const* compareTrigger = NULL;
+    AreaTrigger const* compareTrigger = nullptr;
     MapEntry const* mEntry = sMapStore.LookupEntry(Map);
 
     for (AreaTriggerMap::const_iterator itr = mAreaTriggers.begin(); itr != mAreaTriggers.end(); ++itr)

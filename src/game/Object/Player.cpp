@@ -245,7 +245,7 @@ std::ostringstream& operator<< (std::ostringstream& ss, PlayerTaxi const& taxi)
  * @param eff The spell effect index.
  * @param _charges The initial charge count.
  */
-SpellModifier::SpellModifier(SpellModOp _op, SpellModType _type, int32 _value, SpellEntry const* spellEntry, SpellEffectIndex eff, int16 _charges /*= 0*/) : op(_op), type(_type), charges(_charges), value(_value), spellId(spellEntry->ID), lastAffected(NULL)
+SpellModifier::SpellModifier(SpellModOp _op, SpellModType _type, int32 _value, SpellEntry const* spellEntry, SpellEffectIndex eff, int16 _charges /*= 0*/) : op(_op), type(_type), charges(_charges), value(_value), spellId(spellEntry->ID), lastAffected(nullptr)
 {
     mask = sSpellMgr.GetSpellAffectMask(spellEntry->ID, eff);
 }
@@ -259,7 +259,7 @@ SpellModifier::SpellModifier(SpellModOp _op, SpellModType _type, int32 _value, S
  * @param aura The aura providing the modifier.
  * @param _charges The initial charge count.
  */
-SpellModifier::SpellModifier(SpellModOp _op, SpellModType _type, int32 _value, Aura const* aura, int16 _charges /*= 0*/) : op(_op), type(_type), charges(_charges), value(_value), spellId(aura->GetId()), lastAffected(NULL)
+SpellModifier::SpellModifier(SpellModOp _op, SpellModType _type, int32 _value, Aura const* aura, int16 _charges /*= 0*/) : op(_op), type(_type), charges(_charges), value(_value), spellId(aura->GetId()), lastAffected(nullptr)
 {
     mask = sSpellMgr.GetSpellAffectMask(aura->GetId(), aura->GetEffIndex());
 }
@@ -273,7 +273,7 @@ SpellModifier::SpellModifier(SpellModOp _op, SpellModType _type, int32 _value, A
 bool SpellModifier::isAffectedOnSpell(SpellEntry const* spell) const
 {
     SpellEntry const* affect_spell = sSpellStore.LookupEntry(spellId);
-    // False if affect_spell == NULL or spellFamily not equal
+    // False if affect_spell == nullptr or spellFamily not equal
     if (!affect_spell || affect_spell->SpellClassSet != spell->SpellClassSet)
     {
         return false;
@@ -296,7 +296,7 @@ TradeData* TradeData::GetTraderData() const
  */
 Item* TradeData::GetItem(TradeSlots slot) const
 {
-    return m_items[slot] ? m_player->GetItemByGuid(m_items[slot]) : NULL;
+    return m_items[slot] ? m_player->GetItemByGuid(m_items[slot]) : nullptr;
 }
 
 /**
@@ -324,7 +324,7 @@ bool TradeData::HasItem(ObjectGuid item_guid) const
  */
 Item* TradeData::GetSpellCastItem() const
 {
-    return m_spellCastItem ?  m_player->GetItemByGuid(m_spellCastItem) : NULL;
+    return m_spellCastItem ?  m_player->GetItemByGuid(m_spellCastItem) : nullptr;
 }
 
 /**
@@ -365,7 +365,7 @@ void TradeData::SetItem(TradeSlots slot, Item* item)
  * @param spell_id The spell identifier.
  * @param castItem The optional reagent item used for the spell.
  */
-void TradeData::SetSpell(uint32 spell_id, Item* castItem /*= NULL*/)
+void TradeData::SetSpell(uint32 spell_id, Item* castItem /*= nullptr*/)
 {
     ObjectGuid itemGuid = castItem ? castItem->GetObjectGuid() : ObjectGuid();
 
@@ -528,16 +528,16 @@ Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(this), m_
 
     memset(m_items, 0, sizeof(Item*)*PLAYER_SLOTS_COUNT);
 
-    m_social = NULL;
+    m_social = nullptr;
 
     // group is initialized in the reference constructor
-    SetGroupInvite(NULL);
+    SetGroupInvite(nullptr);
     m_groupUpdateMask = 0;
     m_auraUpdateMask = 0;
 
     ClearHonorInfo();
 
-    duel = NULL;
+    duel = nullptr;
 
     m_GuildIdInvited = 0;
 
@@ -552,14 +552,14 @@ Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(this), m_
     m_bHasBeenAliveAtDelayedTeleport = true;                // overwrite always at setup teleport data, so not used infact
     m_teleport_options = 0;
 
-    m_trade = NULL;
+    m_trade = nullptr;
 
     m_cinematic = 0;
 
     PlayerTalkClass = new PlayerMenu(GetSession());
     m_currentBuybackSlot = BUYBACK_SLOT_START;
 
-    m_lastLiquid = NULL;
+    m_lastLiquid = nullptr;
 
     for (int i = 0; i < MAX_TIMERS; ++i)
     {
@@ -591,7 +591,7 @@ Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(this), m_
     }
 
     // Set login time to current time
-    m_logintime = time(NULL);
+    m_logintime = time(nullptr);
     // Set last tick time to login time
     m_Last_tick = m_logintime;
     // Initialize weapon proficiency to 0
@@ -682,7 +682,7 @@ Player::~Player()
     CleanupsBeforeDelete();
 
     // Ensure the social object is unloaded (should already be done in PlayerLogout)
-    // m_social = NULL;
+    // m_social = nullptr;
 
     // Delete all items in the player's inventory
     for (int i = 0; i < PLAYER_SLOTS_COUNT; ++i)
@@ -804,10 +804,10 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
         return false;
     }
 
-    // Initialize player items to NULL
+    // Initialize player items to nullptr
     for (int i = 0; i < PLAYER_SLOTS_COUNT; ++i)
     {
-        m_items[i] = NULL;
+        m_items[i] = nullptr;
     }
 
     // Set player's initial location
@@ -872,7 +872,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     SetUInt32Value(PLAYER_FIELD_COINAGE, sWorld.getConfig(CONFIG_UINT32_START_PLAYER_MONEY));
 
     // Initialize played time
-    m_Last_tick = time(NULL);
+    m_Last_tick = time(nullptr);
     m_Played_time[PLAYED_TIME_TOTAL] = 0;
     m_Played_time[PLAYED_TIME_LEVEL] = 0;
 
@@ -902,7 +902,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     }
 
     // Initialize player's starting items (match on race/class/gender; outfit deliberately excluded)
-    CharStartOutfitEntry const* oEntry = NULL;
+    CharStartOutfitEntry const* oEntry = nullptr;
     for (uint32 i = 1; i < sCharStartOutfitStore.GetNumRows(); ++i)
     {
         if (CharStartOutfitEntry const* entry = sCharStartOutfitStore.LookupEntry(i))
@@ -1067,7 +1067,7 @@ Item* Player::StoreNewItemInInventorySlot(uint32 itemEntry, uint32 amount)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -1094,7 +1094,7 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     }
 
     // Handle undelivered mail
-    if (m_nextMailDelivereTime && m_nextMailDelivereTime <= time(NULL))
+    if (m_nextMailDelivereTime && m_nextMailDelivereTime <= time(nullptr))
     {
         SendNewMail();
         ++unReadMails;
@@ -1142,7 +1142,7 @@ void Player::Update(uint32 update_diff, uint32 p_time)
         setAttackTimer(RANGED_ATTACK, (update_diff >= ranged_att ? 0 : ranged_att - update_diff));
     }
 
-    time_t now = time(NULL);
+    time_t now = time(nullptr);
 
     // Update PvP flag
     UpdatePvPFlag(now);
@@ -1646,7 +1646,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     if (Transport::IsVesselMapId(mapid))
     {
         Map* deck = sMapMgr.FindMap(mapid);
-        TransportMap* hull = deck ? deck->AsTransport() : NULL;
+        TransportMap* hull = deck ? deck->AsTransport() : nullptr;
 
         if (!hull)
         {
@@ -1706,7 +1706,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
                             m_transport->Where().Z(), m_transport->Where().Facing());
         }
 
-        m_transport = NULL;
+        m_transport = nullptr;
         m_movementInfo.ClearTransportData();
     }
 
@@ -1801,7 +1801,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     else
     {
         // far teleport to another map
-        Map* oldmap = IsInWorld() ? GetMap() : NULL;
+        Map* oldmap = IsInWorld() ? GetMap() : nullptr;
         // check if we can enter before stopping combat / removing pet / totems / interrupting spells
 
         // If the map is not created, assume it is possible to enter it.
@@ -2095,63 +2095,63 @@ Creature* Player::GetNPCIfCanInteractWith(ObjectGuid guid, uint32 npcflagmask)
     // some basic checks
     if (!guid || !IsInWorld() || IsTaxiFlying())
     {
-        return NULL;
+        return nullptr;
     }
 
     // not in interactive state
     if (hasUnitState(UNIT_STAT_CAN_NOT_REACT_OR_LOST_CONTROL))
     {
-        return NULL;
+        return nullptr;
     }
 
     // exist (we need look pets also for some interaction (quest/etc)
     Creature* unit = GetMap()->GetAnyTypeCreature(guid);
     if (!unit)
     {
-        return NULL;
+        return nullptr;
     }
 
     // appropriate npc type
     if (npcflagmask && !unit->HasNpcFlag(npcflagmask))
     {
-        return NULL;
+        return nullptr;
     }
 
     if (npcflagmask == UNIT_NPC_FLAG_STABLEMASTER)
     {
         if (getClass() != CLASS_HUNTER)
         {
-            return NULL;
+            return nullptr;
         }
     }
 
     // if a dead unit should be able to talk - the creature must be alive and have special flags
     if (!unit->IsAlive())
     {
-        return NULL;
+        return nullptr;
     }
 
     if (IsAlive() && unit->IsInvisibleForAlive())
     {
-        return NULL;
+        return nullptr;
     }
 
     // not allow interaction under control, but allow with own pets
     if (unit->GetCharmerGuid())
     {
-        return NULL;
+        return nullptr;
     }
 
     // not enemy
     if (IsHostile(*unit, *this))
     {
-        return NULL;
+        return nullptr;
     }
 
     // not too far
     if (!InReach(*unit, *this, INTERACTION_DISTANCE))
     {
-        return NULL;
+        return nullptr;
     }
 
     return unit;
@@ -2169,13 +2169,13 @@ GameObject* Player::GetGameObjectIfCanInteractWith(ObjectGuid guid, uint32 gameo
     // some basic checks
     if (!guid || !IsInWorld() || IsTaxiFlying())
     {
-        return NULL;
+        return nullptr;
     }
 
     // not in interactive state
     if (hasUnitState(UNIT_STAT_CAN_NOT_REACT_OR_LOST_CONTROL))
     {
-        return NULL;
+        return nullptr;
     }
 
     if (GameObject* go = GetMap()->GetGameObject(guid))
@@ -2192,7 +2192,7 @@ GameObject* Player::GetGameObjectIfCanInteractWith(ObjectGuid guid, uint32 gameo
                 go->GetGOInfo()->name,  go->GetGUIDLow(), GetName(), GetGUIDLow(), go->Where().DistanceTo(this->Where()), maxdist);
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -2765,7 +2765,7 @@ struct spell_cooldown_data
  */
 void Player::SendInitialSpells()
 {
-    time_t curTime = time(NULL);
+    time_t curTime = time(nullptr);
     time_t infTime = curTime + infinityCooldownDelayCheck;
 
     /** * * * * * * * * * * * * * * * *
@@ -3083,7 +3083,7 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
         }
         // The character gets unlinked from the account, the name gets freed up and appears as deleted ingame
         case 1:
-            CharacterDatabase.PExecute("UPDATE `characters` SET `deleteInfos_Name`=`name`, `deleteInfos_Account`=`account`, `deleteDate`='" UI64FMTD "', `name`='', `account`=0 WHERE `guid`=%u", uint64(time(NULL)), lowguid);
+            CharacterDatabase.PExecute("UPDATE `characters` SET `deleteInfos_Name`=`name`, `deleteInfos_Account`=`account`, `deleteDate`='" UI64FMTD "', `name`='', `account`=0 WHERE `guid`=%u", uint64(time(nullptr)), lowguid);
             break;
         default:
             sLog.outError("Player::DeleteFromDB: Unsupported delete method: %u.", charDelete_method);
@@ -3122,7 +3122,7 @@ void Player::DeleteOldCharacters(uint32 keepDays)
 {
     sLog.outString("Player::DeleteOldChars: Deleting all characters which have been deleted %u days before...", keepDays);
 
-    QueryResult* resultChars = CharacterDatabase.PQuery("SELECT `guid`, `deleteInfos_Account` FROM `characters` WHERE `deleteDate` IS NOT NULL AND `deleteDate` < '" UI64FMTD "'", uint64(time(NULL) - time_t(keepDays * DAY)));
+    QueryResult* resultChars = CharacterDatabase.PQuery("SELECT `guid`, `deleteInfos_Account` FROM `characters` WHERE `deleteDate` IS NOT nullptr AND `deleteDate` < '" UI64FMTD "'", uint64(time(nullptr) - time_t(keepDays * DAY)));
     if (resultChars)
     {
         sLog.outString("Player::DeleteOldChars: Found %u character(s) to delete", uint32(resultChars->GetRowCount()));
@@ -3895,7 +3895,7 @@ bool Player::ViableEquipSlots(ItemPrototype const* proto, uint8 *viable_slots) c
 
     if (!viable_slots)
     {
-        //DEBUG_LOG("**** [Player::ViableEquipSlots] Return array is NULL ****");
+        //DEBUG_LOG("**** [Player::ViableEquipSlots] Return array is nullptr ****");
         return false;
     }
 
@@ -4622,13 +4622,13 @@ void Player::RemoveMiniPet()
 /**
  * @brief Retrieves the player's currently summoned mini-pet.
  *
- * @return The mini-pet instance, or NULL if none is active.
+ * @return The mini-pet instance, or nullptr if none is active.
  */
 Pet* Player::GetMiniPet() const
 {
     if (m_miniPetGuid.IsEmpty())
     {
-        return NULL;
+        return nullptr;
     }
 
     return GetMap()->GetPet(m_miniPetGuid);
@@ -4682,7 +4682,7 @@ bool Player::IsAffectedBySpellmod(SpellEntry const* spellInfo, SpellModifier* mo
  *
  * @param op The modifier operation bucket.
  * @param spellId The spell that created the modifier.
- * @return The matching modifier, or NULL if none exists.
+ * @return The matching modifier, or nullptr if none exists.
  */
 SpellModifier* Player::GetSpellMod(SpellModOp op, uint32 spellId) const
 {
@@ -4694,7 +4694,7 @@ SpellModifier* Player::GetSpellMod(SpellModOp op, uint32 spellId) const
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -4716,7 +4716,7 @@ void Player::RemoveSpellMods(Spell const* spell)
             SpellModifier* mod = *itr;
             ++itr;
 
-            if (mod && mod->charges == -1 && (mod->lastAffected == spell || mod->lastAffected == NULL))
+            if (mod && mod->charges == -1 && (mod->lastAffected == spell || mod->lastAffected == nullptr))
             {
                 RemoveAuras(mod->spellId);
                 if (m_spellMods[i].empty())
@@ -4750,7 +4750,7 @@ void Player::ResetSpellModsDueToCanceledSpell(Spell const* spell)
                 continue;
             }
 
-            mod->lastAffected = NULL;
+            mod->lastAffected = nullptr;
 
             if (mod->charges == -1)
             {
@@ -4876,7 +4876,7 @@ void Player::ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs)
     // last check 1.12
     WorldPacket data(SMSG_SPELL_COOLDOWN, 8 + m_spells.size() * 8);
     data << GetObjectGuid();
-    time_t curTime = time(NULL);
+    time_t curTime = time(nullptr);
     for (PlayerSpellMap::const_iterator itr = m_spells.begin(); itr != m_spells.end(); ++itr)
     {
         if (itr->second.state == PLAYERSPELL_REMOVED)
@@ -5033,7 +5033,7 @@ bool Player::BuyItemFromVendor(ObjectGuid vendorGuid, uint32 item, uint8 count, 
     ItemPrototype const* pProto = ObjectMgr::GetItemPrototype(item);
     if (!pProto)
     {
-        SendBuyError(BUY_ERR_CANT_FIND_ITEM, NULL, item, 0);
+        SendBuyError(BUY_ERR_CANT_FIND_ITEM, nullptr, item, 0);
         return false;
     }
 
@@ -5041,7 +5041,7 @@ bool Player::BuyItemFromVendor(ObjectGuid vendorGuid, uint32 item, uint8 count, 
     if (!pCreature)
     {
         DEBUG_LOG("WORLD: BuyItemFromVendor - %s not found or you can't interact with him.", vendorGuid.GetString().c_str());
-        SendBuyError(BUY_ERR_DISTANCE_TOO_FAR, NULL, item, 0);
+        SendBuyError(BUY_ERR_DISTANCE_TOO_FAR, nullptr, item, 0);
         return false;
     }
 
@@ -5123,7 +5123,7 @@ bool Player::BuyItemFromVendor(ObjectGuid vendorGuid, uint32 item, uint8 count, 
         return false;
     }
 
-    Item* pItem = NULL;
+    Item* pItem = nullptr;
 
     if ((bag == NULL_BAG && slot == NULL_SLOT) || IsInventoryPos(bag, slot))
     {
@@ -5131,7 +5131,7 @@ bool Player::BuyItemFromVendor(ObjectGuid vendorGuid, uint32 item, uint8 count, 
         InventoryResult msg = CanStoreNewItem(bag, slot, dest, item, totalCount);
         if (msg != EQUIP_ERR_OK)
         {
-            SendEquipError(msg, NULL, NULL, item);
+            SendEquipError(msg, nullptr, nullptr, item);
             return false;
         }
 
@@ -5143,7 +5143,7 @@ bool Player::BuyItemFromVendor(ObjectGuid vendorGuid, uint32 item, uint8 count, 
     {
         if (totalCount != 1)
         {
-            SendEquipError(EQUIP_ERR_ITEM_CANT_BE_EQUIPPED, NULL, NULL);
+            SendEquipError(EQUIP_ERR_ITEM_CANT_BE_EQUIPPED, nullptr, nullptr);
             return false;
         }
 
@@ -5151,7 +5151,7 @@ bool Player::BuyItemFromVendor(ObjectGuid vendorGuid, uint32 item, uint8 count, 
         InventoryResult msg = CanEquipNewItem(slot, dest, item, false);
         if (msg != EQUIP_ERR_OK)
         {
-            SendEquipError(msg, NULL, NULL, item);
+            SendEquipError(msg, nullptr, nullptr, item);
             return false;
         }
 
@@ -5166,7 +5166,7 @@ bool Player::BuyItemFromVendor(ObjectGuid vendorGuid, uint32 item, uint8 count, 
     }
     else
     {
-        SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, NULL, NULL);
+        SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, nullptr, nullptr);
         return false;
     }
 
@@ -5213,7 +5213,7 @@ void Player::SetComboPoints()
     }
     /*else
     {
-        // can be NULL, and then points=0. Use unknown; to reset points of some sort?
+        // can be nullptr, and then points=0. Use unknown; to reset points of some sort?
         data << PackedGuid();
         data << uint8(0);
         GetSession()->SendPacket(&data);
@@ -5348,7 +5348,7 @@ void Player::GetWorldAnchor(uint32& mapId, float& x, float& y, float& z) const
 
 Map* Player::BoardingMap() const
 {
-    TransportMap* hull = m_transport ? m_transport->AsMap() : NULL;
+    TransportMap* hull = m_transport ? m_transport->AsMap() : nullptr;
 
     // Uncommissioned -- the baker left her no hull -- and she carries nobody: he stays on the
     // water, which is at least a place that exists.
@@ -5395,13 +5395,13 @@ void Player::UpdateLiftMinions()
 {
     // A ship sets Player::m_transport; a type-11 lift or tram sets only the ONTRANSPORT
     // flag, with a GO guid that belongs to no vessel list. That, and only that, is a lift.
-    GameObject* lift = NULL;
+    GameObject* lift = nullptr;
     if (!GetTransport() && m_movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
     {
         lift = GetMap()->GetGameObject(m_movementInfo.GetTransportGuid());
         if (lift && lift->GetGoType() != GAMEOBJECT_TYPE_TRANSPORT)
         {
-            lift = NULL;
+            lift = nullptr;
         }
     }
 
@@ -5563,12 +5563,12 @@ void Player::ApplyEquipCooldown(Item* pItem)
 
         //! Don't replace longer cooldowns by equip cooldown if we have any.
         SpellCooldowns::const_iterator itr = GetSpellCooldownMap().find(spellData.SpellId);
-        if (itr != GetSpellCooldownMap().end() && itr->second.itemid == pItem->GetEntry() && itr->second.end > time(NULL) + 30)
+        if (itr != GetSpellCooldownMap().end() && itr->second.itemid == pItem->GetEntry() && itr->second.end > time(nullptr) + 30)
         {
             break;
         }
 
-        AddSpellCooldown(spellData.SpellId, pItem->GetEntry(), time(NULL) + 30);
+        AddSpellCooldown(spellData.SpellId, pItem->GetEntry(), time(nullptr) + 30);
 
         WorldPacket data(SMSG_ITEM_COOLDOWN, 12);
         data << ObjectGuid(pItem->GetObjectGuid());
@@ -5713,7 +5713,7 @@ float Player::GetReputationPriceDiscount(Creature const* pCreature) const
  *                  if arg not provided then considered train action mode and level checked
  * @return          true if spell available for show in trainer list (with skip level check) or training.
  */
-bool Player::IsSpellFitByClassAndRace(uint32 spell_id, uint32* pReqlevel /*= NULL*/) const
+bool Player::IsSpellFitByClassAndRace(uint32 spell_id, uint32* pReqlevel /*= nullptr*/) const
 {
     uint32 racemask  = getRaceMask();
     uint32 classmask = getClassMask();
@@ -5810,7 +5810,7 @@ void Player::SummonIfPossible(bool agree)
     }
 
     // expire and auto declined
-    if (m_summon_expire < time(NULL))
+    if (m_summon_expire < time(nullptr))
     {
         return;
     }
@@ -6212,7 +6212,7 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
         {
             RemoveAuras(m_lastLiquid->SpellID);
         }
-        m_lastLiquid = NULL;
+        m_lastLiquid = nullptr;
         return;
     }
 
@@ -6244,7 +6244,7 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
     else if (m_lastLiquid && m_lastLiquid->SpellID)
     {
         RemoveAuras(m_lastLiquid->SpellID);
-        m_lastLiquid = NULL;
+        m_lastLiquid = nullptr;
     }
 
     // All liquids type - check under water position
@@ -6414,7 +6414,7 @@ void Player::AutoStoreLoot(Loot& loot, bool broadcast, uint8 bag, uint8 slot)
         }
         if (msg != EQUIP_ERR_OK)
         {
-            SendEquipError(msg, NULL, NULL, lootItem->itemid);
+            SendEquipError(msg, nullptr, nullptr, lootItem->itemid);
             continue;
         }
 
@@ -6428,7 +6428,7 @@ void Player::AutoStoreLoot(Loot& loot, bool broadcast, uint8 bag, uint8 slot)
  *
  * @param item The original item.
  * @param newItemId The new item entry identifier.
- * @return The converted item, or NULL if conversion failed.
+ * @return The converted item, or nullptr if conversion failed.
  */
 Item* Player::ConvertItem(Item* item, uint32 newItemId)
 {
@@ -6437,7 +6437,7 @@ Item* Player::ConvertItem(Item* item, uint32 newItemId)
     Item* pNewItem = Item::CreateItem(newItemId, 1, this);
     if (!pNewItem)
     {
-        return NULL;
+        return nullptr;
     }
 
     // copy enchantments
@@ -6495,7 +6495,7 @@ Item* Player::ConvertItem(Item* item, uint32 newItemId)
 
     // fail
     delete pNewItem;
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -6808,7 +6808,7 @@ void Player::SetHomebindToLocation(Geometry::Placement const& loc, uint32 area_i
  *
  * @param guid The object GUID to resolve.
  * @param typemask The allowed object type mask.
- * @return The matching object, or NULL if not found or disallowed.
+ * @return The matching object, or nullptr if not found or disallowed.
  */
 Object* Player::GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask)
 {
@@ -6860,7 +6860,7 @@ Object* Player::GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask)
             break;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 

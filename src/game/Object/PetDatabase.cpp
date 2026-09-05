@@ -210,7 +210,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
 
     SetCanModifyStats(true);
     InitStatsForLevel(petlevel);
-    SetUInt32Value(UNIT_FIELD_PET_NAME_TIMESTAMP, uint32(time(NULL)));
+    SetUInt32Value(UNIT_FIELD_PET_NAME_TIMESTAMP, uint32(time(nullptr)));
     SetUInt32Value(UNIT_FIELD_PETEXPERIENCE, fields[5].GetUInt32());
     SetCreatorGuid(owner->GetObjectGuid());
 
@@ -251,13 +251,13 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
         int index;
         for (iter = tokens.begin(), index = 0; index < 4; ++iter, ++index)
         {
-            uint32 tmp = std::strtoul((*iter).c_str(), NULL, 10);
+            uint32 tmp = std::strtoul((*iter).c_str(), nullptr, 10);
 
             ++iter;
 
             if (tmp)
             {
-                AddTeachSpell(tmp, std::strtoul((*iter).c_str(), NULL, 10));
+                AddTeachSpell(tmp, std::strtoul((*iter).c_str(), nullptr, 10));
             }
             else
             {
@@ -267,7 +267,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
     }
 
     // since last save (in seconds)
-    uint32 timediff = uint32(time(NULL) - fields[18].GetUInt64());
+    uint32 timediff = uint32(time(nullptr) - fields[18].GetUInt64());
 
     delete result;
 
@@ -481,7 +481,7 @@ void Pet::SavePetToDB(PetSaveMode mode)
         }
         savePet.addString(ss);
 
-        savePet.addUInt64(uint64(time(NULL)));
+        savePet.addUInt64(uint64(time(nullptr)));
         savePet.addUInt32(uint32(m_resetTalentsCost));
         savePet.addUInt64(uint64(m_resetTalentsTime));
         savePet.addUInt32(GetUInt32Value(UNIT_CREATED_BY_SPELL));

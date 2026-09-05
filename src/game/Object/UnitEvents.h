@@ -54,7 +54,7 @@ enum UnitThreatEventType
     // New target should be fetched, could be the current target as well
     UEV_THREAT_SET_NEXT_TARGET          = 1 << 5,
 
-    // A new victim (target) was set. Could be NULL
+    // A new victim (target) was set. Could be nullptr
     UEV_THREAT_VICTIM_CHANGED           = 1 << 6,
 };
 

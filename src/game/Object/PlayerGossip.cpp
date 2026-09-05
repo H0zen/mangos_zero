@@ -395,7 +395,7 @@ void Player::OnGossipSelect(Occupant* pSource, uint32 gossipListId)
         case GOSSIP_OPTION_SPIRITHEALER:
             if (IsDead())
             {
-                ((Creature*)pSource)->CastSpell(((Creature*)pSource), 17251, true, NULL, NULL, GetObjectGuid());
+                ((Creature*)pSource)->CastSpell(((Creature*)pSource), 17251, true, nullptr, nullptr, GetObjectGuid());
             }
             break;
         case GOSSIP_OPTION_QUESTGIVER:

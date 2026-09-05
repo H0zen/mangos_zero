@@ -256,14 +256,14 @@ void Spell::TakeReagents()
                     }
                 }
 
-                m_CastItem = NULL;
+                m_CastItem = nullptr;
             }
         }
 
         // if getItemTarget is also spell reagent
         if (m_targets.getItemTargetEntry() == itemid)
         {
-            m_targets.setItemTarget(NULL);
+            m_targets.setItemTarget(nullptr);
         }
 
         p_caster->DestroyItemCount(itemid, itemcount, true);

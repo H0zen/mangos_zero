@@ -92,7 +92,7 @@ namespace MaNGOS
             return false;
         }
 
-        char* end = NULL;
+        char* end = nullptr;
         unsigned long parsed = std::strtoul(trimmed.c_str(), &end, 10);
         if (!end || *end != '\0')
         {

@@ -106,7 +106,7 @@ DatabaseMysql::DatabaseMysql()
     if (db_count++ == 0)
     {
         // Mysql Library Init
-        if (mysql_library_init(-1, NULL, NULL))
+        if (mysql_library_init(-1, nullptr, nullptr))
         {
             sLog.outError("Could not initialize MySQL client library\n");
             std::exit(1);
@@ -181,7 +181,7 @@ MySQLConnection::~MySQLConnection()
  */
 bool MySQLConnection::Initialize(const char* infoString)
 {
-    MYSQL* mysqlInit = mysql_init(NULL);
+    MYSQL* mysqlInit = mysql_init(nullptr);
     if (!mysqlInit)
     {
         sLog.outError("Could not initialize Mysql connection");
@@ -364,7 +364,7 @@ bool MySQLConnection::_Query(const char* sql, MYSQL_RES** pResult, MYSQL_FIELD**
 /**
  * @brief Execute a SELECT query and return results
  * @param sql SELECT query string
- * @return QueryResult with row data, or NULL on failure/no rows
+ * @return QueryResult with row data, or nullptr on failure/no rows
  *
  * Executes a SQL query and returns a QueryResult object for iterating
  * over the results. Automatically fetches the first row.
@@ -373,14 +373,14 @@ bool MySQLConnection::_Query(const char* sql, MYSQL_RES** pResult, MYSQL_FIELD**
  */
 QueryResult* MySQLConnection::Query(const char* sql)
 {
-    MYSQL_RES* result = NULL;
-    MYSQL_FIELD* fields = NULL;
+    MYSQL_RES* result = nullptr;
+    MYSQL_FIELD* fields = nullptr;
     uint64 rowCount = 0;
     uint32 fieldCount = 0;
 
     if (!_Query(sql, &result, &fields, &rowCount, &fieldCount))
     {
-        return NULL;
+        return nullptr;
     }
 
     QueryResultMysql* queryResult = new QueryResultMysql(result, fields, rowCount, fieldCount);
@@ -392,7 +392,7 @@ QueryResult* MySQLConnection::Query(const char* sql)
 /**
  * @brief Execute a SELECT query with named field access
  * @param sql SELECT query string
- * @return QueryNamedResult with row data and field names, or NULL on failure
+ * @return QueryNamedResult with row data and field names, or nullptr on failure
  *
  * Similar to Query() but returns a QueryNamedResult that allows accessing
  * fields by name rather than index. Field names are extracted from the
@@ -402,14 +402,14 @@ QueryResult* MySQLConnection::Query(const char* sql)
  */
 QueryNamedResult* MySQLConnection::QueryNamed(const char* sql)
 {
-    MYSQL_RES* result = NULL;
-    MYSQL_FIELD* fields = NULL;
+    MYSQL_RES* result = nullptr;
+    MYSQL_FIELD* fields = nullptr;
     uint64 rowCount = 0;
     uint32 fieldCount = 0;
 
     if (!_Query(sql, &result, &fields, &rowCount, &fieldCount))
     {
-        return NULL;
+        return nullptr;
     }
 
     QueryFieldNames names(fieldCount);
@@ -570,7 +570,7 @@ SqlPreparedStatement* MySQLConnection::CreateStatement(const std::string& fmt)
  * The statement is not actually prepared until prepare() is called.
  */
 MySqlPreparedStatement::MySqlPreparedStatement(const std::string& fmt, SqlConnection& conn, MYSQL* mysql) : SqlPreparedStatement(fmt, conn),
-    m_pMySQLConn(mysql), m_stmt(NULL), m_pInputArgs(NULL), m_pResult(NULL), m_pResultMetadata(NULL)
+    m_pMySQLConn(mysql), m_stmt(nullptr), m_pInputArgs(nullptr), m_pResult(nullptr), m_pResultMetadata(nullptr)
 {
 }
 
@@ -734,10 +734,10 @@ void MySqlPreparedStatement::RemoveBinds()
     mysql_free_result(m_pResultMetadata);
     mysql_stmt_close(m_stmt);
 
-    m_stmt = NULL;
-    m_pResultMetadata = NULL;
-    m_pResult = NULL;
-    m_pInputArgs = NULL;
+    m_stmt = nullptr;
+    m_pResultMetadata = nullptr;
+    m_pResult = nullptr;
+    m_pInputArgs = nullptr;
 
     m_bPrepared = false;
 }

@@ -91,7 +91,7 @@ class MotionMaster : private std::stack<MovementGenerator*>
          * @brief Constructor for MotionMaster.
          * @param unit Pointer to the unit.
          */
-        explicit MotionMaster(Unit* unit) : m_owner(unit), m_expList(NULL), m_cleanFlag(MMCF_NONE) {}
+        explicit MotionMaster(Unit* unit) : m_owner(unit), m_expList(nullptr), m_cleanFlag(MMCF_NONE) {}
 
         /**
          * @brief Destructor for MotionMaster.

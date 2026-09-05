@@ -145,7 +145,7 @@ void Player::RewardPlayerAndGroupAtEvent(uint32 creature_id, Occupant* pRewardSo
     // prepare data for near group iteration
     if (Group* pGroup = GetGroup())
     {
-        for (GroupReference* itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+        for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
         {
             Player* pGroupGuy = itr->getSource();
             if (!pGroupGuy)
@@ -182,7 +182,7 @@ void Player::RewardPlayerAndGroupAtCast(Occupant* pRewardSource, uint32 spellid)
     // prepare data for near group iteration
     if (Group* pGroup = GetGroup())
     {
-        for (GroupReference* itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+        for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
         {
             Player* pGroupGuy = itr->getSource();
             if (!pGroupGuy)

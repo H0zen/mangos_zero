@@ -355,7 +355,7 @@ class ThreatContainer
          */
         HostileReference* getMostHated()
         {
-            return iThreatList.empty() ? NULL : iThreatList.front();
+            return iThreatList.empty() ? nullptr : iThreatList.front();
         }
 
         /**
@@ -418,7 +418,7 @@ class ThreatManager
          * @param pVictim Victim unit
          * @param threat Threat amount
          */
-        void addThreat(Unit* pVictim, float threat) { addThreat(pVictim, threat, false, SPELL_SCHOOL_MASK_NONE, NULL); }
+        void addThreat(Unit* pVictim, float threat) { addThreat(pVictim, threat, false, SPELL_SCHOOL_MASK_NONE, nullptr); }
 
         /**
          * @brief Add threat directly

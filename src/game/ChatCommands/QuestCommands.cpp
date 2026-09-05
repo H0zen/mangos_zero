@@ -90,7 +90,7 @@ bool ChatHandler::HandleQuestAddCommand(char* args)
     // ok, normal (creature/GO starting) quest
     if (player->CanAddQuest(pQuest, true))
     {
-        player->AddQuest(pQuest, NULL);
+        player->AddQuest(pQuest, nullptr);
 
         if (player->CanCompleteQuest(entry))
         {

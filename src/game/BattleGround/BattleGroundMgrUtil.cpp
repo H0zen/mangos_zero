@@ -354,7 +354,7 @@ void BattleGroundMgr::LoadBattleEventIndexes()
         uint8 desc_event2 = fields[8].GetUInt8();
         const char* description = fields[9].GetString();
 
-        // checking for NULL - through right outer join this will mean following:
+        // checking for nullptr - through right outer join this will mean following:
         if (fields[5].GetUInt32() != dbTableGuidLow)
         {
             sLog.outErrorDb("BattleGroundEvent: %s with nonexistent guid %u for event: map:%u, event1:%u, event2:%u (\"%s\")",
@@ -362,7 +362,7 @@ void BattleGroundMgr::LoadBattleEventIndexes()
             continue;
         }
 
-        // checking for NULL - through full outer join this can mean 2 things:
+        // checking for nullptr - through full outer join this can mean 2 things:
         if (desc_map != map)
         {
             // there is an event missing

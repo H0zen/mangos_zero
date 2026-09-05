@@ -96,7 +96,7 @@ bool ChatHandler::HandleCastCommand(char* args)
         return false;
     }
 
-    bool triggered = ExtractLiteralArg(&args, "triggered") != NULL;
+    bool triggered = ExtractLiteralArg(&args, "triggered") != nullptr;
     if (!triggered && *args)                                // can be fail also at syntax error
     {
         return false;
@@ -132,7 +132,7 @@ bool ChatHandler::HandleCastBackCommand(char* args)
         return false;
     }
 
-    bool triggered = ExtractLiteralArg(&args, "triggered") != NULL;
+    bool triggered = ExtractLiteralArg(&args, "triggered") != nullptr;
     if (!triggered && *args)                                // can be fail also at syntax error
     {
         return false;
@@ -184,7 +184,7 @@ bool ChatHandler::HandleCastDistCommand(char* args)
         return false;
     }
 
-    bool triggered = ExtractLiteralArg(&args, "triggered") != NULL;
+    bool triggered = ExtractLiteralArg(&args, "triggered") != nullptr;
     if (!triggered && *args)                                // can be fail also at syntax error
     {
         return false;
@@ -228,7 +228,7 @@ bool ChatHandler::HandleCastTargetCommand(char* args)
         return false;
     }
 
-    bool triggered = ExtractLiteralArg(&args, "triggered") != NULL;
+    bool triggered = ExtractLiteralArg(&args, "triggered") != nullptr;
     if (!triggered && *args)                                // can be fail also at syntax error
     {
         return false;
@@ -283,7 +283,7 @@ bool ChatHandler::HandleCastSelfCommand(char* args)
         return false;
     }
 
-    bool triggered = ExtractLiteralArg(&args, "triggered") != NULL;
+    bool triggered = ExtractLiteralArg(&args, "triggered") != nullptr;
     if (!triggered && *args)                                // can be fail also at syntax error
     {
         return false;
@@ -431,7 +431,7 @@ bool ChatHandler::HandleAuraGroupCommand(char* args)
     else
     {
         // Apply to all members of the group
-        for (GroupReference* itr = grp->GetFirstMember(); itr != NULL; itr = itr->next())
+        for (GroupReference* itr = grp->GetFirstMember(); itr != nullptr; itr = itr->next())
         {
             Player* pl = itr->getSource();
 
@@ -543,7 +543,7 @@ bool ChatHandler::HandleUnAuraGroupCommand(char* args)
     else
     {
         // Apply to all members of the group
-        for (GroupReference* itr = grp->GetFirstMember(); itr != NULL; itr = itr->next())
+        for (GroupReference* itr = grp->GetFirstMember(); itr != nullptr; itr = itr->next())
         {
             Player* pl = itr->getSource();
 

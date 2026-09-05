@@ -190,7 +190,7 @@ struct BattleGroundPlayer
  */
 struct BattleGroundObjectInfo
 {
-    BattleGroundObjectInfo() : object(NULL), timer(0), spellid(0) {}
+    BattleGroundObjectInfo() : object(nullptr), timer(0), spellid(0) {}
 
     GameObject* object; /**< Pointer to the game object */
     int32       timer; /**< Timer for the object */
@@ -875,7 +875,7 @@ class BattleGround
          * @param sender The sender.
          * @param self Whether to send to self.
          */
-        void SendPacketToTeam(Team team, WorldPacket* packet, Player* sender = NULL, bool self = true);
+        void SendPacketToTeam(Team team, WorldPacket* packet, Player* sender = nullptr, bool self = true);
 
         /**
          * @brief Sends a packet to all players in the battleground.
@@ -1012,7 +1012,7 @@ class BattleGround
          * @param type The type of chat message.
          * @param source The source player of the message.
          */
-        void SendMessageToAll(int32 entry, ChatMsg type, Player const* source = NULL);
+        void SendMessageToAll(int32 entry, ChatMsg type, Player const* source = nullptr);
 
         /**
          * @brief Sends a yell to all players in the battleground.

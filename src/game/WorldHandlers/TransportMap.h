@@ -110,7 +110,7 @@ class TransportMap : public Map
         TransportMap* AsTransport() override { return this; }
         TransportMap const* AsTransport() const override { return this; }
 
-        /// The game object whose hull this map is. Never NULL for a map of this kind.
+        /// The game object whose hull this map is. Never nullptr for a map of this kind.
         Transport* Vessel() const { return m_vessel; }
 
         /**

@@ -78,7 +78,7 @@ void WorldSession::HandleAttackSwingOpcode(WorldPacket& recv_data)
         sLog.outError("WORLD: Enemy %s not found", guid.GetString().c_str());
 
         // stop attack state at client
-        SendAttackStop(NULL);
+        SendAttackStop(nullptr);
         return;
     }
 
@@ -143,7 +143,7 @@ void WorldSession::HandleSetSheathedOpcode(WorldPacket& recv_data)
 
 /**
  * @brief Send attack stop notification to client
- * @param enemy Target that was being attacked (can be NULL)
+ * @param enemy Target that was being attacked (can be nullptr)
  *
  * Sends SMSG_ATTACKSTOP to inform the client to stop the attack animation.
  * Used when:
@@ -151,7 +151,7 @@ void WorldSession::HandleSetSheathedOpcode(WorldPacket& recv_data)
  * - Attack validation fails
  * - Player manually stops attacking
  *
- * @param enemy NULL if target is unknown or no longer valid
+ * @param enemy nullptr if target is unknown or no longer valid
  */
 void WorldSession::SendAttackStop(Unit const* enemy)
 {

@@ -148,11 +148,11 @@ bool BattleGroundQueue::SelectionPool::AddGroup(GroupQueueInfo* ginfo, uint32 de
  * @brief Adds a group or solo player to the battleground queue.
  *
  * Creates a new group queue info structure and adds all players from the group
- * (or the solo player if grp is NULL) to the appropriate bracket and queue type.
+ * (or the solo player if grp is nullptr) to the appropriate bracket and queue type.
  * Handles queue announcements if configured.
  *
  * @param leader The group leader or solo player joining the queue.
- * @param grp The group joining (NULL for solo players).
+ * @param grp The group joining (nullptr for solo players).
  * @param BgTypeId The type of battleground being queued for.
  * @param bracketId The level bracket for this group.
  * @param isPremade Whether this is a premade group (rated, etc.).
@@ -190,7 +190,7 @@ GroupQueueInfo* BattleGroundQueue::AddGroup(Player* leader, Group* grp, BattleGr
     {
         if (grp)
         {
-            for (GroupReference* itr = grp->GetFirstMember(); itr != NULL; itr = itr->next())
+            for (GroupReference* itr = grp->GetFirstMember(); itr != nullptr; itr = itr->next())
             {
                 Player* member = itr->getSource();
                 if (!member)
@@ -985,7 +985,7 @@ bool BGQueueRemoveEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
 
     BattleGround* bg = sBattleGroundMgr.GetBattleGround(m_BgInstanceGUID, m_BgTypeId);
     // battleground can be deleted already when we are removing queue info
-    // bg pointer can be NULL! so use it carefully!
+    // bg pointer can be nullptr! so use it carefully!
 
     uint32 queueSlot = plr->GetBattleGroundQueueIndex(m_BgQueueTypeId);
     if (queueSlot < PLAYER_MAX_BATTLEGROUND_QUEUES)         // player is in queue, or in Battleground

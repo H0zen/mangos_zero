@@ -119,7 +119,7 @@ class MySQLConnection : public SqlConnection
          * @brief Constructor
          * @param db Database reference
          */
-        MySQLConnection(Database& db) : SqlConnection(db), mMysql(NULL) {}
+        MySQLConnection(Database& db) : SqlConnection(db), mMysql(nullptr) {}
         /**
          * @brief Destructor - closes MySQL connection
          */
@@ -136,13 +136,13 @@ class MySQLConnection : public SqlConnection
         /**
          * @brief Execute SELECT query and return results
          * @param sql SQL query string
-         * @return QueryResult pointer or NULL on error
+         * @return QueryResult pointer or nullptr on error
          */
         QueryResult* Query(const char* sql) override;
         /**
          * @brief Execute SELECT query with named field access
          * @param sql SQL query string
-         * @return QueryNamedResult pointer or NULL on error
+         * @return QueryNamedResult pointer or nullptr on error
          */
         QueryNamedResult* QueryNamed(const char* sql) override;
         /**

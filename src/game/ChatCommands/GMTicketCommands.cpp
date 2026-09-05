@@ -108,7 +108,7 @@ bool ChatHandler::HandleTicketAcceptCommand(char* args)
  */
 bool ChatHandler::HandleTicketCloseCommand(char* args)
 {
-    GMTicket* ticket = NULL;
+    GMTicket* ticket = nullptr;
 
     uint32 num;
     if (ExtractUInt32(&args, num))
@@ -131,7 +131,7 @@ bool ChatHandler::HandleTicketCloseCommand(char* args)
     {
         ObjectGuid target_guid;
         std::string target_name;
-        if (!ExtractPlayerTarget(&args, NULL, &target_guid, &target_name))
+        if (!ExtractPlayerTarget(&args, nullptr, &target_guid, &target_name))
         {
             return false;
         }
@@ -420,7 +420,7 @@ bool ChatHandler::HandleTicketMeAcceptCommand(char* args)
  */
 bool ChatHandler::HandleTicketRespondCommand(char* args)
 {
-    GMTicket* ticket = NULL;
+    GMTicket* ticket = nullptr;
 
     // ticket respond #num
     uint32 num;
@@ -445,7 +445,7 @@ bool ChatHandler::HandleTicketRespondCommand(char* args)
     {
         ObjectGuid target_guid;
         std::string target_name;
-        if (!ExtractPlayerTarget(&args, NULL, &target_guid, &target_name))
+        if (!ExtractPlayerTarget(&args, nullptr, &target_guid, &target_name))
         {
             return false;
         }
@@ -588,7 +588,7 @@ bool ChatHandler::HandleTicketShowCommand(char* args)
 
     ObjectGuid target_guid;
     std::string target_name;
-    if (!ExtractPlayerTarget(&px, NULL, &target_guid, &target_name))
+    if (!ExtractPlayerTarget(&px, nullptr, &target_guid, &target_name))
     {
         return false;
     }
@@ -615,7 +615,7 @@ bool ChatHandler::HandleTicketShowCommand(char* args)
  */
 bool ChatHandler::HandleTickerSurveyClose(char* args)
 {
-    GMTicket* ticket = NULL;
+    GMTicket* ticket = nullptr;
     std::string target_name;
     ObjectGuid target_guid;
     uint32 num;
@@ -638,7 +638,7 @@ bool ChatHandler::HandleTickerSurveyClose(char* args)
     else
     {
 
-        if (!ExtractPlayerTarget(&args, NULL, &target_guid, &target_name))
+        if (!ExtractPlayerTarget(&args, nullptr, &target_guid, &target_name))
         {
             return false;
         }
@@ -669,7 +669,7 @@ bool ChatHandler::HandleTickerSurveyClose(char* args)
 
     //This logic feels misplaced, but you can't have it in GMTicket?
     sTicketMgr.Delete(ticket->GetPlayerGuid());
-    ticket = NULL;
+    ticket = nullptr;
 
     const char* gmNameReplacementWhenUsingCLI = "ADMIN";
 

@@ -138,7 +138,7 @@ namespace
  */
 bool ChatHandler::HandleGridInfoCommand(char* args)
 {
-    Player* player = m_session ? m_session->GetPlayer() : NULL;
+    Player* player = m_session ? m_session->GetPlayer() : nullptr;
     if (!player)
     {
         SendSysMessage("This command requires an in-game player.");
@@ -232,7 +232,7 @@ bool ChatHandler::HandleGridInfoCommand(char* args)
  */
 bool ChatHandler::HandleGridAnchorsCommand(char* args)
 {
-    Player* player = m_session ? m_session->GetPlayer() : NULL;
+    Player* player = m_session ? m_session->GetPlayer() : nullptr;
     if (!player)
     {
         SendSysMessage("This command requires an in-game player.");
@@ -317,7 +317,7 @@ bool ChatHandler::HandleGridAnchorsCommand(char* args)
  */
 bool ChatHandler::HandleGridLwStatsCommand(char* /*args*/)
 {
-    Player* player = m_session ? m_session->GetPlayer() : NULL;
+    Player* player = m_session ? m_session->GetPlayer() : nullptr;
     if (!player)
     {
         SendSysMessage("This command requires an in-game player.");

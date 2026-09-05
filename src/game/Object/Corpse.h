@@ -115,7 +115,7 @@ class Corpse : public Occupant
         time_t const& GetGhostTime() const { return m_time; }
         void ResetGhostTime()
         {
-            m_time = time(NULL);
+            m_time = time(nullptr);
         }
         CorpseType GetType() const { return m_type; }
 

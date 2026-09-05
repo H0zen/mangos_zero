@@ -74,7 +74,7 @@
  * @brief Creates or retrieves scripted AI for a creature.
  *
  * @param pCreature The creature requiring AI.
- * @return CreatureAI* The scripted AI instance, or NULL when none is available.
+ * @return CreatureAI* The scripted AI instance, or nullptr when none is available.
  */
 CreatureAI* ScriptMgr::GetCreatureAI(Creature* pCreature)
 {
@@ -82,7 +82,7 @@ CreatureAI* ScriptMgr::GetCreatureAI(Creature* pCreature)
 #ifdef ENABLE_SD3
     return SD3::GetCreatureAI(pCreature);
 #else
-    return NULL;
+    return nullptr;
 #endif
 }
 
@@ -90,7 +90,7 @@ CreatureAI* ScriptMgr::GetCreatureAI(Creature* pCreature)
  * @brief Creates or retrieves scripted AI for a game object.
  *
  * @param pGo The game object requiring AI.
- * @return GameObjectAI* The scripted AI instance, or NULL when none is available.
+ * @return GameObjectAI* The scripted AI instance, or nullptr when none is available.
  */
 GameObjectAI* ScriptMgr::GetGameObjectAI(GameObject* pGo)
 {
@@ -98,7 +98,7 @@ GameObjectAI* ScriptMgr::GetGameObjectAI(GameObject* pGo)
 #ifdef ENABLE_SD3
     return SD3::GetGameObjectAI(pGo);
 #else
-    return NULL;
+    return nullptr;
 #endif
 }
 
@@ -106,14 +106,14 @@ GameObjectAI* ScriptMgr::GetGameObjectAI(GameObject* pGo)
  * @brief Creates scripted instance data for a map.
  *
  * @param pMap The map requiring instance data.
- * @return InstanceData* The scripted instance data, or NULL when unavailable.
+ * @return InstanceData* The scripted instance data, or nullptr when unavailable.
  */
 InstanceData* ScriptMgr::CreateInstanceData(Map* pMap)
 {
 #ifdef ENABLE_SD3
     return SD3::CreateInstanceData(pMap);
 #else
-    return NULL;
+    return nullptr;
 #endif
 }
 

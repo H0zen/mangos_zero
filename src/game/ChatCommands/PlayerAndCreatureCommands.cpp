@@ -154,7 +154,7 @@ bool ChatHandler::HandleDamageCommand(char* args)
     {
         if (player)
         {
-            player->DealDamage(target, damage, NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
+            player->DealDamage(target, damage, nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);
             if (target != player)
             {
                 player->SendAttackStateUpdate(HITINFO_NORMALSWING2, target, SPELL_SCHOOL_MASK_NORMAL, damage, 0, 0, VICTIMSTATE_NORMAL, 0);
@@ -163,7 +163,7 @@ bool ChatHandler::HandleDamageCommand(char* args)
         else
         {
             // Console: target damages itself (environmental-style)
-            target->DealDamage(target, damage, NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
+            target->DealDamage(target, damage, nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);
         }
         return true;
     }
@@ -204,13 +204,13 @@ bool ChatHandler::HandleDamageCommand(char* args)
             damage -= absorb + resist;
 
             player->DealDamageMods(target, damage, &absorb);
-            player->DealDamage(target, damage, NULL, DIRECT_DAMAGE, schoolmask, NULL, false);
+            player->DealDamage(target, damage, nullptr, DIRECT_DAMAGE, schoolmask, nullptr, false);
             player->SendAttackStateUpdate(HITINFO_NORMALSWING2, target, schoolmask, damage, absorb, resist, VICTIMSTATE_NORMAL, 0);
         }
         else
         {
             // Console: simplified damage without player-specific calculations
-            target->DealDamage(target, damage, NULL, DIRECT_DAMAGE, schoolmask, NULL, false);
+            target->DealDamage(target, damage, nullptr, DIRECT_DAMAGE, schoolmask, nullptr, false);
         }
         return true;
     }
@@ -267,12 +267,12 @@ bool ChatHandler::HandleDieCommand(char* /*args*/)
         if (m_session)
         {
             // In-game: player deals the damage
-            m_session->GetPlayer()->DealDamage(target, target->GetHealth(), NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
+            m_session->GetPlayer()->DealDamage(target, target->GetHealth(), nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);
         }
         else
         {
             // Console: use environmental/direct kill
-            target->DealDamage(target, target->GetHealth(), NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
+            target->DealDamage(target, target->GetHealth(), nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);
         }
     }
 

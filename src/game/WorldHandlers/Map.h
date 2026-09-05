@@ -297,11 +297,11 @@ class Map : public GridRefManager<NGridType>
         bool IsBattleGround() const { return i_mapEntry && i_mapEntry->IsBattleGround(); }
         bool IsContinent() const { return i_mapEntry && i_mapEntry->IsContinent(); }
 
-        /// This map AS A VESSEL, or NULL. Asked of the map itself rather than of its id, so
+        /// This map AS A VESSEL, or nullptr. Asked of the map itself rather than of its id, so
         /// the answer comes from what the map IS -- and the caller gets the thing it wanted
         /// rather than a boolean plus a downcast.
-        virtual TransportMap* AsTransport() { return NULL; }
-        virtual TransportMap const* AsTransport() const { return NULL; }
+        virtual TransportMap* AsTransport() { return nullptr; }
+        virtual TransportMap const* AsTransport() const { return nullptr; }
 
 
         // can't be nullptr for loaded map

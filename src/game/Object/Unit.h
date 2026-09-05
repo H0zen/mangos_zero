@@ -1300,11 +1300,11 @@ class Unit : public Occupant
         /**
          * If another mob/unit want to help this mob this function will return a
          * possible Unit to attack.
-         * @return A Unit to attack if this one is being attacked by anyone, NULL otherwise
+         * @return A Unit to attack if this one is being attacked by anyone, nullptr otherwise
          */
         Unit* getAttackerForHelper()                        // If someone wants to help, who to give them
         {
-            if (getVictim() != NULL)
+            if (getVictim() != nullptr)
             {
                 return getVictim();
             }
@@ -1314,7 +1314,7 @@ class Unit : public Occupant
                 return *(m_attackers.begin());
             }
 
-            return NULL;
+            return nullptr;
         }
 
         /**
@@ -1404,30 +1404,30 @@ class Unit : public Occupant
          * Selects a random unfriendly target, takes care of LOS and such aswell
          * @param except select any target but this one, usually your current target
          * @param radius how big the radius for our search should be
-         * @return The random unfriendly target found, NULL if no targets were found
+         * @return The random unfriendly target found, nullptr if no targets were found
          * \see MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck
          * \see Mangos::UnitListSearcher
          * \see Cell::VisitAllObjects
          */
-        Unit* SelectRandomUnfriendlyTarget(Unit* except = NULL, float radius = ATTACK_DISTANCE) const;
+        Unit* SelectRandomUnfriendlyTarget(Unit* except = nullptr, float radius = ATTACK_DISTANCE) const;
 
         /**
          * Same as Unit::SelectRandomUnfriendlyTarget except it selects a friendly target
          * @param except select any target but this one, usually your current target
          * @param radius how big the radius for our search should be
-         * @return The random friendly target found, NULL if no targets were found
+         * @return The random friendly target found, nullptr if no targets were found
          * \see MaNGOS::AnyFriendlyUnitInObjectRangeCheck
          * \see Mangos::UnitListSearcher
          * \see Cell::VisitAllObjects
          */
-        Unit* SelectRandomFriendlyTarget(Unit* except = NULL, float radius = ATTACK_DISTANCE) const;
+        Unit* SelectRandomFriendlyTarget(Unit* except = nullptr, float radius = ATTACK_DISTANCE) const;
 
         /**
          * @param fRange how big the radius for our search should be
          * @param uiMinHPDiff how much health the unit has to be missing
          * @param bPercent if the previous param is percent or raw value
          * @param except select any target but this one, usually your current target
-         * @return The injured friendly target found, NULL if no targets were found
+         * @return The injured friendly target found, nullptr if no targets were found
          * \see Mangos::UnitListSearcher
          * \see Cell::VisitAllObjects
          */
@@ -1437,7 +1437,7 @@ class Unit : public Occupant
          * @param range how big the radius for our search should be
          * @param spellid buff to check
          * @param except select any target but this one, usually your current target
-         * @return The friendly target found, NULL if no targets were found
+         * @return The friendly target found, nullptr if no targets were found
          * \see Mangos::UnitListSearcher
          * \see Cell::VisitAllObjects
          */
@@ -1445,7 +1445,7 @@ class Unit : public Occupant
 
         /**
          * @param range how big the radius for our search should be
-         * @return The friendly target found, NULL if no targets were found
+         * @return The friendly target found, nullptr if no targets were found
          * \see Mangos::UnitListSearcher
          * \see Cell::VisitAllObjects
          */
@@ -2048,12 +2048,12 @@ class Unit : public Occupant
          * be maxed to 300 at level 60. And when you start a level 1 character you maximum
          * skill with swords (given that you know them) is 5. The formula used is:
          * Current Level * 5
-         * @param target target to get maximum skill value for, if this is NULL the
+         * @param target target to get maximum skill value for, if this is nullptr the
          * returned value is for ourselves.
          * @return the maximum skill level you can have at the your current level.
          * \todo Check out the GetLevelForTarget as it seems it's not doing anything constructive with it's arguments.
          */
-        uint16 GetMaxSkillValueForLevel(Unit const* target = NULL) const { return (target ? GetLevelForTarget(target) : getLevel()) * 5; }
+        uint16 GetMaxSkillValueForLevel(Unit const* target = nullptr) const { return (target ? GetLevelForTarget(target) : getLevel()) * 5; }
 
         /**
          * Deals damage mods to the given victim. If the victim is dead, flying or in evade
@@ -2062,7 +2062,7 @@ class Unit : public Occupant
          * @param pVictim
          * @param damage how much damage we want to try to make, will be updated to how
          * much was actually made
-         * @param absorb if this is != NULL it will be updated with how much more from
+         * @param absorb if this is != nullptr it will be updated with how much more from
          * before of the damage that was absorbed. ie: absorb += damage not done
          * \todo Does DamageDeal in the AI's do anything?
          * \todo Fix this comment, doesn't really seem correct.
@@ -2134,7 +2134,7 @@ class Unit : public Occupant
         /// Deal what OweSplits recorded. Called once the parent blow is applied.
         void DeliverOwedSplits();
 
-        void ProcDamageAndSpell(Unit* pVictim, uint32 procAttacker, uint32 procVictim, uint32 procEx, uint32 amount, WeaponAttackType attType = BASE_ATTACK, SpellEntry const* procSpell = NULL);
+        void ProcDamageAndSpell(Unit* pVictim, uint32 procAttacker, uint32 procVictim, uint32 procEx, uint32 amount, WeaponAttackType attType = BASE_ATTACK, SpellEntry const* procSpell = nullptr);
 
         /**
          * Same as for Unit::ProcDamageAndSpell
@@ -2362,10 +2362,10 @@ class Unit : public Occupant
         /**
          * The melee skill for the given Unit. For units this is always their maximum possible
          * for their level, ie: current level * 5, for level 60 this would give a skill of 300
-         * @param target the target to find the max skill for, if it's NULL we find the level for us
+         * @param target the target to find the max skill for, if it's nullptr we find the level for us
          * @return The max skill level for the given Unit
          */
-        uint32 GetUnitMeleeSkill(Unit const* target = NULL) const { return (target ? GetLevelForTarget(target) : getLevel()) * 5; }
+        uint32 GetUnitMeleeSkill(Unit const* target = nullptr) const { return (target ? GetLevelForTarget(target) : getLevel()) * 5; }
 
         /**
          * Gets the defense skill for the given target, if the target is a Player and this Unit
@@ -2376,7 +2376,7 @@ class Unit : public Occupant
          * skill value for the given target.
          * \todo Is the logic for the return correct in here?
          */
-        uint32 GetDefenseSkillValue(Unit const* target = NULL) const;
+        uint32 GetDefenseSkillValue(Unit const* target = nullptr) const;
 
         /**
          * Get's the skill value for the given weapon type. The same idea as for
@@ -2388,7 +2388,7 @@ class Unit : public Occupant
          * \see Item::GetSkill
          * \see SkillType
          */
-        uint32 GetWeaponSkillValue(WeaponAttackType attType, Unit const* target = NULL) const;
+        uint32 GetWeaponSkillValue(WeaponAttackType attType, Unit const* target = nullptr) const;
 
         /**
          * Returns the proc chance for one weapon, if the \ref BASE_ATTACK is ready then the
@@ -2637,7 +2637,7 @@ class Unit : public Occupant
          * \see ClearInCombat
          * \see SetInCombatWith
          */
-        void SetInCombatState(bool PvP, Unit* enemy = NULL);
+        void SetInCombatState(bool PvP, Unit* enemy = nullptr);
         void SetInDummyCombatState(bool state);
 
         /**
@@ -2905,7 +2905,7 @@ class Unit : public Occupant
          * @param spellId id of the spell to cast
          * @param triggered whether this was triggered by some outside circumstance or used as a button
          * press on you action bar, true means triggered by outside circumstance
-         * @param castItem the item that cast the spell if any, usually NULL
+         * @param castItem the item that cast the spell if any, usually nullptr
          * @param triggeredByAura the \ref Aura that triggered the spell if any
          * @param originalCaster usually just \ref ObjectGuid constructor
          * @param triggeredBy the \ref SpellEntry that triggered this spell if any
@@ -2913,11 +2913,11 @@ class Unit : public Occupant
          * \see SpellCastTargets
          * \todo What's the original caster?
          */
-        void CastSpell(Unit* Victim, uint32 spellId, bool triggered, Item* castItem = NULL, Aura* triggeredByAura = NULL, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
+        void CastSpell(Unit* Victim, uint32 spellId, bool triggered, Item* castItem = nullptr, Aura* triggeredByAura = nullptr, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = nullptr);
 
         /**
          * Casts a spell simple and square, outputs some debugging info for some reasons, ie: if the
-         * spellInfo is NULL it is logged and the function won't do anything. If the spell is triggered
+         * spellInfo is nullptr it is logged and the function won't do anything. If the spell is triggered
          * by an \ref Aura and there's no originalCaster it is updated to be the cast of the \ref Aura
          * and the triggeredBy is set to be the \ref Aura s \ref SpellEntry. Some work is done to
          * work out if we should set a destination and/or source for the spell and it is then cast.
@@ -2933,7 +2933,7 @@ class Unit : public Occupant
          * @param spellInfo info about the spell to cast
          * @param triggered whether this was triggered by some outside circumstance or used as a button
          * press on your action bar, true means triggered by outside circumstance
-         * @param castItem the \ref Item that cast the spell if any, usually NULL
+         * @param castItem the \ref Item that cast the spell if any, usually nullptr
          * @param triggeredByAura the \ref Aura that triggered the spell if any
          * @param originalCaster usually just \ref ObjectGuid constructor
          * @param triggeredBy the \ref SpellEntry that triggered this spell if any
@@ -2942,7 +2942,7 @@ class Unit : public Occupant
          * \todo What's the original caster?
          * \todo Document the spell linked
          */
-        void CastSpell(Unit* Victim, SpellEntry const* spellInfo, bool triggered, Item* castItem = NULL, Aura* triggeredByAura = NULL, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
+        void CastSpell(Unit* Victim, SpellEntry const* spellInfo, bool triggered, Item* castItem = nullptr, Aura* triggeredByAura = nullptr, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = nullptr);
 
         /**
          * Does pretty much the same thing as \ref Unit::CastSpell but uses the three bp0-bp2 variables
@@ -2953,11 +2953,11 @@ class Unit : public Occupant
          * @param Victim victim that should be hit by the spell
          * @param spellId id of the spell to be cast
          * @param bp0 this will change the \ref Spell s member \ref Spell::m_currentBasePoints for
-         * \ref SpellEffectIndex::EFFECT_INDEX_0 to this value if it's not NULL.
+         * \ref SpellEffectIndex::EFFECT_INDEX_0 to this value if it's not nullptr.
          * @param bp1 this will change the \ref Spell s member \ref Spell::m_currentBasePoints for
-         * \ref SpellEffectIndex::EFFECT_INDEX_1 to this value if it's not NULL.
+         * \ref SpellEffectIndex::EFFECT_INDEX_1 to this value if it's not nullptr.
          * @param bp2 this will change the \ref Spell s member \ref Spell::m_currentBasePoints for
-         * \ref SpellEffectIndex::EFFECT_INDEX_2 to this value if it's not NULL.
+         * \ref SpellEffectIndex::EFFECT_INDEX_2 to this value if it's not nullptr.
          * @param triggered whether this was triggered by some outside circumstance or used as a button
          * press on your action bar, true means triggered by outside circumstance
          * @param castItem the \ref Item that cast this if any
@@ -2966,7 +2966,7 @@ class Unit : public Occupant
          * @param triggeredBy the \ref SpellEntry that triggered this cast, if any
          * \todo What's the original caster?
          */
-        void CastCustomSpell(Unit* Victim, uint32 spellId, int32 const* bp0, int32 const* bp1, int32 const* bp2, bool triggered, Item* castItem = NULL, Aura* triggeredByAura = NULL, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
+        void CastCustomSpell(Unit* Victim, uint32 spellId, int32 const* bp0, int32 const* bp1, int32 const* bp2, bool triggered, Item* castItem = nullptr, Aura* triggeredByAura = nullptr, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = nullptr);
 
         /**
          * Same idea for this one as for \ref Unit::CastCustomSpell with a change to the spellid being
@@ -2975,11 +2975,11 @@ class Unit : public Occupant
          * @param Victim victim that should be hit by the spell
          * @param spellInfo info about the spell to cast
          * @param bp0 this will change the \ref Spell s member \ref Spell::m_currentBasePoints for
-         * \ref SpellEffectIndex::EFFECT_INDEX_0 to this value if it's not NULL.
+         * \ref SpellEffectIndex::EFFECT_INDEX_0 to this value if it's not nullptr.
          * @param bp1 this will change the \ref Spell s member \ref Spell::m_currentBasePoints for
-         * \ref SpellEffectIndex::EFFECT_INDEX_1 to this value if it's not NULL.
+         * \ref SpellEffectIndex::EFFECT_INDEX_1 to this value if it's not nullptr.
          * @param bp2 this will change the \ref Spell s member \ref Spell::m_currentBasePoints for
-         * \ref SpellEffectIndex::EFFECT_INDEX_2 to this value if it's not NULL.
+         * \ref SpellEffectIndex::EFFECT_INDEX_2 to this value if it's not nullptr.
          * @param triggered whether this was triggered by some outside circumstance or used as a button
          * press on your action bar, true means triggered by outside circumstance
          * @param castItem the \ref Item that cast this if any
@@ -2989,7 +2989,7 @@ class Unit : public Occupant
          * @param calculateDamage Indicates whether the damage calculation must be performed (in some cases, the calculation has already been executed).
          * \todo What's the original caster?
          */
-        void CastCustomSpell(Unit* Victim, SpellEntry const* spellInfo, int32 const* bp0, int32 const* bp1, int32 const* bp2, bool triggered, Item* castItem = NULL, Aura* triggeredByAura = NULL, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
+        void CastCustomSpell(Unit* Victim, SpellEntry const* spellInfo, int32 const* bp0, int32 const* bp1, int32 const* bp2, bool triggered, Item* castItem = nullptr, Aura* triggeredByAura = nullptr, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = nullptr);
 
         /**
          * Same idea as for \ref Unit::CastSpell, but with the parameters x, y, z telling the
@@ -3009,7 +3009,7 @@ class Unit : public Occupant
          * @param originalCaster the original caster if any
          * @param triggeredBy the \ref SpellEntry that triggered this cast, if any
          */
-        void CastSpell(float x, float y, float z, uint32 spellId, bool triggered, Item* castItem = NULL, Aura* triggeredByAura = NULL, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
+        void CastSpell(float x, float y, float z, uint32 spellId, bool triggered, Item* castItem = nullptr, Aura* triggeredByAura = nullptr, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = nullptr);
 
         /**
          * Same idea as for \ref Unit::CastSpell, but with the parameters x, y, z telling the
@@ -3029,7 +3029,7 @@ class Unit : public Occupant
          * @param originalCaster the original caster if any
          * @param triggeredBy the \ref SpellEntry that triggered this cast, if any
          */
-        void CastSpell(float x, float y, float z, SpellEntry const* spellInfo, bool triggered, Item* castItem = NULL, Aura* triggeredByAura = NULL, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
+        void CastSpell(float x, float y, float z, SpellEntry const* spellInfo, bool triggered, Item* castItem = nullptr, Aura* triggeredByAura = nullptr, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = nullptr);
 
         /**
          * Changes the display id for this \ref Unit to the native one that it usually has.
@@ -3296,7 +3296,7 @@ class Unit : public Occupant
          * Returns the currently spawned minipet, this has an implementation in \ref Player
          * @return the current \ref Pet for this \ref Player
          */
-        virtual Pet* GetMiniPet() const { return NULL; }    // overwrited in Player
+        virtual Pet* GetMiniPet() const { return nullptr; }    // overwrited in Player
 
         /**
          * Gets either the current charmer (ie mind control) or the owner of this \ref Unit
@@ -3335,27 +3335,27 @@ class Unit : public Occupant
 
         /**
          * Returns the \ref Unit that owns this \ref Unit if any
-         * @return the \ref Unit that owns this one, NULL if there is no owner
+         * @return the \ref Unit that owns this one, nullptr if there is no owner
          * \see Unit::GetOwnerGuid
          */
         Unit* GetOwner() const;
 
         /**
          * Returns the \ref Pet for this \ref Unit if any
-         * @return the \ref Pet that is associated with this \ref Unit if any, NULL if there is none
+         * @return the \ref Pet that is associated with this \ref Unit if any, nullptr if there is none
          * \see Unit::GetPetGuid
          */
         Pet* GetPet() const;
 
         /**
          * Returns the \ref Unit that's currently charming this one if any.
-         * @return the \ref Unit that's charming this one, NULL if there is none
+         * @return the \ref Unit that's charming this one, nullptr if there is none
          */
         Unit* GetCharmer() const;
 
         /**
          * Returns the \ref Unit that this one is currently charming
-         * @return the \ref Unit that this one is charming, NULL if there is none
+         * @return the \ref Unit that this one is charming, nullptr if there is none
          */
         Unit* GetCharm() const;
 
@@ -3370,7 +3370,7 @@ class Unit : public Occupant
 
         /**
          * Does the same as \ref Unit::GetCharmerOrOwnerGuid but returns the \ref Unit for that instead
-         * @return the \ref Unit that's charming this one or owning it, NULL if there is none
+         * @return the \ref Unit that's charming this one or owning it, nullptr if there is none
          */
         Unit* GetCharmerOrOwner() const { return GetCharmerGuid() ? GetCharmer() : GetOwner(); }
 
@@ -3426,7 +3426,7 @@ class Unit : public Occupant
         /**
          * Finds a guardian by it's entry, this is the entry in character.character_pet
          * @param entry the entry to find
-         * @return the guardian/\ref Pet found or NULL if there's no such entry in the db
+         * @return the guardian/\ref Pet found or nullptr if there's no such entry in the db
          * \todo Is it the correct entry
          */
         Pet* FindGuardianWithEntry(uint32 entry);
@@ -3440,7 +3440,7 @@ class Unit : public Occupant
 
         /**
          * There's only \ref CharmInfo available if this \ref Unit is in fact charmed by someone
-         * @return The \ref CharmInfo for this \ref Unit if any, NULL otherwise
+         * @return The \ref CharmInfo for this \ref Unit if any, nullptr otherwise
          */
         CharmInfo* GetCharmInfo()
         {
@@ -3465,7 +3465,7 @@ class Unit : public Occupant
         /**
          * Gets a certain \ref Totem that this \ref Unit has spawned
          * @param slot the slot to get the \ref Totem for
-         * @return The requested totem if there is any spawned, NULL otherwise
+         * @return The requested totem if there is any spawned, nullptr otherwise
          */
         Totem* GetTotem(TotemSlot slot) const;
 
@@ -3550,9 +3550,9 @@ class Unit : public Occupant
          * which \ref Aura to remove.
          * @param spellId id of the spell which has the sought \ref Aura somewhere
          * @param effindex the effect index for the spell to find the right \ref Aura
-         * @param except if != NULL we will not remove this \ref Aura if found
+         * @param except if != nullptr we will not remove this \ref Aura if found
          */
-        void RemoveAura(uint32 spellId, SpellEffectIndex effindex, Aura* except = NULL);
+        void RemoveAura(uint32 spellId, SpellEffectIndex effindex, Aura* except = nullptr);
 
         /**
          * Removes a \ref SpellAuraHolder from this \ref Unit. This will remove all the effects that
@@ -3591,7 +3591,7 @@ class Unit : public Occupant
          * @param mode reason for removal
          * \see SpellEntry::Effect
          */
-        void RemoveAuras(uint32 spellId, SpellAuraHolder* except = NULL, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
+        void RemoveAuras(uint32 spellId, SpellAuraHolder* except = nullptr, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
 
         /**
          * Removes all \ref Aura s that a certain spell cast by a certain \ref Item would cause via
@@ -3848,7 +3848,7 @@ class Unit : public Occupant
 
         // Threat related methods
         bool CanHaveThreatList(bool ignoreAliveState = false) const;
-        void AddThreat(Unit* pVictim, float threat = 0.0f, bool crit = false, SpellSchoolMask schoolMask = SPELL_SCHOOL_MASK_NONE, SpellEntry const* threatSpell = NULL);
+        void AddThreat(Unit* pVictim, float threat = 0.0f, bool crit = false, SpellSchoolMask schoolMask = SPELL_SCHOOL_MASK_NONE, SpellEntry const* threatSpell = nullptr);
         float ApplyTotalThreatModifier(float threat, SpellSchoolMask schoolMask = SPELL_SCHOOL_MASK_NORMAL);
         void DeleteThreatList();
         bool IsSecondChoiceTarget(Unit* pTarget, bool checkThreatArea);
@@ -3941,19 +3941,19 @@ class Unit : public Occupant
         void ModifyAuraState(AuraState flag, bool apply);
         bool HasAuraState(AuraState flag) const { return HasFlag(UNIT_FIELD_AURASTATE, 1 << (flag - 1)); }
         void UnsummonAllTotems();
-        Unit* SelectMagnetTarget(Unit* victim, Spell* spell = NULL, SpellEffectIndex eff = EFFECT_INDEX_0);
+        Unit* SelectMagnetTarget(Unit* victim, Spell* spell = nullptr, SpellEffectIndex eff = EFFECT_INDEX_0);
 
-        int32 SpellBonusWithCoeffs(Unit* pCaster, SpellEntry const* spellProto, int32 total, int32 benefit, int32 ap_benefit, DamageEffectType damagetype, bool donePart, Spell const* spell = NULL);
+        int32 SpellBonusWithCoeffs(Unit* pCaster, SpellEntry const* spellProto, int32 total, int32 benefit, int32 ap_benefit, DamageEffectType damagetype, bool donePart, Spell const* spell = nullptr);
         int32 SpellBaseDamageBonusDone(SpellSchoolMask schoolMask);
         int32 SpellBaseDamageBonusTaken(SpellSchoolMask schoolMask);
         uint32 SpellDamageBonusDone(Unit* pVictim, SpellEntry const* spellProto, uint32 pdamage, DamageEffectType damagetype, uint32 stack = 1);
         uint32 SpellDamageBonusTaken(Unit* pCaster, SpellEntry const* spellProto, uint32 pdamage, DamageEffectType damagetype, uint32 stack = 1);
         int32 SpellBaseHealingBonusDone(SpellSchoolMask schoolMask);
         int32 SpellBaseHealingBonusTaken(SpellSchoolMask schoolMask);
-        uint32 SpellHealingBonusDone(Unit* pVictim, SpellEntry const* spellProto, int32 healamount, DamageEffectType damagetype, uint32 stack = 1, Spell const* spell = NULL);
-        uint32 SpellHealingBonusTaken(Unit* pCaster, SpellEntry const* spellProto, int32 healamount, DamageEffectType damagetype, uint32 stack = 1, Spell const* spell = NULL);
-        uint32 MeleeDamageBonusDone(Unit* pVictim, uint32 damage, WeaponAttackType attType, SpellEntry const* spellProto = NULL, DamageEffectType damagetype = DIRECT_DAMAGE, uint32 stack = 1);
-        uint32 MeleeDamageBonusTaken(Unit* pCaster, uint32 pdamage, WeaponAttackType attType, SpellEntry const* spellProto = NULL, DamageEffectType damagetype = DIRECT_DAMAGE, uint32 stack = 1);
+        uint32 SpellHealingBonusDone(Unit* pVictim, SpellEntry const* spellProto, int32 healamount, DamageEffectType damagetype, uint32 stack = 1, Spell const* spell = nullptr);
+        uint32 SpellHealingBonusTaken(Unit* pCaster, SpellEntry const* spellProto, int32 healamount, DamageEffectType damagetype, uint32 stack = 1, Spell const* spell = nullptr);
+        uint32 MeleeDamageBonusDone(Unit* pVictim, uint32 damage, WeaponAttackType attType, SpellEntry const* spellProto = nullptr, DamageEffectType damagetype = DIRECT_DAMAGE, uint32 stack = 1);
+        uint32 MeleeDamageBonusTaken(Unit* pCaster, uint32 pdamage, WeaponAttackType attType, SpellEntry const* spellProto = nullptr, DamageEffectType damagetype = DIRECT_DAMAGE, uint32 stack = 1);
 
         bool   IsSpellBlocked(Unit* pCaster, SpellEntry const* spellProto, WeaponAttackType attackType = BASE_ATTACK);
         bool   IsSpellCrit(Unit* pVictim, SpellEntry const* spellProto, SpellSchoolMask schoolMask, WeaponAttackType attackType = BASE_ATTACK);
@@ -3991,7 +3991,7 @@ class Unit : public Occupant
         }
         bool IsUnderLastManaUseEffect() const { return m_lastManaUseTimer; }
 
-        void SetContestedPvP(Player* attackedPlayer = NULL);
+        void SetContestedPvP(Player* attackedPlayer = nullptr);
 
         void ApplySpellImmune(uint32 spellId, uint32 op, uint32 type, bool apply);
         void ApplySpellDispelImmunity(const SpellEntry* spellProto, DispelType type, bool apply);
@@ -4013,7 +4013,7 @@ class Unit : public Occupant
         void _RemoveAllAuraMods();
         void _ApplyAllAuraMods();
 
-        int32 CalculateSpellDamage(Unit const* target, SpellEntry const* spellProto, SpellEffectIndex effect_index, int32 const* basePoints = NULL);
+        int32 CalculateSpellDamage(Unit const* target, SpellEntry const* spellProto, SpellEffectIndex effect_index, int32 const* basePoints = nullptr);
 
         float CalculateLevelPenalty(SpellEntry const* spellProto) const;
 

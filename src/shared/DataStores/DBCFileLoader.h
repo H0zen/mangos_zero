@@ -181,12 +181,12 @@ class DBCFileLoader
          * @param id Field index
          * @return Byte offset from record start
          */
-        uint32 GetOffset(size_t id) const { return (fieldsOffset != NULL && id < fieldCount) ? fieldsOffset[id] : 0; }
+        uint32 GetOffset(size_t id) const { return (fieldsOffset != nullptr && id < fieldCount) ? fieldsOffset[id] : 0; }
         /**
          * @brief Check if file is loaded
          * @return True if loaded, false otherwise
          */
-        bool IsLoaded() const {return (data != NULL);}
+        bool IsLoaded() const {return (data != nullptr);}
         /**
          * @brief Automatically produce data array from DBC file
          * @param fmt Format string for conversion
@@ -209,7 +209,7 @@ class DBCFileLoader
          * @param index_pos
          * @return uint32 the total amount of memory required for all the data types
          */
-        static uint32 GetFormatRecordSize(const char* format, int32* index_pos = NULL);
+        static uint32 GetFormatRecordSize(const char* format, int32* index_pos = nullptr);
     private:
 
         uint32 recordSize; /**< Size of each record in bytes */

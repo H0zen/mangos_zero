@@ -126,7 +126,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         // root to self part of (root_target->charge->root_self sequence
                         if (Unit* caster = GetCaster())
                         {
-                            caster->CastSpell(caster, 13138, true, NULL, this);
+                            caster->CastSpell(caster, 13138, true, nullptr, this);
                         }
                         return;
                     case 23183:                             // Mark of Frost
@@ -135,7 +135,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         {
                             if (target->HasAura(23182))
                             {
-                                target->CastSpell(target, 23186, true, NULL, NULL, GetCaster()->GetObjectGuid());
+                                target->CastSpell(target, 23186, true, nullptr, nullptr, GetCaster()->GetObjectGuid());
                             }
                         }
                         return;
@@ -146,7 +146,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         {
                             if (target->HasAura(25040))
                             {
-                                target->CastSpell(target, 25043, true, NULL, NULL, GetCaster()->GetObjectGuid());
+                                target->CastSpell(target, 25043, true, nullptr, nullptr, GetCaster()->GetObjectGuid());
                             }
                         }
                         return;
@@ -172,7 +172,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
                         if (Unit* caster = GetCaster())
                         {
-                            caster->CastCustomSpell(target, 28836, &damage, NULL, NULL, true, NULL, this);
+                            caster->CastCustomSpell(target, 28836, &damage, nullptr, nullptr, true, nullptr, this);
                         }
                         return;
                     }
@@ -211,7 +211,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
             if (finalSpellId)
             {
-                caster->CastSpell(target, finalSpellId, true, NULL, this);
+                caster->CastSpell(target, finalSpellId, true, nullptr, this);
             }
 
             return;
@@ -265,7 +265,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 }
                 return;
             case 12479:                                     // Hex of Jammal'an
-                target->CastSpell(target, 12480, true, NULL, this);
+                target->CastSpell(target, 12480, true, nullptr, this);
                 return;
             case 12774:                                     // (DND) Belnistrasz Idol Shutdown Visual
             {
@@ -285,9 +285,9 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             case 28169:                                     // Mutating Injection
             {
                 // Mutagen Explosion
-                target->CastSpell(target, 28206, true, NULL, this);
+                target->CastSpell(target, 28206, true, nullptr, this);
                 // Poison Cloud
-                target->CastSpell(target, 28240, true, NULL, this);
+                target->CastSpell(target, 28240, true, nullptr, this);
                 return;
             }
         }
@@ -339,7 +339,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                             return;
                         }
 
-                        caster->CastSpell(target, 24659, true, NULL, NULL, GetCasterGuid());
+                        caster->CastSpell(target, 24659, true, nullptr, nullptr, GetCasterGuid());
                     }
                     else
                     {
@@ -357,7 +357,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                             return;
                         }
 
-                        caster->CastSpell(target, 24662, true, NULL, NULL, GetCasterGuid());
+                        caster->CastSpell(target, 24662, true, nullptr, nullptr, GetCasterGuid());
                     }
                     else
                     {

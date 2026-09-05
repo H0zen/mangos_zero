@@ -116,7 +116,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     // get the destination map entry, not the current one, this will fix homebind and reset greeting
     MapEntry const* mEntry = sMapStore.LookupEntry(loc.MapId());
 
-    Map* map = NULL;
+    Map* map = nullptr;
 
     // prevent crash at attempt landing to not existed battleground instance
     if (mEntry->IsBattleGround())
@@ -244,7 +244,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     {
         if (time_t timeReset = sMapPersistentStateMgr.GetScheduler().GetResetTimeFor(mEntry->MapID))
         {
-            uint32 timeleft = uint32(timeReset - time(NULL));
+            uint32 timeleft = uint32(timeReset - time(nullptr));
             GetPlayer()->SendInstanceResetWarning(mEntry->MapID, timeleft);
         }
     }
@@ -287,7 +287,7 @@ void WorldSession::HandleMoveTeleportAckOpcode(WorldPacket& recv_data)
     DEBUG_LOG("Counter %u, time %u", counter, time / IN_MILLISECONDS);
 
     Unit* mover = _player->GetMover();
-    Player* plMover = mover->GetTypeId() == TYPEID_PLAYER ? (Player*)mover : NULL;
+    Player* plMover = mover->GetTypeId() == TYPEID_PLAYER ? (Player*)mover : nullptr;
 
     if (!plMover || !plMover->IsBeingTeleportedNear())
     {
@@ -343,7 +343,7 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recv_data)
     }
 
     Unit* mover = _player->GetMover();
-    Player* plMover = mover->GetTypeId() == TYPEID_PLAYER ? (Player*)mover : NULL;
+    Player* plMover = mover->GetTypeId() == TYPEID_PLAYER ? (Player*)mover : nullptr;
 
     // ignore, waiting processing in WorldSession::HandleMoveWorldportAckOpcode and WorldSession::HandleMoveTeleportAck
     if (plMover && plMover->IsBeingTeleported())
@@ -533,7 +533,7 @@ void WorldSession::HandleMoveKnockBackAck(WorldPacket& recv_data)
     DEBUG_LOG("CMSG_MOVE_KNOCK_BACK_ACK");
 
     Unit* mover = _player->GetMover();
-    Player* plMover = mover->GetTypeId() == TYPEID_PLAYER ? (Player*)mover : NULL;
+    Player* plMover = mover->GetTypeId() == TYPEID_PLAYER ? (Player*)mover : nullptr;
 
     // ignore, waiting processing in WorldSession::HandleMoveWorldportAckOpcode and WorldSession::HandleMoveTeleportAck
     if (plMover && plMover->IsBeingTeleported())
@@ -721,7 +721,7 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
 
     Unit* mover = _player->GetMover();
 
-    if (Player* plMover = mover->GetTypeId() == TYPEID_PLAYER ? (Player*)mover : NULL)
+    if (Player* plMover = mover->GetTypeId() == TYPEID_PLAYER ? (Player*)mover : nullptr)
     {
         // BEFORE the transport branch, and the ordering is the whole of it.
         // TransportMap::Add reads the passenger's OWN m_movementInfo for his deck offset; the
@@ -790,7 +790,7 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
                                     vessel->Where().Z(), vessel->Where().Facing());
                 }
             }
-            plMover->m_transport = NULL;
+            plMover->m_transport = nullptr;
             movementInfo.ClearTransportData();
         }
 

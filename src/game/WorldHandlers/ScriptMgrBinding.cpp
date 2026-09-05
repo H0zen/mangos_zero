@@ -311,13 +311,13 @@ uint32 ScriptMgr::GetBoundScriptId(ScriptedObjectType entity, int32 entry)
 /**
  * @brief Returns the version string for the loaded script library.
  *
- * @return char const* The script library version, or NULL when unavailable.
+ * @return char const* The script library version, or nullptr when unavailable.
  */
 char const* ScriptMgr::GetScriptLibraryVersion() const
 {
 #ifdef ENABLE_SD3
     return SD3::GetScriptLibraryVersion();
 #else
-    return NULL;
+    return nullptr;
 #endif
 }

@@ -206,7 +206,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
         if (crit)
         {
             procEx |= PROC_EX_CRITICAL_HIT;
-            addhealth = caster->SpellCriticalHealingBonus(m_spellInfo, addhealth, NULL);
+            addhealth = caster->SpellCriticalHealingBonus(m_spellInfo, addhealth, nullptr);
         }
         else
         {
@@ -507,14 +507,14 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
     }
     else
     {
-        m_spellAuraHolder = NULL;
+        m_spellAuraHolder = nullptr;
     }
 
     for (int effectNumber = 0; effectNumber < MAX_EFFECT_INDEX; ++effectNumber)
     {
         if (effectMask & (1 << effectNumber))
         {
-            HandleEffects(unit, NULL, NULL, SpellEffectIndex(effectNumber), m_damageMultipliers[effectNumber]);
+            HandleEffects(unit, nullptr, nullptr, SpellEffectIndex(effectNumber), m_damageMultipliers[effectNumber]);
             if (m_applyMultiplierMask & (1 << effectNumber))
             {
                 // Get multiplier
@@ -602,7 +602,7 @@ void Spell::DoAllEffectOnTarget(GOTargetInfo* target)
     {
         if (effectMask & (1 << effectNumber))
         {
-            HandleEffects(NULL, NULL, go, SpellEffectIndex(effectNumber));
+            HandleEffects(nullptr, nullptr, go, SpellEffectIndex(effectNumber));
         }
     }
 
@@ -634,7 +634,7 @@ void Spell::DoAllEffectOnTarget(ItemTargetInfo* target)
     {
         if (effectMask & (1 << effectNumber))
         {
-            HandleEffects(NULL, target->item, NULL, SpellEffectIndex(effectNumber));
+            HandleEffects(nullptr, target->item, nullptr, SpellEffectIndex(effectNumber));
         }
     }
 }
@@ -679,7 +679,7 @@ void Spell::HandleDelayedSpellLaunch(TargetInfo* target)
         {
             if (mask & (1 << effectNumber) && IsEffectHandledOnDelayedSpellLaunch(m_spellInfo, SpellEffectIndex(effectNumber)))
             {
-                HandleEffects(unit, NULL, NULL, SpellEffectIndex(effectNumber), m_damageMultipliers[effectNumber]);
+                HandleEffects(unit, nullptr, nullptr, SpellEffectIndex(effectNumber), m_damageMultipliers[effectNumber]);
                 if (m_applyMultiplierMask & (1 << effectNumber))
                 {
                     // Get multiplier

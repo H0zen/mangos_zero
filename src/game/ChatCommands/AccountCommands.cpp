@@ -219,7 +219,7 @@ bool ChatHandler::HandleAccountDeleteCommand(char* args)
     /// Commands not recommended call from chat, but support anyway
     /// can delete only for account with less security
     /// This is also reject self apply in fact
-    if (HasLowerSecurityAccount(NULL, account_id, true))
+    if (HasLowerSecurityAccount(nullptr, account_id, true))
     {
         return false;
     }
@@ -313,7 +313,7 @@ bool ChatHandler::HandleAccountCharactersCommand(char* args)
 {
     ///- Get the command line arguments
     std::string account_name;
-    Player* target = NULL;                                  // only for triggering use targeted player account
+    Player* target = nullptr;                                  // only for triggering use targeted player account
     uint32 account_id = ExtractAccountId(&args, &account_name, &target);
     if (!account_id)
     {
@@ -346,7 +346,7 @@ bool ChatHandler::HandleAccountSetAddonCommand(char* args)
 
     // Let set addon state only for lesser (strong) security level
     // or to self account
-    if (GetAccountId() && GetAccountId() != account_id && HasLowerSecurityAccount(NULL, account_id, true))
+    if (GetAccountId() && GetAccountId() != account_id && HasLowerSecurityAccount(nullptr, account_id, true))
     {
         return false;
     }
@@ -377,7 +377,7 @@ bool ChatHandler::HandleAccountSetGmLevelCommand(char* args)
     char* accountStr = ExtractOptNotLastArg(&args);
 
     std::string targetAccountName;
-    Player* targetPlayer = NULL;
+    Player* targetPlayer = nullptr;
     uint32 targetAccountId = ExtractAccountId(&accountStr, &targetAccountName, &targetPlayer);
     if (!targetAccountId)
     {
@@ -405,7 +405,7 @@ bool ChatHandler::HandleAccountSetGmLevelCommand(char* args)
 
     /// can set security level only for target with less security and to less security that we have
     /// This will reject self apply by specify account name
-    if (HasLowerSecurityAccount(NULL, targetAccountId, true))
+    if (HasLowerSecurityAccount(nullptr, targetAccountId, true))
     {
         return false;
     }
@@ -460,7 +460,7 @@ bool ChatHandler::HandleAccountSetPasswordCommand(char* args)
 
     /// can set password only for target with less security
     /// This is also reject self apply in fact
-    if (HasLowerSecurityAccount(NULL, targetAccountId, true))
+    if (HasLowerSecurityAccount(nullptr, targetAccountId, true))
     {
         return false;
     }

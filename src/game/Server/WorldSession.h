@@ -255,7 +255,7 @@ class WorldSession
         /// stays with the caller.
         void HandlePacket(WorldPacket& packet);
 
-        /// The map that runs this packet, or NULL to answer it in the serial
+        /// The map that runs this packet, or nullptr to answer it in the serial
         /// phase.
         Map* MapForPacket(const WorldPacket& packet) const;
 
@@ -278,7 +278,7 @@ class WorldSession
         void SendTabardVendorActivate(ObjectGuid guid);
         void SendSpiritResurrect();
         void SendBindPoint(Creature* npc);
-        void SendGMTicketGetTicket(uint32 status, GMTicket* ticket = NULL);
+        void SendGMTicketGetTicket(uint32 status, GMTicket* ticket = nullptr);
 
         void SendAttackStop(Unit const* enemy);
 

@@ -101,7 +101,7 @@ void GMTicket::Init(ObjectGuid guid, const std::string& text, const std::string&
 void GMTicket::SetText(const char* text)
 {
     m_text = text ? text : "";
-    m_lastUpdate = time(NULL);
+    m_lastUpdate = time(nullptr);
 
     std::string escapedString = m_text;
     CharacterDatabase.escape_string(escapedString);
@@ -122,7 +122,7 @@ void GMTicket::SetResponseText(const char* text)
     // Perform action in DB only if text is not empty
     if (m_responseText != "")
     {
-        m_lastUpdate = time(NULL);
+        m_lastUpdate = time(nullptr);
 
         std::string escapedString = m_responseText;
         CharacterDatabase.escape_string(escapedString);
@@ -270,7 +270,7 @@ void GMTicketMgr::Create(ObjectGuid guid, const char* text)
     }
 
     //Lets reinitialize with new data
-    ticket.Init(guid, text, "", time(NULL), ticketId);
+    ticket.Init(guid, text, "", time(nullptr), ticketId);
     m_GMTicketIdMap[ticketId] = &ticket;
 }
 

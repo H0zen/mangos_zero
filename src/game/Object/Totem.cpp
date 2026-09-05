@@ -189,7 +189,7 @@ void Totem::UnSummon()
             // Not only the player can summon the totem (scripted AI)
             if (Group* pGroup = ((Player*)owner)->GetGroup())
             {
-                for (GroupReference* itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+                for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
                 {
                     Player* Target = itr->getSource();
                     if (Target && pGroup->SameSubGroup((Player*)owner, Target))
@@ -233,7 +233,7 @@ void Totem::SetOwner(Unit* owner)
 /**
  * @brief Retrieves the unit that owns this totem.
  *
- * @return Pointer to the owning unit, or NULL if the owner cannot be found.
+ * @return Pointer to the owning unit, or nullptr if the owner cannot be found.
  */
 Unit* Totem::GetOwner()
 {
@@ -242,7 +242,7 @@ Unit* Totem::GetOwner()
         return ObjectLookup::GetUnit(*this, ownerGuid);
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**

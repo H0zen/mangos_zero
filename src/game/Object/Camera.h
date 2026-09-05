@@ -129,8 +129,8 @@ class ViewPoint
         bool hasViewers() const { return !m_cameras.empty(); }
 
         // these events are called when viewpoint changes visibility state
-        void Event_AddedToWorld(GridType* grid, Player* batchOwner = NULL,
-                                InitialWorldUpdateBatch* batch = NULL)
+        void Event_AddedToWorld(GridType* grid, Player* batchOwner = nullptr,
+                                InitialWorldUpdateBatch* batch = nullptr)
         {
             m_grid = grid;
             // A viewpoint may have several cameras. Only the logging-in
@@ -138,13 +138,13 @@ class ViewPoint
             for (CameraList::iterator itr = m_cameras.begin(); itr != m_cameras.end();)
             {
                 Camera* c = *(itr++);
-                c->Event_AddedToWorld(c->GetOwner() == batchOwner ? batch : NULL);
+                c->Event_AddedToWorld(c->GetOwner() == batchOwner ? batch : nullptr);
             }
         }
 
         void Event_RemovedFromWorld()
         {
-            m_grid = NULL;
+            m_grid = nullptr;
             CameraCall(&Camera::Event_RemovedFromWorld);
         }
 

@@ -88,7 +88,7 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recv_data)
     if (!pCreature)
     {
         DEBUG_LOG("WORLD: HandleSellItemOpcode - %s not found or you can't interact with him.", vendorGuid.GetString().c_str());
-        _player->SendSellError(SELL_ERR_CANT_FIND_VENDOR, NULL, itemGuid, 0);
+        _player->SendSellError(SELL_ERR_CANT_FIND_VENDOR, nullptr, itemGuid, 0);
         return;
     }
 
@@ -206,7 +206,7 @@ void WorldSession::HandleBuybackItem(WorldPacket& recv_data)
     if (!pCreature)
     {
         DEBUG_LOG("WORLD: HandleBuybackItem - %s not found or you can't interact with him.", vendorGuid.GetString().c_str());
-        _player->SendSellError(SELL_ERR_CANT_FIND_VENDOR, NULL, ObjectGuid(), 0);
+        _player->SendSellError(SELL_ERR_CANT_FIND_VENDOR, nullptr, ObjectGuid(), 0);
         return;
     }
 
@@ -237,7 +237,7 @@ void WorldSession::HandleBuybackItem(WorldPacket& recv_data)
         }
         else
         {
-            _player->SendEquipError(msg, pItem, NULL);
+            _player->SendEquipError(msg, pItem, nullptr);
         }
         return;
     }
@@ -299,7 +299,7 @@ void WorldSession::SendListInventory(ObjectGuid vendorguid)
     if (!pCreature)
     {
         DEBUG_LOG("WORLD: SendListInventory - %s not found or you can't interact with him.", vendorguid.GetString().c_str());
-        _player->SendSellError(SELL_ERR_CANT_FIND_VENDOR, NULL, ObjectGuid(), 0);
+        _player->SendSellError(SELL_ERR_CANT_FIND_VENDOR, nullptr, ObjectGuid(), 0);
         return;
     }
 
@@ -508,7 +508,7 @@ void WorldSession::HandleAutoStoreBagItemOpcode(WorldPacket& recv_data)
 
     if (!_player->IsValidPos(dstbag, NULL_SLOT, false))     // can be autostore pos
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, NULL, NULL);
+        _player->SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, nullptr, nullptr);
         return;
     }
 
@@ -520,7 +520,7 @@ void WorldSession::HandleAutoStoreBagItemOpcode(WorldPacket& recv_data)
         InventoryResult msg = _player->CanUnequipItem(src, !_player->IsBagPos(src));
         if (msg != EQUIP_ERR_OK)
         {
-            _player->SendEquipError(msg, pItem, NULL);
+            _player->SendEquipError(msg, pItem, nullptr);
             return;
         }
     }
@@ -529,7 +529,7 @@ void WorldSession::HandleAutoStoreBagItemOpcode(WorldPacket& recv_data)
     InventoryResult msg = _player->CanStoreItem(dstbag, NULL_SLOT, dest, pItem, false);
     if (msg != EQUIP_ERR_OK)
     {
-        _player->SendEquipError(msg, pItem, NULL);
+        _player->SendEquipError(msg, pItem, nullptr);
         return;
     }
 
@@ -537,7 +537,7 @@ void WorldSession::HandleAutoStoreBagItemOpcode(WorldPacket& recv_data)
     if (dest.size() == 1 && dest[0].pos == src)
     {
         // just remove gray item state
-        _player->SendEquipError(EQUIP_ERR_NONE, pItem, NULL);
+        _player->SendEquipError(EQUIP_ERR_NONE, pItem, nullptr);
         return;
     }
 
@@ -649,7 +649,7 @@ void WorldSession::HandleAutoBankItemOpcode(WorldPacket& recvPacket)
     InventoryResult msg = _player->CanBankItem(NULL_BAG, NULL_SLOT, dest, pItem, false);
     if (msg != EQUIP_ERR_OK)
     {
-        _player->SendEquipError(msg, pItem, NULL);
+        _player->SendEquipError(msg, pItem, nullptr);
         return;
     }
 
@@ -657,7 +657,7 @@ void WorldSession::HandleAutoBankItemOpcode(WorldPacket& recvPacket)
     if (dest.size() == 1 && dest[0].pos == pItem->GetPos())
     {
         // just remove gray item state
-        _player->SendEquipError(EQUIP_ERR_NONE, pItem, NULL);
+        _player->SendEquipError(EQUIP_ERR_NONE, pItem, nullptr);
         return;
     }
 
@@ -690,7 +690,7 @@ void WorldSession::HandleAutoStoreBankItemOpcode(WorldPacket& recvPacket)
         InventoryResult msg = _player->CanStoreItem(NULL_BAG, NULL_SLOT, dest, pItem, false);
         if (msg != EQUIP_ERR_OK)
         {
-            _player->SendEquipError(msg, pItem, NULL);
+            _player->SendEquipError(msg, pItem, nullptr);
             return;
         }
 
@@ -703,7 +703,7 @@ void WorldSession::HandleAutoStoreBankItemOpcode(WorldPacket& recvPacket)
         InventoryResult msg = _player->CanBankItem(NULL_BAG, NULL_SLOT, dest, pItem, false);
         if (msg != EQUIP_ERR_OK)
         {
-            _player->SendEquipError(msg, pItem, NULL);
+            _player->SendEquipError(msg, pItem, nullptr);
             return;
         }
 
@@ -721,7 +721,7 @@ void WorldSession::HandleSetAmmoOpcode(WorldPacket& recv_data)
 {
     if (!GetPlayer()->IsAlive())
     {
-        GetPlayer()->SendEquipError(EQUIP_ERR_YOU_ARE_DEAD, NULL, NULL);
+        GetPlayer()->SendEquipError(EQUIP_ERR_YOU_ARE_DEAD, nullptr, nullptr);
         return;
     }
 

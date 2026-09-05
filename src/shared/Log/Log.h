@@ -444,7 +444,7 @@ class Log : public MaNGOS::Singleton<Log>
          *        must stay game-agnostic and does not resolve opcode names.
          * @return bool
          */
-        bool IsPacketLoggingEnabled() const { return worldLogfile != NULL; }
+        bool IsPacketLoggingEnabled() const { return worldLogfile != nullptr; }
 
         /**
          * @brief

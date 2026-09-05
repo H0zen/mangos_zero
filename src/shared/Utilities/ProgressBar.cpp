@@ -73,7 +73,7 @@ void BarGoLink::DefaultSink(char const* bytes, size_t len)
 }
 
 BarGoLink::ConsoleSink BarGoLink::m_sink = &BarGoLink::DefaultSink;
-BarGoLink::ProgressSink BarGoLink::m_progressSink = NULL;
+BarGoLink::ProgressSink BarGoLink::m_progressSink = nullptr;
 
 void BarGoLink::SetConsoleSink(ConsoleSink sink)
 {

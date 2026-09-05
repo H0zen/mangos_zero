@@ -115,7 +115,7 @@ void ObjectMgr::LoadPetLevelInfo()
 
             PetLevelInfo*& pInfoMapEntry = petInfo[creature_id];
 
-            if (pInfoMapEntry == NULL)
+            if (pInfoMapEntry == nullptr)
             {
                 pInfoMapEntry =  new PetLevelInfo[sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL)];
             }
@@ -179,7 +179,7 @@ PetLevelInfo const* ObjectMgr::GetPetLevelInfo(uint32 creature_id, uint32 level)
 {
     if (level == 0)
     {
-        return NULL;
+        return nullptr;
     }
 
     if (level > sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
@@ -207,7 +207,7 @@ PetLevelInfo const* ObjectMgr::GetPetLevelInfo(uint32 creature_id, uint32 level)
 
         if (itr == petInfo.end())
         {
-            return NULL;
+            return nullptr;
         }
     }
 
@@ -481,7 +481,7 @@ void ObjectMgr::LoadPlayerInfo()
                 uint32 action = fields[3].GetUInt32();
                 uint8 action_type = fields[4].GetUInt8();
 
-                if (!Player::IsActionButtonDataValid(action_button, action, action_type, NULL))
+                if (!Player::IsActionButtonDataValid(action_button, action, action_type, nullptr))
                 {
                     continue;
                 }

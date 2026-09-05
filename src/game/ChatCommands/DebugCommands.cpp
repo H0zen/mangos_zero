@@ -158,7 +158,7 @@ bool ChatHandler::HandleDebugSendEquipErrorCommand(char* args)
     }
 
     uint8 msg = atoi(args);
-    m_session->GetPlayer()->SendEquipError(InventoryResult(msg), NULL, NULL);
+    m_session->GetPlayer()->SendEquipError(InventoryResult(msg), nullptr, nullptr);
     return true;
 }
 
@@ -642,7 +642,7 @@ bool ChatHandler::HandleDebugGetLootRecipientCommand(char* /*args*/)
  */
 bool ChatHandler::HandleDebugSendQuestInvalidMsgCommand(char* args)
 {
-    uint32 msg = std::strtoul(args, NULL, 10);
+    uint32 msg = std::strtoul(args, nullptr, 10);
     m_session->GetPlayer()->SendCanTakeQuestResponse(msg);
     return true;
 }
@@ -898,7 +898,7 @@ bool ChatHandler::HandleDebugGetItemStateCommand(char* args)
             }
             Item* test = player->GetItemByPos(item->GetBagSlot(), item->GetSlot());
 
-            if (test == NULL)
+            if (test == nullptr)
             {
                 PSendSysMessage("queue(%zu): %s has incorrect (bag %u slot %u) values, the player doesn't have an item at that position!",
                     i, item->GetGuidStr().c_str(), item->GetBagSlot(), item->GetSlot());
@@ -962,7 +962,7 @@ bool ChatHandler::HandleDebugSpellCheckCommand(char* /*args*/)
  */
 bool ChatHandler::HandleDebugCrowdSpawnCommand(char* args)
 {
-    Player* me = m_session ? m_session->GetPlayer() : NULL;
+    Player* me = m_session ? m_session->GetPlayer() : nullptr;
     if (!me)
     {
         SendSysMessage("This one has to be run from in the world.");
@@ -1652,7 +1652,7 @@ bool ChatHandler::HandleDebugSpellModsCommand(char* args)
     }
 
     Player* chr = getSelectedPlayer();
-    if (chr == NULL)
+    if (chr == nullptr)
     {
         SendSysMessage(LANG_NO_CHAR_SELECTED);
         SetSentErrorMessage(true);
@@ -1695,7 +1695,7 @@ bool ChatHandler::HandleDebugMinionCommand(char* /*args*/)
     Player* master = getSelectedPlayer();
     if (!master)
     {
-        master = m_session ? m_session->GetPlayer() : NULL;
+        master = m_session ? m_session->GetPlayer() : nullptr;
     }
 
     if (!master)

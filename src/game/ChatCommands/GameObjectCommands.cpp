@@ -65,7 +65,7 @@ bool ChatHandler::HandleGameObjectDeleteCommand(char* args)
         return false;
     }
 
-    GameObject* obj = NULL;
+    GameObject* obj = nullptr;
 
     // by DB guid
     if (GameObjectData const* go_data = sObjectMgr.GetGOData(lowguid))
@@ -122,7 +122,7 @@ bool ChatHandler::HandleGameObjectTurnCommand(char* args)
         return false;
     }
 
-    GameObject* obj = NULL;
+    GameObject* obj = nullptr;
 
     // by DB guid
     if (GameObjectData const* go_data = sObjectMgr.GetGOData(lowguid))
@@ -195,7 +195,7 @@ bool ChatHandler::HandleGameObjectMoveCommand(char* args)
         return false;
     }
 
-    GameObject* obj = NULL;
+    GameObject* obj = nullptr;
 
     // by DB guid
     if (GameObjectData const* go_data = sObjectMgr.GetGOData(lowguid))
@@ -574,7 +574,7 @@ bool ChatHandler::HandleGameObjectTargetCommand(char* args)
     else
     {
         std::ostringstream eventFilter;
-        eventFilter << " AND (event IS NULL ";
+        eventFilter << " AND (event IS nullptr ";
         bool initString = true;
 
         for (GameEventMgr::ActiveEvents::const_iterator itr = activeEventsList.begin(); itr != activeEventsList.end(); ++itr)
@@ -657,7 +657,7 @@ bool ChatHandler::HandleGameObjectTargetCommand(char* args)
 
     if (target)
     {
-        time_t curRespawnDelay = target->GetRespawnTimeEx() - time(NULL);
+        time_t curRespawnDelay = target->GetRespawnTimeEx() - time(nullptr);
         if (curRespawnDelay < 0)
         {
             curRespawnDelay = 0;

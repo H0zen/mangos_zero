@@ -526,8 +526,8 @@ void Player::UpdateEquipSpellsAtFormChange()
                 continue;
             }
 
-            ApplyEquipSpell(spellInfo, NULL, false, true);  // remove spells that not fit to form
-            ApplyEquipSpell(spellInfo, NULL, true, true);   // add spells that fit form but not active
+            ApplyEquipSpell(spellInfo, nullptr, false, true);  // remove spells that not fit to form
+            ApplyEquipSpell(spellInfo, nullptr, true, true);   // add spells that fit form but not active
         }
     }
 }

@@ -192,7 +192,7 @@ Map* MapManager::CreateMap(uint32 id, const Occupant* obj)
     const MapEntry* entry = sMapStore.LookupEntry(id);
     if (!entry)
     {
-        return NULL;
+        return nullptr;
     }
 
     Map* m;
@@ -202,7 +202,7 @@ Map* MapManager::CreateMap(uint32 id, const Occupant* obj)
         // create DungeonMap object
         m = CreateInstance(id, (Player*)obj);
         // Load active objects for this map
-        if (m != NULL)
+        if (m != nullptr)
         {
             LoadActiveEntities(m);
         }
@@ -211,7 +211,7 @@ Map* MapManager::CreateMap(uint32 id, const Occupant* obj)
     {
         // create regular non-instanceable map
         m = FindMap(id);
-        if (m == NULL)
+        if (m == nullptr)
         {
             // A vessel's deck is its own kind of map, and the vessel asking for it is the
             // object it belongs to -- which is the only moment that link can be made.
@@ -267,14 +267,14 @@ Map* MapManager::FindMap(uint32 mapid, uint32 instanceId) const
     MapMapType::const_iterator iter = i_maps.find(MapID(mapid, instanceId));
     if (iter == i_maps.end())
     {
-        return NULL;
+        return nullptr;
     }
 
     // this is a small workaround for transports
     if (instanceId == 0 && iter->second->Instanceable())
     {
         assert(false);
-        return NULL;
+        return nullptr;
     }
 
     return iter->second;
@@ -562,8 +562,8 @@ uint32 MapManager::GetNumPlayersInInstances()
 ///// in case of battlegrounds it will only return an existing map, those maps are created by bg-system
 Map* MapManager::CreateInstance(uint32 id, Player* player)
 {
-    Map* map = NULL;
-    Map* pNewMap = NULL;
+    Map* map = nullptr;
+    Map* pNewMap = nullptr;
     uint32 NewInstanceId;                               // instanceId of the resulting map
     const MapEntry* entry = sMapStore.LookupEntry(id);
 
@@ -633,7 +633,7 @@ DungeonMap* MapManager::CreateDungeonMap(uint32 id, uint32 InstanceId, DungeonPe
     DungeonMap* map = new DungeonMap(id, i_gridCleanUpDelay, InstanceId);
 
     // Dungeons can have saved instance data
-    bool load_data = save != NULL;
+    bool load_data = save != nullptr;
     map->CreateInstanceData(load_data);
 
     return map;
@@ -679,7 +679,7 @@ MapManager::LivingWorldStartupStats MapManager::LoadContinents()
     s_livingWorldStartupPass = true;
 
     uint32 continents[] = {0, 1, 369};
-    Map* _map = NULL;
+    Map* _map = nullptr;
 
     for (uint8 i = 0; i < countof(continents); ++i)
     {
@@ -687,7 +687,7 @@ MapManager::LivingWorldStartupStats MapManager::LoadContinents()
 
         if (!_map)
         {
-            _map = sMapMgr.CreateMap(continents[i], NULL);
+            _map = sMapMgr.CreateMap(continents[i], nullptr);
         }
 
         if (!_map)

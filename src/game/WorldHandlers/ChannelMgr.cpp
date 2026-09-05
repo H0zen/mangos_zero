@@ -49,7 +49,7 @@
 /**
  * @brief Get the appropriate channel manager for a team
  * @param team Player's faction (ALLIANCE or HORDE)
- * @return Channel manager for that faction, or NULL for invalid team
+ * @return Channel manager for that faction, or nullptr for invalid team
  *
  * Returns the channel manager instance for the specified faction.
  * If cross-faction channels are enabled in configuration, all
@@ -73,7 +73,7 @@ ChannelMgr* channelMgr(Team team)
         return &MaNGOS::Singleton<HordeChannelMgr>::Instance();
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -127,13 +127,13 @@ Channel* ChannelMgr::GetJoinChannel(const std::string &name)
  * @param name Channel name (case-insensitive)
  * @param p Player requesting the channel (for error packet)
  * @param pkt If true, send "not on channel" error packet when channel not found
- * @return Channel instance, or NULL if not found
+ * @return Channel instance, or nullptr if not found
  *
  * Looks up a channel by name. Unlike GetJoinChannel(), this does NOT
  * create the channel if it doesn't exist.
  *
  * @param pkt controls whether an error packet is sent to the player
- * @return NULL if channel doesn't exist, otherwise the Channel pointer
+ * @return nullptr if channel doesn't exist, otherwise the Channel pointer
  */
 Channel* ChannelMgr::GetChannel(const std::string &name, Player* p, bool pkt)
 {
@@ -152,7 +152,7 @@ Channel* ChannelMgr::GetChannel(const std::string &name, Player* p, bool pkt)
             p->GetSession()->SendPacket(&data);
         }
 
-        return NULL;
+        return nullptr;
     }
     else
     {

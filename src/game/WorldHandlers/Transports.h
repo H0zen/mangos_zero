@@ -81,7 +81,7 @@ class Transport : public GameObject
         /// does it, because a vessel is in no cell and no grid unload reaches it.
         void WithdrawFromWorld();
 
-        /// THE MAP THIS SHIP IS. NULL when the baker left no hull for her, in which case she
+        /// THE MAP THIS SHIP IS. nullptr when the baker left no hull for her, in which case she
         /// is an ordinary game object that carries nobody.
         TransportMap* AsMap() const { return m_map; }
 
@@ -109,11 +109,11 @@ class Transport : public GameObject
         /// into them, because what the relay finds ashore is whatever those cells hold.
         void PinRouteGrids();
 
-        /// The vessel `obj` is aboard, or NULL. DERIVED, NEVER STORED: being aboard is what
+        /// The vessel `obj` is aboard, or nullptr. DERIVED, NEVER STORED: being aboard is what
         /// having that map MEANS.
         static Transport* VesselOf(Occupant const& obj);
 
-        /// The vessel of the given GUID on `map`, or NULL. For resolving a transport a client
+        /// The vessel of the given GUID on `map`, or nullptr. For resolving a transport a client
         /// packet named by GUID when we do not already hold the object.
         static Transport* GetTransport(Map const* map, ObjectGuid guid);
 
@@ -165,7 +165,7 @@ class Transport : public GameObject
         bool m_crossing = false;
 
         /// THE ONE REFERENCE. Owned by MapManager like any map; the vessel only holds it.
-        TransportMap* m_map = NULL;
+        TransportMap* m_map = nullptr;
 
     public:
         WayPointMap m_WayPoints;

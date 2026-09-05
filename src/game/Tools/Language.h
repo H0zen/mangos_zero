@@ -480,7 +480,7 @@ enum MangosStrings
     LANG_MOVEGENS_CONFUSED                                    = 531,    /*    Confused */
     LANG_MOVEGENS_CHASE_PLAYER                                = 532,    /*    Targeted to player %s (lowguid %u) */
     LANG_MOVEGENS_CHASE_CREATURE                              = 533,    /*    Targeted to creature %s (lowguid %u) */
-    LANG_MOVEGENS_CHASE_NULL                                  = 534,    /*    Targeted to <NULL> */
+    LANG_MOVEGENS_CHASE_NULL                                  = 534,    /*    Targeted to <nullptr> */
     LANG_MOVEGENS_HOME_CREATURE                               = 535,    /*    Home movement to (X:%f Y:%f Z:%f) */
     LANG_MOVEGENS_HOME_PLAYER                                 = 536,    /*    Home movement used for player?!? */
     LANG_MOVEGENS_FLIGHT                                      = 537,    /*    Taxi flight */
@@ -714,7 +714,7 @@ enum MangosStrings
     LANG_EVENT_STOPPED                                        = 1131,    /* event stopped %u "%s" */
     LANG_MOVEGENS_FOLLOW_PLAYER                               = 1132,    /*    Follow player %s (lowguid %u) */
     LANG_MOVEGENS_FOLLOW_CREATURE                             = 1133,    /*    Follow creature %s (lowguid %u) */
-    LANG_MOVEGENS_FOLLOW_NULL                                 = 1134,    /*    Follow <NULL> */
+    LANG_MOVEGENS_FOLLOW_NULL                                 = 1134,    /*    Follow <nullptr> */
     LANG_LIST_TALENTS_TITLE                                   = 1135,    /* List known talents: */
     LANG_LIST_TALENTS_COUNT                                   = 1136,    /*    (Found talents: %u used talent points: %u) */
     LANG_GO_LIST_CHAT                                         = 1137,    /* %d%s - |cffffffff|Hgameobject:%d|h[%s X:%f Y:%f Z:%f MapId:%d]|h|r  */

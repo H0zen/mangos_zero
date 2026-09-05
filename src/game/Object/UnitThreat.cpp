@@ -116,7 +116,7 @@ float Unit::ApplyTotalThreatModifier(float threat, SpellSchoolMask schoolMask)
     return threat * m_threatModifier[school];
 }
 
-void Unit::AddThreat(Unit* pVictim, float threat /*= 0.0f*/, bool crit /*= false*/, SpellSchoolMask schoolMask /*= SPELL_SCHOOL_MASK_NONE*/, SpellEntry const* threatSpell /*= NULL*/)
+void Unit::AddThreat(Unit* pVictim, float threat /*= 0.0f*/, bool crit /*= false*/, SpellSchoolMask schoolMask /*= SPELL_SCHOOL_MASK_NONE*/, SpellEntry const* threatSpell /*= nullptr*/)
 {
     // Only mobs can manage threat lists
     if (CanHaveThreatList())
@@ -229,7 +229,7 @@ void Unit::TauntFadeOut(Unit* taunter)
 }
 
 //======================================================================
-/// if pVictim is given, the npc will fixate onto pVictim, if NULL it will remove current fixation
+/// if pVictim is given, the npc will fixate onto pVictim, if nullptr it will remove current fixation
 void Unit::FixateTarget(Unit* pVictim)
 {
     if (!pVictim)                                           // Remove Fixation
@@ -273,7 +273,7 @@ bool Unit::SelectHostileTarget()
         return false;
     }
 
-    Unit* target = NULL;
+    Unit* target = nullptr;
     Unit* oldTarget = getVictim();
 
     // first check if we should fixate a target

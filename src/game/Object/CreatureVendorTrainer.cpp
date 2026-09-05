@@ -78,7 +78,7 @@ VendorItemData const* Creature::GetVendorItems() const
 VendorItemData const* Creature::GetVendorTemplateItems() const
 {
     uint32 VendorTemplateId = GetCreatureInfo()->VendorTemplateId;
-    return VendorTemplateId ? sObjectMgr.GetNpcVendorTemplateItemList(VendorTemplateId) : NULL;
+    return VendorTemplateId ? sObjectMgr.GetNpcVendorTemplateItemList(VendorTemplateId) : nullptr;
 }
 
 /**
@@ -110,7 +110,7 @@ uint32 Creature::GetVendorItemCurrentCount(VendorItem const* vItem)
 
     VendorItemCount* vCount = &*itr;
 
-    time_t ptime = time(NULL);
+    time_t ptime = time(nullptr);
 
     if (vCount->lastIncrementTime + vItem->incrtime <= ptime)
     {
@@ -162,7 +162,7 @@ uint32 Creature::UpdateVendorItemCurrentCount(VendorItem const* vItem, uint32 us
 
     VendorItemCount* vCount = &*itr;
 
-    time_t ptime = time(NULL);
+    time_t ptime = time(nullptr);
 
     if (vCount->lastIncrementTime + vItem->incrtime <= ptime)
     {
@@ -192,7 +192,7 @@ uint32 Creature::UpdateVendorItemCurrentCount(VendorItem const* vItem, uint32 us
 TrainerSpellData const* Creature::GetTrainerTemplateSpells() const
 {
     uint32 TrainerTemplateId = GetCreatureInfo()->TrainerTemplateId;
-    return TrainerTemplateId ? sObjectMgr.GetNpcTrainerTemplateSpells(TrainerTemplateId) : NULL;
+    return TrainerTemplateId ? sObjectMgr.GetNpcTrainerTemplateSpells(TrainerTemplateId) : nullptr;
 }
 
 /**

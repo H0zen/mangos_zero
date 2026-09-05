@@ -144,19 +144,19 @@ bool ChatHandler::isValidChatMessage(const char* message)
 
     uint32 color = 0;
 
-    ItemPrototype const* linkedItem = NULL;
-    Quest const* linkedQuest = NULL;
-    SpellEntry const* linkedSpell = NULL;
-    ItemRandomPropertiesEntry const* itemProperty = NULL;
+    ItemPrototype const* linkedItem = nullptr;
+    Quest const* linkedQuest = nullptr;
+    SpellEntry const* linkedSpell = nullptr;
+    ItemRandomPropertiesEntry const* itemProperty = nullptr;
 
     while (!reader.eof())
     {
         if (validSequence == validSequenceIterator)
         {
-            linkedItem = NULL;
-            linkedQuest = NULL;
-            linkedSpell = NULL;
-            itemProperty = NULL;
+            linkedItem = nullptr;
+            linkedQuest = nullptr;
+            linkedSpell = nullptr;
+            itemProperty = nullptr;
 
             reader.ignore(255, '|');
         }
@@ -568,7 +568,7 @@ bool ChatHandler::isValidChatMessage(const char* message)
                             for (uint8 i = LOCALE_koKR; i < MAX_LOCALE; ++i)
                             {
                                 int8 dbIndex = sObjectMgr.GetIndexForLocale(LocaleConstant(i));
-                                if (dbIndex == -1 || il == NULL || (size_t)dbIndex >= il->Name.size())
+                                if (dbIndex == -1 || il == nullptr || (size_t)dbIndex >= il->Name.size())
                                     // using strange database/client combinations can lead to this case
                                 {
                                     expectedName = linkedItem->Name1;

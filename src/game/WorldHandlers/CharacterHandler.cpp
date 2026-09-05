@@ -520,7 +520,7 @@ void WorldSession::HandlePlayerLoginOpcode(WorldPacket& recv_data)
     ObjectGuid playerGuid;
     recv_data >> playerGuid;
 
-    if (PlayerLoading() || GetPlayer() != NULL)
+    if (PlayerLoading() || GetPlayer() != nullptr)
     {
         sLog.outError("Player tryes to login again, AccountId = %d", GetAccountId());
         return;
@@ -945,7 +945,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     m_clientTimeDelay = 0;
 
     /* Used for looting */
-    pCurrChar->lastTimeLooted = time(NULL);
+    pCurrChar->lastTimeLooted = time(nullptr);
 
     delete holder;
 }

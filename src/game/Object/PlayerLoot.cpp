@@ -144,7 +144,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
         m_session->DoLootRelease(lootGuid);
     }
 
-    Loot* loot = NULL;
+    Loot* loot = nullptr;
     PermissionTypes permission = ALL_PERMISSION;
 
     DEBUG_LOG("Player::SendLoot");

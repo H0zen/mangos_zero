@@ -99,12 +99,12 @@ void Creature::AddCreatureSpellCooldown(uint32 spellid)
     uint32 cooldown = GetSpellRecoveryTime(spellInfo);
     if (cooldown)
     {
-        _AddCreatureSpellCooldown(spellid, time(NULL) + cooldown / IN_MILLISECONDS);
+        _AddCreatureSpellCooldown(spellid, time(nullptr) + cooldown / IN_MILLISECONDS);
     }
 
     if (spellInfo->Category)
     {
-        _AddCreatureCategoryCooldown(spellInfo->Category, time(NULL));
+        _AddCreatureCategoryCooldown(spellInfo->Category, time(nullptr));
     }
 }
 
@@ -123,7 +123,7 @@ bool Creature::HasCategoryCooldown(uint32 spell_id) const
     }
 
     CreatureSpellCooldowns::const_iterator itr = m_CreatureCategoryCooldowns.find(spellInfo->Category);
-    return (itr != m_CreatureCategoryCooldowns.end() && time_t(itr->second + (spellInfo->CategoryRecoveryTime / IN_MILLISECONDS)) > time(NULL));
+    return (itr != m_CreatureCategoryCooldowns.end() && time_t(itr->second + (spellInfo->CategoryRecoveryTime / IN_MILLISECONDS)) > time(nullptr));
 }
 
 /**
@@ -135,7 +135,7 @@ bool Creature::HasCategoryCooldown(uint32 spell_id) const
 uint32 Creature::GetCreatureSpellCooldownDelay(uint32 spellId) const
 {
     CreatureSpellCooldowns::const_iterator itr = m_CreatureSpellCooldowns.find(spellId);
-    time_t t = time(NULL);
+    time_t t = time(nullptr);
     return uint32(itr != m_CreatureSpellCooldowns.end() && itr->second > t ? itr->second - t : 0);
 }
 
@@ -148,5 +148,5 @@ uint32 Creature::GetCreatureSpellCooldownDelay(uint32 spellId) const
 bool Creature::HasSpellCooldown(uint32 spell_id) const
 {
     CreatureSpellCooldowns::const_iterator itr = m_CreatureSpellCooldowns.find(spell_id);
-    return (itr != m_CreatureSpellCooldowns.end() && itr->second > time(NULL)) || HasCategoryCooldown(spell_id);
+    return (itr != m_CreatureSpellCooldowns.end() && itr->second > time(nullptr)) || HasCategoryCooldown(spell_id);
 }

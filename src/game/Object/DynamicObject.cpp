@@ -61,7 +61,7 @@ bool DynamicObject::IsInEffectRange(Unit const* target) const
     if (m_transportGuid)
     {
         Transport* named = Transport::GetTransport(GetMap(), m_transportGuid);
-        TransportMap* vessel = named ? named->AsMap() : NULL;
+        TransportMap* vessel = named ? named->AsMap() : nullptr;
         if (!vessel)
         {
             return false;
@@ -107,7 +107,7 @@ void DynamicObject::RemoveFromWorld()
     ///- Remove the dynamicObject from the accessor
     if (IsInWorld())
     {
-        GetMap()->GetObjectsStore().erase<DynamicObject>(GetObjectGuid(), (DynamicObject*)NULL);
+        GetMap()->GetObjectsStore().erase<DynamicObject>(GetObjectGuid(), (DynamicObject*)nullptr);
         GetViewPoint().Event_RemovedFromWorld();
     }
 
@@ -184,7 +184,7 @@ bool DynamicObject::Create(uint32 guidlow, Unit* caster, uint32 spellId, SpellEf
 /**
  * @brief Retrieves the caster that owns this dynamic object.
  *
- * @return Pointer to the caster, or NULL if not found.
+ * @return Pointer to the caster, or nullptr if not found.
  */
 Unit* DynamicObject::GetCaster() const
 {

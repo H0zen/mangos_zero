@@ -106,11 +106,11 @@ Map::~Map()
 
     if (m_persistentState)
     {
-        m_persistentState->SetUsedByMapState(NULL);          // field pointer can be deleted after this
+        m_persistentState->SetUsedByMapState(nullptr);          // field pointer can be deleted after this
     }
 
     delete i_data;
-    i_data = NULL;
+    i_data = nullptr;
 
     // unload instance specific navigation data
     MMAP::MMapFactory::createOrGetMMapManager()->unloadMapInstance(m_TerrainData->GetMapId(), GetInstanceId());
@@ -122,7 +122,7 @@ Map::~Map()
     }
 
     delete m_weatherSystem;
-    m_weatherSystem = NULL;
+    m_weatherSystem = nullptr;
 }
 
 /**
@@ -168,10 +168,10 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId)
     : i_mapEntry(sMapStore.LookupEntry(id)),
     i_id(id), i_InstanceId(InstanceId), m_unloadTimer(0),
     m_VisibleDistance(DEFAULT_VISIBILITY_DISTANCE),
-    m_cinematicViewerRadius(0.0f), m_persistentState(NULL),
+    m_cinematicViewerRadius(0.0f), m_persistentState(nullptr),
     m_activeNonPlayersIter(m_activeNonPlayers.end()),
     i_gridExpiry(expiry), m_TerrainData(sTerrainMgr.LoadTerrain(id)),
-    i_data(NULL)
+    i_data(nullptr)
 {
 
     m_CreatureGuids.Set(sObjectMgr.GetFirstTemporaryCreatureLowGuid());
@@ -183,7 +183,7 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId)
         {
             // z code
             m_bLoadedGrids[idx][j] = false;
-            setNGrid(NULL, idx, j);
+            setNGrid(nullptr, idx, j);
         }
     }
 
@@ -503,7 +503,7 @@ Map::EnsureGridLoadedAtEnter(const Cell& cell, Player* player)
 {
     NGridType* grid;
 
-    bool useEnvelope = (player == NULL) && UseLivingWorldCellEnvelope();
+    bool useEnvelope = (player == nullptr) && UseLivingWorldCellEnvelope();
     bool loadedNow = false;
 
     if (useEnvelope)
@@ -554,7 +554,7 @@ bool Map::EnsureGridLoaded(const Cell& cell)
     EnsureGridCreated(GridPair(cell.GridX(), cell.GridY()));
     NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
 
-    MANGOS_ASSERT(grid != NULL);
+    MANGOS_ASSERT(grid != nullptr);
     if (!isGridObjectDataLoaded(cell.GridX(), cell.GridY()))
     {
         bool wasEnvelope = (grid->loadedCellCount() > 0);
@@ -756,7 +756,7 @@ template<class T>
     }
 
     NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
-    MANGOS_ASSERT(grid != NULL);
+    MANGOS_ASSERT(grid != nullptr);
 
     AddToGrid(obj, grid, cell);
     obj->AddToWorld();
@@ -1071,7 +1071,7 @@ void Map::Remove(Player* player, bool remove)
     // after decrement+unlink, ++m_mapRefIter will continue correctly
     // when the first element of the list is being removed
     // nocheck_prev will return the padding element of the RefManager
-    // instead of NULL in the case of prev
+    // instead of nullptr in the case of prev
     if (m_mapRefIter == player->GetMapRef())
     {
         m_mapRefIter = m_mapRefIter->nocheck_prev();
@@ -1094,13 +1094,13 @@ void Map::Remove(Player* player, bool remove)
 
     if (!getNGrid(cell.data.Part.grid_x, cell.data.Part.grid_y))
     {
-        sLog.outError("Map::Remove() i_grids was NULL x:%d, y:%d", cell.data.Part.grid_x, cell.data.Part.grid_y);
+        sLog.outError("Map::Remove() i_grids was nullptr x:%d, y:%d", cell.data.Part.grid_x, cell.data.Part.grid_y);
         return;
     }
 
     DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_MOVES, "Remove player %s from grid[%u,%u]", player->GetName(), cell.GridX(), cell.GridY());
     NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
-    MANGOS_ASSERT(grid != NULL);
+    MANGOS_ASSERT(grid != nullptr);
 
     RemoveFromGrid(player, grid, cell);
 
@@ -1131,7 +1131,7 @@ template<class T>
     }
 
     DEBUG_LOG("Remove object (GUID: %u TypeId:%u) from grid[%u,%u]", obj->GetGUIDLow(), obj->GetTypeId(), cell.data.Part.grid_x, cell.data.Part.grid_y);
-    MANGOS_ASSERT(grid != NULL);
+    MANGOS_ASSERT(grid != nullptr);
 
     if (obj->IsActiveObject())
     {
@@ -1667,7 +1667,7 @@ void Map::ProcessPendingCellUnloads()
 bool Map::UnloadGrid(const uint32& x, const uint32& y, bool pForce)
 {
     NGridType* grid = getNGrid(x, y);
-    MANGOS_ASSERT(grid != NULL);
+    MANGOS_ASSERT(grid != nullptr);
 
     {
         if (!pForce && ActiveObjectsNearGrid(x, y))
@@ -1690,14 +1690,14 @@ bool Map::UnloadGrid(const uint32& x, const uint32& y, bool pForce)
 
         unloader.UnloadN();
         delete getNGrid(x, y);
-        setNGrid(NULL, x, y);
+        setNGrid(nullptr, x, y);
     }
 
     int gx = (MAX_NUMBER_OF_GRIDS - 1) - x;
     int gy = (MAX_NUMBER_OF_GRIDS - 1) - y;
 
     // unload GridMap - it is reference-countable so will be deleted safely when lockCount < 1
-    // also simply set Map's pointer to corresponding GridMap object to NULL
+    // also simply set Map's pointer to corresponding GridMap object to nullptr
     if (m_bLoadedGrids[gx][gy])
     {
         m_bLoadedGrids[gx][gy] = false;
@@ -2187,7 +2187,7 @@ void Map::RemoveFromActive(Occupant* obj)
  */
 void Map::CreateInstanceData(bool load)
 {
-    if (i_data != NULL)
+    if (i_data != nullptr)
     {
         return;
     }
@@ -2427,7 +2427,7 @@ bool DungeonMap::Add(Player* player, InitialWorldEntryHook* initialEntry)
                     }
                     else
                     {
-                        sLog.outError("GroupBind save NULL");
+                        sLog.outError("GroupBind save nullptr");
                     }
                     MANGOS_ASSERT(false);
                 }
@@ -2947,7 +2947,7 @@ void Map::ScriptsProcess()
 Player* Map::GetPlayer(ObjectGuid guid)
 {
     Player* plr = sPlayerRegistry.Find(guid);         // return only in world players
-    return plr && plr->GetMap() == this ? plr : NULL;
+    return plr && plr->GetMap() == this ? plr : nullptr;
 }
 
 /**
@@ -2957,7 +2957,7 @@ Player* Map::GetPlayer(ObjectGuid guid)
  */
 Creature* Map::GetCreature(ObjectGuid guid)
 {
-    return m_objectsStore.find<Creature>(guid, (Creature*)NULL);
+    return m_objectsStore.find<Creature>(guid, (Creature*)nullptr);
 }
 
 /**
@@ -2967,7 +2967,7 @@ Creature* Map::GetCreature(ObjectGuid guid)
  */
 Pet* Map::GetPet(ObjectGuid guid)
 {
-    return m_objectsStore.find<Pet>(guid, (Pet*)NULL);
+    return m_objectsStore.find<Pet>(guid, (Pet*)nullptr);
 }
 
 /**
@@ -2980,7 +2980,7 @@ Pet* Map::GetPet(ObjectGuid guid)
 Corpse* Map::GetCorpse(ObjectGuid guid)
 {
     Corpse* ret = sCorpseManager.FindInMap(guid, GetId());
-    return ret && ret->GetInstanceId() == GetInstanceId() ? ret : NULL;
+    return ret && ret->GetInstanceId() == GetInstanceId() ? ret : nullptr;
 }
 
 /**
@@ -2997,7 +2997,7 @@ Creature* Map::GetAnyTypeCreature(ObjectGuid guid)
         default:                    break;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -3007,7 +3007,7 @@ Creature* Map::GetAnyTypeCreature(ObjectGuid guid)
  */
 GameObject* Map::GetGameObject(ObjectGuid guid)
 {
-    return m_objectsStore.find<GameObject>(guid, (GameObject*)NULL);
+    return m_objectsStore.find<GameObject>(guid, (GameObject*)nullptr);
 }
 
 /**
@@ -3017,7 +3017,7 @@ GameObject* Map::GetGameObject(ObjectGuid guid)
  */
 DynamicObject* Map::GetDynamicObject(ObjectGuid guid)
 {
-    return m_objectsStore.find<DynamicObject>(guid, (DynamicObject*)NULL);
+    return m_objectsStore.find<DynamicObject>(guid, (DynamicObject*)nullptr);
 }
 
 /**
@@ -3054,14 +3054,14 @@ Occupant* Map::GetOccupant(ObjectGuid guid)
         {
             // corpse special case, it can be not in world
             Corpse* corpse = GetCorpse(guid);
-            return corpse && corpse->IsInWorld() ? corpse : NULL;
+            return corpse && corpse->IsInWorld() ? corpse : nullptr;
         }
         case HIGHGUID_MO_TRANSPORT:
         case HIGHGUID_TRANSPORT:
         default:                    break;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -3167,7 +3167,7 @@ class StaticMonsterChatBuilder
  * @param guid must be creature guid of whom to Simulate the yell, non-creature guids not supported at this moment
  * @param textId Id of the simulated text
  * @param language language of the text
- * @param target, can be NULL
+ * @param target, can be nullptr
  */
 void Map::MonsterYellToMap(ObjectGuid guid, int32 textId, Language language, Unit const* target) const
 {
@@ -3195,7 +3195,7 @@ void Map::MonsterYellToMap(ObjectGuid guid, int32 textId, Language language, Uni
  * @param cinfo must be entry of Creature of whom to Simulate the yell
  * @param textId Id of the simulated text
  * @param language language of the text
- * @param target, can be NULL
+ * @param target, can be nullptr
  * @param senderLowGuid provide way proper show yell for near spawned creature with known lowguid,
  *        0 accepted by client else if this not important
  */

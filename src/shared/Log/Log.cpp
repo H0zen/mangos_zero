@@ -104,7 +104,7 @@ LogFilterData logFilterData[LOG_FILTER_COUNT] =
 /**
  * @brief Construct the Log singleton
  *
- * Initializes all log file handles to NULL and sets default values:
+ * Initializes all log file handles to nullptr and sets default values:
  * - No colored output initially
  * - Time not included by default
  * - GM log not split per account
@@ -113,11 +113,11 @@ LogFilterData logFilterData[LOG_FILTER_COUNT] =
  * @note This is called automatically when sLog is first accessed
  */
 Log::Log() :
-    logfile(NULL), gmLogfile(NULL), charLogfile(NULL), dberLogfile(NULL),
+    logfile(nullptr), gmLogfile(nullptr), charLogfile(nullptr), dberLogfile(nullptr),
 
-    eventAiErLogfile(NULL), scriptErrLogFile(NULL), worldLogfile(NULL),
-    m_consoleBody(NULL), m_consoleThread(NULL), m_consoleAsync(false), m_colored(false),
-    m_includeTime(false), m_gmlog_per_account(false), m_scriptLibName(NULL)
+    eventAiErLogfile(nullptr), scriptErrLogFile(nullptr), worldLogfile(nullptr),
+    m_consoleBody(nullptr), m_consoleThread(nullptr), m_consoleAsync(false), m_colored(false),
+    m_includeTime(false), m_gmlog_per_account(false), m_scriptLibName(nullptr)
 {
     Initialize();
 }
@@ -287,40 +287,40 @@ void Log::SetLogFileLevel(char* level)
 
 void Log::CloseLogFiles()
 {
-    if (logfile != NULL)
+    if (logfile != nullptr)
     {
         fclose(logfile);
-        logfile = NULL;
+        logfile = nullptr;
     }
-    if (gmLogfile != NULL)
+    if (gmLogfile != nullptr)
     {
         fclose(gmLogfile);
-        gmLogfile = NULL;
+        gmLogfile = nullptr;
     }
-    if (charLogfile != NULL)
+    if (charLogfile != nullptr)
     {
         fclose(charLogfile);
-        charLogfile = NULL;
+        charLogfile = nullptr;
     }
-    if (dberLogfile != NULL)
+    if (dberLogfile != nullptr)
     {
         fclose(dberLogfile);
-        dberLogfile = NULL;
+        dberLogfile = nullptr;
     }
-    if (eventAiErLogfile != NULL)
+    if (eventAiErLogfile != nullptr)
     {
         fclose(eventAiErLogfile);
-        eventAiErLogfile = NULL;
+        eventAiErLogfile = nullptr;
     }
-    if (scriptErrLogFile != NULL)
+    if (scriptErrLogFile != nullptr)
     {
         fclose(scriptErrLogFile);
-        scriptErrLogFile = NULL;
+        scriptErrLogFile = nullptr;
     }
-    if (worldLogfile != NULL)
+    if (worldLogfile != nullptr)
     {
         fclose(worldLogfile);
-        worldLogfile = NULL;
+        worldLogfile = nullptr;
     }
 }
 
@@ -334,7 +334,7 @@ void Log::Flush()
 
     {
         std::lock_guard<std::mutex> fileGuard(m_fileMtx);
-        if (logfile != NULL)
+        if (logfile != nullptr)
         {
             fflush(logfile);
         }
@@ -342,7 +342,7 @@ void Log::Flush()
 
     {
         std::lock_guard<std::mutex> worldGuard(m_worldLogMtx);
-        if (worldLogfile != NULL)
+        if (worldLogfile != nullptr)
         {
             fflush(worldLogfile);
         }
@@ -488,8 +488,8 @@ void Log::StopConsoleThread()
     m_consoleBody->Stop();                                  // m_running = false (MUST be before wait())
     m_consoleThread->wait();                                // join: run() does its final DrainOnce then returns
     delete m_consoleThread;                                 // ALSO deletes m_consoleBody via refcount
-    m_consoleThread = NULL;
-    m_consoleBody = NULL;
+    m_consoleThread = nullptr;
+    m_consoleBody = nullptr;
 }
 
 void Log::Initialize()
@@ -553,14 +553,14 @@ void Log::Initialize()
     }
 
     charLogfile = openLogFile("CharLogFile", "CharLogTimestamp", "a");
-    dberLogfile = openLogFile("DBErrorLogFile", NULL, "a");
+    dberLogfile = openLogFile("DBErrorLogFile", nullptr, "a");
 
-    eventAiErLogfile = openLogFile("EventAIErrorLogFile", NULL, "a");
+    eventAiErLogfile = openLogFile("EventAIErrorLogFile", nullptr, "a");
     // Packet logging is opt-in via PacketLoggingEnabled (default off): open the
     // packet log only when explicitly enabled, so it stays off even on legacy
     // configs that still set WorldLogFile with LogLevel=3 (and a disabled server
     // creates no stray empty world-packets.log). IsPacketLoggingEnabled() keys
-    // off worldLogfile != NULL, so this open is the single gate.
+    // off worldLogfile != nullptr, so this open is the single gate.
     if (sConfig.GetBoolDefault("PacketLoggingEnabled", false))
     {
         worldLogfile = openLogFile("WorldLogFile", "WorldLogTimestamp", "a");
@@ -590,7 +590,7 @@ FILE* Log::openLogFile(char const* configFileName, char const* configTimeStampFl
     std::string logfn = sConfig.GetStringDefault(configFileName, "");
     if (logfn.empty())
     {
-        return NULL;
+        return nullptr;
     }
 
     if (configTimeStampFlag && sConfig.GetBoolDefault(configTimeStampFlag, false))
@@ -607,14 +607,14 @@ FILE* Log::openLogFile(char const* configFileName, char const* configTimeStampFl
     }
 
     FILE* fp = fopen((m_logsDir + logfn).c_str(), mode);
-    if (fp != NULL)
+    if (fp != nullptr)
     {
         // Fully buffer log files (64 KiB). Per-line fflush is removed from the
         // hot loggers (outString/outBasic/outDetail/outDebug); Log::Flush()
         // (world tick + shutdown) and the error paths push the buffer to the
         // OS. This removes the per-line flush syscall that stalled the world
         // and map-update threads at LogFileLevel=3.
-        setvbuf(fp, NULL, _IOFBF, 64 * 1024);
+        setvbuf(fp, nullptr, _IOFBF, 64 * 1024);
     }
     return fp;
 }
@@ -623,7 +623,7 @@ FILE* Log::openGmlogPerAccount(uint32 account)
 {
     if (m_gmlog_filename_format.empty())
     {
-        return NULL;
+        return nullptr;
     }
 
     char namebuf[MANGOS_PATH_MAX];
@@ -1174,7 +1174,7 @@ void Log::setScriptLibraryErrorFile(char const* fname, char const* libName)
 
     if (!fname)
     {
-        scriptErrLogFile = NULL;
+        scriptErrLogFile = nullptr;
         return;
     }
 

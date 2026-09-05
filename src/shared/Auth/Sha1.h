@@ -67,7 +67,7 @@ class Sha1Hash
         /**
          * @brief Update hash with multiple BigNumbers (variadic)
          * @param bn0 First BigNumber to add
-         * @param ... Additional BigNumbers (NULL terminated)
+         * @param ... Additional BigNumbers (nullptr terminated)
          */
         void UpdateBigNumbers(BigNumber* bn0, ...);
 

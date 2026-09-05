@@ -116,7 +116,7 @@ void Pet::RemoveFromWorld()
     ///- Remove the pet from the accessor
     if (IsInWorld())
     {
-        GetMap()->GetObjectsStore().erase<Pet>(GetObjectGuid(), (Pet*)NULL);
+        GetMap()->GetObjectsStore().erase<Pet>(GetObjectGuid(), (Pet*)nullptr);
     }
 
     ///- Don't call the function for Creature, normal mobs + totems go in a different storage
@@ -178,7 +178,7 @@ void Pet::Update(uint32 update_diff, uint32 diff)
     {
         case CORPSE:
         {
-            if (getPetType() != HUNTER_PET || m_corpseRemoveTime <= time(NULL))
+            if (getPetType() != HUNTER_PET || m_corpseRemoveTime <= time(nullptr))
             {
                 Unsummon(PET_SAVE_NOT_IN_SLOT);
                 return;
@@ -607,7 +607,7 @@ void Pet::SetTP(int32 TP)
  * @param mode The pet save mode to use.
  * @param owner Optional owner override.
  */
-void Pet::Unsummon(PetSaveMode mode, Unit* owner /*= NULL*/)
+void Pet::Unsummon(PetSaveMode mode, Unit* owner /*= nullptr*/)
 {
     if (!owner)
     {
@@ -623,7 +623,7 @@ void Pet::Unsummon(PetSaveMode mode, Unit* owner /*= NULL*/)
             return;
         }
 
-        Player* p_owner = owner->GetTypeId() == TYPEID_PLAYER ? (Player*)owner : NULL;
+        Player* p_owner = owner->GetTypeId() == TYPEID_PLAYER ? (Player*)owner : nullptr;
 
         if (p_owner)
         {
@@ -678,7 +678,7 @@ void Pet::Unsummon(PetSaveMode mode, Unit* owner /*= NULL*/)
             case MINI_PET:
                 if (p_owner)
                 {
-                    p_owner->_SetMiniPet(NULL);
+                    p_owner->_SetMiniPet(nullptr);
                 }
                 break;
             case GUARDIAN_PET:
@@ -687,7 +687,7 @@ void Pet::Unsummon(PetSaveMode mode, Unit* owner /*= NULL*/)
             default:
                 if (owner->GetPetGuid() == GetObjectGuid())
                 {
-                    owner->SetPet(NULL);
+                    owner->SetPet(nullptr);
                 }
                 break;
         }
@@ -784,7 +784,7 @@ bool Pet::CreateBaseAtCreature(Creature* creature)
 {
     if (!creature)
     {
-        sLog.outError("CRITICAL: NULL pointer passed into CreateBaseAtCreature()");
+        sLog.outError("CRITICAL: nullptr pointer passed into CreateBaseAtCreature()");
         return false;
     }
 
@@ -1354,7 +1354,7 @@ void Pet::CastPetAura(PetAura const* aura)
     if (auraId == 35696)                                    // Demonic Knowledge
     {
         int32 basePoints = int32(aura->GetDamage() * (GetStat(STAT_STAMINA) + GetStat(STAT_INTELLECT)) / 100);
-        CastCustomSpell(this, auraId, &basePoints, NULL, NULL, true);
+        CastCustomSpell(this, auraId, &basePoints, nullptr, nullptr, true);
     }
     else
     {
@@ -1430,7 +1430,7 @@ void Pet::ApplyModeFlags(PetModeFlags mode, bool apply)
 void Pet::UpdateSpeed(UnitMoveType mtype, bool forced, float ratio)
 {
     Unit* unitOwner = GetOwner();
-    Player *owner = unitOwner ? ToPlayer(unitOwner) : NULL;
+    Player *owner = unitOwner ? ToPlayer(unitOwner) : nullptr;
     if (!owner)
     {
         return Unit::UpdateSpeed(mtype, forced, ratio);         // NPC pets are usual creatures

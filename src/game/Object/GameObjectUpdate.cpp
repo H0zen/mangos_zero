@@ -87,7 +87,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     Unit* owner = GetOwner();
                     if (owner && owner->IsInCombat())
                     {
-                        m_cooldownTime = time(NULL) + GetGOInfo()->trap.startDelay;
+                        m_cooldownTime = time(nullptr) + GetGOInfo()->trap.startDelay;
                     }
                     m_lootState = GO_READY;
                     break;
@@ -95,7 +95,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                 case GAMEOBJECT_TYPE_FISHINGNODE:           // Keep not ready for some delay
                 {
                     // fishing code (bobber ready)
-                    if (time(NULL) > m_respawnTime - FISHING_BOBBER_READY_TIME)
+                    if (time(nullptr) > m_respawnTime - FISHING_BOBBER_READY_TIME)
                     {
                         // splash bobber (bobber ready now)
                         Unit* caster = GetOwner();
@@ -144,7 +144,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
         {
             if (m_respawnTime > 0)                          // timer on
             {
-                if (m_respawnTime <= time(NULL))            // timer expired
+                if (m_respawnTime <= time(nullptr))            // timer expired
                 {
                     m_respawnTime = 0;
                     ClearAllUsesData();
@@ -207,7 +207,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
 
                 if (goInfo->type == GAMEOBJECT_TYPE_TRAP)   // traps
                 {
-                    if (m_cooldownTime >= time(NULL))
+                    if (m_cooldownTime >= time(nullptr))
                     {
                         return;
                     }
@@ -242,7 +242,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     }
                     else
                     {
-                        Unit* targetUnit = NULL;                     // pointer to appropriate target if found any
+                        Unit* targetUnit = nullptr;                     // pointer to appropriate target if found any
                         MaNGOS::AnySpecificUnitInGameObjectRangeCheck u_check(this, radius, IsPositiveSpell(se));
                         MaNGOS::UnitSearcher<MaNGOS::AnySpecificUnitInGameObjectRangeCheck> checker(targetUnit, u_check);
                         Cell::VisitAllObjects(this, checker, radius);
@@ -281,7 +281,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
             {
                 case GAMEOBJECT_TYPE_DOOR:
                 case GAMEOBJECT_TYPE_BUTTON:
-                    if (GetGOInfo()->GetAutoCloseTime() && (m_cooldownTime < time(NULL)))
+                    if (GetGOInfo()->GetAutoCloseTime() && (m_cooldownTime < time(nullptr)))
                     {
                         ResetDoorOrButton();
                     }
@@ -316,7 +316,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     }
                     break;
                 case GAMEOBJECT_TYPE_GOOBER:
-                    if (m_cooldownTime < time(NULL))
+                    if (m_cooldownTime < time(nullptr))
                     {
                         RemoveGoFlag(GO_FLAG_IN_USE);
 
@@ -349,7 +349,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                         {
                             if (Player* owner = GetMap()->GetPlayer(*itr))
                             {
-                                owner->CastSpell(owner, spellId, false, NULL, NULL, GetObjectGuid());
+                                owner->CastSpell(owner, spellId, false, nullptr, nullptr, GetObjectGuid());
                             }
                         }
 
@@ -380,7 +380,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     if (trapEntry == 144064) // Special case for Gordunni Cobalt Visual
                     {
                         float range = 0.5f;
-                        GameObject* visualGO = NULL;
+                        GameObject* visualGO = nullptr;
 
                         MaNGOS::NearestGameObjectEntryInObjectRangeCheck go_check(*this, 177683, range); //177683 Visual Entry
                         MaNGOS::GameObjectLastSearcher<MaNGOS::NearestGameObjectEntryInObjectRangeCheck> checker(visualGO, go_check);
@@ -406,7 +406,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
 
                     float range = 0.5f;
 
-                    GameObject* trapGO = NULL;
+                    GameObject* trapGO = nullptr;
 
                     MaNGOS::NearestGameObjectEntryInObjectRangeCheck go_check(*this, trapEntry, range);
                     MaNGOS::GameObjectLastSearcher<MaNGOS::NearestGameObjectEntryInObjectRangeCheck> checker(trapGO, go_check);
@@ -453,7 +453,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
             }
 
             loot.clear();
-            Claim().StakedBy(NULL);
+            Claim().StakedBy(nullptr);
             SetLootState(GO_READY);
 
             if (!m_respawnDelayTime)
@@ -462,7 +462,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
             }
 
             // since pool system can fail to roll unspawned object, this one can remain spawned, so must set respawn nevertheless
-            m_respawnTime = m_spawnedByDefault ? time(NULL) + m_respawnDelayTime : 0;
+            m_respawnTime = m_spawnedByDefault ? time(nullptr) + m_respawnDelayTime : 0;
 
             // if option not set then object will be saved at grid unload
             if (sWorld.getConfig(CONFIG_BOOL_SAVE_RESPAWN_TIME_IMMEDIATELY))

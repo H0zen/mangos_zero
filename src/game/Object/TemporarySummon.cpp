@@ -288,7 +288,7 @@ void TemporarySummon::RemoveFromWorld()
                 player->InterruptSpell(CURRENT_CHANNELED_SPELL);
 
                 player->SetClientControl(player, 1);
-                player->SetMover(NULL);
+                player->SetMover(nullptr);
                 camera.ResetView();
                 player->RemovePetActionBar();
             }

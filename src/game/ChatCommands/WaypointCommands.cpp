@@ -61,7 +61,7 @@ inline Creature* Helper_CreateWaypointFor(Creature* wpOwner, WaypointPathOrigin 
     if (!wpCreature->Create(wpOwner->GetMap()->GenerateLocalLowGuid(HIGHGUID_UNIT), pos, waypointInfo))
     {
         delete wpCreature;
-        return NULL;
+        return nullptr;
     }
 
     wpCreature->SetVisibility(VISIBILITY_OFF);
@@ -632,7 +632,7 @@ bool ChatHandler::HandleWpShowCommand(char* args)
     }
 
     Creature* wpOwner;                               ///< Npc that is moving
-    TemporarySummonWaypoint* wpTarget = NULL;               // Define here for wp-info command
+    TemporarySummonWaypoint* wpTarget = nullptr;               // Define here for wp-info command
 
     // Show info for the selected waypoint (Step one: get moving npc)
     if (subCmd == "info")
@@ -671,7 +671,7 @@ bool ChatHandler::HandleWpShowCommand(char* args)
     }
 
     // Get the path
-    WaypointPath* wpPath = NULL;
+    WaypointPath* wpPath = nullptr;
     if (wpOrigin != PATH_NO_PATH)                           // Might have been provided by param
     {
         wpPath = sWaypointMgr.GetPathFromOrigin(wpOwner->GetEntry(), wpOwner->GetGUIDLow(), wpPathId, wpOrigin);

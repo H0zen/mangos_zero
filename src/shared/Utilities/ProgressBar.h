@@ -79,7 +79,7 @@ class BarGoLink
         typedef void (*ConsoleSink)(char const* bytes, size_t len);
 
         /**
-         * @brief Install the console sink. Passing NULL restores the default
+         * @brief Install the console sink. Passing nullptr restores the default
          *        synchronous sink.
          * @param sink
          */
@@ -96,7 +96,7 @@ class BarGoLink
          */
         typedef void (*ProgressSink)(int percent);
 
-        /// Install the progress sink. Passing NULL restores byte-sink drawing.
+        /// Install the progress sink. Passing nullptr restores byte-sink drawing.
         static void SetProgressSink(ProgressSink sink);
 
     private:

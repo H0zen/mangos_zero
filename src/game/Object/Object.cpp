@@ -71,7 +71,7 @@
  * Initializes the object to a default state:
  * - Type set to TYPEID_OBJECT (base type)
  * - Type mask set to TYPEMASK_OBJECT
- * - Update fields array set to NULL (allocated by derived classes)
+ * - Update fields array set to nullptr (allocated by derived classes)
  * - Not in world, not marked for update
  *
  * @note Derived classes must call _InitValues() to allocate update fields
@@ -247,7 +247,7 @@ void Object::ResendField(uint16 index)
  * Initializes a new Occupant with default values.
  */
 Occupant::Occupant() :
-    m_currMap(NULL),
+    m_currMap(nullptr),
     m_mapId(0), m_InstanceId(0),
     m_isActiveObject(false),
     m_visibilityDistanceOverride(0.0f)
@@ -398,7 +398,7 @@ Occupant::~Occupant()
  * @param despwtime Despawn time
  * @param asActiveObject If true, set as active object
  * @param setRun If true, set run mode
- * @return Summoned creature pointer or NULL
+ * @return Summoned creature pointer or nullptr
  *
  * Summons a creature at the specified position.
  */
@@ -412,7 +412,7 @@ Occupant::~Occupant()
  * @param z Z coordinate
  * @param angle Orientation
  * @param despwtime Despawn time in milliseconds
- * @return Summoned game object pointer or NULL
+ * @return Summoned game object pointer or nullptr
  *
  * Summons a game object at the specified position.
  */

@@ -303,7 +303,7 @@ bool ChatHandler::HandleListItemCommand(char* args)
     }
     else
     {
-        result = NULL;
+        result = nullptr;
     }
 
     if (result)
@@ -359,7 +359,7 @@ bool ChatHandler::HandleListItemCommand(char* args)
     }
     else
     {
-        result = NULL;
+        result = nullptr;
     }
 
     if (result)

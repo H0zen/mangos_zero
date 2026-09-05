@@ -650,7 +650,7 @@ SimpleFactionsList const* GetFactionTeamList(uint32 faction)
     FactionTeamMap::const_iterator itr = sFactionTeamMap.find(faction);
     if (itr == sFactionTeamMap.end())
     {
-        return NULL;
+        return nullptr;
     }
     return &itr->second;
 }
@@ -666,14 +666,14 @@ char const* GetPetName(uint32 petfamily, uint32 dbclang)
 {
     if (!petfamily)
     {
-        return NULL;
+        return nullptr;
     }
     CreatureFamilyEntry const* pet_family = sCreatureFamilyStore.LookupEntry(petfamily);
     if (!pet_family)
     {
-        return NULL;
+        return nullptr;
     }
-    return pet_family->Name_lang[dbclang] ? pet_family->Name_lang[dbclang] : NULL;
+    return pet_family->Name_lang[dbclang] ? pet_family->Name_lang[dbclang] : nullptr;
 }
 
 /**
@@ -687,7 +687,7 @@ TalentSpellPos const* GetTalentSpellPos(uint32 spellId)
     TalentSpellPosMap::const_iterator itr = sTalentSpellPosMap.find(spellId);
     if (itr == sTalentSpellPosMap.end())
     {
-        return NULL;
+        return nullptr;
     }
 
     return &itr->second;
@@ -750,7 +750,7 @@ WMOAreaTableEntry const* GetWMOAreaTableEntryByTripple(int32 rootid, int32 adtid
     WMOAreaInfoByTripple::iterator i = sWMOAreaInfoByTripple.find(WMOAreaTableTripple(rootid, adtid, groupid));
     if (i == sWMOAreaInfoByTripple.end())
     {
-        return NULL;
+        return nullptr;
     }
     return i->second;
 }
@@ -784,7 +784,7 @@ AreaTableEntry const* GetAreaEntryByAreaFlagAndMap(uint32 area_flag, uint32 map_
         return it->second;
     }
 
-    AreaTableEntry const* aEntry = NULL;
+    AreaTableEntry const* aEntry = nullptr;
     for (uint32 i = 0 ; i <= sAreaStore.GetNumRows() ; i++)
     {
         if (area_flag != 0)
@@ -819,8 +819,8 @@ AreaTableEntry const* GetAreaEntryByAreaFlagAndMap(uint32 area_flag, uint32 map_
         return result;
     }
 
-    cache[cacheKey] = NULL;
-    return NULL;
+    cache[cacheKey] = nullptr;
+    return nullptr;
 }
 
 /**
@@ -859,7 +859,7 @@ ChatChannelsEntry const* GetChannelEntryFor(uint32 channel_id)
             return ch;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 static ChatChannelsEntry worldCh = { 26, 4, "world" };
@@ -910,7 +910,7 @@ ChatChannelsEntry const* GetChannelEntryFor(const std::string& name)
         return &worldCh;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**

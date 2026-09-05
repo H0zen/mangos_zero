@@ -197,7 +197,7 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, uint32& m
     if (at->condition) //condition validity is checked at startup
     {
         ConditionEntry fault;
-        if (!sObjectMgr.IsPlayerMeetToCondition(at->condition, this, GetMap(),NULL, CONDITION_AREA_TRIGGER, &fault))
+        if (!sObjectMgr.IsPlayerMeetToCondition(at->condition, this, GetMap(),nullptr, CONDITION_AREA_TRIGGER, &fault))
         {
             switch (fault.type)
             {

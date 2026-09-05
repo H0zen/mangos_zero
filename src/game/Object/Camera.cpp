@@ -225,7 +225,7 @@ void Camera::UpdateVisibilityOf(Occupant* target, UpdateData& data, std::set<Occ
  */
 void Camera::UpdateVisibilityForOwner()
 {
-    UpdateVisibilityForOwnerInBatch(NULL);
+    UpdateVisibilityForOwnerInBatch(nullptr);
 }
 
 /**

@@ -118,7 +118,7 @@ void ObjectMgr::LoadCreatureTemplates()
         }
 
         // used later for scale
-        CreatureDisplayInfoEntry const* displayScaleEntry = NULL;
+        CreatureDisplayInfoEntry const* displayScaleEntry = nullptr;
 
         for (int j = 0; j < MAX_CREATURE_MODEL; ++j)
         {
@@ -314,7 +314,7 @@ void ObjectMgr::ConvertCreatureAddonAuras(CreatureDataAddon* addon, char const* 
     // empty list
     if (val.empty())
     {
-        addon->auras = NULL;
+        addon->auras = nullptr;
         return;
     }
 
@@ -521,7 +521,7 @@ CreatureClassLvlStats const* ObjectMgr::GetCreatureClassLvlStats(uint32 level, u
         return cCLS;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -605,7 +605,7 @@ CreatureModelInfo const* ObjectMgr::GetCreatureModelRandomGender(uint32 display_
     CreatureModelInfo const* minfo = GetCreatureModelInfo(display_id);
     if (!minfo)
     {
-        return NULL;
+        return nullptr;
     }
 
     // If a model for another gender exists, 50% chance to use it
@@ -808,7 +808,7 @@ void ObjectMgr::LoadCreatures()
         uint32 guid         = fields[ 0].GetUInt32();
         uint32 entry        = fields[ 1].GetUInt32();
 
-        if (DisableMgr::IsDisabledFor(DISABLE_TYPE_CREATURE_SPAWN, entry, NULL, 0, guid))
+        if (DisableMgr::IsDisabledFor(DISABLE_TYPE_CREATURE_SPAWN, entry, nullptr, 0, guid))
         {
             sLog.outDebug("Creature guid %u (entry %u) spawning is disabled.", guid, entry);
             continue;

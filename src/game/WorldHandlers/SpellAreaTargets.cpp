@@ -85,9 +85,9 @@
  * @param radius               Radius around (x,y) for target search
  * @param pushType             Additional rules for target area selection (in front, angle, etc)
  * @param spellTargets         Additional rules for target selection base at hostile/friendly state to original spell caster
- * @param originalCaster       If provided set alternative original caster, if =NULL then used Spell::GetAffectiveObject() return
+ * @param originalCaster       If provided set alternative original caster, if =nullptr then used Spell::GetAffectiveObject() return
  */
-void Spell::FillAreaTargets(UnitList& targetUnitMap, float radius, SpellNotifyPushType pushType, SpellTargets spellTargets, Occupant* originalCaster /*=NULL*/)
+void Spell::FillAreaTargets(UnitList& targetUnitMap, float radius, SpellNotifyPushType pushType, SpellTargets spellTargets, Occupant* originalCaster /*=nullptr*/)
 {
     MaNGOS::SpellNotifierCreatureAndPlayer notifier(*this, targetUnitMap, radius, pushType, spellTargets, originalCaster);
     Cell::VisitAllObjects(notifier.GetCenterX(), notifier.GetCenterY(), m_caster->GetMap(), notifier, radius);
@@ -106,13 +106,13 @@ void Spell::FillAreaTargets(UnitList& targetUnitMap, float radius, SpellNotifyPu
 void Spell::FillRaidOrPartyTargets(UnitList& targetUnitMap, Unit* member, float radius, bool raid, bool withPets, bool withcaster)
 {
     Player* pMember = member->GetCharmerOrOwnerPlayerOrPlayerItself();
-    Group* pGroup = pMember ? pMember->GetGroup() : NULL;
+    Group* pGroup = pMember ? pMember->GetGroup() : nullptr;
 
     if (pGroup)
     {
         uint8 subgroup = pMember->GetSubGroup();
 
-        for (GroupReference* itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+        for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
         {
             Player* Target = itr->getSource();
 

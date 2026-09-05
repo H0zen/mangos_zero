@@ -187,7 +187,7 @@ class Occupant : public Object
         void SetMap(Map* map);
         Map* GetMap() const { MANGOS_ASSERT(m_currMap); return m_currMap; }
 
-        /// The map, or NULL, for the paths that legitimately run on an object which never
+        /// The map, or nullptr, for the paths that legitimately run on an object which never
         /// reached one -- a destructor after LoadFromDB failed, above all. GetMap() asserts
         /// there, so `if (GetMap())` is not a guard, it is the crash.
         Map* FindMap() const { return m_currMap; }
@@ -289,13 +289,13 @@ bool IsPlaceable(Occupant const& obj);
 // height, the collision sweep and the map's bounds come from the engines that own them.
 Geometry::Vector3 PointNear(Occupant const& anchor, float distance2d, float absAngle);
 void DropToGround(Occupant const& obj, float x, float y, float& z);
-void ClampToAllowedZ(Occupant const& obj, float x, float y, float& z, Map* atMap = NULL);
+void ClampToAllowedZ(Occupant const& obj, float x, float y, float& z, Map* atMap = nullptr);
 Geometry::Vector3 RandomGroundPointNear(Occupant const& obj, Geometry::Vector3 const& centre,
-                                        float distance, float minDist = 0.0f, float const* ori = NULL);
+                                        float distance, float minDist = 0.0f, float const* ori = nullptr);
 void FindFreeSpotNear(Occupant const& anchor, Occupant const* searcher, float& x, float& y, float& z,
                       float searcher_bounding_radius, float distance2d, float absAngle);
 void ClosePointNear(Occupant const& anchor, float& x, float& y, float& z, float bounding_radius,
-                    float distance2d = 0.0f, float angle = 0.0f, Occupant const* searcher = NULL);
+                    float distance2d = 0.0f, float angle = 0.0f, Occupant const* searcher = nullptr);
 void ContactPointNear(Occupant const& anchor, Occupant const* obj, float& x, float& y, float& z,
                       float distance2d = CONTACT_DISTANCE);
 

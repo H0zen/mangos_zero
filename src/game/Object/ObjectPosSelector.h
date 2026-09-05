@@ -82,5 +82,5 @@ struct ObjectPosSelector
 
     float m_stepAngle[2];                                   // current checked angle position at sides (less m_nextUsedArea), positive value
 
-    Occupant const* m_searchPosFor;                      // For whom a position is searched (can be NULL)
+    Occupant const* m_searchPosFor;                      // For whom a position is searched (can be nullptr)
 };

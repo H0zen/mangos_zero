@@ -71,7 +71,7 @@ ARC4::ARC4(uint8 len) : m_cipherContext()
     }
 
     // Checked, not assumed: a loaded provider does not mean the cipher was fetched.
-    if (EVP_EncryptInit_ex(m_cipherContext.Get(), EVP_rc4(), NULL, NULL, NULL) != 1)
+    if (EVP_EncryptInit_ex(m_cipherContext.Get(), EVP_rc4(), nullptr, nullptr, nullptr) != 1)
     {
         sLog.outError("ARC4: Failed to initialize RC4 - is the OpenSSL legacy provider loaded?");
         return;
@@ -114,7 +114,7 @@ ARC4::ARC4(uint8 *seed, uint8 len) : m_cipherContext()
     }
 
     // Checked, not assumed: a loaded provider does not mean the cipher was fetched.
-    if (EVP_EncryptInit_ex(m_cipherContext.Get(), EVP_rc4(), NULL, NULL, NULL) != 1)
+    if (EVP_EncryptInit_ex(m_cipherContext.Get(), EVP_rc4(), nullptr, nullptr, nullptr) != 1)
     {
         sLog.outError("ARC4: Failed to initialize RC4 - is the OpenSSL legacy provider loaded?");
         return;
@@ -126,7 +126,7 @@ ARC4::ARC4(uint8 *seed, uint8 len) : m_cipherContext()
         return;
     }
 
-    if (EVP_EncryptInit_ex(m_cipherContext.Get(), NULL, NULL, seed, NULL) != 1)
+    if (EVP_EncryptInit_ex(m_cipherContext.Get(), nullptr, nullptr, seed, nullptr) != 1)
     {
         sLog.outError("ARC4: Failed to seed RC4");
     }
@@ -156,7 +156,7 @@ void ARC4::Init(uint8 *seed)
 {
     if (m_cipherContext.IsValid())
     {
-        EVP_EncryptInit_ex(m_cipherContext.Get(), NULL, NULL, seed, NULL);
+        EVP_EncryptInit_ex(m_cipherContext.Get(), nullptr, nullptr, seed, nullptr);
     }
 }
 

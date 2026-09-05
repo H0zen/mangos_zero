@@ -52,7 +52,7 @@ void Pet::_LoadSpellCooldowns()
 
     if (result)
     {
-        time_t curTime = time(NULL);
+        time_t curTime = time(nullptr);
 
         WorldPacket data(SMSG_SPELL_COOLDOWN, (8 + size_t(result->GetRowCount()) * 8));
         data << ObjectGuid(GetObjectGuid());
@@ -105,7 +105,7 @@ void Pet::_SaveSpellCooldowns()
     SqlStatement stmt = CharacterDatabase.CreateStatement(delSpellCD, "DELETE FROM `pet_spell_cooldown` WHERE `guid` = ?");
     stmt.PExecute(m_charmInfo->GetPetNumber());
 
-    time_t curTime = time(NULL);
+    time_t curTime = time(nullptr);
 
     // remove oudated and save active
     for (CreatureSpellCooldowns::iterator itr = m_CreatureSpellCooldowns.begin(); itr != m_CreatureSpellCooldowns.end();)
@@ -276,7 +276,7 @@ void Pet::_LoadAuras(uint32 timediff)
                 stackcount = 1;
             }
 
-            SpellAuraHolder* holder = CreateSpellAuraHolder(spellproto, this, NULL);
+            SpellAuraHolder* holder = CreateSpellAuraHolder(spellproto, this, nullptr);
             holder->SetLoadedState(casterGuid, ObjectGuid(HIGHGUID_ITEM, item_lowguid), stackcount, remaincharges, maxduration, remaintime);
 
             for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
@@ -286,7 +286,7 @@ void Pet::_LoadAuras(uint32 timediff)
                     continue;
                 }
 
-                Aura* aura = CreateAura(spellproto, SpellEffectIndex(i), NULL, holder, this);
+                Aura* aura = CreateAura(spellproto, SpellEffectIndex(i), nullptr, holder, this);
                 if (!damage[i])
                 {
                     damage[i] = aura->GetModifier()->m_amount;
@@ -678,7 +678,7 @@ void Pet::InitPetCreateSpells()
     if (CreateSpells)
     {
         Unit* owner = GetOwner();
-        Player* p_owner = owner && owner->GetTypeId() == TYPEID_PLAYER ? (Player*)owner : NULL;
+        Player* p_owner = owner && owner->GetTypeId() == TYPEID_PLAYER ? (Player*)owner : nullptr;
 
         for (uint8 i = 0; i < 4; ++i)
         {

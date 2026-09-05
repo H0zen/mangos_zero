@@ -40,7 +40,7 @@ PlayerLogger::PlayerLogger(ObjectGuid const & guid) : logActiveMask(0), playerGu
 {
     for (uint8 i = 0; i < MAX_PLAYER_LOG_ENTITIES; ++i)
     {
-        data[i] = NULL;
+        data[i] = nullptr;
     }
 }
 
@@ -123,7 +123,7 @@ void PlayerLogger::Clean(PlayerLogMask mask)
         {
             continue;
         }
-        if (data[i] == NULL)
+        if (data[i] == nullptr)
         {
             sLog.outError("PlayerLogging: flag for logtype %u set but no init was called! Ignored.", i);
             continue;
@@ -147,7 +147,7 @@ bool PlayerLogger::SaveToDB(PlayerLogMask mask, bool removeSaved, bool insideTra
     uint64 serverStart = uint64(sWorld.GetStartTime());
     for (uint8 i = 0; i < MAX_PLAYER_LOG_ENTITIES; ++i)
     {
-        if ((mask & CalcLogMask(PlayerLogEntity(i))) == 0 || data[i] == NULL)
+        if ((mask & CalcLogMask(PlayerLogEntity(i))) == 0 || data[i] == nullptr)
         {
             continue;
         }
@@ -291,7 +291,7 @@ void PlayerLogger::StartCombatLogging()
  */
 void PlayerLogger::StartLogging(PlayerLogEntity entity)
 {
-    if (data[entity] == NULL)
+    if (data[entity] == nullptr)
     {
         sLog.outError("PlayerLogger: StartLogging without init! Fixing, check your code.");
         Initialize(entity);

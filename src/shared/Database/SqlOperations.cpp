@@ -204,7 +204,7 @@ bool SqlQuery::ExecuteLocked(SqlConnection* conn)
 void SqlResultQueue::Update()
 {
     /// execute the callbacks waiting in the synchronization queue
-    MaNGOS::IQueryCallback* callback = NULL;
+    MaNGOS::IQueryCallback* callback = nullptr;
     while (next(callback))
     {
         callback->Execute();
@@ -257,7 +257,7 @@ bool SqlQueryHolder::SetQuery(size_t index, const char* sql)
         return false;
     }
 
-    if (m_queries[index].first != NULL)
+    if (m_queries[index].first != nullptr)
     {
         sLog.outError("Attempt assign query to holder index (%zu) where other query stored (Old: [%s] New: [%s])",
                       index, m_queries[index].first, sql);
@@ -265,7 +265,7 @@ bool SqlQueryHolder::SetQuery(size_t index, const char* sql)
     }
 
     /// not executed yet, just stored (it's not called a holder for nothing)
-    m_queries[index] = SqlResultPair(mangos_strdup(sql), (QueryResult*)NULL);
+    m_queries[index] = SqlResultPair(mangos_strdup(sql), (QueryResult*)nullptr);
     return true;
 }
 
@@ -307,7 +307,7 @@ bool SqlQueryHolder::SetPQuery(size_t index, const char* format, ...)
 /**
  * @brief Get the query result at a specific index
  * @param index The slot to retrieve the result from
- * @return Pointer to the QueryResult, or NULL if index invalid or no result
+ * @return Pointer to the QueryResult, or nullptr if index invalid or no result
  *
  * Retrieves the result of a previously executed query. The query string
  * is freed on first access (transferred to caller responsibility). The
@@ -321,17 +321,17 @@ QueryResult* SqlQueryHolder::GetResult(size_t index)
     if (index < m_queries.size())
     {
         /// the query strings are freed on the first GetResult or in the destructor
-        if (m_queries[index].first != NULL)
+        if (m_queries[index].first != nullptr)
         {
             delete[](const_cast<char*>(m_queries[index].first));
-            m_queries[index].first = NULL;
+            m_queries[index].first = nullptr;
         }
         /// when you get a result aways remember to delete it!
         return m_queries[index].second;
     }
     else
     {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -360,7 +360,7 @@ void SqlQueryHolder::SetResult(size_t index, QueryResult* result)
  * Any query strings still present are deleted, and any unretrieved results
  * are also deleted to prevent memory leaks.
  *
- * @note Already-retrieved results (where first == NULL) are NOT deleted
+ * @note Already-retrieved results (where first == nullptr) are NOT deleted
  * as they were transferred to the caller.
  */
 SqlQueryHolder::~SqlQueryHolder()
@@ -369,7 +369,7 @@ SqlQueryHolder::~SqlQueryHolder()
     {
         /// if the result was never used, free the resources
         /// results used already (getresult called) are expected to be deleted
-        if (m_queries[i].first != NULL)
+        if (m_queries[i].first != nullptr)
         {
             delete[](const_cast<char*>(m_queries[i].first));
             delete m_queries[i].second;
@@ -452,7 +452,7 @@ bool SqlTransactionResultSignal::ExecuteLocked(SqlConnection* conn)
     }
 
     delete m_trans;
-    m_trans = NULL;
+    m_trans = nullptr;
     // Set BEFORE the worker deletes this op: the caller's promise lives on its still
     // blocked stack frame, which is what makes the hand-off race-free.
     m_result->set_value(ok);

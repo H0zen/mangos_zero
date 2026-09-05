@@ -85,7 +85,7 @@ class MapRefManager : public RefManager<Map, Player>
          */
         iterator end()
         {
-            return iterator(NULL);
+            return iterator(nullptr);
         }
 
         /**
@@ -103,7 +103,7 @@ class MapRefManager : public RefManager<Map, Player>
          */
         iterator rend()
         {
-            return iterator(NULL);
+            return iterator(nullptr);
         }
 
         /**
@@ -118,6 +118,6 @@ class MapRefManager : public RefManager<Map, Player>
          */
         const_iterator end() const
         {
-            return const_iterator(NULL);
+            return const_iterator(nullptr);
         }
 };

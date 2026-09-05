@@ -506,12 +506,12 @@ void Spell::SendChannelUpdate(uint32 time)
             // These Auras are applied to self, so get the possessed first
             Unit* possessed = player->GetCharm();
 
-            player->SetCharm(NULL);
+            player->SetCharm(nullptr);
             if (possessed)
             {
                 player->SetClientControl(possessed, 0);
             }
-            player->SetMover(NULL);
+            player->SetMover(nullptr);
             player->GetCamera().ResetView();
             player->RemovePetActionBar();
 
@@ -566,7 +566,7 @@ void Spell::SendChannelUpdate(uint32 time)
  */
 void Spell::SendChannelStart(uint32 duration)
 {
-    Occupant* target = NULL;
+    Occupant* target = nullptr;
 
     // select dynobject created by first effect if any
     if (m_spellInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_PERSISTENT_AREA_AURA)

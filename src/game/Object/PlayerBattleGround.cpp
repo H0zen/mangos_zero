@@ -84,9 +84,9 @@ bool Player::TeleportToBGEntryPoint()
 /**
  * @brief Stores the location used to return the player after leaving a battleground.
  *
- * @param leader The group leader to mirror entry positioning from, or NULL.
+ * @param leader The group leader to mirror entry positioning from, or nullptr.
  */
-void Player::SetBattleGroundEntryPoint(Player* leader /*= NULL*/)
+void Player::SetBattleGroundEntryPoint(Player* leader /*= nullptr*/)
 {
     // chat command use case, or non-group join
     if (!leader || !leader->IsInWorld() || leader->IsTaxiFlying() || leader->GetMap()->IsDungeon() || leader->GetMap()->IsBattleGround())
@@ -172,13 +172,13 @@ bool Player::CanJoinToBattleground() const
 /**
  * @brief Gets the battleground instance the player is currently associated with.
  *
- * @return The active battleground instance, or NULL if none exists.
+ * @return The active battleground instance, or nullptr if none exists.
  */
 BattleGround* Player::GetBattleGround() const
 {
     if (GetBattleGroundId() == 0)
     {
-        return NULL;
+        return nullptr;
     }
 
     return sBattleGroundMgr.GetBattleGround(GetBattleGroundId(), m_bgData.bgTypeID);
@@ -235,7 +235,7 @@ void Player::RemoveFromBattleGroundRaid()
         m_group.link(group, this);
         m_group.setSubGroup(GetOriginalSubGroup());
     }
-    SetOriginalGroup(NULL);
+    SetOriginalGroup(nullptr);
 }
 
 /**

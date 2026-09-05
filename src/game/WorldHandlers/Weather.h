@@ -162,7 +162,7 @@ class WeatherMgr
             }
             else
             {
-                return NULL;
+                return nullptr;
             }
         }
 

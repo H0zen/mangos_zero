@@ -109,8 +109,8 @@ bool ChatHandler::HandleHonorShow(char* /*args*/)
         LANG_HRD_HIGH_WARLORD,
         // LANG_GAME_MASTER
     };
-    char const* rank_name = NULL;
-    char const* hrank_name = NULL;
+    char const* rank_name = nullptr;
+    char const* hrank_name = nullptr;
 
     uint32 honor_rank = target->GetHonorRankInfo().visualRank;
 

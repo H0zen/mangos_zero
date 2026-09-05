@@ -145,13 +145,13 @@ void CommandMgr::LoadCommandHelpLocale()
 /**
  * @brief Get localized help text for a command
  * @param commandId Command identifier from database
- * @return Pointer to locale data, or NULL if not found
+ * @return Pointer to locale data, or nullptr if not found
  *
  * Looks up the CommandHelpLocale for a given command ID.
  * The returned structure contains a vector of help strings
  * indexed by locale index.
  *
- * @return NULL if command has no localization data
+ * @return nullptr if command has no localization data
  * @return Valid pointer to CommandHelpLocale with HelpText vector
  */
 CommandHelpLocale const* CommandMgr::GetCommandLocale(uint32 commandId) const
@@ -159,7 +159,7 @@ CommandHelpLocale const* CommandMgr::GetCommandLocale(uint32 commandId) const
     CommandHelpLocaleMap::const_iterator itr = m_CommandHelpLocaleMap.find(commandId);
     if (itr == m_CommandHelpLocaleMap.end())
     {
-        return NULL;
+        return nullptr;
     }
     return &itr->second;
 }

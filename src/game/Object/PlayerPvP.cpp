@@ -88,7 +88,7 @@ void Player::UpdatePvP(bool state, bool ovrride)
     {
         if (pvpInfo.endTimer != 0)
         {
-            pvpInfo.endTimer = time(NULL);
+            pvpInfo.endTimer = time(nullptr);
         }
         else
         {

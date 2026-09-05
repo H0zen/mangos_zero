@@ -95,7 +95,7 @@ Occupant* Spell::FindCorpseUsing()
     SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->RangeIndex);
     float max_range = GetSpellMaxRange(srange);
 
-    Occupant* result = NULL;
+    Occupant* result = nullptr;
 
     T u_check(m_caster, max_range);
     MaNGOS::OccupantSearcher<T> searcher(result, u_check);
@@ -293,7 +293,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     break;
                 }
 
-                if (!DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->ID, NULL, SPELL_DISABLE_LOS) && !HasLineOfSight(*prev, *(*next)))
+                if (!DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->ID, nullptr, SPELL_DISABLE_LOS) && !HasLineOfSight(*prev, *(*next)))
                 {
                     ++next;
                     continue;
@@ -380,7 +380,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                         break;
                     }
 
-                    if (!DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->ID, NULL, SPELL_DISABLE_LOS) && !HasLineOfSight(*prev, *(*next)))
+                    if (!DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->ID, nullptr, SPELL_DISABLE_LOS) && !HasLineOfSight(*prev, *(*next)))
                     {
                         ++next;
                         continue;
@@ -654,7 +654,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             if (target && target != m_caster)
             {
                 // Can only be casted on group's members or its pets
-                Group*  pGroup = NULL;
+                Group*  pGroup = nullptr;
 
                 Unit* owner = m_caster->GetCharmerOrOwner();
                 Unit* targetOwner = target->GetCharmerOrOwner();
@@ -831,7 +831,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         case TARGET_AREAEFFECT_PARTY:
         {
             Unit* owner = m_caster->GetCharmerOrOwner();
-            Player* pTarget = NULL;
+            Player* pTarget = nullptr;
 
             if (owner)
             {
@@ -863,13 +863,13 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 }
             }
 
-            Group* pGroup = pTarget ? pTarget->GetGroup() : NULL;
+            Group* pGroup = pTarget ? pTarget->GetGroup() : nullptr;
 
             if (pGroup)
             {
                 uint8 subgroup = pTarget->GetSubGroup();
 
-                for (GroupReference* itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+                for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
                 {
                     Player* Target = itr->getSource();
 
@@ -977,7 +977,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                         break;
                     }
 
-                    if (!DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->ID, NULL, SPELL_DISABLE_LOS) && !HasLineOfSight(*prev, *(*next)))
+                    if (!DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->ID, nullptr, SPELL_DISABLE_LOS) && !HasLineOfSight(*prev, *(*next)))
                     {
                         ++next;
                         continue;
@@ -1013,12 +1013,12 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         case TARGET_AREAEFFECT_PARTY_AND_CLASS:
         {
             Player* targetPlayer = m_targets.getUnitTarget() && m_targets.getUnitTarget()->GetTypeId() == TYPEID_PLAYER
-                ? (Player*)m_targets.getUnitTarget() : NULL;
+                ? (Player*)m_targets.getUnitTarget() : nullptr;
 
-            Group* pGroup = targetPlayer ? targetPlayer->GetGroup() : NULL;
+            Group* pGroup = targetPlayer ? targetPlayer->GetGroup() : nullptr;
             if (pGroup)
             {
-                for (GroupReference* itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+                for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
                 {
                     Player* Target = itr->getSource();
 

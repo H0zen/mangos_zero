@@ -238,7 +238,7 @@ void BattleGroundMgr::Update(uint32 /*diff*/)
  * Handles different status types: waiting in queue, invited to join, and in progress.
  *
  * @param data Pointer to the WorldPacket to write data to.
- * @param bg Pointer to the battleground (may be NULL for status clear).
+ * @param bg Pointer to the battleground (may be nullptr for status clear).
  * @param QueueSlot The queue slot index (0-2, player can be in multiple queues).
  * @param StatusID The status identifier (0=clear, STATUS_WAIT_QUEUE, STATUS_WAIT_JOIN, STATUS_IN_PROGRESS).
  * @param Time1 Status-specific time value (wait time, invitation timeout, or auto-leave time).
@@ -436,7 +436,7 @@ void BattleGroundMgr::BuildPlayerJoinedBattleGroundPacket(WorldPacket* data, Pla
  *
  * @param instanceId The client-side instance ID.
  * @param bgTypeId The battleground type to search in.
- * @return Pointer to the battleground instance, or NULL if not found.
+ * @return Pointer to the battleground instance, or nullptr if not found.
  */
 BattleGround* BattleGroundMgr::GetBattleGroundThroughClientInstance(uint32 instanceId, BattleGroundTypeId bgTypeId)
 {
@@ -445,7 +445,7 @@ BattleGround* BattleGroundMgr::GetBattleGroundThroughClientInstance(uint32 insta
     BattleGround* bg = GetBattleGroundTemplate(bgTypeId);
     if (!bg)
     {
-        return NULL;
+        return nullptr;
     }
 
     for (BattleGroundSet::iterator itr = m_BattleGrounds[bgTypeId].begin(); itr != m_BattleGrounds[bgTypeId].end(); ++itr)
@@ -455,7 +455,7 @@ BattleGround* BattleGroundMgr::GetBattleGroundThroughClientInstance(uint32 insta
             return itr->second;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -466,7 +466,7 @@ BattleGround* BattleGroundMgr::GetBattleGroundThroughClientInstance(uint32 insta
  *
  * @param InstanceID The server instance ID.
  * @param bgTypeId The battleground type to search in, or BATTLEGROUND_TYPE_NONE for all types.
- * @return Pointer to the battleground instance, or NULL if not found.
+ * @return Pointer to the battleground instance, or nullptr if not found.
  */
 BattleGround* BattleGroundMgr::GetBattleGround(uint32 InstanceID, BattleGroundTypeId bgTypeId)
 {
@@ -482,10 +482,10 @@ BattleGround* BattleGroundMgr::GetBattleGround(uint32 InstanceID, BattleGroundTy
                 return itr->second;
             }
         }
-        return NULL;
+        return nullptr;
     }
     itr = m_BattleGrounds[bgTypeId].find(InstanceID);
-    return ((itr != m_BattleGrounds[bgTypeId].end()) ? itr->second : NULL);
+    return ((itr != m_BattleGrounds[bgTypeId].end()) ? itr->second : nullptr);
 }
 
 /**
@@ -495,12 +495,12 @@ BattleGround* BattleGroundMgr::GetBattleGround(uint32 InstanceID, BattleGroundTy
  * battleground in the container and is used as a reference for creating new instances.
  *
  * @param bgTypeId The battleground type.
- * @return Pointer to the template battleground, or NULL if none exists.
+ * @return Pointer to the template battleground, or nullptr if none exists.
  */
 BattleGround* BattleGroundMgr::GetBattleGroundTemplate(BattleGroundTypeId bgTypeId)
 {
     // map is sorted and we can be sure that lowest instance id has only BG template
-    return m_BattleGrounds[bgTypeId].empty() ? NULL : m_BattleGrounds[bgTypeId].begin()->second;
+    return m_BattleGrounds[bgTypeId].empty() ? nullptr : m_BattleGrounds[bgTypeId].begin()->second;
 }
 
 /**
@@ -545,7 +545,7 @@ uint32 BattleGroundMgr::CreateClientVisibleInstanceId(BattleGroundTypeId bgTypeI
  *
  * @param bgTypeId The type of battleground to create.
  * @param bracket_id The bracket the battleground belongs to.
- * @return Pointer to the newly created battleground, or NULL if creation failed.
+ * @return Pointer to the newly created battleground, or nullptr if creation failed.
  */
 BattleGround* BattleGroundMgr::CreateNewBattleGround(BattleGroundTypeId bgTypeId, BattleGroundBracketId bracket_id)
 {
@@ -554,10 +554,10 @@ BattleGround* BattleGroundMgr::CreateNewBattleGround(BattleGroundTypeId bgTypeId
     if (!bg_template)
     {
         sLog.outError("BattleGround: CreateNewBattleGround - bg template not found for %u", bgTypeId);
-        return NULL;
+        return nullptr;
     }
 
-    BattleGround* bg = NULL;
+    BattleGround* bg = nullptr;
     // create a copy of the BG template
     switch (bgTypeId)
     {

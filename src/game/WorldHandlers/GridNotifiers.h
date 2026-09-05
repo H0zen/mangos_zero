@@ -51,7 +51,7 @@ namespace MaNGOS
         GuidSet i_clientGUIDs;
         std::set<Occupant*> i_visibleNow;
 
-        explicit VisibleNotifier(Camera& c, InitialWorldUpdateBatch* batch = NULL)
+        explicit VisibleNotifier(Camera& c, InitialWorldUpdateBatch* batch = nullptr)
             : i_camera(c), i_initialBatch(batch), i_clientGUIDs(c.GetOwner()->m_clientGUIDs) {}
         UpdateData& Data() { return i_initialBatch ? i_initialBatch->Data() : i_data; }
         bool BuildPacket(WorldPacket* packet)

@@ -121,7 +121,7 @@ bool ChatHandler::HandleMuteCommand(char* args)
         return false;
     }
 
-    time_t mutetime = time(NULL) + notspeaktime * 60;
+    time_t mutetime = time(nullptr) + notspeaktime * 60;
 
     if (target)
     {

@@ -96,9 +96,9 @@ bool IsQuestTameSpell(uint32 spellId)
 
 SpellCastTargets::SpellCastTargets()
 {
-    m_unitTarget = NULL;
-    m_itemTarget = NULL;
-    m_GOTarget   = NULL;
+    m_unitTarget = nullptr;
+    m_itemTarget = nullptr;
+    m_GOTarget   = nullptr;
 
     m_itemTargetEntry  = 0;
 
@@ -222,12 +222,12 @@ void SpellCastTargets::setCorpseTarget(Corpse* corpse)
  */
 void SpellCastTargets::Update(Unit* caster)
 {
-    m_GOTarget   = m_GOTargetGUID ? caster->GetMap()->GetGameObject(m_GOTargetGUID) : NULL;
+    m_GOTarget   = m_GOTargetGUID ? caster->GetMap()->GetGameObject(m_GOTargetGUID) : nullptr;
     m_unitTarget = m_unitTargetGUID
         ? (m_unitTargetGUID == caster->GetObjectGuid() ? caster : ObjectLookup::GetUnit(*caster, m_unitTargetGUID))
-        : NULL;
+        : nullptr;
 
-    m_itemTarget = NULL;
+    m_itemTarget = nullptr;
     if (caster->GetTypeId() == TYPEID_PLAYER)
     {
         Player* player = ((Player*)caster);
@@ -395,13 +395,13 @@ void SpellCastTargets::write(ByteBuffer& data) const
 
 Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid originalCasterGUID, SpellEntry const* triggeredBy)
 {
-    MANGOS_ASSERT(caster != NULL && info != NULL);
+    MANGOS_ASSERT(caster != nullptr && info != nullptr);
     MANGOS_ASSERT(info == sSpellStore.LookupEntry(info->ID));   // `info` must be pointer to sSpellStore element
 
     m_spellInfo = info;
     m_triggeredBySpellInfo = triggeredBy;
     m_caster = caster;
-    m_selfContainer = NULL;
+    m_selfContainer = nullptr;
     m_referencedFromCurrentSpell = false;
     m_executedCurrently = false;
     m_delayStart = 0;
@@ -442,13 +442,13 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
     m_preCastSpells.clear();
     m_IsTriggeredSpell = triggered;
     // m_AreaAura = false;
-    m_CastItem = NULL;
+    m_CastItem = nullptr;
 
-    unitTarget = NULL;
-    itemTarget = NULL;
-    gameObjTarget = NULL;
-    focusObject = NULL;
-    m_triggeredByAuraSpell  = NULL;
+    unitTarget = nullptr;
+    itemTarget = nullptr;
+    gameObjTarget = nullptr;
+    focusObject = nullptr;
+    m_triggeredByAuraSpell  = nullptr;
 
     // Auto Shot & Shoot (wand)
     m_autoRepeat = IsAutoRepeatRangedSpell(m_spellInfo);
@@ -867,13 +867,13 @@ void Spell::UpdateOriginalCasterPointer()
     }
     else if (m_originalCasterGUID.IsGameObject())
     {
-        GameObject* go = m_caster->IsInWorld() ? m_caster->GetMap()->GetGameObject(m_originalCasterGUID) : NULL;
-        m_originalCaster = go ? go->GetOwner() : NULL;
+        GameObject* go = m_caster->IsInWorld() ? m_caster->GetMap()->GetGameObject(m_originalCasterGUID) : nullptr;
+        m_originalCaster = go ? go->GetOwner() : nullptr;
     }
     else
     {
         Unit* unit = ObjectLookup::GetUnit(*m_caster, m_originalCasterGUID);
-        m_originalCaster = unit && unit->IsInWorld() ? unit : NULL;
+        m_originalCaster = unit && unit->IsInWorld() ? unit : nullptr;
     }
 }
 
@@ -1225,7 +1225,7 @@ Occupant* Spell::GetCastingObject() const
 {
     if (m_originalCasterGUID.IsGameObject())
     {
-        return m_caster->IsInWorld() ? m_caster->GetMap()->GetGameObject(m_originalCasterGUID) : NULL;
+        return m_caster->IsInWorld() ? m_caster->GetMap()->GetGameObject(m_originalCasterGUID) : nullptr;
     }
     else
     {
@@ -1249,10 +1249,10 @@ void Spell::ClearCastItem()
 {
     if (m_CastItem == m_targets.getItemTarget())
     {
-        m_targets.setItemTarget(NULL);
+        m_targets.setItemTarget(nullptr);
     }
 
-    m_CastItem = NULL;
+    m_CastItem = nullptr;
 }
 
 

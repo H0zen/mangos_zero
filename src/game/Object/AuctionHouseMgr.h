@@ -107,8 +107,8 @@ struct AuctionEntry
     bool BuildAuctionInfo(WorldPacket& data) const;
     void DeleteFromDB() const;
     void SaveToDB() const;
-    void AuctionBidWinning(Player* bidder = NULL);
-    bool UpdateBid(uint32 newbid, Player* newbidder = NULL);// true if normal bid, false if buyout, bidder==NULL for generated bid
+    void AuctionBidWinning(Player* bidder = nullptr);
+    bool UpdateBid(uint32 newbid, Player* newbidder = nullptr);// true if normal bid, false if buyout, bidder==nullptr for generated bid
 };
 
 // this class is used as auctionhouse instance
@@ -144,7 +144,7 @@ class AuctionHouseObject
         AuctionEntry* GetAuction(uint32 id) const
         {
             AuctionEntryMap::const_iterator itr = AuctionsMap.find(id);
-            return itr != AuctionsMap.end() ? itr->second : NULL;
+            return itr != AuctionsMap.end() ? itr->second : nullptr;
         }
 
         bool RemoveAuction(uint32 id)
@@ -172,7 +172,7 @@ class AuctionHouseObject
             uint32 quality, const std::vector<uint32>& clientOutbidIds,
             uint32& count, uint32& totalcount);
 
-        AuctionEntry* AddAuction(AuctionHouseEntry const* auctionHouseEntry, Item* newItem, uint32 etime, uint32 bid, uint32 buyout = 0, uint32 deposit = 0, Player* pl = NULL, bool ownTransaction = true);
+        AuctionEntry* AddAuction(AuctionHouseEntry const* auctionHouseEntry, Item* newItem, uint32 etime, uint32 bid, uint32 buyout = 0, uint32 deposit = 0, Player* pl = nullptr, bool ownTransaction = true);
         AuctionEntry* AddAuctionByGuid(AuctionHouseEntry const* auctionHouseEntry, Item* newItem, uint32 etime, uint32 bid, uint32 buyout, uint32 lowguid);
     private:
         AuctionEntryMap AuctionsMap;
@@ -210,7 +210,7 @@ class AuctionHouseMgr
             {
                 return itr->second;
             }
-            return NULL;
+            return nullptr;
         }
 
         // auction messages

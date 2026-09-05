@@ -302,7 +302,7 @@ class SQLStorage : public SQLStorageBase
         {
             if (id >= GetMaxEntry())
             {
-                return NULL;
+                return nullptr;
             }
             return reinterpret_cast<T const*>(m_Index[id]);
         }
@@ -398,7 +398,7 @@ class SQLHashStorage : public SQLStorageBase
             {
                 return reinterpret_cast<T const*>(find->second);
             }
-            return NULL;
+            return nullptr;
         }
 
         /**

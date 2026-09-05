@@ -203,7 +203,7 @@ void Item::SaveToDB()
             // save items and quest items (at load its all will added as normal, but this not important for item loot case)
             for (size_t i = 0; i < loot.GetMaxSlotInLootFor(owner); ++i)
             {
-                QuestItem* qitem = NULL;
+                QuestItem* qitem = nullptr;
 
                 LootItem* item = loot.LootItemInSlot(i, owner, &qitem);
                 if (!item)

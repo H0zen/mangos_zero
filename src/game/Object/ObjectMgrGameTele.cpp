@@ -133,21 +133,21 @@ GameTele const* ObjectMgr::GetGameTele(const std::string& name) const
     std::wstring wname;
     if (!Utf8toWStr(name, wname))
     {
-        return NULL;
+        return nullptr;
     }
 
     // converting string that we try to find to lower case
     wstrToLower(wname);
 
     // Alternative first GameTele what contains wnameLow as substring in case no GameTele location found
-    const GameTele* alt = NULL;
+    const GameTele* alt = nullptr;
     for (GameTeleMap::const_iterator itr = m_GameTeleMap.begin(); itr != m_GameTeleMap.end(); ++itr)
     {
         if (itr->second.wnameLow == wname)
         {
             return &itr->second;
         }
-        else if (alt == NULL && itr->second.wnameLow.find(wname) != std::wstring::npos)
+        else if (alt == nullptr && itr->second.wnameLow.find(wname) != std::wstring::npos)
         {
             alt = &itr->second;
         }

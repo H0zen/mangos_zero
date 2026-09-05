@@ -221,7 +221,7 @@ void Player::SaveToDB()
     uberInsert.addUInt32(m_Played_time[PLAYED_TIME_LEVEL]);
 
     uberInsert.addFloat(finiteAlways(m_rest_bonus));
-    uberInsert.addUInt64(uint64(time(NULL)));
+    uberInsert.addUInt64(uint64(time(nullptr)));
     uberInsert.addUInt32(HasPlayerFlag(PLAYER_FLAGS_RESTING) ? 1 : 0);
     // save, far from tavern/city
     // save, but in tavern/city
@@ -535,7 +535,7 @@ void Player::_SaveInventory()
         }
         Item* test = GetItemByPos(item->GetBagSlot(), item->GetSlot());
 
-        if (test == NULL)
+        if (test == nullptr)
         {
             sLog.outError("Player(GUID: %u Name: %s)::_SaveInventory - the bag(%d) and slot(%d) values for the item with guid %d are incorrect, the player doesn't have an item at that position!", GetGUIDLow(), GetName(), item->GetBagSlot(), item->GetSlot(), item->GetGUIDLow());
             error = true;
@@ -846,7 +846,7 @@ void Player::UpdateSpeakTime()
         return;
     }
 
-    time_t current = time(NULL);
+    time_t current = time(nullptr);
     if (m_speakTime > current)
     {
         uint32 max_count = sWorld.getConfig(CONFIG_UINT32_CHATFLOOD_MESSAGE_COUNT);
@@ -883,7 +883,7 @@ void Player::UpdateSpeakTime()
  */
 bool Player::CanSpeak() const
 {
-    return  GetSession()->m_muteTime <= time(NULL);
+    return  GetSession()->m_muteTime <= time(nullptr);
 }
 
 void Player::SendAttackSwingNotInRange()
@@ -1329,7 +1329,7 @@ void Player::PetSpellInitialize()
     uint8 cooldownsCount = pet->m_CreatureSpellCooldowns.size() + pet->m_CreatureCategoryCooldowns.size();
     data << uint8(cooldownsCount);
 
-    time_t curTime = time(NULL);
+    time_t curTime = time(nullptr);
 
     for (CreatureSpellCooldowns::const_iterator itr = pet->m_CreatureSpellCooldowns.begin(); itr != pet->m_CreatureSpellCooldowns.end(); ++itr)
     {
@@ -1651,11 +1651,11 @@ void Player::HandleStealthedUnitsDetection()
  * @brief Starts a taxi flight across a sequence of taxi nodes.
  *
  * @param nodes The ordered taxi node path to travel.
- * @param npc The taxi master providing the route, or NULL for spell/scripted travel.
+ * @param npc The taxi master providing the route, or nullptr for spell/scripted travel.
  * @param spellid The spell initiating the taxi flight, if any.
  * @return True if the flight started successfully; otherwise, false.
  */
-bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc /*= NULL*/, uint32 spellid /*= 0*/)
+bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc /*= nullptr*/, uint32 spellid /*= 0*/)
 {
     if (nodes.size() < 2)
     {
@@ -1749,7 +1749,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
             return false;
         }
     }
-    // node must have pos if taxi master case (npc != NULL)
+    // node must have pos if taxi master case (npc != nullptr)
     else if (npc)
     {
         GetSession()->SendActivateTaxiReply(ERR_TAXIUNSPECIFIEDSERVERERROR);
@@ -1801,8 +1801,8 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
         prevnode = lastnode;
     }
 
-    // get mount model (in case non taximaster (npc==NULL) allow more wide lookup)
-    uint32 mount_display_id = sObjectMgr.GetTaxiMountDisplayId(sourcenode, GetTeam(), npc == NULL);
+    // get mount model (in case non taximaster (npc==nullptr) allow more wide lookup)
+    uint32 mount_display_id = sObjectMgr.GetTaxiMountDisplayId(sourcenode, GetTeam(), npc == nullptr);
 
     // in spell case allow 0 model
     if ((mount_display_id == 0 && spellid == 0) || sourcepath == 0)
@@ -1871,7 +1871,7 @@ bool Player::ActivateTaxiPathTo(uint32 taxi_path_id, uint32 spellid /*= 0*/)
     nodes[0] = entry->from;
     nodes[1] = entry->to;
 
-    return ActivateTaxiPathTo(nodes, NULL, spellid);
+    return ActivateTaxiPathTo(nodes, nullptr, spellid);
 }
 
 /**

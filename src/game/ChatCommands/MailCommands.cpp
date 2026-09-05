@@ -125,7 +125,7 @@ bool ChatHandler::HandleSendMassMailCommand(char* args)
 {
     // format: raceMask "subject text" "mail text"
     uint32 raceMask = 0;
-    char const* name = NULL;
+    char const* name = nullptr;
 
     if (!ExtractRaceMask(&args, raceMask, &name))
     {
@@ -307,7 +307,7 @@ bool ChatHandler::HandleSendMassItemsCommand(char* args)
     // format: racemask "subject text" "mail text" item1[:count1] item2[:count2] ... item12[:count12]
 
     uint32 raceMask = 0;
-    char const* name = NULL;
+    char const* name = nullptr;
 
     if (!ExtractRaceMask(&args, raceMask, &name))
     {
@@ -417,7 +417,7 @@ bool ChatHandler::HandleSendMassMoneyCommand(char* args)
     /// format: raceMask "subject text" "mail text" money
 
     uint32 raceMask = 0;
-    char const* name = NULL;
+    char const* name = nullptr;
 
     if (!ExtractRaceMask(&args, raceMask, &name))
     {

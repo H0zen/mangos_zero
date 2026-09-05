@@ -84,13 +84,13 @@ void WorldSession::HandleSplitItemOpcode(WorldPacket& recv_data)
 
     if (!_player->IsValidPos(srcbag, srcslot, true))
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, NULL, NULL);
+        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
         return;
     }
 
     if (!_player->IsValidPos(dstbag, dstslot, false))       // can be autostore pos
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, NULL, NULL);
+        _player->SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, nullptr, nullptr);
         return;
     }
 
@@ -118,13 +118,13 @@ void WorldSession::HandleSwapInvItemOpcode(WorldPacket& recv_data)
 
     if (!_player->IsValidPos(INVENTORY_SLOT_BAG_0, srcslot, true))
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, NULL, NULL);
+        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
         return;
     }
 
     if (!_player->IsValidPos(INVENTORY_SLOT_BAG_0, dstslot, true))
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, NULL, NULL);
+        _player->SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, nullptr, nullptr);
         return;
     }
 
@@ -186,13 +186,13 @@ void WorldSession::HandleSwapItem(WorldPacket& recv_data)
 
     if (!_player->IsValidPos(srcbag, srcslot, true))
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, NULL, NULL);
+        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
         return;
     }
 
     if (!_player->IsValidPos(dstbag, dstslot, true))
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, NULL, NULL);
+        _player->SendEquipError(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, nullptr, nullptr);
         return;
     }
 
@@ -222,7 +222,7 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recv_data)
     InventoryResult msg = _player->CanEquipItem(NULL_SLOT, dest, pSrcItem, !pSrcItem->IsBag());
     if (msg != EQUIP_ERR_OK)
     {
-        _player->SendEquipError(msg, pSrcItem, NULL);
+        _player->SendEquipError(msg, pSrcItem, nullptr);
         return;
     }
 
@@ -247,7 +247,7 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recv_data)
         msg = _player->CanUnequipItem(dest, !pSrcItem->IsBag());
         if (msg != EQUIP_ERR_OK)
         {
-            _player->SendEquipError(msg, pDstItem, NULL);
+            _player->SendEquipError(msg, pDstItem, nullptr);
             return;
         }
 
@@ -339,7 +339,7 @@ void WorldSession::HandleDestroyItemOpcode(WorldPacket& recv_data)
         InventoryResult msg = _player->CanUnequipItem(pos, false);
         if (msg != EQUIP_ERR_OK)
         {
-            _player->SendEquipError(msg, _player->GetItemByPos(pos), NULL);
+            _player->SendEquipError(msg, _player->GetItemByPos(pos), nullptr);
             return;
         }
     }
@@ -347,14 +347,14 @@ void WorldSession::HandleDestroyItemOpcode(WorldPacket& recv_data)
     Item* pItem  = _player->GetItemByPos(bag, slot);
     if (!pItem)
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, NULL, NULL);
+        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
         return;
     }
 
     // checked at client side and not have server side appropriate error output
     if (pItem->GetProto()->Flags & ITEM_FLAG_INDESTRUCTIBLE)
     {
-        _player->SendEquipError(EQUIP_ERR_CANT_DROP_SOULBOUND, NULL, NULL);
+        _player->SendEquipError(EQUIP_ERR_CANT_DROP_SOULBOUND, nullptr, nullptr);
         return;
     }
 
@@ -623,13 +623,13 @@ void WorldSession::HandleReadItemOpcode(WorldPacket& recv_data)
             data << uint8(0);                       // 0..2, read failure reason? if == 1, use next command
             // data << uint32(0);                     // pItem->GetProto()->LanguageID or clientside delay in ms to "translate" item?
             DETAIL_LOG("STORAGE: Unable to read item");
-            _player->SendEquipError(msg, pItem, NULL);
+            _player->SendEquipError(msg, pItem, nullptr);
         }
         SendPacket(&data);
     }
     else
     {
-        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, NULL, NULL);
+        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
     }
 }
 

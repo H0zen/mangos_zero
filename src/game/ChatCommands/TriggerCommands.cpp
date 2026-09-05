@@ -107,9 +107,9 @@ void ChatHandler::ShowTriggerListHelper(AreaTriggerEntry const* atEntry)
  */
 bool ChatHandler::HandleTriggerCommand(char* args)
 {
-    AreaTriggerEntry const* atEntry = NULL;
+    AreaTriggerEntry const* atEntry = nullptr;
 
-    Player* pl = m_session ? m_session->GetPlayer() : NULL;
+    Player* pl = m_session ? m_session->GetPlayer() : nullptr;
 
     // select by args
     if (*args)

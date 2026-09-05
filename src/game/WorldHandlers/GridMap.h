@@ -203,8 +203,8 @@ class TerrainInfo : public Referencable<AtomicLong>
         /// The floor under a point, static geometry only. Nothing when the column is bare.
         std::optional<float> StaticFloor(float x, float y, float z) const;
 
-        std::optional<float> GetWaterLevel(float x, float y, float z, float* pGround = NULL) const;
-        float GetWaterOrGroundLevel(float x, float y, float z, float* pGround = NULL, bool swim = false) const;
+        std::optional<float> GetWaterLevel(float x, float y, float z, float* pGround = nullptr) const;
+        float GetWaterOrGroundLevel(float x, float y, float z, float* pGround = nullptr, bool swim = false) const;
         bool IsInWater(float x, float y, float z, GridMapLiquidData* data = 0) const;
         bool IsUnderWater(float x, float y, float z) const;
 

@@ -236,14 +236,14 @@ class GMTicketMgr
         /**
          * Retrieves a GM ticket by the player's GUID.
          * @param guid The GUID of the player who created the ticket
-         * @return A pointer to the GM ticket, or NULL if not found
+         * @return A pointer to the GM ticket, or nullptr if not found
          */
         GMTicket* GetGMTicket(ObjectGuid guid)
         {
             GMTicketMap::iterator itr = m_GMTicketMap.find(guid);
             if (itr == m_GMTicketMap.end())
             {
-                return NULL;
+                return nullptr;
             }
             return &(itr->second);
         }
@@ -251,14 +251,14 @@ class GMTicketMgr
         /**
          * Retrieves a GM ticket by its ID.
          * @param id The ID of the ticket
-         * @return A pointer to the GM ticket, or NULL if not found
+         * @return A pointer to the GM ticket, or nullptr if not found
          */
         GMTicket* GetGMTicket(uint32 id)
         {
             GMTicketIdMap::iterator itr = m_GMTicketIdMap.find(id);
             if (itr == m_GMTicketIdMap.end())
             {
-                return NULL;
+                return nullptr;
             }
             return itr->second;
         }
@@ -275,20 +275,20 @@ class GMTicketMgr
         /**
          * Retrieves a GM ticket by its order position.
          * @param pos The order position of the ticket
-         * @return A pointer to the GM ticket, or NULL if not found
+         * @return A pointer to the GM ticket, or nullptr if not found
          */
         GMTicket* GetGMTicketByOrderPos(uint32 pos)
         {
             if (pos >= GetTicketCount())
             {
-                return NULL;
+                return nullptr;
             }
 
             GMTicketMap::iterator itr = m_GMTicketMap.begin();
             std::advance(itr, pos);
             if (itr == m_GMTicketMap.end())
             {
-                return NULL;
+                return nullptr;
             }
             return &(itr->second);
         }

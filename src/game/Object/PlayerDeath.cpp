@@ -106,7 +106,7 @@ void Player::BuildPlayerRepop()
     // nothing will ever unload. Retail agrees: dying on a transport releases you to the
     // nearest port, alive. RepopAtGraveyard -- which always follows this call -- resurrects
     // him and finds that port from the vessel's own position.
-    Corpse* corpse = NULL;
+    Corpse* corpse = nullptr;
 
     if (!GetMap()->AsTransport())
     {
@@ -134,7 +134,7 @@ void Player::BuildPlayerRepop()
 
     SendCorpseReclaimDelay();
 
-    // to prevent cheating. NULL when he died aboard a vessel: no corpse is left on a deck
+    // to prevent cheating. nullptr when he died aboard a vessel: no corpse is left on a deck
     // that sails away from it, and RepopAtGraveyard revives him at the port instead.
     if (corpse)
     {
@@ -263,7 +263,7 @@ Corpse* Player::CreateCorpse()
     if (!corpse->Create(sObjectMgr.GenerateCorpseLowGuid(), this))
     {
         delete corpse;
-        return NULL;
+        return nullptr;
     }
 
     uint8 skin       = GetByteValue(PLAYER_BYTES, 0);
@@ -374,7 +374,7 @@ void Player::RepopAtGraveyard()
         SpawnCorpseBones();
     }
 
-    WorldSafeLocsEntry const* ClosestGrave = NULL;
+    WorldSafeLocsEntry const* ClosestGrave = nullptr;
 
     // Special handle for battleground maps
     if (BattleGround* bg = GetBattleGround())
@@ -416,7 +416,7 @@ uint32 Player::GetCorpseReclaimDelay(bool pvp) const
         return corpseReclaimDelay[0];
     }
 
-    time_t now = time(NULL);
+    time_t now = time(nullptr);
     // 0..2 full period
     uint32 count = (now < m_deathExpireTime) ? uint32((m_deathExpireTime - now) / DEATH_EXPIRE_STEP) : 0;
     return corpseReclaimDelay[count];
@@ -435,7 +435,7 @@ void Player::UpdateCorpseReclaimDelay()
         return;
     }
 
-    time_t now = time(NULL);
+    time_t now = time(nullptr);
     if (now < m_deathExpireTime)
     {
         // full and partly periods 1..3
@@ -495,7 +495,7 @@ void Player::SendCorpseReclaimDelay(bool load)
 
         time_t expected_time = corpse->GetGhostTime() + corpseReclaimDelay[count];
 
-        time_t now = time(NULL);
+        time_t now = time(nullptr);
         if (now >= expected_time)
         {
             return;

@@ -186,7 +186,7 @@ uint32 Group::CanJoinBattleGroundQueue(BattleGroundTypeId bgTypeId, BattleGround
     Team team = reference->GetTeam();
 
     // check every member of the group to be able to join
-    for (GroupReference* itr = GetFirstMember(); itr != NULL; itr = itr->next())
+    for (GroupReference* itr = GetFirstMember(); itr != nullptr; itr = itr->next())
     {
         Player* member = itr->getSource();
         // offline member? don't let join
@@ -231,7 +231,7 @@ uint32 Group::CanJoinBattleGroundQueue(BattleGroundTypeId bgTypeId, BattleGround
  */
 bool Group::InCombatToInstance(uint32 instanceId)
 {
-    for (GroupReference* itr = GetFirstMember(); itr != NULL; itr = itr->next())
+    for (GroupReference* itr = GetFirstMember(); itr != nullptr; itr = itr->next())
     {
         Player* pPlayer = itr->getSource();
         if (pPlayer->getAttackers().size() && pPlayer->GetInstanceId() == instanceId)
@@ -328,14 +328,14 @@ void Group::ResetInstances(InstanceResetMethod method, Player* SendMsgTo)
  * @brief Retrieves the group's binding information for a dungeon map.
  *
  * @param mapid The map identifier.
- * @return InstanceGroupBind* The bind information if present; otherwise NULL.
+ * @return InstanceGroupBind* The bind information if present; otherwise nullptr.
  */
 InstanceGroupBind* Group::GetBoundInstance(uint32 mapid)
 {
     MapEntry const* mapEntry = sMapStore.LookupEntry(mapid);
     if (!mapEntry)
     {
-        return NULL;
+        return nullptr;
     }
 
     BoundInstancesMap::iterator itr = m_boundInstances.find(mapid);
@@ -345,7 +345,7 @@ InstanceGroupBind* Group::GetBoundInstance(uint32 mapid)
     }
     else
     {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -355,7 +355,7 @@ InstanceGroupBind* Group::GetBoundInstance(uint32 mapid)
  * @param state The dungeon persistent state to bind.
  * @param permanent True to create a permanent bind.
  * @param load True when reconstructing binds from storage.
- * @return InstanceGroupBind* The updated bind information, or NULL on failure.
+ * @return InstanceGroupBind* The updated bind information, or nullptr on failure.
  */
 InstanceGroupBind* Group::BindToInstance(DungeonPersistentState* state, bool permanent, bool load)
 {
@@ -400,7 +400,7 @@ InstanceGroupBind* Group::BindToInstance(DungeonPersistentState* state, bool per
     }
     else
     {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -518,8 +518,8 @@ void Group::RewardGroupAtKill(Unit* pVictim, Player* player_tap)
     // prepare data for near group iteration (PvP and !PvP cases)
     uint32 count = 0;
     uint32 sum_level = 0;
-    Player* member_with_max_level = NULL;
-    Player* not_gray_member_with_max_level = NULL;
+    Player* member_with_max_level = nullptr;
+    Player* not_gray_member_with_max_level = nullptr;
 
     GetDataForXPAtKill(pVictim, count, sum_level, member_with_max_level, not_gray_member_with_max_level, player_tap);
 
@@ -533,7 +533,7 @@ void Group::RewardGroupAtKill(Unit* pVictim, Player* player_tap)
         bool is_dungeon = PvP ? false : sMapStore.LookupEntry(pVictim->GetMapId())->IsDungeon();
         float group_rate = MaNGOS::XP::xp_in_group_rate(count, is_raid);
 
-        for (GroupReference* itr = GetFirstMember(); itr != NULL; itr = itr->next())
+        for (GroupReference* itr = GetFirstMember(); itr != nullptr; itr = itr->next())
         {
             Player* pGroupGuy = itr->getSource();
             if (!pGroupGuy)

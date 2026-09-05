@@ -176,10 +176,10 @@ bool ChatHandler::HandlePoolInfoCommand(char* args)
         return true;
     }
 
-    Player* player = m_session ? m_session->GetPlayer() : NULL;
+    Player* player = m_session ? m_session->GetPlayer() : nullptr;
 
-    MapPersistentState* mapState = player ? player->GetMap()->GetPersistentState() : NULL;
-    SpawnedPoolData const* spawns = mapState ? &mapState->GetSpawnedPoolData() : NULL;
+    MapPersistentState* mapState = player ? player->GetMap()->GetPersistentState() : nullptr;
+    SpawnedPoolData const* spawns = mapState ? &mapState->GetSpawnedPoolData() : nullptr;
 
     std::string active_str = GetMangosString(LANG_ACTIVE);
 
@@ -205,7 +205,7 @@ bool ChatHandler::HandlePoolInfoCommand(char* args)
     }
 
     PoolGroup<Creature> const& poolCreatures = sPoolMgr.GetPoolCreatures(pool_id);
-    SpawnedPoolObjects const* crSpawns = spawns ? &spawns->GetSpawnedCreatures() : NULL;
+    SpawnedPoolObjects const* crSpawns = spawns ? &spawns->GetSpawnedCreatures() : nullptr;
 
     PoolObjectList const& poolCreaturesEx = poolCreatures.GetExplicitlyChanced();
     if (!poolCreaturesEx.empty())
@@ -260,7 +260,7 @@ bool ChatHandler::HandlePoolInfoCommand(char* args)
     }
 
     PoolGroup<GameObject> const& poolGameObjects = sPoolMgr.GetPoolGameObjects(pool_id);
-    SpawnedPoolObjects const* goSpawns = spawns ? &spawns->GetSpawnedGameobjects() : NULL;
+    SpawnedPoolObjects const* goSpawns = spawns ? &spawns->GetSpawnedGameobjects() : nullptr;
 
     PoolObjectList const& poolGameObjectsEx = poolGameObjects.GetExplicitlyChanced();
     if (!poolGameObjectsEx.empty())
@@ -315,7 +315,7 @@ bool ChatHandler::HandlePoolInfoCommand(char* args)
     }
 
     PoolGroup<Pool> const& poolPools = sPoolMgr.GetPoolPools(pool_id);
-    SpawnedPoolPools const* poolSpawns = spawns ? &spawns->GetSpawnedPools() : NULL;
+    SpawnedPoolPools const* poolSpawns = spawns ? &spawns->GetSpawnedPools() : nullptr;
 
     PoolObjectList const& poolPoolsEx = poolPools.GetExplicitlyChanced();
     if (!poolPoolsEx.empty())

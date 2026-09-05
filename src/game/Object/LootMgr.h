@@ -161,7 +161,7 @@ class LootStore
         void Verify() const;
 
         void LoadAndCollectLootIds(LootIdSet& ids_set);
-        void CheckLootRefs(LootIdSet* ref_set = NULL) const;// check existence reference and remove it from ref_set
+        void CheckLootRefs(LootIdSet* ref_set = nullptr) const;// check existence reference and remove it from ref_set
         void ReportUnusedIds(LootIdSet const& ids_set) const;
         void ReportNotExistedId(uint32 id) const;
 
@@ -280,7 +280,7 @@ class LootValidatorRefManager : public RefManager<Loot, LootValidatorRef>
 
         iterator end()
         {
-            return iterator(NULL);
+            return iterator(nullptr);
         }
 
         iterator rbegin()
@@ -290,7 +290,7 @@ class LootValidatorRefManager : public RefManager<Loot, LootValidatorRef>
 
         iterator rend()
         {
-            return iterator(NULL);
+            return iterator(nullptr);
         }
 };
 
@@ -383,7 +383,7 @@ struct Loot
     // Inserts the item into the loot (called by LootTemplate processors)
     void AddItem(LootStoreItem const& item);
 
-    LootItem* LootItemInSlot(uint32 lootslot, Player* player, QuestItem** qitem = NULL, QuestItem** ffaitem = NULL, QuestItem** conditem = NULL);
+    LootItem* LootItemInSlot(uint32 lootslot, Player* player, QuestItem** qitem = nullptr, QuestItem** ffaitem = nullptr, QuestItem** conditem = nullptr);
     uint32 GetMaxSlotInLootFor(Player* player) const;
 
     Occupant const* GetLootTarget() const { return m_lootTarget; }

@@ -71,7 +71,7 @@ void SpellCooldownMgr::AddSpellAndCategoryCooldowns(SpellEntry const* spellInfo,
         catrec = spellInfo->CategoryRecoveryTime;
     }
 
-    time_t curTime = time(NULL);
+    time_t curTime = time(nullptr);
 
     time_t catrecTime;
     time_t recTime;
@@ -222,7 +222,7 @@ void SpellCooldownMgr::LoadFromDB(QueryResult* result)
 
     if (result)
     {
-        time_t curTime = time(NULL);
+        time_t curTime = time(nullptr);
 
         do
         {
@@ -262,7 +262,7 @@ void SpellCooldownMgr::SaveToDB()
     SqlStatement stmt = CharacterDatabase.CreateStatement(deleteSpellCooldown, "DELETE FROM `character_spell_cooldown` WHERE `guid` = ?");
     stmt.PExecute(m_owner->GetGUIDLow());
 
-    time_t curTime = time(NULL);
+    time_t curTime = time(nullptr);
     time_t infTime = curTime + Player::infinityCooldownDelayCheck;
 
     // remove outdated and save active

@@ -1174,7 +1174,7 @@ void Unit::RemoveHolder(SpellAuraHolder* holder, AuraRemoveMode mode)
 {
     // Statue unsummoned at holder remove
     SpellEntry const* AurSpellInfo = holder->GetSpellProto();
-    Totem* statue = NULL;
+    Totem* statue = nullptr;
     Unit* caster = holder->GetCaster();
     if (IsChanneledSpell(AurSpellInfo) && caster)
     {
@@ -1481,7 +1481,7 @@ bool Unit::HasAffectedAura(AuraType auraType, SpellEntry const* spellProto) cons
  *
  * @param spellId The spell identifier.
  * @param effindex The effect index.
- * @return The matching aura, or NULL if none exists.
+ * @return The matching aura, or nullptr if none exists.
  */
 Aura* Unit::GetAura(uint32 spellId, SpellEffectIndex effindex)
 {
@@ -1490,7 +1490,7 @@ Aura* Unit::GetAura(uint32 spellId, SpellEffectIndex effindex)
     {
         return bounds.first->second->GetAuraByEffectIndex(effindex);
     }
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -1500,7 +1500,7 @@ Aura* Unit::GetAura(uint32 spellId, SpellEffectIndex effindex)
  * @param family The spell family.
  * @param familyFlag The required family flag mask.
  * @param casterGuid An optional caster GUID filter.
- * @return The matching aura, or NULL if none exists.
+ * @return The matching aura, or nullptr if none exists.
  */
 Aura* Unit::GetAura(AuraType type, SpellFamily family, uint64 familyFlag, ObjectGuid casterGuid)
 {
@@ -1513,7 +1513,7 @@ Aura* Unit::GetAura(AuraType type, SpellFamily family, uint64 familyFlag, Object
             return aura;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /**

@@ -121,7 +121,7 @@ bool Bag::Create(uint32 guidlow, uint32 itemid, Player const* owner)
     for (uint8 i = 0; i < MAX_BAG_SIZE; ++i)
     {
         SetGuidValue(CONTAINER_FIELD_SLOT_1 + (i * 2), ObjectGuid());
-        m_bagslot[i] = NULL;
+        m_bagslot[i] = nullptr;
     }
 
     return true;
@@ -158,7 +158,7 @@ bool Bag::LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid)
         SetGuidValue(CONTAINER_FIELD_SLOT_1 + (i * 2), ObjectGuid());
 
         delete m_bagslot[i];
-        m_bagslot[i] = NULL;
+        m_bagslot[i] = nullptr;
     }
 
     return true;
@@ -208,10 +208,10 @@ void Bag::RemoveItem(uint8 slot)
 
     if (m_bagslot[slot])
     {
-        m_bagslot[slot]->SetContainer(NULL);
+        m_bagslot[slot]->SetContainer(nullptr);
     }
 
-    m_bagslot[slot] = NULL;
+    m_bagslot[slot] = nullptr;
     SetGuidValue(CONTAINER_FIELD_SLOT_1 + (slot * 2), ObjectGuid());
 }
 
@@ -276,7 +276,7 @@ bool Bag::IsEmpty() const
  * @brief Finds the first item in the bag matching an entry ID.
  *
  * @param item The item entry to search for.
- * @return Pointer to the matching item, or NULL if not found.
+ * @return Pointer to the matching item, or nullptr if not found.
  */
 Item* Bag::GetItemByEntry(uint32 item) const
 {
@@ -287,7 +287,7 @@ Item* Bag::GetItemByEntry(uint32 item) const
             return m_bagslot[i];
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -339,7 +339,7 @@ uint8 Bag::GetSlotByItemGUID(ObjectGuid guid) const
  * @brief Retrieves the item stored in a specific slot.
  *
  * @param slot The slot index to inspect.
- * @return Pointer to the item in the slot, or NULL if the slot is invalid or empty.
+ * @return Pointer to the item in the slot, or nullptr if the slot is invalid or empty.
  */
 Item* Bag::GetItemByPos(uint8 slot) const
 {
@@ -348,5 +348,5 @@ Item* Bag::GetItemByPos(uint8 slot) const
         return m_bagslot[slot];
     }
 
-    return NULL;
+    return nullptr;
 }

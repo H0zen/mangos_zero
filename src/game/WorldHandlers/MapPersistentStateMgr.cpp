@@ -76,7 +76,7 @@ static uint32 resetEventTypeDelay[MAX_RESET_EVENT_TYPE] = { 0,                  
 //== MapPersistentState functions ==========================
 MapPersistentState::MapPersistentState(uint32 MapId, uint32 InstanceId)
     : m_instanceid(InstanceId), m_mapid(MapId),
-    m_usedByMap(NULL)
+    m_usedByMap(nullptr)
 {
 }
 
@@ -459,7 +459,7 @@ time_t DungeonResetScheduler::CalculateNextResetTime(InstanceTemplate const* tem
  */
 void DungeonResetScheduler::LoadResetTimes()
 {
-    time_t now = time(NULL);
+    time_t now = time(nullptr);
     time_t today = (now / DAY) * DAY;
     time_t nextWeek = today + (7 * DAY);
 
@@ -668,7 +668,7 @@ void DungeonResetScheduler::ScheduleReset(bool add, time_t time, DungeonResetEve
  */
 void DungeonResetScheduler::Update()
 {
-    time_t now = time(NULL), t;
+    time_t now = time(nullptr), t;
     while (!m_resetTimeQueue.empty() && (t = m_resetTimeQueue.begin()->first) < now)
     {
         DungeonResetEvent& event = m_resetTimeQueue.begin()->second;
@@ -726,7 +726,7 @@ void DungeonResetScheduler::Update()
  */
 void DungeonResetScheduler::ResetAllRaid()
 {
-    time_t now = time(NULL);
+    time_t now = time(nullptr);
     ResetTimeQueue rTQ;
     rTQ.clear();
 
@@ -794,7 +794,7 @@ MapPersistentState* MapPersistentStateManager::AddPersistentState(MapEntry const
             }
             else
             {
-                resetTime = time(NULL) + 2 * HOUR;
+                resetTime = time(nullptr) + 2 * HOUR;
                 // normally this will be removed soon after in DungeonMap::Add, prevent error
                 m_Scheduler.ScheduleReset(true, resetTime, DungeonResetEvent(RESET_EVENT_NORMAL_DUNGEON, mapEntry->MapID, instanceId));
             }
@@ -851,12 +851,12 @@ MapPersistentState* MapPersistentStateManager::GetPersistentState(uint32 mapId, 
     if (instanceId)
     {
         PersistentStateMap::iterator itr = m_instanceSaveByInstanceId.find(instanceId);
-        return itr != m_instanceSaveByInstanceId.end() ? itr->second : NULL;
+        return itr != m_instanceSaveByInstanceId.end() ? itr->second : nullptr;
     }
     else
     {
         PersistentStateMap::iterator itr = m_instanceSaveByMapId.find(mapId);
-        return itr != m_instanceSaveByMapId.end() ? itr->second : NULL;
+        return itr != m_instanceSaveByMapId.end() ? itr->second : nullptr;
     }
 }
 
@@ -973,17 +973,17 @@ void MapPersistentStateManager::CleanupInstances()
     CharacterDatabase.BeginTransaction();
     sLog.outString("|>  Clean character/group - instance binds with invalid group/characters...");
     // clean character/group - instance binds with invalid group/characters
-    _DelHelper(CharacterDatabase, "`character_instance`.`guid`, `instance`", "`character_instance`", "LEFT JOIN `characters` ON `character_instance`.`guid` = `characters`.`guid` WHERE `characters`.`guid` IS NULL");
-    _DelHelper(CharacterDatabase, "`group_instance`.`leaderGuid`, `instance`", "`group_instance`", "LEFT JOIN `characters` ON `group_instance`.`leaderGuid` = `characters`.`guid` LEFT JOIN `groups` ON `group_instance`.`leaderGuid` = `groups`.`leaderGuid` WHERE `characters`.`guid` IS NULL OR `groups`.`leaderGuid` IS NULL");
+    _DelHelper(CharacterDatabase, "`character_instance`.`guid`, `instance`", "`character_instance`", "LEFT JOIN `characters` ON `character_instance`.`guid` = `characters`.`guid` WHERE `characters`.`guid` IS nullptr");
+    _DelHelper(CharacterDatabase, "`group_instance`.`leaderGuid`, `instance`", "`group_instance`", "LEFT JOIN `characters` ON `group_instance`.`leaderGuid` = `characters`.`guid` LEFT JOIN `groups` ON `group_instance`.`leaderGuid` = `groups`.`leaderGuid` WHERE `characters`.`guid` IS nullptr OR `groups`.`leaderGuid` IS nullptr");
 
     sLog.outString("|>  Clean instances that do not have any players or groups bound to them...");
     // clean instances that do not have any players or groups bound to them
-    _DelHelper(CharacterDatabase, "`id`, `map`", "`instance`", "LEFT JOIN `character_instance` ON `character_instance`.`instance` = `id` LEFT JOIN `group_instance` ON `group_instance`.`instance` = `id` WHERE `character_instance`.`instance` IS NULL AND `group_instance`.`instance` IS NULL");
+    _DelHelper(CharacterDatabase, "`id`, `map`", "`instance`", "LEFT JOIN `character_instance` ON `character_instance`.`instance` = `id` LEFT JOIN `group_instance` ON `group_instance`.`instance` = `id` WHERE `character_instance`.`instance` IS nullptr AND `group_instance`.`instance` IS nullptr");
 
     sLog.outString("|>  Clean invalid instance references in other tables...");
     // clean invalid instance references in other tables
-    _DelHelper(CharacterDatabase, "`character_instance`.`guid`, `instance`", "`character_instance`", "LEFT JOIN `instance` ON `character_instance`.`instance` = `instance`.`id` WHERE `instance`.`id` IS NULL");
-    _DelHelper(CharacterDatabase, "`group_instance`.`leaderGuid`, `instance`", "`group_instance`", "LEFT JOIN `instance` ON `group_instance`.`instance` = `instance`.`id` WHERE `instance`.`id` IS NULL");
+    _DelHelper(CharacterDatabase, "`character_instance`.`guid`, `instance`", "`character_instance`", "LEFT JOIN `instance` ON `character_instance`.`instance` = `instance`.`id` WHERE `instance`.`id` IS nullptr");
+    _DelHelper(CharacterDatabase, "`group_instance`.`leaderGuid`, `instance`", "`group_instance`", "LEFT JOIN `instance` ON `group_instance`.`instance` = `instance`.`id` WHERE `instance`.`id` IS nullptr");
 
     sLog.outString("|>  Clean unused respawn data...");
     // clean unused respawn data
@@ -1136,7 +1136,7 @@ void MapPersistentStateManager::_ResetOrWarnAll(uint32 mapid, bool warn, uint32 
         return;
     }
 
-    time_t now = time(NULL);
+    time_t now = time(nullptr);
 
     if (!warn)
     {
@@ -1221,7 +1221,7 @@ void MapPersistentStateManager::GetStatistics(uint32& numStates, uint32& numBoun
  */
 void MapPersistentStateManager::_CleanupExpiredInstancesAtTime(time_t t)
 {
-    _DelHelper(CharacterDatabase, "id, map", "instance", "LEFT JOIN instance_reset ON mapid = map WHERE (instance.resettime < '" UI64FMTD "' AND instance.resettime > '0') OR (NOT instance_reset.resettime IS NULL AND instance_reset.resettime < '" UI64FMTD "')", (uint64)t, (uint64)t);
+    _DelHelper(CharacterDatabase, "id, map", "instance", "LEFT JOIN instance_reset ON mapid = map WHERE (instance.resettime < '" UI64FMTD "' AND instance.resettime > '0') OR (NOT instance_reset.resettime IS nullptr AND instance_reset.resettime < '" UI64FMTD "')", (uint64)t, (uint64)t);
 }
 
 /**
@@ -1229,7 +1229,7 @@ void MapPersistentStateManager::_CleanupExpiredInstancesAtTime(time_t t)
  */
 void MapPersistentStateManager::InitWorldMaps()
 {
-    MapPersistentState* state = NULL;                       // need any from created for shared pool state
+    MapPersistentState* state = nullptr;                       // need any from created for shared pool state
     for (uint32 mapid = 0; mapid < sMapStore.GetNumRows(); ++mapid)
     {
         if (MapEntry const* entry = sMapStore.LookupEntry(mapid))

@@ -156,7 +156,7 @@ void DropToGround(Occupant const& obj, float x, float y, float& z)
 /**
  * @brief Hold z between the floor and the highest surface this object may occupy.
  */
-void ClampToAllowedZ(Occupant const& obj, float x, float y, float& z, Map* atMap /*=NULL*/)
+void ClampToAllowedZ(Occupant const& obj, float x, float y, float& z, Map* atMap /*=nullptr*/)
 {
     if (!atMap)
     {
@@ -193,7 +193,7 @@ void ClampToAllowedZ(Occupant const& obj, float x, float y, float& z, Map* atMap
     if (unit.CanSwim())
     {
         ceiling = atMap->GetTerrain()->GetWaterOrGroundLevel(
-                      x, y, z, NULL, !unit.HasAuraType(SPELL_AURA_WATER_WALK));
+                      x, y, z, nullptr, !unit.HasAuraType(SPELL_AURA_WATER_WALK));
     }
 
     if (z > ceiling)
@@ -234,8 +234,8 @@ static bool InCommonFrame(Occupant const& a, Occupant const& b,
         return true;
     }
 
-    TransportMap* va = a.GetMap() ? a.GetMap()->AsTransport() : NULL;
-    TransportMap* vb = b.GetMap() ? b.GetMap()->AsTransport() : NULL;
+    TransportMap* va = a.GetMap() ? a.GetMap()->AsTransport() : nullptr;
+    TransportMap* vb = b.GetMap() ? b.GetMap()->AsTransport() : nullptr;
 
     if (!va && !vb)
     {
@@ -372,7 +372,7 @@ bool HasLineOfSight(Occupant const& a, Occupant const& b)
 
     // Aboard, the sight line is cast through the HULL's own geometry, on the ship's own map,
     // in the coordinates both passengers already speak.
-    if (TransportMap* hull = a.GetMap() ? a.GetMap()->AsTransport() : NULL)
+    if (TransportMap* hull = a.GetMap() ? a.GetMap()->AsTransport() : nullptr)
     {
         Geometry::Placement pa, pb;
         if (!InCommonFrame(a, b, pa, pb))

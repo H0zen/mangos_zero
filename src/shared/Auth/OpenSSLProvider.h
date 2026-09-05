@@ -102,7 +102,7 @@ public:
     /**
      * @brief Constructor - loads specified provider
      * @param name Provider name (e.g., "legacy", "default")
-     * @param libraryContext Library context (NULL for default)
+     * @param libraryContext Library context (nullptr for default)
      */
     OpenSSLProvider(const char* name, OSSL_LIB_CTX* libraryContext = nullptr);
 

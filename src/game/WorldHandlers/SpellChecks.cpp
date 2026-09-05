@@ -383,7 +383,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 return SPELL_FAILED_BAD_TARGETS;
             }
 
-            if (!m_IsTriggeredSpell && !DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->ID, NULL, SPELL_DISABLE_LOS) && !LineOfSightExemptions::Has(m_spellInfo->ID) && !HasLineOfSight(*m_caster, *target))
+            if (!m_IsTriggeredSpell && !DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->ID, nullptr, SPELL_DISABLE_LOS) && !LineOfSightExemptions::Has(m_spellInfo->ID) && !HasLineOfSight(*m_caster, *target))
             {
                 return SPELL_FAILED_LINE_OF_SIGHT;
             }
@@ -671,9 +671,9 @@ SpellCastResult Spell::CheckCast(bool strict)
                     range = m_caster->GetMap()->IsDungeon() ? DEFAULT_VISIBILITY_INSTANCE : DEFAULT_VISIBILITY_DISTANCE;
                 }
 
-                Creature* targetExplicit = NULL;            // used for cases where a target is provided (by script for example)
-                Creature* creatureScriptTarget = NULL;
-                GameObject* goScriptTarget = NULL;
+                Creature* targetExplicit = nullptr;            // used for cases where a target is provided (by script for example)
+                Creature* creatureScriptTarget = nullptr;
+                GameObject* goScriptTarget = nullptr;
 
                 for (SQLMultiStorage::SQLMultiSIterator<SpellTargetEntry> i_spellST = bounds.first; i_spellST != bounds.second; ++i_spellST)
                 {
@@ -686,7 +686,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     {
                         case SPELL_TARGET_TYPE_GAMEOBJECT:
                         {
-                            GameObject* p_GameObject = NULL;
+                            GameObject* p_GameObject = nullptr;
 
                             if (i_spellST->targetEntry)
                             {
@@ -697,7 +697,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                                 if (p_GameObject)
                                 {
                                     // remember found target and range, next attempt will find more near target with another entry
-                                    creatureScriptTarget = NULL;
+                                    creatureScriptTarget = nullptr;
                                     goScriptTarget = p_GameObject;
                                     range = go_check.GetLastRange();
                                 }
@@ -707,7 +707,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                                 float frange = m_caster->Where().DistanceTo(focusObject->Where());
                                 if (range >= frange)
                                 {
-                                    creatureScriptTarget = NULL;
+                                    creatureScriptTarget = nullptr;
                                     goScriptTarget = focusObject;
                                     range = frange;
                                 }
@@ -718,7 +718,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                         case SPELL_TARGET_TYPE_DEAD:
                         default:
                         {
-                            Creature* p_Creature = NULL;
+                            Creature* p_Creature = nullptr;
 
                             // check if explicit target is provided and check it up against database valid target entry/state
                             if (Unit* pTarget = m_targets.getUnitTarget())
@@ -768,7 +768,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
                             if (creatureScriptTarget)
                             {
-                                goScriptTarget = NULL;
+                                goScriptTarget = nullptr;
                             }
 
                             break;
@@ -980,7 +980,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             }
             case SPELL_EFFECT_TAMECREATURE:
             {
-                if (m_triggeredBySpellInfo == NULL)
+                if (m_triggeredBySpellInfo == nullptr)
                 {
                     SpellCastResult castResult = CanTameUnit(true);
                     if (castResult != SPELL_CAST_OK)
@@ -1420,7 +1420,7 @@ SpellCastResult Spell::CheckCast(bool strict)
         }
 
         // Possible Unit-target for the spell
-        Unit* expectedTarget = m_caster->GetMap() ? m_caster->GetMap()->GetUnit(GetPrefilledOrUnitTargetGuid(SpellEffectIndex(i))) : NULL;
+        Unit* expectedTarget = m_caster->GetMap() ? m_caster->GetMap()->GetUnit(GetPrefilledOrUnitTargetGuid(SpellEffectIndex(i))) : nullptr;
 
         switch (m_spellInfo->EffectAura[i])
         {
@@ -2430,7 +2430,7 @@ SpellCastResult Spell::CheckItems()
     // check spell focus object
     if (m_spellInfo->RequiresSpellFocus)
     {
-        GameObject* ok = NULL;
+        GameObject* ok = nullptr;
         MaNGOS::GameObjectFocusCheck go_check(m_caster, m_spellInfo->RequiresSpellFocus);
         MaNGOS::GameObjectSearcher<MaNGOS::GameObjectFocusCheck> checker(ok, go_check);
         Cell::VisitGridObjects(m_caster, checker, m_caster->GetMap()->GetVisibilityDistance());
@@ -2547,7 +2547,7 @@ SpellCastResult Spell::CheckItems()
                     InventoryResult msg = p_caster->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, m_spellInfo->EffectItemType[i], 1);
                     if (msg != EQUIP_ERR_OK)
                     {
-                        p_caster->SendEquipError(msg, NULL, NULL, m_spellInfo->EffectItemType[i]);
+                        p_caster->SendEquipError(msg, nullptr, nullptr, m_spellInfo->EffectItemType[i]);
                         return SPELL_FAILED_DONT_REPORT;
                     }
                 }

@@ -75,7 +75,7 @@
  * @brief Returns the script chain map for a database script type.
  *
  * @param type The database script type.
- * @return ScriptChainMap const* The corresponding script chain map, or NULL for unsupported types.
+ * @return ScriptChainMap const* The corresponding script chain map, or nullptr for unsupported types.
  */
 ScriptChainMap const* ScriptMgr::GetScriptChainMap(DBScriptType type)
 {
@@ -85,7 +85,7 @@ ScriptChainMap const* ScriptMgr::GetScriptChainMap(DBScriptType type)
         return &m_dbScripts[type];
     }
 
-    return NULL;
+    return nullptr;
 }
 
 // /////////////////////////////////////////////////////////

@@ -126,14 +126,14 @@ bool Group::_addMember(ObjectGuid guid, const char* name, bool isAssistant, uint
     member.name      = name;
     member.group     = group;
     member.assistant = isAssistant;
-    member.joinTime = time(NULL);
+    member.joinTime = time(nullptr);
     m_memberSlots.push_back(member);
 
     SubGroupCounterIncrease(group);
 
     if (player)
     {
-        player->SetGroupInvite(NULL);
+        player->SetGroupInvite(nullptr);
         // if player is in group and he is being added to BG raid group, then call SetBattleGroundRaid()
         if (player->GetGroup() && isBGGroup())
         {
@@ -202,11 +202,11 @@ bool Group::_removeMember(ObjectGuid guid)
             // we can remove player who is in battleground from his original group
             if (player->GetOriginalGroup() == this)
             {
-                player->SetOriginalGroup(NULL);
+                player->SetOriginalGroup(nullptr);
             }
             else
             {
-                player->SetGroup(NULL);
+                player->SetGroup(nullptr);
             }
         }
     }

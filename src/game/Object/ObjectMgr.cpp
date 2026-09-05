@@ -143,7 +143,7 @@ LanguageDesc const* GetLanguageDescByID(uint32 lang)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -325,7 +325,7 @@ Group* ObjectMgr::GetGroupById(uint32 id) const
         return itr->second;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -740,8 +740,8 @@ void ObjectMgr::LoadStandingList(uint32 dateBegin)
 
     uint32 guid, kills, side;
 
-    Field* fields = NULL;
-    QueryResult* result2 = NULL;
+    Field* fields = nullptr;
+    QueryResult* result2 = nullptr;
     // this query create an ordered standing list
     QueryResult* result = CharacterDatabase.PQuery("SELECT `guid`,SUM(`honor`) as honor_sum FROM `character_honor_cp` WHERE `TYPE` = %u AND `date` BETWEEN %u AND %u AND `used`=0 GROUP BY `guid` ORDER BY `honor_sum` DESC", HONORABLE, dateBegin, dateBegin + 7);
     if (result)
@@ -862,7 +862,7 @@ void ObjectMgr::FlushRankPoints(uint32 dateTop)
         CharacterDatabase.BeginTransaction();
         uint32 guid, kills;
         uint8 type;
-        Field* fields = NULL;
+        Field* fields = nullptr;
         do
         {
             fields = result->Fetch();
@@ -918,8 +918,8 @@ void ObjectMgr::DistributeRankPoints(uint32 team, uint32 dateBegin , bool flush 
 
     HonorScores scores = MaNGOS::Honor::GenerateScores(list, team);
 
-    Field* fields = NULL;
-    QueryResult* result = NULL;
+    Field* fields = nullptr;
+    QueryResult* result = nullptr;
     for (HonorStandingList::iterator itr = list.begin(); itr != list.end() ; ++itr)
     {
         RP = 0;
@@ -1180,7 +1180,7 @@ void ObjectMgr::LoadPetCreateSpells()
             continue;
         }
 
-        if (CreatureSpellDataEntry const* petSpellEntry = cInfo->PetSpellDataId ? sCreatureSpellDataStore.LookupEntry(cInfo->PetSpellDataId) : NULL)
+        if (CreatureSpellDataEntry const* petSpellEntry = cInfo->PetSpellDataId ? sCreatureSpellDataStore.LookupEntry(cInfo->PetSpellDataId) : nullptr)
         {
             sLog.outErrorDb("Creature id %u listed in `petcreateinfo_spell` have set `PetSpellDataId` field and will use its instead, skip.", creature_id);
             continue;
@@ -1263,7 +1263,7 @@ void ObjectMgr::LoadPetCreateSpells()
             continue;
         }
 
-        CreatureSpellDataEntry const* petSpellEntry = cInfo->PetSpellDataId ? sCreatureSpellDataStore.LookupEntry(cInfo->PetSpellDataId) : NULL;
+        CreatureSpellDataEntry const* petSpellEntry = cInfo->PetSpellDataId ? sCreatureSpellDataStore.LookupEntry(cInfo->PetSpellDataId) : nullptr;
         if (!petSpellEntry)
         {
             continue;
@@ -1444,7 +1444,7 @@ GossipText const* ObjectMgr::GetGossipText(uint32 Text_ID) const
     {
         return &itr->second;
     }
-    return NULL;
+    return nullptr;
 }
 
 
@@ -1453,7 +1453,7 @@ GossipText const* ObjectMgr::GetGossipText(uint32 Text_ID) const
 /// @param serverUp true if the server is already running, false when the server is started
 void ObjectMgr::ReturnOrDeleteOldMails(bool serverUp)
 {
-    time_t curTime = time(NULL);
+    time_t curTime = time(nullptr);
     std::tm lt = safe_localtime(curTime);
     uint64 basetime(curTime);
     sLog.outString("Returning mails current time: hour: %d, minute: %d, second: %d ", lt.tm_hour, lt.tm_min, lt.tm_sec);
@@ -2529,7 +2529,7 @@ char const* conditionSourceToStr[] =
 bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const* source, ConditionSource conditionSourceType, ConditionEntry* entry) const
 {
     DEBUG_LOG("Condition-System: Check condition %u, type %i - called from %s with params plr: %s, map %i, src %s",
-        m_entry, m_condition, conditionSourceToStr[conditionSourceType], player ? player->GetGuidStr().c_str() : "<NULL>", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "<NULL>");
+        m_entry, m_condition, conditionSourceToStr[conditionSourceType], player ? player->GetGuidStr().c_str() : "<nullptr>", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "<nullptr>");
 
     if (entry)
     {
@@ -2809,7 +2809,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const
                     }
                     if (Group const* grp = player->GetGroup())
                     {
-                        for (GroupReference const* itr = grp->GetFirstMember(); itr != NULL; itr = itr->next())
+                        for (GroupReference const* itr = grp->GetFirstMember(); itr != nullptr; itr = itr->next())
                         {
                             Player const* pl = itr->getSource();
                             if (pl && pl->IsAlive() && !pl->isGameMaster() && (!m_value2 || !source || InReach(*source, *pl, m_value2)))
@@ -2838,7 +2838,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const
             }
         case CONDITION_CREATURE_IN_RANGE:
         {
-            Creature* creature = NULL;
+            Creature* creature = nullptr;
 
             MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck creature_check(*player, m_value1, true, false, m_value2, true);
             MaNGOS::CreatureLastSearcher<MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck> searcher(creature, creature_check);
@@ -2848,7 +2848,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const
         }
         case CONDITION_GAMEOBJECT_IN_RANGE:
         {
-            GameObject* pGo = NULL;
+            GameObject* pGo = nullptr;
 
             if (source)
             {
@@ -2892,7 +2892,7 @@ bool PlayerCondition::CheckParamRequirements(Player const* pPlayer, Map const* m
             if (!pPlayer && !source)
             {
                 sLog.outErrorDb("CONDITION %u type %u used with bad parameters, called from %s, used with plr: %s, map %i, src %s",
-                    m_entry, m_condition, conditionSourceToStr[conditionSourceType], pPlayer ? pPlayer->GetGuidStr().c_str() : "NULL", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "NULL");
+                    m_entry, m_condition, conditionSourceToStr[conditionSourceType], pPlayer ? pPlayer->GetGuidStr().c_str() : "nullptr", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "nullptr");
                 return false;
             }
             break;
@@ -2900,7 +2900,7 @@ bool PlayerCondition::CheckParamRequirements(Player const* pPlayer, Map const* m
             if (!pPlayer && !source && !map)
             {
                 sLog.outErrorDb("CONDITION %u type %u used with bad parameters, called from %s, used with plr: %s, map %i, src %s",
-                    m_entry, m_condition, conditionSourceToStr[conditionSourceType], pPlayer ? pPlayer->GetGuidStr().c_str() : "NULL", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "NULL");
+                    m_entry, m_condition, conditionSourceToStr[conditionSourceType], pPlayer ? pPlayer->GetGuidStr().c_str() : "nullptr", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "nullptr");
                 return false;
             }
             break;
@@ -2909,7 +2909,7 @@ bool PlayerCondition::CheckParamRequirements(Player const* pPlayer, Map const* m
             if (!source)
             {
                 sLog.outErrorDb("CONDITION %u type %u used with bad parameters, called from %s, used with plr: %s, map %i, src %s",
-                    m_entry, m_condition, conditionSourceToStr[conditionSourceType], pPlayer ? pPlayer->GetGuidStr().c_str() : "NULL", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "NULL");
+                    m_entry, m_condition, conditionSourceToStr[conditionSourceType], pPlayer ? pPlayer->GetGuidStr().c_str() : "nullptr", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "nullptr");
                 return false;
             }
             break;
@@ -2946,7 +2946,7 @@ bool PlayerCondition::CheckParamRequirements(Player const* pPlayer, Map const* m
             if (!pPlayer)
             {
                 sLog.outErrorDb("CONDITION %u type %u used with bad parameters, called from %s, used with %s, map %i, src %s",
-                    m_entry, m_condition, conditionSourceToStr[conditionSourceType], pPlayer ? pPlayer->GetGuidStr().c_str() : "NULL", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "NULL");
+                    m_entry, m_condition, conditionSourceToStr[conditionSourceType], pPlayer ? pPlayer->GetGuidStr().c_str() : "nullptr", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "nullptr");
                 return false;
             }
             break;
@@ -2954,7 +2954,7 @@ bool PlayerCondition::CheckParamRequirements(Player const* pPlayer, Map const* m
             if (!pPlayer)
             {
                 sLog.outErrorDb("CONDITION %u type %u used with bad parameters, called from %s, used with plr: %s, map %i, src %s",
-                    m_entry, m_condition, conditionSourceToStr[conditionSourceType], pPlayer ? pPlayer->GetGuidStr().c_str() : "NULL", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "NULL");
+                    m_entry, m_condition, conditionSourceToStr[conditionSourceType], pPlayer ? pPlayer->GetGuidStr().c_str() : "nullptr", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "nullptr");
                 return false;
             }
             break;
@@ -3544,7 +3544,7 @@ bool ObjectMgr::RemoveVendorItem(uint32 entry, uint32 item)
 bool ObjectMgr::IsVendorItemValid(bool isTemplate, char const* tableName, uint32 vendor_entry, uint32 item_id, uint32 maxcount, uint32 incrtime, uint16 conditionId, Player* pl, std::set<uint32>* skip_vendors) const
 {
     char const* idStr = isTemplate ? "vendor template" : "vendor";
-    CreatureInfo const* cInfo = NULL;
+    CreatureInfo const* cInfo = nullptr;
 
     if (!isTemplate)
     {
@@ -3632,7 +3632,7 @@ bool ObjectMgr::IsVendorItemValid(bool isTemplate, char const* tableName, uint32
     }
 
     VendorItemData const* vItems = isTemplate ? GetNpcVendorTemplateItemList(vendor_entry) : GetNpcVendorItemList(vendor_entry);
-    VendorItemData const* tItems = isTemplate ? NULL : GetNpcVendorTemplateItemList(vendor_entry);
+    VendorItemData const* tItems = isTemplate ? nullptr : GetNpcVendorTemplateItemList(vendor_entry);
 
     if (!vItems && !tItems)
     {
@@ -3929,7 +3929,7 @@ GameObjectDataPair const* FindGOData::GetResult() const
  * @param target The optional target unit for whispers.
  * @return true if the text was displayed successfully; otherwise false.
  */
-bool DoDisplayText(Occupant* source, int32 entry, Unit const* target /*=NULL*/)
+bool DoDisplayText(Occupant* source, int32 entry, Unit const* target /*=nullptr*/)
 {
     MangosStringLocale const* data = sObjectMgr.GetMangosStringLocale(entry);
 

@@ -122,7 +122,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         default: spell_id = 8855; break;
                     }
 
-                    m_caster->CastSpell(m_caster, spell_id, true, NULL);
+                    m_caster->CastSpell(m_caster, spell_id, true, nullptr);
                     return;
                 }
                 case 17512:                                 // Piccolo of the Flaming Fire
@@ -207,7 +207,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                 }
                 case 24320:                                 // Poisonous Blood
                 {
-                    unitTarget->CastSpell(unitTarget, 24321, true, NULL, NULL, m_caster->GetObjectGuid());
+                    unitTarget->CastSpell(unitTarget, 24321, true, nullptr, nullptr, m_caster->GetObjectGuid());
                     return;
                 }
                 case 24324:                                 // Blood Siphon
@@ -456,7 +456,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     int32 damage = unitTarget->GetHealth() - unitTarget->GetMaxHealth() * 0.05f;
                     if (damage > 0)
                     {
-                        m_caster->CastCustomSpell(unitTarget, 28375, &damage, NULL, NULL, true);
+                        m_caster->CastCustomSpell(unitTarget, 28375, &damage, nullptr, nullptr, true);
                     }
                     return;
                 }
@@ -467,7 +467,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         return;
                     }
 
-                    unitTarget->CastSpell(unitTarget, 28561, true, NULL, NULL, m_caster->GetObjectGuid());
+                    unitTarget->CastSpell(unitTarget, 28561, true, nullptr, nullptr, m_caster->GetObjectGuid());
                     return;
                 }
             }
@@ -546,7 +546,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                 }
                 int32 heal = damage;
                 int32 spellid = m_spellInfo->ID;            // send main spell id as basepoints for not used effect
-                m_caster->CastCustomSpell(unitTarget, 19968, &heal, &spellid, NULL, true, NULL, NULL, ObjectGuid(), m_spellInfo);
+                m_caster->CastCustomSpell(unitTarget, 19968, &heal, &spellid, nullptr, true, nullptr, nullptr, ObjectGuid(), m_spellInfo);
             }
             // Flash of Light
             else if (m_spellInfo->SpellIconID  == 242)
@@ -557,7 +557,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                 }
                 int32 heal = damage;
                 int32 spellid = m_spellInfo->ID;            // send main spell id as basepoints for not used effect
-                m_caster->CastCustomSpell(unitTarget, 19993, &heal, &spellid, NULL, true);
+                m_caster->CastCustomSpell(unitTarget, 19993, &heal, &spellid, nullptr, true);
             }
             else if (m_spellInfo->SpellIconID == 205)
             {

@@ -45,7 +45,7 @@ namespace proto
     DecodeStatus PacketCodec::Feed(const uint8* data, size_t len,
                                    std::vector<WorldPacket>& out)
     {
-        if (data == NULL || len == 0)
+        if (data == nullptr || len == 0)
         {
             return DecodeStatus::Ok;
         }

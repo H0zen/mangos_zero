@@ -64,7 +64,7 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
     ObjectGuid lguid = player->GetLootGuid();
     Loot*    loot;
     uint8    lootSlot;
-    Item* pItem = NULL;
+    Item* pItem = nullptr;
 
     recv_data >> lootSlot;
 
@@ -130,15 +130,15 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
         }
     }
 
-    QuestItem* qitem = NULL;
-    QuestItem* ffaitem = NULL;
-    QuestItem* conditem = NULL;
+    QuestItem* qitem = nullptr;
+    QuestItem* ffaitem = nullptr;
+    QuestItem* conditem = nullptr;
 
     LootItem* item = loot->LootItemInSlot(lootSlot, player, &qitem, &ffaitem, &conditem);
 
     if (!item)
     {
-        player->SendEquipError(EQUIP_ERR_ALREADY_LOOTED, NULL, NULL);
+        player->SendEquipError(EQUIP_ERR_ALREADY_LOOTED, nullptr, nullptr);
         return;
     }
 
@@ -156,7 +156,7 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
             {
                 if ((!item->is_underthreshold && !group->IsRollDoneForItem(pObject, item)) || (item->winner && item->winner != player->GetObjectGuid()))
                 {
-                    player->SendEquipError(EQUIP_ERR_LOOT_CANT_LOOT_THAT_NOW, NULL, NULL, item->itemid);
+                    player->SendEquipError(EQUIP_ERR_LOOT_CANT_LOOT_THAT_NOW, nullptr, nullptr, item->itemid);
                     return;
                 }
                 break;
@@ -165,7 +165,7 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
             {
                 if ((item->winner && item->winner != player->GetObjectGuid()) || (!item->winner && !item->is_underthreshold && !item->freeforall))
                 {
-                    player->SendEquipError(EQUIP_ERR_LOOT_CANT_LOOT_THAT_NOW, NULL, NULL, item->itemid);
+                    player->SendEquipError(EQUIP_ERR_LOOT_CANT_LOOT_THAT_NOW, nullptr, nullptr, item->itemid);
                     return;
                 }
                 break;
@@ -238,7 +238,7 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
     }
     else
     {
-        player->SendEquipError(msg, NULL, NULL, item->itemid);
+        player->SendEquipError(msg, nullptr, nullptr, item->itemid);
     }
 }
 
@@ -258,8 +258,8 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
         return;
     }
 
-    Loot* pLoot = NULL;
-    Item* pItem = NULL;
+    Loot* pLoot = nullptr;
+    Item* pItem = nullptr;
 
     switch (guid.GetHigh())
     {
@@ -337,7 +337,7 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
                 Group* group = player->GetGroup();
 
                 std::vector<Player*> playersNear;
-                for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
+                for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
                 {
                     Player* playerGroup = itr->getSource();
                     if (!playerGroup)
@@ -696,7 +696,7 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recv_data)
         return;
     }
 
-    Loot* pLoot = NULL;
+    Loot* pLoot = nullptr;
 
     if (lootguid.IsCreature())
     {
@@ -737,7 +737,7 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recv_data)
     {
         // Assign winner to the item, avoiding other member picks it up.
         item.winner = target->GetObjectGuid();
-        target->SendEquipError(msg, NULL, NULL, item.itemid);
+        target->SendEquipError(msg, nullptr, nullptr, item.itemid);
 
         pLoot->NotifyItemRemoved(slotid);
 

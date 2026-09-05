@@ -72,7 +72,7 @@
  * Function skip all whitespaces in args string
  *
  * @param args variable pointer to non parsed args string, updated at function call to new position (with skipped white spaces)
- *             allowed NULL string pointer stored in *args
+ *             allowed nullptr string pointer stored in *args
  */
 void ChatHandler::SkipWhiteSpaces(char** args)
 {
@@ -264,13 +264,13 @@ bool  ChatHandler::ExtractOptFloat(char** args, float& val, float defVal)
  * @param args variable pointer to non parsed args string, updated at function call to new position (with skipped white spaces)
  * @param lit  optional explicit literal requirement. function fail if literal is not starting substring of lit.
  *             Note: function in same way fail if no any literal or literal not fit in this case. Need additional check for select specific fail case
- * @return     name/number-like string without whitespaces, or NULL if args empty or not appropriate content.
+ * @return     name/number-like string without whitespaces, or nullptr if args empty or not appropriate content.
  */
-char* ChatHandler::ExtractLiteralArg(char** args, char const* lit /*= NULL*/)
+char* ChatHandler::ExtractLiteralArg(char** args, char const* lit /*= nullptr*/)
 {
     if (!*args || !** args)
     {
-        return NULL;
+        return nullptr;
     }
 
     char* head = *args;
@@ -280,13 +280,13 @@ char* ChatHandler::ExtractLiteralArg(char** args, char const* lit /*= NULL*/)
     {
         // reject quoted string
         case '[': case '\'': case '"':
-            return NULL;
+            return nullptr;
         // reject link (|-started text)
         case '|':
             // client replace all | by || in raw text
             if (head[1] != '|')
             {
-                return NULL;
+                return nullptr;
             }
             ++head;                                         // skip one |
             break;
@@ -312,12 +312,12 @@ char* ChatHandler::ExtractLiteralArg(char** args, char const* lit /*= NULL*/)
 
         if (diff != 0)
         {
-            return NULL;
+            return nullptr;
         }
 
         if (head[l] && !isWhiteSpace(head[l]))
         {
-            return NULL;
+            return nullptr;
         }
 
         char* arg = head;
@@ -341,9 +341,9 @@ char* ChatHandler::ExtractLiteralArg(char** args, char const* lit /*= NULL*/)
 
     char* name = strtok(head, " ");
 
-    char* tail = strtok(NULL, "");
+    char* tail = strtok(nullptr, "");
 
-    *args = tail ? tail : (char*)"";                        // *args don't must be NULL
+    *args = tail ? tail : (char*)"";                        // *args don't must be nullptr
 
     SkipWhiteSpaces(args);
 
@@ -355,18 +355,18 @@ char* ChatHandler::ExtractLiteralArg(char** args, char const* lit /*= NULL*/)
  *
  * @param args variable pointer to non parsed args string, updated at function call to new position (with skipped white spaces)
  * @param asis control save quote string wrappers
- * @return     quote-like string, or NULL if args empty or not appropriate content.
+ * @return     quote-like string, or nullptr if args empty or not appropriate content.
  */
 char* ChatHandler::ExtractQuotedArg(char** args, bool asis /*= false*/)
 {
     if (!*args || !** args)
     {
-        return NULL;
+        return nullptr;
     }
 
     if (**args != '\'' &&**  args != '"' &&**  args != '[')
     {
-        return NULL;
+        return nullptr;
     }
 
     char guard = (*args)[0];
@@ -386,7 +386,7 @@ char* ChatHandler::ExtractQuotedArg(char** args, bool asis /*= false*/)
 
     if (!*tail || (tail[1] && !isWhiteSpace(tail[1])))      // fail
     {
-        return NULL;
+        return nullptr;
     }
 
     if (!tail[1])                                           // quote is last char in string
@@ -418,7 +418,7 @@ char* ChatHandler::ExtractQuotedArg(char** args, bool asis /*= false*/)
  *
  * @param args variable pointer to non parsed args string, updated at function call to new position (with skipped white spaces)
  * @param asis control save quote string wrappers
- * @return     quote/literal string, or NULL if args empty or not appropriate content.
+ * @return     quote/literal string, or nullptr if args empty or not appropriate content.
  */
 char* ChatHandler::ExtractQuotedOrLiteralArg(char** args, bool asis /*= false*/)
 {
@@ -466,29 +466,29 @@ bool  ChatHandler::ExtractOnOff(char** args, bool& value)
  *
  * @param args variable pointer to non parsed args string, updated at function call to new position (with skipped white spaces)
  *
- * @param linkTypes  optional NULL-terminated array of link types, shift-link must fit one from link type from array if provided or extraction fail
+ * @param linkTypes  optional nullptr-terminated array of link types, shift-link must fit one from link type from array if provided or extraction fail
  *
- * @param found_idx  if not NULL then at return index in linkTypes that fit shift-link type, if extraction fail then non modified
+ * @param found_idx  if not nullptr then at return index in linkTypes that fit shift-link type, if extraction fail then non modified
  *
- * @param keyPair    if not NULL then pointer to 2-elements array for return start and end pointer for found key
+ * @param keyPair    if not nullptr then pointer to 2-elements array for return start and end pointer for found key
  *                   if extraction fail then non modified
  *
  * @param somethingPair then pointer to 2-elements array for return start and end pointer if found.
- *                   if not NULL then shift-link must have data field, if extraction fail then non modified
+ *                   if not nullptr then shift-link must have data field, if extraction fail then non modified
  *
- * @return     shift-link-like string, or NULL if args empty or not appropriate content.
+ * @return     shift-link-like string, or nullptr if args empty or not appropriate content.
  */
-char* ChatHandler::ExtractLinkArg(char** args, char const* const* linkTypes /*= NULL*/, int* foundIdx /*= NULL*/, char** keyPair /*= NULL*/, char** somethingPair /*= NULL*/)
+char* ChatHandler::ExtractLinkArg(char** args, char const* const* linkTypes /*= nullptr*/, int* foundIdx /*= nullptr*/, char** keyPair /*= nullptr*/, char** somethingPair /*= nullptr*/)
 {
     if (!*args || !** args)
     {
-        return NULL;
+        return nullptr;
     }
 
     // skip if not linked started or encoded single | (doubled by client)
     if ((*args)[0] != '|' || (*args)[1] == '|')
     {
-        return NULL;
+        return nullptr;
     }
 
     // |color|Hlinktype:key:data...|h[name]|h|r
@@ -514,7 +514,7 @@ char* ChatHandler::ExtractLinkArg(char** args, char const* const* linkTypes /*= 
 
         if (!*tail)
         {
-            return NULL;
+            return nullptr;
         }
 
         // |Hlinktype:key:data...|h[name]|h|r
@@ -526,7 +526,7 @@ char* ChatHandler::ExtractLinkArg(char** args, char const* const* linkTypes /*= 
 
     if (*tail != 'H')
     {
-        return NULL;
+        return nullptr;
     }
 
     int linktype_idx = 0;
@@ -546,9 +546,9 @@ char* ChatHandler::ExtractLinkArg(char** args, char const* const* linkTypes /*= 
         }
 
         // is search fail?
-        if (!linkTypes[linktype_idx])                       // NULL terminator in last element
+        if (!linkTypes[linktype_idx])                       // nullptr terminator in last element
         {
-            return NULL;
+            return nullptr;
         }
 
         tail += strlen(linkTypes[linktype_idx]);            // skip linktype string
@@ -557,7 +557,7 @@ char* ChatHandler::ExtractLinkArg(char** args, char const* const* linkTypes /*= 
 
         if (*tail != ':')
         {
-            return NULL;
+            return nullptr;
         }
     }
     else
@@ -569,7 +569,7 @@ char* ChatHandler::ExtractLinkArg(char** args, char const* const* linkTypes /*= 
 
         if (!*tail)
         {
-            return NULL;
+            return nullptr;
         }
     }
 
@@ -585,7 +585,7 @@ char* ChatHandler::ExtractLinkArg(char** args, char const* const* linkTypes /*= 
 
     if (!*tail)
     {
-        return NULL;
+        return nullptr;
     }
 
     char* keyEnd = tail;                                    // remember key end for truncate
@@ -609,7 +609,7 @@ char* ChatHandler::ExtractLinkArg(char** args, char const* const* linkTypes /*= 
 
         if (!*tail)
         {
-            return NULL;
+            return nullptr;
         }
 
         somethingEnd = tail;                                // remember data end for truncate
@@ -624,7 +624,7 @@ char* ChatHandler::ExtractLinkArg(char** args, char const* const* linkTypes /*= 
 
     if (!*tail)
     {
-        return NULL;
+        return nullptr;
     }
 
     // |h[name]|h|r
@@ -634,7 +634,7 @@ char* ChatHandler::ExtractLinkArg(char** args, char const* const* linkTypes /*= 
     // [name]|h|r
     if (*tail != '[')
     {
-        return NULL;
+        return nullptr;
     }
 
     while (*tail && (*tail != ']' || *(tail + 1) != '|'))   // skip name part
@@ -647,7 +647,7 @@ char* ChatHandler::ExtractLinkArg(char** args, char const* const* linkTypes /*= 
     // h|r
     if (*tail != 'h' || *(tail + 1) != '|')
     {
-        return NULL;
+        return nullptr;
     }
 
     tail += 2;                                              // skip h|
@@ -655,7 +655,7 @@ char* ChatHandler::ExtractLinkArg(char** args, char const* const* linkTypes /*= 
     // r
     if (*tail != 'r' || (*(tail + 1) && !isWhiteSpace(*(tail + 1))))
     {
-        return NULL;
+        return nullptr;
     }
 
     ++tail;                                                 // skip r
@@ -696,13 +696,13 @@ char* ChatHandler::ExtractLinkArg(char** args, char const* const* linkTypes /*= 
  *
  * @param args variable pointer to non parsed args string, updated at function call to new position (with skipped white spaces)
  * @param asis control save quote string wrappers
- * @return     extracted arg string, or NULL if args empty or not appropriate content.
+ * @return     extracted arg string, or nullptr if args empty or not appropriate content.
  */
 char* ChatHandler::ExtractArg(char** args, bool asis /*= false*/)
 {
     if (!*args || !** args)
     {
-        return NULL;
+        return nullptr;
     }
 
     char* arg = ExtractQuotedOrLiteralArg(args, asis);
@@ -719,7 +719,7 @@ char* ChatHandler::ExtractArg(char** args, bool asis /*= false*/)
  *
  * @param args variable pointer to non parsed args string, updated at function call to new position (with skipped white spaces)
  *             if args have only single arg then args still pointing to this arg (unmodified pointer)
- * @return     extracted string, or NULL if args empty or not appropriate content or have single arg totally.
+ * @return     extracted string, or nullptr if args empty or not appropriate content or have single arg totally.
  */
 char* ChatHandler::ExtractOptNotLastArg(char** args)
 {
@@ -732,9 +732,9 @@ char* ChatHandler::ExtractOptNotLastArg(char** args)
     }
 
     // optional name not found
-    *args = arg ? arg : (char*)"";                          // *args don't must be NULL
+    *args = arg ? arg : (char*)"";                          // *args don't must be nullptr
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -746,16 +746,16 @@ char* ChatHandler::ExtractOptNotLastArg(char** args)
  *
  * @param linkType   shift-link must fit by link type to this arg value or extraction fail
  *
- * @param something1 if not NULL then shift-link must have data field and it returned into this arg
+ * @param something1 if not nullptr then shift-link must have data field and it returned into this arg
  *                   if extraction fail then non modified
  *
- * @return           extracted key, or NULL if args empty or not appropriate content or not fit to linkType.
+ * @return           extracted key, or nullptr if args empty or not appropriate content or not fit to linkType.
  */
-char* ChatHandler::ExtractKeyFromLink(char** text, char const* linkType, char** something1 /*= NULL*/)
+char* ChatHandler::ExtractKeyFromLink(char** text, char const* linkType, char** something1 /*= nullptr*/)
 {
     char const* linkTypes[2];
     linkTypes[0] = linkType;
-    linkTypes[1] = NULL;
+    linkTypes[1] = nullptr;
 
     int foundIdx;
 
@@ -769,22 +769,22 @@ char* ChatHandler::ExtractKeyFromLink(char** text, char const* linkType, char** 
  * @param args       variable pointer to non parsed args string, updated at function call to new position (with skipped white spaces)
  *                   if args have sift link with linkType != LINKTYPE then args still pointing to this arg (unmodified pointer)
  *
- * @param linkTypes  NULL-terminated array of link types, shift-link must fit one from link type from array or extraction fail
+ * @param linkTypes  nullptr-terminated array of link types, shift-link must fit one from link type from array or extraction fail
  *
- * @param found_idx  if not NULL then at return index in linkTypes that fit shift-link type, for non-link case return -1
+ * @param found_idx  if not nullptr then at return index in linkTypes that fit shift-link type, for non-link case return -1
  *                   if extraction fail then non modified
  *
- * @param something1 if not NULL then shift-link must have data field and it returned into this arg
+ * @param something1 if not nullptr then shift-link must have data field and it returned into this arg
  *                   if extraction fail then non modified
  *
- * @return           extracted key, or NULL if args empty or not appropriate content or not fit to linkType.
+ * @return           extracted key, or nullptr if args empty or not appropriate content or not fit to linkType.
  */
-char* ChatHandler::ExtractKeyFromLink(char** text, char const* const* linkTypes, int* found_idx, char** something1 /*= NULL*/)
+char* ChatHandler::ExtractKeyFromLink(char** text, char const* const* linkTypes, int* found_idx, char** something1 /*= nullptr*/)
 {
     // skip empty
     if (!*text || !** text)
     {
-        return NULL;
+        return nullptr;
     }
 
     // return non link case
@@ -802,10 +802,10 @@ char* ChatHandler::ExtractKeyFromLink(char** text, char const* const* linkTypes,
     char* keyPair[2];
     char* somethingPair[2];
 
-    arg = ExtractLinkArg(text, linkTypes, found_idx, keyPair, something1 ? somethingPair : NULL);
+    arg = ExtractLinkArg(text, linkTypes, found_idx, keyPair, something1 ? somethingPair : nullptr);
     if (!arg)
     {
-        return NULL;
+        return nullptr;
     }
 
     *keyPair[1] = '\0';                                     // truncate key string
@@ -848,13 +848,13 @@ bool ChatHandler::ExtractUint32KeyFromLink(char** text, char const* linkType, ui
  *
  * @param lowguid The game object low GUID.
  * @param entry The game object entry identifier.
- * @return GameObject* The matching game object, or NULL if not found.
+ * @return GameObject* The matching game object, or nullptr if not found.
  */
 GameObject* ChatHandler::GetGameObjectWithGuid(uint32 lowguid, uint32 entry)
 {
     if (!m_session)
     {
-        return NULL;
+        return nullptr;
     }
 
     Player* pl = m_session->GetPlayer();
@@ -875,7 +875,7 @@ static char const* const spellKeys[] =
         "Hspell",                                               // normal spell
         "Htalent",                                              // talent spell
         "Henchant",                                             // enchanting recipe spell
-    NULL
+    nullptr
 };
 
 /**
@@ -890,7 +890,7 @@ uint32 ChatHandler::ExtractSpellIdFromLink(char** text)
     // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r
     // number or [name] Shift-click form |color|Htalent:talent_id,rank|h[name]|h|r
     int type;
-    char* param1_str = NULL;
+    char* param1_str = nullptr;
     char* idS = ExtractKeyFromLink(text, spellKeys, &type, &param1_str);
     if (idS)
     {
@@ -1045,7 +1045,7 @@ uint32 ChatHandler::ExtractSpellIdFromLink(char** text)
  * @brief Extracts a game teleport definition from a raw argument or teleport link.
  *
  * @param text The argument text pointer to parse.
- * @return GameTele const* The matching teleport definition, or NULL on failure.
+ * @return GameTele const* The matching teleport definition, or nullptr on failure.
  */
 GameTele const* ChatHandler::ExtractGameTeleFromLink(char** text)
 {
@@ -1053,7 +1053,7 @@ GameTele const* ChatHandler::ExtractGameTeleFromLink(char** text)
     char* cId = ExtractKeyFromLink(text, "Htele");
     if (!cId)
     {
-        return NULL;
+        return nullptr;
     }
 
     // id case (explicit or from shift link)
@@ -1081,7 +1081,7 @@ static char const* const guidKeys[] =
         "Hplayer",
         "Hcreature",
         "Hgameobject",
-    NULL
+    nullptr
 };
 
 /**
@@ -1186,7 +1186,7 @@ static char const* const locationKeys[] =
         "Hgameobject_entry",
         "Hareatrigger",
         "Hareatrigger_target",
-    NULL
+    nullptr
 };
 
 /**
@@ -1338,7 +1338,7 @@ bool ChatHandler::ExtractLocationFromLink(char** text, uint32& mapid, float& x, 
 
             if (ObjectMgr::GetCreatureTemplate(id))
             {
-                FindCreatureData worker(id, m_session ? m_session->GetPlayer() : NULL);
+                FindCreatureData worker(id, m_session ? m_session->GetPlayer() : nullptr);
 
                 sObjectMgr.DoCreatureData(worker);
 
@@ -1370,7 +1370,7 @@ bool ChatHandler::ExtractLocationFromLink(char** text, uint32& mapid, float& x, 
 
             if (ObjectMgr::GetGameObjectInfo(id))
             {
-                FindGOData worker(id, m_session ? m_session->GetPlayer() : NULL);
+                FindGOData worker(id, m_session ? m_session->GetPlayer() : nullptr);
 
                 sObjectMgr.DoGOData(worker);
 
@@ -1486,7 +1486,7 @@ std::string ChatHandler::ExtractPlayerNameFromLink(char** text)
  *
  * @return           true if extraction successful
  */
-bool ChatHandler::ExtractPlayerTarget(char** args, Player** player /*= NULL*/, ObjectGuid* player_guid /*= NULL*/, std::string* player_name /*= NULL*/)
+bool ChatHandler::ExtractPlayerTarget(char** args, Player** player /*= nullptr*/, ObjectGuid* player_guid /*= nullptr*/, std::string* player_name /*= nullptr*/)
 {
     if (*args &&**  args)
     {
@@ -1596,7 +1596,7 @@ bool ChatHandler::ExtractPlayerTarget(char** args, Player** player /*= NULL*/, O
  * @param targetIfNullArg Optional output for the selected player when no argument is given.
  * @return uint32 The extracted account id, or 0 on failure.
  */
-uint32 ChatHandler::ExtractAccountId(char** args, std::string* accountName /*= NULL*/, Player** targetIfNullArg /*= NULL*/)
+uint32 ChatHandler::ExtractAccountId(char** args, std::string* accountName /*= nullptr*/, Player** targetIfNullArg /*= nullptr*/)
 {
     uint32 account_id = 0;
 
@@ -1610,7 +1610,7 @@ uint32 ChatHandler::ExtractAccountId(char** args, std::string* accountName /*= N
             return 0;
         }
 
-        /// only target player different from self allowed (if targetPlayer!=NULL then not console)
+        /// only target player different from self allowed (if targetPlayer!=nullptr then not console)
         Player* targetPlayer = getSelectedPlayer();
         if (!targetPlayer)
         {
@@ -1669,7 +1669,7 @@ uint32 ChatHandler::ExtractAccountId(char** args, std::string* accountName /*= N
 
     if (targetIfNullArg)
     {
-        *targetIfNullArg = NULL;
+        *targetIfNullArg = nullptr;
     }
 
     return account_id;
@@ -1699,7 +1699,7 @@ static RaceMaskName const raceMaskNames[] =
     { "all", RACEMASK_ALL_PLAYABLE },
 
     // terminator
-    { NULL, 0 }
+    { nullptr, 0 }
 };
 
 /**
@@ -1710,7 +1710,7 @@ static RaceMaskName const raceMaskNames[] =
  * @param maskName Optional output for the resolved preset name.
  * @return true if a race mask was extracted; otherwise false.
  */
-bool ChatHandler::ExtractRaceMask(char** text, uint32& raceMask, char const** maskName /*=NULL*/)
+bool ChatHandler::ExtractRaceMask(char** text, uint32& raceMask, char const** maskName /*=nullptr*/)
 {
     if (ExtractUInt32(text, raceMask))
     {

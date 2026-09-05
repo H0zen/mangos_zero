@@ -336,7 +336,7 @@ void Terminal::Write(const char* bytes, std::size_t len)
     // WriteFile, not fwrite: stdout is a text-mode CRT stream on Windows and
     // would rewrite '\n' into "\r\n" inside cursor-positioning sequences.
     DWORD written = 0;
-    WriteFile(s_out, bytes, DWORD(len), &written, NULL);
+    WriteFile(s_out, bytes, DWORD(len), &written, nullptr);
 }
 
 #else

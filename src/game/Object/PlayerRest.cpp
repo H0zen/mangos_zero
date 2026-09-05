@@ -117,7 +117,7 @@ void Player::SetRestType(RestType n_r_type, uint32 areaTriggerId /*= 0*/)
         SetPlayerFlag(PLAYER_FLAGS_RESTING);
 
         inn_trigger_id = areaTriggerId;
-        time_inn_enter = time(NULL);
+        time_inn_enter = time(nullptr);
 
         if (sWorld.IsFFAPvPRealm())
         {

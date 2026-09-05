@@ -74,7 +74,7 @@
 bool ChatHandler::ShowHelpForSubCommands(ChatCommand* table, char const* cmd)
 {
     std::string list;
-    for (uint32 i = 0; table[i].Name != NULL; ++i)
+    for (uint32 i = 0; table[i].Name != nullptr; ++i)
     {
         // must be available (ignore handler existence for show command with possible available subcommands
         if (!isAvailable(table[i]))
@@ -127,11 +127,11 @@ bool ChatHandler::ShowHelpForSubCommands(ChatCommand* table, char const* cmd)
 bool ChatHandler::ShowHelpForCommand(ChatCommand* table, const char* cmd)
 {
     char const* oldCmd = cmd;
-    ChatCommand* command = NULL;
-    ChatCommand* parentCommand = NULL;
+    ChatCommand* command = nullptr;
+    ChatCommand* parentCommand = nullptr;
 
-    ChatCommand* showCommand = NULL;
-    ChatCommand* childCommands = NULL;
+    ChatCommand* showCommand = nullptr;
+    ChatCommand* childCommands = nullptr;
 
     ChatCommandSearchResult res = FindCommand(table, cmd, command, &parentCommand);
 
@@ -158,8 +158,8 @@ bool ChatHandler::ShowHelpForCommand(ChatCommand* table, const char* cmd)
             break;
         case CHAT_COMMAND_UNKNOWN:
             // not show command list at error in first level command find fail
-            childCommands = table != getCommandTable() || strlen(oldCmd) == 0 ? table : NULL;
-            command = NULL;
+            childCommands = table != getCommandTable() || strlen(oldCmd) == 0 ? table : nullptr;
+            command = nullptr;
             break;
     }
 

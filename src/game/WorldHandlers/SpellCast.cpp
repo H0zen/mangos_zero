@@ -330,7 +330,7 @@ void Spell::cast(bool skipCheck)
     float speed = m_spellInfo->Speed == 0.0f && m_triggeredBySpellInfo ? m_triggeredBySpellInfo->Speed : m_spellInfo->Speed;
     if (speed > 0.0f)
     {
-        // Remove used for cast item if need (it can be already NULL after TakeReagents call
+        // Remove used for cast item if need (it can be already nullptr after TakeReagents call
         // in case delayed spell remove item at cast delay start
         TakeCastItem();
 
@@ -383,7 +383,7 @@ void Spell::handle_immediate()
     // spell is finished, perform some last features of the spell here
     _handle_finish_phase();
 
-    // Remove used for cast item if need (it can be already NULL after TakeReagents call
+    // Remove used for cast item if need (it can be already nullptr after TakeReagents call
     TakeCastItem();
 
     if (m_spellState != SPELL_STATE_CASTING)
@@ -476,7 +476,7 @@ void Spell::_handle_immediate_phase()
         // apply Send Event effect to ground in case empty target lists
         if (m_spellInfo->Effect[j] == SPELL_EFFECT_SEND_EVENT && !HaveTargetsForEffect(SpellEffectIndex(j)))
         {
-            HandleEffects(NULL, NULL, NULL, SpellEffectIndex(j));
+            HandleEffects(nullptr, nullptr, nullptr, SpellEffectIndex(j));
             continue;
         }
 
@@ -505,7 +505,7 @@ void Spell::_handle_immediate_phase()
             //summon a gameobject at the spell's destination xyz
             (m_spellInfo->Effect[j] == SPELL_EFFECT_TRANS_DOOR && m_spellInfo->ImplicitTargetA[j] == TARGET_AREAEFFECT_GO_AROUND_DEST))
         {
-            HandleEffects(NULL, NULL, NULL, SpellEffectIndex(j));
+            HandleEffects(nullptr, nullptr, nullptr, SpellEffectIndex(j));
         }
     }
 }
@@ -721,7 +721,7 @@ void Spell::update(uint32 difftime)
                             }
 
                             Unit* unit = m_caster->GetObjectGuid() == target.targetGUID ? m_caster : ObjectLookup::GetUnit(*m_caster, target.targetGUID);
-                            if (unit == NULL)
+                            if (unit == nullptr)
                             {
                                 continue;
                             }
@@ -816,7 +816,7 @@ void Spell::finish(bool ok)
                     int32 chance = m_caster->CalculateSpellDamage(unit, auraSpellInfo, auraSpellIdx, &auraBasePoints);
                     if (roll_chance_i(chance))
                     {
-                        m_caster->CastSpell(unit, auraSpellInfo->EffectTriggerSpell[auraSpellIdx], true, NULL, aura);
+                        m_caster->CastSpell(unit, auraSpellInfo->EffectTriggerSpell[auraSpellIdx], true, nullptr, aura);
                     }
                 }
             }

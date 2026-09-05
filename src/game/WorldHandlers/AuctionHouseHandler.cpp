@@ -300,7 +300,7 @@ void WorldSession::SendAuctionCancelledToBidderMail(AuctionEntry* auction)
  * @brief Resolves the auction house entry for a player or auctioneer interaction.
  *
  * @param guid The guid of the player or auctioneer being used.
- * @return AuctionHouseEntry const* The resolved auction house entry, or NULL when access is invalid.
+ * @return AuctionHouseEntry const* The resolved auction house entry, or nullptr when access is invalid.
  */
 AuctionHouseEntry const* WorldSession::GetCheckedAuctionHouseForAuctioneer(ObjectGuid guid)
 {
@@ -314,7 +314,7 @@ AuctionHouseEntry const* WorldSession::GetCheckedAuctionHouseForAuctioneer(Objec
         if (GetPlayer()->GetAuctionAccessMode() == 0 && !ChatHandler(GetPlayer()).FindCommand("auction"))
         {
             DEBUG_LOG("%s attempt open auction in cheating way.", guid.GetString().c_str());
-            return NULL;
+            return nullptr;
         }
 
         auctioneer = GetPlayer();
@@ -326,7 +326,7 @@ AuctionHouseEntry const* WorldSession::GetCheckedAuctionHouseForAuctioneer(Objec
         if (!auctioneer)
         {
             DEBUG_LOG("Auctioneer %s accessed in cheating way.", guid.GetString().c_str());
-            return NULL;
+            return nullptr;
         }
     }
 
@@ -396,26 +396,26 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recv_data)
     if (sAuctionMgr.GetAItem(itemGuid.GetCounter()))
     {
         sLog.outError("AuctionError, %s is sending %s, but item is already in another auction", pl->GetGuidStr().c_str(), itemGuid.GetString().c_str());
-        SendAuctionCommandResult(NULL, AUCTION_STARTED, AUCTION_ERR_INVENTORY, EQUIP_ERR_ITEM_NOT_FOUND);
+        SendAuctionCommandResult(nullptr, AUCTION_STARTED, AUCTION_ERR_INVENTORY, EQUIP_ERR_ITEM_NOT_FOUND);
         return;
     }
 
     // prevent sending bag with items (cheat: can be placed in bag after adding equipped empty bag to auction)
     if (!it)
     {
-        SendAuctionCommandResult(NULL, AUCTION_STARTED, AUCTION_ERR_INVENTORY, EQUIP_ERR_ITEM_NOT_FOUND);
+        SendAuctionCommandResult(nullptr, AUCTION_STARTED, AUCTION_ERR_INVENTORY, EQUIP_ERR_ITEM_NOT_FOUND);
         return;
     }
 
     if (!it->CanBeTraded())
     {
-        SendAuctionCommandResult(NULL, AUCTION_STARTED, AUCTION_ERR_INVENTORY, EQUIP_ERR_ITEM_NOT_FOUND);
+        SendAuctionCommandResult(nullptr, AUCTION_STARTED, AUCTION_ERR_INVENTORY, EQUIP_ERR_ITEM_NOT_FOUND);
         return;
     }
 
     if ((it->GetProto()->Flags & ITEM_FLAG_CONJURED) || it->GetUInt32Value(ITEM_FIELD_DURATION))
     {
-        SendAuctionCommandResult(NULL, AUCTION_STARTED, AUCTION_ERR_INVENTORY, EQUIP_ERR_ITEM_NOT_FOUND);
+        SendAuctionCommandResult(nullptr, AUCTION_STARTED, AUCTION_ERR_INVENTORY, EQUIP_ERR_ITEM_NOT_FOUND);
         return;
     }
 
@@ -423,7 +423,7 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recv_data)
     uint32 deposit = AuctionHouseMgr::GetAuctionDeposit(auctionHouseEntry, etime, it);
     if (pl->GetMoney() < deposit)
     {
-        SendAuctionCommandResult(NULL, AUCTION_STARTED, AUCTION_ERR_NOT_ENOUGH_MONEY);
+        SendAuctionCommandResult(nullptr, AUCTION_STARTED, AUCTION_ERR_NOT_ENOUGH_MONEY);
         return;
     }
 
@@ -453,7 +453,7 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recv_data)
                 {
                     /* Player already listed 50 auctions; */
                     /* Send an internal error result back down to the client... */
-                    return SendAuctionCommandResult(NULL, AUCTION_STARTED, AUCTION_ERR_DATABASE, EQUIP_ERR_OK);
+                    return SendAuctionCommandResult(nullptr, AUCTION_STARTED, AUCTION_ERR_DATABASE, EQUIP_ERR_OK);
                 }
             }
         }
@@ -507,7 +507,7 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket& recv_data)
     if (!auction || auction->owner == pl->GetGUIDLow())
     {
         // you can not bid your own auction:
-        SendAuctionCommandResult(NULL, AUCTION_BID_PLACED, AUCTION_ERR_BID_OWN);
+        SendAuctionCommandResult(nullptr, AUCTION_BID_PLACED, AUCTION_ERR_BID_OWN);
         return;
     }
 
@@ -518,7 +518,7 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket& recv_data)
     if (!auction_owner && sObjectMgr.GetPlayerAccountIdByGUID(ownerGuid) == pl->GetSession()->GetAccountId())
     {
         // you can not bid your another character auction:
-        SendAuctionCommandResult(NULL, AUCTION_BID_PLACED, AUCTION_ERR_BID_OWN);
+        SendAuctionCommandResult(nullptr, AUCTION_BID_PLACED, AUCTION_ERR_BID_OWN);
         return;
     }
 
@@ -594,8 +594,8 @@ void WorldSession::HandleAuctionRemoveItem(WorldPacket& recv_data)
 
     if (!auction || auction->owner != pl->GetGUIDLow())
     {
-        SendAuctionCommandResult(NULL, AUCTION_REMOVED, AUCTION_ERR_DATABASE);
-        sLog.outError("CHEATER : %u, he tried to cancel auction (id: %u) of another player, or auction is NULL", pl->GetGUIDLow(), auctionId);
+        SendAuctionCommandResult(nullptr, AUCTION_REMOVED, AUCTION_ERR_DATABASE);
+        sLog.outError("CHEATER : %u, he tried to cancel auction (id: %u) of another player, or auction is nullptr", pl->GetGUIDLow(), auctionId);
         return;
     }
 
@@ -603,7 +603,7 @@ void WorldSession::HandleAuctionRemoveItem(WorldPacket& recv_data)
     if (!pItem)
     {
         sLog.outError("Auction id: %u has nonexistent item (item guid : %u)!!!", auction->Id, auction->itemGuidLow);
-        SendAuctionCommandResult(NULL, AUCTION_REMOVED, AUCTION_ERR_INVENTORY, EQUIP_ERR_ITEM_NOT_FOUND);
+        SendAuctionCommandResult(nullptr, AUCTION_REMOVED, AUCTION_ERR_INVENTORY, EQUIP_ERR_ITEM_NOT_FOUND);
         return;
     }
 

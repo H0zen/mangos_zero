@@ -342,14 +342,14 @@ Transport* Transport::GetTransport(Map const* map, ObjectGuid guid)
 {
     if (!map || !guid)
     {
-        return NULL;
+        return nullptr;
     }
 
     MapManager::TransportsByMapType::const_iterator vessels =
         sMapMgr.m_TransportsByMap.find(map->GetId());
     if (vessels == sMapMgr.m_TransportsByMap.end())
     {
-        return NULL;
+        return nullptr;
     }
 
     for (Transport* vessel : vessels->second)
@@ -360,7 +360,7 @@ Transport* Transport::GetTransport(Map const* map, ObjectGuid guid)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 namespace
@@ -432,8 +432,8 @@ Transport* Transport::VesselOf(Occupant const& obj)
     // A lift passenger and a vehicle rider are NOT here: their map is the world's, and the
     // seat transform is the vehicle system's business, not this one's.
     Map* map = obj.GetMap();
-    TransportMap* hull = map ? map->AsTransport() : NULL;
-    return hull ? hull->Vessel() : NULL;
+    TransportMap* hull = map ? map->AsTransport() : nullptr;
+    return hull ? hull->Vessel() : nullptr;
 }
 
 void Transport::WithdrawFromWorld()
@@ -465,7 +465,7 @@ void Transport::WithdrawFromWorld()
         RemoveFromWorld();
     }
 
-    m_map = NULL;
+    m_map = nullptr;
 }
 
 struct keyFrame

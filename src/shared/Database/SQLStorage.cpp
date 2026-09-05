@@ -48,21 +48,21 @@
 /**
  * @brief Default constructor for SQLStorageBase
  *
- * Initializes all member variables to their default values (NULL or 0).
+ * Initializes all member variables to their default values (nullptr or 0).
  * The actual initialization of table name and formats is done via
  * the Initialize() method.
  */
 SQLStorageBase::SQLStorageBase() :
-    m_tableName(NULL),
-    m_entry_field(NULL),
-    m_src_format(NULL),
-    m_dst_format(NULL),
+    m_tableName(nullptr),
+    m_entry_field(nullptr),
+    m_src_format(nullptr),
+    m_dst_format(nullptr),
     m_dstFieldCount(0),
     m_srcFieldCount(0),
     m_recordCount(0),
     m_maxEntry(0),
     m_recordSize(0),
-    m_data(NULL)
+    m_data(nullptr)
 {}
 
 /**
@@ -191,7 +191,7 @@ void SQLStorageBase::Free()
                     if (*ptrPtr)
                     {
                         delete[] *ptrPtr;
-                        *ptrPtr = NULL;
+                        *ptrPtr = nullptr;
                     }
                 }
                 offset += sizeof(char*);
@@ -207,7 +207,7 @@ void SQLStorageBase::Free()
         }
     }
     delete[] m_data;
-    m_data = NULL;
+    m_data = nullptr;
     m_recordCount = 0;
 }
 
@@ -232,13 +232,13 @@ void SQLStorageBase::Free()
  * @brief Remove an entry from the index
  * @param id The record ID to remove from the index
  *
- * Sets the index entry to NULL, effectively removing the record
+ * Sets the index entry to nullptr, effectively removing the record
  * from fast lookup. The record data remains in memory until Free() is called.
  * This is useful for marking records as deleted without reallocating memory.
  */
 void SQLStorage::EraseEntry(uint32 id)
 {
-    m_Index[id] = NULL;
+    m_Index[id] = nullptr;
 }
 
 /**
@@ -252,7 +252,7 @@ void SQLStorage::Free()
 {
     SQLStorageBase::Free();
     delete[] m_Index;
-    m_Index = NULL;
+    m_Index = nullptr;
 }
 
 /**
@@ -276,12 +276,12 @@ void SQLStorage::Load(bool error_at_empty /*= true*/)
  * @param sqlname Name of the SQL table
  *
  * Creates a SQLStorage where the source and destination formats are identical.
- * The index pointer is initialized to NULL and will be allocated during Load().
+ * The index pointer is initialized to nullptr and will be allocated during Load().
  */
 SQLStorage::SQLStorage(const char* fmt, const char* _entry_field, const char* sqlname)
 {
     Initialize(sqlname, _entry_field, fmt, fmt);
-    m_Index = NULL;
+    m_Index = nullptr;
 }
 
 /**
@@ -293,12 +293,12 @@ SQLStorage::SQLStorage(const char* fmt, const char* _entry_field, const char* sq
  *
  * Creates a SQLStorage that can transform data during loading.
  * This is useful for converting strings to pointers or changing data types.
- * The index pointer is initialized to NULL and will be allocated during Load().
+ * The index pointer is initialized to nullptr and will be allocated during Load().
  */
 SQLStorage::SQLStorage(const char* src_fmt, const char* dst_fmt, const char* _entry_field, const char* sqlname)
 {
     Initialize(sqlname, _entry_field, src_fmt, dst_fmt);
-    m_Index = NULL;
+    m_Index = nullptr;
 }
 
 /**
@@ -309,7 +309,7 @@ SQLStorage::SQLStorage(const char* src_fmt, const char* dst_fmt, const char* _en
  *
  * Clears any existing data and allocates the index array.
  * The index is a char* array where index[recordId] points to the record data.
- * The index is initialized with NULL pointers before data is loaded.
+ * The index is initialized with nullptr pointers before data is loaded.
  */
 void SQLStorage::prepareToLoad(uint32 maxRecordId, uint32 recordCount, uint32 recordSize)
 {
@@ -386,7 +386,7 @@ void SQLHashStorage::prepareToLoad(uint32 maxRecordId, uint32 recordCount, uint3
  * @brief Remove an entry from the hash map index
  * @param id The record ID to mark as removed
  *
- * Sets the hash map entry to NULL without removing the key.
+ * Sets the hash map entry to nullptr without removing the key.
  * The record data remains allocated until Free() is called.
  * This marks the record as deleted while preserving the map structure.
  */
@@ -396,7 +396,7 @@ void SQLHashStorage::EraseEntry(uint32 id)
     RecordMap::iterator find = m_indexMap.find(id);
     if (find != m_indexMap.end())
     {
-        find->second = NULL;
+        find->second = nullptr;
     }
 }
 
@@ -490,7 +490,7 @@ void SQLMultiStorage::prepareToLoad(uint32 maxRecordId, uint32 recordCount, uint
  * @brief Remove all entries with the given ID from the multi-map
  * @param id The record ID to remove
  *
- * Unlike SQLHashStorage which marks entries as NULL, this removes
+ * Unlike SQLHashStorage which marks entries as nullptr, this removes
  * all records with the specified ID from the multi-map completely.
  * This is the standard multimap erase behavior.
  */

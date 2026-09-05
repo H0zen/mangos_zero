@@ -124,7 +124,7 @@ void Unit::RemoveAllDynObjects()
  *
  * @param spellId The spell identifier.
  * @param effIndex The effect index.
- * @return The matching dynamic object, or NULL if none exists.
+ * @return The matching dynamic object, or nullptr if none exists.
  */
 DynamicObject* Unit::GetDynObject(uint32 spellId, SpellEffectIndex effIndex)
 {
@@ -143,14 +143,14 @@ DynamicObject* Unit::GetDynObject(uint32 spellId, SpellEffectIndex effIndex)
         }
         ++i;
     }
-    return NULL;
+    return nullptr;
 }
 
 /**
  * @brief Gets an owned dynamic object by spell id.
  *
  * @param spellId The spell identifier.
- * @return The matching dynamic object, or NULL if none exists.
+ * @return The matching dynamic object, or nullptr if none exists.
  */
 DynamicObject* Unit::GetDynObject(uint32 spellId)
 {
@@ -169,14 +169,14 @@ DynamicObject* Unit::GetDynObject(uint32 spellId)
         }
         ++i;
     }
-    return NULL;
+    return nullptr;
 }
 
 /**
  * @brief Gets an owned or tracked gameobject created by a spell.
  *
  * @param spellId The spell identifier.
- * @return The matching gameobject, or NULL if none exists.
+ * @return The matching gameobject, or nullptr if none exists.
  */
 GameObject* Unit::GetGameObject(uint32 spellId) const
 {
@@ -191,10 +191,10 @@ GameObject* Unit::GetGameObject(uint32 spellId) const
     WildGameObjectMap::const_iterator find = m_wildGameObjs.find(spellId);
     if (find != m_wildGameObjs.end())
     {
-        return GetMap()->GetGameObject(find->second); // Can be NULL
+        return GetMap()->GetGameObject(find->second); // Can be nullptr
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -215,7 +215,7 @@ void Unit::AddGameObject(GameObject* gameObj)
         if (createBySpell && createBySpell->HasAttribute(SPELL_ATTR_DISABLED_WHILE_ACTIVE))
             // note: item based cooldowns and cooldown spell mods with charges ignored (unknown existing cases)
         {
-            ((Player*)this)->AddSpellAndCategoryCooldowns(createBySpell, 0, NULL, true);
+            ((Player*)this)->AddSpellAndCategoryCooldowns(createBySpell, 0, nullptr, true);
         }
     }
 }

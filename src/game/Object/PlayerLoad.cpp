@@ -257,10 +257,10 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
     {
         SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), ObjectGuid());
-        SetVisibleItemSlot(slot, NULL);
+        SetVisibleItemSlot(slot, nullptr);
 
         delete m_items[slot];
-        m_items[slot] = NULL;
+        m_items[slot] = nullptr;
     }
 
     DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_STATS, "Load Basic value of player %s is: ", m_name.c_str());
@@ -269,7 +269,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     // Need to call it to initialize m_team (m_team can be calculated from race)
     // Other way is to saves m_team into characters table.
     setFactionForRace(getRace());
-    SetCharm(NULL);
+    SetCharm(nullptr);
 
     // load home bind and check in same time class/race pair, it used later for restore broken positions
     if (!_LoadHomeBind(holder->GetResult(PLAYER_LOGIN_QUERY_LOADHOMEBIND)))
@@ -489,7 +489,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     SaveRecallPosition();
 
-    time_t now = time(NULL);
+    time_t now = time(nullptr);
     time_t logoutTime = time_t(fields[22].GetUInt64());
 
     // since last logout (in seconds)
@@ -545,8 +545,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     SetUInt32Value(UNIT_CHANNEL_SPELL, 0);
 
     // clear charm/summon related fields
-    SetCharm(NULL);
-    SetPet(NULL);
+    SetCharm(nullptr);
+    SetPet(nullptr);
     SetTargetGuid(ObjectGuid());
     SetCharmerGuid(ObjectGuid());
     SetOwnerGuid(ObjectGuid());
@@ -622,7 +622,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     if (!m_taxi.LoadTaxiDestinationsFromString(taxi_nodes, GetTeam()))
     {
         // problems with taxi path loading
-        TaxiNodesEntry const* nodeEntry = NULL;
+        TaxiNodesEntry const* nodeEntry = nullptr;
         if (uint32 node_id = m_taxi.GetTaxiSource())
         {
             nodeEntry = sTaxiNodesStore.LookupEntry(node_id);
@@ -892,7 +892,7 @@ bool Player::isAllowedToLoot(Creature* creature)
                     }
 
                     /* We have our looter, update their loot time */
-                    final_looter->lastTimeLooted = time(NULL);
+                    final_looter->lastTimeLooted = time(nullptr);
 
                     /* Update the creature with the looter that has been assigned to them */
                     creature->assignedLooter = final_looter->GetGUIDLow();
@@ -1037,7 +1037,7 @@ void Player::_LoadAuras(QueryResult* result, uint32 timediff)
                 stackcount = 1;
             }
 
-            SpellAuraHolder* holder = CreateSpellAuraHolder(spellproto, this, NULL);
+            SpellAuraHolder* holder = CreateSpellAuraHolder(spellproto, this, nullptr);
             holder->SetLoadedState(caster_guid, ObjectGuid(HIGHGUID_ITEM, item_lowguid), stackcount, remaincharges, maxduration, remaintime);
 
             for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
@@ -1047,7 +1047,7 @@ void Player::_LoadAuras(QueryResult* result, uint32 timediff)
                     continue;
                 }
 
-                Aura* aura = CreateAura(spellproto, SpellEffectIndex(i), NULL, holder, this);
+                Aura* aura = CreateAura(spellproto, SpellEffectIndex(i), nullptr, holder, this);
                 if (!damage[i])
                 {
                     damage[i] = aura->GetModifier()->m_amount;
@@ -1181,7 +1181,7 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
             // the item/bag is not in a bag
             if (!bag_guid)
             {
-                item->SetContainer(NULL);
+                item->SetContainer(nullptr);
                 item->SetSlot(slot);
 
                 if (IsInventoryPos(INVENTORY_SLOT_BAG_0, slot))
@@ -1689,7 +1689,7 @@ void Player::_LoadBoundInstances(QueryResult* result)
  * @brief Finds the player's instance bind for a specific map.
  *
  * @param mapid The map identifier to look up.
- * @return The matching bind entry, or NULL if none exists.
+ * @return The matching bind entry, or nullptr if none exists.
  */
 InstancePlayerBind* Player::GetBoundInstance(uint32 mapid)
 {
@@ -1701,7 +1701,7 @@ InstancePlayerBind* Player::GetBoundInstance(uint32 mapid)
     }
     else
     {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -1743,7 +1743,7 @@ void Player::UnbindInstance(BoundInstancesMap::iterator& itr, bool unload)
  * @param state The persistent instance state to bind.
  * @param permanent True for a permanent lock, false for a temporary one.
  * @param load True when rebuilding the bind from saved data.
- * @return The resulting bind entry, or NULL if the state was invalid.
+ * @return The resulting bind entry, or nullptr if the state was invalid.
  */
 InstancePlayerBind* Player::BindToInstance(DungeonPersistentState* state, bool permanent, bool load)
 {
@@ -1797,7 +1797,7 @@ InstancePlayerBind* Player::BindToInstance(DungeonPersistentState* state, bool p
     }
     else
     {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -1805,24 +1805,24 @@ InstancePlayerBind* Player::BindToInstance(DungeonPersistentState* state, bool p
  * @brief Resolves the instance save that applies to the player or the player's group.
  *
  * @param mapid The map identifier to inspect.
- * @return The applicable persistent state, or NULL if none exists.
+ * @return The applicable persistent state, or nullptr if none exists.
  */
 DungeonPersistentState* Player::GetBoundInstanceSaveForSelfOrGroup(uint32 mapid)
 {
     MapEntry const* mapEntry = sMapStore.LookupEntry(mapid);
     if (!mapEntry)
     {
-        return NULL;
+        return nullptr;
     }
 
     InstancePlayerBind* pBind = GetBoundInstance(mapid);
-    DungeonPersistentState* state = pBind ? pBind->state : NULL;
+    DungeonPersistentState* state = pBind ? pBind->state : nullptr;
 
     // the player's permanent player bind is taken into consideration first
     // then the player's group bind and finally the solo bind.
     if (!pBind || !pBind->perm)
     {
-        InstanceGroupBind* groupBind = NULL;
+        InstanceGroupBind* groupBind = nullptr;
         if (Group* group = GetGroup())
         {
             if ((groupBind = group->GetBoundInstance(mapid)))
@@ -1853,7 +1853,7 @@ void Player::SendRaidInfo()
         {
             DungeonPersistentState* state = itr->second.state;
             data << uint32(state->GetMapId());              // map id
-            data << uint32(state->GetResetTime() - time(NULL));
+            data << uint32(state->GetResetTime() - time(nullptr));
             data << uint32(state->GetInstanceId());         // instance id
             counter++;
         }

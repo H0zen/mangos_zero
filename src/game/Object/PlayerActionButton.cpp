@@ -209,7 +209,7 @@ ActionButton* Player::addActionButton(uint8 button, uint32 action, uint8 type)
 {
     if (!IsActionButtonDataValid(button, action, type, this))
     {
-        return NULL;
+        return nullptr;
     }
 
     // it create new button (NEW state) if need or return existing
