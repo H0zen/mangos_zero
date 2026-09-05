@@ -472,8 +472,8 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
                         float min_amount = go_min * amount_rate;
                         float max_amount = go_max * amount_rate;
 
-                        go->AddUse();
-                        float uses = float(go->GetUseCount());
+                        go->Users().Used();
+                        float uses = float(go->Users().Uses());
 
                         if (uses < max_amount)
                         {
@@ -516,8 +516,8 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
                 else if (go->GetGoType() == GAMEOBJECT_TYPE_FISHINGHOLE)
                 {
                     // The fishing hole used once more
-                    go->AddUse();                           // if the max usage is reached, will be despawned at next tick
-                    if (go->GetUseCount() >= urand(go->GetGOInfo()->fishinghole.minSuccessOpens, go->GetGOInfo()->fishinghole.maxSuccessOpens))
+                    go->Users().Used();                     // if the max usage is reached, will be despawned at next tick
+                    if (go->Users().Uses() >= urand(go->GetGOInfo()->fishinghole.minSuccessOpens, go->GetGOInfo()->fishinghole.maxSuccessOpens))
                     {
                         go->SetLootState(GO_JUST_DEACTIVATED);
                     }

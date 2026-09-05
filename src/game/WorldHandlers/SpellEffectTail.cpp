@@ -383,7 +383,7 @@ void Spell::EffectTransmitted(SpellEffectIndex eff_idx)
         {
             if (m_caster->GetTypeId() == TYPEID_PLAYER)
             {
-                pGameObj->AddUniqueUse((Player*)m_caster);
+                pGameObj->Users().UsedBy(m_caster->GetObjectGuid());
                 m_caster->AddGameObject(pGameObj);          // will removed at spell cancel
             }
             break;

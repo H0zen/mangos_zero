@@ -30,6 +30,7 @@ set(TEST_SOURCES
     unit/test_sides.cpp
     unit/test_itemsavequeue.cpp
     unit/test_capturepoint.cpp
+    unit/test_usertally.cpp
 
     combat/test_school.cpp
     combat/test_roll.cpp

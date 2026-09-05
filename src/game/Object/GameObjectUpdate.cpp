@@ -87,7 +87,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     Unit* owner = GetOwner();
                     if (owner && owner->IsInCombat())
                     {
-                        m_cooldownTime = time(nullptr) + GetGOInfo()->trap.startDelay;
+                        m_usableAt = time(nullptr) + GetGOInfo()->trap.startDelay;
                     }
                     m_lootState = GO_READY;
                     break;
@@ -197,7 +197,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
 
                 if (goInfo->type == GAMEOBJECT_TYPE_TRAP)   // traps
                 {
-                    if (m_cooldownTime >= time(nullptr))
+                    if (m_usableAt >= time(nullptr))
                     {
                         return;
                     }
@@ -257,9 +257,9 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                 // it means (all GO with charges = 0 in DB should never be despawned)
                 // Check : https://www.getmangos.eu/wiki/referenceinfo/dbinfo/mangosdb/mangoszeroworlddb/gameobject_template-r1047
                 // for more information about charges field in db depending on object type
-                if (max_charges > 0 && m_useTimes >= max_charges)
+                if (max_charges > 0 && m_users.Uses() >= max_charges)
                 {
-                    m_useTimes = 0;
+                    m_users.Forget();
                     SetLootState(GO_JUST_DEACTIVATED);  // can be despawned or destroyed
                 }
             }
@@ -271,7 +271,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
             {
                 case GAMEOBJECT_TYPE_DOOR:
                 case GAMEOBJECT_TYPE_BUTTON:
-                    if (GetGOInfo()->GetAutoCloseTime() && (m_cooldownTime < time(nullptr)))
+                    if (m_closesAt != 0 && m_closesAt <= time(nullptr))
                     {
                         ResetDoorOrButton();
                     }
@@ -291,27 +291,13 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                         // TODO : Missing Loot::Update() method found in CMangos
                     }
                     break;
-                case GAMEOBJECT_TYPE_TRAP:
-                    if (m_rearmTimer == 0)
-                    {
-                        m_rearmTimer = time(nullptr) + GetRespawnDelay();
-                        SetGoState(GO_STATE_ACTIVE_ALTERNATIVE);
-                    }
-
-                    if (m_rearmTimer < time(nullptr))
-                    {
-                        SetGoState(GO_STATE_READY);
-                        m_lootState = GO_READY;
-                        m_rearmTimer = 0;
-                    }
-                    break;
                 case GAMEOBJECT_TYPE_GOOBER:
-                    if (m_cooldownTime < time(nullptr))
+                    if (m_closesAt <= time(nullptr))
                     {
                         RemoveGoFlag(GO_FLAG_IN_USE);
 
                         SetLootState(GO_JUST_DEACTIVATED);
-                        m_cooldownTime = 0;
+                        m_closesAt = 0;
                     }
                     break;
                 case GAMEOBJECT_TYPE_CAPTURE_POINT:
@@ -333,7 +319,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     // if gameobject should cast spell, then this, but some GOs (type = 10) should be destroyed
                     if (uint32 spellId = GetGOInfo()->goober.spellId)
                     {
-                        for (auto const& guid : m_UniqueUsers)
+                        for (auto const& guid : m_users.Everyone())
                         {
                             if (Player* owner = GetMap()->GetPlayer(guid))
                             {

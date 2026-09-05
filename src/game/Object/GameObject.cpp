@@ -75,11 +75,9 @@ GameObject::GameObject() : Occupant(),
     m_respawnDelayTime = 25;
     m_lootState = GO_READY;
     m_spawnedByDefault = true;
-    m_useTimes = 0;
     m_spellId = 0;
-    m_cooldownTime = 0;
-
-    m_rearmTimer = 0;
+    m_usableAt = 0;
+    m_closesAt = 0;
 }
 
 /**
@@ -288,23 +286,6 @@ void GameObject::Refresh()
     {
         GetMap()->Add(this);
     }
-}
-
-/**
- * @brief Records a unique player use for this game object.
- *
- * @param player The player using the object.
- */
-void GameObject::AddUniqueUse(Player* player)
-{
-    AddUse();
-
-    if (!m_firstUser)
-    {
-        m_firstUser = player->GetObjectGuid();
-    }
-
-    m_UniqueUsers.insert(player->GetObjectGuid());
 }
 
 /**
@@ -946,7 +927,7 @@ void GameObject::ResetDoorOrButton()
 
     SwitchDoorOrButton(false);
     SetLootState(GO_JUST_DEACTIVATED);
-    m_cooldownTime = 0;
+    m_closesAt = 0;
 }
 
 /**
@@ -970,7 +951,8 @@ void GameObject::UseDoorOrButton(uint32 time_to_restore, bool alternative /* = f
     SwitchDoorOrButton(true, alternative);
     SetLootState(GO_ACTIVATED);
 
-    m_cooldownTime = time(nullptr) + time_to_restore;
+    // a door with nothing to close it stays as the last one through it left it
+    m_closesAt = time_to_restore ? time(nullptr) + time_to_restore : 0;
 }
 
 /**

@@ -74,15 +74,15 @@ void GameObject::Use(Unit* user)
     uint32 spellId = 0;
     bool triggered = false;
 
-    // test only for exist cooldown data (cooldown timer used for door/buttons reset that not have use cooldown)
+    // traps and gooberi are the only ones the template gives a use cooldown to
     if (uint32 cooldown = GetGOInfo()->GetCooldown())
     {
-        if (m_cooldownTime > sWorld.GetGameTime())
+        if (m_usableAt > sWorld.GetGameTime())
         {
             return;
         }
 
-        m_cooldownTime = sWorld.GetGameTime() + cooldown;
+        m_usableAt = sWorld.GetGameTime() + cooldown;
     }
 
     bool scriptReturnValue = user->GetTypeId() == TYPEID_PLAYER && sScriptMgr.OnGameObjectUse((Player*)user, this);
@@ -187,12 +187,12 @@ void GameObject::Use(Unit* user)
                 caster->CastSpell(user, goInfo->trap.spellId, true, nullptr, nullptr, GetObjectGuid());
             }
             // use template cooldown if provided
-            m_cooldownTime = time(nullptr) + (goInfo->trap.cooldown ? goInfo->trap.cooldown : uint32(4));
+            m_usableAt = time(nullptr) + (goInfo->trap.cooldown ? goInfo->trap.cooldown : uint32(4));
 
             // count charges
             if (goInfo->trap.charges > 0)
             {
-                AddUse();
+                m_users.Used();
             }
 
             if (IsBattleGroundTrap && user->GetTypeId() == TYPEID_PLAYER)
@@ -322,7 +322,7 @@ void GameObject::Use(Unit* user)
                 SetGoState(GO_STATE_ACTIVE);
             }
 
-            m_cooldownTime = time(nullptr) + info->GetAutoCloseTime();
+            m_closesAt = time(nullptr) + info->GetAutoCloseTime();
 
             if (user->GetTypeId() == TYPEID_PLAYER)
             {
@@ -555,11 +555,12 @@ void GameObject::Use(Unit* user)
             }
             else
             {
-                if (m_firstUser && player->GetObjectGuid() != m_firstUser && info->summoningRitual.castersGrouped)
+                ObjectGuid const& firstUser = m_users.First();
+                if (firstUser && player->GetObjectGuid() != firstUser && info->summoningRitual.castersGrouped)
                 {
                     if (Group* group = player->GetGroup())
                     {
-                        if (!group->IsMember(m_firstUser))
+                        if (!group->IsMember(firstUser))
                         {
                             return;
                         }
@@ -573,7 +574,7 @@ void GameObject::Use(Unit* user)
                 spellCaster = player;
             }
 
-            AddUniqueUse(player);
+            m_users.UsedBy(player->GetObjectGuid());
 
             if (info->summoningRitual.animSpell)
             {
@@ -584,7 +585,7 @@ void GameObject::Use(Unit* user)
             }
 
             // full amount unique participants including original summoner, need more
-            if (GetUniqueUseCount() < info->summoningRitual.reqParticipants)
+            if (m_users.Distinct() < info->summoningRitual.reqParticipants)
             {
                 return;
             }
@@ -592,9 +593,9 @@ void GameObject::Use(Unit* user)
             // owner is first user for non-wild GO objects, if it offline value already set to current user
             if (!GetOwnerGuid())
             {
-                if (Player* firstUser = GetMap()->GetPlayer(m_firstUser))
+                if (Player* opener = GetMap()->GetPlayer(m_users.First()))
                 {
-                    spellCaster = firstUser;
+                    spellCaster = opener;
                 }
             }
 
@@ -650,7 +651,7 @@ void GameObject::Use(Unit* user)
 
             spellId = info->spellcaster.spellId;
 
-            AddUse();
+            m_users.Used();
             break;
         }
         case GAMEOBJECT_TYPE_FLAGSTAND:                     // 24

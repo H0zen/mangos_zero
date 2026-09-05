@@ -59,6 +59,7 @@
 #include "SharedDefines.h"
 #include "Occupant.h"
 #include "CapturePoint.h"
+#include "UserTally.h"
 #include "Chest.h"
 #include "LootClaim.h"
 #include "LootMgr.h"
@@ -743,19 +744,12 @@ class GameObject : public Occupant
         void ClearAllUsesData()
         {
             m_chest.ForgetLearners();
-            m_useTimes = 0;
-            m_firstUser.Clear();
-            m_UniqueUsers.clear();
+            m_users.Forget();
         }
 
-        void AddUniqueUse(Player* player);
-        void AddUse()
-        {
-            ++m_useTimes;
-        }
-
-        uint32 GetUseCount() const { return m_useTimes; }
-        uint32 GetUniqueUseCount() const { return m_UniqueUsers.size(); }
+        /// How often this has been used, and by whom when that matters.
+        UserTally& Users() { return m_users; }
+        UserTally const& Users() const { return m_users; }
 
         void SaveRespawnTime();
 
@@ -810,22 +804,15 @@ class GameObject : public Occupant
         uint32      m_respawnDelayTime;                     // (secs) if 0 then current GO state no dependent from timer
         LootState   m_lootState;
         bool        m_spawnedByDefault;
-        time_t      m_cooldownTime;                         // used as internal reaction delay time store (not state change reaction).
-        // For traps/goober this: spell casting cooldown, for doors/buttons: reset time.
+        time_t      m_usableAt;                             // not to be used again before this moment
+        time_t      m_closesAt;                             // shuts itself at this moment; 0 when it stays as it is
 
-        uint32 m_useTimes;                                  // how many times the object has been used, or charges spent
-
-        // collected only for GAMEOBJECT_TYPE_SUMMONING_RITUAL
-        ObjectGuid m_firstUser;                             // first GO user, in most used cases owner, but in some cases no, for example non-summoned multi-use GAMEOBJECT_TYPE_SUMMONING_RITUAL
-        GuidSet m_UniqueUsers;                              // all players who use item, some items activated after specific amount unique uses
+        UserTally m_users;
 
         GameObjectInfo const* m_goInfo;
 
         // Loot System
         LootClaim m_claim;
-
-        // Used for trap type
-        time_t m_rearmTimer;                                // timer to rearm the trap once disarmed
 
         CapturePoint m_capture;
         Chest m_chest;

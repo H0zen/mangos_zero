@@ -686,7 +686,7 @@ struct go_fixed_trap : public GameObjectScript
         DoScriptText(SAY_SLIPKIK_TRAP, slipkik);
         if (pGo->GetGOInfo()->trap.charges > 0)
         {
-            pGo->AddUse();
+            pGo->Users().Used();
         }
 
         pGo->SetLootState(GO_JUST_DEACTIVATED);    // Despawn the trap
