@@ -353,47 +353,6 @@ void Player::QuickEquipItem(uint16 pos, Item* pItem)
 }
 
 /**
- * @brief Updates the visible equipment fields for an equipment slot.
- *
- * @param slot The equipment slot to update.
- * @param pItem The item to display, or null to clear the slot.
- */
-void Player::SetVisibleItemSlot(uint8 slot, Item* pItem)
-{
-    if (pItem)
-    {
-        SetGuidValue(PLAYER_VISIBLE_ITEM_1_CREATOR + (slot * MAX_VISIBLE_ITEM_OFFSET), pItem->GetCreatorGuid());
-
-        int VisibleBase = PLAYER_VISIBLE_ITEM_1_0 + (slot * MAX_VISIBLE_ITEM_OFFSET);
-        SetUInt32Value(VisibleBase + 0, pItem->GetEntry());
-
-        for (int i = 0; i < MAX_INSPECTED_ENCHANTMENT_SLOT; ++i)
-        {
-            SetUInt32Value(VisibleBase + 1 + i, pItem->GetEnchantmentId(EnchantmentSlot(i)));
-        }
-
-        // Use SetInt16Value to prevent set high part to FFFF for negative value
-        SetInt16Value(PLAYER_VISIBLE_ITEM_1_PROPERTIES + (slot * MAX_VISIBLE_ITEM_OFFSET), 0, pItem->GetItemRandomPropertyId());
-        SetUInt32Value(PLAYER_VISIBLE_ITEM_1_PROPERTIES + 1 + (slot * MAX_VISIBLE_ITEM_OFFSET), pItem->GetItemSuffixFactor());
-    }
-    else
-    {
-        SetGuidValue(PLAYER_VISIBLE_ITEM_1_CREATOR + (slot * MAX_VISIBLE_ITEM_OFFSET), ObjectGuid());
-
-        int VisibleBase = PLAYER_VISIBLE_ITEM_1_0 + (slot * MAX_VISIBLE_ITEM_OFFSET);
-        SetUInt32Value(VisibleBase + 0, 0);
-
-        for (int i = 0; i < MAX_INSPECTED_ENCHANTMENT_SLOT; ++i)
-        {
-            SetUInt32Value(VisibleBase + 1 + i, 0);
-        }
-
-        SetUInt32Value(PLAYER_VISIBLE_ITEM_1_PROPERTIES + 0 + (slot * MAX_VISIBLE_ITEM_OFFSET), 0);
-        SetUInt32Value(PLAYER_VISIBLE_ITEM_1_PROPERTIES + 1 + (slot * MAX_VISIBLE_ITEM_OFFSET), 0);
-    }
-}
-
-/**
  * @brief Places an item into an equipment slot and updates visible state.
  *
  * @param slot The destination equipment slot.
@@ -420,11 +379,6 @@ void Player::VisualizeItem(uint8 slot, Item* pItem)
     pItem->SetGuidValue(ITEM_FIELD_OWNER, GetObjectGuid());
     pItem->SetSlot(slot);
     pItem->SetContainer(nullptr);
-
-    if (slot < EQUIPMENT_SLOT_END)
-    {
-        SetVisibleItemSlot(slot, pItem);
-    }
 
     pItem->SetState(ITEM_CHANGED, this);
 }
@@ -479,11 +433,6 @@ void Player::RemoveItem(uint8 bag, uint8 slot, bool update)
             }
 
             m_inventory.Own(slot, nullptr);
-
-            if (slot < EQUIPMENT_SLOT_END)
-            {
-                SetVisibleItemSlot(slot, nullptr);
-            }
         }
         else
         {
@@ -597,9 +546,6 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
             {
                 // remove item dependent auras and casts (only weapon and armor slots)
                 RemoveItemDependentAurasAndCasts(pItem);
-
-                // equipment visual show
-                SetVisibleItemSlot(slot, nullptr);
             }
 
             m_inventory.Own(slot, nullptr);

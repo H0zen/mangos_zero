@@ -1597,9 +1597,6 @@ class Player : public Unit
         // Visualize an item
         void VisualizeItem(uint8 slot, Item* pItem);
 
-        // Set the visible item slot
-        void SetVisibleItemSlot(uint8 slot, Item* pItem);
-
         // Bank an item
         Item* BankItem(ItemPosCountVec const& dest, Item* pItem, bool update)
         {

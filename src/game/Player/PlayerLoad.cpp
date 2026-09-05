@@ -256,8 +256,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     // cleanup inventory related item value fields (its will be filled correctly in _LoadInventory)
     for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
     {
-        SetVisibleItemSlot(slot, nullptr);
-
         delete m_inventory.Own(slot);
         m_inventory.Own(slot, nullptr);
     }

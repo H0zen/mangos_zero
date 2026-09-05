@@ -427,12 +427,7 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
         }                                                   /*for*/
     }
 
-    // visualize enchantment at player and equipped items
-    if (slot < MAX_INSPECTED_ENCHANTMENT_SLOT)
-    {
-        int VisibleBase = PLAYER_VISIBLE_ITEM_1_0 + (item->GetSlot() * MAX_VISIBLE_ITEM_OFFSET);
-        SetUInt32Value(VisibleBase + 1 + slot, apply ? item->GetEnchantmentId(slot) : 0);
-    }
+    m_inventory.ShowsEnchant(item, slot, apply ? item->GetEnchantmentId(slot) : 0);
 
     if (apply_dur)
     {

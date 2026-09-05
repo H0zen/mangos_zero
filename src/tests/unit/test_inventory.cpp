@@ -33,6 +33,8 @@
 #include "Inventory/Inventory.h"
 #include "Unit.h"
 #include "UpdateFields.h"
+#include "Item.h"
+#include "Bag.h"
 
 TEST_CASE("place: a number belongs to the character himself only under bag 255")
 {
@@ -205,4 +207,52 @@ TEST_CASE("field: the client keeps more keyring room than the game gives out")
 
     CHECK(room == 32);
     CHECK(KEYRING_SLOT_END - KEYRING_SLOT_START == 16);
+}
+
+// The nineteen worn places have a second, public face: what onlookers are shown
+// of the piece in each of them. It sits in its own block, ahead of the private
+// slot guids, so a face computed for a place that is not worn walks straight out
+// of the block and into them.
+
+TEST_CASE("face: exactly the worn places have one, and it fills its block")
+{
+    uint32 const perFace = MAX_VISIBLE_ITEM_OFFSET;
+    uint32 const block = PLAYER_FIELD_INV_SLOT_HEAD - PLAYER_VISIBLE_ITEM_1_CREATOR;
+
+    CHECK(block == EQUIPMENT_SLOT_END * perFace);
+}
+
+TEST_CASE("face: the last worn place's face ends inside the block")
+{
+    uint32 const last = PLAYER_VISIBLE_ITEM_1_CREATOR
+                      + (EQUIPMENT_SLOT_END - 1) * MAX_VISIBLE_ITEM_OFFSET;
+
+    CHECK(last == PLAYER_VISIBLE_ITEM_LAST_CREATOR);
+    CHECK(last + MAX_VISIBLE_ITEM_OFFSET - 1 == PLAYER_VISIBLE_ITEM_LAST_PAD);
+}
+
+TEST_CASE("face: a place past the worn ones would land among the private guids")
+{
+    // The first backpack place, were a face computed for it, writes over the
+    // slot guids. Nothing may ask for the face of a place that is not worn.
+    uint32 const strayed = PLAYER_VISIBLE_ITEM_1_0
+                         + INVENTORY_SLOT_ITEM_START * MAX_VISIBLE_ITEM_OFFSET;
+
+    CHECK(strayed > PLAYER_FIELD_INV_SLOT_HEAD);
+}
+
+TEST_CASE("face: two enchantments are shown of the seven an item can carry")
+{
+    CHECK(MAX_INSPECTED_ENCHANTMENT_SLOT == 2);
+    CHECK(PERM_ENCHANTMENT_SLOT < MAX_INSPECTED_ENCHANTMENT_SLOT);
+    CHECK(TEMP_ENCHANTMENT_SLOT < MAX_INSPECTED_ENCHANTMENT_SLOT);
+
+    // The face keeps room for one entry and seven ids; five are never filled.
+    uint32 const room = PLAYER_VISIBLE_ITEM_1_PROPERTIES - PLAYER_VISIBLE_ITEM_1_0;
+    CHECK(room == 8);
+}
+
+TEST_CASE("bag: a container holds at most what its slot guids allow")
+{
+    CHECK(MAX_BAG_SIZE == 36);
 }

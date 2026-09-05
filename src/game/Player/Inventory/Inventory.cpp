@@ -115,6 +115,57 @@ void Inventory::Own(uint8 slot, Item* item)
     m_place[slot] = item;
     m_owner.SetGuidValue(uint16(PLAYER_FIELD_INV_SLOT_HEAD + slot * 2),
                          item ? item->GetObjectGuid() : ObjectGuid());
+
+    if (slot < EQUIPMENT_SLOT_END)
+    {
+        Shows(slot, item);
+    }
+}
+
+void Inventory::Shows(uint8 slot, Item const* item)
+{
+    uint16 const face = uint16(PLAYER_VISIBLE_ITEM_1_CREATOR + slot * MAX_VISIBLE_ITEM_OFFSET);
+    uint16 const piece = uint16(PLAYER_VISIBLE_ITEM_1_0 + slot * MAX_VISIBLE_ITEM_OFFSET);
+    uint16 const suffix = uint16(PLAYER_VISIBLE_ITEM_1_PROPERTIES + slot * MAX_VISIBLE_ITEM_OFFSET);
+
+    m_owner.SetGuidValue(face, item ? item->GetCreatorGuid() : ObjectGuid());
+    m_owner.SetUInt32Value(piece, item ? item->GetEntry() : 0);
+
+    for (uint32 which = 0; which < MAX_INSPECTED_ENCHANTMENT_SLOT; ++which)
+    {
+        m_owner.SetUInt32Value(uint16(piece + 1 + which),
+                               item ? item->GetEnchantmentId(EnchantmentSlot(which)) : 0);
+    }
+
+    if (item)
+    {
+        // Signed, and set as a short so that a negative suffix does not fill the
+        // high half with ones.
+        m_owner.SetInt16Value(suffix, 0, int16(item->GetItemRandomPropertyId()));
+        m_owner.SetUInt32Value(uint16(suffix + 1), item->GetItemSuffixFactor());
+    }
+    else
+    {
+        m_owner.SetUInt32Value(suffix, 0);
+        m_owner.SetUInt32Value(uint16(suffix + 1), 0);
+    }
+}
+
+void Inventory::ShowsEnchant(Item const* item, uint32 which, uint32 enchantId)
+{
+    if (!item || which >= MAX_INSPECTED_ENCHANTMENT_SLOT)
+    {
+        return;
+    }
+
+    uint8 const slot = item->GetSlot();
+    if (slot >= EQUIPMENT_SLOT_END || Own(slot) != item)
+    {
+        return;
+    }
+
+    m_owner.SetUInt32Value(uint16(PLAYER_VISIBLE_ITEM_1_0 + slot * MAX_VISIBLE_ITEM_OFFSET + 1 + which),
+                           enchantId);
 }
 
 void Inventory::Arrived(Item* item, bool tell)

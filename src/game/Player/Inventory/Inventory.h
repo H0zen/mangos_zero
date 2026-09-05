@@ -173,12 +173,32 @@ class Inventory
         void Changed(Item* item, bool tell);
         void Gone(Item* item, bool tell);
 
+        /**
+         * One of a worn item's enchantments has changed, and onlookers are shown
+         * the new one.
+         *
+         * Only the first two are ever shown -- the permanent one and whatever is
+         * on the weapon at the moment. The face has room for more, and nothing
+         * fills it.
+         *
+         * An item that is not in a worn place has no face, so nothing is written
+         * for it. That is checked against the places themselves rather than
+         * against the item's own slot number, because an item inside a bag
+         * carries its place in that bag and those numbers run over the worn ones.
+         */
+        void ShowsEnchant(Item const* item, uint32 which, uint32 enchantId);
+
     private:
         /// Hands every item in the wanted regions to the visitor and stops when
         /// the visitor returns false. Every search above is this walk with a
         /// different question, so the walk is written once.
         template <typename Visit>
         void Walk(uint32 scope, Visit visit) const;
+
+        /// What onlookers see of a worn place: the piece, who made it, its first
+        /// two enchantments and its random suffix. Nineteen places have one; the
+        /// rest of what he owns is his own business.
+        void Shows(uint8 slot, Item const* item);
 
         Player& m_owner;
         Item* m_place[PLAYER_SLOTS_COUNT];
