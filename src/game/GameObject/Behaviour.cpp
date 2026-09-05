@@ -73,6 +73,7 @@ std::unique_ptr<GameObjectBehaviour> BehaviourOf(GameObject& it)
         case GAMEOBJECT_TYPE_FLAGSTAND:        return std::make_unique<FlagStandBehaviour>(it);
         case GAMEOBJECT_TYPE_FISHINGHOLE:      return std::make_unique<FishingHoleBehaviour>(it);
         case GAMEOBJECT_TYPE_FLAGDROP:         return std::make_unique<FlagDropBehaviour>(it);
+        case GAMEOBJECT_TYPE_CAPTURE_POINT:    return std::make_unique<CapturePointBehaviour>(it);
 
         // Everything the player never clicks: banners, meeting stones, the hull of a
         // ship, an aura generator. They are in the world and that is all they do.
@@ -89,7 +90,6 @@ std::unique_ptr<GameObjectBehaviour> BehaviourOf(GameObject& it)
         case GAMEOBJECT_TYPE_AUCTIONHOUSE:
         case GAMEOBJECT_TYPE_GUARDPOST:
         case GAMEOBJECT_TYPE_MEETINGSTONE:
-        case GAMEOBJECT_TYPE_CAPTURE_POINT:
         case GAMEOBJECT_TYPE_AURA_GENERATOR:
             return std::make_unique<InertBehaviour>(it);
 

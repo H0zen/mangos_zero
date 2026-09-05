@@ -61,6 +61,14 @@
 #include "Geometry/Quat.h"
 #include "AnimatedTraps.h"
 
+// The one trap in the game that fires at a single creature and ignores everyone
+// else. It is in Dire Maul, and what it is aimed at is Slip'kik's guard.
+enum
+{
+    GO_DIRE_MAUL_FIXED_TRAP = 179512,
+    NPC_SLIPKIK_GUARD = 14323
+};
+
 /**
  * @brief A door swings and swings back on its own.
  */
@@ -781,4 +789,344 @@ GameObjectBehaviour::Casting FlagDropBehaviour::UsedBy(Unit* user, bool scriptSa
         It().Delete();
     }
     return cast;
+}
+
+
+/* ****************************** Being made ready ************************* */
+
+/**
+ * @brief A trap is armed the tick after it is placed, not when it is placed.
+ *
+ * Its arming delay is only served against an owner who is already fighting, and
+ * who that owner is cannot be asked until the object is in the world.
+ */
+void TrapBehaviour::Arming()
+{
+    Unit* owner = It().GetOwner();
+    if (owner && owner->IsInCombat())
+    {
+        It().UsableAt(time(nullptr) + Data().trap.startDelay);
+    }
+
+    It().SetLootState(GO_READY);
+}
+
+/**
+ * @brief A bobber sits under the water until it is time for the fish to take it.
+ */
+void FishingNodeBehaviour::Arming()
+{
+    if (time(nullptr) <= It().Clock().Moment() - FISHING_BOBBER_READY_TIME)
+    {
+        return;
+    }
+
+    // The splash is what the caster is watching for; it is what says the bite may
+    // now be caught.
+    Unit* caster = It().GetOwner();
+    if (caster && caster->GetTypeId() == TYPEID_PLAYER)
+    {
+        It().SetGoState(GO_STATE_ACTIVE);
+        It().SendForcedObjectUpdate();
+        It().SendGameObjectCustomAnim();
+    }
+
+    It().SetLootState(GO_READY);
+}
+
+/**
+ * @brief A chest is ready the moment it is looked at.
+ */
+void ChestBehaviour::Arming()
+{
+    // A chest the data says refills is simply always ready. Nothing ever starts
+    // the countdown, so refilling is not implemented and the restock time in the
+    // template goes unread.
+    //
+    // <<TODO: implement it, or say in the schema that the column is not read. A
+    // chest with chestRestockTime set is meant to fill again after that long
+    // rather than despawn.
+    It().SetLootState(GO_READY);
+}
+
+/* ****************************** The clock running out ******************** */
+
+/**
+ * @brief Nobody caught anything, and the cast ends.
+ */
+GameObjectBehaviour::Tick FishingNodeBehaviour::TimedOut()
+{
+    Unit* caster = It().GetOwner();
+    if (caster && caster->GetTypeId() == TYPEID_PLAYER)
+    {
+        caster->FinishSpell(CURRENT_CHANNELED_SPELL);
+
+        WorldPacket data(SMSG_FISH_NOT_HOOKED, 0);
+        ((Player*)caster)->GetSession()->SendPacket(&data);
+    }
+
+    It().SetLootState(GO_JUST_DEACTIVATED);
+    return Tick::Stop;
+}
+
+/**
+ * @brief A door left open closes again when its time is up.
+ *
+ * And then it is put back like anything else, which is why this carries on: a
+ * battleground door is a permanent spawn and has to come back.
+ */
+GameObjectBehaviour::Tick DoorBehaviour::TimedOut()
+{
+    if (It().GetGoState() != GO_STATE_READY)
+    {
+        It().ResetDoorOrButton();
+    }
+
+    return Tick::Carry;
+}
+
+/// The flags of Arathi Basin are buttons, and they close the same way.
+GameObjectBehaviour::Tick ButtonBehaviour::TimedOut()
+{
+    if (It().GetGoState() != GO_STATE_READY)
+    {
+        It().ResetDoorOrButton();
+    }
+
+    return Tick::Carry;
+}
+
+/* ****************************** Standing there *************************** */
+
+/**
+ * @brief A trap watches the ground around it for somebody to step on.
+ */
+GameObjectBehaviour::Tick TrapBehaviour::Standing()
+{
+    if (It().UsableAt() >= time(nullptr))
+    {
+        return Tick::Stop;                                  // still arming
+    }
+
+    // FIXME: this is activation radius (in different casting radius that must be selected from spell data)
+    // TODO: move activated state code (cast itself) to GO_ACTIVATED, in this place only check activating and set state
+    float radius = float(Data().trap.radius);
+    if (!radius)
+    {
+        // No radius of its own: it goes off only when something else trips it,
+        // unless it is one of the battleground traps, which say so by carrying a
+        // cooldown of three and mean it as a radius.
+        if (Data().trap.cooldown != 3)
+        {
+            return Tick::Stop;
+        }
+
+        if (It().Clock().Moment() > 0)
+        {
+            return Tick::Rest;
+        }
+
+        radius = float(Data().trap.cooldown);
+    }
+
+    SpellEntry const* se = sSpellStore.LookupEntry(Data().trap.spellId);
+
+    if (IsAreaOfEffectSpell(se))
+    {
+        MaNGOS::AllSpecificUnitsInGameObjectRangeDo unit_do(&It(), radius, IsPositiveSpell(se));
+        MaNGOS::UnitWorker<MaNGOS::AllSpecificUnitsInGameObjectRangeDo> worker(unit_do);
+        Cell::VisitAllObjects(&It(), worker, radius);
+
+        return Tick::Carry;
+    }
+
+    Unit* targetUnit = nullptr;
+    MaNGOS::AnySpecificUnitInGameObjectRangeCheck u_check(&It(), radius, IsPositiveSpell(se));
+    MaNGOS::UnitSearcher<MaNGOS::AnySpecificUnitInGameObjectRangeCheck> checker(targetUnit, u_check);
+    Cell::VisitAllObjects(&It(), checker, radius);
+
+    if (targetUnit)
+    {
+        // prevent use if GO entry is "Fixed Trap" and target is not SLIKIK
+        if (It().GetEntry() != GO_DIRE_MAUL_FIXED_TRAP || targetUnit->GetEntry() == NPC_SLIPKIK_GUARD)
+        {
+            It().Use(targetUnit);
+        }
+    }
+
+    return Tick::Carry;
+}
+
+/* ****************************** Being used ******************************* */
+
+/// A door shuts itself at the moment it was told to.
+void DoorBehaviour::InUse(uint32 /*elapsed*/)
+{
+    if (It().ClosesAt() != 0 && It().ClosesAt() <= time(nullptr))
+    {
+        It().ResetDoorOrButton();
+    }
+}
+
+/// And so does a button.
+void ButtonBehaviour::InUse(uint32 /*elapsed*/)
+{
+    if (It().ClosesAt() != 0 && It().ClosesAt() <= time(nullptr))
+    {
+        It().ResetDoorOrButton();
+    }
+}
+
+/**
+ * @brief An emptied chest lingers a moment before it goes.
+ *
+ * As long as anything is left in it the moment keeps being pushed back, so the
+ * countdown only really starts when the last item is taken.
+ */
+void ChestBehaviour::InUse(uint32 /*elapsed*/)
+{
+    // TODO : Missing Loot::Update() method found in CMangos
+    if (!It().loot.empty())
+    {
+        It().AsChest().EmptyAt(time(nullptr) + CHEST_LINGER);
+    }
+    else if (It().AsChest().IsEmptyingDue(time(nullptr)))
+    {
+        It().SetLootState(GO_JUST_DEACTIVATED);
+    }
+}
+
+/// A goober is held in use until the moment its template names, and then released.
+void GooberBehaviour::InUse(uint32 /*elapsed*/)
+{
+    if (It().ClosesAt() > time(nullptr))
+    {
+        return;
+    }
+
+    It().RemoveGoFlag(GO_FLAG_IN_USE);
+    It().SetLootState(GO_JUST_DEACTIVATED);
+    It().ClosesAt(0);
+}
+
+/// The bar moves on its own clock while anybody is standing in the circle.
+void CapturePointBehaviour::InUse(uint32 elapsed)
+{
+    if (It().AsCapturePoint().IsTickDue(elapsed))
+    {
+        It().TickCapturePoint();
+    }
+}
+
+/* ****************************** Finished with **************************** */
+
+/**
+ * @brief What a goober was clicked for is cast on everyone who clicked it.
+ */
+GameObjectBehaviour::Tick GooberBehaviour::Spent()
+{
+    if (uint32 spellId = Data().goober.spellId)
+    {
+        for (auto const& guid : It().Users().Everyone())
+        {
+            if (Player* owner = It().GetMap()->GetPlayer(guid))
+            {
+                owner->CastSpell(owner, spellId, false, nullptr, nullptr, It().GetObjectGuid());
+            }
+        }
+
+        It().ClearAllUsesData();
+    }
+
+    It().SetGoState(GO_STATE_READY);
+
+    return Tick::Carry;
+}
+
+/**
+ * @brief A capture point is never spent, only locked and reopened.
+ *
+ * It goes straight back to ready rather than through the tail, because the tail
+ * despawns anything showing full progress -- which, for a tower being taken, is
+ * every tower at the moment it changes hands.
+ */
+GameObjectBehaviour::Tick CapturePointBehaviour::Spent()
+{
+    // The bar is not drawn for a locked point, so nobody is left standing in it.
+    for (auto const& guid : It().AsCapturePoint().Standing())
+    {
+        if (Player* owner = It().GetMap()->GetPlayer(guid))
+        {
+            owner->SendUpdateWorldState(Data().capturePoint.worldState1, WORLD_STATE_REMOVE);
+        }
+    }
+
+    It().AsCapturePoint().Desert();
+    It().SetLootState(GO_READY);
+
+    return Tick::Stop;
+}
+
+/**
+ * @brief An opened chest springs whatever was linked to it.
+ */
+GameObjectBehaviour::Tick ChestBehaviour::Spent()
+{
+    uint32 const trapEntry = Data().GetLinkedGameObjectEntry();
+
+    // <<TODO: the one hardcoded entry left in this file, and the shape is wrong to
+    // move as it stands. The key is the chest's linkedTrapId, which here names
+    // another chest rather than a trap and is being used as a marker; what it does
+    // with it is despawn a separate visual object standing on the same spot. Decide
+    // whether that is one chest's patch or the case of a general rule -- a visual
+    // that belongs to an object and goes when it goes -- before giving it a table.
+    if (trapEntry == 144064) // Special case for Gordunni Cobalt Visual
+    {
+        float const range = 0.5f;
+        GameObject* visualGO = nullptr;
+
+        MaNGOS::NearestGameObjectEntryInObjectRangeCheck go_check(It(), 177683, range); //177683 Visual Entry
+        MaNGOS::GameObjectLastSearcher<MaNGOS::NearestGameObjectEntryInObjectRangeCheck> checker(visualGO, go_check);
+
+        Cell::VisitGridObjects(&It(), checker, range);
+
+        if (visualGO)
+        {
+            visualGO->SetLootState(GO_JUST_DEACTIVATED);
+        }
+    }
+
+    if (!trapEntry)
+    {
+        return Tick::Carry;
+    }
+
+    GameObjectInfo const* trapInfo = sGOStorage.LookupEntry<GameObjectInfo>(trapEntry);
+    if (!trapInfo || trapInfo->type != GAMEOBJECT_TYPE_TRAP)
+    {
+        return Tick::Carry;
+    }
+
+    float const range = 0.5f;
+    GameObject* trapGO = nullptr;
+
+    MaNGOS::NearestGameObjectEntryInObjectRangeCheck go_check(It(), trapEntry, range);
+    MaNGOS::GameObjectLastSearcher<MaNGOS::NearestGameObjectEntryInObjectRangeCheck> checker(trapGO, go_check);
+
+    Cell::VisitGridObjects(&It(), checker, range);
+
+    if (trapGO)
+    {
+        trapGO->SetLootState(GO_JUST_DEACTIVATED);
+    }
+
+    return Tick::Carry;
+}
+
+/* ****************************** Coming back ****************************** */
+
+/// A vein is rolled afresh every time it comes back, so the ore it holds can change.
+void ChestBehaviour::Respawning()
+{
+    It().RollIfMineralVein();
 }

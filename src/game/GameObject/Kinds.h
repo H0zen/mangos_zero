@@ -42,6 +42,8 @@ class DoorBehaviour : public GameObjectBehaviour
         using GameObjectBehaviour::GameObjectBehaviour;
 
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
+        Tick TimedOut() override;
+        void InUse(uint32 elapsed) override;
 };
 
 /// A button is a door that trips something else as it opens.
@@ -51,6 +53,8 @@ class ButtonBehaviour : public GameObjectBehaviour
         using GameObjectBehaviour::GameObjectBehaviour;
 
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
+        Tick TimedOut() override;
+        void InUse(uint32 elapsed) override;
 };
 
 /// A thing that hands out quests and takes them back.
@@ -69,6 +73,10 @@ class ChestBehaviour : public GameObjectBehaviour
         using GameObjectBehaviour::GameObjectBehaviour;
 
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
+        void Arming() override;
+        void InUse(uint32 elapsed) override;
+        Tick Spent() override;
+        void Respawning() override;
 };
 
 /// A thing with no behaviour of its own beyond being clicked.
@@ -87,6 +95,8 @@ class TrapBehaviour : public GameObjectBehaviour
         using GameObjectBehaviour::GameObjectBehaviour;
 
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
+        void Arming() override;
+        Tick Standing() override;
 };
 
 /// A seat, with a slot per person it holds.
@@ -114,6 +124,8 @@ class GooberBehaviour : public GameObjectBehaviour
         using GameObjectBehaviour::GameObjectBehaviour;
 
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
+        void InUse(uint32 elapsed) override;
+        Tick Spent() override;
 };
 
 /// A point the client is told to look from.
@@ -132,6 +144,8 @@ class FishingNodeBehaviour : public GameObjectBehaviour
         using GameObjectBehaviour::GameObjectBehaviour;
 
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
+        void Arming() override;
+        Tick TimedOut() override;
 };
 
 /// A circle that needs several people standing in it.
@@ -177,4 +191,14 @@ class FlagDropBehaviour : public GameObjectBehaviour
         using GameObjectBehaviour::GameObjectBehaviour;
 
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
+};
+
+/// A tower or banner one side takes from the other by standing near it.
+class CapturePointBehaviour : public GameObjectBehaviour
+{
+    public:
+        using GameObjectBehaviour::GameObjectBehaviour;
+
+        void InUse(uint32 elapsed) override;
+        Tick Spent() override;
 };

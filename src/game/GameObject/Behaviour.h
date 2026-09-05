@@ -70,6 +70,14 @@ class GameObjectBehaviour
         GameObjectBehaviour(GameObjectBehaviour const&) = delete;
         GameObjectBehaviour& operator=(GameObjectBehaviour const&) = delete;
 
+        /// Whether the object's tick goes on after a hook has had its say.
+        enum class Tick
+        {
+            Carry,                                          ///< nothing unusual; the tick continues
+            Rest,                                           ///< nothing more for the object, but its AI still runs
+            Stop                                            ///< the object's whole tick ends here, AI included
+        };
+
         /**
          * @brief Somebody clicked it.
          *
@@ -78,6 +86,27 @@ class GameObjectBehaviour
          * @return The spell the use asks for, or nothing.
          */
         virtual Casting UsedBy(Unit* user, bool scriptSaidYes);
+
+        /**
+         * @brief It is being made ready, and whatever the kind must settle first, it
+         *        settles here. Leaving the object not ready keeps it out of play.
+         */
+        virtual void Arming() {}
+
+        /// Its clock ran out while it stood there ready.
+        virtual Tick TimedOut() { return Tick::Carry; }
+
+        /// A tick of standing there spawned and ready, watching for whatever it watches for.
+        virtual Tick Standing() { return Tick::Carry; }
+
+        /// A tick of being in use.
+        virtual void InUse(uint32 elapsed) { (void)elapsed; }
+
+        /// Somebody has just finished with it.
+        virtual Tick Spent() { return Tick::Carry; }
+
+        /// It has been put back and is about to stand ready again.
+        virtual void Respawning() {}
 
     protected:
         /// The object this behaviour belongs to. It never outlives it.

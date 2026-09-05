@@ -54,12 +54,6 @@
 #include "GameObjectAI.h"
 #include "Geometry/Quat.h"
 
-enum
-{
-    GO_DIRE_MAUL_FIXED_TRAP = 179512,
-    NPC_SLIPKIK_GUARD = 14323
-};
-
 /**
  * @brief Updates game object state, timers, loot state, and AI.
  *
@@ -70,347 +64,94 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
 {
     if (GetObjectGuid().IsMOTransport())
     {
-        //((Transport*)this)->Update(p_time);
         return;
     }
 
-
+    // THE MACHINE IS THE SAME FOR EVERY GAMEOBJECT: it is made ready, it stands
+    // ready until its clock or somebody takes it, it is in use, and then it is
+    // spent and put back. What each KIND does at those five moments is its own,
+    // and is asked of its behaviour.
     switch (m_lootState)
     {
         case GO_NOT_READY:
         {
-            switch (GetGoType())
-            {
-                case GAMEOBJECT_TYPE_TRAP:                  // Initialized delayed to be able to use GetOwner()
-                {
-                    // Arming Time for GAMEOBJECT_TYPE_TRAP (6)
-                    Unit* owner = GetOwner();
-                    if (owner && owner->IsInCombat())
-                    {
-                        m_usableAt = time(nullptr) + GetGOInfo()->trap.startDelay;
-                    }
-                    m_lootState = GO_READY;
-                    break;
-                }
-                case GAMEOBJECT_TYPE_FISHINGNODE:           // Keep not ready for some delay
-                {
-                    // fishing code (bobber ready)
-                    if (time(nullptr) > m_spawn.Moment() - FISHING_BOBBER_READY_TIME)
-                    {
-                        // splash bobber (bobber ready now)
-                        Unit* caster = GetOwner();
-                        if (caster && caster->GetTypeId() == TYPEID_PLAYER)
-                        {
-                            SetGoState(GO_STATE_ACTIVE);
-                            // SetAllGoFlags(GO_FLAG_NODESPAWN);
-
-                            SendForcedObjectUpdate();
-
-                            SendGameObjectCustomAnim();
-                        }
-
-                        m_lootState = GO_READY;             // can be successfully open with some chance
-                    }
-                    break;
-                }
-                case GAMEOBJECT_TYPE_CHEST:
-                {
-                    // A chest the data says refills is simply always ready. Nothing
-                    // ever starts the countdown, so refilling is not implemented and
-                    // the restock time in the template goes unread.
-                    //
-                    // <<TODO: implement it, or say in the schema that the column is
-                    // not read. A chest with chestRestockTime set is meant to fill
-                    // again after that long rather than despawn.
-                    if (m_goInfo->chest.chestRestockTime)
-                    {
-                        m_lootState = GO_READY;
-                        return;
-                    }
-                    m_lootState = GO_READY;
-                }
-                default:
-                    break;
-            }
+            m_behaviour->Arming();
             break;
         }
+
         case GO_READY:
         {
-            if (m_spawn.Moment() > 0)                          // timer on
+            if (m_spawn.Moment() > 0 && m_spawn.Moment() <= time(nullptr))
             {
-                if (m_spawn.Moment() <= time(nullptr))            // timer expired
+                m_spawn.ChangesAt(0);
+                ClearAllUsesData();
+
+                if (m_behaviour->TimedOut() == GameObjectBehaviour::Tick::Stop)
                 {
-                    m_spawn.ChangesAt(0);
-                    ClearAllUsesData();
-
-                    switch (GetGoType())
-                    {
-                        case GAMEOBJECT_TYPE_FISHINGNODE:   // can't fish now
-                        {
-                            Unit* caster = GetOwner();
-                            if (caster && caster->GetTypeId() == TYPEID_PLAYER)
-                            {
-                                caster->FinishSpell(CURRENT_CHANNELED_SPELL);
-
-                                WorldPacket data(SMSG_FISH_NOT_HOOKED, 0);
-                                ((Player*)caster)->GetSession()->SendPacket(&data);
-                            }
-                            // can be deleted
-                            m_lootState = GO_JUST_DEACTIVATED;
-                            return;
-                        }
-                        case GAMEOBJECT_TYPE_DOOR:
-                        case GAMEOBJECT_TYPE_BUTTON:
-                            // we need to open doors if they are closed (add there another condition if this code breaks some usage, but it need to be here for battlegrounds)
-                            if (GetGoState() != GO_STATE_READY)
-                            {
-                                ResetDoorOrButton();
-                            }
-                            // flags in AB are type_button and we need to add them here so no break!
-                        default:
-                            if (!m_spawn.IsPermanent())        // despawn timer
-                            {
-                                // can be despawned or destroyed
-                                SetLootState(GO_JUST_DEACTIVATED);
-                                // Remove Wild-Summoned GO on timer expire
-                                if (!HasStaticDBSpawnData())
-                                {
-                                    if (Unit* owner = GetOwner())
-                                    {
-                                        owner->RemoveGameObject(this, false);
-                                    }
-                                    Delete();
-                                }
-                                return;
-                            }
-
-                            // respawn timer
-                            GetMap()->Add(this);
-                            break;
-                    }
+                    return;
                 }
+
+                // A thing that only ever goes away is gone; one that belongs to the
+                // world comes back into it.
+                if (!m_spawn.IsPermanent())
+                {
+                    SetLootState(GO_JUST_DEACTIVATED);
+
+                    // Summoned by a spell rather than placed by the data: nobody owns
+                    // the row it would go back to, so there is nothing to put back.
+                    if (!HasStaticDBSpawnData())
+                    {
+                        if (Unit* owner = GetOwner())
+                        {
+                            owner->RemoveGameObject(this, false);
+                        }
+                        Delete();
+                    }
+                    return;
+                }
+
+                GetMap()->Add(this);
             }
 
             if (isSpawned())
             {
-
-                // traps can have time and can not have
-                GameObjectInfo const* goInfo = GetGOInfo();
-
-                uint32 max_charges = goInfo->GetCharges();
-
-                if (goInfo->type == GAMEOBJECT_TYPE_TRAP)   // traps
+                GameObjectBehaviour::Tick const verdict = m_behaviour->Standing();
+                if (verdict == GameObjectBehaviour::Tick::Stop)
                 {
-                    if (m_usableAt >= time(nullptr))
-                    {
-                        return;
-                    }
-
-                    // FIXME: this is activation radius (in different casting radius that must be selected from spell data)
-                    // TODO: move activated state code (cast itself) to GO_ACTIVATED, in this place only check activating and set state
-                    float radius = float(goInfo->trap.radius);
-                    if (!radius)
-                    {
-                        if (goInfo->trap.cooldown != 3)     // cast in other case (at some triggering/linked go/etc explicit call)
-                        {
-                            return;
-                        }
-                        else
-                        {
-                            if (m_spawn.Moment() > 0)
-                            {
-                                break;
-                            }
-
-                            // battlegrounds gameobjects has data2 == 0 && data5 == 3
-                            radius = float(goInfo->trap.cooldown);
-                        }
-                    }
-
-                    SpellEntry const* se = sSpellStore.LookupEntry(goInfo->trap.spellId);
-                    if (IsAreaOfEffectSpell(se))
-                    {
-                        MaNGOS::AllSpecificUnitsInGameObjectRangeDo unit_do(this, radius, IsPositiveSpell(se));
-                        MaNGOS::UnitWorker<MaNGOS::AllSpecificUnitsInGameObjectRangeDo> worker(unit_do);
-                        Cell::VisitAllObjects(this,worker,radius);
-                    }
-                    else
-                    {
-                        Unit* targetUnit = nullptr;                     // pointer to appropriate target if found any
-                        MaNGOS::AnySpecificUnitInGameObjectRangeCheck u_check(this, radius, IsPositiveSpell(se));
-                        MaNGOS::UnitSearcher<MaNGOS::AnySpecificUnitInGameObjectRangeCheck> checker(targetUnit, u_check);
-                        Cell::VisitAllObjects(this, checker, radius);
-                        if (targetUnit)
-                        {
-                            bool useTrap = true;
-                            // prevent use if GO entry is "Fixed Trap" and target is not SLIKIK
-                            if (GetEntry() == GO_DIRE_MAUL_FIXED_TRAP && targetUnit->GetEntry() != NPC_SLIPKIK_GUARD)
-                            {
-                                useTrap = false;
-                            }
-
-                            if (useTrap)
-                            {
-                                Use(targetUnit);
-                            }
-                        }
-                    }
+                    return;
+                }
+                if (verdict == GameObjectBehaviour::Tick::Rest)
+                {
+                    break;
                 }
 
-                // Only despawn object if there are charges to "consume"
-                // it means (all GO with charges = 0 in DB should never be despawned)
-                // Check : https://www.getmangos.eu/wiki/referenceinfo/dbinfo/mangosdb/mangoszeroworlddb/gameobject_template-r1047
-                // for more information about charges field in db depending on object type
-                if (max_charges > 0 && m_users.Uses() >= max_charges)
+                // USES ARE COUNTED ONLY WHERE THE TEMPLATE SAYS THEY ARE. A charge
+                // count of zero is not "no uses left", it is "this one is never used
+                // up", which is why nothing with a zero here is ever despawned.
+                uint32 const charges = GetGOInfo()->GetCharges();
+                if (charges > 0 && m_users.Uses() >= charges)
                 {
                     m_users.Forget();
-                    SetLootState(GO_JUST_DEACTIVATED);  // can be despawned or destroyed
+                    SetLootState(GO_JUST_DEACTIVATED);
                 }
             }
             break;
         }
+
         case GO_ACTIVATED:
         {
-            switch (GetGoType())
-            {
-                case GAMEOBJECT_TYPE_DOOR:
-                case GAMEOBJECT_TYPE_BUTTON:
-                    if (m_closesAt != 0 && m_closesAt <= time(nullptr))
-                    {
-                        ResetDoorOrButton();
-                    }
-                    break;
-                case GAMEOBJECT_TYPE_CHEST:
-                    if (true)
-                    {
-                        if (!loot.empty())
-                        {
-                            m_chest.EmptyAt(time(nullptr) + CHEST_LINGER);
-                        }
-                        else if (m_chest.IsEmptyingDue(time(nullptr)))
-                        {
-                            m_lootState = GO_JUST_DEACTIVATED;
-                        }
-
-                        // TODO : Missing Loot::Update() method found in CMangos
-                    }
-                    break;
-                case GAMEOBJECT_TYPE_GOOBER:
-                    if (m_closesAt <= time(nullptr))
-                    {
-                        RemoveGoFlag(GO_FLAG_IN_USE);
-
-                        SetLootState(GO_JUST_DEACTIVATED);
-                        m_closesAt = 0;
-                    }
-                    break;
-                case GAMEOBJECT_TYPE_CAPTURE_POINT:
-                    if (m_capture.IsTickDue(p_time))
-                    {
-                        TickCapturePoint();
-                    }
-                    break;
-                default:
-                    break;
-            }
+            m_behaviour->InUse(p_time);
             break;
         }
+
         case GO_JUST_DEACTIVATED:
         {
-            switch (GetGoType())
+            if (m_behaviour->Spent() == GameObjectBehaviour::Tick::Stop)
             {
-                case GAMEOBJECT_TYPE_GOOBER:
-                    // if gameobject should cast spell, then this, but some GOs (type = 10) should be destroyed
-                    if (uint32 spellId = GetGOInfo()->goober.spellId)
-                    {
-                        for (auto const& guid : m_users.Everyone())
-                        {
-                            if (Player* owner = GetMap()->GetPlayer(guid))
-                            {
-                                owner->CastSpell(owner, spellId, false, nullptr, nullptr, GetObjectGuid());
-                            }
-                        }
-
-                        ClearAllUsesData();
-                    }
-
-                    SetGoState(GO_STATE_READY);
-
-                    // any return here in case battleground traps
-                    break;
-
-                case GAMEOBJECT_TYPE_CAPTURE_POINT:
-                    // remove capturing players because slider wont be displayed if capture point is being locked
-                    for (auto const& guid : m_capture.Standing())
-                    {
-                        if (Player* owner = GetMap()->GetPlayer(guid))
-                        {
-                            owner->SendUpdateWorldState(GetGOInfo()->capturePoint.worldState1, WORLD_STATE_REMOVE);
-                        }
-                    }
-
-                    m_capture.Desert();
-                    SetLootState(GO_READY);
-                    return; // SetLootState and return because go is treated as "burning flag" due to GetGoAnimProgress() being 100 and would be removed on the client
-                case GAMEOBJECT_TYPE_CHEST:
-                {
-                    uint32 trapEntry = GetGOInfo()->GetLinkedGameObjectEntry();
-
-                    // <<TODO: the one hardcoded entry left in this file, and the shape is
-                    // wrong to move as it stands. The key is the chest's linkedTrapId,
-                    // which here names another chest rather than a trap and is being used
-                    // as a marker; what it does with it is despawn a separate visual
-                    // object standing on the same spot. Decide whether that is one chest's
-                    // patch or the case of a general rule -- a visual that belongs to an
-                    // object and goes when it goes -- before giving it a table.
-                    if (trapEntry == 144064) // Special case for Gordunni Cobalt Visual
-                    {
-                        float range = 0.5f;
-                        GameObject* visualGO = nullptr;
-
-                        MaNGOS::NearestGameObjectEntryInObjectRangeCheck go_check(*this, 177683, range); //177683 Visual Entry
-                        MaNGOS::GameObjectLastSearcher<MaNGOS::NearestGameObjectEntryInObjectRangeCheck> checker(visualGO, go_check);
-
-                        Cell::VisitGridObjects(this, checker, range);
-
-                        if (visualGO)
-                        {
-                            visualGO->SetLootState(GO_JUST_DEACTIVATED);
-                        }
-                    }
-
-                    if (!trapEntry)
-                    {
-                        break;
-                    }
-
-                    GameObjectInfo const* trapInfo = sGOStorage.LookupEntry<GameObjectInfo>(trapEntry);
-                    if (!trapInfo || trapInfo->type != GAMEOBJECT_TYPE_TRAP)
-                    {
-                        break;
-                    }
-
-                    float range = 0.5f;
-
-                    GameObject* trapGO = nullptr;
-
-                    MaNGOS::NearestGameObjectEntryInObjectRangeCheck go_check(*this, trapEntry, range);
-                    MaNGOS::GameObjectLastSearcher<MaNGOS::NearestGameObjectEntryInObjectRangeCheck> checker(trapGO, go_check);
-
-                    Cell::VisitGridObjects(this, checker, range);
-
-                    // found correct GO
-                    if (trapGO)
-                    {
-                        trapGO->SetLootState(GO_JUST_DEACTIVATED);
-                    }
-                }
-
-                default:
-                    break;
+                return;
             }
 
-            // Remove wild summoned after use
+            // Wild-summoned things are not put back, they are done with.
             if (!HasStaticDBSpawnData() && (!GetSpellId() || GetGOInfo()->GetDespawnPossibility() || GetGOInfo()->IsDespawnAtAction()))
             {
                 if (Unit* owner = GetOwner())
@@ -425,7 +166,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
             if (GetGOInfo()->IsDespawnAtAction() || GetGoAnimProgress() > 0)
             {
                 SendDespawnAnimation(*this);
-                // reset flags
+
                 if (GetMap()->Instanceable())
                 {
                     // In Instances GO_FLAG_LOCKED, GO_FLAG_INTERACT_COND or GO_FLAG_NO_INTERACT are not changed
@@ -468,10 +209,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                 UpdateObjectVisibility();
             }
 
-            if (GetGoType() == GAMEOBJECT_TYPE_CHEST)
-            {
-                RollIfMineralVein();
-            }
+            m_behaviour->Respawning();
 
             break;
         }

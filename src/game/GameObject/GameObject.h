@@ -842,6 +842,9 @@ class GameObject : public Occupant
         CapturePoint& AsCapturePoint() { return m_capture; }
         CapturePoint const& AsCapturePoint() const { return m_capture; }
 
+        /// Move the bar one step towards whoever is standing in it.
+        void TickCapturePoint();
+
         float GetInteractionDistance() const;              // Get the maximum distance for a GO to interact with
 
         uint32 GetScriptId();
@@ -883,7 +886,6 @@ class GameObject : public Occupant
 
     private:
         void SwitchDoorOrButton(bool activate, bool alternative = false);
-        void TickCapturePoint();
         void UpdateModel();                                 // updates model in case displayId were changed
         void UpdateCollisionState() const;                  // updates state in Map's dynamic collision tree
 
