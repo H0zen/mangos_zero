@@ -555,7 +555,7 @@ bool Pet::learnSpell(uint32 spell_id)
     if (!m_loading)
     {
         Unit* owner = GetOwner();
-        if (owner && owner->GetTypeId() == TYPEID_PLAYER)
+        if (owner && owner->IsPlayer())
         {
             ((Player*)owner)->PetSpellInitialize();
         }
@@ -632,7 +632,7 @@ bool Pet::removeSpell(uint32 spell_id, bool learn_prev, bool clear_ab)
             // need update action bar for last removed rank
             if (Unit* owner = GetOwner())
             {
-                if (owner->GetTypeId() == TYPEID_PLAYER)
+                if (owner->IsPlayer())
                 {
                     ((Player*)owner)->PetSpellInitialize();
                 }
@@ -678,7 +678,7 @@ void Pet::InitPetCreateSpells()
     if (CreateSpells)
     {
         Unit* owner = GetOwner();
-        Player* p_owner = owner && owner->GetTypeId() == TYPEID_PLAYER ? (Player*)owner : nullptr;
+        Player* p_owner = owner && owner->IsPlayer() ? (Player*)owner : nullptr;
 
         for (uint8 i = 0; i < 4; ++i)
         {

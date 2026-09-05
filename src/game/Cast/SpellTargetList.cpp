@@ -161,7 +161,7 @@ void Spell::FillTargetMap()
                             if ((m_spellInfo->SpellClassSet == SPELLFAMILY_MAGE && m_spellInfo->SpellClassMask & UI64LIT(0x00000800)) ||
                                 (m_spellInfo->ID == 13280))
                             {
-                                if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                                if (m_caster->IsPlayer())
                                 {
                                     if (Unit* target = ObjectLookup::GetUnit(*m_caster, ((Player*)m_caster)->GetSelectionGuid()))
                                     {
@@ -330,7 +330,7 @@ void Spell::FillTargetMap()
             }
         }
 
-        if (m_caster->GetTypeId() == TYPEID_PLAYER)
+        if (m_caster->IsPlayer())
         {
             Player* me = (Player*)m_caster;
             for (UnitList::const_iterator itr = tmpUnitLists[effToIndex[i]].begin(); itr != tmpUnitLists[effToIndex[i]].end(); ++itr)

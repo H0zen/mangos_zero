@@ -128,7 +128,7 @@ struct boss_majordomo : public CreatureScript
 
         void Aggro(Unit* pWho) override
         {
-            if (pWho->GetTypeId() == TYPEID_UNIT && pWho->GetEntry() == NPC_RAGNAROS)
+            if (pWho->IsCreature() && pWho->GetEntry() == NPC_RAGNAROS)
             {
                 return;
             }
@@ -220,7 +220,7 @@ struct boss_majordomo : public CreatureScript
 
         void JustDied(Unit* pKiller) override
         {
-            if (pKiller->GetTypeId() == TYPEID_UNIT && pKiller->GetEntry() == NPC_RAGNAROS)
+            if (pKiller->IsCreature() && pKiller->GetEntry() == NPC_RAGNAROS)
             {
                 DoScriptText(SAY_ARRIVAL4_MAJ, m_creature);
             }

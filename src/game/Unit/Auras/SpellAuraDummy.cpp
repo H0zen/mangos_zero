@@ -112,7 +112,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     {
                         if (Unit* caster = GetCaster())
                         {
-                            if (caster->GetTypeId() != TYPEID_UNIT)
+                            if (!caster->IsCreature())
                             {
                                 return;
                             }
@@ -222,7 +222,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             case 126:                                       // Eye of Killrog
             {
                 Unit* caster = GetCaster();
-                if (!caster || caster->GetTypeId() != TYPEID_PLAYER)
+                if (!caster || !caster->IsPlayer())
                 {
                     return;
                 }
@@ -240,7 +240,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             {
                 if (Unit* caster = GetCaster())
                 {
-                    if (caster->GetTypeId() != TYPEID_UNIT)
+                    if (!caster->IsCreature())
                     {
                         return;
                     }
@@ -258,7 +258,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
                 if (Unit* caster = GetCaster())
                 {
-                    if (caster->GetTypeId() == TYPEID_PLAYER)
+                    if (caster->IsPlayer())
                     {
                         caster->CastSpell(target, 11828, true, ((Player*) caster)->GetItemByGuid(this->GetCastItemGuid()), this);
                     }
@@ -371,7 +371,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     // Some has effect1 that makes the difference, however not all.
                     // Some appear to be used depending on creature location, in water, at solid ground, in air/suspended, etc
                     // For now, just handle all the same way
-                    if (target->GetTypeId() == TYPEID_UNIT)
+                    if (target->IsCreature())
                     {
                         target->SetFeignDeath(apply);
                     }
@@ -394,7 +394,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
         case SPELLFAMILY_DRUID:
         {
             // Predatory Strikes
-            if (target->GetTypeId() == TYPEID_PLAYER && GetSpellProto()->SpellIconID == 1563)
+            if (target->IsPlayer() && GetSpellProto()->SpellIconID == 1563)
             {
                 ((Player*)target)->UpdateAttackPowerAndDamage();
                 return;
@@ -415,7 +415,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             {
                 case 6495:                                  // Sentry Totem
                 {
-                    if (target->GetTypeId() != TYPEID_PLAYER)
+                    if (!target->IsPlayer())
                     {
                         return;
                     }
@@ -462,7 +462,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
         return;
     }
 
-    if (target->GetTypeId() == TYPEID_PLAYER)
+    if (target->IsPlayer())
     {
         SpellAreaForAreaMapBounds saBounds = sSpellMgr.GetSpellAreaForAuraMapBounds(GetId());
         if (saBounds.first != saBounds.second)
@@ -478,7 +478,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
     }
 
     // script has to "handle with care", only use where data are not ok to use in the above code.
-    if (target->GetTypeId() == TYPEID_UNIT)
+    if (target->IsCreature())
     {
         sScriptMgr.OnAuraDummy(this, apply);
     }

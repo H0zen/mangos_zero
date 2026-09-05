@@ -182,7 +182,7 @@ void Aura::HandleAuraHover(bool apply, bool Real)
 void Aura::HandleWaterBreathing(bool /*apply*/, bool /*Real*/)
 {
     // update timers in client
-    if (GetTarget()->GetTypeId() == TYPEID_PLAYER)
+    if (GetTarget()->IsPlayer())
     {
         ((Player*)GetTarget())->UpdateMirrorTimers();
     }
@@ -418,7 +418,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                 {
                     uint32 Rage_val = 0;
                     // Tactical mastery
-                    if (target->GetTypeId() == TYPEID_PLAYER)
+                    if (target->IsPlayer())
                     {
                         const auto aurasOverrideClassScripts = target->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
                         for (auto* aura : aurasOverrideClassScripts)
@@ -483,7 +483,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
     // add/remove the shapeshift aura's boosts
     HandleShapeshiftBoosts(apply);
 
-    if (target->GetTypeId() == TYPEID_PLAYER)
+    if (target->IsPlayer())
     {
         ((Player*)target)->InitDataForForm();
     }
@@ -569,7 +569,7 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
             target->SetDisplayId(model_id);
 
             // creature case, need to update equipment if additional provided
-            if (ci && target->GetTypeId() == TYPEID_UNIT)
+            if (ci && target->IsCreature())
             {
                 ((Creature*)target)->LoadEquipment(ci->EquipmentTemplateId, false);
             }
@@ -588,7 +588,7 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
         target->SetDisplayId(target->GetNativeDisplayId());
 
         // apply default equipment for creature case
-        if (target->GetTypeId() == TYPEID_UNIT)
+        if (target->IsCreature())
         {
             ((Creature*)target)->LoadEquipment(((Creature*)target)->GetCreatureInfo()->EquipmentTemplateId, true);
         }
@@ -621,7 +621,7 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
  */
 void Aura::HandleForceReaction(bool apply, bool Real)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -654,7 +654,7 @@ void Aura::HandleForceReaction(bool apply, bool Real)
  */
 void Aura::HandleAuraModSkill(bool apply, bool /*Real*/)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -696,7 +696,7 @@ void Aura::HandleChannelDeathItem(bool apply, bool Real)
         }
 
         Unit* caster = GetCaster();
-        if (!caster || caster->GetTypeId() != TYPEID_PLAYER)
+        if (!caster || !caster->IsPlayer())
         {
             return;
         }
@@ -710,7 +710,7 @@ void Aura::HandleChannelDeathItem(bool apply, bool Real)
 
             // Only from non-grey units
             if (!((Player*)caster)->isHonorOrXPTarget(victim) ||
-                (victim->GetTypeId() == TYPEID_UNIT && !((Creature*)victim)->IsTappedBy((Player*)caster)))
+                (victim->IsCreature() && !((Creature*)victim)->IsTappedBy((Player*)caster)))
             {
                 return;
             }
@@ -757,7 +757,7 @@ void Aura::HandleChannelDeathItem(bool apply, bool Real)
 void Aura::HandleBindSight(bool apply, bool /*Real*/)
 {
     Unit* caster = GetCaster();
-    if (!caster || caster->GetTypeId() != TYPEID_PLAYER)
+    if (!caster || !caster->IsPlayer())
     {
         return;
     }
@@ -782,7 +782,7 @@ void Aura::HandleBindSight(bool apply, bool /*Real*/)
 void Aura::HandleFarSight(bool apply, bool /*Real*/)
 {
     Unit* caster = GetCaster();
-    if (!caster || caster->GetTypeId() != TYPEID_PLAYER)
+    if (!caster || !caster->IsPlayer())
     {
         return;
     }

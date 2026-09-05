@@ -89,7 +89,7 @@ bool Unit::IsVisibleForOrDetect(Unit const* u, Occupant const* viewPoint, bool d
     // player visible for other player if not logout and at same transport
     // including case when player is out of world
     bool at_same_transport =
-        GetTypeId() == TYPEID_PLAYER &&  u->GetTypeId() == TYPEID_PLAYER &&
+        IsPlayer() &&  u->IsPlayer() &&
         !((Player*)this)->GetSession()->PlayerLogout() && !((Player*)u)->GetSession()->PlayerLogout() &&
         !((Player*)this)->GetSession()->PlayerLoading() && !((Player*)u)->GetSession()->PlayerLoading() &&
         ((Player*)this)->GetTransport() && ((Player*)this)->GetTransport() == ((Player*)u)->GetTransport();
@@ -108,7 +108,7 @@ bool Unit::IsVisibleForOrDetect(Unit const* u, Occupant const* viewPoint, bool d
 
     Map& _map = *u->GetMap();
     // Grid dead/alive checks
-    if (u->GetTypeId() == TYPEID_PLAYER)
+    if (u->IsPlayer())
     {
         // non visible at grid for any stealth state
         if (!IsVisibleInGridForPlayer((Player*)u))
@@ -168,7 +168,7 @@ bool Unit::IsVisibleForOrDetect(Unit const* u, Occupant const* viewPoint, bool d
     // should be able to see it too
     if (u->IsAlive() && IsAlive() && IsInvisibleForAlive() != u->IsInvisibleForAlive())
     {
-        if (u->GetTypeId() != TYPEID_PLAYER || !((Player*)u)->isGameMaster())
+        if (!u->IsPlayer() || !((Player*)u)->isGameMaster())
         {
             return false;
         }
@@ -181,9 +181,9 @@ bool Unit::IsVisibleForOrDetect(Unit const* u, Occupant const* viewPoint, bool d
     }
 
     // GMs see any players, not higher GMs and all units
-    if (u->GetTypeId() == TYPEID_PLAYER && ((Player*)u)->isGameMaster())
+    if (u->IsPlayer() && ((Player*)u)->isGameMaster())
     {
-        if (GetTypeId() == TYPEID_PLAYER)
+        if (IsPlayer())
         {
             return ((Player*)this)->GetSession()->GetSecurity() <= ((Player*)u)->GetSession()->GetSecurity();
         }
@@ -200,7 +200,7 @@ bool Unit::IsVisibleForOrDetect(Unit const* u, Occupant const* viewPoint, bool d
     }
 
     // grouped players should always see stealthed party members
-    if (GetTypeId() == TYPEID_PLAYER && u->GetTypeId() == TYPEID_PLAYER)
+    if (IsPlayer() && u->IsPlayer())
     {
         if (((Player*)this)->IsGroupVisibleFor(((Player*)u)) && IsFriendly(*u, *this))
         {
@@ -265,7 +265,7 @@ bool Unit::IsVisibleForOrDetect(Unit const* u, Occupant const* viewPoint, bool d
     // players detect players only in Player::HandleStealthedUnitsDetection()
     if (!detect)
     {
-        return (u->GetTypeId() == TYPEID_PLAYER) ? ((Player*)u)->HaveAtClient(this) : false;
+        return (u->IsPlayer()) ? ((Player*)u)->HaveAtClient(this) : false;
     }
 
     // Special cases
@@ -289,7 +289,7 @@ bool Unit::IsVisibleForOrDetect(Unit const* u, Occupant const* viewPoint, bool d
     }
 
     // set max ditance
-    float visibleDistance = (u->GetTypeId() == TYPEID_PLAYER) ? MAX_PLAYER_STEALTH_DETECT_RANGE : ((Creature const*)u)->GetAttackDistance(this);
+    float visibleDistance = (u->IsPlayer()) ? MAX_PLAYER_STEALTH_DETECT_RANGE : ((Creature const*)u)->GetAttackDistance(this);
 
     // Always invisible from back (when stealth detection is on), also filter max distance cases
     bool IsInFront = InFrontPhased(*viewPoint, *this, visibleDistance, M_PI_F);

@@ -487,7 +487,7 @@ struct event_spell_gandling_shadow_portal : public MapEventScript
 
     bool OnReceived(uint32 uiEventId, Object* pSource, Object* /*pTarget*/, bool /*bIsStart*/) override
     {
-        if (pSource->GetTypeId() == TYPEID_UNIT)
+        if (pSource->IsCreature())
         {
             if (InstanceData* pInstance = ((Creature*)pSource)->GetInstanceData())
             {

@@ -124,7 +124,7 @@ void Aura::HandleManaShield(bool apply, bool Real)
     }
 
     // prevent double apply bonuses
-    if (apply && (GetTarget()->GetTypeId() != TYPEID_PLAYER || !((Player*)GetTarget())->GetSession()->PlayerLoading()))
+    if (apply && (!GetTarget()->IsPlayer() || !((Player*)GetTarget())->GetSession()->PlayerLoading()))
     {
         if (Unit* caster = GetCaster())
         {

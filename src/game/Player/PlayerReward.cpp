@@ -85,7 +85,7 @@ bool Player::isHonorOrXPTarget(Unit* pVictim) const
         return false;
     }
 
-    if (pVictim->GetTypeId() == TYPEID_UNIT)
+    if (pVictim->IsCreature())
     {
         if (((Creature*)pVictim)->IsTotem() ||
             ((Creature*)pVictim)->IsPet() ||
@@ -123,7 +123,7 @@ void Player::RewardSinglePlayerAtKill(Unit* pVictim)
         }
 
         // normal creature (not pet/etc) can be only in !PvP case
-        if (pVictim->GetTypeId() == TYPEID_UNIT)
+        if (pVictim->IsCreature())
         {
             KilledMonster(((Creature*)pVictim)->GetCreatureInfo(), pVictim->GetObjectGuid());
         }
@@ -140,7 +140,7 @@ void Player::RewardPlayerAndGroupAtEvent(uint32 creature_id, Occupant* pRewardSo
 {
     MANGOS_ASSERT((!GetGroup() || pRewardSource));              // Player::RewardPlayerAndGroupAtEvent called for Group-Case but no source for range searching provided
 
-    ObjectGuid creature_guid = pRewardSource && pRewardSource->GetTypeId() == TYPEID_UNIT ? pRewardSource->GetObjectGuid() : ObjectGuid();
+    ObjectGuid creature_guid = pRewardSource && pRewardSource->IsCreature() ? pRewardSource->GetObjectGuid() : ObjectGuid();
 
     // prepare data for near group iteration
     if (Group* pGroup = GetGroup())

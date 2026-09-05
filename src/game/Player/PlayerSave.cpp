@@ -1408,7 +1408,7 @@ void Player::CharmSpellInitialize()
 
     uint8 addlist = 0;
 
-    if (charm->GetTypeId() != TYPEID_PLAYER)
+    if (!charm->IsPlayer())
     {
         CreatureInfo const* cinfo = ((Creature*)charm)->GetCreatureInfo();
 
@@ -1428,7 +1428,7 @@ void Player::CharmSpellInitialize()
     data << charm->GetObjectGuid();
     data << uint32(0x00000000);
 
-    if (charm->GetTypeId() != TYPEID_PLAYER)
+    if (!charm->IsPlayer())
     {
         data << uint8(charmInfo->GetReactState()) << uint8(charmInfo->GetCommandState()) << uint16(0);
     }

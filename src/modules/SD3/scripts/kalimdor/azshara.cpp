@@ -134,7 +134,7 @@ struct mobs_spitelashes : public CreatureScript
             }
 
             // Creature get polymorphed into a sheep and after 5 secs despawns
-            if (pCaster->GetTypeId() == TYPEID_PLAYER && ((Player*)pCaster)->GetQuestStatus(QUEST_FRAGMENTED_MAGIC) == QUEST_STATUS_INCOMPLETE &&
+            if (pCaster->IsPlayer() && ((Player*)pCaster)->GetQuestStatus(QUEST_FRAGMENTED_MAGIC) == QUEST_STATUS_INCOMPLETE &&
                 (SD3_SpellId(pSpell) == 118 || SD3_SpellId(pSpell) == 12824 || SD3_SpellId(pSpell) == 12825 || SD3_SpellId(pSpell) == 12826))
             {
                 m_uiMorphTimer = 5000;

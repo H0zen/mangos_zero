@@ -170,7 +170,7 @@ struct boss_kelthuzad : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->GetTypeId() != TYPEID_PLAYER)
+            if (!pVictim->IsPlayer())
             {
                 return;
             }

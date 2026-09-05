@@ -115,7 +115,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 8063:                                  // Deviate Fish
                 {
-                    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+                    if (!m_caster->IsPlayer())
                     {
                         return;
                     }
@@ -134,7 +134,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 8213:                                  // Savory Deviate Delight
                 {
-                    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+                    if (!m_caster->IsPlayer())
                     {
                         return;
                     }
@@ -172,7 +172,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 9976:                                  // Polly Eats the E.C.A.C.
                 {
-                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
+                    if (!unitTarget || !unitTarget->IsCreature())
                     {
                         return;
                     }
@@ -185,7 +185,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 10254:                                 // Stone Dwarf Awaken Visual
                 {
-                    if (m_caster->GetTypeId() != TYPEID_UNIT)
+                    if (!m_caster->IsCreature())
                     {
                         return;
                     }
@@ -310,7 +310,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 13535:                                 // Tame Beast
                 {
-                    if (!m_originalCaster || m_originalCaster->GetTypeId() != TYPEID_PLAYER)
+                    if (!m_originalCaster || !m_originalCaster->IsPlayer())
                     {
                         return;
                     }
@@ -356,7 +356,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 14185:                                 // Preparation Rogue
                 {
-                    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+                    if (!m_caster->IsPlayer())
                     {
                         return;
                     }
@@ -426,7 +426,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 case 15998:                                 // Capture Worg Pup
                 case 19614:                                 // Despawn Caster
                 {
-                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
+                    if (!unitTarget || !unitTarget->IsCreature())
                     {
                         return;
                     }
@@ -438,7 +438,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 16589:                                 // Noggenfogger Elixir
                 {
-                    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+                    if (!m_caster->IsPlayer())
                     {
                         return;
                     }
@@ -456,7 +456,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 17009:                                 // Voodoo
                 {
-                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                    if (!unitTarget || !unitTarget->IsPlayer())
                     {
                         return;
                     }
@@ -485,7 +485,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                     Unit* caster = GetAffectiveCaster();
 
-                    if (caster && caster->GetTypeId() == TYPEID_PLAYER)
+                    if (caster && caster->IsPlayer())
                     {
                         WorldPacket data(SMSG_SPIRIT_HEALER_CONFIRM, 8);
                         data << unitTarget->GetObjectGuid();
@@ -495,7 +495,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 17271:                                 // Test Fetid Skull
                 {
-                    if (!itemTarget && m_caster->GetTypeId() != TYPEID_PLAYER)
+                    if (!itemTarget && !m_caster->IsPlayer())
                     {
                         return;
                     }
@@ -532,7 +532,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                         return;
                     }
 
-                    if (unitTarget->GetTypeId() == TYPEID_PLAYER)
+                    if (unitTarget->IsPlayer())
                     {
                         return;
                     }
@@ -542,7 +542,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 18350:                                 // Dummy Trigger
                 {
-                    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+                    if (!unitTarget->IsPlayer())
                     {
                         return;
                     }
@@ -563,7 +563,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 19395:                                 // Gordunni Trap
                 {
-                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                    if (!unitTarget || !unitTarget->IsPlayer())
                     {
                         return;
                     }
@@ -584,7 +584,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 20572:                                 // Blood Fury
                 {
-                    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+                    if (!m_caster->IsPlayer())
                     {
                         return;
                     }
@@ -597,7 +597,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 19869:                                 // Dragon Orb
                 {
-                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER || unitTarget->HasAura(23958))
+                    if (!unitTarget || !unitTarget->IsPlayer() || unitTarget->HasAura(23958))
                     {
                         return;
                     }
@@ -647,7 +647,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 23019:                                 // Crystal Prison Dummy DND
                 {
-                    if (!unitTarget || !unitTarget->IsAlive() || unitTarget->GetTypeId() != TYPEID_UNIT || ((Creature*)unitTarget)->IsPet())
+                    if (!unitTarget || !unitTarget->IsAlive() || !unitTarget->IsCreature() || ((Creature*)unitTarget)->IsPet())
                     {
                         return;
                     }
@@ -759,7 +759,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 24781:                                 // Dream Fog
                 {
-                    if (m_caster->GetTypeId() != TYPEID_UNIT || !unitTarget)
+                    if (!m_caster->IsCreature() || !unitTarget)
                     {
                         return;
                     }
@@ -811,7 +811,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     return;
                 case 26626:                                 // Mana Burn Area
                 {
-                    if (unitTarget->GetTypeId() != TYPEID_UNIT || unitTarget->GetPowerType() != POWER_MANA)
+                    if (!unitTarget->IsCreature() || unitTarget->GetPowerType() != POWER_MANA)
                     {
                         return;
                     }
@@ -821,7 +821,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 28006:                                 // Arcane Cloaking
                 {
-                    if (unitTarget && unitTarget->GetTypeId() == TYPEID_PLAYER)
+                    if (unitTarget && unitTarget->IsPlayer())
                         // Naxxramas Entry Flag Effect DND
                     {
                         m_caster->CastSpell(unitTarget, 29294, true);
@@ -832,7 +832,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 case 28098:                                 // Stalagg Tesla Effect
                 case 28110:                                 // Feugen Tesla Effect
                 {
-                    if (unitTarget->GetTypeId() != TYPEID_UNIT)
+                    if (!unitTarget->IsCreature())
                     {
                         return;
                     }
@@ -894,7 +894,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 case 11189:                                 // Frost Warding
                 case 28332:
                 {
-                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                    if (!unitTarget || !unitTarget->IsPlayer())
                     {
                         return;
                     }
@@ -906,7 +906,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 12472:                                 // Cold Snap
                 {
-                    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+                    if (!m_caster->IsPlayer())
                     {
                         return;
                     }
@@ -1100,7 +1100,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
             {
                 case 23989:                                 // Readiness talent
                 {
-                    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+                    if (!m_caster->IsPlayer())
                     {
                         return;
                     }
@@ -1218,7 +1218,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
     {
         libraryResult = sScriptMgr.OnEffectDummy(m_caster, m_spellInfo->ID, eff_idx, gameObjTarget, m_originalCasterGUID);
     }
-    else if (unitTarget && (unitTarget->GetTypeId() == TYPEID_UNIT || unitTarget->GetTypeId() == TYPEID_PLAYER))
+    else if (unitTarget && (unitTarget->IsCreature() || unitTarget->IsPlayer()))
     {
         libraryResult = sScriptMgr.OnEffectDummy(m_caster, m_spellInfo->ID, eff_idx, unitTarget, m_originalCasterGUID);
     }

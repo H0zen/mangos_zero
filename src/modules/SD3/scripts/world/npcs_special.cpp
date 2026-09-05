@@ -398,7 +398,7 @@ struct npc_doctor : public CreatureScript
             loc->y = pSender->Where().Y();
             loc->z = pSender->Where().Z();
             loc->o = pSender->Where().Facing();
-            if (eventType == AI_EVENT_CUSTOM_A && pInvoker->GetTypeId() == TYPEID_PLAYER)
+            if (eventType == AI_EVENT_CUSTOM_A && pInvoker->IsPlayer())
             {
                 PatientSaved(pSender, ToPlayer(pInvoker), loc);
             }
@@ -529,7 +529,7 @@ struct npc_injured_patient : public CreatureScript
 
         void SpellHit(Unit* pCaster, const SpellEntry* pSpell) override
         {
-            if (pCaster->GetTypeId() == TYPEID_PLAYER && m_creature->IsAlive() && SD3_SpellId(pSpell) == 20804)
+            if (pCaster->IsPlayer() && m_creature->IsAlive() && SD3_SpellId(pSpell) == 20804)
             {
                 Player* pPlayer = static_cast<Player*>(pCaster);
                 if (pPlayer->GetQuestStatus(6624) == QUEST_STATUS_INCOMPLETE || pPlayer->GetQuestStatus(6622) == QUEST_STATUS_INCOMPLETE)
@@ -715,7 +715,7 @@ struct npc_garments_of_quests : public CreatureScript
                     return;
                 }
 
-                if (pCaster->GetTypeId() == TYPEID_PLAYER)
+                if (pCaster->IsPlayer())
                 {
                     switch (m_creature->GetEntry())
                     {

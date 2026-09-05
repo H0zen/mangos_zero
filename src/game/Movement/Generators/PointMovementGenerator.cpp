@@ -98,7 +98,7 @@ Motion::MoveIntent RoutedPointMovementGenerator::Intent(Unit& owner, Motion::Mov
 
 void PointMovementGenerator::MovementInform(Unit& owner) const
 {
-    if (owner.GetTypeId() != TYPEID_UNIT)
+    if (!owner.IsCreature())
     {
         return;
     }
@@ -189,7 +189,7 @@ Motion::MoveIntent EffectMovementGenerator::Intent(Unit& /*owner*/,
 
 void EffectMovementGenerator::Finalize(Unit& owner)
 {
-    if (owner.GetTypeId() != TYPEID_UNIT)
+    if (!owner.IsCreature())
     {
         return;
     }

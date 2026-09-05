@@ -85,9 +85,9 @@ void Spell::EffectLearnSpell(SpellEffectIndex eff_idx)
         return;
     }
 
-    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget->IsPlayer())
     {
-        if (m_caster->GetTypeId() == TYPEID_PLAYER)
+        if (m_caster->IsPlayer())
         {
             EffectLearnPetSpell(eff_idx);
         }
@@ -287,7 +287,7 @@ void Spell::EffectDispel(SpellEffectIndex eff_idx)
  */
 void Spell::EffectDualWield(SpellEffectIndex /*eff_idx*/)
 {
-    if (unitTarget && unitTarget->GetTypeId() == TYPEID_PLAYER)
+    if (unitTarget && unitTarget->IsPlayer())
     {
         ((Player*)unitTarget)->SetCanDualWield(true);
     }
@@ -328,7 +328,7 @@ void Spell::EffectDistract(SpellEffectIndex /*eff_idx*/)
     unitTarget->clearUnitState(UNIT_STAT_MOVING);
     unitTarget->Place().Face(angle);
 
-    if (unitTarget->GetTypeId() == TYPEID_UNIT)
+    if (unitTarget->IsCreature())
     {
         unitTarget->GetMotionMaster()->MoveDistract(damage * IN_MILLISECONDS);
     }
@@ -341,13 +341,13 @@ void Spell::EffectDistract(SpellEffectIndex /*eff_idx*/)
  */
 void Spell::EffectPickPocket(SpellEffectIndex /*eff_idx*/)
 {
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         return;
     }
 
     // victim must be creature and attackable
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT || IsFriendly(*m_caster, *unitTarget))
+    if (!unitTarget || !unitTarget->IsCreature() || IsFriendly(*m_caster, *unitTarget))
     {
         return;
     }
@@ -380,7 +380,7 @@ void Spell::EffectPickPocket(SpellEffectIndex /*eff_idx*/)
  */
 void Spell::EffectAddFarsight(SpellEffectIndex eff_idx)
 {
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         return;
     }
@@ -440,7 +440,7 @@ void Spell::EffectTeleUnitsFaceCaster(SpellEffectIndex eff_idx)
  */
 void Spell::EffectLearnSkill(SpellEffectIndex eff_idx)
 {
-    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget->IsPlayer())
     {
         return;
     }
@@ -467,7 +467,7 @@ void Spell::EffectLearnSkill(SpellEffectIndex eff_idx)
  */
 void Spell::EffectTradeSkill(SpellEffectIndex /*eff_idx*/)
 {
-    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget->IsPlayer())
     {
         return;
     }
@@ -483,7 +483,7 @@ void Spell::EffectTradeSkill(SpellEffectIndex /*eff_idx*/)
  */
 void Spell::EffectEnchantItemPerm(SpellEffectIndex eff_idx)
 {
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         return;
     }
@@ -540,7 +540,7 @@ void Spell::EffectEnchantItemPerm(SpellEffectIndex eff_idx)
  */
 void Spell::EffectEnchantItemTmp(SpellEffectIndex eff_idx)
 {
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         return;
     }
@@ -716,14 +716,14 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
             OldSummon->Place().MoveTo(px, py, pz, OldSummon->Where().Facing());
             m_caster->GetMap()->Add((Creature*)OldSummon);
 
-            if (m_caster->GetTypeId() == TYPEID_PLAYER && OldSummon->isControlled())
+            if (m_caster->IsPlayer() && OldSummon->isControlled())
             {
                 ((Player*)m_caster)->PetSpellInitialize();
             }
             return;
         }
 
-        if (m_caster->GetTypeId() == TYPEID_PLAYER)
+        if (m_caster->IsPlayer())
         {
             OldSummon->Unsummon(OldSummon->getPetType() == HUNTER_PET ? PET_SAVE_AS_DELETED : PET_SAVE_NOT_IN_SLOT, m_caster);
         }
@@ -745,7 +745,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
     Pet* NewSummon = new Pet;
 
     // petentry==0 for hunter "call pet" (current pet summoned if any)
-    if (m_caster->GetTypeId() == TYPEID_PLAYER && NewSummon->LoadPetFromDB((Player*)m_caster, petentry))
+    if (m_caster->IsPlayer() && NewSummon->LoadPetFromDB((Player*)m_caster, petentry))
     {
         if (NewSummon->getPetType() == SUMMON_PET)
         {
@@ -786,7 +786,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
     NewSummon->setPetType(SUMMON_PET);
 
     uint32 faction = m_caster->getFaction();
-    if (m_caster->GetTypeId() == TYPEID_UNIT)
+    if (m_caster->IsCreature())
     {
         if (((Creature*)m_caster)->IsTotem())
         {
@@ -831,7 +831,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
         }
     }
 
-    if (m_caster->GetTypeId() == TYPEID_PLAYER && NewSummon->getPetType() == SUMMON_PET)
+    if (m_caster->IsPlayer() && NewSummon->getPetType() == SUMMON_PET)
     {
         // generate new name for summon pet
         std::string new_name = sObjectMgr.GeneratePetName(petentry);
@@ -855,7 +855,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
     m_caster->SetPet(NewSummon);
     DEBUG_LOG("New Pet has guid %u", NewSummon->GetGUIDLow());
 
-    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+    if (m_caster->IsPlayer())
     {
         NewSummon->SavePetToDB(PET_SAVE_AS_CURRENT);
         ((Player*)m_caster)->PetSpellInitialize();
@@ -869,7 +869,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
  */
 void Spell::EffectLearnPetSpell(SpellEffectIndex eff_idx)
 {
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         return;
     }
@@ -918,7 +918,7 @@ void Spell::EffectTaunt(SpellEffectIndex /*eff_idx*/)
 
     // this effect use before aura Taunt apply for prevent taunt already attacking target
     // for spell as marked "non effective at already attacking target"
-    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget->IsPlayer())
     {
         if (unitTarget->getVictim() == m_caster)
         {
@@ -1071,7 +1071,7 @@ void Spell::EffectWeaponDmg(SpellEffectIndex eff_idx)
     // Mangle (Cat): CP
     if (m_spellInfo->IsFitToFamily(SPELLFAMILY_DRUID, UI64LIT(0x0000040000000000)))
     {
-        if (m_caster->GetTypeId() == TYPEID_PLAYER)
+        if (m_caster->IsPlayer())
         {
             ((Player*)m_caster)->AddComboPoints(unitTarget, 1);
         }

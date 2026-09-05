@@ -109,7 +109,7 @@ struct boss_faerlina : public CreatureScript
 
         void MoveInLineOfSight(Unit* pWho) override
         {
-            if (!m_bHasTaunted && pWho->GetTypeId() == TYPEID_PLAYER && InReach(*m_creature, *pWho, 80.0f) && HasLineOfSight(*m_creature, *pWho))
+            if (!m_bHasTaunted && pWho->IsPlayer() && InReach(*m_creature, *pWho, 80.0f) && HasLineOfSight(*m_creature, *pWho))
             {
                 DoScriptText(SAY_GREET, m_creature);
                 m_bHasTaunted = true;

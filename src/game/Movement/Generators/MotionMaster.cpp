@@ -69,7 +69,7 @@ void MotionMaster::Initialize()
     Clear(false, true);
 
     // Set new default movement generator
-    if (m_owner->GetTypeId() == TYPEID_UNIT && !m_owner->hasUnitState(UNIT_STAT_CONTROLLED))
+    if (m_owner->IsCreature() && !m_owner->hasUnitState(UNIT_STAT_CONTROLLED))
     {
         MovementGenerator* movement = FactorySelector::selectMovementGenerator((Creature*)m_owner);
         push(movement == nullptr ? &si_idleMovement : movement);
@@ -329,7 +329,7 @@ void MotionMaster::MoveIdle()
  */
 void MotionMaster::MoveRandomAroundPoint(float x, float y, float z, float radius, float /*verticalZ*/)
 {
-    if (m_owner->GetTypeId() == TYPEID_PLAYER)
+    if (m_owner->IsPlayer())
     {
         sLog.outError("%s attempt to move random.", m_owner->GetGuidStr().c_str());
     }
@@ -352,7 +352,7 @@ void MotionMaster::MoveTargetedHome()
 
     Clear(false);
 
-    if (m_owner->GetTypeId() == TYPEID_UNIT && !((Creature*)m_owner)->GetCharmerOrOwnerGuid())
+    if (m_owner->IsCreature() && !((Creature*)m_owner)->GetCharmerOrOwnerGuid())
     {
         // Manual exception for linked mobs
         if (m_owner->IsLinkingEventTrigger() && m_owner->GetMap()->GetCreatureLinkingHolder()->TryFollowMaster((Creature*)m_owner))
@@ -365,7 +365,7 @@ void MotionMaster::MoveTargetedHome()
             Mutate(new HomeMovementGenerator());
         }
     }
-    else if (m_owner->GetTypeId() == TYPEID_UNIT && ((Creature*)m_owner)->GetCharmerOrOwnerGuid())
+    else if (m_owner->IsCreature() && ((Creature*)m_owner)->GetCharmerOrOwnerGuid())
     {
         if (Unit* target = ((Creature*)m_owner)->GetCharmerOrOwner())
         {
@@ -476,7 +476,7 @@ void MotionMaster::MovePointRouted(uint32 id, float x, float y, float z)
  */
 void MotionMaster::MoveSeekAssistance(float x, float y, float z)
 {
-    if (m_owner->GetTypeId() == TYPEID_PLAYER)
+    if (m_owner->IsPlayer())
     {
         sLog.outError("%s attempt to seek assistance", m_owner->GetGuidStr().c_str());
     }
@@ -494,7 +494,7 @@ void MotionMaster::MoveSeekAssistance(float x, float y, float z)
  */
 void MotionMaster::MoveSeekAssistanceDistract(uint32 time)
 {
-    if (m_owner->GetTypeId() == TYPEID_PLAYER)
+    if (m_owner->IsPlayer())
     {
         sLog.outError("%s attempt to call distract after assistance", m_owner->GetGuidStr().c_str());
     }
@@ -522,7 +522,7 @@ void MotionMaster::MoveFleeing(Unit* enemy, uint32 time)
 
     // Only a creature ever flees on a timer and then turns to fight again; a feared
     // player runs until the aura that frightened it is gone.
-    if (time && m_owner->GetTypeId() == TYPEID_UNIT)
+    if (time && m_owner->IsCreature())
     {
         Mutate(new TimedFleeingMovementGenerator(enemy->GetObjectGuid(), time));
     }
@@ -541,7 +541,7 @@ void MotionMaster::MoveFleeing(Unit* enemy, uint32 time)
  */
 void MotionMaster::MoveWaypoint(int32 id /*=0*/, uint32 source /*=0==PATH_NO_PATH*/, uint32 initialDelay /*=0*/, uint32 overwriteEntry /*=0*/)
 {
-    if (m_owner->GetTypeId() == TYPEID_UNIT)
+    if (m_owner->IsCreature())
     {
         if (GetCurrentMovementGeneratorType() == WAYPOINT_MOTION_TYPE)
         {
@@ -569,7 +569,7 @@ void MotionMaster::MoveWaypoint(int32 id /*=0*/, uint32 source /*=0==PATH_NO_PAT
  */
 void MotionMaster::MoveTaxiFlight(uint32 path, uint32 pathnode)
 {
-    if (m_owner->GetTypeId() == TYPEID_PLAYER)
+    if (m_owner->IsPlayer())
     {
         if (path < sTaxiPathNodesByPath.size())
         {
@@ -611,7 +611,7 @@ void MotionMaster::MoveDistract(uint32 timer)
  */
 void MotionMaster::MoveFlyOrLand(uint32 id, float x, float y, float z, bool liftOff)
 {
-    if (m_owner->GetTypeId() != TYPEID_UNIT)
+    if (!m_owner->IsCreature())
     {
         return;
     }

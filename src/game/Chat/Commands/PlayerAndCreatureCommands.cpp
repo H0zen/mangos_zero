@@ -56,7 +56,7 @@ bool ChatHandler::HandleDeMorphCommand(char* /*args*/)
     }
 
     // check online security
-    else if (target->GetTypeId() == TYPEID_PLAYER && HasLowerSecurity((Player*)target))
+    else if (target->IsPlayer() && HasLowerSecurity((Player*)target))
     {
         return false;
     }
@@ -96,7 +96,7 @@ bool ChatHandler::HandleModifyMorphCommand(char* args)
     }
 
     // check online security
-    else if (target->GetTypeId() == TYPEID_PLAYER && HasLowerSecurity((Player*)target))
+    else if (target->IsPlayer() && HasLowerSecurity((Player*)target))
     {
         return false;
     }
@@ -254,7 +254,7 @@ bool ChatHandler::HandleDieCommand(char* /*args*/)
         return false;
     }
 
-    if (target->GetTypeId() == TYPEID_PLAYER)
+    if (target->IsPlayer())
     {
         if (HasLowerSecurity((Player*)target, ObjectGuid(), false))
         {
@@ -295,7 +295,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
         return false;
     }
 
-    PSendSysMessage(LANG_MOVEGENS_LIST, (unit->GetTypeId() == TYPEID_PLAYER ? "Player" : "Creature"), unit->GetGUIDLow());
+    PSendSysMessage(LANG_MOVEGENS_LIST, (unit->IsPlayer() ? "Player" : "Creature"), unit->GetGUIDLow());
 
     MotionMaster* mm = unit->GetMotionMaster();
     float x, y, z;
@@ -312,7 +312,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
             case CHASE_MOTION_TYPE:
             {
                 Unit* target;
-                if (unit->GetTypeId() == TYPEID_PLAYER)
+                if (unit->IsPlayer())
                 {
                     target = static_cast<ChaseMovementGenerator const*>(*itr)->GetTarget();
                 }
@@ -325,7 +325,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
                 {
                     SendSysMessage(LANG_MOVEGENS_CHASE_NULL);
                 }
-                else if (target->GetTypeId() == TYPEID_PLAYER)
+                else if (target->IsPlayer())
                 {
                     PSendSysMessage(LANG_MOVEGENS_CHASE_PLAYER, target->GetName(), target->GetGUIDLow());
                 }
@@ -338,7 +338,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
             case FOLLOW_MOTION_TYPE:
             {
                 Unit* target;
-                if (unit->GetTypeId() == TYPEID_PLAYER)
+                if (unit->IsPlayer())
                 {
                     target = static_cast<FollowMovementGenerator const*>(*itr)->GetTarget();
                 }
@@ -351,7 +351,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
                 {
                     SendSysMessage(LANG_MOVEGENS_FOLLOW_NULL);
                 }
-                else if (target->GetTypeId() == TYPEID_PLAYER)
+                else if (target->IsPlayer())
                 {
                     PSendSysMessage(LANG_MOVEGENS_FOLLOW_PLAYER, target->GetName(), target->GetGUIDLow());
                 }
@@ -362,7 +362,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
                 break;
             }
             case HOME_MOTION_TYPE:
-                if (unit->GetTypeId() == TYPEID_UNIT)
+                if (unit->IsCreature())
                 {
                     PSendSysMessage(LANG_MOVEGENS_HOME_CREATURE, x, y, z);
                 }

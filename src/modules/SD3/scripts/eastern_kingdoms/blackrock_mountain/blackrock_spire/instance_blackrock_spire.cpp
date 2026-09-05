@@ -979,7 +979,7 @@ struct event_spell_altar_emberseer : public MapEventScript
 
     bool OnReceived(uint32 /*uiEventId*/, Object* pSource, Object* /*pTarget*/, bool bIsStart) override
     {
-        if (bIsStart && pSource->GetTypeId() == TYPEID_PLAYER)
+        if (bIsStart && pSource->IsPlayer())
         {
             if (InstanceData* pInstance = ((Unit*)pSource)->GetInstanceData())
             {

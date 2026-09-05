@@ -82,7 +82,7 @@
  */
 void Spell::TakeCastItem()
 {
-    if (!m_CastItem || m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_CastItem || !m_caster->IsPlayer())
     {
         return;
     }
@@ -176,7 +176,7 @@ void Spell::TakePower()
         if (m_spellInfo->ImplicitTargetA[j] == TARGET_CHAIN_DAMAGE ||
             m_spellInfo->ImplicitTargetA[j] == TARGET_CURRENT_ENEMY_COORDINATES)
         {
-            if (m_caster->GetTypeId() == TYPEID_PLAYER)
+            if (m_caster->IsPlayer())
             {
                 if (powerType == POWER_ENERGY || powerType == POWER_RAGE)
                 {
@@ -213,7 +213,7 @@ void Spell::TakePower()
  */
 void Spell::TakeReagents()
 {
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         return;
     }

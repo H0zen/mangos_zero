@@ -82,7 +82,7 @@
 /*********************************************************/
 void Aura::HandleAddModifier(bool apply, bool Real)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER || !Real)
+    if (!GetTarget()->IsPlayer() || !Real)
     {
         return;
     }

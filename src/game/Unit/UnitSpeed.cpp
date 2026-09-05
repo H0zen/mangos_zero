@@ -135,7 +135,7 @@ void Unit::UpdateSpeed(UnitMoveType mtype, bool forced, float ratio)
     }
 
     // for creature case, we check explicit if mob searched for assistance
-    if (GetTypeId() == TYPEID_UNIT)
+    if (IsCreature())
     {
         if (((Creature*)this)->HasSearchedAssistance())
         {
@@ -158,7 +158,7 @@ void Unit::UpdateSpeed(UnitMoveType mtype, bool forced, float ratio)
         speed *= (100.0f + slow) / 100.0f;
     }
 
-    if (GetTypeId() == TYPEID_UNIT)
+    if (IsCreature())
     {
         switch (mtype)
         {
@@ -229,7 +229,7 @@ void Unit::SetSpeedRate(UnitMoveType mtype, float rate, bool forced)
 
         const SpeedOpcodePair& speedOpcodes = SetSpeed2Opc_table[mtype];
 
-        if (forced && GetTypeId() == TYPEID_PLAYER)
+        if (forced && IsPlayer())
         {
             // register forced speed changes for WorldSession::HandleForceSpeedChangeAck
             // and do it only for real sent packets and use run for run/mounted as client expected
@@ -285,7 +285,7 @@ void Unit::SetFeignDeath(bool apply, ObjectGuid casterGuid /*= ObjectGuid()*/)
 {
     if (apply)
     {
-        if (GetTypeId() != TYPEID_PLAYER)
+        if (!IsPlayer())
         {
             StopMoving();
         }
@@ -327,7 +327,7 @@ void Unit::SetFeignDeath(bool apply, ObjectGuid casterGuid /*= ObjectGuid()*/)
 
         clearUnitState(UNIT_STAT_DIED);
 
-        if (GetTypeId() != TYPEID_PLAYER && IsAlive())
+        if (!IsPlayer() && IsAlive())
         {
             // restore appropriate movement generator
             if (getVictim())

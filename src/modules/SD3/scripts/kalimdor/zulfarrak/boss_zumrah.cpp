@@ -111,7 +111,7 @@ struct boss_zumrah : public CreatureScript
 
         void MoveInLineOfSight(Unit* pWho) override
         {
-            if (!m_bHasTurnedHostile && pWho->GetTypeId() == TYPEID_PLAYER && InReach(*m_creature, *pWho, 9.0f) && HasLineOfSight(*m_creature, *pWho))
+            if (!m_bHasTurnedHostile && pWho->IsPlayer() && InReach(*m_creature, *pWho, 9.0f) && HasLineOfSight(*m_creature, *pWho))
             {
                 m_creature->SetFactionTemporary(FACTION_HOSTILE, TEMPFACTION_NONE);
                 DoScriptText(SAY_INTRO, m_creature);

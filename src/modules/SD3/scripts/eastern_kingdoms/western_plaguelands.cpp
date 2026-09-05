@@ -72,12 +72,12 @@ struct npc_the_scourge_cauldron : public CreatureScript
 
         void MoveInLineOfSight(Unit* who) override
         {
-            if (!who || who->GetTypeId() != TYPEID_PLAYER)
+            if (!who || !who->IsPlayer())
             {
                 return;
             }
 
-            if (who->GetTypeId() == TYPEID_PLAYER)
+            if (who->IsPlayer())
             {
                 switch (m_creature->GetTerrain()->GetAreaId(m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z()))
                 {
@@ -345,13 +345,13 @@ struct npc_taelan_fordring : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* /*pSender*/, Unit* pInvoker, uint32 uiMiscValue) override
         {
-            if (eventType == AI_EVENT_START_ESCORT && pInvoker->GetTypeId() == TYPEID_PLAYER)
+            if (eventType == AI_EVENT_START_ESCORT && pInvoker->IsPlayer())
             {
                 Start(false, (Player*)pInvoker, GetQuestTemplateStore(uiMiscValue));
                 DoScriptText(SAY_ESCORT_START, m_creature);
                 m_creature->SetFactionTemporary(FACTION_ESCORT_N_FRIEND_PASSIVE, TEMPFACTION_RESTORE_RESPAWN);
             }
-            else if (eventType == AI_EVENT_CUSTOM_A && pInvoker->GetTypeId() == TYPEID_PLAYER && uiMiscValue == QUEST_ID_SCARLET_SUBTERFUGE)
+            else if (eventType == AI_EVENT_CUSTOM_A && pInvoker->IsPlayer() && uiMiscValue == QUEST_ID_SCARLET_SUBTERFUGE)
             {
                 StartNextDialogueText(NPC_SCARLET_CAVALIER);
             }

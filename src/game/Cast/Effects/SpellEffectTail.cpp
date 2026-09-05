@@ -188,7 +188,7 @@ void Spell::EffectDestroyAllTotems(SpellEffectIndex /*eff_idx*/)
  */
 void Spell::EffectDurabilityDamage(SpellEffectIndex eff_idx)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
@@ -222,7 +222,7 @@ void Spell::EffectDurabilityDamage(SpellEffectIndex eff_idx)
  */
 void Spell::EffectDurabilityDamagePCT(SpellEffectIndex eff_idx)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
@@ -382,7 +382,7 @@ void Spell::EffectTransmitted(SpellEffectIndex eff_idx)
         }
         case GAMEOBJECT_TYPE_SUMMONING_RITUAL:
         {
-            if (m_caster->GetTypeId() == TYPEID_PLAYER)
+            if (m_caster->IsPlayer())
             {
                 pGameObj->Behaves<RitualBehaviour>()->Tally().UsedBy(m_caster->GetObjectGuid());
                 m_caster->AddGameObject(pGameObj);          // will removed at spell cancel
@@ -415,11 +415,11 @@ void Spell::EffectTransmitted(SpellEffectIndex eff_idx)
 
     pGameObj->SummonLinkedTrapIfAny();
 
-    if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
+    if (m_caster->IsCreature() && ((Creature*)m_caster)->AI())
     {
         ((Creature*)m_caster)->AI()->JustSummoned(pGameObj);
     }
-    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->IsCreature() && ((Creature*)m_originalCaster)->AI())
     {
         ((Creature*)m_originalCaster)->AI()->JustSummoned(pGameObj);
     }
@@ -447,7 +447,7 @@ void Spell::EffectSpiritHeal(SpellEffectIndex /*eff_idx*/)
     {
         return;
     }
-    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget->IsPlayer())
     {
         return;
     }
@@ -468,7 +468,7 @@ void Spell::EffectSpiritHeal(SpellEffectIndex /*eff_idx*/)
 void Spell::EffectSkinPlayerCorpse(SpellEffectIndex /*eff_idx*/)
 {
     DEBUG_LOG("Effect: SkinPlayerCorpse");
-    if ((m_caster->GetTypeId() != TYPEID_PLAYER) || (unitTarget->GetTypeId() != TYPEID_PLAYER) || (unitTarget->IsAlive()))
+    if ((!m_caster->IsPlayer()) || (!unitTarget->IsPlayer()) || (unitTarget->IsAlive()))
     {
         return;
     }
@@ -483,7 +483,7 @@ void Spell::EffectSkinPlayerCorpse(SpellEffectIndex /*eff_idx*/)
  */
 void Spell::EffectBind(SpellEffectIndex eff_idx)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }

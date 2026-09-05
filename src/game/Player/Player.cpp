@@ -3606,7 +3606,7 @@ bool Player::RewardHonor(Unit* uVictim, uint32 groupsize)
         return false;
     }
 
-    if (uVictim->GetTypeId() == TYPEID_UNIT)
+    if (uVictim->IsCreature())
     {
         Creature* cVictim = (Creature*)uVictim;
         if (cVictim->IsCivilian())
@@ -3624,7 +3624,7 @@ bool Player::RewardHonor(Unit* uVictim, uint32 groupsize)
             return true;
         }
     }
-    else if (uVictim->GetTypeId() == TYPEID_PLAYER)
+    else if (uVictim->IsPlayer())
     {
         Player* pVictim = (Player*)uVictim;
 
@@ -6163,7 +6163,7 @@ void Player::ResurectUsingRequestData()
 bool Player::IsClientControl(Unit* target) const
 {
     return (target && !target->IsFleeing() && !target->IsConfused() && !target->IsTaxiFlying() &&
-        (target->GetTypeId() != TYPEID_PLAYER ||
+        (!target->IsPlayer() ||
         !((Player*)target)->InBattleGround() || ((Player*)target)->GetBattleGround()->GetStatus() != STATUS_WAIT_LEAVE) &&
         target->GetCharmerOrOwnerOrOwnGuid() == GetObjectGuid());
 }

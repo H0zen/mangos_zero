@@ -243,7 +243,7 @@ struct npc_kinelory : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* /*pSender*/, Unit* pInvoker, uint32 uiMiscValue) override
         {
-            if (eventType == AI_EVENT_START_ESCORT && pInvoker->GetTypeId() == TYPEID_PLAYER)
+            if (eventType == AI_EVENT_START_ESCORT && pInvoker->IsPlayer())
             {
                 DoScriptText(SAY_START, m_creature);
                 Start(false, (Player*)pInvoker, GetQuestTemplateStore(uiMiscValue), true);

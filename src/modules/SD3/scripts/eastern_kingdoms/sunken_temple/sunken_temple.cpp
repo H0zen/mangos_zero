@@ -180,7 +180,7 @@ struct event_antalarion_statue_activation : public MapEventScript
 
     bool OnReceived(uint32 uiEventId, Object* pSource, Object* pTarget, bool /*bIsStart*/) override
     {
-        if (pSource->GetTypeId() == TYPEID_PLAYER && pTarget->GetTypeId() == TYPEID_GAMEOBJECT)
+        if (pSource->IsPlayer() && pTarget->IsGameObject())
         {
             if (ScriptedInstance* pInstance = (ScriptedInstance*)((Player*)pSource)->GetInstanceData())
             {
@@ -234,7 +234,7 @@ struct event_avatar_of_hakkar : public MapEventScript
 
     bool OnReceived(uint32 /*uiEventId*/, Object* pSource, Object* /*pTarget*/, bool /*bIsStart*/) override
     {
-        if (pSource->GetTypeId() == TYPEID_PLAYER)
+        if (pSource->IsPlayer())
         {
             if (InstanceData* pInstance = ((Player*)pSource)->GetInstanceData())
             {
@@ -292,7 +292,7 @@ struct spell_summon_hakkar : public SpellScript
         // Always check spellid and effectindex
         if (uiSpellId == SPELL_SUMMON_AVATAR && uiEffIndex == EFFECT_INDEX_0)
         {
-            if (!pCaster || pCaster->GetTypeId() != TYPEID_UNIT)
+            if (!pCaster || !pCaster->IsCreature())
             {
                 return true;
             }

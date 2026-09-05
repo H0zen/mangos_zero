@@ -456,7 +456,7 @@ bool CreatureEventAI::ProcessEvent(CreatureEventAIHolder& pHolder, Unit* pAction
         case EVENT_T_SUMMONED_JUST_DESPAWN:
         {
             // Prevent event from occuring on no unit or non creatures
-            if (!pActionInvoker || pActionInvoker->GetTypeId() != TYPEID_UNIT)
+            if (!pActionInvoker || !pActionInvoker->IsCreature())
             {
                 return false;
             }
@@ -731,13 +731,13 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
 
                 if (pActionInvoker)
                 {
-                    if (pActionInvoker->GetTypeId() == TYPEID_PLAYER)
+                    if (pActionInvoker->IsPlayer())
                     {
                         target = pActionInvoker;
                     }
                     else if (Unit* owner = pActionInvoker->GetOwner())
                     {
-                        if (owner->GetTypeId() == TYPEID_PLAYER)
+                        if (owner->IsPlayer())
                         {
                             target = owner;
                         }
@@ -745,11 +745,11 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
                 }
                 else if ((target = m_creature->getVictim()))
                 {
-                    if (target->GetTypeId() != TYPEID_PLAYER)
+                    if (!target->IsPlayer())
                     {
                         if (Unit* owner = target->GetOwner())
                         {
-                            if (owner->GetTypeId() == TYPEID_PLAYER)
+                            if (owner->IsPlayer())
                             {
                                 target = owner;
                             }
@@ -905,7 +905,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
         case ACTION_T_QUEST_EVENT:          //15
             if (Unit* target = GetTargetByType(action.quest_event.target, pActionInvoker, pAIEventSender, reportTargetError))
             {
-                if (target->GetTypeId() == TYPEID_PLAYER)
+                if (target->IsPlayer())
                 {
                     ((Player*)target)->AreaExploredOrEventHappens(action.quest_event.questId);
                 }
@@ -918,7 +918,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
         case ACTION_T_CAST_EVENT:           //16
             if (Unit* target = GetTargetByType(action.cast_event.target, pActionInvoker, pAIEventSender, reportTargetError, 0, SELECT_FLAG_PLAYER))
             {
-                if (target->GetTypeId() == TYPEID_PLAYER)
+                if (target->IsPlayer())
                 {
                     ((Player*)target)->CastedCreatureOrGO(action.cast_event.creatureId, m_creature->GetObjectGuid(), action.cast_event.spellId);
                 }
@@ -1025,7 +1025,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
             m_creature->DoFleeToGetAssistance();
             break;
         case ACTION_T_QUEST_EVENT_ALL:      //26
-            if (pActionInvoker && pActionInvoker->GetTypeId() == TYPEID_PLAYER)
+            if (pActionInvoker && pActionInvoker->IsPlayer())
             {
                 ((Player*)pActionInvoker)->GroupEventHappens(action.quest_event_all.questId, m_creature);
             }
@@ -1489,7 +1489,7 @@ void CreatureEventAI::JustDied(Unit* killer)
  */
 void CreatureEventAI::KilledUnit(Unit* victim)
 {
-    if (victim->GetTypeId() != TYPEID_PLAYER)
+    if (!victim->IsPlayer())
     {
         return;
     }

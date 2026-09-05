@@ -920,7 +920,7 @@ InventoryResult Item::CanBeMergedPartlyWith(ItemPrototype const* proto) const
  */
 bool ItemRequiredTarget::IsFitToRequirements(Unit* pUnitTarget) const
 {
-    if (pUnitTarget->GetTypeId() != TYPEID_UNIT)
+    if (!pUnitTarget->IsCreature())
     {
         return false;
     }

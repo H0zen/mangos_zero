@@ -93,7 +93,7 @@ bool TargetedMovementGenerator::RequiresNewPosition(Unit& owner,
     float distSq = dx * dx + dy * dy;
 
     // A flier cares about height too; anything on the ground does not.
-    if (owner.GetTypeId() == TYPEID_UNIT && static_cast<Creature&>(owner).CanFly())
+    if (owner.IsCreature() && static_cast<Creature&>(owner).CanFly())
     {
         const float dz = spot.z - target.z;
         distSq += dz * dz;
@@ -195,7 +195,7 @@ Motion::MoveIntent TargetedMovementGenerator::Intent(Unit& owner,
 
     // A pet heeling its master is allowed to cheat its way to the exact spot; otherwise
     // it strands itself on the wrong side of scenery its master walked straight through.
-    if (owner.GetTypeId() == TYPEID_UNIT && static_cast<Creature&>(owner).IsPet() &&
+    if (owner.IsCreature() && static_cast<Creature&>(owner).IsPet() &&
         owner.hasUnitState(UNIT_STAT_FOLLOW))
     {
         flags |= Motion::MOVE_FORCE_DEST;
@@ -208,7 +208,7 @@ Motion::MoveIntent TargetedMovementGenerator::Intent(Unit& owner,
 
 void ChaseMovementGenerator::Initialize(Unit& owner)
 {
-    if (owner.GetTypeId() == TYPEID_UNIT)
+    if (owner.IsCreature())
     {
         static_cast<Creature&>(owner).SetWalk(false, false); // a chase runs
     }
@@ -289,12 +289,12 @@ void FollowMovementGenerator::Finalize(Unit& owner)
 bool FollowMovementGenerator::EnableWalking(Unit& owner) const
 {
     // A creature follower matches its target's gait; a player follower never walks.
-    return owner.GetTypeId() == TYPEID_UNIT && i_target.isValid() && i_target->IsWalking();
+    return owner.IsCreature() && i_target.isValid() && i_target->IsWalking();
 }
 
 void FollowMovementGenerator::SyncSpeedWithMaster(Unit& owner) const
 {
-    if (owner.GetTypeId() != TYPEID_UNIT)
+    if (!owner.IsCreature())
     {
         return;
     }

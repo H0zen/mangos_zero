@@ -115,7 +115,7 @@ namespace
      */
     bool IsPlanted(Unit const* minion)
     {
-        return minion->GetTypeId() == TYPEID_UNIT &&
+        return minion->IsCreature() &&
                static_cast<Creature const*>(minion)->IsTotem();
     }
 
@@ -154,7 +154,7 @@ namespace
     /// the client holds it. Either one alone leaves the two disagreeing.
     void ForgetMinion(Creature* minion, Unit* watcher)
     {
-        Player* client = watcher && watcher->GetTypeId() == TYPEID_PLAYER
+        Player* client = watcher && watcher->IsPlayer()
                              ? static_cast<Player*>(watcher) : nullptr;
         if (!client)
         {

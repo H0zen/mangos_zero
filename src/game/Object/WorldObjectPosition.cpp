@@ -170,7 +170,7 @@ void ClampToAllowedZ(Occupant const& obj, float x, float y, float& z, Map* atMap
     }
 
     // Anything that is not a unit has no say in the matter: it sits on the floor.
-    const bool isUnit = obj.GetTypeId() == TYPEID_UNIT || obj.GetTypeId() == TYPEID_PLAYER;
+    const bool isUnit = obj.IsCreature() || obj.IsPlayer();
     if (!isUnit)
     {
         z = *floor;

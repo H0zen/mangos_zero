@@ -911,7 +911,7 @@ namespace MaNGOS
                 : i_obj(obj), i_originalCaster(originalCaster), i_range(range)
             {
                 i_targetForUnit = i_originalCaster->isType(TYPEMASK_UNIT);
-                i_targetForPlayer = (i_originalCaster->GetTypeId() == TYPEID_PLAYER);
+                i_targetForPlayer = (i_originalCaster->IsPlayer());
             }
             Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
@@ -923,7 +923,7 @@ namespace MaNGOS
                 }
 
                 // ignore totems as AoE targets
-                if (u->GetTypeId() == TYPEID_UNIT && ((Creature*)u)->IsTotem())
+                if (u->IsCreature() && ((Creature*)u)->IsTotem())
                 {
                     return false;
                 }
@@ -966,7 +966,7 @@ namespace MaNGOS
                     return false;
                 }
 
-                if (u->GetTypeId() == TYPEID_UNIT && ((Creature*)u)->IsTotem())
+                if (u->IsCreature() && ((Creature*)u)->IsTotem())
                 {
                     return false;
                 }
@@ -1001,7 +1001,7 @@ namespace MaNGOS
                     return false;
                 }
 
-                if (u->GetTypeId() == TYPEID_UNIT && ((Creature*)u)->IsTotem())
+                if (u->IsCreature() && ((Creature*)u)->IsTotem())
                 {
                     return false;
                 }
@@ -1035,7 +1035,7 @@ namespace MaNGOS
                     return;
                 }
 
-                if (u->GetTypeId() == TYPEID_UNIT && ((Creature*)u)->IsTotem())
+                if (u->IsCreature() && ((Creature*)u)->IsTotem())
                 {
                     return;
                 }

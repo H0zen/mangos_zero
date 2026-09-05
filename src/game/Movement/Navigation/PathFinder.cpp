@@ -255,7 +255,7 @@ void PathFinder::BuildPolyPath(const Vector3& startPos, const Vector3& endPos)
         DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ BuildPolyPath :: (startPoly == 0 || endPoly == 0) for %s\n", m_sourceUnit->GetGuidStr().c_str());
         BuildShortcut();
 
-        if (m_sourceUnit->GetTypeId() == TYPEID_UNIT)
+        if (m_sourceUnit->IsCreature())
         {
             // Check for swimming or flying shortcut
             if ((startPoly == INVALID_POLYREF && m_sourceUnit->GetMap()->GetTerrain()->IsUnderWater(startPos.x, startPos.y, startPos.z)) ||
@@ -284,7 +284,7 @@ void PathFinder::BuildPolyPath(const Vector3& startPos, const Vector3& endPos)
             distToStartPoly, distToEndPoly, m_sourceUnit->GetGuidStr().c_str());
 
         bool buildShortcut = false;
-        if (m_sourceUnit->GetTypeId() == TYPEID_UNIT)
+        if (m_sourceUnit->IsCreature())
         {
             const Creature* owner = ToCreature(m_sourceUnit);
 
@@ -624,7 +624,7 @@ void PathFinder::createFilter()
     uint16 includeFlags = 0;
     uint16 excludeFlags = 0;
 
-    if (m_sourceUnit->GetTypeId() == TYPEID_UNIT)
+    if (m_sourceUnit->IsCreature())
     {
         Creature* creature = (Creature*)m_sourceUnit;
         if (creature->CanWalk())
@@ -638,7 +638,7 @@ void PathFinder::createFilter()
             includeFlags |= (NAV_WATER | NAV_MAGMA | NAV_SLIME); // swim
         }
     }
-    else if (m_sourceUnit->GetTypeId() == TYPEID_PLAYER)
+    else if (m_sourceUnit->IsPlayer())
     {
         // perfect support not possible, just stay 'safe'
         includeFlags |= (NAV_GROUND | NAV_WATER);

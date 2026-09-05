@@ -159,7 +159,7 @@ struct boss_gothik : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->GetTypeId() == TYPEID_PLAYER)
+            if (pVictim->IsPlayer())
             {
                 DoScriptText(SAY_KILL, m_creature);
             }

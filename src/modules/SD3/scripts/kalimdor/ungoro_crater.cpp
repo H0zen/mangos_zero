@@ -90,7 +90,7 @@ struct npc_ame01 : public CreatureScript
 
         void Aggro(Unit* pWho) override
         {
-            if (pWho->GetTypeId() == TYPEID_PLAYER)
+            if (pWho->IsPlayer())
             {
                 return;
             }

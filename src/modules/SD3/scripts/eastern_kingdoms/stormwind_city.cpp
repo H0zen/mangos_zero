@@ -111,7 +111,7 @@ struct npc_bartleby : public CreatureScript
             {
                 uiDamage = 0;
 
-                if (pDoneBy->GetTypeId() == TYPEID_PLAYER)
+                if (pDoneBy->IsPlayer())
                 {
                     ((Player*)pDoneBy)->AreaExploredOrEventHappens(QUEST_BEAT);
                 }
@@ -178,7 +178,7 @@ struct npc_dashel_stonefist : public CreatureScript
             {
                 uiDamage = 0;
 
-                if (pDoneBy->GetTypeId() == TYPEID_PLAYER)
+                if (pDoneBy->IsPlayer())
                 {
                     ((Player*)pDoneBy)->AreaExploredOrEventHappens(QUEST_MISSING_DIPLO_PT8);
                 }

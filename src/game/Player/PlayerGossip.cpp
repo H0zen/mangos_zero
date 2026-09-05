@@ -119,7 +119,7 @@ void Player::PrepareGossipMenu(Occupant* pSource, uint32 menuId)
             }
         }
 
-        if (pSource->GetTypeId() == TYPEID_UNIT)
+        if (pSource->IsCreature())
         {
             Creature* pCreature = (Creature*)pSource;
 
@@ -206,7 +206,7 @@ void Player::PrepareGossipMenu(Occupant* pSource, uint32 menuId)
                     break;
             }
         }
-        else if (pSource->GetTypeId() == TYPEID_GAMEOBJECT)
+        else if (pSource->IsGameObject())
         {
             GameObject* pGo = (GameObject*)pSource;
 
@@ -298,7 +298,7 @@ void Player::SendPreparedGossip(Occupant* pSource)
         return;
     }
 
-    if (pSource->GetTypeId() == TYPEID_UNIT)
+    if (pSource->IsCreature())
     {
         // in case no gossip flag and quest menu not empty, open quest menu (client expect gossip menu with this flag)
         if (!ToCreature(pSource)->HasNpcFlag(UNIT_NPC_FLAG_GOSSIP) && !PlayerTalkClass->GetQuestMenu().Empty())
@@ -307,7 +307,7 @@ void Player::SendPreparedGossip(Occupant* pSource)
             return;
         }
     }
-    else if (pSource->GetTypeId() == TYPEID_GAMEOBJECT)
+    else if (pSource->IsGameObject())
     {
         // probably need to find a better way here
         if (!PlayerTalkClass->GetGossipMenu().GetMenuId() && !PlayerTalkClass->GetQuestMenu().Empty())
@@ -350,7 +350,7 @@ void Player::OnGossipSelect(Occupant* pSource, uint32 gossipListId)
     uint32 gossipOptionId = menu_item.m_gOptionId;
     ObjectGuid guid = pSource->GetObjectGuid();
 
-    if (pSource->GetTypeId() == TYPEID_GAMEOBJECT)
+    if (pSource->IsGameObject())
     {
         if (gossipOptionId > GOSSIP_OPTION_QUESTGIVER)
         {
@@ -462,11 +462,11 @@ void Player::OnGossipSelect(Occupant* pSource, uint32 gossipListId)
 
     if (pMenuData && menuData.m_gAction_script)
     {
-        if (pSource->GetTypeId() == TYPEID_UNIT)
+        if (pSource->IsCreature())
         {
             GetMap()->ScriptsStart(DBS_ON_GOSSIP, menuData.m_gAction_script, pSource, this, Map::SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE);
         }
-        else if (pSource->GetTypeId() == TYPEID_GAMEOBJECT)
+        else if (pSource->IsGameObject())
         {
             GetMap()->ScriptsStart(DBS_ON_GOSSIP, menuData.m_gAction_script, this, pSource, Map::SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET);
         }
@@ -481,7 +481,7 @@ void Player::OnGossipSelect(Occupant* pSource, uint32 gossipListId)
  */
 uint32 Player::GetGossipTextId(Occupant* pSource)
 {
-    if (!pSource || pSource->GetTypeId() != TYPEID_UNIT)
+    if (!pSource || !pSource->IsCreature())
     {
         return DEFAULT_GOSSIP_MESSAGE;
     }
@@ -545,11 +545,11 @@ uint32 Player::GetGossipTextId(uint32 menuId, Occupant* pSource)
  */
 uint32 Player::GetDefaultGossipMenuForSource(Occupant* pSource)
 {
-    if (pSource->GetTypeId() == TYPEID_UNIT)
+    if (pSource->IsCreature())
     {
         return ((Creature*)pSource)->GetCreatureInfo()->GossipMenuId;
     }
-    else if (pSource->GetTypeId() == TYPEID_GAMEOBJECT)
+    else if (pSource->IsGameObject())
     {
         return((GameObject*)pSource)->GetGOInfo()->GetGossipMenuId();
     }

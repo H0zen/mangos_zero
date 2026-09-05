@@ -337,7 +337,7 @@ float Player::GetSpellCritFromIntellect()
     float crit_chance;
 
     // only players use intelligence for critical chance computations
-    if (GetTypeId() == TYPEID_PLAYER)
+    if (IsPlayer())
     {
         int my_class = getClass();
         float crit_ratio = crit_data[my_class].rate0 + crit_data[my_class].rate1 * getLevel();

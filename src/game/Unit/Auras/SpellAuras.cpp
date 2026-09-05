@@ -359,7 +359,7 @@ AreaAura::AreaAura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* cu
     }
 
     // totems are immune to any kind of area auras
-    if (target->GetTypeId() == TYPEID_UNIT && ((Creature*)target)->IsTotem())
+    if (target->IsCreature() && ((Creature*)target)->IsTotem())
     {
         m_modifier.m_auraname = SPELL_AURA_NONE;
     }
@@ -384,7 +384,7 @@ SingleEnemyTargetAura::SingleEnemyTargetAura(SpellEntry const* spellproto, Spell
 {
     if (caster)
     {
-        m_castersTargetGuid = caster->GetTypeId() == TYPEID_PLAYER ? ((Player*)caster)->GetSelectionGuid() : caster->GetTargetGuid();
+        m_castersTargetGuid = caster->IsPlayer() ? ((Player*)caster)->GetSelectionGuid() : caster->GetTargetGuid();
     }
 }
 
@@ -501,7 +501,7 @@ void AreaAura::Update(uint32 diff)
                 {
                     Group* pGroup = nullptr;
 
-                    if (owner->GetTypeId() == TYPEID_PLAYER)
+                    if (owner->IsPlayer())
                     {
                         pGroup = ((Player*)owner)->GetGroup();
                     }
@@ -599,7 +599,7 @@ void AreaAura::Update(uint32 diff)
                 }
 
                 // Skip some targets (TODO: Might require better checks, also unclear how the actual caster must/can be handled)
-                if (actualSpellInfo->HasAttribute(SPELL_ATTR_EX3_TARGET_ONLY_PLAYER) && (*tIter)->GetTypeId() != TYPEID_PLAYER)
+                if (actualSpellInfo->HasAttribute(SPELL_ATTR_EX3_TARGET_ONLY_PLAYER) && !(*tIter)->IsPlayer())
                 {
                     continue;
                 }
@@ -864,7 +864,7 @@ void Aura::ReapplyAffectedPassiveAuras(Unit* target)
 
     if (!affectedSelf.empty())
     {
-        Player* pTarget = target->GetTypeId() == TYPEID_PLAYER ? (Player*)target : nullptr;
+        Player* pTarget = target->IsPlayer() ? (Player*)target : nullptr;
 
         for (std::map<uint32, ObjectGuid>::const_iterator map_itr = affectedSelf.begin(); map_itr != affectedSelf.end(); ++map_itr)
         {
@@ -1059,7 +1059,7 @@ void Aura::TriggerSpell()
                     {
                         // X-Chain is casted by Tesla to X, so: caster == Tesla, target = X
                         Unit* pCaster = GetCaster();
-                        if (pCaster && pCaster->GetTypeId() == TYPEID_UNIT && !InReach(*pCaster, *target, 60.0f))
+                        if (pCaster && pCaster->IsCreature() && !InReach(*pCaster, *target, 60.0f))
                         {
                             pCaster->InterruptNonMeleeSpells(true);
                             ((Creature*)pCaster)->SetInCombatWithZone();
@@ -1202,7 +1202,7 @@ void Aura::TriggerSpell()
         {
             case 9347:                                      // Mortal Strike
             {
-                if (target->GetTypeId() != TYPEID_UNIT)
+                if (!target->IsCreature())
                 {
                     return;
                 }
@@ -1285,7 +1285,7 @@ void Aura::TriggerSpell()
     {
         if (Unit* caster = GetCaster())
         {
-            if (triggerTarget->GetTypeId() != TYPEID_UNIT || !sScriptMgr.OnEffectDummy(caster, GetId(), GetEffIndex(), (Creature*)triggerTarget, ObjectGuid()))
+            if (!triggerTarget->IsCreature() || !sScriptMgr.OnEffectDummy(caster, GetId(), GetEffIndex(), (Creature*)triggerTarget, ObjectGuid()))
             {
                 sLog.outError("Aura::TriggerSpell: Spell %u have 0 in EffectTriggered[%d], not handled custom case?", GetId(), GetEffIndex());
             }
@@ -1454,7 +1454,7 @@ void Aura::HandleAurasVisible(bool apply, bool /*Real*/)
  */
 void Aura::HandleAuraModBlockPercent(bool /*apply*/, bool /*Real*/)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -1519,7 +1519,7 @@ void Aura::HandleShieldBlockValue(bool apply, bool /*Real*/)
         modType = PCT_MOD;
     }
 
-    if (GetTarget()->GetTypeId() == TYPEID_PLAYER)
+    if (GetTarget()->IsPlayer())
     {
         ((Player*)GetTarget())->HandleBaseModValue(SHIELD_BLOCK_VALUE, modType, float(m_modifier.m_amount), apply);
     }
@@ -1811,7 +1811,7 @@ void Aura::PeriodicTick()
             if (target != pCaster && spellProto->SpellVisualID == 163)
             {
                 uint32 dmg = spellProto->ManaPerSecond;
-                if (pCaster->GetHealth() <= dmg && pCaster->GetTypeId() == TYPEID_PLAYER)
+                if (pCaster->GetHealth() <= dmg && pCaster->IsPlayer())
                 {
                     pCaster->RemoveAuras(GetId());
 
@@ -1913,7 +1913,7 @@ void Aura::PeriodicTick()
             switch (GetId())
             {
                 case 21056:                                 // Mark of Kazzak
-                    if (target->GetTypeId() == TYPEID_PLAYER && target->GetPower(power) == 0)
+                    if (target->IsPlayer() && target->GetPower(power) == 0)
                     {
                         target->CastSpell(target, 21058, true, nullptr, this);
                         target->RemoveAuras(GetId());
@@ -2156,7 +2156,7 @@ void Aura::PeriodicDummyTick()
 
     if (Unit* caster = GetCaster())
     {
-        if (target && target->GetTypeId() == TYPEID_UNIT)
+        if (target && target->IsCreature())
         {
             sScriptMgr.OnEffectDummy(caster, GetId(), GetEffIndex(), (Creature*)target, ObjectGuid());
         }
@@ -2266,7 +2266,7 @@ SpellAuraHolder::SpellAuraHolder(SpellEntry const* spellproto, Unit* target, Occ
     }
 
     m_isHeartbeatSubject = (m_spellProto->Attributes & SPELL_ATTR_HEARTBEAT_RESIST_CHECK) && caster != target &&
-        caster->GetTypeId() == TYPEID_PLAYER && target->GetTypeId() == TYPEID_PLAYER && !IsChanneledSpell(m_spellProto);
+        caster->IsPlayer() && target->IsPlayer() && !IsChanneledSpell(m_spellProto);
 
     for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
@@ -2359,7 +2359,7 @@ void SpellAuraHolder::_AddSpellAuraHolder()
     }
 
     // set infinity cooldown state for spells
-    if (caster && caster->GetTypeId() == TYPEID_PLAYER)
+    if (caster && caster->IsPlayer())
     {
         if (m_spellProto->HasAttribute(SPELL_ATTR_DISABLED_WHILE_ACTIVE))
         {
@@ -2432,7 +2432,7 @@ void SpellAuraHolder::_RemoveSpellAuraHolder()
 
     // passive auras do not get put in slots - said who? ;)
     // Note: but totem can be not accessible for aura target in time remove (to far for find in grid)
-    // if (m_isPassive && !(caster && caster->GetTypeId() == TYPEID_UNIT && ((Creature*)caster)->IsTotem()))
+    // if (m_isPassive && !(caster && caster->IsCreature() && ((Creature*)caster)->IsTotem()))
     //    return;
 
     uint8 slot = GetAuraSlot();
@@ -2504,7 +2504,7 @@ void SpellAuraHolder::_RemoveSpellAuraHolder()
         }
 
         // reset cooldown state for spells
-        if (caster && caster->GetTypeId() == TYPEID_PLAYER)
+        if (caster && caster->IsPlayer())
         {
             if (GetSpellProto()->HasAttribute(SPELL_ATTR_DISABLED_WHILE_ACTIVE))
                 // note: item based cooldowns and cooldown spell mods with charges ignored (unknown existing cases)
@@ -2681,7 +2681,7 @@ bool SpellAuraHolder::IsWeaponBuffCoexistableWith(SpellAuraHolder const* ref) co
     }
 
     // only self applied player buffs
-    if (m_target->GetTypeId() != TYPEID_PLAYER || m_target->GetObjectGuid() != GetCasterGuid())
+    if (!m_target->IsPlayer() || m_target->GetObjectGuid() != GetCasterGuid())
     {
         return false;
     }
@@ -2711,7 +2711,7 @@ bool SpellAuraHolder::IsWeaponBuffCoexistableWith(SpellAuraHolder const* ref) co
  */
 bool SpellAuraHolder::IsNeedVisibleSlot(Unit const* caster) const
 {
-    bool totemAura = caster && caster->GetTypeId() == TYPEID_UNIT && ((Creature*)caster)->IsTotem();
+    bool totemAura = caster && caster->IsCreature() && ((Creature*)caster)->IsTotem();
 
     for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
@@ -2832,7 +2832,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                 case 11189:                                 // Frost Warding
                 case 28332:
                 {
-                    if (m_target->GetTypeId() == TYPEID_PLAYER && !apply)
+                    if (m_target->IsPlayer() && !apply)
                     {
                         // reflection chance (effect 1) of Frost Ward, applied in dummy effect
                         if (SpellModifier* mod = ((Player*)m_target)->GetSpellMod(SPELLMOD_RESIST_MISS_CHANCE, GetId()))
@@ -3260,7 +3260,7 @@ void SpellAuraHolder::UpdateAuraDuration()
         return;
     }
 
-    if (m_target->GetTypeId() == TYPEID_PLAYER)
+    if (m_target->IsPlayer())
     {
         WorldPacket data(SMSG_UPDATE_AURA_DURATION, 5);
         data << uint8(GetAuraSlot());
@@ -3269,14 +3269,14 @@ void SpellAuraHolder::UpdateAuraDuration()
     }
 
     // not send in case player loading (will not work anyway until player not added to map), sent in visibility change code
-    if (m_target->GetTypeId() == TYPEID_PLAYER && ((Player*)m_target)->GetSession()->PlayerLoading())
+    if (m_target->IsPlayer() && ((Player*)m_target)->GetSession()->PlayerLoading())
     {
         return;
     }
 
     Unit* caster = GetCaster();
 
-    if (caster && caster->GetTypeId() == TYPEID_PLAYER && caster != m_target)
+    if (caster && caster->IsPlayer() && caster != m_target)
     {
         SendAuraDurationForCaster((Player*)caster);
     }

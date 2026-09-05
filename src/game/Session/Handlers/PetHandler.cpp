@@ -95,7 +95,7 @@ void WorldSession::HandlePetAction(WorldPacket& recv_data)
         return;
     }
 
-    if (pet->GetTypeId() == TYPEID_PLAYER)
+    if (pet->IsPlayer())
     {
         // controller player can only do melee attack
         if (!(flag == ACT_COMMAND && spellid == COMMAND_ATTACK))
@@ -281,7 +281,7 @@ void WorldSession::HandlePetAction(WorldPacket& recv_data)
                 if (unit_target)
                 {
                     pet->SetInFront(unit_target);
-                    if (unit_target->GetTypeId() == TYPEID_PLAYER)
+                    if (unit_target->IsPlayer())
                     {
                         pet->SendCreateUpdateToPlayer((Player*)unit_target);
                     }
@@ -289,14 +289,14 @@ void WorldSession::HandlePetAction(WorldPacket& recv_data)
                 else if (Unit* unit_target2 = spell->m_targets.getUnitTarget())
                 {
                     pet->SetInFront(unit_target2);
-                    if (unit_target2->GetTypeId() == TYPEID_PLAYER)
+                    if (unit_target2->IsPlayer())
                     {
                         pet->SendCreateUpdateToPlayer((Player*)unit_target2);
                     }
                 }
                 if (Unit* powner = pet->GetCharmerOrOwner())
                 {
-                    if (powner->GetTypeId() == TYPEID_PLAYER)
+                    if (powner->IsPlayer())
                     {
                         pet->SendCreateUpdateToPlayer((Player*)powner);
                     }

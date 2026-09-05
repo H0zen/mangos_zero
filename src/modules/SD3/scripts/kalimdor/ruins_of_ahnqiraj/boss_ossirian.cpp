@@ -190,7 +190,7 @@ struct boss_ossirian : public CreatureScript
 
         void SpellHit(Unit* pCaster, const SpellEntry* pSpell) override
         {
-            if (pCaster->GetTypeId() == TYPEID_UNIT && pCaster->GetEntry() == NPC_OSSIRIAN_TRIGGER)
+            if (pCaster->IsCreature() && pCaster->GetEntry() == NPC_OSSIRIAN_TRIGGER)
             {
                 // Check for proper spell id
                 bool bIsWeaknessSpell = false;
@@ -218,7 +218,7 @@ struct boss_ossirian : public CreatureScript
         void MoveInLineOfSight(Unit* pWho) override
         {
             // TODO: Range guesswork
-            if (!m_bSaidIntro && pWho->GetTypeId() == TYPEID_PLAYER && InReach(*m_creature, *pWho, 75.0f, false))
+            if (!m_bSaidIntro && pWho->IsPlayer() && InReach(*m_creature, *pWho, 75.0f, false))
             {
                 switch (urand(0, 2))
                 {

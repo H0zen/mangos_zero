@@ -174,7 +174,7 @@ namespace MMAP
         if (unit)
         {
             // Always use mmaps for players
-            if (unit->GetTypeId() == TYPEID_PLAYER)
+            if (unit->IsPlayer())
             {
                 return true;
             }
@@ -190,8 +190,8 @@ namespace MMAP
             }
 
             // Always use mmaps for pets of players
-            if (unit->GetTypeId() == TYPEID_UNIT && ((Creature*)unit)->IsPet() && unit->GetOwner() &&
-                unit->GetOwner()->GetTypeId() == TYPEID_PLAYER)
+            if (unit->IsCreature() && ((Creature*)unit)->IsPet() && unit->GetOwner() &&
+                unit->GetOwner()->IsPlayer())
             {
                 return true;
             }

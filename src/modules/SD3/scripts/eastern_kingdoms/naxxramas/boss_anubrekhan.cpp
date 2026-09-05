@@ -109,7 +109,7 @@ struct boss_anubrekhan : public CreatureScript
         void KilledUnit(Unit* pVictim) override
         {
             // Force the player to spawn corpse scarabs via spell
-            if (pVictim->GetTypeId() == TYPEID_PLAYER)
+            if (pVictim->IsPlayer())
             {
                 pVictim->CastSpell(pVictim, SPELL_SELF_SPAWN_5, true, nullptr, nullptr, m_creature->GetObjectGuid());
             }
@@ -161,7 +161,7 @@ struct boss_anubrekhan : public CreatureScript
 
         void MoveInLineOfSight(Unit* pWho) override
         {
-            if (!m_bHasTaunted && pWho->GetTypeId() == TYPEID_PLAYER && InReach(*m_creature, *pWho, 110.0f) && HasLineOfSight(*m_creature, *pWho))
+            if (!m_bHasTaunted && pWho->IsPlayer() && InReach(*m_creature, *pWho, 110.0f) && HasLineOfSight(*m_creature, *pWho))
             {
                 m_introDialogue.StartNextDialogueText(SAY_GREET);
                 m_bHasTaunted = true;

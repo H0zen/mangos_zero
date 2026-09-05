@@ -104,7 +104,7 @@ void FleeingMovementGenerator::Initialize(Unit& owner)
     owner.addUnitState(UNIT_STAT_FLEEING | UNIT_STAT_FLEEING_MOVE);
     owner.StopMoving();
 
-    if (owner.GetTypeId() == TYPEID_UNIT)
+    if (owner.IsCreature())
     {
         static_cast<Creature&>(owner).SetWalk(false, false);
         owner.SetTargetGuid(ObjectGuid());
@@ -131,7 +131,7 @@ void FleeingMovementGenerator::Interrupt(Unit& owner)
 
 void FleeingMovementGenerator::Finalize(Unit& owner)
 {
-    if (owner.GetTypeId() == TYPEID_UNIT)
+    if (owner.IsCreature())
     {
         static_cast<Creature&>(owner).SetWalk(!owner.hasUnitState(UNIT_STAT_RUNNING_STATE), false);
     }

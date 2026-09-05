@@ -737,7 +737,7 @@ struct npc_kernobee : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* /*pSender*/, Unit* pInvoker, uint32 uiMiscValue) override
         {
-            if (eventType == AI_EVENT_START_EVENT && pInvoker->GetTypeId() == TYPEID_PLAYER)
+            if (eventType == AI_EVENT_START_EVENT && pInvoker->IsPlayer())
             {
                 // No idea why he has UNIT_STAND_STATE_DEAD in UDB ..
                 m_creature->SetStandState(UNIT_STAND_STATE_STAND);

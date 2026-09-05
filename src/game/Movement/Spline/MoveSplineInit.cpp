@@ -205,7 +205,7 @@ namespace Movement
         // same spline coordinate.
         if (unit.IsInWorld())
         {
-            if (unit.GetTypeId() == TYPEID_PLAYER)
+            if (unit.IsPlayer())
             {
                 static_cast<Player*>(&unit)->SetPosition(real_position.x, real_position.y,
                                                          real_position.z, real_position.orientation);

@@ -228,7 +228,7 @@ void SpellCastTargets::Update(Unit* caster)
         : nullptr;
 
     m_itemTarget = nullptr;
-    if (caster->GetTypeId() == TYPEID_PLAYER)
+    if (caster->IsPlayer())
     {
         Player* player = ((Player*)caster);
 
@@ -285,7 +285,7 @@ void SpellCastTargets::read(ByteBuffer& data, Unit* caster)
         data >> m_GOTargetGUID.ReadAsPacked();
     }
 
-    if ((m_targetMask & (TARGET_FLAG_ITEM | TARGET_FLAG_TRADE_ITEM)) && caster->GetTypeId() == TYPEID_PLAYER)
+    if ((m_targetMask & (TARGET_FLAG_ITEM | TARGET_FLAG_TRADE_ITEM)) && caster->IsPlayer())
     {
         data >> m_itemTargetGUID.ReadAsPacked();
     }
@@ -417,7 +417,7 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
     if (m_attackType == RANGED_ATTACK)
     {
         // wand case
-        if (!(m_caster->getClassMask() & CLASSMASK_WAND_USERS) && m_caster->GetTypeId() == TYPEID_PLAYER)
+        if (!(m_caster->getClassMask() & CLASSMASK_WAND_USERS) && m_caster->IsPlayer())
         {
             m_spellSchoolMask = GetSchoolMask(m_caster->GetWeaponDamageSchool(RANGED_ATTACK));
         }
@@ -751,7 +751,7 @@ ObjectGuid Spell::GetPrefilledOrUnitTargetGuid(SpellEffectIndex effIndex) const
  */
 void Spell::Delayed()
 {
-    if (!m_caster || m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster || !m_caster->IsPlayer())
     {
         return;
     }
@@ -794,7 +794,7 @@ void Spell::Delayed()
     data << ObjectGuid(m_caster->GetObjectGuid());
     data << uint32(delaytime);
 
-    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+    if (m_caster->IsPlayer())
     {
         ((Player*)m_caster)->SendDirectMessage(&data);
     }
@@ -805,7 +805,7 @@ void Spell::Delayed()
  */
 void Spell::DelayedChannel()
 {
-    if (!m_caster || m_caster->GetTypeId() != TYPEID_PLAYER || getState() != SPELL_STATE_CASTING)
+    if (!m_caster || !m_caster->IsPlayer() || getState() != SPELL_STATE_CASTING)
     {
         return;
     }
@@ -967,7 +967,7 @@ SpellEvent::~SpellEvent()
     else
     {
         sLog.outError("~SpellEvent: %s %u tried to delete non-deletable spell %u. Was not deleted, causes memory leak.",
-            (m_Spell->GetCaster()->GetTypeId() == TYPEID_PLAYER ? "Player" : "Creature"), m_Spell->GetCaster()->GetGUIDLow(), m_Spell->m_spellInfo->ID);
+            (m_Spell->GetCaster()->IsPlayer() ? "Player" : "Creature"), m_Spell->GetCaster()->GetGUIDLow(), m_Spell->m_spellInfo->ID);
     }
 }
 
@@ -1171,7 +1171,7 @@ SpellCastResult Spell::CanOpenLock(SpellEffectIndex effIndex, uint32 lockId, Ski
                     reqSkillValue = lockInfo->Skill[j];
 
                     // castitem check: rogue using skeleton keys. the skill values should not be added in this case.
-                    skillValue = m_CastItem || m_caster->GetTypeId() != TYPEID_PLAYER ? 0
+                    skillValue = m_CastItem || !m_caster->IsPlayer() ? 0
                         : ((Player*)m_caster)->GetSkillValue(skillId);
 
                     skillValue += spellSkillBonus;
@@ -1360,8 +1360,8 @@ SpellCastResult Spell::CanTameUnit(bool isGM)
 {
     // Spell can be triggered, we need to check original caster prior to caster
     Unit* caster = GetAffectiveCaster();
-    if (!caster || caster->GetTypeId() != TYPEID_PLAYER ||
-        !m_targets.getUnitTarget() || m_targets.getUnitTarget()->GetTypeId() == TYPEID_PLAYER)
+    if (!caster || !caster->IsPlayer() ||
+        !m_targets.getUnitTarget() || m_targets.getUnitTarget()->IsPlayer())
     {
         return SPELL_FAILED_BAD_TARGETS;
     }

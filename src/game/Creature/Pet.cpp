@@ -341,7 +341,7 @@ void Pet::ModifyLoyalty(int32 addvalue)
         {
             m_loyaltyPoints = 0;
             Unit* owner = GetOwner();
-            if (owner && owner->GetTypeId() == TYPEID_PLAYER)
+            if (owner && owner->IsPlayer())
             {
                 WorldPacket data(SMSG_PET_BROKEN, 0);
                 ((Player*)owner)->GetSession()->SendPacket(&data);
@@ -623,7 +623,7 @@ void Pet::Unsummon(PetSaveMode mode, Unit* owner /*= nullptr*/)
             return;
         }
 
-        Player* p_owner = owner->GetTypeId() == TYPEID_PLAYER ? (Player*)owner : nullptr;
+        Player* p_owner = owner->IsPlayer() ? (Player*)owner : nullptr;
 
         if (p_owner)
         {
@@ -940,7 +940,7 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
     {
         case SUMMON_PET:
         {
-            if (owner->GetTypeId() == TYPEID_PLAYER)
+            if (owner->IsPlayer())
             {
                 switch (owner->getClass())
                 {
@@ -1157,14 +1157,14 @@ uint32 Pet::GetCurrentFoodBenefitLevel(uint32 itemlevel)
 void Pet::CheckLearning(uint32 spellid)
 {
     // charmed case -> prevent crash
-    if (GetTypeId() == TYPEID_PLAYER || getPetType() != HUNTER_PET)
+    if (IsPlayer() || getPetType() != HUNTER_PET)
     {
         return;
     }
 
     Unit* owner = GetOwner();
 
-    if (m_teachspells.empty() || !owner || owner->GetTypeId() != TYPEID_PLAYER)
+    if (m_teachspells.empty() || !owner || !owner->IsPlayer())
     {
         return;
     }
@@ -1299,7 +1299,7 @@ void Pet::LearnPetPassives()
 void Pet::CastPetAuras(bool current)
 {
     Unit* owner = GetOwner();
-    if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
+    if (!owner || !owner->IsPlayer())
     {
         return;
     }
@@ -1330,7 +1330,7 @@ void Pet::CastPetAuras(bool current)
  */
 void Pet::CastOwnerTalentAuras()
 {
-    if (!GetOwner() || GetOwner()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetOwner() || !GetOwner()->IsPlayer())
     {
         return;
     }
@@ -1368,7 +1368,7 @@ void Pet::CastPetAura(PetAura const* aura)
 void Pet::SynchronizeLevelWithOwner()
 {
     Unit* owner = GetOwner();
-    if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
+    if (!owner || !owner->IsPlayer())
     {
         return;
     }
@@ -1409,7 +1409,7 @@ void Pet::ApplyModeFlags(PetModeFlags mode, bool apply)
     }
 
     Unit* owner = GetOwner();
-    if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
+    if (!owner || !owner->IsPlayer())
     {
         return;
     }

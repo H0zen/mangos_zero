@@ -85,7 +85,7 @@ void Spell::EffectApplyAura(SpellEffectIndex eff_idx)
 
     // ghost spell check, allow apply any auras at player loading in ghost mode (will be cleanup after load)
     if ((!unitTarget->IsAlive() && !(IsDeathOnlySpell(m_spellInfo) || IsDeathPersistentSpell(m_spellInfo))) &&
-        (unitTarget->GetTypeId() != TYPEID_PLAYER || !((Player*)unitTarget)->GetSession()->PlayerLoading()))
+        (!unitTarget->IsPlayer() || !((Player*)unitTarget)->GetSession()->PlayerLoading()))
     {
         return;
     }
@@ -393,7 +393,7 @@ void Spell::EffectHealthLeech(SpellEffectIndex eff_idx)
  */
 void Spell::DoCreateItem(SpellEffectIndex eff_idx, uint32 itemtype)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
@@ -514,7 +514,7 @@ void Spell::EffectCreateItem(SpellEffectIndex eff_idx)
         case SPELL_FILLING_EMPTY_JAR__CURSED_OOZE: // Spell 15698 (for Cursed Ooze)
         case SPELL_FILLING_EMPTY_JAR__TAINTED_OOZE: // Spell 15699 (for Tainted Ooze)
         {
-            if (unitTarget->GetTypeId() == TYPEID_UNIT)
+            if (unitTarget->IsCreature())
             {
                 Creature* creature = static_cast<Creature*>(unitTarget);
                 if (creature->IsDead() && (creature->GetEntry() == CREATURE_TAINTED_OOZE || creature->GetEntry() == CREATURE_CURSED_OOZE))
@@ -527,7 +527,7 @@ void Spell::EffectCreateItem(SpellEffectIndex eff_idx)
         }
         case SPELL_FILLING_EMPTY_JAR__PURE_OOZE: // Spell 15702 (for Primal, Muculent and Glutonous Ooze):
         {
-            if (unitTarget->GetTypeId() == TYPEID_UNIT)
+            if (unitTarget->IsCreature())
             {
                 Creature* creature = static_cast<Creature*>(unitTarget);
                 if (creature->IsDead() &&

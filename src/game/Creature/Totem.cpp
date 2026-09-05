@@ -61,7 +61,7 @@ bool Totem::Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo const* 
 {
     SetMap(cPos.GetMap());
 
-    Team team = owner->GetTypeId() == TYPEID_PLAYER ? ((Player*)owner)->GetTeam() : TEAM_NONE;
+    Team team = owner->IsPlayer() ? ((Player*)owner)->GetTeam() : TEAM_NONE;
 
     if (!CreateFromProto(guidlow, cinfo, team))
     {
@@ -142,7 +142,7 @@ void Totem::Summon(Unit* owner)
     data << GetObjectGuid();
     Broadcast(*this, &data, true);
 
-    if (owner->GetTypeId() == TYPEID_UNIT && ((Creature*)owner)->AI())
+    if (owner->IsCreature() && ((Creature*)owner)->AI())
     {
         ((Creature*)owner)->AI()->JustSummoned((Creature*)this);
     }
@@ -184,7 +184,7 @@ void Totem::UnSummon()
         owner->RemoveAuras(GetSpell());
 
         // remove aura all party members too
-        if (owner->GetTypeId() == TYPEID_PLAYER)
+        if (owner->IsPlayer())
         {
             // Not only the player can summon the totem (scripted AI)
             if (Group* pGroup = ((Player*)owner)->GetGroup())
@@ -200,7 +200,7 @@ void Totem::UnSummon()
             }
         }
 
-        if (owner->GetTypeId() == TYPEID_UNIT && ((Creature*)owner)->AI())
+        if (owner->IsCreature() && ((Creature*)owner)->AI())
         {
             ((Creature*)owner)->AI()->SummonedCreatureDespawn((Creature*)this);
         }

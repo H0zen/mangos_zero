@@ -154,7 +154,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
             DoSpellHitOnUnit(m_caster, mask, true);
             unitTarget = m_caster;
 
-            if (m_caster->GetTypeId() == TYPEID_UNIT)
+            if (m_caster->IsCreature())
             {
                 ToCreature(m_caster)->LowerPlayerDamageReq(target->damage);
             }
@@ -184,7 +184,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
                 if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX3_NO_INITIAL_AGGRO) && !IsPositiveSpell(m_spellInfo->ID) &&
                     m_caster->IsVisibleForOrDetect(unit, unit, false))
                 {
-                    if (!unit->IsInCombat() && unit->GetTypeId() != TYPEID_PLAYER && ((Creature*)unit)->AI())
+                    if (!unit->IsInCombat() && !unit->IsPlayer() && ((Creature*)unit)->AI())
                     {
                         ((Creature*)unit)->AI()->AttackedBy(real_caster);
                     }
@@ -273,7 +273,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
         }
 
         // trigger weapon enchants for weapon based spells; exclude spells that stop attack, because may break CC
-        if (m_caster->GetTypeId() == TYPEID_PLAYER && m_spellInfo->EquippedItemClass == ITEM_CLASS_WEAPON &&
+        if (m_caster->IsPlayer() && m_spellInfo->EquippedItemClass == ITEM_CLASS_WEAPON &&
             !m_spellInfo->HasAttribute(SPELL_ATTR_STOP_ATTACK_TARGET))
         {
             ((Player*)m_caster)->CastItemCombatSpell(unitTarget, m_attackType);
@@ -317,7 +317,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
     }
 
     // Call scripted function for AI if this spell is casted upon a creature
-    if (unit->GetTypeId() == TYPEID_UNIT)
+    if (unit->IsCreature())
     {
         // cast at creature (or GO) quest objectives update at successful cast finished (+channel finished)
         // ignore pets or autorepeat/melee casts for speed (not exist quest for spells (hm... )
@@ -336,11 +336,11 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
     }
 
     // Call scripted function for AI if this spell is casted by a creature
-    if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
+    if (m_caster->IsCreature() && ((Creature*)m_caster)->AI())
     {
         ((Creature*)m_caster)->AI()->SpellHitTarget(unit, m_spellInfo);
     }
-    if (real_caster && real_caster != m_caster && real_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)real_caster)->AI())
+    if (real_caster && real_caster != m_caster && real_caster->IsCreature() && ((Creature*)real_caster)->AI())
     {
         ((Creature*)real_caster)->AI()->SpellHitTarget(unit, m_spellInfo);
     }
@@ -439,7 +439,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
                         break;
                     default:
                     {
-                        if (!unit->IsInCombat() && unit->GetTypeId() != TYPEID_PLAYER && ((Creature*)unit)->AI())
+                        if (!unit->IsInCombat() && !unit->IsPlayer() && ((Creature*)unit)->AI())
                         {
                             unit->AttackedBy(realCaster);
                         }
@@ -489,7 +489,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
     // where both the spell and the target are in hand. The component holds the
     // history; it is not asked to know what a player is.
     const DiminishingReturnsType type = GetDiminishingReturnsGroupType(m_diminishGroup);
-    m_diminishApplies = (type == DRTYPE_PLAYER && unit->GetTypeId() == TYPEID_PLAYER) ||
+    m_diminishApplies = (type == DRTYPE_PLAYER && unit->IsPlayer()) ||
                         type == DRTYPE_ALL;
 
     if (m_diminishApplies)

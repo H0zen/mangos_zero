@@ -94,7 +94,7 @@ void ConfusedMovementGenerator::Finalize(Unit& owner)
 
     // A player is left where it stands with its client told to stop; a creature's
     // spline is simply abandoned to whatever generator takes over.
-    if (owner.GetTypeId() == TYPEID_PLAYER)
+    if (owner.IsPlayer())
     {
         owner.StopMoving(true);
     }

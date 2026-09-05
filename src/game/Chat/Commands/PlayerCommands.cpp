@@ -2029,7 +2029,7 @@ bool ChatHandler::HandleModifyScaleCommand(char* args)
         return false;
     }
 
-    if (target->GetTypeId() == TYPEID_PLAYER)
+    if (target->IsPlayer())
     {
         // check online security
         if (HasLowerSecurity((Player*)target))

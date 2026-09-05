@@ -277,7 +277,7 @@ bool Unit::IsTriggeredAtSpellProcEvent(Unit* pVictim, SpellAuraHolder* holder, S
     }
 
     // In most cases req get honor or XP from kill
-    if (EventProcFlag & PROC_FLAG_KILL && GetTypeId() == TYPEID_PLAYER)
+    if (EventProcFlag & PROC_FLAG_KILL && IsPlayer())
     {
         bool allow = ((Player*)this)->isHonorOrXPTarget(pVictim);
         if (!allow)
@@ -293,7 +293,7 @@ bool Unit::IsTriggeredAtSpellProcEvent(Unit* pVictim, SpellAuraHolder* holder, S
     }
 
     // Check if current equipment allows aura to proc
-    if (!isVictim && GetTypeId() == TYPEID_PLAYER)
+    if (!isVictim && IsPlayer())
     {
         if (spellProto->EquippedItemClass == ITEM_CLASS_WEAPON)
         {
@@ -371,7 +371,7 @@ SpellAuraProcResult Unit::HandleHasteAuraProc(Unit* pVictim, uint32 damage, Aura
 {
     SpellEntry const* hasteSpell = triggeredByAura->GetSpellProto();
 
-    Item* castItem = triggeredByAura->GetCastItemGuid() && GetTypeId() == TYPEID_PLAYER
+    Item* castItem = triggeredByAura->GetCastItemGuid() && IsPlayer()
         ? ((Player*)this)->GetItemByGuid(triggeredByAura->GetCastItemGuid()) : nullptr;
 
     uint32 triggered_spell_id = 0;
@@ -421,7 +421,7 @@ SpellAuraProcResult Unit::HandleHasteAuraProc(Unit* pVictim, uint32 damage, Aura
         return SPELL_AURA_PROC_FAILED;
     }
 
-    if (cooldown && GetTypeId() == TYPEID_PLAYER && ((Player*)this)->HasSpellCooldown(triggered_spell_id))
+    if (cooldown && IsPlayer() && ((Player*)this)->HasSpellCooldown(triggered_spell_id))
     {
         return SPELL_AURA_PROC_FAILED;
     }
@@ -435,7 +435,7 @@ SpellAuraProcResult Unit::HandleHasteAuraProc(Unit* pVictim, uint32 damage, Aura
         CastSpell(target, triggered_spell_id, true, castItem, triggeredByAura);
     }
 
-    if (cooldown && GetTypeId() == TYPEID_PLAYER)
+    if (cooldown && IsPlayer())
     {
         ((Player*)this)->AddSpellCooldown(triggered_spell_id, 0, time(nullptr) + cooldown);
     }
@@ -454,7 +454,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura
     SpellEffectIndex effIndex = triggeredByAura->GetEffIndex();
     int32  triggerAmount = triggeredByAura->GetModifier()->m_amount;
 
-    Item* castItem = triggeredByAura->GetCastItemGuid() && GetTypeId() == TYPEID_PLAYER
+    Item* castItem = triggeredByAura->GetCastItemGuid() && IsPlayer()
         ? ((Player*)this)->GetItemByGuid(triggeredByAura->GetCastItemGuid()) : nullptr;
 
     uint32 triggered_spell_id = 0;
@@ -798,7 +798,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura
             // Seal of Righteousness - melee proc dummy
             if ((dummySpell->SpellClassMask & UI64LIT(0x000000008000000)) && triggeredByAura->GetEffIndex() == EFFECT_INDEX_0)
             {
-                if (GetTypeId() != TYPEID_PLAYER)
+                if (!IsPlayer())
                 {
                     return SPELL_AURA_PROC_FAILED;
                 }
@@ -952,7 +952,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura
                     target = !(procFlag & PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL) && IsPositiveSpell(*itr) ? this : pVictim;
                 }
                 CastSpell(this, *itr, true, castItem, triggeredByAura);
-                if (cooldown && GetTypeId() == TYPEID_PLAYER)
+                if (cooldown && IsPlayer())
                 {
                     ((Player*)this)->AddSpellCooldown(*itr, 0, time(nullptr) + cooldown);
                 }
@@ -980,7 +980,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura
         return SPELL_AURA_PROC_FAILED;
     }
 
-    if (cooldown && GetTypeId() == TYPEID_PLAYER && ((Player*)this)->HasSpellCooldown(triggered_spell_id))
+    if (cooldown && IsPlayer() && ((Player*)this)->HasSpellCooldown(triggered_spell_id))
     {
         return SPELL_AURA_PROC_FAILED;
     }
@@ -998,7 +998,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura
         CastSpell(target, triggered_spell_id, true, castItem, triggeredByAura);
     }
 
-    if (cooldown && GetTypeId() == TYPEID_PLAYER)
+    if (cooldown && IsPlayer())
     {
         ((Player*)this)->AddSpellCooldown(triggered_spell_id, 0, time(nullptr) + cooldown);
     }
@@ -1024,7 +1024,7 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
     Unit*  target = nullptr;
     int32  basepoints[MAX_EFFECT_INDEX] = {0, 0, 0};
 
-    Item* castItem = triggeredByAura->GetCastItemGuid() && GetTypeId() == TYPEID_PLAYER
+    Item* castItem = triggeredByAura->GetCastItemGuid() && IsPlayer()
         ? ((Player*)this)->GetItemByGuid(triggeredByAura->GetCastItemGuid()) : nullptr;
 
     // Try handle unknown trigger spells
@@ -1388,7 +1388,7 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
                     target = !(procFlags & PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL) && IsPositiveSpell(*itr) ? this : pVictim;
                 }
                 CastSpell(target, *itr, true, castItem, triggeredByAura);
-                if (cooldown && GetTypeId() == TYPEID_PLAYER)
+                if (cooldown && IsPlayer())
                 {
                     ((Player*)this)->AddSpellCooldown(*itr, 0, time(nullptr) + cooldown);
                 }
@@ -1396,7 +1396,7 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
         }
     }
 
-    if (cooldown && GetTypeId() == TYPEID_PLAYER && ((Player*)this)->HasSpellCooldown(trigger_spell_id))
+    if (cooldown && IsPlayer() && ((Player*)this)->HasSpellCooldown(trigger_spell_id))
     {
         return SPELL_AURA_PROC_FAILED;
     }
@@ -1426,7 +1426,7 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
         CastSpell(target, trigger_spell_id, true, castItem, triggeredByAura);
     }
 
-    if (cooldown && GetTypeId() == TYPEID_PLAYER)
+    if (cooldown && IsPlayer())
     {
         ((Player*)this)->AddSpellCooldown(trigger_spell_id, 0, time(nullptr) + cooldown);
     }
@@ -1467,7 +1467,7 @@ SpellAuraProcResult Unit::HandleOverrideClassScriptAuraProc(Unit* pVictim, uint3
         return SPELL_AURA_PROC_FAILED;
     }
 
-    Item* castItem = triggeredByAura->GetCastItemGuid() && GetTypeId() == TYPEID_PLAYER
+    Item* castItem = triggeredByAura->GetCastItemGuid() && IsPlayer()
         ? ((Player*)this)->GetItemByGuid(triggeredByAura->GetCastItemGuid()) : nullptr;
 
     // Basepoints of trigger aura
@@ -1563,14 +1563,14 @@ SpellAuraProcResult Unit::HandleOverrideClassScriptAuraProc(Unit* pVictim, uint3
         return SPELL_AURA_PROC_FAILED;
     }
 
-    if (cooldown && GetTypeId() == TYPEID_PLAYER && ((Player*)this)->HasSpellCooldown(triggered_spell_id))
+    if (cooldown && IsPlayer() && ((Player*)this)->HasSpellCooldown(triggered_spell_id))
     {
         return SPELL_AURA_PROC_FAILED;
     }
 
     CastSpell(pVictim, triggered_spell_id, true, castItem, triggeredByAura);
 
-    if (cooldown && GetTypeId() == TYPEID_PLAYER)
+    if (cooldown && IsPlayer())
     {
         ((Player*)this)->AddSpellCooldown(triggered_spell_id, 0, time(nullptr) + cooldown);
     }

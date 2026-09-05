@@ -382,7 +382,7 @@ struct event_spell_altar_boss_aggro : public MapEventScript
 
     bool OnReceived(uint32 uiEventId, Object* pSource, Object* /*pTarget*/, bool bIsStart) override
     {
-        if (bIsStart && pSource->GetTypeId() == TYPEID_PLAYER)
+        if (bIsStart && pSource->IsPlayer())
         {
             if (InstanceData* pInstance = ((Player*)pSource)->GetInstanceData())
             {

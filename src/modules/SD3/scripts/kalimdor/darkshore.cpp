@@ -745,7 +745,7 @@ struct npc_rabid_bear : public CreatureScript
 
         void MoveInLineOfSight(Unit* pWho) override
         {
-            if (!m_uiCheckTimer && pWho->GetTypeId() == TYPEID_UNIT && pWho->GetEntry() == NPC_THARNARIUN_TREETENDER &&
+            if (!m_uiCheckTimer && pWho->IsCreature() && pWho->GetEntry() == NPC_THARNARIUN_TREETENDER &&
                 pWho->Where().WithinDist(m_creature->Where(), 2 * INTERACTION_DISTANCE, false))
             {
                 // Possible related spell: 9455 9372
@@ -779,7 +779,7 @@ struct npc_rabid_bear : public CreatureScript
                         m_creature->UpdateEntry(NPC_CAPTURED_RABID_THISTLE_BEAR);
                         // get player
                         Unit* pTrapOwner = pTrap->GetOwner();
-                        if (pTrapOwner && pTrapOwner->GetTypeId() == TYPEID_PLAYER &&
+                        if (pTrapOwner && pTrapOwner->IsPlayer() &&
                             ((Player*)pTrapOwner)->GetQuestStatus(QUEST_PLAGUED_LANDS) == QUEST_STATUS_INCOMPLETE)
                         {
                             ((Player*)pTrapOwner)->KilledMonsterCredit(m_creature->GetEntry(), m_creature->GetObjectGuid());

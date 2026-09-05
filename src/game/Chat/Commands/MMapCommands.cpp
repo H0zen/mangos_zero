@@ -421,7 +421,7 @@ bool ChatHandler::HandleMmapTestHeight(char* args)
         unit = player;
     }
 
-    if (unit->GetTypeId() == TYPEID_UNIT)
+    if (unit->IsCreature())
     {
         if (radius < 0.1f)
         {
@@ -430,7 +430,7 @@ bool ChatHandler::HandleMmapTestHeight(char* args)
     }
     else
     {
-        if (unit->GetTypeId() != TYPEID_PLAYER)
+        if (!unit->IsPlayer())
         {
             PSendSysMessage(LANG_SELECT_CHAR_OR_CREATURE);
             return false;

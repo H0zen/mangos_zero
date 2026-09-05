@@ -94,7 +94,7 @@ int32 Unit::SpellBonusWithCoeffs(Unit* pCaster, SpellEntry const* spellProto, in
     bool const useTriggeredHealBonus = damagetype == HEAL && levelPenaltySpell != spellProto;
 
     // Not apply this to creature casted spells
-    if (pCaster->GetTypeId() == TYPEID_UNIT && !((Creature*)this)->IsPet())
+    if (pCaster->IsCreature() && !((Creature*)this)->IsPet())
     {
         coeff = 1.0f;
     }
@@ -115,7 +115,7 @@ int32 Unit::SpellBonusWithCoeffs(Unit* pCaster, SpellEntry const* spellProto, in
                 break;
             case SPELL_DIRECT_DAMAGE:
                 // Special check for bonus damage applying on spells depending on the equiped weapon.
-                if (pCaster->GetTypeId() == TYPEID_PLAYER && damagetype == SPELL_DIRECT_DAMAGE)
+                if (pCaster->IsPlayer() && damagetype == SPELL_DIRECT_DAMAGE)
                 {
                     Item* item = ((Player*)pCaster)->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
 
@@ -227,7 +227,7 @@ uint32 Unit::SpellDamageBonusDone(Unit* pVictim, SpellEntry const* spellProto, u
     }
 
     // For totems get damage bonus from owner (statue isn't totem in fact)
-    if (GetTypeId() == TYPEID_UNIT && ((Creature*)this)->IsTotem() && ((Totem*)this)->GetTotemType() != TOTEM_STATUE)
+    if (IsCreature() && ((Creature*)this)->IsTotem() && ((Totem*)this)->GetTotemType() != TOTEM_STATUE)
     {
         if (Unit* owner = GetOwner())
         {
@@ -240,7 +240,7 @@ uint32 Unit::SpellDamageBonusDone(Unit* pVictim, SpellEntry const* spellProto, u
     int32 DoneTotal = 0;
 
     // Creature damage
-    if (GetTypeId() == TYPEID_UNIT && !((Creature*)this)->IsPet())
+    if (IsCreature() && !((Creature*)this)->IsPet())
     {
         DoneTotalMod *= Creature::_GetSpellDamageMod(((Creature*)this)->GetCreatureInfo()->Rank);
     }
@@ -303,7 +303,7 @@ uint32 Unit::SpellDamageBonusDone(Unit* pVictim, SpellEntry const* spellProto, u
 
     // Pets just add their bonus damage to their spell damage
     // note that their spell damage is just gain of their own auras
-    if (GetTypeId() == TYPEID_UNIT && ((Creature*)this)->IsPet())
+    if (IsCreature() && ((Creature*)this)->IsPet())
     {
         DoneAdvertisedBenefit += ((Pet*)this)->GetBonusDamage();
     }
@@ -374,7 +374,7 @@ int32 Unit::SpellBaseDamageBonusDone(SpellSchoolMask schoolMask)
         }
     }
 
-    if (GetTypeId() == TYPEID_PLAYER)
+    if (IsPlayer())
     {
         // Damage bonus from stats
         const auto mDamageDoneOfStatPercent = GetAurasByType(SPELL_AURA_MOD_SPELL_DAMAGE_OF_STAT_PERCENT);
@@ -426,7 +426,7 @@ int32 Unit::SpellBaseDamageBonusTaken(SpellSchoolMask schoolMask)
 bool Unit::IsSpellCrit(Unit* pVictim, SpellEntry const* spellProto, SpellSchoolMask schoolMask, WeaponAttackType attackType)
 {
     // Creatures shouldn't crit with spells
-    if (GetTypeId() == TYPEID_UNIT && !((Creature*)this)->IsPet() && !((Creature*)this)->IsTotem())
+    if (IsCreature() && !((Creature*)this)->IsPet() && !((Creature*)this)->IsTotem())
     {
         return false;
     }
@@ -449,7 +449,7 @@ bool Unit::IsSpellCrit(Unit* pVictim, SpellEntry const* spellProto, SpellSchoolM
                 crit_chance = 0.0f;
             }
             // For other schools
-            else if (GetTypeId() == TYPEID_PLAYER)
+            else if (IsPlayer())
             {
                 crit_chance = ((Player*)this)->m_SpellCritPercentage[GetFirstSchoolInMask(schoolMask)];
             }
@@ -615,7 +615,7 @@ uint32 Unit::SpellCriticalHealingBonus(SpellEntry const* spellProto, uint32 dama
 uint32 Unit::SpellHealingBonusDone(Unit* pVictim, SpellEntry const* spellProto, int32 healamount, DamageEffectType damagetype, uint32 stack, Spell const* spell)
 {
     // For totems get healing bonus from owner (statue isn't totem in fact)
-    if (GetTypeId() == TYPEID_UNIT && ((Creature*)this)->IsTotem() && ((Totem*)this)->GetTotemType() != TOTEM_STATUE)
+    if (IsCreature() && ((Creature*)this)->IsTotem() && ((Totem*)this)->GetTotemType() != TOTEM_STATUE)
     {
         if (Unit* owner = GetOwner())
         {
@@ -783,7 +783,7 @@ int32 Unit::SpellBaseHealingBonusDone(SpellSchoolMask schoolMask)
     }
 
     // Healing bonus of spirit, intellect and strength
-    if (GetTypeId() == TYPEID_PLAYER)
+    if (IsPlayer())
     {
         // Healing bonus from stats
         const auto mHealingDoneOfStatPercent = GetAurasByType(SPELL_AURA_MOD_SPELL_HEALING_OF_STAT_PERCENT);
@@ -954,14 +954,14 @@ uint32 Unit::MeleeDamageBonusDone(Unit* pVictim, uint32 pdamage, WeaponAttackTyp
     }
 
     // Paladin Holy Spells such as seal of righteousness, seal of command or judgement of command are all calculated in other functions.
-    if (spellProto && GetSpellSchoolMask(spellProto) == SPELL_SCHOOL_MASK_HOLY && GetTypeId() == TYPEID_PLAYER)
+    if (spellProto && GetSpellSchoolMask(spellProto) == SPELL_SCHOOL_MASK_HOLY && IsPlayer())
     {
         return pdamage;
     }
 
     // differentiate for weapon damage based spells
     bool isWeaponDamageBasedSpell = !(spellProto && (damagetype == DOT || spellProto->HasSpellEffect(SPELL_EFFECT_SCHOOL_DAMAGE)));
-    Item*  pWeapon          = GetTypeId() == TYPEID_PLAYER ? ((Player*)this)->GetWeaponForAttack(attType, true, false) : nullptr;
+    Item*  pWeapon          = IsPlayer() ? ((Player*)this)->GetWeaponForAttack(attType, true, false) : nullptr;
     uint32 creatureTypeMask = pVictim->GetCreatureTypeMask();
     uint32 schoolMask       = uint32(spellProto ? GetSpellSchoolMask(spellProto) : GetMeleeDamageSchoolMask());
 
@@ -986,7 +986,7 @@ uint32 Unit::MeleeDamageBonusDone(Unit* pVictim, uint32 pdamage, WeaponAttackTyp
         }
 
         // Pets just add their bonus damage to their melee damage
-        if (GetTypeId() == TYPEID_UNIT && ((Creature*)this)->IsPet())
+        if (IsCreature() && ((Creature*)this)->IsPet())
         {
             DoneFlat += ((Pet*)this)->GetBonusDamage();
         }
@@ -1108,7 +1108,7 @@ uint32 Unit::MeleeDamageBonusTaken(Unit* pCaster, uint32 pdamage, WeaponAttackTy
     }
 
     // Paladin Holy Spells such as seal of righteousness, seal of command or judgement of command are all calculated in other functions.
-    if (spellProto && GetSpellSchoolMask(spellProto) == SPELL_SCHOOL_MASK_HOLY && pCaster->GetTypeId() == TYPEID_PLAYER)
+    if (spellProto && GetSpellSchoolMask(spellProto) == SPELL_SCHOOL_MASK_HOLY && pCaster->IsPlayer())
     {
         return pdamage;
     }

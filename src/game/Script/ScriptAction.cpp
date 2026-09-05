@@ -180,7 +180,7 @@ bool ScriptAction::GetScriptProcessTargets(Occupant* pOrigSource, Occupant* pOri
             // Prefer non-players as searcher
             Occupant* pSearcher = pOrigSource ? pOrigSource : pOrigTarget;
             if (pOrigSource && pOrigTarget &&
-                pOrigSource->GetTypeId() == TYPEID_PLAYER && pOrigTarget->GetTypeId() != TYPEID_PLAYER)
+                pOrigSource->IsPlayer() && !pOrigTarget->IsPlayer())
             {
                 pSearcher = pOrigTarget;
             }
@@ -265,7 +265,7 @@ bool ScriptAction::GetScriptProcessTargets(Occupant* pOrigSource, Occupant* pOri
 /// Helper to log error information
 bool ScriptAction::LogIfNotCreature(Occupant* pOccupant)
 {
-    if (!pOccupant || pOccupant->GetTypeId() != TYPEID_UNIT)
+    if (!pOccupant || !pOccupant->IsCreature())
     {
         sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u call for non-creature, skipping.", m_type, m_script->id, m_script->command);
         return true;
@@ -297,7 +297,7 @@ bool ScriptAction::LogIfNotUnit(Occupant* pOccupant)
  */
 bool ScriptAction::LogIfNotGameObject(Occupant* pOccupant)
 {
-    if (!pOccupant || pOccupant->GetTypeId() != TYPEID_GAMEOBJECT)
+    if (!pOccupant || !pOccupant->IsGameObject())
     {
         sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u call for non-gameobject, skipping.", m_type, m_script->id, m_script->command);
         return true;
@@ -313,7 +313,7 @@ bool ScriptAction::LogIfNotGameObject(Occupant* pOccupant)
  */
 bool ScriptAction::LogIfNotPlayer(Occupant* pOccupant)
 {
-    if (!pOccupant || pOccupant->GetTypeId() != TYPEID_PLAYER)
+    if (!pOccupant || !pOccupant->IsPlayer())
     {
         sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u call for non-player, skipping.", m_type, m_script->id, m_script->command);
         return true;
@@ -324,13 +324,13 @@ bool ScriptAction::LogIfNotPlayer(Occupant* pOccupant)
 /// Helper to get a player if possible (target preferred)
 Player* ScriptAction::GetPlayerTargetOrSourceAndLog(Occupant* pSource, Occupant* pTarget)
 {
-    if ((!pTarget || pTarget->GetTypeId() != TYPEID_PLAYER) && (!pSource || pSource->GetTypeId() != TYPEID_PLAYER))
+    if ((!pTarget || !pTarget->IsPlayer()) && (!pSource || !pSource->IsPlayer()))
     {
         sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u call for non player, skipping.", m_type, m_script->id, m_script->command);
         return nullptr;
     }
 
-    return pTarget && pTarget->GetTypeId() == TYPEID_PLAYER ? (Player*)pTarget : (Player*)pSource;
+    return pTarget && pTarget->IsPlayer() ? (Player*)pTarget : (Player*)pSource;
 }
 
 /// Handle one Script Step
@@ -539,7 +539,7 @@ bool ScriptAction::HandleScriptStep()
 
             bool failQuest = false;
             // Creature must be alive for giving credit
-            if (pOccupant && pOccupant->GetTypeId() == TYPEID_UNIT && !((Creature*)pOccupant)->IsAlive())
+            if (pOccupant && pOccupant->IsCreature() && !((Creature*)pOccupant)->IsAlive())
             {
                 failQuest = true;
             }
@@ -569,7 +569,7 @@ bool ScriptAction::HandleScriptStep()
             }
 
             uint32 creatureEntry = m_script->killCredit.creatureEntry;
-            Occupant* pRewardSource = pSource && pSource->GetTypeId() == TYPEID_UNIT ? pSource : (pTarget && pTarget->GetTypeId() == TYPEID_UNIT ? pTarget : nullptr);
+            Occupant* pRewardSource = pSource && pSource->IsCreature() ? pSource : (pTarget && pTarget->IsCreature() ? pTarget : nullptr);
 
             // dynamic effect, take entry of reward Source
             if (!creatureEntry)
@@ -773,7 +773,7 @@ bool ScriptAction::HandleScriptStep()
                 }
             }
             // TODO: when GO cast implemented, code below must be updated accordingly to also allow GO spell cast
-            if (pSource && pSource->GetTypeId() == TYPEID_GAMEOBJECT)
+            if (pSource && pSource->IsGameObject())
             {
                 ((Unit*)pTarget)->CastSpell(((Unit*)pTarget), spell, true, nullptr, nullptr, pSource->GetObjectGuid());
                 {
@@ -847,7 +847,7 @@ bool ScriptAction::HandleScriptStep()
         case SCRIPT_COMMAND_DESPAWN_SELF:                   // 18
         {
             // TODO - Remove this check after a while
-            if (pTarget && pTarget->GetTypeId() != TYPEID_UNIT && pSource && pSource->GetTypeId() == TYPEID_UNIT)
+            if (pTarget && !pTarget->IsCreature() && pSource && pSource->IsCreature())
             {
                 sLog.outErrorDb("DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u target must be creature, but (only) source is, use data_flags to fix", m_type, m_script->id, m_script->command);
                 pTarget = pSource;
@@ -1120,7 +1120,7 @@ bool ScriptAction::HandleScriptStep()
                     break;
                 }
 
-                if (pSearcher->GetTypeId() == TYPEID_PLAYER && pTarget && pTarget->GetTypeId() != TYPEID_PLAYER)
+                if (pSearcher->IsPlayer() && pTarget && !pTarget->IsPlayer())
                 {
                     pSearcher = pTarget;
                 }
@@ -1188,12 +1188,12 @@ bool ScriptAction::HandleScriptStep()
             Player* player = nullptr;
             Occupant* second = pSource;
             // First case: target is player
-            if (pTarget && pTarget->GetTypeId() == TYPEID_PLAYER)
+            if (pTarget && pTarget->IsPlayer())
             {
                 player = static_cast<Player*>(pTarget);
             }
             // Second case: source is player
-            else if (pSource && pSource->GetTypeId() == TYPEID_PLAYER)
+            else if (pSource && pSource->IsPlayer())
             {
                 player = static_cast<Player*>(pSource);
                 second = pTarget;

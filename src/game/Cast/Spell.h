@@ -858,7 +858,7 @@ namespace MaNGOS
                             break;
                         case SPELL_TARGETS_AOE_DAMAGE:
                         {
-                            if (itr->getSource()->GetTypeId() == TYPEID_UNIT && ((Creature*)itr->getSource())->IsTotem())
+                            if (itr->getSource()->IsCreature() && ((Creature*)itr->getSource())->IsTotem())
                             {
                                 continue;
                             }

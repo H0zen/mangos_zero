@@ -159,7 +159,7 @@ struct npc_calvin_montague : public CreatureScript
                 m_creature->SetUnitFlag(UNIT_FLAG_PASSIVE);
                 m_uiPhase = 1;
 
-                if (pDoneBy->GetTypeId() == TYPEID_PLAYER)
+                if (pDoneBy->IsPlayer())
                 {
                     m_playerGuid = pDoneBy->GetObjectGuid();
                 }

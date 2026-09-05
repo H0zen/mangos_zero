@@ -198,7 +198,7 @@ Map* MapManager::CreateMap(uint32 id, const Occupant* obj)
     Map* m;
     if (entry->Instanceable())
     {
-        MANGOS_ASSERT(obj && obj->GetTypeId() == TYPEID_PLAYER);
+        MANGOS_ASSERT(obj && obj->IsPlayer());
         // create DungeonMap object
         m = CreateInstance(id, (Player*)obj);
         // Load active objects for this map
@@ -216,7 +216,7 @@ Map* MapManager::CreateMap(uint32 id, const Occupant* obj)
             // A vessel's deck is its own kind of map, and the vessel asking for it is the
             // object it belongs to -- which is the only moment that link can be made.
             if (Transport::IsVesselMapId(id) && obj &&
-                obj->GetTypeId() == TYPEID_GAMEOBJECT)
+                obj->IsGameObject())
             {
                 m = new TransportMap(id, i_gridCleanUpDelay,
                                      const_cast<Transport*>(static_cast<Transport const*>(obj)));

@@ -394,7 +394,7 @@ namespace MaNGOS
 
         inline uint32 Gain(Player* pl, Unit* u)
         {
-            if (u->GetTypeId() == TYPEID_UNIT &&
+            if (u->IsCreature() &&
                 (((Creature*)u)->IsTotem() || ((Creature*)u)->IsPet() ||
                 (((Creature*)u)->GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_NO_XP_AT_KILL)))
             {
@@ -407,7 +407,7 @@ namespace MaNGOS
                 return 0;
             }
 
-            if (u->GetTypeId() == TYPEID_UNIT && ((Creature*)u)->IsElite())
+            if (u->IsCreature() && ((Creature*)u)->IsElite())
             {
                 xp_gain *= 2;
             }

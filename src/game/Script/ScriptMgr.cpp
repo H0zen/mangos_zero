@@ -242,11 +242,11 @@ bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool
     }
 
     // Handle PvP Calls
-    if (forwardToPvp && source->GetTypeId() == TYPEID_GAMEOBJECT)
+    if (forwardToPvp && source->IsGameObject())
     {
         BattleGround* bg = nullptr;
         OutdoorPvP* opvp = nullptr;
-        if (forwardToPvp->GetTypeId() == TYPEID_PLAYER)
+        if (forwardToPvp->IsPlayer())
         {
             bg = ((Player*)forwardToPvp)->GetBattleGround();
             if (!bg)

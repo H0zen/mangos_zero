@@ -90,7 +90,7 @@ bool Spell::CheckTargetCreatureType(Unit* target) const
     if (m_spellInfo->ID == 603)                             // in 1.12 "Curse of doom" have only 1 rank.
     {
         // not allow cast at player
-        if (target->GetTypeId() == TYPEID_PLAYER)
+        if (target->IsPlayer())
         {
             return false;
         }
@@ -184,7 +184,7 @@ bool Spell::CheckTarget(Unit* target, SpellEffectIndex eff)
     }
 
     // Check player targets and remove if in GM mode or GM invisibility (for not self casting case)
-    if (target != m_caster && target->GetTypeId() == TYPEID_PLAYER)
+    if (target != m_caster && target->IsPlayer())
     {
         if (((Player*)target)->GetVisibility() == VISIBILITY_OFF)
         {
@@ -256,7 +256,7 @@ bool Spell::CheckTarget(Unit* target, SpellEffectIndex eff)
         }
     }
 
-    if (target->GetTypeId() != TYPEID_PLAYER && m_spellInfo->HasAttribute(SPELL_ATTR_EX3_TARGET_ONLY_PLAYER) &&
+    if (!target->IsPlayer() && m_spellInfo->HasAttribute(SPELL_ATTR_EX3_TARGET_ONLY_PLAYER) &&
         m_spellInfo->ImplicitTargetA[eff] != TARGET_SCRIPT && m_spellInfo->ImplicitTargetA[eff] != TARGET_SELF)
     {
         return false;

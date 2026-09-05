@@ -145,7 +145,7 @@ inline void MaNGOS::DynamicObjectUpdater::VisitHelper(Unit* target)
         return;
     }
 
-    if (target->GetTypeId() == TYPEID_UNIT && ((Creature*)target)->IsTotem())
+    if (target->IsCreature() && ((Creature*)target)->IsTotem())
     {
         return;
     }
@@ -164,19 +164,19 @@ inline void MaNGOS::DynamicObjectUpdater::VisitHelper(Unit* target)
     }
 
     // Evade target
-    if (target->GetTypeId() == TYPEID_UNIT && ((Creature*)target)->IsInEvadeMode())
+    if (target->IsCreature() && ((Creature*)target)->IsInEvadeMode())
     {
         return;
     }
 
     // Check player targets and remove if in GM mode or GM invisibility (for not self casting case)
-    if (target->GetTypeId() == TYPEID_PLAYER && target != i_check && (((Player*)target)->isGameMaster() || ((Player*)target)->GetVisibility() == VISIBILITY_OFF))
+    if (target->IsPlayer() && target != i_check && (((Player*)target)->isGameMaster() || ((Player*)target)->GetVisibility() == VISIBILITY_OFF))
     {
         return;
     }
 
     // for player casts use less strict negative and more stricted positive targeting
-    if (i_check->GetTypeId() == TYPEID_PLAYER)
+    if (i_check->IsPlayer())
     {
         if (IsFriendly(*i_check, *target) != i_positive)
         {

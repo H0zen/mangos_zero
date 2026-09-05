@@ -205,7 +205,7 @@ struct npc_tapoke_slim_jahn : public CreatureScript
         void ReceiveAIEvent(AIEventType eventType, Creature* /*pSender*/, Unit* pInvoker, uint32 uiMiscValue) override
         {
             // start escort
-            if (eventType == AI_EVENT_START_ESCORT && pInvoker->GetTypeId() == TYPEID_PLAYER)
+            if (eventType == AI_EVENT_START_ESCORT && pInvoker->IsPlayer())
             {
                 Start(false, (Player*)pInvoker, GetQuestTemplateStore(uiMiscValue), true);
             }

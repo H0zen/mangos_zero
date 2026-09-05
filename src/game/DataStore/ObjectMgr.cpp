@@ -2781,7 +2781,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const
         }
         case CONDITION_LAST_WAYPOINT:
         {
-            if (source->GetTypeId() != TYPEID_UNIT)
+            if (!source->IsCreature())
             {
                 sLog.outErrorDb("CONDITION_LAST_WAYPOINT (entry %u) is used for non creature source (source %s) by %s", m_entry, source->GetGuidStr().c_str(), player->GetGuidStr().c_str());
                 return false;
@@ -2834,7 +2834,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const
                     }
                     return true;
                 case 3:                                     // Creature source is dead
-                    return !source || source->GetTypeId() != TYPEID_UNIT || !((Unit*)source)->IsAlive();
+                    return !source || !source->IsCreature() || !((Unit*)source)->IsAlive();
             }
         case CONDITION_CREATURE_IN_RANGE:
         {
@@ -3948,7 +3948,7 @@ bool DoDisplayText(Occupant* source, int32 entry, Unit const* target /*=nullptr*
         else if (data->Type == CHAT_TYPE_WHISPER || data->Type == CHAT_TYPE_BOSS_WHISPER)
         {
             // An error will be displayed for the text
-            if (target && target->GetTypeId() == TYPEID_PLAYER)
+            if (target && target->IsPlayer())
             {
                 PlaySound(*source, SoundKind::Flat, data->SoundId, ToPlayer(target));
             }
@@ -3961,7 +3961,7 @@ bool DoDisplayText(Occupant* source, int32 entry, Unit const* target /*=nullptr*
 
     if (data->Emote)
     {
-        if (source->GetTypeId() == TYPEID_UNIT || source->GetTypeId() == TYPEID_PLAYER)
+        if (source->IsCreature() || source->IsPlayer())
         {
             ((Unit*)source)->HandleEmote(data->Emote);
         }
@@ -3972,7 +3972,7 @@ bool DoDisplayText(Occupant* source, int32 entry, Unit const* target /*=nullptr*
         }
     }
 
-    if ((data->Type == CHAT_TYPE_WHISPER || data->Type == CHAT_TYPE_BOSS_WHISPER) && (!target || target->GetTypeId() != TYPEID_PLAYER))
+    if ((data->Type == CHAT_TYPE_WHISPER || data->Type == CHAT_TYPE_BOSS_WHISPER) && (!target || !target->IsPlayer()))
     {
         _DoStringError(entry, "DoDisplayText entry %i can not whisper without target unit (TYPEID_PLAYER).", entry);
         return false;

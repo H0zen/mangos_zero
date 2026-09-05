@@ -116,7 +116,7 @@ GameObjectBehaviour::Casting QuestGiverBehaviour::UsedBy(Unit* user, bool script
     Casting cast;
     cast.caster = user;
 
-    if (user->GetTypeId() != TYPEID_PLAYER)
+    if (!user->IsPlayer())
     {
         return Casting();
     }
@@ -139,7 +139,7 @@ GameObjectBehaviour::Casting ChestBehaviour::UsedBy(Unit* user, bool scriptSaidY
     Casting cast;
     cast.caster = user;
 
-    if (user->GetTypeId() != TYPEID_PLAYER)
+    if (!user->IsPlayer())
     {
         return Casting();
     }
@@ -206,7 +206,7 @@ GameObjectBehaviour::Casting TrapBehaviour::UsedBy(Unit* user, bool scriptSaidYe
         m_tally.Used();
     }
 
-    if (IsBattleGroundTrap && user->GetTypeId() == TYPEID_PLAYER)
+    if (IsBattleGroundTrap && user->IsPlayer())
     {
         // BattleGround gameobjects case
         if (BattleGround* bg = static_cast<Player*>(user)->GetBattleGround())
@@ -224,7 +224,7 @@ GameObjectBehaviour::Casting TrapBehaviour::UsedBy(Unit* user, bool scriptSaidYe
         It().SendGameObjectCustomAnim();
     }
 
-    if (!scriptSaidYes && user->GetTypeId() == TYPEID_UNIT)
+    if (!scriptSaidYes && user->IsCreature())
     {
         sScriptMgr.OnGameObjectUse(user, &It());
     }
@@ -246,7 +246,7 @@ GameObjectBehaviour::Casting ChairBehaviour::UsedBy(Unit* user, bool scriptSaidY
         return Casting();
     }
 
-    if (user->GetTypeId() != TYPEID_PLAYER)
+    if (!user->IsPlayer())
     {
         return Casting();
     }
@@ -325,7 +325,7 @@ GameObjectBehaviour::Casting GooberBehaviour::UsedBy(Unit* user, bool scriptSaid
 
     // Handle OutdoorPvP use cases
     // Note: this may be also handled by DB spell scripts in the future, when the world state manager is implemented
-    if (user->GetTypeId() == TYPEID_PLAYER)
+    if (user->IsPlayer())
     {
         Player* player = static_cast<Player*>(user);
         if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(player->GetCachedZoneId()))
@@ -353,7 +353,7 @@ GameObjectBehaviour::Casting GooberBehaviour::UsedBy(Unit* user, bool scriptSaid
 
     It().ClosesAt(time(nullptr) + info->GetAutoCloseTime());
 
-    if (user->GetTypeId() == TYPEID_PLAYER)
+    if (user->IsPlayer())
     {
         Player* player = static_cast<Player*>(user);
 
@@ -420,7 +420,7 @@ GameObjectBehaviour::Casting CameraBehaviour::UsedBy(Unit* user, bool scriptSaid
         return Casting();
     }
 
-    if (user->GetTypeId() != TYPEID_PLAYER)
+    if (!user->IsPlayer())
     {
         return Casting();
     }
@@ -447,7 +447,7 @@ GameObjectBehaviour::Casting FishingNodeBehaviour::UsedBy(Unit* user, bool scrip
     Casting cast;
     cast.caster = user;
 
-    if (user->GetTypeId() != TYPEID_PLAYER)
+    if (!user->IsPlayer())
     {
         return Casting();
     }
@@ -567,7 +567,7 @@ GameObjectBehaviour::Casting RitualBehaviour::UsedBy(Unit* user, bool scriptSaid
     Casting cast;
     cast.caster = user;
 
-    if (user->GetTypeId() != TYPEID_PLAYER)
+    if (!user->IsPlayer())
     {
         return Casting();
     }
@@ -580,7 +580,7 @@ GameObjectBehaviour::Casting RitualBehaviour::UsedBy(Unit* user, bool scriptSaid
 
     if (owner)
     {
-        if (owner->GetTypeId() != TYPEID_PLAYER)
+        if (!owner->IsPlayer())
         {
             return Casting();
         }
@@ -691,12 +691,12 @@ GameObjectBehaviour::Casting SpellCasterBehaviour::UsedBy(Unit* user, bool scrip
     if (info->spellcaster.partyOnly)
     {
         Unit* caster = It().GetOwner();
-        if (!caster || caster->GetTypeId() != TYPEID_PLAYER)
+        if (!caster || !caster->IsPlayer())
         {
             return Casting();
         }
 
-        if (user->GetTypeId() != TYPEID_PLAYER || !static_cast<Player*>(user)->IsInSameRaidWith(static_cast<Player*>(caster)))
+        if (!user->IsPlayer() || !static_cast<Player*>(user)->IsInSameRaidWith(static_cast<Player*>(caster)))
         {
             return Casting();
         }
@@ -715,7 +715,7 @@ GameObjectBehaviour::Casting FlagStandBehaviour::UsedBy(Unit* user, bool scriptS
     Casting cast;
     cast.caster = user;
 
-    if (user->GetTypeId() != TYPEID_PLAYER)
+    if (!user->IsPlayer())
     {
         return Casting();
     }
@@ -746,7 +746,7 @@ GameObjectBehaviour::Casting FishingHoleBehaviour::UsedBy(Unit* user, bool scrip
     Casting cast;
     cast.caster = user;
 
-    if (user->GetTypeId() != TYPEID_PLAYER)
+    if (!user->IsPlayer())
     {
         return Casting();
     }
@@ -764,7 +764,7 @@ GameObjectBehaviour::Casting FlagDropBehaviour::UsedBy(Unit* user, bool scriptSa
     Casting cast;
     cast.caster = user;
 
-    if (user->GetTypeId() != TYPEID_PLAYER)
+    if (!user->IsPlayer())
     {
         return Casting();
     }
@@ -824,7 +824,7 @@ void FishingNodeBehaviour::Arming()
     // The splash is what the caster is watching for; it is what says the bite may
     // now be caught.
     Unit* caster = It().GetOwner();
-    if (caster && caster->GetTypeId() == TYPEID_PLAYER)
+    if (caster && caster->IsPlayer())
     {
         It().SetGoState(GO_STATE_ACTIVE);
         It().SendForcedObjectUpdate();
@@ -857,7 +857,7 @@ void ChestBehaviour::Arming()
 GameObjectBehaviour::Tick FishingNodeBehaviour::TimedOut()
 {
     Unit* caster = It().GetOwner();
-    if (caster && caster->GetTypeId() == TYPEID_PLAYER)
+    if (caster && caster->IsPlayer())
     {
         caster->FinishSpell(CURRENT_CHANNELED_SPELL);
 

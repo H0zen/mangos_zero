@@ -186,7 +186,7 @@ void Spell::EffectSummonObjectWild(SpellEffectIndex eff_idx)
     map->Add(pGameObj);
     pGameObj->AIM_Initialize();
 
-    if (pGameObj->GetGoType() == GAMEOBJECT_TYPE_FLAGDROP && m_caster->GetTypeId() == TYPEID_PLAYER)
+    if (pGameObj->GetGoType() == GAMEOBJECT_TYPE_FLAGDROP && m_caster->IsPlayer())
     {
         Player* pl = (Player*)m_caster;
         BattleGround* bg = ((Player*)m_caster)->GetBattleGround();
@@ -208,11 +208,11 @@ void Spell::EffectSummonObjectWild(SpellEffectIndex eff_idx)
 
     pGameObj->SummonLinkedTrapIfAny();
 
-    if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
+    if (m_caster->IsCreature() && ((Creature*)m_caster)->AI())
     {
         ((Creature*)m_caster)->AI()->JustSummoned(pGameObj);
     }
-    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->IsCreature() && ((Creature*)m_originalCaster)->AI())
     {
         ((Creature*)m_originalCaster)->AI()->JustSummoned(pGameObj);
     }
@@ -241,7 +241,7 @@ void Spell::EffectSanctuary(SpellEffectIndex /*eff_idx*/)
     }
 
     // Improved Sap: a hacky way
-    if (m_triggeredByAuraSpell && m_spellInfo->ID == 14093 && unitTarget->GetTypeId() == TYPEID_PLAYER)
+    if (m_triggeredByAuraSpell && m_spellInfo->ID == 14093 && unitTarget->IsPlayer())
     {
         // find highest rank Stealth spell cooldown
         uint32 stealth_id = 0;
@@ -276,7 +276,7 @@ void Spell::EffectAddComboPoints(SpellEffectIndex /*eff_idx*/)
         return;
     }
 
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         return;
     }
@@ -296,7 +296,7 @@ void Spell::EffectAddComboPoints(SpellEffectIndex /*eff_idx*/)
  */
 void Spell::EffectDuel(SpellEffectIndex eff_idx)
 {
-    if (!m_caster || !unitTarget || m_caster->GetTypeId() != TYPEID_PLAYER || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster || !unitTarget || !m_caster->IsPlayer() || !unitTarget->IsPlayer())
     {
         return;
     }
@@ -386,7 +386,7 @@ void Spell::EffectDuel(SpellEffectIndex eff_idx)
  */
 void Spell::EffectStuck(SpellEffectIndex /*eff_idx*/)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
@@ -426,7 +426,7 @@ void Spell::EffectStuck(SpellEffectIndex /*eff_idx*/)
  */
 void Spell::EffectSummonPlayer(SpellEffectIndex /*eff_idx*/)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
@@ -570,7 +570,7 @@ void Spell::EffectActivateObject(SpellEffectIndex eff_idx)
 void Spell::EffectEnchantHeldItem(SpellEffectIndex eff_idx)
 {
     // this is only item spell effect applied to main-hand weapon of target player (players in area)
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
@@ -630,7 +630,7 @@ void Spell::EffectEnchantHeldItem(SpellEffectIndex eff_idx)
  */
 void Spell::EffectDisEnchant(SpellEffectIndex /*eff_idx*/)
 {
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         return;
     }
@@ -655,7 +655,7 @@ void Spell::EffectDisEnchant(SpellEffectIndex /*eff_idx*/)
  */
 void Spell::EffectInebriate(SpellEffectIndex /*eff_idx*/)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
@@ -681,7 +681,7 @@ void Spell::EffectInebriate(SpellEffectIndex /*eff_idx*/)
  */
 void Spell::EffectFeedPet(SpellEffectIndex eff_idx)
 {
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         return;
     }
@@ -725,7 +725,7 @@ void Spell::EffectFeedPet(SpellEffectIndex eff_idx)
  */
 void Spell::EffectDismissPet(SpellEffectIndex /*eff_idx*/)
 {
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         return;
     }
@@ -807,11 +807,11 @@ void Spell::EffectSummonObject(SpellEffectIndex eff_idx)
 
     pGameObj->SummonLinkedTrapIfAny();
 
-    if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
+    if (m_caster->IsCreature() && ((Creature*)m_caster)->AI())
     {
         ((Creature*)m_caster)->AI()->JustSummoned(pGameObj);
     }
-    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->IsCreature() && ((Creature*)m_originalCaster)->AI())
     {
         ((Creature*)m_originalCaster)->AI()->JustSummoned(pGameObj);
     }
@@ -824,7 +824,7 @@ void Spell::EffectSummonObject(SpellEffectIndex eff_idx)
  */
 void Spell::EffectResurrect(SpellEffectIndex /*eff_idx*/)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
@@ -907,7 +907,7 @@ void Spell::EffectAddExtraAttacks(SpellEffectIndex /*eff_idx*/)
  */
 void Spell::EffectParry(SpellEffectIndex /*eff_idx*/)
 {
-    if (unitTarget && unitTarget->GetTypeId() == TYPEID_PLAYER)
+    if (unitTarget && unitTarget->IsPlayer())
     {
         ((Player*)unitTarget)->SetCanParry(true);
     }
@@ -920,7 +920,7 @@ void Spell::EffectParry(SpellEffectIndex /*eff_idx*/)
  */
 void Spell::EffectBlock(SpellEffectIndex /*eff_idx*/)
 {
-    if (unitTarget && unitTarget->GetTypeId() == TYPEID_PLAYER)
+    if (unitTarget && unitTarget->IsPlayer())
     {
         ((Player*)unitTarget)->SetCanBlock(true);
     }
@@ -1106,7 +1106,7 @@ void Spell::EffectLeapForward(SpellEffectIndex eff_idx)
  */
 void Spell::EffectReputation(SpellEffectIndex eff_idx)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
@@ -1135,7 +1135,7 @@ void Spell::EffectReputation(SpellEffectIndex eff_idx)
  */
 void Spell::EffectQuestComplete(SpellEffectIndex eff_idx)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
@@ -1155,7 +1155,7 @@ void Spell::EffectSelfResurrect(SpellEffectIndex eff_idx)
     {
         return;
     }
-    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget->IsPlayer())
     {
         return;
     }
@@ -1201,11 +1201,11 @@ void Spell::EffectSelfResurrect(SpellEffectIndex eff_idx)
  */
 void Spell::EffectSkinning(SpellEffectIndex /*eff_idx*/)
 {
-    if (unitTarget->GetTypeId() != TYPEID_UNIT)
+    if (!unitTarget->IsCreature())
     {
         return;
     }
-    if (!m_caster || m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster || !m_caster->IsPlayer())
     {
         return;
     }
@@ -1244,7 +1244,7 @@ void Spell::EffectCharge(SpellEffectIndex /*eff_idx*/)
     float x, y, z;
     ContactPointNear(*unitTarget, m_caster, x, y, z, 3.666666f);
 
-    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget->IsPlayer())
     {
         ((Creature*)unitTarget)->StopMoving();
     }
@@ -1266,7 +1266,7 @@ void Spell::EffectCharge(SpellEffectIndex /*eff_idx*/)
  */
 void Spell::EffectKnockBack(SpellEffectIndex eff_idx)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
@@ -1281,7 +1281,7 @@ void Spell::EffectKnockBack(SpellEffectIndex eff_idx)
  */
 void Spell::EffectSendTaxi(SpellEffectIndex eff_idx)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
@@ -1296,7 +1296,7 @@ void Spell::EffectSendTaxi(SpellEffectIndex eff_idx)
  */
 void Spell::EffectPlayerPull(SpellEffectIndex eff_idx)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }

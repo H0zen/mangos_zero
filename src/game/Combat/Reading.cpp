@@ -42,7 +42,7 @@ namespace combat
 
         const Creature* AsCreature(const Unit& unit)
         {
-            return unit.GetTypeId() == TYPEID_UNIT
+            return unit.IsCreature()
                        ? static_cast<const Creature*>(&unit)
                        : nullptr;
         }
@@ -54,7 +54,7 @@ namespace combat
         Combatant c;
         c.guid = attacker.GetObjectGuid();
         c.level = attacker.getLevel();
-        c.isPlayer = attacker.GetTypeId() == TYPEID_PLAYER;
+        c.isPlayer = attacker.IsPlayer();
         c.classId = static_cast<uint8>(attacker.getClass());
         c.health = static_cast<int32>(attacker.GetHealth());
 
@@ -95,7 +95,7 @@ namespace combat
         Combatant c;
         c.guid = victim.GetObjectGuid();
         c.level = victim.getLevel();
-        c.isPlayer = victim.GetTypeId() == TYPEID_PLAYER;
+        c.isPlayer = victim.IsPlayer();
         c.classId = static_cast<uint8>(victim.getClass());
         c.health = static_cast<int32>(victim.GetHealth());
         c.isSitting = !victim.IsStandState();

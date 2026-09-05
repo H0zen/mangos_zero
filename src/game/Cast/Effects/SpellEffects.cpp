@@ -279,7 +279,7 @@ void Spell::EffectSummon(SpellEffectIndex eff_idx)
     uint32 level = m_caster->getLevel();
     Pet* spawnCreature = new Pet(SUMMON_PET);
 
-    if (m_caster->GetTypeId() == TYPEID_PLAYER && spawnCreature->LoadPetFromDB((Player*)m_caster, pet_entry))
+    if (m_caster->IsPlayer() && spawnCreature->LoadPetFromDB((Player*)m_caster, pet_entry))
     {
         // Summon in dest location
         if (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
@@ -345,18 +345,18 @@ void Spell::EffectSummon(SpellEffectIndex eff_idx)
 
     m_caster->SetPet(spawnCreature);
 
-    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+    if (m_caster->IsPlayer())
     {
         spawnCreature->GetCharmInfo()->SetReactState(REACT_DEFENSIVE);
         spawnCreature->SavePetToDB(PET_SAVE_AS_CURRENT);
         ((Player*)m_caster)->PetSpellInitialize();
     }
 
-    if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
+    if (m_caster->IsCreature() && ((Creature*)m_caster)->AI())
     {
         ((Creature*)m_caster)->AI()->JustSummoned((Creature*)spawnCreature);
     }
-    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->IsCreature() && ((Creature*)m_originalCaster)->AI())
     {
         ((Creature*)m_originalCaster)->AI()->JustSummoned((Creature*)spawnCreature);
     }
@@ -385,7 +385,7 @@ void Spell::EffectSummonWild(SpellEffectIndex eff_idx)
     uint32 level = m_caster->getLevel();
 
     // level of creature summoned using engineering item based at engineering skill level
-    if (m_caster->GetTypeId() == TYPEID_PLAYER && m_CastItem)
+    if (m_caster->IsPlayer() && m_CastItem)
     {
         ItemPrototype const* proto = m_CastItem->GetProto();
         if (proto && proto->RequiredSkill == SKILL_ENGINEERING)
@@ -458,7 +458,7 @@ void Spell::EffectSummonWild(SpellEffectIndex eff_idx)
             // summon->SetCreatorGuid(m_caster->GetObjectGuid());
 
             // Notify original caster if not done already
-            if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+            if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->IsCreature() && ((Creature*)m_originalCaster)->AI())
             {
                 ((Creature*)m_originalCaster)->AI()->JustSummoned(summon);
             }
@@ -492,7 +492,7 @@ void Spell::EffectSummonGuardian(SpellEffectIndex eff_idx)
     // Search old Guardian only for players (if casted spell not have duration or cooldown)
     // FIXME: some guardians have control spell applied and controlled by player and anyway player can't summon in this time
     //        so this code hack in fact
-    if (m_caster->GetTypeId() == TYPEID_PLAYER && (duration <= 0 || GetSpellRecoveryTime(m_spellInfo) == 0))
+    if (m_caster->IsPlayer() && (duration <= 0 || GetSpellRecoveryTime(m_spellInfo) == 0))
     {
         if (m_caster->FindGuardianWithEntry(pet_entry))
         {
@@ -504,7 +504,7 @@ void Spell::EffectSummonGuardian(SpellEffectIndex eff_idx)
     uint32 level = m_caster->getLevel();
 
     // level of pet summoned using engineering item based at engineering skill level
-    if (m_caster->GetTypeId() == TYPEID_PLAYER && m_CastItem)
+    if (m_caster->IsPlayer() && m_CastItem)
     {
         ItemPrototype const* proto = m_CastItem->GetProto();
         if (proto && proto->RequiredSkill == SKILL_ENGINEERING)
@@ -589,11 +589,11 @@ void Spell::EffectSummonGuardian(SpellEffectIndex eff_idx)
         spawnCreature->AIM_Initialize();
 
         // Notify Summoner
-        if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
+        if (m_caster->IsCreature() && ((Creature*)m_caster)->AI())
         {
             ((Creature*)m_caster)->AI()->JustSummoned(spawnCreature);
         }
-        if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+        if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->IsCreature() && ((Creature*)m_originalCaster)->AI())
         {
             ((Creature*)m_originalCaster)->AI()->JustSummoned(spawnCreature);
         }
@@ -609,7 +609,7 @@ void Spell::EffectSummonGuardian(SpellEffectIndex eff_idx)
  */
 void Spell::EffectAddHonor(SpellEffectIndex /*eff_idx*/)
 {
-    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget->IsPlayer())
     {
         return;
     }
@@ -709,7 +709,7 @@ void Spell::EffectSummonTotem(SpellEffectIndex eff_idx)
 
     pTotem->SetUInt32Value(UNIT_CREATED_BY_SPELL, m_spellInfo->ID);
 
-    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+    if (m_caster->IsPlayer())
     {
         pTotem->SetUnitFlag(UNIT_FLAG_PLAYER_CONTROLLED);
     }
@@ -759,7 +759,7 @@ void Spell::EffectSummonPossessed(SpellEffectIndex eff_idx)
     spawnCreature->addUnitState(UNIT_STAT_CONTROLLED);
 
     // Changes to owner
-    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+    if (m_caster->IsPlayer())
     {
         Player* player = (Player*)m_caster;
 
@@ -777,7 +777,7 @@ void Spell::EffectSummonPossessed(SpellEffectIndex eff_idx)
     }
 
     // Notify Summoner
-    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->IsCreature() && ((Creature*)m_originalCaster)->AI())
     {
         ((Creature*)m_originalCaster)->AI()->JustSummoned(spawnCreature);
     }
@@ -806,7 +806,7 @@ void Spell::EffectSummonPossessed(SpellEffectIndex eff_idx)
  */
 void Spell::EffectSummonCritter(SpellEffectIndex eff_idx)
 {
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         return;
     }
@@ -884,11 +884,11 @@ void Spell::EffectSummonCritter(SpellEffectIndex eff_idx)
     critter->InitPetCreateSpells();                         // e.g. disgusting oozeling has a create spell as critter...
 
     // Notify Summoner
-    if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
+    if (m_caster->IsCreature() && ((Creature*)m_caster)->AI())
     {
         ((Creature*)m_caster)->AI()->JustSummoned(critter);
     }
-    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->IsCreature() && ((Creature*)m_originalCaster)->AI())
     {
         ((Creature*)m_originalCaster)->AI()->JustSummoned(critter);
     }
@@ -947,7 +947,7 @@ void Spell::EffectSummonDemon(SpellEffectIndex eff_idx)
  */
 void Spell::EffectTeleportGraveyard(SpellEffectIndex eff_idx)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER || !unitTarget->GetMap()->IsBattleGround())
+    if (!unitTarget || !unitTarget->IsPlayer() || !unitTarget->GetMap()->IsBattleGround())
     {
         return;
     }

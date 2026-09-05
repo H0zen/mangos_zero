@@ -87,7 +87,7 @@
 SpellCastResult Spell::CheckCast(bool strict)
 {
     // check cooldowns to prevent cheating (ignore passive spells, that client side visual only)
-    if (m_caster->GetTypeId() == TYPEID_PLAYER && !m_spellInfo->HasAttribute(SPELL_ATTR_PASSIVE) &&
+    if (m_caster->IsPlayer() && !m_spellInfo->HasAttribute(SPELL_ATTR_PASSIVE) &&
         ((Player*)m_caster)->HasSpellCooldown(m_spellInfo->ID))
     {
         if (m_triggeredByAuraSpell)
@@ -107,7 +107,7 @@ SpellCastResult Spell::CheckCast(bool strict)
     }
 
     // only allow triggered spells if at an ended battleground
-    if (!m_IsTriggeredSpell && m_caster->GetTypeId() == TYPEID_PLAYER)
+    if (!m_IsTriggeredSpell && m_caster->IsPlayer())
     {
         if (BattleGround* bg = ((Player*)m_caster)->GetBattleGround())
         {
@@ -142,7 +142,7 @@ SpellCastResult Spell::CheckCast(bool strict)
         }
     }
 
-    if (m_caster->GetTypeId() == TYPEID_PLAYER && !((Player*)m_caster)->isGameMaster() &&
+    if (m_caster->IsPlayer() && !((Player*)m_caster)->isGameMaster() &&
         sWorld.getConfig(CONFIG_BOOL_VMAP_INDOOR_CHECK))
     {
         if (m_spellInfo->HasAttribute(SPELL_ATTR_OUTDOORS_ONLY) &&
@@ -180,7 +180,7 @@ SpellCastResult Spell::CheckCast(bool strict)
         return SPELL_FAILED_CANT_DO_THAT_YET;
     }
 
-    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+    if (m_caster->IsPlayer())
     {
         // cancel autorepeat spells if cast start when moving
         // (not wand currently autorepeat cast delayed to moving stop anyway in spell update code)
@@ -357,7 +357,7 @@ SpellCastResult Spell::CheckCast(bool strict)
         // totem immunity for channeled spells(needs to be before spell cast)
         // spell attribs for player channeled spells
         if (m_spellInfo->HasAttribute(SPELL_ATTR_EX_CHANNEL_TRACK_TARGET) &&
-            target->GetTypeId() == TYPEID_UNIT &&
+            target->IsCreature() &&
             ((Creature*)target)->IsTotem())
         {
             return SPELL_FAILED_IMMUNE;
@@ -390,7 +390,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
             // auto selection spell rank implemented in WorldSession::HandleCastSpellOpcode
             // this case can be triggered if rank not found (too low-level target for first rank)
-            if (m_caster->GetTypeId() == TYPEID_PLAYER && !m_CastItem && !m_IsTriggeredSpell)
+            if (m_caster->IsPlayer() && !m_CastItem && !m_IsTriggeredSpell)
             {
                 // spell expected to be auto-downranking in cast handle, so must be same
                 if (m_spellInfo != sSpellMgr.SelectAuraRankForLevel(m_spellInfo, target->getLevel()))
@@ -399,14 +399,14 @@ SpellCastResult Spell::CheckCast(bool strict)
                 }
             }
 
-            if (strict && m_spellInfo->HasAttribute(SPELL_ATTR_EX3_TARGET_ONLY_PLAYER) && target->GetTypeId() != TYPEID_PLAYER && !IsAreaOfEffectSpell(m_spellInfo))
+            if (strict && m_spellInfo->HasAttribute(SPELL_ATTR_EX3_TARGET_ONLY_PLAYER) && !target->IsPlayer() && !IsAreaOfEffectSpell(m_spellInfo))
             {
                 return SPELL_FAILED_BAD_TARGETS;
             }
         }
         else if (m_caster == target)
         {
-            if (m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->IsInWorld())
+            if (m_caster->IsPlayer() && m_caster->IsInWorld())
             {
                 // Additional check for some spells
                 // If 0 spell effect empty - client not send target data (need use selection)
@@ -479,7 +479,7 @@ SpellCastResult Spell::CheckCast(bool strict)
         {
             if (!CheckTargetCreatureType(target))
             {
-                if (target->GetTypeId() == TYPEID_PLAYER)
+                if (target->IsPlayer())
                 {
                     return SPELL_FAILED_TARGET_IS_PLAYER;
                 }
@@ -530,7 +530,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             }
             // TODO: this check can be applied and for player to prevent cheating when IsPositiveSpell will return always correct result.
             // check target for pet/charmed casts (not self targeted), self targeted cast used for area effects and etc
-            if (!explicit_target_mode && m_caster->GetTypeId() == TYPEID_UNIT && m_caster->GetCharmerOrOwnerGuid())
+            if (!explicit_target_mode && m_caster->IsCreature() && m_caster->GetCharmerOrOwnerGuid())
             {
                 // check correctness positive/negative cast target (pet cast real check and cheating check)
                 if (IsPositiveSpell(m_spellInfo->ID))
@@ -607,7 +607,7 @@ SpellCastResult Spell::CheckCast(bool strict)
     }
 
     // not let players cast spells at mount (and let do it to creatures)
-    if (m_caster->IsMounted() && m_caster->GetTypeId() == TYPEID_PLAYER && !m_IsTriggeredSpell &&
+    if (m_caster->IsMounted() && m_caster->IsPlayer() && !m_IsTriggeredSpell &&
         !IsPassiveSpell(m_spellInfo) && !m_spellInfo->HasAttribute(SPELL_ATTR_CASTABLE_WHILE_MOUNTED))
     {
         if (m_caster->IsTaxiFlying())
@@ -723,7 +723,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                             // check if explicit target is provided and check it up against database valid target entry/state
                             if (Unit* pTarget = m_targets.getUnitTarget())
                             {
-                                if (pTarget->GetTypeId() == TYPEID_UNIT && pTarget->GetEntry() == i_spellST->targetEntry)
+                                if (pTarget->IsCreature() && pTarget->GetEntry() == i_spellST->targetEntry)
                                 {
                                     if (i_spellST->type == SPELL_TARGET_TYPE_DEAD && ((Creature*)pTarget)->IsCorpse())
                                     {
@@ -856,7 +856,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             }
             if (Unit* target = m_targets.getUnitTarget())
             {
-                if (m_caster->GetTypeId() == TYPEID_PLAYER &&
+                if (m_caster->IsPlayer() &&
                     (sSpellMgr.GetSpellFacingFlag(m_spellInfo->ID) & SPELL_FACING_FLAG_INFRONT) &&
                     !m_caster->Where().HasInArc(target->Where(), M_PI_F))
                 {
@@ -1063,7 +1063,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             }
             case SPELL_EFFECT_FEED_PET:
             {
-                if (m_caster->GetTypeId() != TYPEID_PLAYER)
+                if (!m_caster->IsPlayer())
                 {
                     return SPELL_FAILED_BAD_TARGETS;
                 }
@@ -1102,7 +1102,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             case SPELL_EFFECT_POWER_DRAIN:
             {
                 // Can be area effect, Check only for players and not check if target - caster (spell can have multiply drain/burn effects)
-                if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                if (m_caster->IsPlayer())
                 {
                     if (Unit* target = m_targets.getUnitTarget())
                     {
@@ -1125,7 +1125,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             }
             case SPELL_EFFECT_SKINNING:
             {
-                if (m_caster->GetTypeId() != TYPEID_PLAYER || !m_targets.getUnitTarget() || m_targets.getUnitTarget()->GetTypeId() != TYPEID_UNIT)
+                if (!m_caster->IsPlayer() || !m_targets.getUnitTarget() || !m_targets.getUnitTarget()->IsCreature())
                 {
                     return SPELL_FAILED_BAD_TARGETS;
                 }
@@ -1164,7 +1164,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             case SPELL_EFFECT_OPEN_LOCK_ITEM:
             case SPELL_EFFECT_OPEN_LOCK:
             {
-                if (m_caster->GetTypeId() != TYPEID_PLAYER) // only players can open locks, gather etc.
+                if (!m_caster->IsPlayer()) // only players can open locks, gather etc.
                 {
                     return SPELL_FAILED_BAD_TARGETS;
                 }
@@ -1336,7 +1336,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             }
             case SPELL_EFFECT_SUMMON_PLAYER:
             {
-                if (m_caster->GetTypeId() != TYPEID_PLAYER)
+                if (!m_caster->IsPlayer())
                 {
                     return SPELL_FAILED_BAD_TARGETS;
                 }
@@ -1388,7 +1388,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     }
                 }
 
-                if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                if (m_caster->IsPlayer())
                 {
                     if (((Player*)m_caster)->HasMovementFlag(MOVEFLAG_ONTRANSPORT))
                     {
@@ -1426,7 +1426,7 @@ SpellCastResult Spell::CheckCast(bool strict)
         {
             case SPELL_AURA_MOD_POSSESS:
             {
-                if (m_caster->GetTypeId() != TYPEID_PLAYER)
+                if (!m_caster->IsPlayer())
                 {
                     return SPELL_FAILED_UNKNOWN;
                 }
@@ -1507,7 +1507,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             }
             case SPELL_AURA_MOD_POSSESS_PET:
             {
-                if (m_caster->GetTypeId() != TYPEID_PLAYER)
+                if (!m_caster->IsPlayer())
                 {
                     return SPELL_FAILED_UNKNOWN;
                 }
@@ -1541,7 +1541,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     return SPELL_FAILED_ONLY_ABOVEWATER;
                 }
 
-                if (m_caster->GetTypeId() == TYPEID_PLAYER && ((Player*)m_caster)->GetTransport())
+                if (m_caster->IsPlayer() && ((Player*)m_caster)->GetTransport())
                 {
                     return SPELL_FAILED_NO_MOUNTS_ALLOWED;
                 }
@@ -1578,7 +1578,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 }
 
                 // Ignore map check if spell have AreaId. AreaId already checked and this prevent special mount spells
-                if (!isAQ40Mounted && m_caster->GetTypeId() == TYPEID_PLAYER && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed() && !m_IsTriggeredSpell) //[-ZERO] && !m_spellInfo->AreaId)
+                if (!isAQ40Mounted && m_caster->IsPlayer() && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed() && !m_IsTriggeredSpell) //[-ZERO] && !m_spellInfo->AreaId)
                 {
                     return SPELL_FAILED_NO_MOUNTS_ALLOWED;
                 }
@@ -1615,7 +1615,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     return SPELL_FAILED_BAD_IMPLICIT_TARGETS;
                 }
 
-                if (m_caster->GetTypeId() != TYPEID_PLAYER || m_CastItem)
+                if (!m_caster->IsPlayer() || m_CastItem)
                 {
                     break;
                 }
@@ -1633,7 +1633,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     return SPELL_FAILED_BAD_IMPLICIT_TARGETS;
                 }
 
-                if (expectedTarget->GetTypeId() == TYPEID_PLAYER)
+                if (expectedTarget->IsPlayer())
                 {
                     Player const* player = static_cast<Player const*>(expectedTarget);
 
@@ -1652,7 +1652,7 @@ SpellCastResult Spell::CheckCast(bool strict)
     // check trade slot case (last, for allow catch any another cast problems)
     if (m_targets.m_targetMask & TARGET_FLAG_TRADE_ITEM)
     {
-        if (m_caster->GetTypeId() != TYPEID_PLAYER)
+        if (!m_caster->IsPlayer())
         {
             return SPELL_FAILED_NOT_TRADING;
         }
@@ -1706,7 +1706,7 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
         return SPELL_FAILED_AFFECTING_COMBAT;
     }
 
-    if (m_caster->GetTypeId() == TYPEID_UNIT && (((Creature*)m_caster)->IsPet() || m_caster->IsCharmed()))
+    if (m_caster->IsCreature() && (((Creature*)m_caster)->IsPet() || m_caster->IsCharmed()))
     {
         // dead owner (pets still alive when owners ressed?)
         if (m_caster->GetCharmerOrOwner() && !m_caster->GetCharmerOrOwner()->IsAlive())
@@ -2204,7 +2204,7 @@ SpellCastResult Spell::CheckPower()
     }
 
     // Questgivers ignore power requirements for scripts, any other creature (except a per) is checked only in combat
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         // power for pets should be checked
         if (!m_caster->GetObjectGuid().IsPet() && m_caster->HasNpcFlag(UNIT_NPC_FLAG_QUESTGIVER) && !m_caster->IsInCombat())
@@ -2275,7 +2275,7 @@ bool Spell::IgnoreItemRequirements() const
  */
 SpellCastResult Spell::CheckItems()
 {
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         return SPELL_CAST_OK;
     }
@@ -2400,7 +2400,7 @@ SpellCastResult Spell::CheckItems()
     // check target item (for triggered case not report error)
     if (m_targets.getItemTargetGuid())
     {
-        if (m_caster->GetTypeId() != TYPEID_PLAYER)
+        if (!m_caster->IsPlayer())
         {
             return m_IsTriggeredSpell && !(m_targets.m_targetMask & TARGET_FLAG_TRADE_ITEM)
                 ? SPELL_FAILED_DONT_REPORT : SPELL_FAILED_BAD_TARGETS;
@@ -2421,7 +2421,7 @@ SpellCastResult Spell::CheckItems()
     // if not item target then required item must be equipped (for triggered case not report error)
     else
     {
-        if (m_caster->GetTypeId() == TYPEID_PLAYER && !((Player*)m_caster)->HasItemFitToSpellReqirements(m_spellInfo))
+        if (m_caster->IsPlayer() && !((Player*)m_caster)->HasItemFitToSpellReqirements(m_spellInfo))
         {
             return m_IsTriggeredSpell ? SPELL_FAILED_DONT_REPORT : SPELL_FAILED_EQUIPPED_ITEM_CLASS;
         }
@@ -2651,7 +2651,7 @@ SpellCastResult Spell::CheckItems()
             case SPELL_EFFECT_WEAPON_DAMAGE:
             case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:
             {
-                if (m_caster->GetTypeId() != TYPEID_PLAYER)
+                if (!m_caster->IsPlayer())
                 {
                     return SPELL_FAILED_TARGET_NOT_PLAYER;
                 }

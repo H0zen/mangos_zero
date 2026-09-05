@@ -322,7 +322,7 @@ struct npc_ouro_spawner : public CreatureScript
         void MoveInLineOfSight(Unit* pWho) override
         {
             // Spawn Ouro on LoS check
-            if (!m_bHasSummoned && pWho->GetTypeId() == TYPEID_PLAYER && !((Player*)pWho)->isGameMaster() && InReach(*m_creature, *pWho, 50.0f))
+            if (!m_bHasSummoned && pWho->IsPlayer() && !((Player*)pWho)->isGameMaster() && InReach(*m_creature, *pWho, 50.0f))
             {
 
                 if (DoCastSpellIfCan(m_creature, SPELL_SUMMON_OURO, CAST_TRIGGERED) == CAST_OK)

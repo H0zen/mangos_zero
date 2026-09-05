@@ -1857,7 +1857,7 @@ struct boss_plugger_spazzringAI : public ScriptedAI
 
     void SpellHit(Unit* pCaster, const SpellEntry* pSpell) override
     {
-        if (pCaster->GetTypeId() == TYPEID_PLAYER)
+        if (pCaster->IsPlayer())
         {
             if (SD3_SpellId(pSpell) == SPELL_PICKPOCKET)
             {

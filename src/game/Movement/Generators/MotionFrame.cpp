@@ -177,7 +177,7 @@ namespace Motion
                     // A player is pulled back to the first obstruction on the way, so a
                     // feared player cannot be shoved through a wall. The half-yard lift
                     // avoids false hits against the ground itself and small clutter.
-                    if (mover.GetTypeId() == TYPEID_PLAYER)
+                    if (mover.IsPlayer())
                     {
                         float testZ = p.z + 0.5f;
                         if (map->GetHitPosition(from.x, from.y, from.z + 0.5f,

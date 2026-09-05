@@ -196,7 +196,7 @@ struct boss_vaelastrasz : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* pSender, Unit* pInvoker, uint32 /*uiMiscValue*/) override
         {
-            if (eventType == AI_EVENT_START_EVENT && pSender == m_creature && pInvoker->GetTypeId() == TYPEID_PLAYER)
+            if (eventType == AI_EVENT_START_EVENT && pSender == m_creature && pInvoker->IsPlayer())
             {
                 BeginIntro();
             }

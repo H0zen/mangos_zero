@@ -196,7 +196,7 @@ void Player::UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target)
         {
             ObjectGuid t_guid = target->GetObjectGuid();
 
-            if (target->GetTypeId() == TYPEID_UNIT)
+            if (target->IsCreature())
             {
                 BeforeVisibilityDestroy(target, this);
             }
@@ -212,7 +212,7 @@ void Player::UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target)
         if (target->IsVisibleForInState(this, viewPoint, false))
         {
             target->SendCreateUpdateToPlayer(this);
-            if (target->GetTypeId() != TYPEID_GAMEOBJECT || !((GameObject*)target)->IsMovingPlatform())
+            if (!target->IsGameObject() || !((GameObject*)target)->IsMovingPlatform())
             {
                 m_clientGUIDs.insert(target->GetObjectGuid());
             }

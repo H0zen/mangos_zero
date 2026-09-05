@@ -65,7 +65,7 @@
 bool Unit::CanHaveThreatList(bool ignoreAliveState/*=false*/) const
 {
     // only creatures can have threat list
-    if (GetTypeId() != TYPEID_UNIT)
+    if (!IsCreature())
     {
         return false;
     }
@@ -132,9 +132,9 @@ void Unit::DeleteThreatList()
 
 void Unit::TauntApply(Unit* taunter)
 {
-    MANGOS_ASSERT(GetTypeId() == TYPEID_UNIT);
+    MANGOS_ASSERT(IsCreature());
 
-    if (!taunter || (taunter->GetTypeId() == TYPEID_PLAYER && ((Player*)taunter)->isGameMaster()))
+    if (!taunter || (taunter->IsPlayer() && ((Player*)taunter)->isGameMaster()))
     {
         return;
     }
@@ -170,9 +170,9 @@ void Unit::TauntApply(Unit* taunter)
 
 void Unit::TauntFadeOut(Unit* taunter)
 {
-    MANGOS_ASSERT(GetTypeId() == TYPEID_UNIT);
+    MANGOS_ASSERT(IsCreature());
 
-    if (!taunter || (taunter->GetTypeId() == TYPEID_PLAYER && ((Player*)taunter)->isGameMaster()))
+    if (!taunter || (taunter->IsPlayer() && ((Player*)taunter)->isGameMaster()))
     {
         return;
     }
@@ -247,7 +247,7 @@ void Unit::FixateTarget(Unit* pVictim)
 
 bool Unit::IsSecondChoiceTarget(Unit* pTarget, bool checkThreatArea)
 {
-    MANGOS_ASSERT(pTarget && GetTypeId() == TYPEID_UNIT);
+    MANGOS_ASSERT(pTarget && IsCreature());
 
     return pTarget->IsImmuneToDamage(GetMeleeDamageSchoolMask()) ||
         pTarget->hasNegativeAuraWithInterruptFlag(AURA_INTERRUPT_FLAG_DAMAGE) ||
@@ -260,7 +260,7 @@ bool Unit::SelectHostileTarget()
     // next-victim-selection algorithm and evade mode are called
     // threat list sorting etc.
 
-    MANGOS_ASSERT(GetTypeId() == TYPEID_UNIT);
+    MANGOS_ASSERT(IsCreature());
 
     if (!this->IsAlive())
     {

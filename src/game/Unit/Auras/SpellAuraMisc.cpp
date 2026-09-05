@@ -152,7 +152,7 @@ void Aura::HandleShapeshiftBoosts(bool apply)
             target->CastSpell(target, spellId2, true, nullptr, this);
         }
 
-        if (target->GetTypeId() == TYPEID_PLAYER)
+        if (target->IsPlayer())
         {
             const PlayerSpellMap& sp_list = ((Player*)target)->GetSpellMap();
             for (PlayerSpellMap::const_iterator itr = sp_list.begin(); itr != sp_list.end(); ++itr)
@@ -238,7 +238,7 @@ void Aura::HandleAuraEmpathy(bool apply, bool /*Real*/)
 
     // This aura is expected to only work with CREATURE_TYPE_BEAST or players
     CreatureInfo const* ci = ObjectMgr::GetCreatureTemplate(target->GetEntry());
-    if (target->GetTypeId() == TYPEID_PLAYER || (target->GetTypeId() == TYPEID_UNIT && ci && ci->CreatureType == CREATURE_TYPE_BEAST))
+    if (target->IsPlayer() || (target->IsCreature() && ci && ci->CreatureType == CREATURE_TYPE_BEAST))
     {
         target->ApplyModUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_SPECIALINFO, apply);
     }
@@ -320,7 +320,7 @@ void Aura::HandleAuraRetainComboPoints(bool apply, bool Real)
         return;
     }
 
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -373,7 +373,7 @@ void Aura::HandleSpiritOfRedemption(bool apply, bool Real)
     // prepare spirit state
     if (apply)
     {
-        if (target->GetTypeId() == TYPEID_PLAYER)
+        if (target->IsPlayer())
         {
             // disable breath/etc timers
             ((Player*)target)->StopMirrorTimers();
@@ -426,7 +426,7 @@ void Aura::HandleSchoolAbsorb(bool apply, bool Real)
     if (apply)
     {
         // prevent double apply bonuses
-        if (target->GetTypeId() != TYPEID_PLAYER || !((Player*)target)->GetSession()->PlayerLoading())
+        if (!target->IsPlayer() || !((Player*)target)->GetSession()->PlayerLoading())
         {
             float DoneActualBenefit = 0.0f;
             switch (spellProto->SpellClassSet)

@@ -567,7 +567,7 @@ struct boss_arugal : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->GetTypeId() == TYPEID_PLAYER)
+            if (pVictim->IsPlayer())
             {
                 DoScriptText(YELL_KILLED_PLAYER, m_creature);
             }

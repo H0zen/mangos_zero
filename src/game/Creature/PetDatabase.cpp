@@ -306,7 +306,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
 
     }
 
-    Player* p_owner = owner->GetTypeId() == TYPEID_PLAYER ? (Player*)owner : nullptr;
+    Player* p_owner = owner->IsPlayer() ? (Player*)owner : nullptr;
 
     map->Add((Creature*)this);
     AIM_Initialize();

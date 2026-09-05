@@ -94,7 +94,7 @@ bool ChatHandler::HandleRespawnCommand(char* /*args*/)
     Unit* target = getSelectedUnit();
     if (pl->GetSelectionGuid() && target)
     {
-        if (target->GetTypeId() != TYPEID_UNIT)
+        if (!target->IsCreature())
         {
             SendSysMessage(LANG_SELECT_CREATURE);
             SetSentErrorMessage(true);
@@ -1067,7 +1067,7 @@ bool ChatHandler::HandleNpcChangeEntryCommand(char* args)
     }
 
     Unit* unit = getSelectedUnit();
-    if (!unit || unit->GetTypeId() != TYPEID_UNIT)
+    if (!unit || !unit->IsCreature())
     {
         SendSysMessage(LANG_SELECT_CREATURE);
         SetSentErrorMessage(true);
@@ -1109,7 +1109,7 @@ namespace
 
         handler.PSendSysMessage("  %s=%s", label, unit->GetGuidStr().c_str());
 
-        if (unit->GetTypeId() == TYPEID_UNIT)
+        if (unit->IsCreature())
         {
             handler.PSendSysMessage("    creature entry=%u name=\"%s\"",
                                     unit->GetEntry(), unit->GetName());

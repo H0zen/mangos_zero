@@ -77,7 +77,7 @@ void Spell::EffectResurrectNew(SpellEffectIndex eff_idx)
         return;
     }
 
-    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget->IsPlayer())
     {
         return;
     }
@@ -113,7 +113,7 @@ void Spell::EffectInstaKill(SpellEffectIndex /*eff_idx*/)
     }
 
     // Demonic Sacrifice
-    if (m_spellInfo->ID == 18788 && unitTarget->GetTypeId() == TYPEID_UNIT)
+    if (m_spellInfo->ID == 18788 && unitTarget->IsCreature())
     {
         uint32 entry = unitTarget->GetEntry();
         uint32 spellID;
@@ -161,7 +161,7 @@ void Spell::EffectEnvironmentalDMG(SpellEffectIndex eff_idx)
     m_caster->CalculateDamageAbsorbAndResist(m_caster, GetSpellSchoolMask(m_spellInfo), SPELL_DIRECT_DAMAGE, damage, &absorb, &resist);
 
     m_caster->SendSpellNonMeleeDamageLog(m_caster, m_spellInfo->ID, damage, GetSpellSchoolMask(m_spellInfo), absorb, resist, false, 0, false);
-    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+    if (m_caster->IsPlayer())
     {
         ((Player*)m_caster)->EnvironmentalDamage(DAMAGE_FIRE, damage);
     }
@@ -211,7 +211,7 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                     // Judgement of Command
                     case 20467:    case 20963:    case 20964:    case 20965:    case 20966:
                     {
-                        if (!unitTarget->hasUnitState(UNIT_STAT_STUNNED) && m_caster->GetTypeId() == TYPEID_PLAYER)
+                        if (!unitTarget->hasUnitState(UNIT_STAT_STUNNED) && m_caster->IsPlayer())
                         {
                             damage /= 2;
                         }
@@ -272,7 +272,7 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
             case SPELLFAMILY_ROGUE:
             {
                 // Eviscerate
-                if ((m_spellInfo->SpellClassMask & UI64LIT(0x00020000)) && m_caster->GetTypeId() == TYPEID_PLAYER)
+                if ((m_spellInfo->SpellClassMask & UI64LIT(0x00020000)) && m_caster->IsPlayer())
                 {
                     if (uint32 combo = ((Player*)m_caster)->GetComboPoints())
                     {
@@ -339,7 +339,7 @@ void Spell::EffectTriggerSpell(SpellEffectIndex eff_idx)
             unitTarget->RemoveAurasOfType(SPELL_AURA_MOD_STALKED);
 
             // if this spell is given to NPC it must handle rest by it's own AI
-            if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+            if (!unitTarget->IsPlayer())
             {
                 return;
             }
@@ -425,7 +425,7 @@ void Spell::EffectTriggerSpell(SpellEffectIndex eff_idx)
     Unit* caster = m_caster;
 
     // some triggered spells require specific equipment
-    if (spellInfo->EquippedItemClass >= 0 && m_caster->GetTypeId() == TYPEID_PLAYER)
+    if (spellInfo->EquippedItemClass >= 0 && m_caster->IsPlayer())
     {
         // main hand weapon required
         if (spellInfo->AttributesExC & SPELL_ATTR_EX3_MAIN_HAND)
@@ -527,7 +527,7 @@ void Spell::EffectTeleportUnits(SpellEffectIndex eff_idx)   // TODO - Use target
         case TARGET_INNKEEPER_COORDINATES:
         {
             // Only players can teleport to innkeeper
-            if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+            if (!unitTarget->IsPlayer())
             {
                 return;
             }
@@ -549,7 +549,7 @@ void Spell::EffectTeleportUnits(SpellEffectIndex eff_idx)   // TODO - Use target
             {
                 unitTarget->NearTeleportTo(st->target_X, st->target_Y, st->target_Z, st->target_Orientation, unitTarget == m_caster);
             }
-            else if (unitTarget->GetTypeId() == TYPEID_PLAYER)
+            else if (unitTarget->IsPlayer())
             {
                 ((Player*)unitTarget)->TeleportTo(st->target_mapId, st->target_X, st->target_Y, st->target_Z, st->target_Orientation, unitTarget == m_caster ? TELE_TO_SPELL : 0);
             }

@@ -2103,7 +2103,7 @@ void Map::AddToActive(Occupant* obj)
     MaybePromoteEnvelopeGridForPlayer(cell.GridX(), cell.GridY());
 
     // also not allow unloading spawn grid to prevent creating creature clone at load
-    if (obj->GetTypeId() == TYPEID_UNIT)
+    if (obj->IsCreature())
     {
         Creature* c = (Creature*)obj;
 
@@ -2155,7 +2155,7 @@ void Map::RemoveFromActive(Occupant* obj)
     }
 
     // also allow unloading spawn grid
-    if (obj->GetTypeId() == TYPEID_UNIT)
+    if (obj->IsCreature())
     {
         Creature* c = (Creature*)obj;
 

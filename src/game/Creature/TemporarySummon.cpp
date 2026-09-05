@@ -281,7 +281,7 @@ void TemporarySummon::RemoveFromWorld()
         if (charmer && charmer->GetCharmGuid() == GetObjectGuid())
         {
             charmer->Uncharm();
-            if (charmer->GetCharmGuid() == GetObjectGuid() && charmer->GetTypeId() == TYPEID_PLAYER)
+            if (charmer->GetCharmGuid() == GetObjectGuid() && charmer->IsPlayer())
             {
                 Player* player = (Player*)charmer;
                 Camera& camera = player->GetCamera();

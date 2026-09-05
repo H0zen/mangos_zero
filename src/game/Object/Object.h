@@ -483,58 +483,100 @@ class Object
         Object& operator=(Object const&);                   // prevent generation assigment operator
 
     public:
+        /// It is a player, which on the wire is TypeID 4.
+        bool IsPlayer() const { return IsPlayer(); }
+
+        /// A unit that is not a player. There is no creature TypeID: see the note
+        /// on ToCreature below for why that is the whole of the question.
+        bool IsCreature() const { return IsCreature(); }
+
+        /// Anything alive, a player included: the mask carries the whole chain.
+        bool IsUnit() const { return isType(TYPEMASK_UNIT); }
+
+        bool IsGameObject() const { return IsGameObject(); }
+        bool IsCorpse() const { return IsCorpse(); }
+        bool IsDynObject() const { return IsDynObject(); }
+
         // for output helpfull error messages from ASSERTs
         bool PrintIndexError(uint32 index, bool set) const;
         bool PrintEntryError(char const* descr) const;
 };
 
-// Helper functions to cast between different Object pointers. Useful when unsure that your object* is valid at all.
-inline GameObject* ToGameObject(Object* object)
+/**
+ * Asking an object to be one of the kinds it might be.
+ *
+ * THERE IS NO CREATURE ON THE WIRE. The client's own hierarchy has CGUnit_C at
+ * TypeID 3 and CGPlayer_C at 4, with nothing in between: a creature IS a unit,
+ * and what makes it a creature arrives separately, in the record the client
+ * caches from SMSG_CREATURE_QUERY_RESPONSE. This core agrees without meaning to
+ * -- Unit's constructor sets TYPEID_UNIT and Creature never touches it -- so a
+ * creature goes out as TypeID 3 like anything else alive that is not a player.
+ *
+ * Which is why ToCreature tests IsCreature, and IsCreature reads "a unit that is
+ * not a player". The name is the invariant it rests on: in this core every Unit
+ * is either a Player or a Creature, and nothing else derives from Unit.
+ *
+ * Each of these is a template so that the cast is compiled where the caller
+ * stands, with the derived type complete, rather than being taken on trust in a
+ * header that has only heard the name.
+ */
+
+template <typename T = GameObject>
+inline T* ToGameObject(Object* object)
 {
-    return object && object->GetTypeId() == TYPEID_GAMEOBJECT ? reinterpret_cast<GameObject*>(object) : nullptr;
+    return object && object->IsGameObject() ? static_cast<T*>(object) : nullptr;
 }
 
-inline GameObject const* ToGameObject(Object const* object)
+template <typename T = GameObject>
+inline T const* ToGameObject(Object const* object)
 {
-    return object && object->GetTypeId() == TYPEID_GAMEOBJECT ? reinterpret_cast<GameObject const*>(object) : nullptr;
+    return object && object->IsGameObject() ? static_cast<T const*>(object) : nullptr;
 }
 
-inline Unit* ToUnit(Object* object)
+template <typename T = Unit>
+inline T* ToUnit(Object* object)
 {
-    return object && object->isType(TYPEMASK_UNIT) ? reinterpret_cast<Unit*>(object) : nullptr;
+    return object && object->IsUnit() ? static_cast<T*>(object) : nullptr;
 }
 
-inline Unit const* ToUnit(Object const* object)
+template <typename T = Unit>
+inline T const* ToUnit(Object const* object)
 {
-    return object && object->isType(TYPEMASK_UNIT) ? reinterpret_cast<Unit const*>(object) : nullptr;
+    return object && object->IsUnit() ? static_cast<T const*>(object) : nullptr;
 }
 
-inline Creature* ToCreature(Object* object)
+template <typename T = Creature>
+inline T* ToCreature(Object* object)
 {
-    return object && object->GetTypeId() == TYPEID_UNIT ? reinterpret_cast<Creature*>(object) : nullptr;
+    return object && object->IsCreature() ? static_cast<T*>(object) : nullptr;
 }
 
-inline Creature const* ToCreature(Object const* object)
+template <typename T = Creature>
+inline T const* ToCreature(Object const* object)
 {
-    return object && object->GetTypeId() == TYPEID_UNIT ? reinterpret_cast<Creature const*>(object) : nullptr;
+    return object && object->IsCreature() ? static_cast<T const*>(object) : nullptr;
 }
 
-inline Player* ToPlayer(Object* object)
+template <typename T = Player>
+inline T* ToPlayer(Object* object)
 {
-    return object && object->GetTypeId() == TYPEID_PLAYER ? reinterpret_cast<Player*>(object) : nullptr;
+    return object && object->IsPlayer() ? static_cast<T*>(object) : nullptr;
 }
 
-inline Player const* ToPlayer(Object const* object)
+template <typename T = Player>
+inline T const* ToPlayer(Object const* object)
 {
-    return object && object->GetTypeId() == TYPEID_PLAYER ? reinterpret_cast<Player const*>(object) : nullptr;
+    return object && object->IsPlayer() ? static_cast<T const*>(object) : nullptr;
 }
 
-inline Corpse const* ToCorpse(Object const* object)
+template <typename T = Corpse>
+inline T const* ToCorpse(Object const* object)
 {
-    return object && object->GetTypeId() == TYPEID_CORPSE ? reinterpret_cast<Corpse const*>(object) : nullptr;
+    return object && object->IsCorpse() ? static_cast<T const*>(object) : nullptr;
 }
 
-inline DynamicObject const* ToDynObject(Object const* object)
+template <typename T = DynamicObject>
+inline T const* ToDynObject(Object const* object)
 {
-    return object && object->GetTypeId() == TYPEID_DYNAMICOBJECT ? reinterpret_cast<DynamicObject const*>(object) : nullptr;
+    return object && object->IsDynObject() ? static_cast<T const*>(object) : nullptr;
 }

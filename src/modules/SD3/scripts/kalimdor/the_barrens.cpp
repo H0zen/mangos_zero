@@ -163,7 +163,7 @@ struct npc_gilthares : public CreatureScript
             }
 
             // only aggro text if not player and only in this area
-            if (pWho->GetTypeId() != TYPEID_PLAYER && m_creature->GetTerrain()->GetAreaId(m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z()) == AREA_MERCHANT_COAST)
+            if (!pWho->IsPlayer() && m_creature->GetTerrain()->GetAreaId(m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z()) == AREA_MERCHANT_COAST)
             {
                 // appears to be pretty much random (possible only if escorter not in combat with pWho yet?)
                 switch (urand(0, 3))
@@ -258,7 +258,7 @@ struct npc_taskmaster_fizzule : public CreatureScript
 
         void SpellHit(Unit* pCaster, const SpellEntry* pSpell) override
         {
-            if (pCaster->GetTypeId() == TYPEID_PLAYER && (SD3_SpellId(pSpell) == SPELL_FLARE || SD3_SpellId(pSpell) == SPELL_FOLLY))
+            if (pCaster->IsPlayer() && (SD3_SpellId(pSpell) == SPELL_FLARE || SD3_SpellId(pSpell) == SPELL_FOLLY))
             {
                 ++m_uiFlareCount;
 
@@ -464,7 +464,7 @@ struct npc_twiggy_flathead : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* pSender, Unit* pInvoker, uint32 /*uiMiscValue*/) override
         {
-            if (eventType == AI_EVENT_CUSTOM_A && pSender == m_creature && pInvoker->GetTypeId() == TYPEID_PLAYER)
+            if (eventType == AI_EVENT_CUSTOM_A && pSender == m_creature && pInvoker->IsPlayer())
             {
                 CanStartEvent(ToPlayer(pInvoker));
             }

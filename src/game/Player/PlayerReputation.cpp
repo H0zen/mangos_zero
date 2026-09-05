@@ -155,7 +155,7 @@ int32 Player::CalculateReputationGain(ReputationSource source, int32 rep, int32 
 // Calculates how many reputation points player gains in victim's enemy factions
 void Player::RewardReputation(Unit* pVictim, float rate)
 {
-    if (!pVictim || pVictim->GetTypeId() == TYPEID_PLAYER)
+    if (!pVictim || pVictim->IsPlayer())
     {
         return;
     }

@@ -2637,7 +2637,7 @@ void Creature::SetInCombatWithZone()
  */
 bool Creature::MeetsSelectAttackingRequirement(Unit* pTarget, SpellEntry const* pSpellInfo, uint32 selectFlags) const
 {
-    if (selectFlags & SELECT_FLAG_PLAYER && pTarget->GetTypeId() != TYPEID_PLAYER)
+    if (selectFlags & SELECT_FLAG_PLAYER && !pTarget->IsPlayer())
     {
         return false;
     }

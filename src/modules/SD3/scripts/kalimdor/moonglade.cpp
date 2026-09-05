@@ -657,7 +657,7 @@ struct boss_eranikus : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->GetTypeId() != TYPEID_PLAYER)
+            if (!pVictim->IsPlayer())
             {
                 return;
             }

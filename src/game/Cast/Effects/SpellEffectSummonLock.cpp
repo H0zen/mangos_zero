@@ -106,7 +106,7 @@ void Spell::SendLoot(ObjectGuid guid, LootType loottype, LockType lockType)
         }
     }
 
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         return;
     }
@@ -122,7 +122,7 @@ void Spell::SendLoot(ObjectGuid guid, LootType loottype, LockType lockType)
  */
 void Spell::EffectOpenLock(SpellEffectIndex eff_idx)
 {
-    if (!m_caster || m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster || !m_caster->IsPlayer())
     {
         DEBUG_LOG("WORLD: Open Lock - No Player Caster!");
         return;
@@ -233,7 +233,7 @@ void Spell::EffectOpenLock(SpellEffectIndex eff_idx)
  */
 void Spell::EffectSummonChangeItem(SpellEffectIndex eff_idx)
 {
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+    if (!m_caster->IsPlayer())
     {
         return;
     }
@@ -273,7 +273,7 @@ void Spell::EffectSummonChangeItem(SpellEffectIndex eff_idx)
  */
 void Spell::EffectProficiency(SpellEffectIndex /*eff_idx*/)
 {
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+    if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }

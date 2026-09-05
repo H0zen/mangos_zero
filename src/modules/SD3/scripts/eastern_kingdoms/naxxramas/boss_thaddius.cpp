@@ -174,7 +174,7 @@ struct boss_thaddius : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->GetTypeId() != TYPEID_PLAYER)
+            if (!pVictim->IsPlayer())
             {
                 return;
             }
@@ -767,7 +767,7 @@ struct boss_stalagg : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->GetTypeId() == TYPEID_PLAYER)
+            if (pVictim->IsPlayer())
             {
                 DoScriptText(SAY_STAL_SLAY, m_creature);
             }
@@ -831,7 +831,7 @@ struct boss_feugen : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->GetTypeId() == TYPEID_PLAYER)
+            if (pVictim->IsPlayer())
             {
                 DoScriptText(SAY_FEUG_SLAY, m_creature);
             }

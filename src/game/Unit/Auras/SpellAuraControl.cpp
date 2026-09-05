@@ -103,7 +103,7 @@ void Aura::HandleModPossess(bool apply, bool Real)
     }
 
     Unit* caster = GetCaster();
-    if (!caster || caster->GetTypeId() != TYPEID_PLAYER)
+    if (!caster || !caster->IsPlayer())
     {
         return;
     }
@@ -140,11 +140,11 @@ void Aura::HandleModPossess(bool apply, bool Real)
 
         p_caster->PossessSpellInitialize();
 
-        if (target->GetTypeId() == TYPEID_UNIT)
+        if (target->IsCreature())
         {
             ((Creature*)target)->AIM_Initialize();
         }
-        else if (target->GetTypeId() == TYPEID_PLAYER)
+        else if (target->IsPlayer())
         {
             ((Player*)target)->SetClientControl(target, 0);
         }
@@ -178,18 +178,18 @@ void Aura::HandleModPossess(bool apply, bool Real)
 
         target->SetCharmerGuid(ObjectGuid());
 
-        if (target->GetTypeId() == TYPEID_PLAYER)
+        if (target->IsPlayer())
         {
             ((Player*)target)->setFactionForRace(target->getRace());
             ((Player*)target)->SetClientControl(target, 1);
         }
-        else if (target->GetTypeId() == TYPEID_UNIT)
+        else if (target->IsCreature())
         {
             CreatureInfo const* cinfo = ((Creature*)target)->GetCreatureInfo();
             target->setFaction(cinfo->FactionAlliance);
         }
 
-        if (target->GetTypeId() == TYPEID_UNIT)
+        if (target->IsCreature())
         {
             ((Creature*)target)->AIM_Initialize();
             target->AttackedBy(caster);
@@ -211,13 +211,13 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
     }
 
     Unit* caster = GetCaster();
-    if (!caster || caster->GetTypeId() != TYPEID_PLAYER)
+    if (!caster || !caster->IsPlayer())
     {
         return;
     }
 
     Unit* target = GetTarget();
-    if (target->GetTypeId() != TYPEID_UNIT || !((Creature*)target)->IsPet())
+    if (!target->IsCreature() || !((Creature*)target)->IsPet())
     {
         return;
     }
@@ -326,14 +326,14 @@ void Aura::HandleModCharm(bool apply, bool Real)
         target->GetHostileRefManager().deleteReferences();
         target->GetMotionMaster()->MovementExpired(true);
 
-        if (target->GetTypeId() == TYPEID_UNIT)
+        if (target->IsCreature())
         {
             ((Creature*)target)->AIM_Initialize();
             CharmInfo* charmInfo = target->InitCharmInfo(target);
             charmInfo->InitCharmCreateSpells();
             charmInfo->SetReactState(REACT_DEFENSIVE);
 
-            if (caster->GetTypeId() == TYPEID_PLAYER && caster->getClass() == CLASS_WARLOCK)
+            if (caster->IsPlayer() && caster->getClass() == CLASS_WARLOCK)
             {
                 CreatureInfo const* cinfo = ((Creature*)target)->GetCreatureInfo();
                 if (cinfo && cinfo->CreatureType == CREATURE_TYPE_DEMON)
@@ -365,7 +365,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
             plTarget->SetClientControl(plTarget, 0);
         }
 
-        if (caster->GetTypeId() == TYPEID_PLAYER)
+        if (caster->IsPlayer())
         {
             ((Player*)caster)->CharmSpellInitialize();
         }
@@ -401,7 +401,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
             }
 
             // restore UNIT_FIELD_BYTES_0
-            if (cinfo && caster->GetTypeId() == TYPEID_PLAYER && caster->getClass() == CLASS_WARLOCK && cinfo->CreatureType == CREATURE_TYPE_DEMON)
+            if (cinfo && caster->IsPlayer() && caster->getClass() == CLASS_WARLOCK && cinfo->CreatureType == CREATURE_TYPE_DEMON)
             {
                 // DB must have proper class set in field at loading, not req. restore, including workaround case at apply
                 // m_target->SetClass(cinfo->unit_class);
@@ -419,7 +419,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
 
         caster->SetCharm(nullptr);
 
-        if (caster->GetTypeId() == TYPEID_PLAYER)
+        if (caster->IsPlayer())
         {
             ((Player*)caster)->RemovePetActionBar();
         }
@@ -429,7 +429,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
         target->GetHostileRefManager().deleteReferences();
         target->GetMotionMaster()->MovementExpired(true);
 
-        if (target->GetTypeId() == TYPEID_UNIT)
+        if (target->IsCreature())
         {
             ((Creature*)target)->AIM_Initialize();
             //target->AttackedBy(caster);
@@ -519,7 +519,7 @@ void Aura::HandleAuraModDisarm(bool apply, bool Real)
 
     target->ApplyUnitFlag(UNIT_FLAG_DISARMED, apply);
 
-    if (target->GetTypeId() != TYPEID_PLAYER)
+    if (!target->IsPlayer())
     {
         return;
     }
@@ -608,7 +608,7 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
         if (GetSpellProto()->SpellClassSet == SPELLFAMILY_HUNTER && GetSpellProto()->SpellClassMask & UI64LIT(0x00010000))
         {
             Unit* caster = GetCaster();
-            if (!caster || caster->GetTypeId() != TYPEID_PLAYER)
+            if (!caster || !caster->IsPlayer())
             {
                 return;
             }
@@ -680,7 +680,7 @@ void Aura::HandleModStealth(bool apply, bool Real)
             }
 
             // for RACE_NIGHTELF stealth
-            if (target->GetTypeId() == TYPEID_PLAYER && GetId() == 20580)
+            if (target->IsPlayer() && GetId() == 20580)
             {
                 target->CastSpell(target, 21009, true, nullptr, this);
             }
@@ -689,7 +689,7 @@ void Aura::HandleModStealth(bool apply, bool Real)
     else
     {
         // for RACE_NIGHTELF stealth
-        if (Real && target->GetTypeId() == TYPEID_PLAYER && GetId() == 20580)
+        if (Real && target->IsPlayer() && GetId() == 20580)
         {
             target->RemoveAuras(21009);
         }
@@ -815,7 +815,7 @@ void Aura::HandleInvisibilityDetect(bool apply, bool Real)
             target->m_detectInvisibilityMask |= (1 << aura->GetModifier()->m_miscvalue);
         }
     }
-    if (Real && target->GetTypeId() == TYPEID_PLAYER)
+    if (Real && target->IsPlayer())
     {
         ((Player*)target)->GetCamera().UpdateVisibilityForOwner();
     }
@@ -861,7 +861,7 @@ void Aura::HandleAuraModRoot(bool apply, bool Real)
 
         target->addUnitState(UNIT_STAT_ROOT);
 
-        if (target->GetTypeId() == TYPEID_PLAYER)
+        if (target->IsPlayer())
         {
             target->SetRoot(true);
 
@@ -999,7 +999,7 @@ void Aura::HandleModThreat(bool apply, bool Real)
         m_modifier.m_amount += multiplier * level_diff;
     }
 
-    if (target->GetTypeId() == TYPEID_PLAYER)
+    if (target->IsPlayer())
     {
         for (int8 x = 0; x < MAX_SPELL_SCHOOL; ++x)
         {
@@ -1027,7 +1027,7 @@ void Aura::HandleAuraModTotalThreat(bool apply, bool Real)
 
     Unit* target = GetTarget();
 
-    if (!target->IsAlive() || target->GetTypeId() != TYPEID_PLAYER)
+    if (!target->IsAlive() || !target->IsPlayer())
     {
         return;
     }
@@ -1226,7 +1226,7 @@ void Aura::HandleAuraModEffectImmunity(bool apply, bool /*Real*/)
     Unit* target = GetTarget();
 
     // when removing flag aura, handle flag drop
-    if (!apply && target->GetTypeId() == TYPEID_PLAYER &&
+    if (!apply && target->IsPlayer() &&
         (GetSpellProto()->AuraInterruptFlags & AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION))
     {
         Player* player = (Player*)target;

@@ -200,7 +200,7 @@ void Aura::HandlePeriodicHeal(bool apply, bool /*Real*/)
     Unit* target = GetTarget();
 
     // For prevent double apply bonuses
-    bool loading = (target->GetTypeId() == TYPEID_PLAYER && ((Player*)target)->GetSession()->PlayerLoading());
+    bool loading = (target->IsPlayer() && ((Player*)target)->GetSession()->PlayerLoading());
 
     // Custom damage calculation after
     if (apply)
@@ -240,7 +240,7 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
     SpellEntry const* spellProto = GetSpellProto();
 
     // For prevent double apply bonuses
-    bool loading = (target->GetTypeId() == TYPEID_PLAYER && ((Player*)target)->GetSession()->PlayerLoading());
+    bool loading = (target->IsPlayer() && ((Player*)target)->GetSession()->PlayerLoading());
 
     // Custom damage calculation after
     if (apply)
@@ -264,7 +264,7 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
                 if (spellProto->SpellClassMask & UI64LIT(0x000000000000800000))
                 {
                     // $AP * min(0.06*$cp, 0.24)/6 [Yes, there is no difference, whether 4 or 5 CPs are being used]
-                    if (caster->GetTypeId() == TYPEID_PLAYER)
+                    if (caster->IsPlayer())
                     {
                         uint8 cp = ((Player*)caster)->GetComboPoints();
 
@@ -282,7 +282,7 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
                 // Rupture
                 if (spellProto->SpellClassMask & UI64LIT(0x000000000000100000))
                 {
-                    if (caster->GetTypeId() != TYPEID_PLAYER)
+                    if (!caster->IsPlayer())
                     {
                         break;
                     }
@@ -339,7 +339,7 @@ void Aura::HandlePeriodicLeech(bool apply, bool /*Real*/)
     m_isPeriodic = apply;
 
     // For prevent double apply bonuses
-    bool loading = (GetTarget()->GetTypeId() == TYPEID_PLAYER && ((Player*)GetTarget())->GetSession()->PlayerLoading());
+    bool loading = (GetTarget()->IsPlayer() && ((Player*)GetTarget())->GetSession()->PlayerLoading());
 
     // Custom damage calculation after
     if (apply)
@@ -381,7 +381,7 @@ void Aura::HandlePeriodicHealthFunnel(bool apply, bool /*Real*/)
     m_isPeriodic = apply;
 
     // For prevent double apply bonuses
-    bool loading = (GetTarget()->GetTypeId() == TYPEID_PLAYER && ((Player*)GetTarget())->GetSession()->PlayerLoading());
+    bool loading = (GetTarget()->IsPlayer() && ((Player*)GetTarget())->GetSession()->PlayerLoading());
 
     // Custom damage calculation after
     if (apply)
@@ -408,7 +408,7 @@ void Aura::HandleAuraModResistanceExclusive(bool apply, bool /*Real*/)
         if (m_modifier.m_miscvalue & int32(1 << x))
         {
             GetTarget()->HandleStatModifier(UnitMods(UNIT_MOD_RESISTANCE_START + x), BASE_VALUE, float(m_modifier.m_amount), apply);
-            if (GetTarget()->GetTypeId() == TYPEID_PLAYER)
+            if (GetTarget()->IsPlayer())
             {
                 ((Player*)GetTarget())->ApplyResistanceBuffModsMod(SpellSchools(x), m_positive, float(m_modifier.m_amount), apply);
             }
@@ -432,7 +432,7 @@ void Aura::HandleAuraModResistance(bool apply, bool /*Real*/)
         if (m_modifier.m_miscvalue & int32(1 << x))
         {
             target->HandleStatModifier(UnitMods(UNIT_MOD_RESISTANCE_START + x), TOTAL_VALUE, float(m_modifier.m_amount), apply);
-            if (target->GetTypeId() == TYPEID_PLAYER)
+            if (target->IsPlayer())
             {
                 ((Player*)target)->ApplyResistanceBuffModsMod(SpellSchools(x), m_positive, float(m_modifier.m_amount), apply);
             }
@@ -458,7 +458,7 @@ void Aura::HandleAuraModResistance(bool apply, bool /*Real*/)
 void Aura::HandleAuraModBaseResistancePCT(bool apply, bool /*Real*/)
 {
     // only players have base stats
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         // pets only have base armor
         if (((Creature*)GetTarget())->IsPet() && (m_modifier.m_miscvalue & SPELL_SCHOOL_MASK_NORMAL))
@@ -493,7 +493,7 @@ void Aura::HandleModResistancePercent(bool apply, bool /*Real*/)
         if (m_modifier.m_miscvalue & int32(1 << i))
         {
             target->HandleStatModifier(UnitMods(UNIT_MOD_RESISTANCE_START + i), TOTAL_PCT, float(m_modifier.m_amount), apply);
-            if (target->GetTypeId() == TYPEID_PLAYER)
+            if (target->IsPlayer())
             {
                 ((Player*)target)->ApplyResistanceBuffModsPercentMod(SpellSchools(i), true, float(m_modifier.m_amount), apply);
                 ((Player*)target)->ApplyResistanceBuffModsPercentMod(SpellSchools(i), false, float(m_modifier.m_amount), apply);
@@ -511,7 +511,7 @@ void Aura::HandleModResistancePercent(bool apply, bool /*Real*/)
 void Aura::HandleModBaseResistance(bool apply, bool /*Real*/)
 {
     // only players have base stats
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         // only pets have base stats
         if (((Creature*)GetTarget())->IsPet() && (m_modifier.m_miscvalue & SPELL_SCHOOL_MASK_NORMAL))
@@ -546,7 +546,7 @@ void Aura::HandleAuraModStat(bool apply, bool /*Real*/)
         {
             // m_target->ApplyStatMod(Stats(i), m_modifier.m_amount,apply);
             GetTarget()->HandleStatModifier(UnitMods(UNIT_MOD_STAT_START + i), TOTAL_VALUE, float(m_modifier.m_amount), apply);
-            if (GetTarget()->GetTypeId() == TYPEID_PLAYER)
+            if (GetTarget()->IsPlayer())
             {
                 ((Player*)GetTarget())->ApplyStatBuffMod(Stats(i), float(m_modifier.m_amount), apply);
             }
@@ -569,7 +569,7 @@ void Aura::HandleModPercentStat(bool apply, bool /*Real*/)
     }
 
     // only players have base stats
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -591,7 +591,7 @@ void Aura::HandleModPercentStat(bool apply, bool /*Real*/)
  */
 void Aura::HandleModSpellDamagePercentFromStat(bool /*apply*/, bool /*Real*/)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -610,7 +610,7 @@ void Aura::HandleModSpellDamagePercentFromStat(bool /*apply*/, bool /*Real*/)
  */
 void Aura::HandleModSpellHealingPercentFromStat(bool /*apply*/, bool /*Real*/)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -627,7 +627,7 @@ void Aura::HandleModSpellHealingPercentFromStat(bool /*apply*/, bool /*Real*/)
  */
 void Aura::HandleModHealingDone(bool /*apply*/, bool /*Real*/)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -661,7 +661,7 @@ void Aura::HandleModTotalPercentStat(bool apply, bool /*Real*/)
         if (m_modifier.m_miscvalue == i || m_modifier.m_miscvalue == -1)
         {
             target->HandleStatModifier(UnitMods(UNIT_MOD_STAT_START + i), TOTAL_PCT, float(m_modifier.m_amount), apply);
-            if (target->GetTypeId() == TYPEID_PLAYER)
+            if (target->IsPlayer())
             {
                 ((Player*)target)->ApplyStatPercentBuffMod(Stats(i), float(m_modifier.m_amount), apply);
             }
@@ -685,7 +685,7 @@ void Aura::HandleModTotalPercentStat(bool apply, bool /*Real*/)
  */
 void Aura::HandleAuraModResistenceOfStatPercent(bool /*apply*/, bool /*Real*/)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -761,7 +761,7 @@ void Aura::HandleModPowerRegen(bool apply, bool Real)       // drinking
 
     m_periodicTimer = 5000;
 
-    if (GetTarget()->GetTypeId() == TYPEID_PLAYER && m_modifier.m_miscvalue == POWER_MANA)
+    if (GetTarget()->IsPlayer() && m_modifier.m_miscvalue == POWER_MANA)
     {
         ((Player*)GetTarget())->UpdateManaRegen();
     }
@@ -783,7 +783,7 @@ void Aura::HandleModPowerRegenPCT(bool /*apply*/, bool Real)
         return;
     }
 
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -907,7 +907,7 @@ void Aura::HandleAuraModIncreaseHealthPercent(bool apply, bool /*Real*/)
 
 void Aura::HandleAuraModParryPercent(bool /*apply*/, bool /*Real*/)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -923,7 +923,7 @@ void Aura::HandleAuraModParryPercent(bool /*apply*/, bool /*Real*/)
  */
 void Aura::HandleAuraModDodgePercent(bool /*apply*/, bool /*Real*/)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -946,7 +946,7 @@ void Aura::HandleAuraModRegenInterrupt(bool /*apply*/, bool Real)
         return;
     }
 
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -964,7 +964,7 @@ void Aura::HandleAuraModCritPercent(bool apply, bool Real)
 {
     Unit* target = GetTarget();
 
-    if (target->GetTypeId() != TYPEID_PLAYER)
+    if (!target->IsPlayer())
     {
         return;
     }
@@ -1047,7 +1047,7 @@ void Aura::HandleModSpellCritChance(bool apply, bool Real)
         return;
     }
 
-    if (GetTarget()->GetTypeId() == TYPEID_PLAYER)
+    if (GetTarget()->IsPlayer())
     {
         ((Player*)GetTarget())->UpdateAllSpellCritChances();
     }
@@ -1071,7 +1071,7 @@ void Aura::HandleModSpellCritChanceShool(bool /*apply*/, bool Real)
         return;
     }
 
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -1177,7 +1177,7 @@ void Aura::HandleAuraModRangedHaste(bool apply, bool /*Real*/)
  */
 void Aura::HandleRangedAmmoHaste(bool apply, bool /*Real*/)
 {
-    if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
+    if (!GetTarget()->IsPlayer())
     {
         return;
     }
@@ -1304,7 +1304,7 @@ void Aura::HandleModDamageDone(bool apply, bool Real)
     Unit* target = GetTarget();
 
     // apply item specific bonuses for already equipped weapon
-    if (Real && target->GetTypeId() == TYPEID_PLAYER)
+    if (Real && target->IsPlayer())
     {
         for (int i = 0; i < MAX_ATTACK; ++i)
         {
@@ -1327,7 +1327,7 @@ void Aura::HandleModDamageDone(bool apply, bool Real)
     if ((m_modifier.m_miscvalue & SPELL_SCHOOL_MASK_NORMAL) != 0)
     {
         // apply generic physical damage bonuses including wand case
-        if (GetSpellProto()->EquippedItemClass == -1 || target->GetTypeId() != TYPEID_PLAYER)
+        if (GetSpellProto()->EquippedItemClass == -1 || !target->IsPlayer())
         {
             target->HandleStatModifier(UNIT_MOD_DAMAGE_MAINHAND, TOTAL_VALUE, float(m_modifier.m_amount), apply);
             target->HandleStatModifier(UNIT_MOD_DAMAGE_OFFHAND, TOTAL_VALUE, float(m_modifier.m_amount), apply);
@@ -1338,7 +1338,7 @@ void Aura::HandleModDamageDone(bool apply, bool Real)
             // done in Player::_ApplyWeaponDependentAuraMods
         }
 
-        if (target->GetTypeId() == TYPEID_PLAYER)
+        if (target->IsPlayer())
         {
             if (m_positive)
             {
@@ -1368,7 +1368,7 @@ void Aura::HandleModDamageDone(bool apply, bool Real)
 
     // Magic damage modifiers implemented in Unit::SpellDamageBonusDone
     // This information for client side use only
-    if (target->GetTypeId() == TYPEID_PLAYER)
+    if (target->IsPlayer())
     {
         if (m_positive)
         {
@@ -1410,7 +1410,7 @@ void Aura::HandleModDamagePercentDone(bool apply, bool Real)
     Unit* target = GetTarget();
 
     // apply item specific bonuses for already equipped weapon
-    if (Real && target->GetTypeId() == TYPEID_PLAYER)
+    if (Real && target->IsPlayer())
     {
         for (int i = 0; i < MAX_ATTACK; ++i)
         {
@@ -1433,7 +1433,7 @@ void Aura::HandleModDamagePercentDone(bool apply, bool Real)
     if ((m_modifier.m_miscvalue & SPELL_SCHOOL_MASK_NORMAL) != 0)
     {
         // apply generic physical damage bonuses including wand case
-        if (GetSpellProto()->EquippedItemClass == -1 || target->GetTypeId() != TYPEID_PLAYER)
+        if (GetSpellProto()->EquippedItemClass == -1 || !target->IsPlayer())
         {
             target->HandleStatModifier(UNIT_MOD_DAMAGE_MAINHAND, TOTAL_PCT, float(m_modifier.m_amount), apply);
             target->HandleStatModifier(UNIT_MOD_DAMAGE_OFFHAND, TOTAL_PCT, float(m_modifier.m_amount), apply);

@@ -534,7 +534,7 @@ struct npc_cork_gizelton : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* /*pSender*/, Unit* pInvoker, uint32 uiMiscValue) override
         {
-            if (eventType == AI_EVENT_START_ESCORT && pInvoker->GetTypeId() == TYPEID_PLAYER)
+            if (eventType == AI_EVENT_START_ESCORT && pInvoker->IsPlayer())
             {
                 m_playerGuid = pInvoker->GetObjectGuid();
             }

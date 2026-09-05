@@ -128,7 +128,7 @@ struct boss_grobbulus : public CreatureScript
             {
                 if (Unit* pTarget = m_creature->GetMap()->GetUnit((*itr)->getUnitGuid()))
                 {
-                    if (pTarget->GetTypeId() == TYPEID_PLAYER && !pTarget->HasAura(SPELL_MUTATING_INJECTION))
+                    if (pTarget->IsPlayer() && !pTarget->HasAura(SPELL_MUTATING_INJECTION))
                     {
                         suitableTargets.push_back(pTarget);
                     }
@@ -154,7 +154,7 @@ struct boss_grobbulus : public CreatureScript
 
         void SpellHitTarget(Unit* pTarget, const SpellEntry* pSpell) override
         {
-            if ((SD3_SpellId(pSpell) == SPELL_SLIME_SPRAY) && pTarget->GetTypeId() == TYPEID_PLAYER)
+            if ((SD3_SpellId(pSpell) == SPELL_SLIME_SPRAY) && pTarget->IsPlayer())
             {
                 SummonCreature(*m_creature, NPC_FALLOUT_SLIME, pTarget->Where().X(), pTarget->Where().Y(), pTarget->Where().Z(), 0.0f, TEMPSPAWN_TIMED_OOC_DESPAWN, 10 * IN_MILLISECONDS);
             }

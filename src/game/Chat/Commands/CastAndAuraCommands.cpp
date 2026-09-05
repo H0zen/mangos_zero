@@ -396,7 +396,7 @@ bool ChatHandler::HandleAuraGroupCommand(char* args)
 
     if (rawTarget)
     {
-        if (rawTarget->GetTypeId() == TYPEID_UNIT)
+        if (rawTarget->IsCreature())
         {
             SendSysMessage(LANG_NO_CHAR_SELECTED);
             SetSentErrorMessage(true);
@@ -498,7 +498,7 @@ bool ChatHandler::HandleUnAuraGroupCommand(char* args)
 
     if (rawTarget)
     {
-        if (rawTarget->GetTypeId() == TYPEID_UNIT)
+        if (rawTarget->IsCreature())
         {
             SendSysMessage(LANG_NO_CHAR_SELECTED);
             SetSentErrorMessage(true);

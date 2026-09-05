@@ -193,7 +193,7 @@ struct boss_mandokir : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->GetTypeId() == TYPEID_PLAYER)
+            if (pVictim->IsPlayer())
             {
                 ++m_uiKillCount;
 
@@ -360,7 +360,7 @@ struct boss_mandokir : public CreatureScript
                     {
                         Unit* pTarget = m_creature->GetMap()->GetUnit((*i)->getUnitGuid());
 
-                        if (pTarget && pTarget->GetTypeId() == TYPEID_PLAYER && InMeleeReach(*m_creature, *pTarget))
+                        if (pTarget && pTarget->IsPlayer() && InMeleeReach(*m_creature, *pTarget))
                         {
                             ++uiTargetInRangeCount;
                         }
@@ -423,7 +423,7 @@ struct mob_ohgan : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->GetTypeId() == TYPEID_PLAYER)
+            if (pVictim->IsPlayer())
             {
                 if (m_creature->IsInCombat())
                 {

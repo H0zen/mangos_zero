@@ -126,7 +126,7 @@ struct spell_apply_salve : public SpellScript
         if (uiSpellId == SPELL_APPLY_SALVE && uiEffIndex == EFFECT_INDEX_0)
         {
             Creature *pCreatureTarget = ToCreature(pTarget);
-            if (pCaster->GetTypeId() != TYPEID_PLAYER || !pCreatureTarget)
+            if (!pCaster->IsPlayer() || !pCreatureTarget)
             {
                 return true;
             }
@@ -174,7 +174,7 @@ struct spell_melodious_rapture : public SpellScript
         if (uiSpellId == SPELL_MELODIOUS_RAPTURE && uiEffIndex == EFFECT_INDEX_0)
         {
             Creature *pCreatureTarget = ToCreature(pTarget);
-            if (pCaster->GetTypeId() != TYPEID_PLAYER || !pCreatureTarget || (pCreatureTarget->GetEntry() != NPC_DEEPRUN_RAT))
+            if (!pCaster->IsPlayer() || !pCreatureTarget || (pCreatureTarget->GetEntry() != NPC_DEEPRUN_RAT))
             {
                 return true;
             }

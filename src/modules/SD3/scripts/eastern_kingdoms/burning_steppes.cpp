@@ -60,7 +60,7 @@ struct npc_ragged_john : public CreatureScript
         {
             if (who->HasAura(16468, EFFECT_INDEX_0))
             {
-                if (who->GetTypeId() == TYPEID_PLAYER && InReach(*m_creature, *who, 15) && who->isInAccessablePlaceFor(m_creature))
+                if (who->IsPlayer() && InReach(*m_creature, *who, 15) && who->isInAccessablePlaceFor(m_creature))
                 {
                     DoCastSpellIfCan(who, 16472);
                     ((Player*)who)->AreaExploredOrEventHappens(4866);

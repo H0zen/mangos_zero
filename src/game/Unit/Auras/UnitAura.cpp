@@ -365,7 +365,7 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder* holder)
     // ghost spell check, allow apply any auras at player loading in ghost mode (will be cleanup after load)
     if (!IsAlive() && !IsDeathPersistentSpell(aurSpellInfo) &&
         !IsDeathOnlySpell(aurSpellInfo) &&
-        (GetTypeId() != TYPEID_PLAYER || !((Player*)this)->GetSession()->PlayerLoading()))
+        (!IsPlayer() || !((Player*)this)->GetSession()->PlayerLoading()))
     {
         delete holder;
         return false;
@@ -374,8 +374,8 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder* holder)
     if (holder->GetTarget() != this)
     {
         sLog.outError("Holder (spell %u) add to spell aura holder list of %s (lowguid: %u) but spell aura holder target is %s (lowguid: %u)",
-            holder->GetId(), (GetTypeId() == TYPEID_PLAYER ? "player" : "creature"), GetGUIDLow(),
-            (holder->GetTarget()->GetTypeId() == TYPEID_PLAYER ? "player" : "creature"), holder->GetTarget()->GetGUIDLow());
+            holder->GetId(), (IsPlayer() ? "player" : "creature"), GetGUIDLow(),
+            (holder->GetTarget()->IsPlayer() ? "player" : "creature"), holder->GetTarget()->GetGUIDLow());
         delete holder;
         return false;
     }
@@ -1180,7 +1180,7 @@ void Unit::RemoveHolder(SpellAuraHolder* holder, AuraRemoveMode mode)
     Unit* caster = holder->GetCaster();
     if (IsChanneledSpell(AurSpellInfo) && caster)
     {
-        if (caster->GetTypeId() == TYPEID_UNIT && ((Creature*)caster)->IsTotem() && ((Totem*)caster)->GetTotemType() == TOTEM_STATUE)
+        if (caster->IsCreature() && ((Creature*)caster)->IsTotem() && ((Totem*)caster)->GetTotemType() == TOTEM_STATUE)
         {
             statue = ((Totem*)caster);
         }
@@ -1388,7 +1388,7 @@ void Unit::RemoveAllAurasOnEvade()
     // has earned it. The flag says exactly what the claim says, so the two are
     // dropped together or they disagree -- and a claim left standing here is a
     // corpse the killer cannot loot.
-    if (GetTypeId() == TYPEID_UNIT)
+    if (IsCreature())
     {
         RemoveDynFlag(UNIT_DYNFLAG_TAPPED);
 
