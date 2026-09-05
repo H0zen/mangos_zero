@@ -32,7 +32,7 @@
 
 #include "doctest.h"
 
-#include "Components/Diminishing.h"
+#include "Unit/Auras/Diminishing.h"
 
 using unit::Diminishing;
 using unit::Fade;

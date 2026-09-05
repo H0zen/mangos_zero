@@ -32,7 +32,7 @@
 
 #include "doctest.h"
 
-#include "Object/AuraIndex.h"
+#include "Unit/Auras/AuraIndex.h"
 
 #include <vector>
 #include <cstdint>

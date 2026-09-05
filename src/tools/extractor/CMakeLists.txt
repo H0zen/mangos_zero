@@ -54,7 +54,7 @@ target_include_directories(extractor_data
         ${CMAKE_SOURCE_DIR}/src/shared
         ${CMAKE_SOURCE_DIR}/src/game
 
-        ${CMAKE_SOURCE_DIR}/src/game/WorldHandlers
+        ${CMAKE_SOURCE_DIR}/src/game/Movement/Navigation
 )
 
 target_link_libraries(extractor_data

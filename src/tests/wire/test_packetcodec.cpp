@@ -29,7 +29,7 @@
 
 #include "doctest.h"
 
-#include "Protocol/PacketCodec.h"
+#include "Packet/PacketCodec.h"
 
 #include <cstdint>
 #include <vector>

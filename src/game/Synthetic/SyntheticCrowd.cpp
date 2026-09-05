@@ -32,7 +32,7 @@
 #include "ObjectMgr.h"
 #include "Opcodes.h"
 #include "Player.h"
-#include "MotionGenerators/MotionMaster.h"
+#include "Movement/Generators/MotionMaster.h"
 #include "PlayerRegistry.h"
 #include "SessionMailbox.h"
 #include "World.h"

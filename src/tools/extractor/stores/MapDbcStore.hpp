@@ -6,7 +6,7 @@
 
 #include "MpqDbcLoader.hpp"
 
-#include "Server/DBCfmt.h"
+#include "DataStore/DBCfmt.h"
 
 #include <cstdint>
 #include <map>

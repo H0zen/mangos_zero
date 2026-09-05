@@ -1,93 +1,176 @@
-file(GLOB SRC_GRP_BATTLEGROUND BattleGround/*.cpp BattleGround/*.h)
-source_group("BattleGround" FILES ${SRC_GRP_BATTLEGROUND})
+# The game library, laid out by subsystem as in emDOC/ARCH.md section 6.
+#
+# One group per directory. A group is the unit a reviewer reads, so the name
+# says what the code is for rather than which class it came out of.
 
-file(GLOB SRC_GRP_CHAT_COMMANDS ChatCommands/*.cpp ChatCommands/*.h)
-source_group("Chat Commands" FILES ${SRC_GRP_CHAT_COMMANDS})
+macro(game_group VAR FOLDER)
+    file(GLOB ${VAR} ${FOLDER}/*.cpp ${FOLDER}/*.h)
+    string(REPLACE "/" "\\" _display "${FOLDER}")
+    source_group("${_display}" FILES ${${VAR}})
+endmacro()
 
-file(GLOB SRC_GRP_COMPONENTS Components/*.cpp Components/*.h)
-source_group("Components" FILES ${SRC_GRP_COMPONENTS})
+# What a thing in the world is
+game_group(SRC_OBJECT           Object)
+game_group(SRC_UPDATEFIELDS     UpdateFields)
+game_group(SRC_VISIBILITY       Visibility)
 
-file(GLOB SRC_GRP_COMBAT Combat/*.cpp Combat/*.h)
-source_group("Combat" FILES ${SRC_GRP_COMBAT})
+# The kinds of thing
+game_group(SRC_UNIT             Unit)
+game_group(SRC_AURAS            Unit/Auras)
+game_group(SRC_PLAYER           Player)
+game_group(SRC_PLAYER_PACK      Player/Pack)
+game_group(SRC_PLAYER_JOURNAL   Player/Journal)
+game_group(SRC_PLAYER_TALENTS   Player/Talents)
+game_group(SRC_CREATURE         Creature)
+game_group(SRC_CREATURE_AI      Creature/AI)
+game_group(SRC_GAMEOBJECT       GameObject)
+game_group(SRC_ITEM             Item)
+game_group(SRC_CORPSE           Corpse)
 
-file(GLOB SRC_GRP_SYNTHETIC Synthetic/*.cpp Synthetic/*.h)
-source_group("Synthetic" FILES ${SRC_GRP_SYNTHETIC})
+# What they do to each other
+game_group(SRC_COMBAT           Combat)
+game_group(SRC_CAST             Cast)
+game_group(SRC_CAST_EFFECTS     Cast/Effects)
+game_group(SRC_LOOT             Loot)
 
-file(GLOB SRC_GRP_METRICS Metrics/*.cpp Metrics/*.h)
-source_group("Metrics" FILES ${SRC_GRP_METRICS})
+# Where they stand and how they get about
+game_group(SRC_MAP              Map)
+game_group(SRC_MAP_GRID         Map/Grid)
+game_group(SRC_MAP_COLLISION    Map/Collision)
+game_group(SRC_MAP_TRANSPORT    Map/Transport)
+game_group(SRC_MOVEMENT         Movement)
+game_group(SRC_MOVE_GENERATORS  Movement/Generators)
+game_group(SRC_MOVE_NAVIGATION  Movement/Navigation)
+game_group(SRC_MOVE_SPLINE      Movement/Spline)
 
-file(GLOB SRC_GRP_MAP_THREAD Maps/*.cpp Maps/*.h)
-source_group("Map Threading" FILES ${SRC_GRP_MAP_THREAD})
+# The player's connection to all of it
+game_group(SRC_PACKET           Packet)
+game_group(SRC_SESSION          Session)
+game_group(SRC_HANDLERS         Session/Handlers)
+game_group(SRC_CHAT             Chat)
+game_group(SRC_CHAT_COMMANDS    Chat/Commands)
 
-file(GLOB SRC_GRP_MOTION_GEN MotionGenerators/*.cpp MotionGenerators/*.h)
-source_group("Motion generators" FILES ${SRC_GRP_MOTION_GEN})
+# Systems that belong to no single map
+game_group(SRC_WORLD            World)
+game_group(SRC_WORLD_GROUP      World/Group)
+game_group(SRC_WORLD_GUILD      World/Guild)
+game_group(SRC_WORLD_CHANNEL    World/Channel)
+game_group(SRC_WORLD_MAIL       World/Mail)
+game_group(SRC_WORLD_AUCTION    World/Auction)
+game_group(SRC_WORLD_LFG        World/LFG)
+game_group(SRC_WORLD_SOCIAL     World/Social)
+game_group(SRC_BATTLEGROUND     BattleGround)
+game_group(SRC_OUTDOOR_PVP      OutdoorPvP)
 
-file(GLOB SRC_GRP_MOVEMENT movement/*.cpp movement/*.h)
-source_group("Movement" FILES ${SRC_GRP_MOVEMENT})
+# Read once at boot, then only read
+game_group(SRC_DATASTORE        DataStore)
 
-file(GLOB SRC_GRP_OBJECT Object/*.cpp Object/*.h)
-source_group("Object" FILES ${SRC_GRP_OBJECT})
-
-file(GLOB SRC_GRP_OUTDOOR_PVP OutdoorPvP/*.cpp OutdoorPvP/*.h)
-source_group("Outdoor PvP" FILES ${SRC_GRP_OUTDOOR_PVP})
-
-file(GLOB SRC_GRP_PROTOCOL Protocol/*.cpp Protocol/*.h)
-source_group("Protocol" FILES ${SRC_GRP_PROTOCOL})
-
-file(GLOB SRC_GRP_REFERENCES References/*.cpp References/*.h)
-source_group("References" FILES ${SRC_GRP_REFERENCES})
-
-file(GLOB SRC_GRP_SERVER Server/*.cpp Server/*.h)
-source_group("Server" FILES ${SRC_GRP_SERVER})
-
-file(GLOB SRC_GRP_TIME Time/*.cpp Time/*.h)
-source_group("Time" FILES ${SRC_GRP_TIME})
-
-file(GLOB SRC_GRP_TOOL Tools/*.cpp Tools/*.h)
-source_group("Tool" FILES ${SRC_GRP_TOOL})
-
-file(GLOB SRC_GRP_WORLD_HANDLERS WorldHandlers/*.cpp WorldHandlers/*.h)
-source_group("World\\Handlers" FILES ${SRC_GRP_WORLD_HANDLERS})
+# Around the edges
+game_group(SRC_SCRIPT           Script)
+game_group(SRC_CLOCK            Clock)
+game_group(SRC_METRICS          Metrics)
+game_group(SRC_SYNTHETIC        Synthetic)
+game_group(SRC_TOOLS            Tools)
 
 add_library(game STATIC
-    ${SRC_GRP_BATTLEGROUND}
-    ${SRC_GRP_CHAT_COMMANDS}
-    ${SRC_GRP_COMBAT}
-    ${SRC_GRP_COMPONENTS}
-    ${SRC_GRP_METRICS}
-    ${SRC_GRP_SYNTHETIC}
-    ${SRC_GRP_MAP_THREAD}
-    ${SRC_GRP_MOTION_GEN}
-    ${SRC_GRP_MOVEMENT}
-    ${SRC_GRP_OBJECT}
-    ${SRC_GRP_OUTDOOR_PVP}
-    ${SRC_GRP_PROTOCOL}
-    ${SRC_GRP_REFERENCES}
-    ${SRC_GRP_SERVER}
-    ${SRC_GRP_TIME}
-    ${SRC_GRP_TOOL}
-    ${SRC_GRP_WORLD_HANDLERS}
+    ${SRC_OBJECT}
+    ${SRC_UPDATEFIELDS}
+    ${SRC_VISIBILITY}
+    ${SRC_UNIT}
+    ${SRC_AURAS}
+    ${SRC_PLAYER}
+    ${SRC_PLAYER_PACK}
+    ${SRC_PLAYER_JOURNAL}
+    ${SRC_PLAYER_TALENTS}
+    ${SRC_CREATURE}
+    ${SRC_CREATURE_AI}
+    ${SRC_GAMEOBJECT}
+    ${SRC_ITEM}
+    ${SRC_CORPSE}
+    ${SRC_COMBAT}
+    ${SRC_CAST}
+    ${SRC_CAST_EFFECTS}
+    ${SRC_LOOT}
+    ${SRC_MAP}
+    ${SRC_MAP_GRID}
+    ${SRC_MAP_COLLISION}
+    ${SRC_MAP_TRANSPORT}
+    ${SRC_MOVEMENT}
+    ${SRC_MOVE_GENERATORS}
+    ${SRC_MOVE_NAVIGATION}
+    ${SRC_MOVE_SPLINE}
+    ${SRC_PACKET}
+    ${SRC_SESSION}
+    ${SRC_HANDLERS}
+    ${SRC_CHAT}
+    ${SRC_CHAT_COMMANDS}
+    ${SRC_WORLD}
+    ${SRC_WORLD_GROUP}
+    ${SRC_WORLD_GUILD}
+    ${SRC_WORLD_CHANNEL}
+    ${SRC_WORLD_MAIL}
+    ${SRC_WORLD_AUCTION}
+    ${SRC_WORLD_LFG}
+    ${SRC_WORLD_SOCIAL}
+    ${SRC_BATTLEGROUND}
+    ${SRC_OUTDOOR_PVP}
+    ${SRC_DATASTORE}
+    ${SRC_SCRIPT}
+    ${SRC_CLOCK}
+    ${SRC_METRICS}
+    ${SRC_SYNTHETIC}
+    ${SRC_TOOLS}
 )
 
+# Every directory is on the path, so a header is included by its own name and a
+# file can move between subsystems without touching the ones that use it.
 target_include_directories(game
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
-        BattleGround
-        ChatCommands
+        Object
+        UpdateFields
+        Visibility
+        Unit
+        Unit/Auras
+        Player
+        Player/Journal
+        Creature
+        Creature/AI
+        GameObject
+        Item
+        Corpse
         Combat
-        Components
+        Cast
+        Cast/Effects
+        Loot
+        Map
+        Map/Grid
+        Map/Collision
+        Map/Transport
+        Movement
+        Movement/Generators
+        Movement/Navigation
+        Movement/Spline
+        Packet
+        Session
+        Session/Handlers
+        Chat
+        World
+        World/Group
+        World/Guild
+        World/Channel
+        World/Mail
+        World/Auction
+        World/LFG
+        World/Social
+        BattleGround
+        OutdoorPvP
+        DataStore
+        Script
+        Clock
         Metrics
         Synthetic
-        Maps
-        MotionGenerators
-        Object
-        OutdoorPvP
-        Protocol
-        References
-        Server
-        Time
         Tools
-        WorldHandlers
 )
 
 target_compile_definitions(game

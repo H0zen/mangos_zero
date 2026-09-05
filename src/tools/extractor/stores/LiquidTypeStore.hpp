@@ -10,7 +10,7 @@
 #include "MpqDbcLoader.hpp"
 #include "terrain/Terrain.hpp"
 
-#include "Server/DBCfmt.h"
+#include "DataStore/DBCfmt.h"
 
 #include <cstdint>
 #include <unordered_map>

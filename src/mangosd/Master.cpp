@@ -35,7 +35,7 @@
 #include "Database/DatabaseEnv.h"
 #include "Log.h"
 #include "MapManager.h"
-#include "Server/WorldNetwork.h"
+#include "Session/WorldNetwork.h"
 #include "Version.h"
 #include "Timer.h"
 #include "World.h"
