@@ -256,11 +256,11 @@ void Player::SaveToDB()
     ss << m_taxi.SaveTaxiDestinationsToString();       // string
     uberInsert.addString(ss);
 
-    uberInsert.addUInt32(uint32(m_highest_rank.rank));
-    uberInsert.addInt32(m_standing_pos);
-    uberInsert.addFloat(finiteAlways(m_stored_honor));
-    uberInsert.addUInt32(m_stored_dishonorableKills);
-    uberInsert.addUInt32(m_stored_honorableKills);
+    uberInsert.addUInt32(uint32(m_honor.HighestRank().rank));
+    uberInsert.addInt32(m_honor.LastWeekPlace());
+    uberInsert.addFloat(finiteAlways(m_honor.Stored()));
+    uberInsert.addUInt32(m_honor.Kills(false));
+    uberInsert.addUInt32(m_honor.Kills(true));
 
     // FIXME: at this moment send to DB as unsigned, including unit32(-1)
     uberInsert.addUInt32(GetUInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX));

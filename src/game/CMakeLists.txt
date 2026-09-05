@@ -12,6 +12,7 @@ game_group(SRC_UNIT             Unit)
 game_group(SRC_AURAS            Unit/Auras)
 game_group(SRC_PLAYER           Player)
 game_group(SRC_PLAYER_INVENTORY Player/Inventory)
+game_group(SRC_PLAYER_HONOR     Player/Honor)
 game_group(SRC_PLAYER_JOURNAL   Player/Journal)
 game_group(SRC_PLAYER_TALENTS   Player/Talents)
 game_group(SRC_CREATURE         Creature)
@@ -67,6 +68,7 @@ add_library(game STATIC
     ${SRC_AURAS}
     ${SRC_PLAYER}
     ${SRC_PLAYER_INVENTORY}
+    ${SRC_PLAYER_HONOR}
     ${SRC_PLAYER_JOURNAL}
     ${SRC_PLAYER_TALENTS}
     ${SRC_CREATURE}
@@ -118,6 +120,7 @@ target_include_directories(game
         Unit
         Unit/Auras
         Player
+        Player/Honor
         Player/Inventory
         Player/Journal
         Creature

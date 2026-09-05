@@ -291,12 +291,13 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     _LoadGroup(holder->GetResult(PLAYER_LOGIN_QUERY_LOADGROUP));
 
-    m_highest_rank.rank        = fields[38].GetUInt32();
-    m_highest_rank  = MaNGOS::Honor::CalculateRankInfo(m_highest_rank);
-    m_standing_pos             = fields[39].GetUInt32();
-    m_stored_honor             = fields[40].GetFloat();
-    m_stored_dishonorableKills = fields[41].GetUInt32();
-    m_stored_honorableKills    = fields[42].GetUInt32();
+    HonorRankInfo highest = m_honor.HighestRank();
+    highest.rank = fields[38].GetUInt32();
+    m_honor.HighestRank(MaNGOS::Honor::CalculateRankInfo(highest));
+    m_honor.LastWeekPlace(fields[39].GetUInt32());
+    m_honor.Stored(fields[40].GetFloat());
+    m_honor.Kills(fields[41].GetUInt32(), false);
+    m_honor.Kills(fields[42].GetUInt32(), true);
 
     _LoadHonorCP(holder->GetResult(PLAYER_LOGIN_QUERY_LOADHONORCP));
 

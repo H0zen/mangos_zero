@@ -162,17 +162,19 @@ TEST_CASE("place: three worn places feed a swing and the rest feed none")
 
 TEST_CASE("place: the regions run end to end with no gap between them")
 {
-    CHECK(EQUIPMENT_SLOT_END == INVENTORY_SLOT_BAG_START);
-    CHECK(INVENTORY_SLOT_BAG_END == INVENTORY_SLOT_ITEM_START);
-    CHECK(INVENTORY_SLOT_ITEM_END == BANK_SLOT_ITEM_START);
-    CHECK(BANK_SLOT_ITEM_END == BANK_SLOT_BAG_START);
-    CHECK(BANK_SLOT_BAG_END == BUYBACK_SLOT_START);
-    CHECK(BUYBACK_SLOT_END == KEYRING_SLOT_START);
+    // Each region is an enum of its own, so a place number is compared as the
+    // number it is rather than as a member of either.
+    CHECK(uint32(EQUIPMENT_SLOT_END) == uint32(INVENTORY_SLOT_BAG_START));
+    CHECK(uint32(INVENTORY_SLOT_BAG_END) == uint32(INVENTORY_SLOT_ITEM_START));
+    CHECK(uint32(INVENTORY_SLOT_ITEM_END) == uint32(BANK_SLOT_ITEM_START));
+    CHECK(uint32(BANK_SLOT_ITEM_END) == uint32(BANK_SLOT_BAG_START));
+    CHECK(uint32(BANK_SLOT_BAG_END) == uint32(BUYBACK_SLOT_START));
+    CHECK(uint32(BUYBACK_SLOT_END) == uint32(KEYRING_SLOT_START));
 }
 
 TEST_CASE("place: the places stop where the last region does")
 {
-    CHECK(PLAYER_SLOT_END == KEYRING_SLOT_END);
+    CHECK(uint32(PLAYER_SLOT_END) == uint32(KEYRING_SLOT_END));
 }
 
 // The client keeps one guid per place, in the same order and with no gap, so a

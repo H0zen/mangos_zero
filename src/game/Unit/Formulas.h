@@ -27,6 +27,7 @@
 
 #include <cmath>
 #include "World.h"
+#include "Honor/HonorTally.h"
 
 struct HonorScores
 {

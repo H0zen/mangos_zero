@@ -74,6 +74,7 @@
 #include "ItemSaveQueue.h"
 #include "Inventory/ItemSlots.h"
 #include "Inventory/Inventory.h"
+#include "Honor/HonorLedger.h"
 
 #include "Database/DatabaseEnv.h"
 #include "QuestDef.h"
@@ -456,51 +457,6 @@ enum DrunkenState
 };
 
 #define MAX_DRUNKEN             4
-
-enum TYPE_OF_HONOR
-{
-    HONORABLE    = 1,
-    DISHONORABLE = 2,
-};
-
-struct HonorCP
-{
-    uint8 victimType;
-    uint32 victimID;
-    float honorPoints;
-    uint32 date;
-    uint8 type;
-    uint8 state;
-    bool isKill;
-};
-
-/**
- * This structure contains info about a players pvp rank, ie: what's shown when we hit the H button
- * in the client to show our honor.
- * \todo What's the maxRP,minRP and positive fields?
- */
-struct HonorRankInfo
-{
-    uint8 rank;      ///< Internal range [0..18]
-    int8 visualRank; ///< Number visualized in rank bar [-4..14] 14 being High Warlord, -4 being Pariah)
-    float maxRP;
-    float minRP;
-    bool positive;
-};
-
-enum HonorKillState
-{
-    HK_NEW = 0,
-    HK_OLD = 1,
-    HK_DELETED = 2,
-    HK_UNCHANGED = 3
-};
-
-typedef std::list<HonorCP> HonorCPMap;
-
-#define NEGATIVE_HONOR_RANK_COUNT 4
-#define POSITIVE_HONOR_RANK_COUNT 15
-#define HONOR_RANK_COUNT 19 // negative + positive ranks
 
 enum PlayerFlags
 {
@@ -2958,33 +2914,42 @@ class Player : public Unit
         /*********************************************************/
         /***                  HONOR SYSTEM                     ***/
         /*********************************************************/
-        bool AddHonorCP(float honor, uint8 type, uint32 victim, uint8 victimType);
-        void UpdateHonor();
-        void ResetHonor();
-        void ClearHonorInfo();
+        bool AddHonorCP(float honor, uint8 type, uint32 victim, uint8 victimType)
+        {
+            return m_honor.Add(honor, type, victim, victimType);
+        }
+        void UpdateHonor() { m_honor.Reckon(); }
+        void ResetHonor() { m_honor.Wipe(); }
+        void ClearHonorInfo() { m_honor.Forget(); }
         bool RewardHonor(Unit* pVictim, uint32 groupsize);
+
+        /// What he has done in the war, and where it leaves him standing.
+        HonorLedger& Honors() { return m_honor; }
+        HonorLedger const& Honors() const { return m_honor; }
         // Assume only Players and Units as kills
         // TYPEID_OBJECT used for CP from BG,quests etc.
-        bool isKill(uint8 victimType) { return (victimType == TYPEID_UNIT || victimType == TYPEID_PLAYER); }
-        uint32 CalculateTotalKills(Unit* Victim, uint32 fromDate, uint32 toDate) const;
+        uint32 CalculateTotalKills(Unit* Victim, uint32 fromDate, uint32 toDate) const
+        {
+            return m_honor.KillsOf(Victim, fromDate, toDate);
+        }
         // Acessors of honor rank
-        HonorRankInfo GetHonorRankInfo() const { return m_honor_rank; }
-        void SetHonorRankInfo(HonorRankInfo rank) { m_honor_rank = rank; }
+        HonorRankInfo GetHonorRankInfo() const { return m_honor.Rank(); }
+        void SetHonorRankInfo(HonorRankInfo rank) { m_honor.Rank(rank); }
         // Acessors of total honor points
-        void SetRankPoints(float rankPoints) { m_rank_points = rankPoints; }
-        float GetRankPoints(void) const { return m_rank_points; }
+        void SetRankPoints(float rankPoints) { m_honor.Points(rankPoints); }
+        float GetRankPoints(void) const { return m_honor.Points(); }
         // Acessors of highest rank
-        HonorRankInfo GetHonorHighestRankInfo() const { return m_highest_rank; }
-        void SetHonorHighestRankInfo(HonorRankInfo hr) { m_highest_rank = hr; }
+        HonorRankInfo GetHonorHighestRankInfo() const { return m_honor.HighestRank(); }
+        void SetHonorHighestRankInfo(HonorRankInfo hr) { m_honor.HighestRank(hr); }
         // Acessors of rating
-        float GetStoredHonor() const { return m_stored_honor; }
-        void SetStoredHonor(float rating) { m_stored_honor = rating; }
+        float GetStoredHonor() const { return m_honor.Stored(); }
+        void SetStoredHonor(float rating) { m_honor.Stored(rating); }
         // Acessors of lifetime
-        uint32 GetHonorStoredKills(bool honorable) const { return honorable ? m_stored_honorableKills : m_stored_dishonorableKills; }
-        void SetHonorStoredKills(uint32 kills, bool honorable) { if (honorable) { m_stored_honorableKills = kills; } else { m_stored_dishonorableKills = kills; } }
+        uint32 GetHonorStoredKills(bool honorable) const { return m_honor.Kills(honorable); }
+        void SetHonorStoredKills(uint32 kills, bool honorable) { m_honor.Kills(kills, honorable); }
         // Acessors of last week standing
-        int32 GetHonorLastWeekStandingPos() const { return m_standing_pos; }
-        void SetHonorLastWeekStandingPos(int32 standingPos) { m_standing_pos = standingPos; }
+        int32 GetHonorLastWeekStandingPos() const { return m_honor.LastWeekPlace(); }
+        void SetHonorLastWeekStandingPos(int32 standingPos) { m_honor.LastWeekPlace(standingPos); }
         void SendPvPCredit(ObjectGuid guid, uint32 rank, uint32 points);
 
         /*********************************************************/
@@ -3702,7 +3667,7 @@ class Player : public Unit
 
         // Load bound instances from the database
         void _LoadBoundInstances(QueryResult* result);
-        void _LoadHonorCP(QueryResult* result);
+        void _LoadHonorCP(QueryResult* result) { m_honor.LoadFromDB(result); }
         void _LoadInventory(QueryResult* result, uint32 timediff);
 
         // Load item loot from the database
@@ -3742,7 +3707,7 @@ class Player : public Unit
 
         // Save player inventory to the database
         void _SaveInventory();
-        void _SaveHonorCP();
+        void _SaveHonorCP() { m_honor.SaveToDB(); }
 
         void _SaveQuestStatus();
         void _SaveSkills();
@@ -3779,16 +3744,7 @@ class Player : public Unit
         /*********************************************************/
         /***                  HONOR SYSTEM                     ***/
         /*********************************************************/
-        HonorCPMap m_honorCP;
-        HonorRankInfo m_honor_rank;
-        HonorRankInfo m_highest_rank;
-        float m_rank_points;
-        float m_stored_honor;
-        uint32 m_stored_honorableKills;
-        uint32 m_stored_dishonorableKills;
-        int32 m_standing_pos;
-
-        time_t m_lastHonorUpdateTime; // Last honor update time
+        HonorLedger m_honor;
 
         // Output debug stats values
         void outDebugStatsValues() const;
