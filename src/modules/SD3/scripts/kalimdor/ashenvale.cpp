@@ -167,7 +167,7 @@ struct npc_muglash : public CreatureScript
 
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_VORSHA, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_VORSHA, m_creature);
                     }
                     break;
                 case 26:
@@ -321,7 +321,7 @@ struct npc_ruul_snowhoof : public CreatureScript
                 case 21:
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_FREEDOM_TO_RUUL, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_FREEDOM_TO_RUUL, m_creature);
                     }
                     break;
             }
@@ -419,7 +419,7 @@ struct npc_torek : public CreatureScript
                     break;
                 case 20:
                     DoScriptText(SAY_WIN, m_creature, pPlayer);
-                    pPlayer->GroupEventHappens(QUEST_TOREK_ASSULT, m_creature);
+                    pPlayer->Journal().ExploredWithGroup(QUEST_TOREK_ASSULT, m_creature);
                     break;
                 case 21:
                     DoScriptText(SAY_END, m_creature, pPlayer);
@@ -585,7 +585,7 @@ struct npc_feero_ironhand : public CreatureScript
                     // Complete the quest
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_SUPPLIES_TO_AUBERDINE, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_SUPPLIES_TO_AUBERDINE, m_creature);
                     }
                     break;
             }

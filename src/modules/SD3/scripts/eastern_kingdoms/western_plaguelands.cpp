@@ -579,7 +579,7 @@ struct npc_taelan_fordring : public CreatureScript
                     {
                         if (Player* pPlayer = GetPlayerForEscort())
                         {
-                            pPlayer->GroupEventHappens(QUEST_ID_IN_DREAMS, m_creature);
+                            pPlayer->Journal().ExploredWithGroup(QUEST_ID_IN_DREAMS, m_creature);
                             pTirion->SetFacingToObject(pPlayer);
                         }
 

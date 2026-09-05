@@ -111,7 +111,7 @@ struct go_andorhal_tower : public GameObjectScript
             }
             if (uiKillCredit)
             {
-                pPlayer->KilledMonsterCredit(uiKillCredit);
+                pPlayer->Journal().KillCredited(uiKillCredit);
             }
         }
         return true;
@@ -132,7 +132,7 @@ struct go_table_theka : public GameObjectScript
     {
         if (pPlayer->GetQuestStatus(QUEST_SPIDER_GOD) == QUEST_STATUS_INCOMPLETE)
         {
-            pPlayer->AreaExploredOrEventHappens(QUEST_SPIDER_GOD);
+            pPlayer->Journal().Explored(QUEST_SPIDER_GOD);
         }
 
         pPlayer->SEND_GOSSIP_MENU(GOSSIP_TABLE_THEKA, pGo->GetObjectGuid());

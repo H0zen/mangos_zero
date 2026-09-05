@@ -94,7 +94,7 @@ struct npc_kaya : public CreatureScript
 
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_PROTECT_KAYA, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_PROTECT_KAYA, m_creature);
                     }
                     break;
             }
@@ -258,7 +258,7 @@ struct npc_piznik : public CreatureScript
             {
                 if (Player* pPlayer = (m_creature->GetMap()->GetPlayer(m_uiPlayerGUID)))
                 {
-                    pPlayer->GroupEventHappens(QUEST_GERENZOS_ORDERS, m_creature);
+                    pPlayer->Journal().ExploredWithGroup(QUEST_GERENZOS_ORDERS, m_creature);
                 }
 
                 FinishEvent();

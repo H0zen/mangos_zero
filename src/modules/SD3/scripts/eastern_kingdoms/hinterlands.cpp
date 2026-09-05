@@ -84,7 +84,7 @@ struct npc_00x09hl : public CreatureScript
                     DoScriptText(SAY_OOX_END, m_creature);
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_RESQUE_OOX_09, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_RESQUE_OOX_09, m_creature);
                     }
                     break;
             }
@@ -295,7 +295,7 @@ struct npc_rinji : public CreatureScript
                     break;
                 case 17:
                     DoScriptText(SAY_RIN_COMPLETE, m_creature, pPlayer);
-                    pPlayer->GroupEventHappens(QUEST_RINJI_TRAPPED, m_creature);
+                    pPlayer->Journal().ExploredWithGroup(QUEST_RINJI_TRAPPED, m_creature);
                     SetRun();
                     m_uiPostEventCount = 1;
                     break;

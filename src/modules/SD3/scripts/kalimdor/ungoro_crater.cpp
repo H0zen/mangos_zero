@@ -82,7 +82,7 @@ struct npc_ame01 : public CreatureScript
                     DoScriptText(SAY_AME_END, m_creature);
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_CHASING_AME, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_CHASING_AME, m_creature);
                     }
                     break;
             }
@@ -215,7 +215,7 @@ struct npc_ringo : public CreatureScript
                     {
                         if (pPlayer->GetQuestStatus(QUEST_A_LITTLE_HELP) == QUEST_STATUS_INCOMPLETE)
                         {
-                            pPlayer->GroupEventHappens(QUEST_A_LITTLE_HELP, m_creature);
+                            pPlayer->Journal().ExploredWithGroup(QUEST_A_LITTLE_HELP, m_creature);
                         }
                     }
 

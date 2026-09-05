@@ -226,7 +226,7 @@ struct npc_oox17tn : public CreatureScript
                 case 34:
                     DoScriptText(SAY_OOX_END, m_creature);
                     // Award quest credit
-                    pPlayer->GroupEventHappens(QUEST_RESCUE_OOX_17TN, m_creature);
+                    pPlayer->Journal().ExploredWithGroup(QUEST_RESCUE_OOX_17TN, m_creature);
                     break;
             }
         }
@@ -342,7 +342,7 @@ struct npc_stone_watcher_of_norgannon : public CreatureScript
                 break;
             case GOSSIP_ACTION_INFO_DEF + 5:
                 pPlayer->CLOSE_GOSSIP_MENU();
-                pPlayer->AreaExploredOrEventHappens(2954);
+                pPlayer->Journal().Explored(2954);
                 break;
         }
         return true;
@@ -407,7 +407,7 @@ struct npc_tooga : public CreatureScript
                     {
                         if (pPlayer->GetQuestStatus(QUEST_TOOGA) == QUEST_STATUS_INCOMPLETE)
                         {
-                            pPlayer->GroupEventHappens(QUEST_TOOGA, m_creature);
+                            pPlayer->Journal().ExploredWithGroup(QUEST_TOOGA, m_creature);
                         }
                     }
 

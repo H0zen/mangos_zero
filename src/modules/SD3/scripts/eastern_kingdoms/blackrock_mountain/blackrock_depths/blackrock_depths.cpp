@@ -372,7 +372,7 @@ struct npc_grimstone : public CreatureScript
                 Player* pPlayer = itr->getSource();
                 if (pPlayer && pPlayer->GetQuestStatus(QUEST_THE_CHALLENGE) == QUEST_STATUS_INCOMPLETE)
                 {
-                    pPlayer->KilledMonsterCredit(NPC_THELDREN_QUEST_CREDIT);
+                    pPlayer->Journal().KillCredited(NPC_THELDREN_QUEST_CREDIT);
                 }
             }
         }
@@ -1410,7 +1410,7 @@ struct npc_marshal_windsor : public CreatureScript
 
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_JAIL_BREAK, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_JAIL_BREAK, m_creature);
                     }
                     break;
             }
@@ -2093,11 +2093,11 @@ struct npc_kharan_mighthammer : public CreatureScript
                 pPlayer->CLOSE_GOSSIP_MENU();
                 if (pPlayer->GetTeam() == HORDE)
                 {
-                    pPlayer->AreaExploredOrEventHappens(QUEST_WHAT_IS_GOING_ON);
+                    pPlayer->Journal().Explored(QUEST_WHAT_IS_GOING_ON);
                 }
                 else
                 {
-                    pPlayer->AreaExploredOrEventHappens(QUEST_KHARANS_TALE);
+                    pPlayer->Journal().Explored(QUEST_KHARANS_TALE);
                 }
                 break;
         }

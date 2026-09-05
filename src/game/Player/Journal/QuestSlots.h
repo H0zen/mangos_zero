@@ -116,4 +116,35 @@ namespace quests
     {
         return COUNTERS_PER_QUEST * BITS_PER_COUNTER <= STATE_BYTE * 8;
     }
+
+    /**
+     * How much of a gain the objective counts.
+     *
+     * An objective stops counting once it has what it asks for, so a stack that
+     * carries him past the mark credits only the part that was still wanted.
+     */
+    inline uint32 CountsTowards(uint32 held, uint32 needed, uint32 gained)
+    {
+        if (held >= needed)
+        {
+            return 0;
+        }
+
+        uint32 const wanted = needed - held;
+        return gained < wanted ? gained : wanted;
+    }
+
+    /**
+     * How much of a loss the objective takes off.
+     *
+     * What he carries above the mark is not counted, so it goes first and only
+     * the remainder eats into the count. The result is never more than is
+     * counted: he cannot be made to owe an objective more than it ever had.
+     */
+    inline uint32 CountsAgainst(uint32 held, uint32 needed, uint32 lost)
+    {
+        uint32 const spare = held > needed ? held - needed : 0;
+        uint32 const off = lost > spare ? lost - spare : 0;
+        return off < held ? off : held;
+    }
 }

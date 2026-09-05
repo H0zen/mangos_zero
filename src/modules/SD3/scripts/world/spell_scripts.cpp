@@ -140,7 +140,7 @@ struct spell_apply_salve : public SpellScript
             uint32 uiUpdateEntry = pCreatureTarget->GetEntry() == NPC_SICKLY_DEER ? NPC_CURED_DEER : NPC_CURED_GAZELLE;
             pCreatureTarget->RemoveAuras(SPELL_SICKLY_AURA);
             pCreatureTarget->UpdateEntry(uiUpdateEntry);
-            ((Player*)pCaster)->KilledMonsterCredit(uiUpdateEntry);
+            ((Player*)pCaster)->Journal().KillCredited(uiUpdateEntry);
             pCreatureTarget->ForcedDespawn(20000);
         }
         return true;
@@ -183,7 +183,7 @@ struct spell_melodious_rapture : public SpellScript
             pCreatureTarget->CastSpell(pCreatureTarget, SPELL_MELODIOUS_RAPTURE_VISUAL, false);
             pCreatureTarget->GetMotionMaster()->MoveFollow(pCaster, frand(0.5f, 3.0f), frand(M_PI_F * 0.8f, M_PI_F * 1.2f));
 
-            ((Player*)pCaster)->KilledMonsterCredit(NPC_ENTHRALLED_DEEPRUN_RAT);
+            ((Player*)pCaster)->Journal().KillCredited(NPC_ENTHRALLED_DEEPRUN_RAT);
         }
         return true;
     }

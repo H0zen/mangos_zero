@@ -189,7 +189,7 @@ struct npc_calvin_montague : public CreatureScript
                     case 2:
                         if (Player* pPlayer = m_creature->GetMap()->GetPlayer(m_playerGuid))
                         {
-                            pPlayer->AreaExploredOrEventHappens(QUEST_590);
+                            pPlayer->Journal().Explored(QUEST_590);
                         }
 
                         m_creature->CastSpell(m_creature, SPELL_DRINK, true);

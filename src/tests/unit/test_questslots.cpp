@@ -124,3 +124,43 @@ TEST_CASE("state: it lives in the top byte and the counters do not disturb it")
     CHECK(quests::StateIn(packed) == QUEST_STATE_COMPLETE);
     CHECK(quests::CounterIn(packed, 3) == 63);
 }
+
+TEST_CASE("objectives: a gain counts only as far as the objective still wants")
+{
+    CHECK(quests::CountsTowards(0, 5, 3) == 3);
+    CHECK(quests::CountsTowards(3, 5, 1) == 1);
+    CHECK(quests::CountsTowards(3, 5, 2) == 2);
+}
+
+TEST_CASE("objectives: a stack that carries him past the mark credits the rest only")
+{
+    CHECK(quests::CountsTowards(3, 5, 20) == 2);
+    CHECK(quests::CountsTowards(0, 1, 5) == 1);
+}
+
+TEST_CASE("objectives: nothing more counts once the objective has what it asked")
+{
+    CHECK(quests::CountsTowards(5, 5, 4) == 0);
+    CHECK(quests::CountsTowards(9, 5, 4) == 0);
+}
+
+TEST_CASE("objectives: what he carries above the mark goes before the count does")
+{
+    CHECK(quests::CountsAgainst(9, 5, 4) == 0);
+    CHECK(quests::CountsAgainst(9, 5, 6) == 2);
+}
+
+TEST_CASE("objectives: below the mark every one lost comes off the count")
+{
+    CHECK(quests::CountsAgainst(5, 5, 2) == 2);
+    CHECK(quests::CountsAgainst(3, 5, 2) == 2);
+}
+
+TEST_CASE("objectives: an objective can never be left owing more than it counted")
+{
+    // one mug wanted, five carried, and the whole stack destroyed at once
+    CHECK(quests::CountsAgainst(1, 1, 5) == 1);
+
+    CHECK(quests::CountsAgainst(0, 5, 3) == 0);
+    CHECK(quests::CountsAgainst(2, 5, 7) == 2);
+}

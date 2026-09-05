@@ -110,7 +110,7 @@ struct npc_professor_phizzlethorpe : public CreatureScript
                 case 20:
                     DoScriptText(EMOTE_PROGRESS_8, m_creature);
                     DoScriptText(SAY_PROGRESS_9, m_creature, pPlayer);
-                    pPlayer->GroupEventHappens(QUEST_SUNKEN_TREASURE, m_creature);
+                    pPlayer->Journal().ExploredWithGroup(QUEST_SUNKEN_TREASURE, m_creature);
                     break;
             }
         }
@@ -223,7 +223,7 @@ struct npc_kinelory : public CreatureScript
                 case 34:
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_HINTS_NEW_PLAGUE, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_HINTS_NEW_PLAGUE, m_creature);
                     }
                     break;
             }

@@ -149,7 +149,7 @@ struct npc_aged_dying_ancient_kodo : public CreatureScript
         if (pPlayer->HasAura(SPELL_KODO_KOMBO_PLAYER_BUFF) && pCreature->HasAura(SPELL_KODO_KOMBO_DESPAWN_BUFF) && pCreature->HasAura(SPELL_KODO_KOMBO_GOSSIP))
         {
             // the expected quest objective
-            pPlayer->TalkedToCreature(pCreature->GetEntry(), pCreature->GetObjectGuid());
+            pPlayer->Journal().TalkCredited(pCreature->GetEntry(), pCreature->GetObjectGuid());
 
             pPlayer->RemoveAuras(SPELL_KODO_KOMBO_PLAYER_BUFF);
             pCreature->GetMotionMaster()->MoveIdle();
@@ -228,7 +228,7 @@ struct npc_dalinda_malem : public CreatureScript
             {
                 if (Player* pPlayer = GetPlayerForEscort())
                 {
-                    pPlayer->GroupEventHappens(QUEST_RETURN_TO_VAHLARRIEL, m_creature);
+                    pPlayer->Journal().ExploredWithGroup(QUEST_RETURN_TO_VAHLARRIEL, m_creature);
                 }
             }
         }
@@ -402,7 +402,7 @@ struct npc_melizza_brimbuzzle : public CreatureScript
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
                         DoScriptText(SAY_MELIZZA_FINISH, m_creature, pPlayer);
-                        pPlayer->GroupEventHappens(QUEST_GET_ME_OUT_OF_HERE, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_GET_ME_OUT_OF_HERE, m_creature);
                     }
 
                     m_creature->ClearTemporaryFaction();
@@ -617,7 +617,7 @@ struct npc_cork_gizelton : public CreatureScript
                         // Award quest credit
                         if (pPlayer)
                         {
-                            pPlayer->GroupEventHappens(QUEST_BODYGUARD_TO_HIRE, m_creature);
+                            pPlayer->Journal().ExploredWithGroup(QUEST_BODYGUARD_TO_HIRE, m_creature);
                         }
                         // Remove player to avoid adds being spawned again next turn
                         m_playerGuid.Clear();
@@ -664,7 +664,7 @@ struct npc_cork_gizelton : public CreatureScript
                         // Award quest credit
                         if (pPlayer)
                         {
-                            pPlayer->GroupEventHappens(QUEST_GIZELTON_CARAVAN, m_creature);
+                            pPlayer->Journal().ExploredWithGroup(QUEST_GIZELTON_CARAVAN, m_creature);
                         }
                         // Remove player to avoid adds being spawned again next turn
                         m_playerGuid.Clear();

@@ -105,7 +105,7 @@ struct npc_oox22fe : public CreatureScript
                     // Award quest credit
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_RESCUE_OOX22FE, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_RESCUE_OOX22FE, m_creature);
                     }
                     break;
             }
@@ -248,7 +248,7 @@ struct npc_shay_leafrunner : public CreatureScript
                 DoScriptText(SAY_EVENT_COMPLETE_2, pWho);
 
                 // complete quest
-                pPlayer->GroupEventHappens(QUEST_ID_WANDERING_SHAY, m_creature);
+                pPlayer->Journal().ExploredWithGroup(QUEST_ID_WANDERING_SHAY, m_creature);
                 SetFollowComplete(true);
                 m_creature->ForcedDespawn(30000);
                 m_bIsComplete = true;

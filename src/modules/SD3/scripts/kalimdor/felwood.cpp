@@ -194,7 +194,7 @@ struct npc_corrupt_saber : public CreatureScript
                 pKittenAI->SetFollowComplete();
             }
 
-            pPlayer->AreaExploredOrEventHappens(QUEST_CORRUPT_SABER);
+            pPlayer->Journal().Explored(QUEST_CORRUPT_SABER);
         }
 
         return true;
@@ -663,7 +663,7 @@ struct npc_captured_arkonarin : public CreatureScript
                 case 109:
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_ID_RESCUE_JAEDENAR, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_ID_RESCUE_JAEDENAR, m_creature);
                     }
                     SetRun();
                     break;
@@ -883,7 +883,7 @@ struct npc_arei : public CreatureScript
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
                         DoScriptText(SAY_AREI_ESCORT_COMPLETE, m_creature, pPlayer);
-                        pPlayer->GroupEventHappens(QUEST_ID_ANCIENT_SPIRIT, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_ID_ANCIENT_SPIRIT, m_creature);
                         m_creature->ForcedDespawn(10000);
                     }
                     break;

@@ -237,7 +237,7 @@ struct npc_belnistrasz : public CreatureScript
                         case 10:
                             if (Player* pPlayer = GetPlayerForEscort())
                             {
-                                pPlayer->GroupEventHappens(QUEST_EXTINGUISHING_THE_IDOL, m_creature);
+                                pPlayer->Journal().ExploredWithGroup(QUEST_EXTINGUISHING_THE_IDOL, m_creature);
 
                                 if (GameObject* pGo = GetClosestGameObjectWithEntry(m_creature, GO_BELNISTRASZ_BRAZIER, 10.0f))
                                 {

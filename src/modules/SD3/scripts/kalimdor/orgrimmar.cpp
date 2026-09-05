@@ -76,7 +76,7 @@ struct npc_shenthul : public CreatureScript
         {
             if (m_uiResetTimer && uiTextEmote == TEXTEMOTE_SALUTE && pPlayer->GetQuestStatus(QUEST_SHATTERED_SALUTE) == QUEST_STATUS_INCOMPLETE)
             {
-                pPlayer->AreaExploredOrEventHappens(QUEST_SHATTERED_SALUTE);
+                pPlayer->Journal().Explored(QUEST_SHATTERED_SALUTE);
                 EnterEvadeMode();
             }
         }
@@ -213,7 +213,7 @@ struct npc_thrall_warchief : public CreatureScript  //TODO localise
                 break;
             case GOSSIP_ACTION_INFO_DEF + 7:
                 pPlayer->CLOSE_GOSSIP_MENU();
-                pPlayer->AreaExploredOrEventHappens(QUEST_ID_WHAT_THE_WIND_CARRIES);
+                pPlayer->Journal().Explored(QUEST_ID_WHAT_THE_WIND_CARRIES);
                 break;
         }
         return true;

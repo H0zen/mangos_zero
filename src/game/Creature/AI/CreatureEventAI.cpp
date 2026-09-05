@@ -907,7 +907,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
             {
                 if (target->IsPlayer())
                 {
-                    ((Player*)target)->AreaExploredOrEventHappens(action.quest_event.questId);
+                    ((Player*)target)->Journal().Explored(action.quest_event.questId);
                 }
             }
             else if (reportTargetError)
@@ -920,7 +920,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
             {
                 if (target->IsPlayer())
                 {
-                    ((Player*)target)->CastedCreatureOrGO(action.cast_event.creatureId, m_creature->GetObjectGuid(), action.cast_event.spellId);
+                    ((Player*)target)->Journal().CastCredited(action.cast_event.creatureId, m_creature->GetObjectGuid(), action.cast_event.spellId);
                 }
             }
             else if (reportTargetError)
@@ -1027,7 +1027,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
         case ACTION_T_QUEST_EVENT_ALL:      //26
             if (pActionInvoker && pActionInvoker->IsPlayer())
             {
-                ((Player*)pActionInvoker)->GroupEventHappens(action.quest_event_all.questId, m_creature);
+                ((Player*)pActionInvoker)->Journal().ExploredWithGroup(action.quest_event_all.questId, m_creature);
             }
             break;
         case ACTION_T_CAST_EVENT_ALL:       //27
@@ -1037,7 +1037,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
             {
                 if (Player* temp = m_creature->GetMap()->GetPlayer((*i)->getUnitGuid()))
                 {
-                    temp->CastedCreatureOrGO(action.cast_event_all.creatureId, m_creature->GetObjectGuid(), action.cast_event_all.spellId);
+                    temp->Journal().CastCredited(action.cast_event_all.creatureId, m_creature->GetObjectGuid(), action.cast_event_all.spellId);
                 }
             }
             break;

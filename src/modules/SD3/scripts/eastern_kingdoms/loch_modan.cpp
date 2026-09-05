@@ -166,7 +166,7 @@ struct npc_miran : public CreatureScript
                     DoScriptText(SAY_MIRAN_3, m_creature);
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_PROTECTING_THE_SHIPMENT, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_PROTECTING_THE_SHIPMENT, m_creature);
                     }
                     break;
             }

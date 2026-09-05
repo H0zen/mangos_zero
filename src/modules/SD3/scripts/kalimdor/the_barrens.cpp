@@ -83,7 +83,7 @@ struct npc_beaten_corpse : public CreatureScript
         if (uiAction == GOSSIP_ACTION_INFO_DEF + 1)
         {
             pPlayer->SEND_GOSSIP_MENU(3558, pCreature->GetObjectGuid());
-            pPlayer->TalkedToCreature(pCreature->GetEntry(), pCreature->GetObjectGuid());
+            pPlayer->Journal().TalkCredited(pCreature->GetEntry(), pCreature->GetObjectGuid());
         }
         return true;
     }
@@ -149,7 +149,7 @@ struct npc_gilthares : public CreatureScript
                     break;
                 case 53:
                     DoScriptText(SAY_GIL_FREED, m_creature, pPlayer);
-                    pPlayer->GroupEventHappens(QUEST_FREE_FROM_HOLD, m_creature);
+                    pPlayer->Journal().ExploredWithGroup(QUEST_FREE_FROM_HOLD, m_creature);
                     break;
             }
         }
@@ -696,7 +696,7 @@ struct npc_wizzlecranks_shredder : public CreatureScript
                             case 3:
                                 if (Player* pPlayer = GetPlayerForEscort())
                                 {
-                                    pPlayer->GroupEventHappens(QUEST_ESCAPE, m_creature);
+                                    pPlayer->Journal().ExploredWithGroup(QUEST_ESCAPE, m_creature);
                                     SummonCreature(*m_creature, NPC_PILOT_WIZZ, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSPAWN_TIMED_DESPAWN, 180000);
                                 }
                                 break;

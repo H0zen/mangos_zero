@@ -32,6 +32,11 @@
 #include <map>
 #include <set>
 
+class Occupant;
+class Player;
+struct CreatureInfo;
+struct FactionEntry;
+
 typedef std::map<uint32, QuestStatusData> QuestStatusMap;
 
 /**
@@ -41,6 +46,11 @@ typedef std::map<uint32, QuestStatusData> QuestStatusMap;
  * has finished and been paid for stays here as rewarded, so that it is never
  * offered again, long after its slot has been given to something else. The slots
  * are a view of the journal, not the journal itself.
+ *
+ * What he carries right now is exactly what stands in those twenty slots, which
+ * is why everything that reports progress -- a kill, a spell cast, a word with
+ * someone, an item gained or lost, money, reputation, a place walked into --
+ * walks the slots and looks up the line each one names.
  *
  * Quests that run out are kept apart in a set of their own. Only one may be
  * carried at a time, so the set holds at most one thing -- it is a set because
@@ -53,6 +63,8 @@ typedef std::map<uint32, QuestStatusData> QuestStatusMap;
 class QuestJournal
 {
     public:
+        explicit QuestJournal(Player& owner) : m_owner(owner) {}
+
         /// The line for a quest, made if he has none yet.
         QuestStatusData& Of(uint32 questId) { return m_status[questId]; }
 
@@ -93,7 +105,46 @@ class QuestJournal
         void Divider(ObjectGuid who) { m_divider = who; }
         void NoDivider() { m_divider.Clear(); }
 
+        /// Which of the twenty slots a quest stands in, or MAX_QUEST_LOG_SIZE.
+        uint16 SlotOf(uint32 questId) const;
+
+        /// Fills the item counts of a fresh line from what he already carries.
+        void CountItemsHeld(Quest const* quest, QuestStatusData& line);
+
+        /// A place walked into, or an event a script says has happened.
+        void Explored(uint32 questId);
+
+        /// The same, for every living group member near the object.
+        void ExploredWithGroup(uint32 questId, Occupant const* what);
+
+        void ItemGained(uint32 entry, uint32 count);
+        void ItemLost(uint32 entry, uint32 count);
+
+        /// A creature killed, crediting its own entry and its shared credits.
+        void CreatureKilled(CreatureInfo const* what, ObjectGuid whose);
+
+        void KillCredited(uint32 entry, ObjectGuid whose = ObjectGuid());
+        void CastCredited(uint32 entry, ObjectGuid whose, uint32 spellId, bool originalCaster = true);
+        void TalkCredited(uint32 entry, ObjectGuid whose);
+
+        void MoneyNowIs(uint32 amount);
+        void ReputationNowIs(FactionEntry const* faction);
+
+        /// Whether an item still counts towards something he carries.
+        bool NeedsItem(uint32 itemId) const;
+
+        /// Whether a gameobject is still an objective of something he carries.
+        bool NeedsGameObject(int32 goId) const;
+
     private:
+        /// One step against the objective at `which`, and the word for it.
+        void Credited(Quest const* quest, QuestStatusData& line, uint32 which, ObjectGuid whose);
+
+        void TellExplored(uint32 questId);
+        void TellItemCount(Quest const* quest, uint32 which, uint32 count);
+        void TellTargetCount(Quest const* quest, ObjectGuid whose, uint32 which, uint32 count);
+
+        Player& m_owner;
         QuestStatusMap m_status;
         std::set<uint32> m_timed;
         ObjectGuid m_divider;

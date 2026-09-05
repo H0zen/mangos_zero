@@ -258,7 +258,7 @@ struct npc_loramus_thalipedes : public CreatureScript
         {
             case GOSSIP_ACTION_INFO_DEF + 1:
                 pPlayer->CLOSE_GOSSIP_MENU();
-                pPlayer->AreaExploredOrEventHappens(2744);
+                pPlayer->Journal().Explored(2744);
                 break;
 
             case GOSSIP_ACTION_INFO_DEF + 2:
@@ -283,7 +283,7 @@ struct npc_loramus_thalipedes : public CreatureScript
                 break;
             case GOSSIP_ACTION_INFO_DEF + 25:
                 pPlayer->CLOSE_GOSSIP_MENU();
-                pPlayer->AreaExploredOrEventHappens(3141);
+                pPlayer->Journal().Explored(3141);
                 break;
         }
         return true;

@@ -97,7 +97,7 @@ struct npc_fallen_hero_of_horde : public CreatureScript
                 pPlayer->SEND_GOSSIP_MENU(1411, pCreature->GetObjectGuid());
                 if (pPlayer->GetQuestStatus(2784) == QUEST_STATUS_INCOMPLETE)
                 {
-                    pPlayer->AreaExploredOrEventHappens(2784);
+                    pPlayer->Journal().Explored(2784);
                 }
                 if (pPlayer->GetTeam() == ALLIANCE)
                 {
@@ -132,7 +132,7 @@ struct npc_fallen_hero_of_horde : public CreatureScript
                 break;
             case GOSSIP_ACTION_INFO_DEF + 26:
                 pPlayer->CLOSE_GOSSIP_MENU();
-                pPlayer->AreaExploredOrEventHappens(2801);
+                pPlayer->Journal().Explored(2801);
                 break;
         }
         return true;

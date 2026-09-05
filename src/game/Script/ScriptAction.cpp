@@ -551,7 +551,7 @@ bool ScriptAction::HandleScriptStep()
             // quest id and flags checked at script loading
             if (!failQuest)
             {
-                pPlayer->AreaExploredOrEventHappens(m_script->questExplored.questId);
+                pPlayer->Journal().Explored(m_script->questExplored.questId);
             }
             else
             {
@@ -596,7 +596,7 @@ bool ScriptAction::HandleScriptStep()
             }
             else
             {
-                pPlayer->KilledMonsterCredit(creatureEntry, pRewardSource ? pRewardSource->GetObjectGuid() : ObjectGuid());
+                pPlayer->Journal().KillCredited(creatureEntry, pRewardSource ? pRewardSource->GetObjectGuid() : ObjectGuid());
             }
 
             break;

@@ -79,7 +79,7 @@ struct npc_kanati : public CreatureScript
                 case 1:
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_PROTECT_KANATI, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_PROTECT_KANATI, m_creature);
                     }
                     break;
             }
@@ -176,7 +176,7 @@ struct npc_lakota_windsong : public CreatureScript
                 case 45:
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_FREE_AT_LAST, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_FREE_AT_LAST, m_creature);
                     }
                     break;
             }
@@ -258,7 +258,7 @@ struct npc_paoka_swiftmountain : public CreatureScript
                 case 27:
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_HOMEWARD, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_HOMEWARD, m_creature);
                     }
                     break;
             }
@@ -417,7 +417,7 @@ struct npc_plucky_johnson : public CreatureScript
         if (uiAction == GOSSIP_ACTION_INFO_DEF)
         {
             pPlayer->SEND_GOSSIP_MENU(738, pCreature->GetObjectGuid());
-            pPlayer->AreaExploredOrEventHappens(QUEST_SCOOP);
+            pPlayer->Journal().Explored(QUEST_SCOOP);
         }
 
         return true;

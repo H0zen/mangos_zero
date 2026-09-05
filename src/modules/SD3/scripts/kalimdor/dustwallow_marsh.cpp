@@ -125,7 +125,7 @@ struct npc_morokk : public CreatureScript
                 {
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_CHALLENGE_MOROKK, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_CHALLENGE_MOROKK, m_creature);
                     }
 
                     m_creature->setFaction(FACTION_MOR_RUNNING);
@@ -469,7 +469,7 @@ struct npc_ogron : public CreatureScript
                                     case 12:
                                         if (Player* pPlayer = GetPlayerForEscort())
                                         {
-                                            pPlayer->GroupEventHappens(QUEST_QUESTIONING, m_creature);
+                                            pPlayer->Journal().ExploredWithGroup(QUEST_QUESTIONING, m_creature);
                                         }
 
                                         DoScriptText(SAY_OGR_SURVIVE, m_creature);
@@ -591,7 +591,7 @@ struct npc_private_hendel : public CreatureScript
 
                 if (Player* pPlayer = pDoneBy->GetCharmerOrOwnerPlayerOrPlayerItself())
                 {
-                    pPlayer->GroupEventHappens(QUEST_MISSING_DIPLO_PT16, m_creature);
+                    pPlayer->Journal().ExploredWithGroup(QUEST_MISSING_DIPLO_PT16, m_creature);
                 }
                 DoScriptText(EMOTE_SURRENDER, m_creature);
 
@@ -719,7 +719,7 @@ struct npc_stinky_ignatz : public CreatureScript
                 case 39:
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(pPlayer->GetTeam() == ALLIANCE ? QUEST_ID_STINKYS_ESCAPE_ALLIANCE : QUEST_ID_STINKYS_ESCAPE_HORDE, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(pPlayer->GetTeam() == ALLIANCE ? QUEST_ID_STINKYS_ESCAPE_ALLIANCE : QUEST_ID_STINKYS_ESCAPE_HORDE, m_creature);
                         DoScriptText(SAY_STINKY_END, m_creature, pPlayer);
                     }
                     break;

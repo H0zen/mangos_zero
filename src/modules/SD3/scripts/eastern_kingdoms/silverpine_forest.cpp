@@ -137,7 +137,7 @@ struct npc_deathstalker_erland : public CreatureScript
                             DoScriptText(SAY_PROGRESS, m_creature);
                             break;
                     }
-                    pPlayer->GroupEventHappens(QUEST_ERLAND, m_creature);
+                    pPlayer->Journal().ExploredWithGroup(QUEST_ERLAND, m_creature);
                     m_creature->SetWalk(false);
                     break;
                 case 16:
@@ -407,7 +407,7 @@ struct npc_deathstalker_faerleia : public CreatureScript
                 m_creature->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
                 if (Player* pPlayer = (m_creature->GetMap()->GetPlayer(m_uiPlayerGUID)))
                 {
-                    pPlayer->GroupEventHappens(QUEST_PYREWOOD_AMBUSH, m_creature);
+                    pPlayer->Journal().ExploredWithGroup(QUEST_PYREWOOD_AMBUSH, m_creature);
                 }
 
                 FinishEvent();

@@ -425,7 +425,7 @@ struct npc_ranshalla : public CreatureScript
                     m_creature->SetStandState(UNIT_STAND_STATE_KNEEL);
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_GUARDIANS_ALTAR, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_GUARDIANS_ALTAR, m_creature);
                     }
                     break;
             }

@@ -107,7 +107,7 @@ struct npc_kerlonian : public CreatureScript
                     {
                         if (pPlayer->GetQuestStatus(QUEST_SLEEPER_AWAKENED) == QUEST_STATUS_INCOMPLETE)
                         {
-                            pPlayer->GroupEventHappens(QUEST_SLEEPER_AWAKENED, m_creature);
+                            pPlayer->Journal().ExploredWithGroup(QUEST_SLEEPER_AWAKENED, m_creature);
                         }
 
                         DoScriptText(SAY_KER_END, m_creature);
@@ -317,7 +317,7 @@ struct npc_prospector_remtravel : public CreatureScript
                     break;
                 case 42:
                     DoScriptText(EMOTE_REM_END, m_creature, pPlayer);
-                    pPlayer->GroupEventHappens(QUEST_ABSENT_MINDED_PT2, m_creature);
+                    pPlayer->Journal().ExploredWithGroup(QUEST_ABSENT_MINDED_PT2, m_creature);
                     break;
             }
         }
@@ -590,7 +590,7 @@ struct npc_volcor : public CreatureScript
                     DoScriptText(SAY_END, m_creature);
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_ESCAPE_THROUGH_FORCE, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_ESCAPE_THROUGH_FORCE, m_creature);
                     }
                     SetEscortPaused(true);
                     m_creature->ForcedDespawn(10000);
@@ -611,7 +611,7 @@ struct npc_volcor : public CreatureScript
                 case 24:
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_ESCAPE_THROUGH_STEALTH, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_ESCAPE_THROUGH_STEALTH, m_creature);
                     }
                     break;
             }
@@ -667,7 +667,7 @@ struct npc_therylune : public CreatureScript
                 case 17:
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_ID_THERYLUNE_ESCAPE, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_ID_THERYLUNE_ESCAPE, m_creature);
                     }
                     break;
                 case 19:
@@ -782,7 +782,7 @@ struct npc_rabid_bear : public CreatureScript
                         if (pTrapOwner && pTrapOwner->IsPlayer() &&
                             ((Player*)pTrapOwner)->GetQuestStatus(QUEST_PLAGUED_LANDS) == QUEST_STATUS_INCOMPLETE)
                         {
-                            ((Player*)pTrapOwner)->KilledMonsterCredit(m_creature->GetEntry(), m_creature->GetObjectGuid());
+                            ((Player*)pTrapOwner)->Journal().KillCredited(m_creature->GetEntry(), m_creature->GetObjectGuid());
                             m_creature->GetMotionMaster()->MoveFollow(pTrapOwner, PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);
                         }
                         else                                // Something unexpected happened

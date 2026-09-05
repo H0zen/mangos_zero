@@ -112,7 +112,7 @@ struct npc_corporal_keeshan_escort : public CreatureScript
                     DoScriptText(SAY_CORPORAL_KEESHAN_4, m_creature);
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_MISSING_IN_ACTION, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_MISSING_IN_ACTION, m_creature);
                     }
                     break;
             }

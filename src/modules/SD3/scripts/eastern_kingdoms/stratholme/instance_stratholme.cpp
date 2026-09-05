@@ -395,7 +395,7 @@ struct is_stratholme : public InstanceScript
 
                                         if (pPlayer->GetQuestStatus(QUEST_DEAD_MAN_PLEA) == QUEST_STATUS_INCOMPLETE)
                                         {
-                                            pPlayer->AreaExploredOrEventHappens(QUEST_DEAD_MAN_PLEA);
+                                            pPlayer->Journal().Explored(QUEST_DEAD_MAN_PLEA);
 
                                             // Argent Dawn reputation reward
                                             pPlayer->CastSpell(pPlayer, SPELL_YSIDA_FREED, true);

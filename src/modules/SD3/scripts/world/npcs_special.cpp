@@ -375,11 +375,11 @@ struct npc_doctor : public CreatureScript
 
                         if (pPlayer->GetQuestStatus(QUEST_TRIAGE_A) == QUEST_STATUS_INCOMPLETE)
                         {
-                            pPlayer->GroupEventHappens(QUEST_TRIAGE_A, m_creature);
+                            pPlayer->Journal().ExploredWithGroup(QUEST_TRIAGE_A, m_creature);
                         }
                         else if (pPlayer->GetQuestStatus(QUEST_TRIAGE_H) == QUEST_STATUS_INCOMPLETE)
                         {
-                            pPlayer->GroupEventHappens(QUEST_TRIAGE_H, m_creature);
+                            pPlayer->Journal().ExploredWithGroup(QUEST_TRIAGE_H, m_creature);
                         }
 
                         Reset();
@@ -809,7 +809,7 @@ struct npc_garments_of_quests : public CreatureScript
                     // give quest credit, not expect any special quest objectives
                     if (m_bCanRun)
                     {
-                        ((Player*)pCaster)->TalkedToCreature(m_creature->GetEntry(), m_creature->GetObjectGuid());
+                        ((Player*)pCaster)->Journal().TalkCredited(m_creature->GetEntry(), m_creature->GetObjectGuid());
                     }
                 }
             }
@@ -953,7 +953,7 @@ struct npc_innkeeper : public CreatureScript
             }
         }
 
-        pPlayer->TalkedToCreature(pCreature->GetEntry(), pCreature->GetObjectGuid());
+        pPlayer->Journal().TalkCredited(pCreature->GetEntry(), pCreature->GetObjectGuid());
         pPlayer->SendPreparedGossip(pCreature);
         return true;
     }
@@ -1056,7 +1056,7 @@ struct npc_redemption_target : public CreatureScript
                         // Quests 9600 and 9685 requires kill credit
                         if (m_creature->GetEntry() == NPC_FURBOLG_SHAMAN || m_creature->GetEntry() == NPC_BLOOD_KNIGHT)
                         {
-                            pPlayer->KilledMonsterCredit(m_creature->GetEntry(), m_creature->GetObjectGuid());
+                            pPlayer->Journal().KillCredited(m_creature->GetEntry(), m_creature->GetObjectGuid());
                         }
                     }
 

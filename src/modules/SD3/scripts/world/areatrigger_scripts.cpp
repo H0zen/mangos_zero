@@ -93,7 +93,7 @@ struct at_ravenholdt : public AreaTriggerScript
     {
         if (pPlayer->GetQuestStatus(QUEST_MANOR_RAVENHOLDT) == QUEST_STATUS_INCOMPLETE)
         {
-            pPlayer->KilledMonsterCredit(NPC_RAVENHOLDT);
+            pPlayer->Journal().KillCredited(NPC_RAVENHOLDT);
         }
 
         return false;

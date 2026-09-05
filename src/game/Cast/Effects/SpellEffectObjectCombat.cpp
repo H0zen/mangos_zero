@@ -1142,7 +1142,7 @@ void Spell::EffectQuestComplete(SpellEffectIndex eff_idx)
     }
 
     uint32 quest_id = m_spellInfo->EffectMiscValue[eff_idx];
-    ((Player*)unitTarget)->AreaExploredOrEventHappens(quest_id);
+    ((Player*)unitTarget)->Journal().Explored(quest_id);
 }
 
 /**

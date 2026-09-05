@@ -410,7 +410,7 @@ bool ReputationMgr::SetOneFactionReputation(FactionEntry const* factionEntry, in
             }
         }
 
-        m_player->ReputationChanged(factionEntry);
+        m_player->Journal().ReputationNowIs(factionEntry);
 
         return true;
     }

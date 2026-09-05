@@ -85,7 +85,7 @@ struct npc_mist : public CreatureScript
             {
                 if (pPlayer->GetQuestStatus(QUEST_MIST) == QUEST_STATUS_INCOMPLETE)
                 {
-                    pPlayer->GroupEventHappens(QUEST_MIST, m_creature);
+                    pPlayer->Journal().ExploredWithGroup(QUEST_MIST, m_creature);
                 }
             }
 

@@ -762,7 +762,7 @@ struct npc_kernobee : public CreatureScript
                     SetFollowComplete(true);
                     if (Player* pPlayer = GetLeaderForFollower())
                     {
-                        pPlayer->GroupEventHappens(QUEST_A_FINE_MESS, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_A_FINE_MESS, m_creature);
                     }
                     m_creature->GetMotionMaster()->MovePoint(1, aKernobeePositions[1][0], aKernobeePositions[1][1], aKernobeePositions[1][2], false);
                     m_creature->ForcedDespawn(2000);

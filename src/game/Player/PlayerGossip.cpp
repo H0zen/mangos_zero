@@ -387,7 +387,7 @@ void Player::OnGossipSelect(Occupant* pSource, uint32 gossipListId)
             else if (menuData.m_gAction_menu < 0)
             {
                 PlayerTalkClass->CloseGossip();
-                TalkedToCreature(pSource->GetEntry(), pSource->GetObjectGuid());
+                m_journal.TalkCredited(pSource->GetEntry(), pSource->GetObjectGuid());
             }
 
             break;

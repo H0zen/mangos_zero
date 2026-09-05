@@ -222,7 +222,7 @@ bool ChatHandler::HandleQuestCompleteCommand(char* args)
         {
             for (uint16 z = 0; z < creaturecount; ++z)
             {
-                player->CastedCreatureOrGO(creature, ObjectGuid(), spell_id);
+                player->Journal().CastCredited(creature, ObjectGuid(), spell_id);
             }
         }
         else if (creature > 0)
@@ -231,7 +231,7 @@ bool ChatHandler::HandleQuestCompleteCommand(char* args)
             {
                 for (uint16 z = 0; z < creaturecount; ++z)
                 {
-                    player->KilledMonster(cInfo, ObjectGuid());
+                    player->Journal().CreatureKilled(cInfo, ObjectGuid());
                 }
             }
         }
@@ -239,7 +239,7 @@ bool ChatHandler::HandleQuestCompleteCommand(char* args)
         {
             for (uint16 z = 0; z < creaturecount; ++z)
             {
-                player->CastedCreatureOrGO(-creature, ObjectGuid(), 0);
+                player->Journal().CastCredited(-creature, ObjectGuid(), 0);
             }
         }
     }

@@ -113,7 +113,7 @@ struct npc_bartleby : public CreatureScript
 
                 if (pDoneBy->IsPlayer())
                 {
-                    ((Player*)pDoneBy)->AreaExploredOrEventHappens(QUEST_BEAT);
+                    ((Player*)pDoneBy)->Journal().Explored(QUEST_BEAT);
                 }
 
                 EnterEvadeMode();
@@ -180,7 +180,7 @@ struct npc_dashel_stonefist : public CreatureScript
 
                 if (pDoneBy->IsPlayer())
                 {
-                    ((Player*)pDoneBy)->AreaExploredOrEventHappens(QUEST_MISSING_DIPLO_PT8);
+                    ((Player*)pDoneBy)->Journal().Explored(QUEST_MISSING_DIPLO_PT8);
                 }
 
                 EnterEvadeMode();
@@ -254,7 +254,7 @@ struct npc_lady_katrana_prestor : public CreatureScript //TODO localisation
                 break;
             case GOSSIP_ACTION_INFO_DEF + 3:
                 pPlayer->CLOSE_GOSSIP_MENU();
-                pPlayer->AreaExploredOrEventHappens(4185);
+                pPlayer->Journal().Explored(4185);
                 break;
         }
         return true;
@@ -1038,7 +1038,7 @@ struct npc_reginald_windsor : public CreatureScript
 
                     if (Player* pPlayer = m_creature->GetMap()->GetPlayer(m_playerGuid))
                     {
-                        pPlayer->GroupEventHappens(QUEST_THE_GREAT_MASQUERADE, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_THE_GREAT_MASQUERADE, m_creature);
                     }
                     break;
                 case NPC_GUARD_PATROLLER:

@@ -697,7 +697,7 @@ struct npc_anachronos_the_ancient : public CreatureScript
                             // Complete quest and despawn gate
                             if (Player* pPlayer = m_creature->GetMap()->GetPlayer(m_playerGuid))
                             {
-                                pPlayer->GroupEventHappens(QUEST_A_PAWN_ON_THE_ETERNAL_BOARD, m_creature);
+                                pPlayer->Journal().ExploredWithGroup(QUEST_A_PAWN_ON_THE_ETERNAL_BOARD, m_creature);
                             }
                             m_creature->SetStandState(UNIT_STAND_STATE_STAND);
                             m_uiEventTimer = 4000;

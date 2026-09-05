@@ -63,7 +63,7 @@ struct npc_ragged_john : public CreatureScript
                 if (who->IsPlayer() && InReach(*m_creature, *who, 15) && who->isInAccessablePlaceFor(m_creature))
                 {
                     DoCastSpellIfCan(who, 16472);
-                    ((Player*)who)->AreaExploredOrEventHappens(4866);
+                    ((Player*)who)->Journal().Explored(4866);
                 }
             }
 
@@ -156,7 +156,7 @@ struct npc_ragged_john : public CreatureScript
                 break;
             case GOSSIP_ACTION_INFO_DEF + 11:
                 pPlayer->CLOSE_GOSSIP_MENU();
-                pPlayer->AreaExploredOrEventHappens(4224);
+                pPlayer->Journal().Explored(4224);
                 break;
         }
         return true;
@@ -368,7 +368,7 @@ struct npc_grark_lorkrub : public CreatureScript
                     // Finish the quest
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_ID_PRECARIOUS_PREDICAMENT, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_ID_PRECARIOUS_PREDICAMENT, m_creature);
                     }
                     // Kill self
                     m_creature->DealDamage(m_creature, m_creature->GetHealth(), nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NONE, nullptr, false);

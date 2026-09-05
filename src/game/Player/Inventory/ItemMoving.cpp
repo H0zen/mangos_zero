@@ -79,7 +79,7 @@ Item* Player::StoreNewItem(ItemPosCountVec const& dest, uint32 item, bool update
     Item* pItem = Item::CreateItem(item, count, this, randomPropertyId);
     if (pItem)
     {
-        ItemAddedQuestCheck(item, count);
+        m_journal.ItemGained(item, count);
         pItem = StoreItem(dest, pItem, update);
     }
     return pItem;
@@ -89,7 +89,7 @@ Item* Player::EquipNewItem(uint16 pos, uint32 item, bool update)
 {
     if (Item* pItem = Item::CreateItem(item, 1, this))
     {
-        ItemAddedQuestCheck(item, 1);
+        m_journal.ItemGained(item, 1);
         return EquipItem(pos, pItem, update);
     }
 
@@ -215,7 +215,7 @@ void Player::MoveItemFromInventory(uint8 bag, uint8 slot, bool update)
 {
     if (Item* it = GetItemByPos(bag, slot))
     {
-        ItemRemovedQuestCheck(it->GetEntry(), it->GetCount());
+        m_journal.ItemLost(it->GetEntry(), it->GetCount());
         RemoveItem(bag, slot, update);
         m_inventory.Saves().Forget(it);
         if (it->IsInWorld())
@@ -230,7 +230,7 @@ void Player::MoveItemFromInventory(uint8 bag, uint8 slot, bool update)
 void Player::MoveItemToInventory(ItemPosCountVec const& dest, Item* pItem, bool update, bool in_characterInventoryDB)
 {
     // update quest counters
-    ItemAddedQuestCheck(pItem->GetEntry(), pItem->GetCount());
+    m_journal.ItemGained(pItem->GetEntry(), pItem->GetCount());
 
     // store item
     Item* pLastItem = StoreItem(dest, pItem, update);
@@ -283,7 +283,7 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
         stmt.PExecute(pItem->GetGUIDLow());
     }
 
-    ItemRemovedQuestCheck(pItem->GetEntry(), pItem->GetCount());
+    m_journal.ItemLost(pItem->GetEntry(), pItem->GetCount());
 
     // A worn piece stops doing whatever it was doing for him before it goes.
     if (Inventory::IsHisOwn(bag) && slot < INVENTORY_SLOT_BAG_END)
@@ -341,7 +341,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                 }
                 else
                 {
-                    ItemRemovedQuestCheck(pItem->GetEntry(), count - remcount);
+                    m_journal.ItemLost(pItem->GetEntry(), count - remcount);
                     pItem->SetCount(pItem->GetCount() - count + remcount);
                     m_inventory.Changed(pItem, update);
                     pItem->SetState(ITEM_CHANGED, this);
@@ -371,7 +371,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                 }
                 else
                 {
-                    ItemRemovedQuestCheck(pItem->GetEntry(), count - remcount);
+                    m_journal.ItemLost(pItem->GetEntry(), count - remcount);
                     pItem->SetCount(pItem->GetCount() - count + remcount);
                     m_inventory.Changed(pItem, update);
                     pItem->SetState(ITEM_CHANGED, this);
@@ -405,7 +405,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                         }
                         else
                         {
-                            ItemRemovedQuestCheck(pItem->GetEntry(), count - remcount);
+                            m_journal.ItemLost(pItem->GetEntry(), count - remcount);
                             pItem->SetCount(pItem->GetCount() - count + remcount);
                             m_inventory.Changed(pItem, update);
                             pItem->SetState(ITEM_CHANGED, this);
@@ -438,7 +438,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                 }
                 else
                 {
-                    ItemRemovedQuestCheck(pItem->GetEntry(), count - remcount);
+                    m_journal.ItemLost(pItem->GetEntry(), count - remcount);
                     pItem->SetCount(pItem->GetCount() - count + remcount);
                     m_inventory.Changed(pItem, update);
                     pItem->SetState(ITEM_CHANGED, this);
@@ -471,7 +471,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                     }
                     else
                     {
-                        ItemRemovedQuestCheck(pItem->GetEntry(), count - remcount);
+                        m_journal.ItemLost(pItem->GetEntry(), count - remcount);
                         pItem->SetCount(pItem->GetCount() - count + remcount);
                         m_inventory.Changed(pItem, update);
                         pItem->SetState(ITEM_CHANGED, this);
@@ -505,7 +505,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                             }
                             else
                             {
-                                ItemRemovedQuestCheck(pItem->GetEntry(), count - remcount);
+                                m_journal.ItemLost(pItem->GetEntry(), count - remcount);
                                 pItem->SetCount(pItem->GetCount() - count + remcount);
                                 m_inventory.Changed(pItem, update);
                                 pItem->SetState(ITEM_CHANGED, this);
@@ -540,7 +540,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                     }
                     else
                     {
-                        ItemRemovedQuestCheck(pItem->GetEntry(), count - remcount);
+                        m_journal.ItemLost(pItem->GetEntry(), count - remcount);
                         pItem->SetCount(pItem->GetCount() - count + remcount);
                         m_inventory.Changed(pItem, update);
                         pItem->SetState(ITEM_CHANGED, this);
@@ -695,7 +695,7 @@ void Player::DestroyItemCount(Item* pItem, uint32& count, bool update)
     }
     else
     {
-        ItemRemovedQuestCheck(pItem->GetEntry(), count);
+        m_journal.ItemLost(pItem->GetEntry(), count);
         pItem->SetCount(pItem->GetCount() - count);
         count = 0;
         m_inventory.Changed(pItem, update);

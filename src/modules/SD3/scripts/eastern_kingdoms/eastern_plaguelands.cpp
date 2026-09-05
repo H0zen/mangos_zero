@@ -300,7 +300,7 @@ struct npc_eris_havenfire : public CreatureScript
         {
             if (Player* pPlayer = m_creature->GetMap()->GetPlayer(m_playerGuid))
             {
-                pPlayer->AreaExploredOrEventHappens(QUEST_BALANCE_OF_LIGHT_AND_SHADOW);
+                pPlayer->Journal().Explored(QUEST_BALANCE_OF_LIGHT_AND_SHADOW);
             }
 
             DoScriptText(SAY_EVENT_END, m_creature);

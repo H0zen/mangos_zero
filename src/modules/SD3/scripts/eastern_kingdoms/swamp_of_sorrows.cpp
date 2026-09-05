@@ -130,7 +130,7 @@ struct npc_galen_goodward : public CreatureScript
                         m_creature->SetFacingToObject(pPlayer);
                         DoScriptText(SAY_QUEST_COMPLETE, m_creature, pPlayer);
                         DoScriptText(EMOTE_WHISPER, m_creature, pPlayer);
-                        pPlayer->GroupEventHappens(QUEST_GALENS_ESCAPE, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_GALENS_ESCAPE, m_creature);
                     }
                     SetRun(true);
                     break;

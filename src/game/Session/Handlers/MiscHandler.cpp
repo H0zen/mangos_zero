@@ -766,7 +766,7 @@ void WorldSession::HandleAreaTriggerOpcode(WorldPacket& recv_data)
         {
             if (player->GetQuestStatus(quest_id) == QUEST_STATUS_INCOMPLETE)
             {
-                player->AreaExploredOrEventHappens(quest_id);
+                player->Journal().Explored(quest_id);
             }
         }
     }

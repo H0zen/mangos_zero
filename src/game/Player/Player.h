@@ -1785,9 +1785,6 @@ class Player : public Unit
         // This is used to change the quest's rewarded state
         void SetQuestRewarded(uint32 quest_id, bool rewarded);
 
-        // Find the quest slot for a quest
-        uint16 FindQuestSlot(uint32 quest_id) const;
-
         // Get the quest ID from a quest slot
         uint32 GetQuestSlotQuestId(uint16 slot) const
         {
@@ -1841,53 +1838,11 @@ class Player : public Unit
             }
         }
 
-        // Get the current count for a required kill or cast
-        uint32 GetReqKillOrCastCurrentCount(uint32 quest_id, int32 entry);
-
-        // Mark an area as explored or an event as happened for a quest
-        void AreaExploredOrEventHappens(uint32 questId);
-
-        // Mark a group event as happened for a quest
-        void GroupEventHappens(uint32 questId, Occupant const* pEventObject);
-
-        // Check if an item added satisfies a quest requirement
-        void ItemAddedQuestCheck(uint32 entry, uint32 count);
-
-        // Check if an item removed satisfies a quest requirement
-        void ItemRemovedQuestCheck(uint32 entry, uint32 count);
-
-        // Mark a monster as killed for a quest
-        void KilledMonster(CreatureInfo const* cInfo, ObjectGuid guid);
-
-        // Mark a monster as killed for a quest (with credit)
-        void KilledMonsterCredit(uint32 entry, ObjectGuid guid = ObjectGuid());
-
-        // Mark a creature or game object as casted for a quest
-        void CastedCreatureOrGO(uint32 entry, ObjectGuid guid, uint32 spell_id, bool original_caster = true);
-
-        // Mark a creature as talked to for a quest
-        void TalkedToCreature(uint32 entry, ObjectGuid guid);
-
-        // Handle money change for a quest
-        void MoneyChanged(uint32 value);
-
-        // Handle reputation change for a quest
-        void ReputationChanged(FactionEntry const* factionEntry);
-
-        // Check if the player has a quest for an item
-        bool HasQuestForItem(uint32 itemid) const;
-
-        // Check if the player has a quest for a game object
-        bool HasQuestForGO(int32 GOId) const;
-
         // Update the world objects for quests
         void UpdateForQuestObjects();
 
         // Check if the player can share a quest
         bool CanShareQuest(uint32 quest_id) const;
-
-        // Send a quest complete event
-        void SendQuestCompleteEvent(uint32 quest_id);
 
         // Send a quest reward notification
         void SendQuestReward(Quest const* pQuest, uint32 XP);
@@ -1903,11 +1858,6 @@ class Player : public Unit
         // Send a quest confirm accept notification
         void SendQuestConfirmAccept(Quest const* pQuest, Player* pReceiver);
         void SendPushToPartyResponse(Player* pPlayer, uint8 msg);
-        void SendQuestUpdateAddItem(Quest const* pQuest, uint32 item_idx, uint32 count);
-
-        // Send a quest update for adding a creature or game object
-        void SendQuestUpdateAddCreatureOrGo(Quest const* pQuest, ObjectGuid guid, uint32 creatureOrGO_idx, uint32 count);
-
         // Get the divider GUID
         ObjectGuid GetDividerGuid() const { return m_journal.Divider(); }
 
@@ -2036,7 +1986,7 @@ class Player : public Unit
         void SetMoney(uint32 value)
         {
             SetUInt32Value(PLAYER_FIELD_COINAGE, value);
-            MoneyChanged(value);
+            m_journal.MoneyNowIs(value);
         }
 
         // Get the player's quest status map
@@ -3828,7 +3778,6 @@ class Player : public Unit
         void UpdateKnownCurrencies(uint32 itemId, bool apply);
 
         // Adjust quest required item count
-        void AdjustQuestReqItemCount(Quest const* pQuest, QuestStatusData& questStatusData);
 
         // Set the ability to delay teleport
         void SetCanDelayTeleport(bool setting) { m_teleport.MayWait(setting); }

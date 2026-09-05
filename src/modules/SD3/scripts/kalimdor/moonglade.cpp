@@ -364,7 +364,7 @@ struct npc_keeper_remulos : public CreatureScript
         {
             if (Player* pPlayer = GetPlayerForEscort())
             {
-                pPlayer->GroupEventHappens(QUEST_NIGHTMARE_MANIFESTS, pTarget);
+                pPlayer->Journal().ExploredWithGroup(QUEST_NIGHTMARE_MANIFESTS, pTarget);
             }
 
             m_uiOutroTimer = 3000;

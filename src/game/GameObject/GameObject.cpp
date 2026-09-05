@@ -758,7 +758,7 @@ bool GameObject::HoldsQuestLootFor(Player* seeker) const
 bool GameObject::ActivateToQuest(Player* seeker) const
 {
     // An objective in its own right: the player was told to go and click this.
-    if (seeker->HasQuestForGO(GetEntry()))
+    if (seeker->Journal().NeedsGameObject(GetEntry()))
     {
         return true;
     }

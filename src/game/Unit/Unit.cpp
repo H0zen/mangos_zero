@@ -1212,7 +1212,7 @@ void Unit::JustKilledCreature(Creature* victim, Player* responsiblePlayer)
     {
         if (CreatureInfo const* normalInfo = ObjectMgr::GetCreatureTemplate(victim->GetEntry()))
         {
-            ((Player*)this)->KilledMonster(normalInfo, victim->GetObjectGuid());
+            ((Player*)this)->Journal().CreatureKilled(normalInfo, victim->GetObjectGuid());
         }
     }
 

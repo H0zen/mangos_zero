@@ -516,7 +516,7 @@ bool LootItem::AllowedForPlayer(Player const* player, Occupant const* lootTarget
     if (needs_quest)
     {
         // Checking quests for quest-only drop (check only quests requirements in this case)
-        if (!player->HasQuestForItem(itemid))
+        if (!player->Journal().NeedsItem(itemid))
         {
             return false;
         }
@@ -524,7 +524,7 @@ bool LootItem::AllowedForPlayer(Player const* player, Occupant const* lootTarget
     else
     {
         // Not quest only drop (check quest starting items for already accepted non-repeatable quests)
-        if (pProto->StartQuest && player->GetQuestStatus(pProto->StartQuest) != QUEST_STATUS_NONE && !player->HasQuestForItem(itemid))
+        if (pProto->StartQuest && player->GetQuestStatus(pProto->StartQuest) != QUEST_STATUS_NONE && !player->Journal().NeedsItem(itemid))
         {
             return false;
         }
@@ -1273,7 +1273,7 @@ bool LootTemplate::LootGroup::HasQuestDropForPlayer(Player const* player) const
 {
     for (LootStoreItemList::const_iterator i = ExplicitlyChanced.begin(); i != ExplicitlyChanced.end(); ++i)
     {
-        if (player->HasQuestForItem(i->itemid))
+        if (player->Journal().NeedsItem(i->itemid))
         {
             return true;
         }
@@ -1281,7 +1281,7 @@ bool LootTemplate::LootGroup::HasQuestDropForPlayer(Player const* player) const
 
     for (LootStoreItemList::const_iterator i = EqualChanced.begin(); i != EqualChanced.end(); ++i)
     {
-        if (player->HasQuestForItem(i->itemid))
+        if (player->Journal().NeedsItem(i->itemid))
         {
             return true;
         }
@@ -1301,7 +1301,7 @@ bool LootTemplate::LootGroup::HasSharedQuestDropForPlayer(Player const* player) 
     for (LootStoreItemList::const_iterator i = ExplicitlyChanced.begin(); i != ExplicitlyChanced.end(); ++i)
     {
         proto = ObjectMgr::GetItemPrototype(i->itemid);
-        if (player->HasQuestForItem(i->itemid) && proto && (player->GetItemCount(i->itemid, true) < proto->MaxCount) && (proto->Flags & ITEM_FLAG_PARTY_LOOT))
+        if (player->Journal().NeedsItem(i->itemid) && proto && (player->GetItemCount(i->itemid, true) < proto->MaxCount) && (proto->Flags & ITEM_FLAG_PARTY_LOOT))
         {
             return true;
         }
@@ -1309,7 +1309,7 @@ bool LootTemplate::LootGroup::HasSharedQuestDropForPlayer(Player const* player) 
     for (LootStoreItemList::const_iterator i = EqualChanced.begin(); i != EqualChanced.end(); ++i)
     {
         proto = ObjectMgr::GetItemPrototype(i->itemid);
-        if (player->HasQuestForItem(i->itemid) && proto && (player->GetItemCount(i->itemid, true) < proto->MaxCount) && (proto->Flags & ITEM_FLAG_PARTY_LOOT))
+        if (player->Journal().NeedsItem(i->itemid) && proto && (player->GetItemCount(i->itemid, true) < proto->MaxCount) && (proto->Flags & ITEM_FLAG_PARTY_LOOT))
         {
             return true;
         }
@@ -1335,7 +1335,7 @@ bool LootTemplate::LootGroup::HasStartingQuestDropForPlayer(Player const* player
 
         proto = ObjectMgr::GetItemPrototype(i->itemid);
 
-        if (proto->StartQuest && ((i->chance == 100 && player->GetQuestStatus(proto->StartQuest) == QUEST_STATUS_NONE) || player->HasQuestForItem(i->itemid)))
+        if (proto->StartQuest && ((i->chance == 100 && player->GetQuestStatus(proto->StartQuest) == QUEST_STATUS_NONE) || player->Journal().NeedsItem(i->itemid)))
         {
             return true;
         }
@@ -1351,7 +1351,7 @@ bool LootTemplate::LootGroup::HasStartingQuestDropForPlayer(Player const* player
 
         proto = ObjectMgr::GetItemPrototype(i->itemid);
 
-        if (proto->StartQuest && ((i->chance == 100 && player->GetQuestStatus(proto->StartQuest) == QUEST_STATUS_NONE) || player->HasQuestForItem(i->itemid)))
+        if (proto->StartQuest && ((i->chance == 100 && player->GetQuestStatus(proto->StartQuest) == QUEST_STATUS_NONE) || player->Journal().NeedsItem(i->itemid)))
         {
             return true;
         }
@@ -1652,7 +1652,7 @@ bool LootTemplate::HasQuestDropForPlayer(LootTemplateMap const& store, Player co
                 return true;
             }
         }
-        else if (player->HasQuestForItem(i->itemid))
+        else if (player->Journal().NeedsItem(i->itemid))
         {
             return true; // active quest drop found
         }
@@ -1705,7 +1705,7 @@ bool LootTemplate::HasSharedQuestDropForPlayer(LootTemplateMap const& store, Pla
                 return true;
             }
         }
-        else if (player->HasQuestForItem(i->itemid) && proto && (player->GetItemCount(i->itemid, true) < proto->MaxCount) && (proto->Flags & ITEM_FLAG_PARTY_LOOT))
+        else if (player->Journal().NeedsItem(i->itemid) && proto && (player->GetItemCount(i->itemid, true) < proto->MaxCount) && (proto->Flags & ITEM_FLAG_PARTY_LOOT))
         {
             return true; // active quest drop found
         }
@@ -1762,7 +1762,7 @@ bool LootTemplate::HasStartingQuestDropForPlayer(LootTemplateMap const& store, P
         {
             return false; // player doesn't respect the conditions.
         }
-        else if (proto->StartQuest && ((i->chance == 100 && player->GetQuestStatus(proto->StartQuest) == QUEST_STATUS_NONE) || player->HasQuestForItem(i->itemid)))
+        else if (proto->StartQuest && ((i->chance == 100 && player->GetQuestStatus(proto->StartQuest) == QUEST_STATUS_NONE) || player->Journal().NeedsItem(i->itemid)))
         {
             return true; // starting quest drop found.
         }

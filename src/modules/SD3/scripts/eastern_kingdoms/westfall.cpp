@@ -146,7 +146,7 @@ struct npc_daphne_stilwell : public CreatureScript
                 case 17:
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_TOME_VALOR, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_TOME_VALOR, m_creature);
                     }
                     break;
             }
@@ -260,7 +260,7 @@ struct npc_defias_traitor : public CreatureScript
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
                         DoScriptText(SAY_END, m_creature, pPlayer);
-                        pPlayer->GroupEventHappens(QUEST_DEFIAS_BROTHERHOOD, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_DEFIAS_BROTHERHOOD, m_creature);
                     }
                     break;
             }

@@ -125,7 +125,7 @@ void Player::RewardSinglePlayerAtKill(Unit* pVictim)
         // normal creature (not pet/etc) can be only in !PvP case
         if (pVictim->IsCreature())
         {
-            KilledMonster(((Creature*)pVictim)->GetCreatureInfo(), pVictim->GetObjectGuid());
+            m_journal.CreatureKilled(((Creature*)pVictim)->GetCreatureInfo(), pVictim->GetObjectGuid());
         }
     }
 }
@@ -161,13 +161,13 @@ void Player::RewardPlayerAndGroupAtEvent(uint32 creature_id, Occupant* pRewardSo
             // quest objectives updated only for alive group member or dead but with not released body
             if (pGroupGuy->IsAlive() || !pGroupGuy->HasPlayerFlag(PLAYER_FLAGS_GHOST))
             {
-                pGroupGuy->KilledMonsterCredit(creature_id, creature_guid);
+                pGroupGuy->Journal().KillCredited(creature_id, creature_guid);
             }
         }
     }
     else                                                    // if (!pGroup)
     {
-        KilledMonsterCredit(creature_id, creature_guid);
+        m_journal.KillCredited(creature_id, creature_guid);
     }
 }
 
@@ -198,13 +198,13 @@ void Player::RewardPlayerAndGroupAtCast(Occupant* pRewardSource, uint32 spellid)
             // quest objectives updated only for alive group member or dead but with not released body
             if (pGroupGuy->IsAlive() || !pGroupGuy->HasPlayerFlag(PLAYER_FLAGS_GHOST))
             {
-                pGroupGuy->CastedCreatureOrGO(pRewardSource->GetEntry(), pRewardSource->GetObjectGuid(), spellid, pGroupGuy == this);
+                pGroupGuy->Journal().CastCredited(pRewardSource->GetEntry(), pRewardSource->GetObjectGuid(), spellid, pGroupGuy == this);
             }
         }
     }
     else                                                    // if (!pGroup)
     {
-        CastedCreatureOrGO(pRewardSource->GetEntry(), pRewardSource->GetObjectGuid(), spellid);
+        m_journal.CastCredited(pRewardSource->GetEntry(), pRewardSource->GetObjectGuid(), spellid);
     }
 }
 

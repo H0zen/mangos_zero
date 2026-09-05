@@ -498,7 +498,7 @@ static void RewardGroupAtKill_helper(Player* pGroupGuy, Unit* pVictim, uint32 co
             // normal creature (not pet/etc) can be only in !PvP case
             if (pVictim->IsCreature())
             {
-                pGroupGuy->KilledMonster(((Creature*)pVictim)->GetCreatureInfo(), pVictim->GetObjectGuid());
+                pGroupGuy->Journal().CreatureKilled(((Creature*)pVictim)->GetCreatureInfo(), pVictim->GetObjectGuid());
             }
         }
     }

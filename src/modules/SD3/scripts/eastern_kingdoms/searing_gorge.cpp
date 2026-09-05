@@ -99,7 +99,7 @@ struct npc_dorius_stonetender : public CreatureScript
                     // ToDo: research if there is any event and text here!
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_ID_SUNTARA_STONES, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_ID_SUNTARA_STONES, m_creature);
                     }
                     m_creature->SetStandState(UNIT_STAND_STATE_DEAD);
                     break;

@@ -148,7 +148,7 @@ struct npc_willix_the_importer : public CreatureScript
                     // Complete event
                     if (Player* pPlayer = GetPlayerForEscort())
                     {
-                        pPlayer->GroupEventHappens(QUEST_WILLIX_THE_IMPORTER, m_creature);
+                        pPlayer->Journal().ExploredWithGroup(QUEST_WILLIX_THE_IMPORTER, m_creature);
                     }
                     SetEscortPaused(true);
                     break;
