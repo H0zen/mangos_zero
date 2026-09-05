@@ -40,6 +40,7 @@ set(TEST_SOURCES
     unit/test_teleportorder.cpp
     unit/test_questslots.cpp
     unit/test_worksentry.cpp
+    unit/test_drink.cpp
 
     combat/test_school.cpp
     combat/test_roll.cpp
