@@ -61,6 +61,7 @@
 #include "AccountMgr.h"
 #include "AuctionHouseMgr.h"
 #include "ObjectMgr.h"
+#include "MineralVein.h"
 #include "CreatureEventAIMgr.h"
 #include "GuildMgr.h"
 #include "SpellMgr.h"
@@ -441,6 +442,9 @@ void World::SetInitialWorldSettings()
 
     sLog.outString("Loading Game Object Templates...");     // must be after LoadPageTexts
     sObjectMgr.LoadGameobjectInfo();
+
+    sLog.outString("Loading Mineral Veins...");          // must be after LoadGameobjectInfo
+    LoadMineralVeins();
 
     sLog.outString("Loading GameObject models...");
     sLog.outString();

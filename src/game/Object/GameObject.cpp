@@ -27,6 +27,7 @@
 #include "Utterance.h"
 #include "GameObject.h"
 #include "Geometry/Quat.h"
+#include "MineralVein.h"
 #include "QuestDef.h"
 #include "ObjectMgr.h"
 #include "PoolManager.h"
@@ -1065,129 +1066,37 @@ void GameObject::GetQuaternion(Geometry::Quat& q) const
  */
 void GameObject::RollIfMineralVein()
 {
-    GameObjectInfo const* goinfo = ObjectMgr::GetGameObjectInfo(GetEntry());
-    if (goinfo->chest.minSuccessOpens != 0 && goinfo->chest.maxSuccessOpens > goinfo->chest.minSuccessOpens) //in this case it is a mineral vein
+    // What makes a chest a vein is that it gives up a random number of ores rather than
+    // one lot of loot, and that is in the template it was placed with.
+    GameObjectInfo const* placed = GetGOInfo();
+    if (!placed || placed->chest.minSuccessOpens == 0
+        || placed->chest.maxSuccessOpens <= placed->chest.minSuccessOpens)
     {
-        uint32 entrynew = RollMineralVein(GetObjectGuid().GetEntry());
-
-        GameObjectInfo const* goinfonew = ObjectMgr::GetGameObjectInfo(entrynew);
-        m_goInfo = goinfonew;
-
-        SetUInt32Value(GAMEOBJECT_DISPLAYID, (goinfonew->displayId));
-        Object::_ReCreate(entrynew);
-    }
-}
-
-/**
- * @brief Rolls a replacement mineral vein entry based on zone and rates.
- *
- * @param entry The base vein entry.
- * @return The selected vein entry.
- */
-uint32 GameObject::RollMineralVein(uint32 entry)      //Maybe incedicite bloodstone and indurium have alternate spawns?
-{
-    uint32 entrynew = entry;
-
-    if ((GetTerrain()->GetZoneId(Where().X(), Where().Y(), Where().Z()) == 46) || (GetTerrain()->GetZoneId(Where().X(), Where().Y(), Where().Z()) == 51)) // each node in searing gorge or burning steppes is able to spawn dark iron
-    {
-        if (urand (0, 100) < sWorld.getConfig(CONFIG_UINT32_RATE_MINING_DARKIRON))
-        {
-            entrynew = 165658;
-        }
-        return entrynew;
+        return;
     }
 
-    if (urand (0, 100) < sWorld.getConfig(CONFIG_UINT32_RATE_MINING_LOWER)) // beside silver all base ores have the possibility to spawn the lower base ore type so rol for lower version spawn
+    uint32 const zone = GetTerrain()->GetZoneId(Where().X(), Where().Y(), Where().Z());
+
+    uint32 const came = sMineralVeins.SpawnedAs(
+        GetEntry(), zone,
+        urand(0, 100) < sWorld.getConfig(CONFIG_UINT32_RATE_MINING_DARKIRON),
+        urand(0, 100) < sWorld.getConfig(CONFIG_UINT32_RATE_MINING_LOWER),
+        urand(0, 100) < sWorld.getConfig(CONFIG_UINT32_RATE_MINING_RARE));
+
+    if (came == GetEntry())
     {
-        switch (entry)
-        {
-            case 1735: // Iron can spawn Tin
-                entry = 1732;
-                break;
-            case 2040: // Mithril can spawn Iron
-                entry = 1735;
-                break;
-            case 123310: // Ooze covered mithril can spawn ooze covered iron
-                entry = 73939;
-                break;
-            case 324: // small thorium Vein can spawn Mithril
-                entry = 2040;
-                break;
-            case 123848: // ooze covered thorium Vein can spawn ooze covered mithril
-                entry = 123310;
-                break;
-            case 175404: // Rich thorium Vein can spawn small Thorium vein
-                entry = 324;
-                break;
-            case 177388: // ooze covered Rich thorium Vein can spawn ooze covered thorium
-                entry = 123848;
-                break;
-            default: //default case for copper, tin or not listet special veins
-                break;
-        }
+        return;
     }
 
-    switch (entry)                      // Now roll for rare spawn
+    GameObjectInfo const* instead = ObjectMgr::GetGameObjectInfo(came);
+    if (!instead)
     {
-        case 1732: // Tin can spawn Silver
-            if (urand (0, 100) < sWorld.getConfig(CONFIG_UINT32_RATE_MINING_RARE))
-            {
-                entrynew = 1733;
-            }
-            break;
-        case 1735: // Iron can spawn Gold
-            if (urand (0, 100) < sWorld.getConfig(CONFIG_UINT32_RATE_MINING_RARE))
-            {
-                entrynew = 1734;
-            }
-            break;
-        case 73939: // Ooze covered iron can spawn ooze covered gold
-            if (urand (0, 100) < sWorld.getConfig(CONFIG_UINT32_RATE_MINING_RARE))
-            {
-                entrynew = 73941;
-            }
-            break;
-        case 2040: // Mithril can spawn Truesilver
-            if (urand (0, 100) < sWorld.getConfig(CONFIG_UINT32_RATE_MINING_RARE))
-            {
-                entrynew = 2047;
-            }
-            break;
-        case 123310: // Ooze covered mithril can spawn ooze covered truesilver
-            if (urand (0, 100) < sWorld.getConfig(CONFIG_UINT32_RATE_MINING_RARE))
-            {
-                entrynew = 123309;
-            }
-            break;
-        case 324: // small thorium Vein can spawn Truesilver
-            if (urand (0, 100) < sWorld.getConfig(CONFIG_UINT32_RATE_MINING_RARE))
-            {
-                entrynew = 2047;
-            }
-            break;
-        case 123848: // ooze covered thorium Vein can spawn ooze covered truesilver
-            if (urand (0, 100) < sWorld.getConfig(CONFIG_UINT32_RATE_MINING_RARE))
-            {
-                entrynew = 123309;
-            }
-            break;
-        case 175404: // Rich thorium Vein can spawn truesilver
-            if (urand (0, 100) < sWorld.getConfig(CONFIG_UINT32_RATE_MINING_RARE))
-            {
-                entrynew = 2047;
-            }
-            break;
-        case 177388: // ooze covered Rich thorium Vein can spawn ooze covered truesilver
-            if (urand (0, 100) < sWorld.getConfig(CONFIG_UINT32_RATE_MINING_RARE))
-            {
-                entrynew = 123309;
-            }
-            break;
-
-        default: //default case for copper or not listet special veins
-            entrynew = entry;
+        return;
     }
-    return entrynew;
+
+    m_goInfo = instead;
+    SetUInt32Value(GAMEOBJECT_DISPLAYID, instead->displayId);
+    Object::_ReCreate(came);
 }
 
 /**

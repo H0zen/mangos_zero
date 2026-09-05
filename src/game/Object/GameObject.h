@@ -750,8 +750,8 @@ class GameObject : public Occupant
 
         void Use(Unit* user);
 
+        /// Roll for what this vein has come up as, if it is one at all.
         void RollIfMineralVein();
-        uint32 RollMineralVein(uint32 entry);
 
         LootState getLootState() const { return m_lootState; }
         void SetLootState(LootState s);

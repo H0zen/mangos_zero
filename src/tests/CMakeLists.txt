@@ -33,6 +33,7 @@ set(TEST_SOURCES
     unit/test_usertally.cpp
     unit/test_liftpath.cpp
     unit/test_vesselroute.cpp
+    unit/test_mineralvein.cpp
 
     combat/test_school.cpp
     combat/test_roll.cpp
