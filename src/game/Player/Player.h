@@ -441,20 +441,6 @@ struct Areas
     float y2;        // Y2 coordinate
 };
 
-// Structure to hold enchant duration information
-struct EnchantDuration
-{
-    EnchantDuration() : item(nullptr), slot(MAX_ENCHANTMENT_SLOT), leftduration(0) {};
-    EnchantDuration(Item* _item, EnchantmentSlot _slot, uint32 _leftduration) : item(_item), slot(_slot), leftduration(_leftduration) { MANGOS_ASSERT(item); };
-
-    Item* item;             // Item pointer
-    EnchantmentSlot slot;   // Enchantment slot
-    uint32 leftduration;    // Left duration
-};
-
-typedef std::list<EnchantDuration> EnchantDurationList;
-typedef std::list<Item*> ItemDurationList;
-
 enum RaidGroupError
 {
     ERR_RAID_GROUP_REQUIRED = 1,
@@ -1709,41 +1695,11 @@ class Player : public Unit
         // Cancel the trade
         void TradeCancel(bool sendback);
 
-        // Update enchantment time
-        void UpdateEnchantTime(uint32 time);
-
-        // Update item duration
-        void UpdateItemDuration(uint32 time, bool realtimeonly = false);
-
-        // Add enchantment durations
-        void AddEnchantmentDurations(Item* item);
-
-        // Remove enchantment durations
-        void RemoveEnchantmentDurations(Item* item);
-
-        // Remove all enchantments from a slot
-        void RemoveAllEnchantments(EnchantmentSlot slot);
-
-        // Add enchantment duration to an item
-        void AddEnchantmentDuration(Item* item, EnchantmentSlot slot, uint32 duration);
-
         // Apply or remove an enchantment
         void ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool apply_dur = true, bool ignore_condition = false);
 
         // Apply or remove all enchantments from an item
         void ApplyEnchantment(Item* item, bool apply);
-
-        // Send enchantment durations to the client
-        void SendEnchantmentDurations();
-
-        // Add item durations
-        void AddItemDurations(Item* item);
-
-        // Remove item durations
-        void RemoveItemDurations(Item* item);
-
-        // Send item durations to the client
-        void SendItemDurations();
 
         // Load the player's corpse
         void LoadCorpse();
@@ -3858,8 +3814,6 @@ class Player : public Unit
 
         SpellModList m_spellMods[MAX_SPELLMOD]; // Spell modifiers
         int32 m_SpellModRemoveCount; // Spell modifier remove count
-        EnchantDurationList m_enchantDuration; // Enchant duration list
-        ItemDurationList m_itemDuration; // Item duration list
 
         ObjectGuid m_resurrectGuid; // Resurrect GUID
         uint32 m_resurrectMap; // Resurrect map ID

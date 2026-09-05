@@ -79,7 +79,6 @@
 #include "SQLStorages.h"
 #include "DisableMgr.h"
 
-
 #include <cmath>
 
 namespace
@@ -151,7 +150,6 @@ namespace
 
 #define MAKE_SKILL_VALUE(v, m) MAKE_PAIR32(v,m)
 
-
 enum CharacterFlags
 {
     CHARACTER_FLAG_NONE                 = 0x00000000,
@@ -191,7 +189,6 @@ enum CharacterFlags
 
 #define MAX_DEATH_COUNT 3
 
-
 //== PlayerTaxi ================================================
 
 PlayerTaxi::PlayerTaxi()
@@ -213,11 +210,6 @@ void PlayerTaxi::InitTaxiNodes(uint32 race, uint32 /*level*/)
     ChrRacesEntry const* rEntry = sChrRacesStore.LookupEntry(race);
     m_taximask[0] = rEntry->StartingTaxiNodes;
 }
-
-
-
-
-
 
 /**
  * @brief Serializes the player's discovered taxi mask into a stream.
@@ -457,7 +449,6 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
 
 //== Player ====================================================
 
-
 /**
  * @brief Initializes a player instance and its runtime state.
  *
@@ -475,7 +466,6 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_mover(this)
 
     m_objectType |= TYPEMASK_PLAYER;
     m_objectTypeId = TYPEID_PLAYER;
-
 
     SetActiveObjectState(true);                             // player is always active object
 
@@ -710,7 +700,6 @@ Player::~Player()
     {
         delete ItemSetEff[x];
     }
-
 
     // clean up player-instance binds, may unload some instance saves
     for (BoundInstancesMap::iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end(); ++itr)
@@ -1067,15 +1056,6 @@ Item* Player::StoreNewItemInInventorySlot(uint32 itemEntry, uint32 amount)
     return nullptr;
 }
 
-
-
-
-
-
-
-
-
-
 /**
  * @brief Updates player state, timers, combat, saving, and delayed actions.
  *
@@ -1156,7 +1136,7 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     // Update items that have just a limited lifetime
     if (now > m_Last_tick)
     {
-        UpdateItemDuration(uint32(now - m_Last_tick));
+        m_inventory.RunClocks(uint32(now - m_Last_tick), false);
     }
 
     // Update timed quests
@@ -1363,7 +1343,7 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     }
 
     // Update enchant time
-    UpdateEnchantTime(update_diff);
+    m_inventory.RunEnchantClocks(update_diff);
 
     // Update homebind time
     UpdateHomebindTime(update_diff);
@@ -1374,7 +1354,6 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     {
         TeleportTo(m_teleport_dest, m_teleport_options);
     }
-
 
 }
 
@@ -1949,7 +1928,6 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     return true;
 }
 
-
 /**
  * @brief Executes queued delayed player operations.
  */
@@ -2075,10 +2053,6 @@ void Player::RemoveFromWorld()
 
     Unit::RemoveFromWorld();
 }
-
-
-
-
 
 /**
  * @brief Gets an NPC the player can currently interact with.
@@ -2351,10 +2325,6 @@ void Player::SetGMVisible(bool on)
     }
 }
 
-
-
-
-
 /**
  * @brief Sends the experience gain log packet to the client.
  *
@@ -2395,7 +2365,6 @@ void Player::GiveXP(uint32 xp, Unit* victim)
     }
 
     uint32 level = getLevel();
-
 
     // XP to money conversion processed in Player::RewardQuest
     if (level >= sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
@@ -2511,7 +2480,6 @@ void Player::GiveLevel(uint32 level)
     {
         pet->SynchronizeLevelWithOwner();
     }
-
 
 }
 
@@ -3135,31 +3103,6 @@ void Player::DeleteOldCharacters(uint32 keepDays)
     sLog.outString();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @brief Attempts to improve defense skill and refresh defense-derived bonuses.
  */
@@ -3174,41 +3117,7 @@ void Player::UpdateDefense()
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* Called from Player::SendInitialPacketsBeforeAddToMap */
-
-
-
-
 
 /**
  * @brief Moves the player to a new position and updates related state.
@@ -3323,7 +3232,6 @@ void Player::SendCinematicStart(uint32 CinematicSequenceId)
     SendDirectMessage(&data);
 }
 
-
 /**
  * @brief Gets the faction team associated with a race.
  *
@@ -3377,10 +3285,6 @@ void Player::setFactionForRace(uint8 race)
     m_team = TeamForRace(race);
     setFaction(getFactionForRace(race));
 }
-
-
-
-
 
 // Update honor fields , cleanKills is only used during char saving
 void Player::UpdateHonor()
@@ -3702,11 +3606,6 @@ bool Player::AddHonorCP(float honor, uint8 type, uint32 victim, uint8 victimType
     return true;
 }
 
-
-
-
-
-
 /**
  * @brief Checks whether the player is eligible to interact with a capture point.
  *
@@ -3723,32 +3622,10 @@ bool Player::CanUseCapturePoint()
         !isGameMaster();
 }
 
-
-
-
 //---------------------------------------------------------//
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /**  If in a battleground a player dies, and an enemy removes the insignia, the player's bones is lootable
  *   Called by remove insignia spell effect    */
-
-
-
-
-
 
 /**
  * @brief Sends a single world state update to the client.
@@ -3828,7 +3705,6 @@ void Player::SendInitWorldStates(uint32 mapid, uint32 zoneid)
     GetSession()->SendPacket(&data);
 }
 
-
 /**
  * @brief Sends a bind point confirmation prompt to the client.
  *
@@ -3873,9 +3749,6 @@ void Player::SendPetSkillWipeConfirm()
 /*********************************************************/
 /***                    STORAGE SYSTEM                 ***/
 /*********************************************************/
-
-
-
 
 /**
  * @brief Lists all viable equipment slots for an item prototype.
@@ -4079,21 +3952,6 @@ bool Player::ViableEquipSlots(ItemPrototype const* proto, uint8 *viable_slots) c
     return (viable_slots[0] != NULL_SLOT);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @brief Checks whether the player has a required quantity of an item equipped.
  *
@@ -4135,31 +3993,6 @@ InventoryResult Player::CanUseItemEluna(uint32 itemEntry) const
     return EQUIP_ERR_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @brief Sends the main container open packet to the client.
  */
@@ -4171,50 +4004,17 @@ void Player::SendOpenContainer()
     GetSession()->SendPacket(&data);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*********************************************************/
 
 /***                    GOSSIP SYSTEM                  ***/
 
 /*********************************************************/
 
-
-
-
-
-
-
 /*********************************************************/
 
 /***                    QUEST SYSTEM                   ***/
 
 /*********************************************************/
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * @brief Retrieves a quest template by identifier.
@@ -4226,30 +4026,6 @@ Quest const* Player::GetQuestTemplate(uint32 quest_id)
 {
     return sObjectMgr.GetQuestTemplate(quest_id);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * @brief Updates whether a quest reward has been claimed.
@@ -4269,22 +4045,6 @@ void Player::SetQuestRewarded(uint32 quest_id, bool rewarded)
     UpdateForQuestObjects();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /// Sent when a quest is failed to be given off at questtaker. Specifically handled reasons:
 /// INVALIDREASON_QUEST_FAILED_INVENTORY_FULL=4 (or 50)
 /// INVALIDREASON_QUEST_FAILED_DUPLICATE_ITEM=17
@@ -4300,19 +4060,9 @@ void Player::SendQuestFailedAtTaker(uint32 quest_id, uint32 reason)
     }
 }
 
-
-
-
-
-
-
-
 /*********************************************************/
 /***                   LOAD SYSTEM                     ***/
 /*********************************************************/
-
-
-
 
 /**
  * @brief Checks whether a creature is tapped by this player or the player's group.
@@ -4367,11 +4117,6 @@ bool Player::IsTappedByMeOrMyGroup(Creature* creature)
     return false;
 }
 
-
-
-
-
-
 /**
  * @brief Loads stored honor contribution points from the database.
  *
@@ -4404,32 +4149,9 @@ void Player::_LoadHonorCP(QueryResult* result)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*********************************************************/
 /***                   SAVE SYSTEM                     ***/
 /*********************************************************/
-
-
-
-
-
-
 
 /**
  * @brief Saves honor contribution point records and prunes obsolete entries.
@@ -4544,23 +4266,13 @@ void Player::SaveMail()
     m_mailsUpdated = false;
 }
 
-
-
-
-
-
 /*********************************************************/
 /***               FLOOD FILTER SYSTEM                 ***/
 /*********************************************************/
 
-
-
 /*********************************************************/
 /***              LOW LEVEL FUNCTIONS:Notifiers        ***/
 /*********************************************************/
-
-
-
 
 /**
  * @brief Sends the error packet for attempting to attack while not standing.
@@ -4571,21 +4283,9 @@ void Player::SendAttackSwingNotStanding()
     GetSession()->SendPacket(&data);
 }
 
-
-
-
-
-
-
-
-
-
-
 /*********************************************************/
 /***              Update timers                        ***/
 /*********************************************************/
-
-
 
 /**
  * @brief Enables or disables the free-for-all PvP player flag.
@@ -4603,7 +4303,6 @@ void Player::SetFFAPvP(bool state)
         RemovePlayerFlag(PLAYER_FLAGS_FFA_PVP);
     }
 }
-
 
 /**
  * @brief Unsummons the player's active mini-pet.
@@ -4630,14 +4329,6 @@ Pet* Player::GetMiniPet() const
 
     return GetMap()->GetPet(m_miniPetGuid);
 }
-
-
-
-
-
-
-
-
 
 /**
  * @brief Checks whether a spell modifier currently applies to a spell.
@@ -4672,7 +4363,6 @@ bool Player::IsAffectedBySpellmod(SpellEntry const* spellInfo, SpellModifier* mo
 
     return mod->isAffectedOnSpell(spellInfo);
 }
-
 
 /**
  * @brief Finds a spell modifier by operation and owning spell.
@@ -4764,13 +4454,6 @@ void Player::ResetSpellModsDueToCanceledSpell(Spell const* spell)
         }
     }
 }
-
-
-
-
-
-
-
 
 /**
  * @brief Mounts the player and updates pet state for the mounted state.
@@ -5186,7 +4869,6 @@ bool Player::BuyItemFromVendor(ObjectGuid vendorGuid, uint32 item, uint8 count, 
     return crItem->maxcount != 0;
 }
 
-
 /**
  * @brief Initializes the number of primary professions the player may learn.
  */
@@ -5216,9 +4898,6 @@ void Player::SetComboPoints()
         GetSession()->SendPacket(&data);
     }*/
 }
-
-
-
 
 /**
  * Sends the map-independent login preamble.
@@ -5523,12 +5202,8 @@ void Player::SendInitialPacketsAfterAddToMap(InitialWorldEntryContext const* ini
     }
 
     /* Must be called after loading the map */
-    SendEnchantmentDurations();
-    SendItemDurations();
+    m_inventory.SendClocks();
 }
-
-
-
 
 /**
  * @brief Applies the default equip cooldown for item use spells.
@@ -5574,11 +5249,6 @@ void Player::ApplyEquipCooldown(Item* pItem)
     }
 }
 
-
-
-
-
-
 /**
  * @brief Sends visible aura duration updates for a target to the player.
  *
@@ -5599,8 +5269,6 @@ void Player::SendAuraDurationsForTarget(Unit* target)
         holder->SendAuraDurationForCaster(this);
     }
 }
-
-
 
 /**
  * @brief Gets the minimum level for a battleground bracket.
@@ -5791,8 +5459,6 @@ bool Player::IsSpellFitByClassAndRace(uint32 spell_id, uint32* pReqlevel /*= nul
     return false;
 }
 
-
-
 /**
  * @brief Accepts or declines a pending summon and teleports when valid.
  *
@@ -5831,40 +5497,6 @@ void Player::SummonIfPossible(bool agree)
     TeleportTo(m_summon_mapid, m_summon_x, m_summon_y, m_summon_z, Where().Facing());
 }
 
-/**
- * @brief Removes an item from the list of items with active duration tracking.
- *
- * @param item The item to stop tracking.
- */
-void Player::RemoveItemDurations(Item* item)
-{
-    for (ItemDurationList::iterator itr = m_itemDuration.begin(); itr != m_itemDuration.end(); ++itr)
-    {
-        if (*itr == item)
-        {
-            m_itemDuration.erase(itr);
-            break;
-        }
-    }
-}
-
-/**
- * @brief Adds an item to the list of items with active duration tracking.
- *
- * @param item The item to track.
- */
-void Player::AddItemDurations(Item* item)
-{
-    if (item->GetUInt32Value(ITEM_FIELD_DURATION))
-    {
-        m_itemDuration.push_back(item);
-        item->SendTimeUpdate(this);
-    }
-}
-
-/**
- * @brief Automatically unequips the offhand item when a two-handed weapon requires it.
- */
 void Player::AutoUnequipOffhandIfNeed()
 {
     Item* offItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
@@ -6079,11 +5711,6 @@ uint32 Player::GetResurrectionSpellId()
     return spell_id;
 }
 
-
-
-
-
-
 /**
  * @brief Gets the player's base weapon skill for an attack type.
  *
@@ -6178,16 +5805,6 @@ void Player::SetClientControl(Unit* target, uint8 allowMove)
     data << uint8(allowMove);
     GetSession()->SendPacket(&data);
 }
-
-
-
-
-
-
-
-
-
-
 
 /**
  * @brief Updates liquid auras and mirror timers based on the player's position.
@@ -6343,7 +5960,6 @@ bool ItemPosCount::isContainedIn(ItemPosCountVec const& vec) const
 
     return false;
 }
-
 
 /**
  * @brief Checks whether the player is immune to all spell schools.
@@ -6700,7 +6316,6 @@ void Player::HandleFall(MovementInfo const& movementInfo)
     }
 }
 
-
 /**
  * @brief Adds or removes money from the player while clamping to valid limits.
  *
@@ -6859,8 +6474,6 @@ Object* Player::GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask)
 
     return nullptr;
 }
-
-
 
 /**
  * @brief Checks whether the player is immune to a specific spell effect.

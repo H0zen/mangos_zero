@@ -513,11 +513,7 @@ void Player::_SaveInventory()
         m_inventory.Own(i)->FSetState(ITEM_NEW);
     }
 
-    // update enchantment durations
-    for (EnchantDurationList::const_iterator itr = m_enchantDuration.begin(); itr != m_enchantDuration.end(); ++itr)
-    {
-        itr->item->SetEnchantmentDuration(itr->slot, itr->leftduration);
-    }
+    m_inventory.SettleClocks();
 
     // if no changes
     if (m_itemSaves.IsEmpty())

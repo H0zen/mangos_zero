@@ -168,6 +168,159 @@ void Inventory::ShowsEnchant(Item const* item, uint32 which, uint32 enchantId)
                            enchantId);
 }
 
+void Inventory::StartClocks(Item* item)
+{
+    if (!item)
+    {
+        return;
+    }
+
+    StartEnchantClocks(item);
+
+    if (item->GetUInt32Value(ITEM_FIELD_DURATION))
+    {
+        m_running.push_back(item);
+        item->SendTimeUpdate(&m_owner);
+    }
+}
+
+void Inventory::StartEnchantClocks(Item* item)
+{
+    if (!item)
+    {
+        return;
+    }
+
+    for (uint32 which = 0; which < MAX_ENCHANTMENT_SLOT; ++which)
+    {
+        EnchantmentSlot const slot = EnchantmentSlot(which);
+        if (!item->GetEnchantmentId(slot))
+        {
+            continue;
+        }
+
+        uint32 const duration = item->GetEnchantmentDuration(slot);
+        if (duration > 0)
+        {
+            StartEnchantClock(item, slot, duration);
+        }
+    }
+}
+
+void Inventory::StopClocks(Item* item)
+{
+    if (!item)
+    {
+        return;
+    }
+
+    // The time left goes back into the item, so that it takes up where it left
+    // off if he picks the thing up again.
+    for (auto itr = m_runningEnchants.begin(); itr != m_runningEnchants.end();)
+    {
+        if (itr->item != item)
+        {
+            ++itr;
+            continue;
+        }
+
+        item->SetEnchantmentDuration(itr->slot, itr->leftduration);
+        itr = m_runningEnchants.erase(itr);
+    }
+
+    m_running.remove(item);
+}
+
+void Inventory::StartEnchantClock(Item* item, EnchantmentSlot which, uint32 duration)
+{
+    if (!item || which >= MAX_ENCHANTMENT_SLOT)
+    {
+        return;
+    }
+
+    for (auto itr = m_runningEnchants.begin(); itr != m_runningEnchants.end(); ++itr)
+    {
+        if (itr->item == item && itr->slot == which)
+        {
+            itr->item->SetEnchantmentDuration(itr->slot, itr->leftduration);
+            m_runningEnchants.erase(itr);
+            break;
+        }
+    }
+
+    if (duration == 0)
+    {
+        return;
+    }
+
+    m_owner.GetSession()->SendItemEnchantTimeUpdate(m_owner.GetObjectGuid(), item->GetObjectGuid(),
+                                                    which, duration / IN_MILLISECONDS);
+    m_runningEnchants.emplace_back(item, which, duration);
+}
+
+void Inventory::RunClocks(uint32 elapsed, bool realTimeOnly)
+{
+    // An item counts itself down and may drop out of the list while doing it, so
+    // the next one is taken before the current one is asked.
+    for (auto itr = m_running.begin(); itr != m_running.end();)
+    {
+        Item* item = *itr;
+        ++itr;
+
+        if (!realTimeOnly || (item->GetProto()->ExtraFlags & ITEM_EXTRA_REAL_TIME_DURATION))
+        {
+            item->UpdateDuration(&m_owner, elapsed);
+        }
+    }
+}
+
+void Inventory::RunEnchantClocks(uint32 elapsed)
+{
+    for (auto itr = m_runningEnchants.begin(); itr != m_runningEnchants.end();)
+    {
+        // Gone from the item by some other route, so there is nothing to count.
+        if (!itr->item->GetEnchantmentId(itr->slot))
+        {
+            itr = m_runningEnchants.erase(itr);
+        }
+        else if (itr->leftduration > elapsed)
+        {
+            itr->leftduration -= elapsed;
+            ++itr;
+        }
+        else
+        {
+            m_owner.ApplyEnchantment(itr->item, itr->slot, false, false);
+            itr->item->ClearEnchantment(itr->slot);
+            itr = m_runningEnchants.erase(itr);
+        }
+    }
+}
+
+void Inventory::SendClocks()
+{
+    for (auto const& running : m_runningEnchants)
+    {
+        m_owner.GetSession()->SendItemEnchantTimeUpdate(m_owner.GetObjectGuid(),
+                                                        running.item->GetObjectGuid(),
+                                                        running.slot,
+                                                        running.leftduration / IN_MILLISECONDS);
+    }
+
+    for (auto* item : m_running)
+    {
+        item->SendTimeUpdate(&m_owner);
+    }
+}
+
+void Inventory::SettleClocks()
+{
+    for (auto const& running : m_runningEnchants)
+    {
+        running.item->SetEnchantmentDuration(running.slot, running.leftduration);
+    }
+}
+
 void Inventory::Arrived(Item* item, bool tell)
 {
     if (!item || !tell || !m_owner.IsInWorld())

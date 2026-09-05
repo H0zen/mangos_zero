@@ -182,8 +182,7 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
             pBag->SetState(ITEM_CHANGED, this);
         }
 
-        AddEnchantmentDurations(pItem);
-        AddItemDurations(pItem);
+        m_inventory.StartClocks(pItem);
 
         return pItem;
     }
@@ -205,15 +204,14 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
             // delete item (it not in any slot currently)
             m_inventory.Gone(pItem, update);
 
-            RemoveEnchantmentDurations(pItem);
-            RemoveItemDurations(pItem);
+            m_inventory.StopClocks(pItem);
 
             pItem->SetOwnerGuid(GetObjectGuid());           // prevent error at next SetState in case trade/mail/buy from vendor
             pItem->SetState(ITEM_REMOVED, this);
         }
 
         // AddItemDurations(pItem2); - pItem2 already have duration listed for player
-        AddEnchantmentDurations(pItem2);
+        m_inventory.StartEnchantClocks(pItem2);
 
         pItem2->SetState(ITEM_CHANGED, this);
 
@@ -250,8 +248,7 @@ Item* Player::EquipNewItem(uint16 pos, uint32 item, bool update)
  */
 Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
 {
-    AddEnchantmentDurations(pItem);
-    AddItemDurations(pItem);
+    m_inventory.StartClocks(pItem);
 
     uint8 bag = pos >> 8;
     uint8 slot = pos & 255;
@@ -316,8 +313,7 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
         // pItem->DeleteFromDB();
         m_inventory.Gone(pItem, update);
 
-        RemoveEnchantmentDurations(pItem);
-        RemoveItemDurations(pItem);
+        m_inventory.StopClocks(pItem);
 
         pItem->SetOwnerGuid(GetObjectGuid());               // prevent error at next SetState in case trade/mail/buy from vendor
         pItem->SetState(ITEM_REMOVED, this);
@@ -342,8 +338,7 @@ void Player::QuickEquipItem(uint16 pos, Item* pItem)
 {
     if (pItem)
     {
-        AddEnchantmentDurations(pItem);
-        AddItemDurations(pItem);
+        m_inventory.StartClocks(pItem);
 
         uint8 slot = pos & 255;
         VisualizeItem(slot, pItem);
@@ -402,8 +397,7 @@ void Player::RemoveItem(uint8 bag, uint8 slot, bool update)
     {
         DEBUG_LOG("STORAGE: RemoveItem bag = %u, slot = %u, item = %u", bag, slot, pItem->GetEntry());
 
-        RemoveEnchantmentDurations(pItem);
-        RemoveItemDurations(pItem);
+        m_inventory.StopClocks(pItem);
 
         if (bag == INVENTORY_SLOT_BAG_0)
         {
@@ -520,8 +514,7 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
             stmt.PExecute(pItem->GetGUIDLow());
         }
 
-        RemoveEnchantmentDurations(pItem);
-        RemoveItemDurations(pItem);
+        m_inventory.StopClocks(pItem);
 
         ItemRemovedQuestCheck(pItem->GetEntry(), pItem->GetCount());
 

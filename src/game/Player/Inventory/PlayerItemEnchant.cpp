@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Utilities/Errors.h"
 #include "Player.h"
 #include "Log.h"
@@ -69,203 +67,6 @@
 #include "SQLStorages.h"
 #include "DisableMgr.h"
 
-/**
- * @brief Updates durations for items tracked by the player.
- *
- * @param time The elapsed time in milliseconds.
- * @param realtimeonly True to update only items using real-time duration tracking.
- */
-void Player::UpdateItemDuration(uint32 time, bool realtimeonly)
-{
-    if (m_itemDuration.empty())
-    {
-        return;
-    }
-
-    DEBUG_LOG("Player::UpdateItemDuration(%u,%u)", time, realtimeonly);
-
-    for (ItemDurationList::const_iterator itr = m_itemDuration.begin(); itr != m_itemDuration.end();)
-    {
-        Item* item = *itr;
-        ++itr;                                              // current element can be erased in UpdateDuration
-
-        if (!(realtimeonly) || (item->GetProto()->ExtraFlags & ITEM_EXTRA_REAL_TIME_DURATION))
-        {
-            item->UpdateDuration(this, time);
-        }
-    }
-}
-
-/**
- * @brief Updates remaining durations for temporary item enchantments.
- *
- * @param time The elapsed time in milliseconds.
- */
-void Player::UpdateEnchantTime(uint32 time)
-{
-    for (EnchantDurationList::iterator itr = m_enchantDuration.begin(), next; itr != m_enchantDuration.end(); itr = next)
-    {
-        MANGOS_ASSERT(itr->item);
-        next = itr;
-        if (!itr->item->GetEnchantmentId(itr->slot))
-        {
-            next = m_enchantDuration.erase(itr);
-        }
-        else if (itr->leftduration <= time)
-        {
-            ApplyEnchantment(itr->item, itr->slot, false, false);
-            itr->item->ClearEnchantment(itr->slot);
-            next = m_enchantDuration.erase(itr);
-        }
-        else if (itr->leftduration > time)
-        {
-            itr->leftduration -= time;
-            ++next;
-        }
-    }
-}
-
-/**
- * @brief Registers timed enchantments from an item for duration tracking.
- *
- * @param item The item whose enchantments should be tracked.
- */
-void Player::AddEnchantmentDurations(Item* item)
-{
-    for (int x = 0; x < MAX_ENCHANTMENT_SLOT; ++x)
-    {
-        if (!item->GetEnchantmentId(EnchantmentSlot(x)))
-        {
-            continue;
-        }
-
-        uint32 duration = item->GetEnchantmentDuration(EnchantmentSlot(x));
-        if (duration > 0)
-        {
-            AddEnchantmentDuration(item, EnchantmentSlot(x), duration);
-        }
-    }
-}
-
-/**
- * @brief Removes an item's enchantments from duration tracking and stores remaining time.
- *
- * @param item The item whose enchantments should be untracked.
- */
-void Player::RemoveEnchantmentDurations(Item* item)
-{
-    for (EnchantDurationList::iterator itr = m_enchantDuration.begin(); itr != m_enchantDuration.end();)
-    {
-        if (itr->item == item)
-        {
-            // save duration in item
-            item->SetEnchantmentDuration(EnchantmentSlot(itr->slot), itr->leftduration);
-            itr = m_enchantDuration.erase(itr);
-        }
-        else
-        {
-            ++itr;
-        }
-    }
-}
-
-/**
- * @brief Removes all enchantments of a given slot type from equipped and stored items.
- *
- * @param slot The enchantment slot type to clear.
- */
-void Player::RemoveAllEnchantments(EnchantmentSlot slot)
-{
-    // remove enchantments from equipped items first to clean up the m_enchantDuration list
-    for (EnchantDurationList::iterator itr = m_enchantDuration.begin(), next; itr != m_enchantDuration.end(); itr = next)
-    {
-        next = itr;
-        if (itr->slot == slot)
-        {
-            if (itr->item && itr->item->GetEnchantmentId(slot))
-            {
-                // remove from stats
-                ApplyEnchantment(itr->item, slot, false, false);
-                // remove visual
-                itr->item->ClearEnchantment(slot);
-            }
-            // remove from update list
-            next = m_enchantDuration.erase(itr);
-        }
-        else
-        {
-            ++next;
-        }
-    }
-
-    // remove enchants from inventory items
-    // NOTE: no need to remove these from stats, since these aren't equipped
-    // in inventory
-    for (int i = INVENTORY_SLOT_ITEM_START; i < INVENTORY_SLOT_ITEM_END; ++i)
-    {
-        if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
-        {
-            if (pItem->GetEnchantmentId(slot))
-            {
-                pItem->ClearEnchantment(slot);
-            }
-        }
-    }
-
-    // in inventory bags
-    for (int i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; ++i)
-    {
-        if (Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, i))
-        {
-            for (uint32 j = 0; j < pBag->GetBagSize(); ++j)
-            {
-                if (Item* pItem = pBag->GetItemByPos(j))
-                {
-                    if (pItem->GetEnchantmentId(slot))
-                    {
-                        pItem->ClearEnchantment(slot);
-                    }
-                }
-            }
-        }
-    }
-}
-
-// duration == 0 will remove item enchant
-void Player::AddEnchantmentDuration(Item* item, EnchantmentSlot slot, uint32 duration)
-{
-    if (!item)
-    {
-        return;
-    }
-
-    if (slot >= MAX_ENCHANTMENT_SLOT)
-    {
-        return;
-    }
-
-    for (EnchantDurationList::iterator itr = m_enchantDuration.begin(); itr != m_enchantDuration.end(); ++itr)
-    {
-        if (itr->item == item && itr->slot == slot)
-        {
-            itr->item->SetEnchantmentDuration(itr->slot, itr->leftduration);
-            m_enchantDuration.erase(itr);
-            break;
-        }
-    }
-    if (item && duration > 0)
-    {
-        GetSession()->SendItemEnchantTimeUpdate(GetObjectGuid(), item->GetObjectGuid(), slot, uint32(duration / 1000));
-        m_enchantDuration.push_back(EnchantDuration(item, slot, duration));
-    }
-}
-
-/**
- * @brief Applies or removes all enchantments on an equipped item.
- *
- * @param item The item whose enchantments should be processed.
- * @param apply True to apply enchantments; false to remove them.
- */
 void Player::ApplyEnchantment(Item* item, bool apply)
 {
     for (uint32 slot = 0; slot < MAX_ENCHANTMENT_SLOT; ++slot)
@@ -437,49 +238,17 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
             uint32 duration = item->GetEnchantmentDuration(slot);
             if (duration > 0)
             {
-                AddEnchantmentDuration(item, slot, duration);
+                m_inventory.StartEnchantClock(item, slot, duration);
             }
         }
         else
         {
             // duration == 0 will remove EnchantDuration
-            AddEnchantmentDuration(item, slot, 0);
+            m_inventory.StartEnchantClock(item, slot, 0);
         }
     }
 }
 
-/**
- * @brief Sends all active enchantment duration timers to the client.
- */
-void Player::SendEnchantmentDurations()
-{
-    for (EnchantDurationList::const_iterator itr = m_enchantDuration.begin(); itr != m_enchantDuration.end(); ++itr)
-    {
-        GetSession()->SendItemEnchantTimeUpdate(GetObjectGuid(), itr->item->GetObjectGuid(), itr->slot, uint32(itr->leftduration) / 1000);
-    }
-}
-
-/**
- * @brief Sends all tracked item duration timers to the client.
- */
-void Player::SendItemDurations()
-{
-    for (ItemDurationList::const_iterator itr = m_itemDuration.begin(); itr != m_itemDuration.end(); ++itr)
-    {
-        (*itr)->SendTimeUpdate(this);
-    }
-}
-
-/**
- * @brief Sends an item push notification for a newly received or created item.
- *
- * @param item The item instance being reported.
- * @param count The quantity gained.
- * @param received True if the item was received rather than looted.
- * @param created True if the item was created rather than simply received.
- * @param broadcast True to broadcast the message to the player's group.
- * @param showInChat True to show the gain in chat.
- */
 void Player::SendNewItem(Item* item, uint32 count, bool received, bool created, bool broadcast /*=false*/, bool showInChat /*=true*/)
 {
     if (!item)                                              // prevent crash

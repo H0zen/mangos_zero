@@ -28,10 +28,31 @@
 #include "Platform/Define.h"
 #include "ObjectGuid.h"
 #include "Inventory/Slots.h"
+#include "Item.h"
+
+#include <list>
 
 class Bag;
 class Item;
 class Player;
+
+/**
+ * A temporary enchantment running down on an item.
+ *
+ * The time left is kept here rather than on the item, because an enchantment
+ * that is not being counted must keep its remaining time in the item's own field
+ * instead: a stone put away in a bag stops running and takes up where it left
+ * off when the item comes back out.
+ */
+struct EnchantClock
+{
+    EnchantClock(Item* onItem, EnchantmentSlot which, uint32 left)
+        : item(onItem), slot(which), leftduration(left) {}
+
+    Item* item;
+    EnchantmentSlot slot;
+    uint32 leftduration;
+};
 
 /**
  * The regions a search covers.
@@ -188,6 +209,41 @@ class Inventory
          */
         void ShowsEnchant(Item const* item, uint32 which, uint32 enchantId);
 
+        /**
+         * What he owns that is running down: an item with a life of its own, and
+         * a temporary enchantment on one.
+         *
+         * The two keep their remaining time in different places. An item's is a
+         * field on the item, so the item is only listed here and counts itself
+         * down. An enchantment's is held here, and is written back into the item
+         * when it stops being counted -- which is what lets a stone survive
+         * being put away and taken out again.
+         *
+         * A thing arriving starts both, and a thing leaving stops both, so they
+         * are one call apiece.
+         */
+        void StartClocks(Item* item);
+        void StopClocks(Item* item);
+
+        /// Only the enchantments, for the one case where the item's own life is
+        /// already being counted: a stack being merged into one already held.
+        void StartEnchantClocks(Item* item);
+
+        /// A single enchantment, replacing whatever was counted for that slot.
+        /// A duration of nothing only stops the old one.
+        void StartEnchantClock(Item* item, EnchantmentSlot which, uint32 duration);
+
+        void RunClocks(uint32 elapsed, bool realTimeOnly);
+        void RunEnchantClocks(uint32 elapsed);
+
+        /// Everything still running, told to him at once when he enters the
+        /// world and has been told nothing yet.
+        void SendClocks();
+
+        /// Each running enchantment's remaining time put back into its item, so
+        /// that whoever writes the item down records where it had got to.
+        void SettleClocks();
+
     private:
         /// Hands every item in the wanted regions to the visitor and stops when
         /// the visitor returns false. Every search above is this walk with a
@@ -203,4 +259,11 @@ class Inventory
         Player& m_owner;
         Item* m_place[PLAYER_SLOTS_COUNT];
         uint32 m_nextBuyback;
+
+        /// Items whose own life is running down. The remaining time is theirs,
+        /// not this list's; the list only says which ones to ask.
+        std::list<Item*> m_running;
+
+        /// Temporary enchantments still running, with the time left on each.
+        std::list<EnchantClock> m_runningEnchants;
 };
