@@ -97,7 +97,7 @@ void GameObject::AddToWorld()
     ///- Register the gameobject for guid lookup
     if (!IsInWorld())
     {
-        GetMap()->GetObjectsStore().insert<GameObject>(GetObjectGuid(), (GameObject*)this);
+        GetMap()->GetObjectsStore().insert<GameObject>(GetObjectGuid(), this);
     }
 
     if (m_model)
@@ -147,7 +147,7 @@ void GameObject::RemoveFromWorld()
             GetMap()->RemoveGameObjectModel(*m_model);
         }
 
-        GetMap()->GetObjectsStore().erase<GameObject>(GetObjectGuid(), (GameObject*)nullptr);
+        GetMap()->GetObjectsStore().erase<GameObject>(GetObjectGuid(), nullptr);
     }
 
     Object::RemoveFromWorld();
@@ -260,7 +260,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map,float x, float 
     // Notify the battleground or outdoor pvp script
     if (map->IsBattleGround())
     {
-        ((BattleGroundMap*)map)->GetBG()->HandleGameObjectCreate(this);
+        static_cast<BattleGroundMap*>(map)->GetBG()->HandleGameObjectCreate(this);
     }
     else if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(GetTerrain()->GetZoneId(Where().X(), Where().Y(), Where().Z())))
     {
@@ -677,12 +677,12 @@ void GameObject::Respawn()
  */
 void GameObject::ClearAllUsesData()
 {
-    if (ChestBehaviour* chest = Behaves<ChestBehaviour>())
+    if (auto* chest = Behaves<ChestBehaviour>())
     {
         chest->Lock().ForgetLearners();
     }
 
-    if (CountingBehaviour* counted = Behaves<CountingBehaviour>())
+    if (auto* counted = Behaves<CountingBehaviour>())
     {
         counted->Tally().Forget();
     }

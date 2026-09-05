@@ -248,43 +248,54 @@ void DynamicObject::Delete()
  *
  * @param delaytime The delay amount in milliseconds.
  */
+namespace
+{
+    /**
+     * @brief Whether a later effect of the same spell is also holding an area here.
+     *
+     * The holder carries every effect of the spell at once, so delaying it moves
+     * one clock for all of them. When a later effect is standing its own ground,
+     * that clock is not this object's to move.
+     */
+    bool HoldsAnotherArea(SpellAuraHolder const& holder, SpellEffectIndex after)
+    {
+        SpellEntry const* spell = holder.GetSpellProto();
+
+        for (uint32 i = after + 1; i < MAX_EFFECT_INDEX; ++i)
+        {
+            bool const area = spell->Effect[i] == SPELL_EFFECT_PERSISTENT_AREA_AURA ||
+                              spell->Effect[i] == SPELL_EFFECT_ADD_FARSIGHT;
+
+            if (area && holder.m_auras[i])
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 void DynamicObject::Delay(int32 delaytime)
 {
     m_aliveDuration -= delaytime;
-    for (GuidSet::iterator iter = m_affected.begin(); iter != m_affected.end();)
+
+    for (auto iter = m_affected.begin(); iter != m_affected.end();)
     {
-        Unit* target = GetMap()->GetUnit((*iter));
-        if (target)
+        Unit* target = GetMap()->GetUnit(*iter);
+
+        if (!target)
         {
-            SpellAuraHolder* holder = target->GetSpellAuraHolder(m_spellId, GetCasterGuid());
-            if (!holder)
-            {
-                ++iter;
-                continue;
-            }
-
-            bool foundAura = false;
-            for (int32 i = m_effIndex + 1; i < MAX_EFFECT_INDEX; ++i)
-            {
-                if ((holder->GetSpellProto()->Effect[i] == SPELL_EFFECT_PERSISTENT_AREA_AURA || holder->GetSpellProto()->Effect[i] == SPELL_EFFECT_ADD_FARSIGHT) && holder->m_auras[i])
-                {
-                    foundAura = true;
-                    break;
-                }
-            }
-
-            if (foundAura)
-            {
-                ++iter;
-                continue;
-            }
-
-            target->DelaySpellAuraHolder(m_spellId, delaytime, GetCasterGuid());
-            ++iter;
+            iter = m_affected.erase(iter);      // it has left the map
+            continue;
         }
-        else
+
+        ++iter;
+
+        SpellAuraHolder* holder = target->GetSpellAuraHolder(m_spellId, GetCasterGuid());
+        if (holder && !HoldsAnotherArea(*holder, m_effIndex))
         {
-            m_affected.erase(iter++);
+            target->DelaySpellAuraHolder(m_spellId, delaytime, GetCasterGuid());
         }
     }
 }

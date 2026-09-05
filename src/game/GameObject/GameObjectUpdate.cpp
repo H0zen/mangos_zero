@@ -129,13 +129,15 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                 // USES ARE COUNTED ONLY WHERE THE TEMPLATE SAYS THEY ARE. A charge
                 // count of zero is not "no uses left", it is "this one is never used
                 // up", which is why nothing with a zero here is ever despawned.
-                uint32 const charges = GetGOInfo()->GetCharges();
-                CountingBehaviour* counted = Behaves<CountingBehaviour>();
-
-                if (charges > 0 && counted && counted->Tally().Uses() >= charges)
+                if (uint32 const charges = GetGOInfo()->GetCharges())
                 {
-                    counted->Tally().Forget();
-                    SetLootState(GO_JUST_DEACTIVATED);
+                    auto* counted = Behaves<CountingBehaviour>();
+
+                    if (counted && counted->Tally().Uses() >= charges)
+                    {
+                        counted->Tally().Forget();
+                        SetLootState(GO_JUST_DEACTIVATED);
+                    }
                 }
             }
             break;

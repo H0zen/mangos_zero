@@ -121,7 +121,7 @@ GameObjectBehaviour::Casting QuestGiverBehaviour::UsedBy(Unit* user, bool script
         return Casting();
     }
 
-    Player* player = (Player*)user;
+    Player* player = static_cast<Player*>(user);
 
     if (!sScriptMgr.OnGossipHello(player, &It()))
     {
@@ -209,7 +209,7 @@ GameObjectBehaviour::Casting TrapBehaviour::UsedBy(Unit* user, bool scriptSaidYe
     if (IsBattleGroundTrap && user->GetTypeId() == TYPEID_PLAYER)
     {
         // BattleGround gameobjects case
-        if (BattleGround* bg = ((Player*)user)->GetBattleGround())
+        if (BattleGround* bg = static_cast<Player*>(user)->GetBattleGround())
         {
             bg->HandleTriggerBuff(It().GetObjectGuid());
         }
@@ -251,7 +251,7 @@ GameObjectBehaviour::Casting ChairBehaviour::UsedBy(Unit* user, bool scriptSaidY
         return Casting();
     }
 
-    Player* player = (Player*)user;
+    Player* player = static_cast<Player*>(user);
 
     // a chair may have n slots. we have to calculate their positions and teleport the player to the nearest one
 
@@ -327,7 +327,7 @@ GameObjectBehaviour::Casting GooberBehaviour::UsedBy(Unit* user, bool scriptSaid
     // Note: this may be also handled by DB spell scripts in the future, when the world state manager is implemented
     if (user->GetTypeId() == TYPEID_PLAYER)
     {
-        Player* player = (Player*)user;
+        Player* player = static_cast<Player*>(user);
         if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(player->GetCachedZoneId()))
         {
             outdoorPvP->HandleGameObjectUse(player, &It());
@@ -355,7 +355,7 @@ GameObjectBehaviour::Casting GooberBehaviour::UsedBy(Unit* user, bool scriptSaid
 
     if (user->GetTypeId() == TYPEID_PLAYER)
     {
-        Player* player = (Player*)user;
+        Player* player = static_cast<Player*>(user);
 
         if (info->goober.pageId)                    // show page...
         {
@@ -425,7 +425,7 @@ GameObjectBehaviour::Casting CameraBehaviour::UsedBy(Unit* user, bool scriptSaid
         return Casting();
     }
 
-    Player* player = (Player*)user;
+    Player* player = static_cast<Player*>(user);
 
     if (info->camera.cinematicId)
     {
@@ -452,7 +452,7 @@ GameObjectBehaviour::Casting FishingNodeBehaviour::UsedBy(Unit* user, bool scrip
         return Casting();
     }
 
-    Player* player = (Player*)user;
+    Player* player = static_cast<Player*>(user);
 
     if (player->GetObjectGuid() != It().GetOwnerGuid())
     {
@@ -572,7 +572,7 @@ GameObjectBehaviour::Casting RitualBehaviour::UsedBy(Unit* user, bool scriptSaid
         return Casting();
     }
 
-    Player* player = (Player*)user;
+    Player* player = static_cast<Player*>(user);
 
     Unit* owner = It().GetOwner();
 
@@ -586,7 +586,7 @@ GameObjectBehaviour::Casting RitualBehaviour::UsedBy(Unit* user, bool scriptSaid
         }
 
         // accept only use by player from same group as owner, excluding owner itself (unique use already added in spell effect)
-        if (player == (Player*)owner || (info->summoningRitual.castersGrouped && !player->IsInSameRaidWith(((Player*)owner))))
+        if (player == static_cast<Player*>(owner) || (info->summoningRitual.castersGrouped && !player->IsInSameRaidWith(static_cast<Player*>(owner))))
         {
             return Casting();
         }
@@ -696,7 +696,7 @@ GameObjectBehaviour::Casting SpellCasterBehaviour::UsedBy(Unit* user, bool scrip
             return Casting();
         }
 
-        if (user->GetTypeId() != TYPEID_PLAYER || !((Player*)user)->IsInSameRaidWith((Player*)caster))
+        if (user->GetTypeId() != TYPEID_PLAYER || !static_cast<Player*>(user)->IsInSameRaidWith(static_cast<Player*>(caster)))
         {
             return Casting();
         }
@@ -720,7 +720,7 @@ GameObjectBehaviour::Casting FlagStandBehaviour::UsedBy(Unit* user, bool scriptS
         return Casting();
     }
 
-    Player* player = (Player*)user;
+    Player* player = static_cast<Player*>(user);
 
     if (player->CanUseBattleGroundObject())
     {
@@ -751,7 +751,7 @@ GameObjectBehaviour::Casting FishingHoleBehaviour::UsedBy(Unit* user, bool scrip
         return Casting();
     }
 
-    Player* player = (Player*)user;
+    Player* player = static_cast<Player*>(user);
 
     player->SendLoot(It().GetObjectGuid(), LOOT_FISHINGHOLE);
     return Casting();
@@ -769,7 +769,7 @@ GameObjectBehaviour::Casting FlagDropBehaviour::UsedBy(Unit* user, bool scriptSa
         return Casting();
     }
 
-    Player* player = (Player*)user;
+    Player* player = static_cast<Player*>(user);
 
     if (player->CanUseBattleGroundObject())
     {
@@ -862,7 +862,7 @@ GameObjectBehaviour::Tick FishingNodeBehaviour::TimedOut()
         caster->FinishSpell(CURRENT_CHANNELED_SPELL);
 
         WorldPacket data(SMSG_FISH_NOT_HOOKED, 0);
-        ((Player*)caster)->GetSession()->SendPacket(&data);
+        static_cast<Player*>(caster)->GetSession()->SendPacket(&data);
     }
 
     It().SetLootState(GO_JUST_DEACTIVATED);

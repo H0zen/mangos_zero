@@ -85,7 +85,7 @@ void GameObject::Use(Unit* user)
         m_usableAt = sWorld.GetGameTime() + cooldown;
     }
 
-    bool const scriptReturnValue = user->GetTypeId() == TYPEID_PLAYER && sScriptMgr.OnGameObjectUse((Player*)user, this);
+    bool const scriptReturnValue = user->GetTypeId() == TYPEID_PLAYER && sScriptMgr.OnGameObjectUse(static_cast<Player*>(user), this);
 
     if (!scriptReturnValue)
     {
