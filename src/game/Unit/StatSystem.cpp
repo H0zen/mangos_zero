@@ -24,6 +24,7 @@
  */
 
 #include "Unit.h"
+#include "Stats/CreatureNumbers.h"
 #include "Player.h"
 #include "Pet.h"
 #include "Creature.h"
@@ -710,15 +711,15 @@ bool Creature::UpdateAllStats()
  */
 void Creature::UpdateResistances(uint32 school)
 {
-    if (school > SPELL_SCHOOL_NORMAL)
-    {
-        float value  = GetTotalAuraModValue(UnitMods(UNIT_MOD_RESISTANCE_START + school));
-        SetResistance(SpellSchools(school), int32(value));
-    }
-    else
+    // The normal school is armour, and armour is kept in its own field.
+    if (school == SPELL_SCHOOL_NORMAL)
     {
         UpdateArmor();
+        return;
     }
+
+    SetResistance(SpellSchools(school),
+                  int32(stats::Simple(ModifiersOf(UnitMods(UNIT_MOD_RESISTANCE_START + school)))));
 }
 
 /**
@@ -726,8 +727,7 @@ void Creature::UpdateResistances(uint32 school)
  */
 void Creature::UpdateArmor()
 {
-    float value = GetTotalAuraModValue(UNIT_MOD_ARMOR);
-    SetArmor(int32(value));
+    SetArmor(int32(stats::Simple(ModifiersOf(UNIT_MOD_ARMOR))));
 }
 
 /**
@@ -735,8 +735,7 @@ void Creature::UpdateArmor()
  */
 void Creature::UpdateMaxHealth()
 {
-    float value = GetTotalAuraModValue(UNIT_MOD_HEALTH);
-    SetMaxHealth((uint32)value);
+    SetMaxHealth(uint32(stats::Simple(ModifiersOf(UNIT_MOD_HEALTH))));
 }
 
 /**
@@ -746,10 +745,7 @@ void Creature::UpdateMaxHealth()
  */
 void Creature::UpdateMaxPower(Powers power)
 {
-    UnitMods unitMod = UnitMods(UNIT_MOD_POWER_START + power);
-
-    float value  = GetTotalAuraModValue(unitMod);
-    SetMaxPower(power, uint32(value));
+    SetMaxPower(power, uint32(stats::Simple(ModifiersOf(UnitMods(UNIT_MOD_POWER_START + power)))));
 }
 
 /**
@@ -761,12 +757,8 @@ void Creature::UpdateAttackPowerAndDamage(bool ranged)
 {
     UnitMods unitMod = ranged ? UNIT_MOD_ATTACK_POWER_RANGED : UNIT_MOD_ATTACK_POWER;
 
-    float base_attPower  = GetModifierValue(unitMod, BASE_VALUE) * GetModifierValue(unitMod, BASE_PCT);
-    float attPowerMod = GetModifierValue(unitMod, TOTAL_VALUE);
-    float attPowerMultiplier = GetModifierValue(unitMod, TOTAL_PCT) - 1.0f;
-
-    SetAttackPower(ranged, static_cast<int32>(base_attPower), static_cast<int32>(attPowerMod),
-                   attPowerMultiplier);
+    stats::AttackPower const power = stats::CreatureAttackPower(ModifiersOf(unitMod));
+    SetAttackPower(ranged, power.base, power.added, power.share);
 
     if (ranged)
     {
@@ -792,22 +784,20 @@ void Creature::UpdateDamagePhysical(WeaponAttackType attType)
 
     UnitMods unitMod = (attType == BASE_ATTACK ? UNIT_MOD_DAMAGE_MAINHAND : UNIT_MOD_DAMAGE_OFFHAND);
 
-    /* difference in AP between current attack power and base value from DB */
-    float att_pwr_change = GetTotalAttackPowerValue(attType) - GetCreatureInfo()->MeleeAttackPower;
-    float base_value  = GetModifierValue(unitMod, BASE_VALUE) + (att_pwr_change * GetAPMultiplier(attType, false) / 14.0f);
-    float base_pct    = GetModifierValue(unitMod, BASE_PCT);
-    float total_value = GetModifierValue(unitMod, TOTAL_VALUE);
-    float total_pct   = GetModifierValue(unitMod, TOTAL_PCT);
-    float dmg_multiplier = GetCreatureInfo()->DamageMultiplier;
+    // Only the attack power it has ABOVE the template's counts: what the template
+    // was written with is already in the damage the template gives.
+    float const gained = GetTotalAttackPowerValue(attType) - GetCreatureInfo()->MeleeAttackPower;
 
-    float weapon_mindamage = GetWeaponDamageRange(attType, MINDAMAGE);
-    float weapon_maxdamage = GetWeaponDamageRange(attType, MAXDAMAGE);
+    stats::Swing const swing = stats::CreatureSwing(
+        ModifiersOf(unitMod),
+        GetWeaponDamageRange(attType, MINDAMAGE),
+        GetWeaponDamageRange(attType, MAXDAMAGE),
+        gained,
+        GetAPMultiplier(attType, false),
+        GetCreatureInfo()->DamageMultiplier);
 
-    float mindamage = ((base_value + weapon_mindamage) * dmg_multiplier * base_pct + total_value) * total_pct;
-    float maxdamage = ((base_value + weapon_maxdamage) * dmg_multiplier * base_pct + total_value) * total_pct;
-
-    SetStatFloatValue(attType == BASE_ATTACK ? UNIT_FIELD_MINDAMAGE : UNIT_FIELD_MINOFFHANDDAMAGE, mindamage);
-    SetStatFloatValue(attType == BASE_ATTACK ? UNIT_FIELD_MAXDAMAGE : UNIT_FIELD_MAXOFFHANDDAMAGE, maxdamage);
+    SetStatFloatValue(attType == BASE_ATTACK ? UNIT_FIELD_MINDAMAGE : UNIT_FIELD_MINOFFHANDDAMAGE, swing.least);
+    SetStatFloatValue(attType == BASE_ATTACK ? UNIT_FIELD_MAXDAMAGE : UNIT_FIELD_MAXOFFHANDDAMAGE, swing.most);
 }
 
 /*#######################################

@@ -37,6 +37,7 @@ set(TEST_SOURCES
     unit/test_spawnclock.cpp
     unit/test_questbond.cpp
     unit/test_trapsight.cpp
+    unit/test_creaturenumbers.cpp
 
     combat/test_school.cpp
     combat/test_roll.cpp

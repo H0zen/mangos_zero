@@ -188,6 +188,24 @@ float Unit::GetTotalStatValue(Stats stat) const
  * @param unitMod The unit modifier group.
  * @return The resulting total modified value.
  */
+Modifiers Unit::ModifiersOf(UnitMods unitMod) const
+{
+    Modifiers mods;
+
+    if (unitMod >= UNIT_MOD_END)
+    {
+        sLog.outError("attempt to access nonexistent UnitMods in ModifiersOf()!");
+        return mods;
+    }
+
+    mods.baseValue = m_auraModifiersGroup[unitMod][BASE_VALUE];
+    mods.basePct = m_auraModifiersGroup[unitMod][BASE_PCT];
+    mods.totalValue = m_auraModifiersGroup[unitMod][TOTAL_VALUE];
+    mods.totalPct = m_auraModifiersGroup[unitMod][TOTAL_PCT];
+
+    return mods;
+}
+
 float Unit::GetTotalAuraModValue(UnitMods unitMod) const
 {
     if (unitMod >= UNIT_MOD_END)

@@ -81,6 +81,7 @@
 #include "Movement/MovementInfo.h"
 #include "GlobalCooldown.h"
 #include "CharmInfo.h"
+#include "Stats/Modifiers.h"
 #include "Creature/CreatureRecord.h"
 #include "MotionMaster.h"
 #include "DBCStructure.h"
@@ -3393,6 +3394,10 @@ class Unit : public Occupant
         bool HandleStatModifier(UnitMods unitMod, UnitModifierType modifierType, float amount, bool apply);
         void SetModifierValue(UnitMods unitMod, UnitModifierType modifierType, float value) { m_auraModifiersGroup[unitMod][modifierType] = value; }
         float GetModifierValue(UnitMods unitMod, UnitModifierType modifierType) const;
+
+        /// The four modifiers of one number, gathered as they are read: a total
+        /// percentage that is not positive comes back as nothing at all.
+        Modifiers ModifiersOf(UnitMods unitMod) const;
         float GetTotalStatValue(Stats stat) const;
         float GetTotalAuraModValue(UnitMods unitMod) const;
         SpellSchools GetSpellSchoolByAuraGroup(UnitMods unitMod) const;
