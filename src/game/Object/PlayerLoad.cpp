@@ -787,7 +787,7 @@ bool Player::isAllowedToLoot(Creature* creature)
     }
 
     /* If we there is a loot recipient, assign it to recipient */
-    if (Player* recipient = creature->GetLootRecipient())
+    if (Player* recipient = creature->Claim().Entitled())
     {
         /* See if we're in a group */
         if (Group* plr_group = recipient->GetGroup())
@@ -915,7 +915,7 @@ bool Player::isAllowedToLoot(Creature* creature)
     else
         // prevent other players from looting if the recipient got disconnected
     {
-        return !creature->HasLootRecipient();
+        return !creature->Claim().IsClaimed();
     }
 
     return false;

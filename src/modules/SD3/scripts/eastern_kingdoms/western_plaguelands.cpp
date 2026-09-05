@@ -307,7 +307,7 @@ struct npc_taelan_fordring : public CreatureScript
                 m_creature->RemoveAllAurasOnEvade();
                 m_creature->DeleteThreatList();
                 m_creature->CombatStop(true);
-                m_creature->SetLootRecipient(nullptr);
+                m_creature->Claim().StakedBy(nullptr);
 
                 m_creature->InterruptNonMeleeSpells(true);
                 m_creature->SetHealth(0);
@@ -787,7 +787,7 @@ struct npc_isillien : public CreatureScript
                 m_creature->RemoveAllAurasOnEvade();
                 m_creature->DeleteThreatList();
                 m_creature->CombatStop(true);
-                m_creature->SetLootRecipient(nullptr);
+                m_creature->Claim().StakedBy(nullptr);
 
                 m_creature->GetMotionMaster()->MoveIdle();
 
@@ -979,7 +979,7 @@ struct npc_tirion_fordring : public CreatureScript
             m_creature->RemoveAllAurasOnEvade();
             m_creature->DeleteThreatList();
             m_creature->CombatStop(true);
-            m_creature->SetLootRecipient(nullptr);
+            m_creature->Claim().StakedBy(nullptr);
 
             // on evade go to Taelan
             if (Creature* pTaelan = m_creature->GetMap()->GetCreature(m_taelanGuid))

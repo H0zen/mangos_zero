@@ -619,7 +619,7 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
             /* Update for other players. */
             if (!loot->isLooted())
             {
-                Group const* group = pCreature->GetGroupLootRecipient();
+                Group const* group = pCreature->Claim().HoldingGroup();
                 if (group && !pCreature->hasBeenLootedOnce)
                 {
                     // Checking whether it has been looted once by the designed looter (master loot case).

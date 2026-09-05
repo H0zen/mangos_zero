@@ -1117,7 +1117,6 @@ enum GameobjectTypes
     GAMEOBJECT_TYPE_LOTTERY_KIOSK          = 28,
     GAMEOBJECT_TYPE_CAPTURE_POINT          = 29,
     GAMEOBJECT_TYPE_AURA_GENERATOR         = 30,
-    GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING  = 14,    // Not Implemented in Zero
 };
 
 #define MAX_GAMEOBJECT_TYPE                  31             // sending to client this or greater value can crash client.

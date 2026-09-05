@@ -1268,7 +1268,10 @@ void Group::StartLootRoll(Occupant* lootTarget, LootMethod method, Loot* loot, u
             SendLootStartRoll(LOOT_ROLL_TIMEOUT, *r);
             loot->items[itemSlot].is_blocked = true;
 
-            StartGroupLoot(*lootTarget, this, LOOT_ROLL_TIMEOUT);
+            if (LootClaim* claim = ClaimOn(*lootTarget))
+            {
+                claim->StartRoll(this, LOOT_ROLL_TIMEOUT);
+            }
         }
 
         RollId.push_back(r);

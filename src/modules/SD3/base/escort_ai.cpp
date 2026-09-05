@@ -275,7 +275,7 @@ void npc_escortAI::EnterEvadeMode()
     m_creature->RemoveAllAurasOnEvade();
     m_creature->DeleteThreatList();
     m_creature->CombatStop(true);
-    m_creature->SetLootRecipient(nullptr);
+    m_creature->Claim().StakedBy(nullptr);
 
     if (HasEscortState(STATE_ESCORT_ESCORTING))
     {

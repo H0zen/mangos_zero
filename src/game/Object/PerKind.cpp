@@ -65,28 +65,19 @@ bool EndsQuest(Object const& object, uint32 questId)
     return false;
 }
 
-void StartGroupLoot(Occupant& holder, Group* group, uint32 timer)
+LootClaim* ClaimOn(Occupant& holder)
 {
     if (Creature* creature = ToCreature(&holder))
     {
-        creature->StartGroupLoot(group, timer);
+        return &creature->Claim();
     }
-    else if (GameObject* go = ToGameObject(&holder))
-    {
-        go->StartGroupLoot(group, timer);
-    }
-}
 
-void StopGroupLoot(Occupant& holder)
-{
-    if (Creature* creature = ToCreature(&holder))
+    if (GameObject* go = ToGameObject(&holder))
     {
-        creature->StopGroupLoot();
+        return &go->Claim();
     }
-    else if (GameObject* go = ToGameObject(&holder))
-    {
-        go->StopGroupLoot();
-    }
+
+    return nullptr;
 }
 
 void SaveRespawnTime(Occupant& what)

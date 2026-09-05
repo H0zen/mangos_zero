@@ -170,7 +170,7 @@ struct npc_disciple_of_naralex : public CreatureScript
             // Do not stop casting at these points
             if (m_uiPoint == 15 || m_uiPoint == 32)
             {
-                m_creature->SetLootRecipient(nullptr);
+                m_creature->Claim().StakedBy(nullptr);
                 m_creature->DeleteThreatList();
                 m_creature->CombatStop(false);
                 Reset();

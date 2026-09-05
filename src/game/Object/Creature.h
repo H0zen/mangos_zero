@@ -53,6 +53,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include "LootClaim.h"
 #include "Unit.h"
 #include "SharedDefines.h"
 #include "LootMgr.h"
@@ -759,16 +760,12 @@ class Creature : public Unit
          *
          * \return ObjectGuid Player GUID.
          */
-        ObjectGuid GetLootRecipientGuid() const { return m_lootRecipientGuid; }
 
         /**
          * function returning the group recipient ID.
          *
          * \return uint32 Group ID.
          */
-        uint32 GetLootGroupRecipientId() const { return m_lootGroupRecipientId; }
-        Player* GetLootRecipient() const;                   // use group cases as prefered
-        Group* GetGroupLootRecipient() const;
         bool IsTappedBy(Player const* player) const;
         bool IsDamageEnoughForLootingAndReward() const { return m_PlayerDamageReq == 0; }
         void LowerPlayerDamageReq(uint32 unDamage);
@@ -782,17 +779,29 @@ class Creature : public Unit
          *
          * \return boolean true if the creature has a recipient defined, false otherwise.
          */
-        bool HasLootRecipient() const { return m_lootGroupRecipientId || m_lootRecipientGuid; }
 
         /**
          * function indicating whether the recipient is a group.
          *
          * \return boolean true if the creature's recipient is a group, false otherwise.
          */
-        bool IsGroupLootRecipient() const { return m_lootGroupRecipientId; }
-        void SetLootRecipient(Unit* unit);
+        /**
+         * Stake the claim on this body for whoever is behind `taker`, and grey it
+         * out for everyone else. The two are one event: a body goes grey exactly
+         * because somebody else has the right to it.
+         */
+        void TappedBy(Unit* taker)
+        {
+            if (m_claim.StakedBy(taker))
+            {
+                SetDynFlag(UNIT_DYNFLAG_TAPPED);
+            }
+        }
+
+        /// Who may take what is on this body, and whether a roll is running.
+        LootClaim& Claim() { return m_claim; }
+        LootClaim const& Claim() const { return m_claim; }
         void AllLootRemovedFromCorpse();
-        Player* GetOriginalLootRecipient() const;           // ignore group changes/etc, not for looting
 
         SpellEntry const* ReachWithSpellAttack(Unit* pVictim);
         SpellEntry const* ReachWithSpellCure(Unit* pVictim);
@@ -862,8 +871,6 @@ class Creature : public Unit
         static void AddToRemoveListInMaps(uint32 db_guid, CreatureData const* data);
         static void SpawnInMaps(uint32 db_guid, CreatureData const* data);
 
-        void StartGroupLoot(Group* group, uint32 timer);
-        void StopGroupLoot();
 
         void SendZoneUnderAttackMessage(Player* attacker);
 
@@ -941,15 +948,12 @@ class Creature : public Unit
         bool CreateFromProto(uint32 guidlow, CreatureInfo const* cinfo, Team team, const CreatureData* data = NULL, GameEventCreatureData const* eventData = NULL);
         bool InitEntry(uint32 entry, Team team = ALLIANCE, const CreatureData* data = NULL, GameEventCreatureData const* eventData = NULL);
 
-        uint32 m_groupLootTimer;                            // (msecs)timer used for group loot
-        uint32 m_groupLootId;                               // used to find group which is looting corpse
+        LootClaim m_claim;
 
         // vendor items
         VendorItemCounts m_vendorItemCounts;
 
         uint32 m_lootMoney;
-        ObjectGuid m_lootRecipientGuid;                     // player who will have rights for looting if m_lootGroupRecipient==0 or group disbanded
-        uint32 m_lootGroupRecipientId;                      // group who will have rights for looting if set and exist
 
         /// Timers
         time_t m_corpseRemoveTime;                          // (secs) time for death or corpse disappearance

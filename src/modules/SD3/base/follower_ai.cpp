@@ -211,7 +211,7 @@ void FollowerAI::EnterEvadeMode()
     m_creature->RemoveAllAurasOnEvade();
     m_creature->DeleteThreatList();
     m_creature->CombatStop(true);
-    m_creature->SetLootRecipient(nullptr);
+    m_creature->Claim().StakedBy(nullptr);
 
     if (HasFollowState(STATE_FOLLOW_INPROGRESS))
     {

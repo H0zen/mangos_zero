@@ -58,6 +58,7 @@
 #include <vector>
 #include "SharedDefines.h"
 #include "Occupant.h"
+#include "LootClaim.h"
 #include "LootMgr.h"
 #include "Utilities/EventProcessor.h"
 #include <memory>
@@ -779,17 +780,10 @@ class GameObject : public Occupant
 
         // Loot System
         Loot loot;
-        void StartGroupLoot(Group* group, uint32 timer);
-        void StopGroupLoot();
+        /// Who may take what is on this body, and whether a roll is running.
+        LootClaim& Claim() { return m_claim; }
+        LootClaim const& Claim() const { return m_claim; }
 
-        ObjectGuid GetLootRecipientGuid() const { return m_lootRecipientGuid; }
-        uint32 GetLootGroupRecipientId() const { return m_lootGroupRecipientId; }
-        Player* GetLootRecipient() const;                   // use group cases as prefered
-        Group* GetGroupLootRecipient() const;
-        bool HasLootRecipient() const { return m_lootGroupRecipientId || !m_lootRecipientGuid.IsEmpty(); }
-        bool IsGroupLootRecipient() const { return m_lootGroupRecipientId; }
-        void SetLootRecipient(Unit* pUnit);
-        Player* GetOriginalLootRecipient() const;           // ignore group changes/etc, not for looting
 
         bool OffersQuest(uint32 quest_id) const;
         bool TakesQuest(uint32 quest_id) const;
@@ -841,7 +835,7 @@ class GameObject : public Occupant
 
         GuidSet m_SkillupSet;                               // players that already have skill-up at GO use
 
-        uint32 m_useTimes;                                  // amount uses/charges triggered - also used for health for DESTRUCTIBLE_BUILDING
+        uint32 m_useTimes;                                  // how many times the object has been used, or charges spent
 
         // collected only for GAMEOBJECT_TYPE_SUMMONING_RITUAL
         ObjectGuid m_firstUser;                             // first GO user, in most used cases owner, but in some cases no, for example non-summoned multi-use GAMEOBJECT_TYPE_SUMMONING_RITUAL
@@ -850,10 +844,7 @@ class GameObject : public Occupant
         GameObjectInfo const* m_goInfo;
 
         // Loot System
-        uint32 m_groupLootTimer;                            // (msecs)timer used for group loot
-        uint32 m_groupLootId;                               // used to find group which is looting
-        ObjectGuid m_lootRecipientGuid;                     // player who will have rights for looting if m_lootGroupRecipient==0 or group disbanded
-        uint32 m_lootGroupRecipientId;                      // group who will have rights for looting if set and exist
+        LootClaim m_claim;
 
         // Used for trap type
         time_t m_rearmTimer;                                // timer to rearm the trap once disarmed

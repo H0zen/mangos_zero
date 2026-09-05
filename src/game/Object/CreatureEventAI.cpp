@@ -1118,7 +1118,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
         }
         case ACTION_T_KILLED_MONSTER:       //33
             // first attempt player/group who tapped creature
-            if (Player* pPlayer = m_creature->GetLootRecipient())
+            if (Player* pPlayer = m_creature->Claim().Entitled())
             {
                 pPlayer->RewardPlayerAndGroupAtEvent(action.killed_monster.creatureId, m_creature);
             }
@@ -1430,7 +1430,7 @@ void CreatureEventAI::EnterEvadeMode()
         m_creature->GetMotionMaster()->MoveTargetedHome();
     }
 
-    m_creature->SetLootRecipient(NULL);
+    m_creature->Claim().StakedBy(NULL);
 
     // Reset back to default spells template. This also resets timers.
     SetSpellsList(m_creature->GetCreatureInfo()->SpellListId);

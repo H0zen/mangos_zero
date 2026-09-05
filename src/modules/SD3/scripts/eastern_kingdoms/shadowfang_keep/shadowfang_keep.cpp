@@ -464,7 +464,7 @@ struct mob_arugal_voidwalker : public CreatureScript
             m_creature->CombatStop(true);
             m_creature->LoadCreatureAddon(true);
 
-            m_creature->SetLootRecipient(nullptr);
+            m_creature->Claim().StakedBy(nullptr);
 
         }
     };
@@ -1057,7 +1057,7 @@ struct npc_deathstalker_vincent : public CreatureScript
             m_creature->DeleteThreatList();
             m_creature->CombatStop(true);
             m_creature->LoadCreatureAddon(true);
-            m_creature->SetLootRecipient(nullptr);
+            m_creature->Claim().StakedBy(nullptr);
             Reset();
         }
     };

@@ -237,8 +237,7 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
     i_AI(NULL),
     loot(this),
     lootForPickPocketed(false), lootForBody(false), lootForSkin(false),
-    m_groupLootTimer(0), m_groupLootId(0),
-    m_lootMoney(0), m_lootGroupRecipientId(0),
+    m_lootMoney(0),
     m_corpseRemoveTime(0), m_respawnTime(0), m_respawnDelay(25), m_corpseDelay(60), m_aggroDelay(0), m_respawnradius(5.0f),
     m_subtype(subtype), m_defaultMovementType(IDLE_MOTION_TYPE), m_equipmentId(0),
     m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false),
@@ -409,7 +408,7 @@ void Creature::RemoveCorpse(bool inPlace)
     UpdateObjectVisibility();
 
     // stop loot rolling before loot clear and for close client dialogs
-    StopGroupLoot();
+    Claim().StopRoll();
 
     loot.clear();
 
@@ -417,8 +416,7 @@ void Creature::RemoveCorpse(bool inPlace)
     m_killedTime = 0;
     hasBeenLootedOnce = false;
     assignedLooter = 0;
-    m_lootGroupRecipientId = 0;
-    m_lootRecipientGuid.Clear();
+    m_claim.StakedBy(nullptr);
 
     RemoveDynFlag(UNIT_DYNFLAG_TAPPED);
 
@@ -848,17 +846,8 @@ void Creature::Update(uint32 update_diff, uint32 diff)
                 break;
             }
 
-            if (m_groupLootId)                              // Loot is stopped already if corpse got removed.
-            {
-                if (m_groupLootTimer <= update_diff)
-                {
-                    StopGroupLoot();
-                }
-                else
-                {
-                    m_groupLootTimer -= update_diff;
-                }
-            }
+            // Loot is stopped already if the corpse got removed.
+            m_claim.TickRoll(update_diff);
 
             if (m_corpseRemoveTime <= time(NULL))
             {
@@ -932,37 +921,6 @@ void Creature::Update(uint32 update_diff, uint32 diff)
         default:
             break;
     }
-}
-
-/**
- * @brief Starts group loot tracking for this creature.
- *
- * @param group The recipient group.
- * @param timer The loot roll timer.
- */
-void Creature::StartGroupLoot(Group* group, uint32 timer)
-{
-    m_groupLootId = group->GetId();
-    m_groupLootTimer = timer;
-}
-
-/**
- * @brief Stops active group loot tracking for this creature.
- */
-void Creature::StopGroupLoot()
-{
-    if (!m_groupLootId)
-    {
-        return;
-    }
-
-    if (Group* group = sObjectMgr.GetGroupById(m_groupLootId))
-    {
-        group->EndRoll();
-    }
-
-    m_groupLootTimer = 0;
-    m_groupLootId = 0;
 }
 
 /**
@@ -1444,29 +1402,8 @@ void Creature::PrepareBodyLootState()
  */
 
 /**
- * @brief Gets the original player who tapped the creature.
- *
- * @return The original loot recipient player, or null if unavailable.
- */
-Player* Creature::GetOriginalLootRecipient() const
-{
-    return m_lootRecipientGuid ? sPlayerRegistry.Find(m_lootRecipientGuid) : NULL;
-}
-
-/**
  * Return group if player tap creature as group member, independent is player after leave group or stil be group member
  */
-
-/**
- * @brief Gets the original group loot recipient.
- *
- * @return The group that owns loot rights, or null if unavailable.
- */
-Group* Creature::GetGroupLootRecipient() const
-{
-    // original recipient group if set and not disbanded
-    return m_lootGroupRecipientId ? sObjectMgr.GetGroupById(m_lootGroupRecipientId) : NULL;
-}
 
 /**
  * Return player who can loot tapped creature (member of group or single player)
@@ -1477,82 +1414,8 @@ Group* Creature::GetGroupLootRecipient() const
  */
 
 /**
- * @brief Gets the player who currently owns loot rights for this creature.
- *
- * @return The effective loot recipient player, or null if none.
- */
-Player* Creature::GetLootRecipient() const
-{
-    // original recipient group if set and not disbanded
-    Group* group = GetGroupLootRecipient();
-
-    // original recipient player if online
-    Player* player = GetOriginalLootRecipient();
-
-    // if group not set or disbanded return original recipient player if any
-    if (!group)
-    {
-        return player;
-    }
-
-    // group case
-
-    // return player if it still be in original recipient group
-    if (player && player->GetGroup() == group)
-    {
-        return player;
-    }
-
-    // find any in group
-    for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
-    {
-        if (Player* p = itr->getSource())
-        {
-            return p;
-        }
-    }
-    return NULL;
-}
-
-/**
  * Set player and group (if player group member) who tap creature
  */
-
-/**
- * @brief Assigns loot rights to a unit and its group if applicable.
- *
- * @param unit The unit receiving loot rights, or null to clear them.
- */
-void Creature::SetLootRecipient(Unit* unit)
-{
-    // set the player whose group should receive the right
-    // to loot the creature after it dies
-    // should be set to NULL after the loot disappears
-
-    if (!unit)
-    {
-        m_lootRecipientGuid.Clear();
-        m_lootGroupRecipientId = 0;
-        return;
-    }
-
-    Player* player = unit->GetCharmerOrOwnerPlayerOrPlayerItself();
-    if (!player)                                            // normal creature, no player involved
-    {
-        return;
-    }
-
-    // set player for non group case or if group will disbanded
-    m_lootRecipientGuid = player->GetObjectGuid();
-
-    // set group for group existing case including if player will leave group at loot time
-    if (Group* group = player->GetGroup())
-    {
-        m_lootGroupRecipientId = group->GetId();
-    }
-
-    SetDynFlag(UNIT_DYNFLAG_TAPPED);
-}
 
 /**
  * @brief Saves the currently loaded creature to the database.
@@ -1581,13 +1444,13 @@ void Creature::SaveToDB()
  */
 bool Creature::IsTappedBy(Player const* player) const
 {
-    if (player == GetOriginalLootRecipient())
+    if (player == Claim().Taker())
     {
         return true;
     }
 
     Group const* playerGroup = player->GetGroup();
-    if (!playerGroup || playerGroup != GetGroupLootRecipient()) // if we dont have a group we arent the recipient
+    if (!playerGroup || playerGroup != Claim().HoldingGroup()) // if we dont have a group we arent the recipient
     {
         return false;                                           // if creature doesnt have group bound it means it was solo killed by someone else
     }
@@ -2089,7 +1952,7 @@ void Creature::SetDeathState(DeathState s)
         Unit::SetDeathState(ALIVE);
 
         SetHealth(GetMaxHealth());
-        SetLootRecipient(NULL);
+        Claim().StakedBy(NULL);
         if (GetTemporaryFactionFlags() & TEMPFACTION_RESTORE_RESPAWN)
         {
             ClearTemporaryFaction();
@@ -3033,7 +2896,7 @@ void Creature::ResetSpawn()
  */
 void Creature::AllLootRemovedFromCorpse()
 {
-    if (loot.loot_type != LOOT_SKINNING && !IsPet() && GetCreatureInfo()->LootId && GetLootRecipient())
+    if (loot.loot_type != LOOT_SKINNING && !IsPet() && GetCreatureInfo()->LootId && Claim().Entitled())
     {
         if (LootTemplates_Skinning.HaveLootFor(GetCreatureInfo()->LootId))
         {

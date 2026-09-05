@@ -211,7 +211,7 @@ struct npc_general_andorov : public CreatureScript
                 }
             }
 
-            m_creature->SetLootRecipient(nullptr);
+            m_creature->Claim().StakedBy(nullptr);
 
             Reset();
         }
@@ -391,7 +391,7 @@ struct npc_kaldorei_elite : public CreatureScript
                 }
             }
 
-            m_creature->SetLootRecipient(nullptr);
+            m_creature->Claim().StakedBy(nullptr);
 
             Reset();
         }

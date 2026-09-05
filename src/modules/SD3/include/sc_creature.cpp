@@ -157,7 +157,7 @@ void ScriptedAI::EnterEvadeMode()
         m_creature->GetMotionMaster()->MoveTargetedHome();
     }
 
-    m_creature->SetLootRecipient(nullptr);
+    m_creature->Claim().StakedBy(nullptr);
 
     Reset();
 }

@@ -767,7 +767,7 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
 
         DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "DealDamage critter, critter dies");
 
-        ((Creature*)pVictim)->SetLootRecipient(this);
+        ((Creature*)pVictim)->TappedBy(this);
 
         JustKilledCreature((Creature*)pVictim, NULL);
         pVictim->SetHealth(0);
@@ -802,9 +802,9 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
 
     if (Creature* victim = ToCreature(pVictim))
     {
-        if (!victim->IsPet() && !victim->HasLootRecipient())
+        if (!victim->IsPet() && !victim->Claim().IsClaimed())
         {
-            victim->SetLootRecipient(this);
+            victim->TappedBy(this);
         }
 
         if (IsControlledByPlayer()) // more narrow: IsPet(), IsGuardian() ?
@@ -827,9 +827,9 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
         // in creature kill case group/player tap stored for creature
         if (pVictim->GetTypeId() == TYPEID_UNIT)
         {
-            group_tap = ((Creature*)pVictim)->GetGroupLootRecipient();
+            group_tap = ((Creature*)pVictim)->Claim().HoldingGroup();
 
-            if (Player* recipient = ((Creature*)pVictim)->GetOriginalLootRecipient())
+            if (Player* recipient = ((Creature*)pVictim)->Claim().Taker())
             {
                 player_tap = recipient;
             }
@@ -870,7 +870,7 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
             isRewardAllowed = creature->IsDamageEnoughForLootingAndReward();
             if (!isRewardAllowed)
             {
-                creature->SetLootRecipient(NULL);
+                creature->Claim().StakedBy(NULL);
             }
         }
 

@@ -245,7 +245,7 @@ struct npc_taskmaster_fizzule : public CreatureScript
                 m_creature->CombatStop(true);
                 m_creature->LoadCreatureAddon(true);
 
-                m_creature->SetLootRecipient(nullptr);
+                m_creature->Claim().StakedBy(nullptr);
 
                 m_creature->SetFactionTemporary(FACTION_FRIENDLY_F, TEMPFACTION_RESTORE_REACH_HOME);
                 m_creature->HandleEmote(EMOTE_ONESHOT_SALUTE);
@@ -1248,7 +1248,7 @@ struct horde_defender : public CreatureScript
         {
             m_creature->RemoveAllAurasOnEvade();
             //            m_creature->DeleteThreatList();
-            m_creature->SetLootRecipient(nullptr);
+            m_creature->Claim().StakedBy(nullptr);
         }
 
         void ReceiveAIEvent(AIEventType eventType, Creature* pSender, Unit* pInvoker, uint32 /*miscValue*/)
@@ -1356,7 +1356,7 @@ struct kolkar_invader : public CreatureScript
         {
             m_creature->RemoveAllAurasOnEvade();
             //m_creature->DeleteThreatList();
-            m_creature->SetLootRecipient(nullptr);
+            m_creature->Claim().StakedBy(nullptr);
         }
 
         void MoveInLineOfSight(Unit* u) override

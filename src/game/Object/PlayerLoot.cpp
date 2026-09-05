@@ -167,10 +167,10 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 
             loot = &go->loot;
 
-            Player* recipient = go->GetLootRecipient();
+            Player* recipient = go->Claim().Entitled();
             if (!recipient)
             {
-                go->SetLootRecipient(this);
+                go->Claim().StakedBy(this);
                 recipient = this;
             }
 
@@ -223,7 +223,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 
                         if (go->GetGoType() == GAMEOBJECT_TYPE_CHEST && goInfo->chest.groupLootRules)
                         {
-                            if (Group* group = go->GetGroupLootRecipient())
+                            if (Group* group = go->Claim().HoldingGroup())
                             {
                                 switch (group->GetLootMethod())
                                 {
@@ -251,7 +251,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 
             if (go->getLootState() == GO_ACTIVATED && go->GetGoType() == GAMEOBJECT_TYPE_CHEST && go->GetGOInfo()->chest.groupLootRules)
             {
-                if (Group* group = go->GetGroupLootRecipient())
+                if (Group* group = go->Claim().HoldingGroup())
                 {
                     if (group == GetGroup())
                     {
@@ -384,10 +384,10 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
             else
             {
                 // the player whose group may loot the corpse
-                Player* recipient = creature->GetLootRecipient();
+                Player* recipient = creature->Claim().Entitled();
                 if (!recipient)
                 {
-                    creature->SetLootRecipient(this);
+                    creature->TappedBy(this);
                     recipient = this;
                 }
 
@@ -409,7 +409,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 
                     loot->generateMoneyLoot(creatureInfo->MinLootGold, creatureInfo->MaxLootGold);
 
-                    if (Group* group = creature->GetGroupLootRecipient())
+                    if (Group* group = creature->Claim().HoldingGroup())
                     {
                         group->UpdateLooterGuid(creature, true);
 
@@ -464,7 +464,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
                 // set group rights only for loot_type != LOOT_SKINNING
                 else
                 {
-                    if (Group* group = creature->GetGroupLootRecipient())
+                    if (Group* group = creature->Claim().HoldingGroup())
                     {
                         if (group == GetGroup())
                         {

@@ -453,7 +453,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
             }
 
             loot.clear();
-            SetLootRecipient(NULL);
+            Claim().StakedBy(NULL);
             SetLootState(GO_READY);
 
             if (!m_respawnDelayTime)

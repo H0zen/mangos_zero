@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "LootClaim.h"
 #include "Platform/Define.h"
 
 class Group;
@@ -47,9 +48,9 @@ bool StartsQuest(Object const& object, uint32 questId);
 /// Does this object take the quest back.
 bool EndsQuest(Object const& object, uint32 questId);
 
-/// Begin the group's roll on what this object is holding, and end it.
-void StartGroupLoot(Occupant& holder, Group* group, uint32 timer);
-void StopGroupLoot(Occupant& holder);
+/// The claim on what this object is holding, or nothing when it holds nothing
+/// anyone can take. Only a corpse and a chest ever do.
+LootClaim* ClaimOn(Occupant& holder);
 
 /// Persist when this object comes back, if it comes back at all.
 void SaveRespawnTime(Occupant& what);

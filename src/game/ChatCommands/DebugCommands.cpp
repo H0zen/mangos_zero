@@ -615,16 +615,16 @@ bool ChatHandler::HandleDebugGetLootRecipientCommand(char* /*args*/)
         return false;
     }
 
-    if (!target->HasLootRecipient())
+    if (!target->Claim().IsClaimed())
     {
         SendSysMessage("loot recipient: no loot recipient");
     }
-    else if (Player* recipient = target->GetLootRecipient())
+    else if (Player* recipient = target->Claim().Entitled())
     {
         PSendSysMessage("loot recipient: %s with raw data %s from group %u",
             recipient->GetGuidStr().c_str(),
-            target->GetLootRecipientGuid().GetString().c_str(),
-            target->GetLootGroupRecipientId());
+            target->Claim().TakerGuid().GetString().c_str(),
+            target->Claim().GroupId());
     }
     else
     {

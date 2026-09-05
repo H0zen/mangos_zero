@@ -625,7 +625,7 @@ struct boss_eranikus : public CreatureScript
                 m_creature->CombatStop(true);
                 m_creature->LoadCreatureAddon(true);
 
-                m_creature->SetLootRecipient(nullptr);
+                m_creature->Claim().StakedBy(nullptr);
 
                 // Get Remulos guid and make him stop summoning shades
                 if (Creature* pRemulos = GetClosestCreatureWithEntry(m_creature, NPC_REMULOS, 50.0f))

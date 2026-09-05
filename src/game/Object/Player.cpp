@@ -4332,7 +4332,7 @@ bool Player::IsTappedByMeOrMyGroup(Creature* creature)
     }
 
     /* If there is a loot recipient, assign it to recipient */
-    if (Player* recipient = creature->GetLootRecipient())
+    if (Player* recipient = creature->Claim().Entitled())
     {
         /* See if we're in a group */
         if (Group* plr_group = recipient->GetGroup())
