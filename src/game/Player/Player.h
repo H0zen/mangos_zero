@@ -1471,15 +1471,15 @@ class Player : public Unit
         // Check if the player can cast the spell without reagents
         bool CanNoReagentCast(SpellEntry const* spellInfo) const;
         bool HasItemWithIdEquipped(uint32 item, uint32 count, uint8 except_slot = NULL_SLOT) const;
-        InventoryResult CanTakeMoreSimilarItems(Item* pItem) const { return _CanTakeMoreSimilarItems(pItem->GetEntry(), pItem->GetCount(), pItem); }
+        InventoryResult CanTakeMoreSimilarItems(Item* pItem) const { return m_inventory.RoomForMore(pItem->GetEntry(), pItem->GetCount(), pItem); }
 
         // Check if the player can take more similar items (overloaded)
-        InventoryResult CanTakeMoreSimilarItems(uint32 entry, uint32 count) const { return _CanTakeMoreSimilarItems(entry, count, nullptr); }
+        InventoryResult CanTakeMoreSimilarItems(uint32 entry, uint32 count) const { return m_inventory.RoomForMore(entry, count, nullptr); }
 
         // Check if the player can store a new item
         InventoryResult CanStoreNewItem(uint8 bag, uint8 slot, ItemPosCountVec& dest, uint32 item, uint32 count, uint32* no_space_count = nullptr) const
         {
-            return _CanStoreItem(bag, slot, dest, item, count, nullptr, false, no_space_count);
+            return m_inventory.PlanToStore(bag, slot, dest, item, count, nullptr, false, no_space_count);
         }
 
         // Check if the player can store an item
@@ -1490,11 +1490,14 @@ class Player : public Unit
                 return EQUIP_ERR_ITEM_NOT_FOUND;
             }
             uint32 count = pItem->GetCount();
-            return _CanStoreItem(bag, slot, dest, pItem->GetEntry(), count, pItem, swap, nullptr);
+            return m_inventory.PlanToStore(bag, slot, dest, pItem->GetEntry(), count, pItem, swap, nullptr);
         }
 
         // Check if the player can store multiple items
-        InventoryResult CanStoreItems(Item** pItem, int count) const;
+        InventoryResult CanStoreItems(Item** pItem, int count) const
+        {
+            return m_inventory.PlanForAll(pItem, count);
+        }
 
         // Check if the player can equip a new item
         InventoryResult CanEquipNewItem(uint8 slot, uint16& dest, uint32 item, bool swap) const;
@@ -1512,16 +1515,25 @@ class Player : public Unit
         InventoryResult CanUnequipItems(uint32 item, uint32 count) const;
 
         // Check if the player can unequip an item
-        InventoryResult CanUnequipItem(uint16 src, bool swap) const;
+        InventoryResult CanUnequipItem(uint16 src, bool swap) const
+        {
+            return m_inventory.CanTakeOff(src, swap);
+        }
 
         // Check if the player can bank an item
-        InventoryResult CanBankItem(uint8 bag, uint8 slot, ItemPosCountVec& dest, Item* pItem, bool swap, bool not_loading = true) const;
+        InventoryResult CanBankItem(uint8 bag, uint8 slot, ItemPosCountVec& dest, Item* pItem, bool swap, bool not_loading = true) const
+        {
+            return m_inventory.PlanToBank(bag, slot, dest, pItem, swap, not_loading);
+        }
 
         // Check if the player can use an item
         InventoryResult CanUseItem(Item* pItem, bool direct_action = true) const;
 
         // Check if the player has an item with the specified totem category
-        bool HasItemTotemCategory(uint32 TotemCategory) const;
+        bool HasItemTotemCategory(uint32 TotemCategory) const
+        {
+            return m_inventory.HasTotem(TotemCategory);
+        }
         InventoryResult CanUseItem(ItemPrototype const* pItem, bool direct_action = true) const;
         InventoryResult CanUseAmmo(uint32 item) const;
 
@@ -1565,8 +1577,6 @@ class Player : public Unit
         Item* ConvertItem(Item* item, uint32 newItemId);
 
         // Internal methods for storing items
-        InventoryResult _CanTakeMoreSimilarItems(uint32 entry, uint32 count, Item* pItem, uint32* no_space_count = nullptr) const;
-        InventoryResult _CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec& dest, uint32 entry, uint32 count, Item* pItem = nullptr, bool swap = false, uint32* no_space_count = nullptr) const;
 
         // Apply equipment cooldown
         void ApplyEquipCooldown(Item* pItem);
@@ -1639,10 +1649,7 @@ class Player : public Unit
         // Remove an item from the buyback slot
         void RemoveItemFromBuyBackSlot(uint32 slot, bool del) { m_inventory.ClearBuyback(slot, del); }
 
-        uint32 GetMaxKeyringSize() const
-        {
-            return KEYRING_SLOT_END - KEYRING_SLOT_START;
-        }
+        uint32 GetMaxKeyringSize() const { return Inventory::MaxKeyring(); }
 
         // Send an equipment error message
         void SendEquipError(InventoryResult msg, Item* pItem, Item* pItem2 = nullptr, uint32 itemid = 0) const;
@@ -3896,13 +3903,10 @@ class Player : public Unit
 
 
         // internal common parts for CanStore/StoreItem functions
-        InventoryResult _CanStoreItem_InSpecificSlot(uint8 bag, uint8 slot, ItemPosCountVec& dest, ItemPrototype const* pProto, uint32& count, bool swap, Item* pSrcItem) const;
 
         // Check if an item can be stored in a bag
-        InventoryResult _CanStoreItem_InBag(uint8 bag, ItemPosCountVec& dest, ItemPrototype const* pProto, uint32& count, bool merge, bool non_specialized, Item* pSrcItem, uint8 skip_bag, uint8 skip_slot) const;
 
         // Check if an item can be stored in inventory slots
-        InventoryResult _CanStoreItem_InInventorySlots(uint8 slot_begin, uint8 slot_end, ItemPosCountVec& dest, ItemPrototype const* pProto, uint32& count, bool merge, Item* pSrcItem, uint8 skip_bag, uint8 skip_slot) const;
 
         // Store an item in a specific position
 

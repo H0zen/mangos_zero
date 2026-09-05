@@ -163,17 +163,7 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
     }
     else
     {
-        pItem2->SetCount(pItem2->GetCount() + pItem->GetCount());
-        m_inventory.Changed(pItem2, update);
-
-        // delete item (it not in any slot currently)
-        // pItem->DeleteFromDB();
-        m_inventory.Gone(pItem, update);
-
-        m_inventory.StopClocks(pItem);
-
-        pItem->SetOwnerGuid(GetObjectGuid());               // prevent error at next SetState in case trade/mail/buy from vendor
-        pItem->SetState(ITEM_REMOVED, this);
+        m_inventory.Merge(pItem2, pItem, pItem->GetCount(), update);
         pItem2->SetState(ITEM_CHANGED, this);
 
         ApplyEquipCooldown(pItem2);
@@ -268,69 +258,50 @@ void Player::MoveItemToInventory(ItemPosCountVec const& dest, Item* pItem, bool 
  */
 void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
 {
-    Item* pItem = GetItemByPos(bag, slot);
-    if (pItem)
+    Item* pItem = m_inventory.At(bag, slot);
+    if (!pItem)
     {
-        DEBUG_LOG("STORAGE: DestroyItem bag = %u, slot = %u, item = %u", bag, slot, pItem->GetEntry());
-
-        // start from destroy contained items (only equipped bag can have its)
-        if (pItem->IsBag() && pItem->IsEquipped())          // this also prevent infinity loop if empty bag stored in bag==slot
-        {
-            for (int i = 0; i < MAX_BAG_SIZE; ++i)
-            {
-                DestroyItem(slot, i, update);
-            }
-        }
-
-        if (pItem->HasItemFlag(ITEM_DYNFLAG_WRAPPED))
-        {
-            static SqlStatementID delGifts ;
-
-            SqlStatement stmt = CharacterDatabase.CreateStatement(delGifts, "DELETE FROM `character_gifts` WHERE `item_guid` = ?");
-            stmt.PExecute(pItem->GetGUIDLow());
-        }
-
-        m_inventory.StopClocks(pItem);
-
-        ItemRemovedQuestCheck(pItem->GetEntry(), pItem->GetCount());
-
-        if (bag == INVENTORY_SLOT_BAG_0)
-        {
-
-            // equipment and equipped bags can have applied bonuses
-            if (slot < INVENTORY_SLOT_BAG_END)
-            {
-                ItemPrototype const* pProto = pItem->GetProto();
-
-                // item set bonuses applied only at equip and removed at unequip, and still active for broken items
-                if (pProto && pProto->ItemSet)
-                {
-                    RemoveItemsSetItem(this, pProto);
-                }
-
-                _ApplyItemMods(pItem, slot, false);
-            }
-
-            if (slot < EQUIPMENT_SLOT_END)
-            {
-                // remove item dependent auras and casts (only weapon and armor slots)
-                RemoveItemDependentAurasAndCasts(pItem);
-            }
-
-            m_inventory.Own(slot, nullptr);
-        }
-        else if (Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, bag))
-        {
-            pBag->RemoveItem(slot);
-        }
-
-        m_inventory.Gone(pItem, update);
-
-        // pItem->SetOwnerGUID(0);
-        pItem->SetGuidValue(ITEM_FIELD_CONTAINED, ObjectGuid());
-        pItem->SetSlot(NULL_SLOT);
-        pItem->SetState(ITEM_REMOVED, this);
+        return;
     }
+
+    // A bag goes with what is in it. Only a worn bag can hold anything, which is
+    // also what keeps this from turning on itself when the bag is its own slot.
+    if (pItem->IsBag() && pItem->IsEquipped())
+    {
+        for (uint8 inside = 0; inside < MAX_BAG_SIZE; ++inside)
+        {
+            DestroyItem(slot, inside, update);
+        }
+    }
+
+    if (pItem->HasItemFlag(ITEM_DYNFLAG_WRAPPED))
+    {
+        static SqlStatementID delGifts ;
+
+        SqlStatement stmt = CharacterDatabase.CreateStatement(delGifts, "DELETE FROM `character_gifts` WHERE `item_guid` = ?");
+        stmt.PExecute(pItem->GetGUIDLow());
+    }
+
+    ItemRemovedQuestCheck(pItem->GetEntry(), pItem->GetCount());
+
+    // A worn piece stops doing whatever it was doing for him before it goes.
+    if (Inventory::IsHisOwn(bag) && slot < INVENTORY_SLOT_BAG_END)
+    {
+        ItemPrototype const* pProto = pItem->GetProto();
+        if (pProto && pProto->ItemSet)
+        {
+            RemoveItemsSetItem(this, pProto);
+        }
+
+        _ApplyItemMods(pItem, slot, false);
+
+        if (slot < EQUIPMENT_SLOT_END)
+        {
+            RemoveItemDependentAurasAndCasts(pItem);
+        }
+    }
+
+    m_inventory.Destroy(bag, slot, update);
 }
 
 /**

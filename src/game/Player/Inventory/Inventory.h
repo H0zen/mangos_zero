@@ -272,6 +272,15 @@ class Inventory
         /// before this, not here.
         void Take(uint8 bag, uint8 slot, bool tell);
 
+        /// The same, and the item is finished with: it leaves his sight and is
+        /// marked for deletion. What it was doing for him is undone before this,
+        /// and so is anything it was carrying.
+        void Destroy(uint8 bag, uint8 slot, bool tell);
+
+        /// Two stacks of the same thing become one. The count moves into the one
+        /// already in place, and the one that arrived is retired.
+        void Merge(Item* into, Item* from, uint32 count, bool tell);
+
         /**
          * The vendor's buyback row: twelve places holding what he has sold, with
          * the price and the hour beside each.
@@ -283,6 +292,44 @@ class Inventory
         void ToBuyback(Item* item);
         Item* InBuyback(uint32 slot) const;
         void ClearBuyback(uint32 slot, bool destroy);
+
+        /// How many places the keyring gives out, which is fewer than the client
+        /// keeps room for.
+        static uint32 MaxKeyring() { return KEYRING_SLOT_END - KEYRING_SLOT_START; }
+
+        /**
+         * Whether a thing fits, and where.
+         *
+         * A plan comes back rather than a move: a list of places and how much of
+         * the stack goes in each, which `Store` then carries out. Nothing here
+         * changes anything, so a caller may ask and then refuse.
+         *
+         * A named place is tried on its own; NULL_BAG and NULL_SLOT mean "find
+         * somewhere", and then the search runs over the regions in the order a
+         * player expects -- what is already stacked there first, then the empty
+         * places, then the bags.
+         */
+        InventoryResult PlanToStore(uint8 bag, uint8 slot, ItemPosCountVec& plan,
+                                    uint32 entry, uint32 count, Item* item = nullptr,
+                                    bool swap = false, uint32* shortBy = nullptr) const;
+
+        /// The same for a whole handful at once, as a vendor's stock or a quest's
+        /// rewards arrive. Nothing is placed unless everything can be.
+        InventoryResult PlanForAll(Item** items, int count) const;
+
+        InventoryResult PlanToBank(uint8 bag, uint8 slot, ItemPosCountVec& plan,
+                                   Item* item, bool swap, bool weighing = true) const;
+
+        /// Whether a worn piece can come off: there has to be somewhere for it to
+        /// go, and a bag has to be empty before it can be taken out of its slot.
+        InventoryResult CanTakeOff(uint16 place, bool swap) const;
+
+        /// Whether one more of a limited thing would put him over its limit. The
+        /// count is over everything he owns, the bank included.
+        InventoryResult RoomForMore(uint32 entry, uint32 count, Item* except,
+                                    uint32* shortBy = nullptr) const;
+
+        bool HasTotem(uint32 totemCategory) const;
 
     private:
         /// Hands every item in the wanted regions to the visitor and stops when
@@ -304,6 +351,21 @@ class Inventory
         /// first wears it, if that is how it was made. A bag is the exception:
         /// one that binds on being worn binds when it is hung up.
         static bool BindsOnArrival(ItemPrototype const& proto, uint16 place);
+
+        /// One named place, one bag, and one run of the character's own places.
+        /// Each takes what it can of the count and writes what it took into the
+        /// plan, so the caller keeps asking until the count runs out.
+        InventoryResult FitsHere(uint8 bag, uint8 slot, ItemPosCountVec& plan,
+                                 ItemPrototype const* proto, uint32& count,
+                                 bool swap, Item* source) const;
+        InventoryResult FitsInBag(uint8 bag, ItemPosCountVec& plan,
+                                  ItemPrototype const* proto, uint32& count,
+                                  bool merge, bool nonSpecialised, Item* source,
+                                  uint8 skipBag, uint8 skipSlot) const;
+        InventoryResult FitsInRun(uint8 from, uint8 to, ItemPosCountVec& plan,
+                                  ItemPrototype const* proto, uint32& count,
+                                  bool merge, Item* source,
+                                  uint8 skipBag, uint8 skipSlot) const;
 
         Player& m_owner;
         Item* m_place[PLAYER_SLOTS_COUNT];

@@ -378,18 +378,16 @@ Item* Inventory::Put(uint16 place, Item* item, uint32 count, bool clone, bool te
             sitting->SetBinding(true);
         }
 
-        sitting->SetCount(sitting->GetCount() + count);
-        Changed(sitting, tell);
-
-        if (!clone)
+        if (clone)
         {
-            Gone(item, tell);
-            StopClocks(item);
-
-            // Named as his before the state changes, or a trade, a mail or a
-            // purchase would be writing an item with no owner.
-            item->SetOwnerGuid(m_owner.GetObjectGuid());
-            item->SetState(ITEM_REMOVED, &m_owner);
+            // The stack it came from is going to other places too, so only the
+            // count crosses over.
+            sitting->SetCount(sitting->GetCount() + count);
+            Changed(sitting, tell);
+        }
+        else
+        {
+            Merge(sitting, item, count, tell);
         }
 
         // Its own life is already being counted; only the enchantments are new.
@@ -500,6 +498,53 @@ void Inventory::Take(uint8 bag, uint8 slot, bool tell)
     item->SetSlot(NULL_SLOT);
 
     Changed(item, tell);
+}
+
+void Inventory::Destroy(uint8 bag, uint8 slot, bool tell)
+{
+    Item* item = At(bag, slot);
+    if (!item)
+    {
+        return;
+    }
+
+    DEBUG_LOG("STORAGE: DestroyItem bag = %u, slot = %u, item = %u", bag, slot, item->GetEntry());
+
+    StopClocks(item);
+
+    if (IsHisOwn(bag))
+    {
+        Own(slot, nullptr);
+    }
+    else if (Bag* holder = BagAt(bag))
+    {
+        holder->RemoveItem(slot);
+    }
+
+    Gone(item, tell);
+
+    item->SetGuidValue(ITEM_FIELD_CONTAINED, ObjectGuid());
+    item->SetSlot(NULL_SLOT);
+    item->SetState(ITEM_REMOVED, &m_owner);
+}
+
+void Inventory::Merge(Item* into, Item* from, uint32 count, bool tell)
+{
+    if (!into || !from)
+    {
+        return;
+    }
+
+    into->SetCount(into->GetCount() + count);
+    Changed(into, tell);
+
+    Gone(from, tell);
+    StopClocks(from);
+
+    // Named as his before the state changes, or a trade, a mail or a purchase
+    // would be writing an item with no owner.
+    from->SetOwnerGuid(m_owner.GetObjectGuid());
+    from->SetState(ITEM_REMOVED, &m_owner);
 }
 
 void Inventory::ToBuyback(Item* item)
