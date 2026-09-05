@@ -1754,24 +1754,72 @@ enum CreatureFamily
     CREATURE_FAMILY_REMOTE_CONTROL = 28,
 };
 
+/**
+ * What the client is told about a kind of creature, one bit at a time.
+ *
+ * These arrive in SMSG_CREATURE_QUERY_RESPONSE rather than in update fields, and
+ * the client keeps them in its own cached record. It reads the low byte only:
+ * every one of bits 0 to 7 is tested by a small predicate of its own, and the
+ * rest are ours.
+ *
+ * The counts below are over the 9113 rows of `creature_template`. A bit no row
+ * carries is a bit this core has never sent, whatever it may mean.
+ */
 enum CreatureTypeFlags
 {
-    CREATURE_TYPEFLAGS_TAMEABLE         = 0x00000001,       // Tameable by any hunter
-    CREATURE_TYPEFLAGS_GHOST_VISIBLE    = 0x00000002,       // Creatures which can _also_ be seen when player is a ghost, used in CanInteract function by client, can't be attacked
-    CREATURE_TYPEFLAGS_UNK3             = 0x00000004,       // "BOSS" flag for tooltips
+    /// 545 rows, not one of them anything but a beast. The client gates on this
+    /// and then reads the family, which is why a beast with no family is untameable.
+    CREATURE_TYPEFLAGS_TAMEABLE         = 0x00000001,
+
+    /// 13 rows: spirit healers, both spirit guides, Lothos Riftwaker, the ghost
+    /// of Franclorn Forgewright. Everything a dead player has to be able to see.
+    CREATURE_TYPEFLAGS_GHOST_VISIBLE    = 0x00000002,
+
+    /// 96 rows, 92 of them world bosses: the tooltip says Boss instead of a level.
+    CREATURE_TYPEFLAGS_BOSS             = 0x00000004,
+
+    /// 418 rows of every type, from ghouls to city leaders. The client tests it
+    /// with a bare two-line predicate that gives no clue what it answers.
     CREATURE_TYPEFLAGS_UNK4             = 0x00000008,
-    CREATURE_TYPEFLAGS_UNK5             = 0x00000010,       // controls something in client tooltip related to creature faction
-    CREATURE_TYPEFLAGS_UNK6             = 0x00000020,       // may be sound related
-    CREATURE_TYPEFLAGS_UNK7             = 0x00000040,       // may be related to attackable / not attackable creatures with spells, used together with lua_IsHelpfulSpell/lua_IsHarmfulSpell
-    CREATURE_TYPEFLAGS_UNK8             = 0x00000080,       // has something to do with unit interaction / quest status requests
-    CREATURE_TYPEFLAGS_HERBLOOT         = 0x00000100,       // Can be looted by herbalist
-    CREATURE_TYPEFLAGS_MININGLOOT       = 0x00000200,       // Can be looted by miner
-    CREATURE_TYPEFLAGS_UNK11            = 0x00000400,       // no idea, but it used by client
-    CREATURE_TYPEFLAGS_UNK12            = 0x00000800,       // related to possibility to cast spells while mounted
-    CREATURE_TYPEFLAGS_CAN_ASSIST       = 0x00001000,       // Can aid any player (and group) in combat. Typically seen for escorting NPC's
-    CREATURE_TYPEFLAGS_UNK14            = 0x00002000,       // checked from calls in Lua_PetHasActionBar
-    CREATURE_TYPEFLAGS_UNK15            = 0x00004000,       // Lua_UnitGUID, client does guid_low &= 0xFF000000 if this flag is set
-    CREATURE_TYPEFLAGS_ENGINEERLOOT     = 0x00008000,       // Can be looted by engineer
+
+    /// Exactly one row, and the client's predicate returns the NEGATION of it:
+    /// what it asks is whether the faction may be shown, so this says it may not.
+    CREATURE_TYPEFLAGS_NO_FACTION_TOOLTIP = 0x00000010,
+
+    /// 14 rows, and every one is a raid boss or a green dragon: Ragnaros, Onyxia,
+    /// Azuregos, Majordomo, the four Emerald dragons. Heard from further off.
+    CREATURE_TYPEFLAGS_MORE_AUDIBLE     = 0x00000020,
+
+    /// 149 rows, heaviest among undead and the Blackrock bosses. The client gates
+    /// on it and then indexes a DBC, so it selects a row somewhere; which one is
+    /// not established.
+    CREATURE_TYPEFLAGS_UNK7             = 0x00000040,
+
+    /// No row carries it. The client tests it by sign rather than by mask, which
+    /// is why a scan for immediates never finds it.
+    CREATURE_TYPEFLAGS_UNK8             = 0x00000080,
+
+    /// Skinning a corpse with a gathering profession. No row carries any of the
+    /// three: they arrive with the expansions, and nothing in 1.12 reads them.
+    CREATURE_TYPEFLAGS_HERBLOOT         = 0x00000100,
+    CREATURE_TYPEFLAGS_MININGLOOT       = 0x00000200,
+
+    /// Two rows, both invisible stand-ins: Poison Cloud and Necropolis health.
+    /// Nothing you would want a death message for.
+    CREATURE_TYPEFLAGS_UNK11            = 0x00000400,
+
+    /// No row carries it. Said to bear on casting while mounted.
+    CREATURE_TYPEFLAGS_UNK12            = 0x00000800,
+
+    /// 63 rows, and every one is an escort: Corporal Keeshan, the Defias Traitor,
+    /// Tirion Fordring, Deathstalker Erland. It may be helped in a fight.
+    CREATURE_TYPEFLAGS_CAN_ASSIST       = 0x00001000,
+
+    /// No rows. Reached from Lua_PetHasActionBar and Lua_UnitGUID respectively.
+    CREATURE_TYPEFLAGS_UNK14            = 0x00002000,
+    CREATURE_TYPEFLAGS_UNK15            = 0x00004000,
+
+    CREATURE_TYPEFLAGS_ENGINEERLOOT     = 0x00008000
 };
 
 /**
@@ -2057,8 +2105,10 @@ enum UnitDynFlags
     UNIT_DYNFLAG_NONE                       = 0x0000,
     UNIT_DYNFLAG_LOOTABLE                   = 0x0001,
     UNIT_DYNFLAG_TRACK_UNIT                 = 0x0002,
-    UNIT_DYNFLAG_TAPPED                     = 0x0004,       // Lua_UnitIsTapped - Indicates the target as grey for the client.
-    UNIT_DYNFLAG_ROOTED                     = 0x0008,
+    /// Lua_UnitIsTapped: somebody has a claim on it, and it is grey to everyone else.
+    UNIT_DYNFLAG_TAPPED                     = 0x0004,
+    /// Lua_UnitIsTappedByPlayer: the claim is the asking player's own.
+    UNIT_DYNFLAG_TAPPED_BY_PLAYER           = 0x0008,
     UNIT_DYNFLAG_SPECIALINFO                = 0x0010,
     UNIT_DYNFLAG_DEAD                       = 0x0020,
 };

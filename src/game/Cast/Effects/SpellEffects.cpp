@@ -711,7 +711,7 @@ void Spell::EffectSummonTotem(SpellEffectIndex eff_idx)
 
     if (m_caster->GetTypeId() == TYPEID_PLAYER)
     {
-        pTotem->SetUnitFlag(UNIT_FLAG_PVP_ATTACKABLE);
+        pTotem->SetUnitFlag(UNIT_FLAG_PLAYER_CONTROLLED);
     }
 
     if (m_caster->IsPvP())

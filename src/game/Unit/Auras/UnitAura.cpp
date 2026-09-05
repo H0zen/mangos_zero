@@ -36,6 +36,8 @@
 #include "ObjectGuid.h"
 #include "SpellMgr.h"
 #include "QuestDef.h"
+#include "PerKind.h"
+#include "LootClaim.h"
 #include "Player.h"
 #include "Creature.h"
 #include "Spell.h"
@@ -1381,9 +1383,19 @@ void Unit::RemoveAllAurasOnEvade()
         }
     }
 
-    if ((GetTypeId() == TYPEID_UNIT) && HasDynFlag(UNIT_DYNFLAG_TAPPED))
+    // AND THE CLAIM WITH IT. A creature that evades goes home whole and belongs to
+    // nobody: whoever fought it walked away, and the next person to bring it down
+    // has earned it. The flag says exactly what the claim says, so the two are
+    // dropped together or they disagree -- and a claim left standing here is a
+    // corpse the killer cannot loot.
+    if (GetTypeId() == TYPEID_UNIT)
     {
         RemoveDynFlag(UNIT_DYNFLAG_TAPPED);
+
+        if (LootClaim* claim = ClaimOn(*this))
+        {
+            claim->StakedBy(nullptr);
+        }
     }
 }
 

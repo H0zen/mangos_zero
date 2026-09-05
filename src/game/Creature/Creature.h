@@ -202,22 +202,26 @@ struct CreatureInfo
     /// @return ObjectGuid combining creature entry and low GUID
     ObjectGuid GetObjectGuid(uint32 lowguid) const { return ObjectGuid(GetHighGuid(), Entry, lowguid); }
 
-    /// @brief Determine the required skill to loot this creature.
-    /// @return SkillType for herbalism, mining, or skinning based on creature type flags
+    /**
+     * @brief Which profession opens this corpse.
+     *
+     * Skinning, on everything this core has: the herbalism and mining answers are
+     * carried by flags no row in `creature_template` sets, because gathering from
+     * a corpse arrives with the expansions.
+     */
     SkillType GetRequiredLootSkill() const
     {
         if (CreatureTypeFlags & CREATURE_TYPEFLAGS_HERBLOOT)
         {
             return SKILL_HERBALISM;
         }
-        else if (CreatureTypeFlags & CREATURE_TYPEFLAGS_MININGLOOT)
+
+        if (CreatureTypeFlags & CREATURE_TYPEFLAGS_MININGLOOT)
         {
             return SKILL_MINING;
         }
-        else
-        {
-            return SKILL_SKINNING; // normal case
-        }
+
+        return SKILL_SKINNING;
     }
 
     /// @brief Check if this creature can be tamed as a pet.
@@ -800,10 +804,11 @@ class Creature : public Unit
 
         // <<TODO: the flag is stored, and it says exactly what Claim().IsClaimed()
         // says, so it could be derived where it is sent instead -- Fields::Project
-        // already rewrites this same flag per observer. What stops it is the one
-        // place that clears the flag without touching the claim, in
-        // UnitAura.cpp: whatever that means has to be established first, because
-        // deriving the flag would silently undo it.
+        // already rewrites this same flag per observer. Both places that drop it
+        // now drop the claim with it, so nothing stands in the way of deriving it;
+        // what is left is to decide whether UNIT_DYNFLAG_TAPPED_BY_PLAYER should
+        // be set for the holder rather than TAPPED being cleared for him, which is
+        // the same picture drawn the other way round and the way retail draws it.
 
         /// Who may take what is on this body, and whether a roll is running.
         LootClaim& Claim() { return m_claim; }

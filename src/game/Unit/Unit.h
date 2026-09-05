@@ -558,9 +558,15 @@ enum UnitFlags
     UNIT_FLAG_UNK_0                 = 0x00000001,
     UNIT_FLAG_NON_ATTACKABLE        = 0x00000002,           ///< not attackable
     UNIT_FLAG_CLIENT_CONTROL_LOST   = 0x00000004,           // Generic unspecified loss of control initiated by server script, movement checks disabled, paired with loss of client control packet.
-    UNIT_FLAG_PVP_ATTACKABLE        = 0x00000008,           ///< allow apply pvp rules to attackable state in addition to faction dependent state, UNIT_FLAG_UNKNOWN1 in pre-bc mangos
-    UNIT_FLAG_RENAME                = 0x00000010,           ///< rename creature
-    UNIT_FLAG_RESTING               = 0x00000020,
+    /// Lua_UnitPlayerControlled. The traffic settles it: set in 25 of 25 player
+    /// updates and 0 of 63 creature updates. This core already sets it on exactly
+    /// the player-controlled units -- players, pets and totems -- and nothing else.
+    UNIT_FLAG_PLAYER_CONTROLLED     = 0x00000008,
+    /// Lua_PetCanBeRenamed.
+    UNIT_FLAG_RENAME                = 0x00000010,
+    /// Lua_PetCanBeAbandoned. The two are the same code but for the mask, and both
+    /// first check that UNIT_FIELD_SUMMONEDBY is the asking player.
+    UNIT_FLAG_ABANDON               = 0x00000020,
     UNIT_FLAG_UNK_6                 = 0x00000040,
     UNIT_FLAG_OOC_NOT_ATTACKABLE    = 0x00000100,           ///< (OOC Out Of Combat) Can not be attacked when not in combat. Removed if unit for some reason enter combat (flag probably removed for the attacked and it's party/group only) \todo Needs more documentation
     UNIT_FLAG_PASSIVE               = 0x00000200,           ///< makes you unable to attack everything. Almost identical to our "civilian"-term. Will ignore it's surroundings and not engage in combat unless "called upon" or engaged by another unit.
@@ -570,7 +576,6 @@ enum UnitFlags
     UNIT_FLAG_UNK_15                = 0x00008000,           ///< related to jerky movement in water?
     UNIT_FLAG_UNK_16                = 0x00010000,           ///< removes attackable icon
     UNIT_FLAG_PACIFIED              = 0x00020000,
-    UNIT_FLAG_DISABLE_ROTATE        = 0x00040000,
     UNIT_FLAG_IN_COMBAT             = 0x00080000,
     UNIT_FLAG_NOT_SELECTABLE        = 0x02000000,
     UNIT_FLAG_SKINNABLE             = 0x04000000,
@@ -578,7 +583,7 @@ enum UnitFlags
     UNIT_FLAG_SHEATHE               = 0x40000000,
     // UNIT_FLAG_UNK_31              = 0x80000000           // no affect in 1.12.1
 
-    UNIT_FLAG_NOT_ATTACKABLE_1      = 0x00000080,           ///< ?? (UNIT_FLAG_PVP_ATTACKABLE | UNIT_FLAG_NOT_ATTACKABLE_1) is NON_PVP_ATTACKABLE
+    UNIT_FLAG_NOT_ATTACKABLE_1      = 0x00000080,           ///< ?? (UNIT_FLAG_PLAYER_CONTROLLED | UNIT_FLAG_NOT_ATTACKABLE_1) is NON_PVP_ATTACKABLE
     UNIT_FLAG_LOOTING               = 0x00000400,           ///< loot animation
     UNIT_FLAG_PET_IN_COMBAT         = 0x00000800,           ///< in combat?, 2.0.8
     UNIT_FLAG_STUNNED               = 0x00040000,           ///< stunned, 2.1.1

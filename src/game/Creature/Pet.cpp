@@ -836,7 +836,7 @@ bool Pet::CreateBaseAtCreature(Creature* creature)
         SetGender(GENDER_NONE);
         SetPowerKind(POWER_FOCUS);
         SetSheath(SHEATH_STATE_MELEE);
-        SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE | UNIT_FLAG_RESTING | UNIT_FLAG_RENAME);
+        SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED | UNIT_FLAG_ABANDON | UNIT_FLAG_RENAME);
 
         SetCastSpeedMod(creature->GetCastSpeedMod());
         SetLoyaltyLevel(REBELLIOUS);
@@ -874,7 +874,7 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
             SetClass(CLASS_MAGE);
 
             // this enables popup window (pet dismiss, cancel)
-            SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
+            SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
             break;
         case HUNTER_PET:
             SetClass(CLASS_WARRIOR);
@@ -882,7 +882,7 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
             SetSheath(SHEATH_STATE_MELEE);
     
             // this enables popup window (pet abandon, cancel), original value set in CreateBaseAtCreature
-            SetUnitFlag(UNIT_FLAG_PVP_ATTACKABLE | UNIT_FLAG_RESTING);
+            SetUnitFlag(UNIT_FLAG_PLAYER_CONTROLLED | UNIT_FLAG_ABANDON);
             break;
         case GUARDIAN_PET:
         case MINI_PET:

@@ -107,7 +107,7 @@ static bool HandleResetStatsOrLevelHelper(Player* player)
         player->InitDisplayIds();
     }
 
-    player->SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
+    player->SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
 
     //-1 is default value
     player->SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, -1);
