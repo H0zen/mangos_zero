@@ -495,7 +495,7 @@ void Player::_SaveInventory()
     // and remove those that aren't already
     for (uint8 i = BUYBACK_SLOT_START; i < BUYBACK_SLOT_END; ++i)
     {
-        Item* item = m_items[i];
+        Item* item = m_inventory.Own(i);
         if (!item || item->GetState() == ITEM_NEW)
         {
             continue;
@@ -510,7 +510,7 @@ void Player::_SaveInventory()
         stmt = CharacterDatabase.CreateStatement(delItemInst, "DELETE FROM `item_instance` WHERE `guid` = ?");
         stmt.PExecute(item->GetGUIDLow());
 
-        m_items[i]->FSetState(ITEM_NEW);
+        m_inventory.Own(i)->FSetState(ITEM_NEW);
     }
 
     // update enchantment durations

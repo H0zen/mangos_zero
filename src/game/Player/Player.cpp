@@ -463,7 +463,7 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
  *
  * @param session The owning world session.
  */
-Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
+Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
 {
 
     m_transport = 0;
@@ -526,8 +526,6 @@ Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(this), m_
 
     m_SpellModRemoveCount = 0;
 
-    memset(m_items, 0, sizeof(Item*)*PLAYER_SLOTS_COUNT);
-
     m_social = nullptr;
 
     // group is initialized in the reference constructor
@@ -557,7 +555,6 @@ Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(this), m_
     m_cinematic = 0;
 
     PlayerTalkClass = new PlayerMenu(GetSession());
-    m_currentBuybackSlot = BUYBACK_SLOT_START;
 
     m_lastLiquid = nullptr;
 
@@ -687,7 +684,7 @@ Player::~Player()
     // Delete all items in the player's inventory
     for (int i = 0; i < PLAYER_SLOTS_COUNT; ++i)
     {
-        delete m_items[i];
+        delete m_inventory.Own(i);
     }
 
     // Clean up communication channels
@@ -807,7 +804,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     // Initialize player items to nullptr
     for (int i = 0; i < PLAYER_SLOTS_COUNT; ++i)
     {
-        m_items[i] = nullptr;
+        m_inventory.Own(i, nullptr);
     }
 
     // Set player's initial location
@@ -2017,9 +2014,9 @@ void Player::AddToWorld()
 
     for (int i = PLAYER_SLOT_START; i < PLAYER_SLOT_END; ++i)
     {
-        if (m_items[i])
+        if (m_inventory.Own(i))
         {
-            m_items[i]->AddToWorld();
+            m_inventory.Own(i)->AddToWorld();
         }
     }
 
@@ -2058,9 +2055,9 @@ void Player::RemoveFromWorld()
 
     for (int i = PLAYER_SLOT_START; i < PLAYER_SLOT_END; ++i)
     {
-        if (m_items[i])
+        if (m_inventory.Own(i))
         {
-            m_items[i]->RemoveFromWorld();
+            m_inventory.Own(i)->RemoveFromWorld();
         }
     }
 
@@ -5125,7 +5122,7 @@ bool Player::BuyItemFromVendor(ObjectGuid vendorGuid, uint32 item, uint8 count, 
 
     Item* pItem = nullptr;
 
-    if ((bag == NULL_BAG && slot == NULL_SLOT) || IsInventoryPos(bag, slot))
+    if ((bag == NULL_BAG && slot == NULL_SLOT) || Inventory::IsCarried(bag, slot))
     {
         ItemPosCountVec dest;
         InventoryResult msg = CanStoreNewItem(bag, slot, dest, item, totalCount);
@@ -5139,7 +5136,7 @@ bool Player::BuyItemFromVendor(ObjectGuid vendorGuid, uint32 item, uint8 count, 
 
         pItem = StoreNewItem(dest, item, true);
     }
-    else if (IsEquipmentPos(bag, slot))
+    else if (Inventory::IsWorn(bag, slot))
     {
         if (totalCount != 1)
         {
@@ -6457,7 +6454,7 @@ Item* Player::ConvertItem(Item* item, uint32 newItemId)
         DurabilityLoss(pNewItem, loosePercent);
     }
 
-    if (IsInventoryPos(pos))
+    if (Inventory::IsCarried(pos))
     {
         ItemPosCountVec dest;
         InventoryResult msg = CanStoreItem(item->GetBagSlot(), item->GetSlot(), dest, pNewItem, true);
@@ -6468,7 +6465,7 @@ Item* Player::ConvertItem(Item* item, uint32 newItemId)
             return StoreItem(dest, pNewItem, true);
         }
     }
-    else if (IsBankPos(pos))
+    else if (Inventory::IsBanked(pos))
     {
         ItemPosCountVec dest;
         InventoryResult msg = CanBankItem(item->GetBagSlot(), item->GetSlot(), dest, pNewItem, true);
@@ -6479,7 +6476,7 @@ Item* Player::ConvertItem(Item* item, uint32 newItemId)
             return BankItem(dest, pNewItem, true);
         }
     }
-    else if (IsEquipmentPos(pos))
+    else if (Inventory::IsWorn(pos))
     {
         uint16 dest;
         InventoryResult msg = CanEquipItem(item->GetSlot(), dest, pNewItem, true, false);

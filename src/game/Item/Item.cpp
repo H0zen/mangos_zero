@@ -575,7 +575,7 @@ bool Item::CanBeTraded() const
     {
         return false;
     }
-    if (IsBag() && (Player::IsBagPos(GetPos()) || !((Bag const*)this)->IsEmpty()))
+    if (IsBag() && (Inventory::HoldsBag(GetPos()) || !((Bag const*)this)->IsEmpty()))
     {
         return false;
     }

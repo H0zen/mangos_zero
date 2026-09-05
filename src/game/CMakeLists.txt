@@ -1,24 +1,17 @@
-# The game library, laid out by subsystem as in emDOC/ARCH.md section 6.
-#
-# One group per directory. A group is the unit a reviewer reads, so the name
-# says what the code is for rather than which class it came out of.
-
 macro(game_group VAR FOLDER)
     file(GLOB ${VAR} ${FOLDER}/*.cpp ${FOLDER}/*.h)
     string(REPLACE "/" "\\" _display "${FOLDER}")
     source_group("${_display}" FILES ${${VAR}})
 endmacro()
 
-# What a thing in the world is
 game_group(SRC_OBJECT           Object)
 game_group(SRC_UPDATEFIELDS     UpdateFields)
 game_group(SRC_VISIBILITY       Visibility)
 
-# The kinds of thing
 game_group(SRC_UNIT             Unit)
 game_group(SRC_AURAS            Unit/Auras)
 game_group(SRC_PLAYER           Player)
-game_group(SRC_PLAYER_PACK      Player/Pack)
+game_group(SRC_PLAYER_INVENTORY Player/Inventory)
 game_group(SRC_PLAYER_JOURNAL   Player/Journal)
 game_group(SRC_PLAYER_TALENTS   Player/Talents)
 game_group(SRC_CREATURE         Creature)
@@ -27,13 +20,11 @@ game_group(SRC_GAMEOBJECT       GameObject)
 game_group(SRC_ITEM             Item)
 game_group(SRC_CORPSE           Corpse)
 
-# What they do to each other
 game_group(SRC_COMBAT           Combat)
 game_group(SRC_CAST             Cast)
 game_group(SRC_CAST_EFFECTS     Cast/Effects)
 game_group(SRC_LOOT             Loot)
 
-# Where they stand and how they get about
 game_group(SRC_MAP              Map)
 game_group(SRC_MAP_GRID         Map/Grid)
 game_group(SRC_MAP_COLLISION    Map/Collision)
@@ -43,14 +34,12 @@ game_group(SRC_MOVE_GENERATORS  Movement/Generators)
 game_group(SRC_MOVE_NAVIGATION  Movement/Navigation)
 game_group(SRC_MOVE_SPLINE      Movement/Spline)
 
-# The player's connection to all of it
 game_group(SRC_PACKET           Packet)
 game_group(SRC_SESSION          Session)
 game_group(SRC_HANDLERS         Session/Handlers)
 game_group(SRC_CHAT             Chat)
 game_group(SRC_CHAT_COMMANDS    Chat/Commands)
 
-# Systems that belong to no single map
 game_group(SRC_WORLD            World)
 game_group(SRC_WORLD_GROUP      World/Group)
 game_group(SRC_WORLD_GUILD      World/Guild)
@@ -62,10 +51,8 @@ game_group(SRC_WORLD_SOCIAL     World/Social)
 game_group(SRC_BATTLEGROUND     BattleGround)
 game_group(SRC_OUTDOOR_PVP      OutdoorPvP)
 
-# Read once at boot, then only read
 game_group(SRC_DATASTORE        DataStore)
 
-# Around the edges
 game_group(SRC_SCRIPT           Script)
 game_group(SRC_CLOCK            Clock)
 game_group(SRC_METRICS          Metrics)
@@ -79,7 +66,7 @@ add_library(game STATIC
     ${SRC_UNIT}
     ${SRC_AURAS}
     ${SRC_PLAYER}
-    ${SRC_PLAYER_PACK}
+    ${SRC_PLAYER_INVENTORY}
     ${SRC_PLAYER_JOURNAL}
     ${SRC_PLAYER_TALENTS}
     ${SRC_CREATURE}
@@ -122,8 +109,6 @@ add_library(game STATIC
     ${SRC_TOOLS}
 )
 
-# Every directory is on the path, so a header is included by its own name and a
-# file can move between subsystems without touching the ones that use it.
 target_include_directories(game
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -133,6 +118,7 @@ target_include_directories(game
         Unit
         Unit/Auras
         Player
+        Player/Inventory
         Player/Journal
         Creature
         Creature/AI

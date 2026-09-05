@@ -1336,7 +1336,7 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool
 InventoryResult Player::CanUnequipItem(uint16 pos, bool swap) const
 {
     // Applied only to equipped items and bank bags
-    if (!IsEquipmentPos(pos) && !IsBagPos(pos))
+    if (!Inventory::IsWorn(pos) && !Inventory::HoldsBag(pos))
     {
         return EQUIP_ERR_OK;
     }

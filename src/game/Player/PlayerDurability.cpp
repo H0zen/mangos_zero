@@ -353,7 +353,7 @@ uint32 Player::DurabilityRepair(uint16 pos, bool cost, float discountMod)
     item->SetState(ITEM_CHANGED, this);
 
     // reapply mods for total broken and repaired item if equipped
-    if (IsEquipmentPos(pos) && !curDurability)
+    if (Inventory::IsWorn(pos) && !curDurability)
     {
         _ApplyItemMods(item, pos & 255, true);
     }

@@ -1,0 +1,173 @@
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the 1.12.x client.
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
+
+// Where a place is.
+//
+// These answers decide what a move is allowed to do, and they are questions
+// about a number rather than about a character, so they are fixed here.
+
+#include "doctest.h"
+
+#include "Inventory/Inventory.h"
+#include "Unit.h"
+
+TEST_CASE("place: a number belongs to the character himself only under bag 255")
+{
+    CHECK(Inventory::IsHisOwn(INVENTORY_SLOT_BAG_0));
+    CHECK_FALSE(Inventory::IsHisOwn(INVENTORY_SLOT_BAG_START));
+    CHECK_FALSE(Inventory::IsHisOwn(0));
+}
+
+TEST_CASE("place: the two halves survive being packed into one number")
+{
+    uint16 const place = Inventory::Packed(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+
+    CHECK(Inventory::Container(place) == INVENTORY_SLOT_BAG_0);
+    CHECK(Inventory::Slot(place) == EQUIPMENT_SLOT_MAINHAND);
+
+    // And a place inside a worn bag, where the container is not the character.
+    uint16 const inBag = Inventory::Packed(INVENTORY_SLOT_BAG_START, 7);
+    CHECK(Inventory::Container(inBag) == INVENTORY_SLOT_BAG_START);
+    CHECK(Inventory::Slot(inBag) == 7);
+}
+
+TEST_CASE("place: worn means the gear places and the slots a bag hangs in")
+{
+    CHECK(Inventory::IsWorn(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_HEAD));
+    CHECK(Inventory::IsWorn(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_TABARD));
+    CHECK(Inventory::IsWorn(INVENTORY_SLOT_BAG_0, INVENTORY_SLOT_BAG_START));
+
+    // The backpack is carried, not worn.
+    CHECK_FALSE(Inventory::IsWorn(INVENTORY_SLOT_BAG_0, INVENTORY_SLOT_ITEM_START));
+
+    // And nothing inside a bag is worn, whatever the slot number is.
+    CHECK_FALSE(Inventory::IsWorn(INVENTORY_SLOT_BAG_START, EQUIPMENT_SLOT_HEAD));
+}
+
+TEST_CASE("place: carried means the backpack, the keyring, and inside a worn bag")
+{
+    CHECK(Inventory::IsCarried(INVENTORY_SLOT_BAG_0, INVENTORY_SLOT_ITEM_START));
+    CHECK(Inventory::IsCarried(INVENTORY_SLOT_BAG_0, KEYRING_SLOT_START));
+    CHECK(Inventory::IsCarried(INVENTORY_SLOT_BAG_START, 0));
+
+    // Worn gear is not carried, and neither is the bank.
+    CHECK_FALSE(Inventory::IsCarried(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_HEAD));
+    CHECK_FALSE(Inventory::IsCarried(INVENTORY_SLOT_BAG_0, BANK_SLOT_ITEM_START));
+}
+
+TEST_CASE("place: asking for no slot in particular counts as carried")
+{
+    // A store that has not chosen a place yet still names the backpack.
+    CHECK(Inventory::IsCarried(INVENTORY_SLOT_BAG_0, NULL_SLOT));
+}
+
+TEST_CASE("place: banked means the bank's own places, its bag slots, and inside them")
+{
+    CHECK(Inventory::IsBanked(INVENTORY_SLOT_BAG_0, BANK_SLOT_ITEM_START));
+    CHECK(Inventory::IsBanked(INVENTORY_SLOT_BAG_0, BANK_SLOT_BAG_START));
+    CHECK(Inventory::IsBanked(BANK_SLOT_BAG_START, 0));
+
+    CHECK_FALSE(Inventory::IsBanked(INVENTORY_SLOT_BAG_0, INVENTORY_SLOT_ITEM_START));
+    CHECK_FALSE(Inventory::IsBanked(INVENTORY_SLOT_BAG_START, 0));
+}
+
+TEST_CASE("place: the three regions never overlap")
+{
+    for (uint8 slot = 0; slot < KEYRING_SLOT_END; ++slot)
+    {
+        int const claims = int(Inventory::IsWorn(INVENTORY_SLOT_BAG_0, slot))
+                         + int(Inventory::IsCarried(INVENTORY_SLOT_BAG_0, slot))
+                         + int(Inventory::IsBanked(INVENTORY_SLOT_BAG_0, slot));
+
+        CHECK_MESSAGE(claims <= 1, "slot ", int(slot), " is claimed by two regions");
+    }
+}
+
+TEST_CASE("place: only the buyback row is claimed by no region at all")
+{
+    for (uint8 slot = 0; slot < KEYRING_SLOT_END; ++slot)
+    {
+        bool const claimed = Inventory::IsWorn(INVENTORY_SLOT_BAG_0, slot)
+                          || Inventory::IsCarried(INVENTORY_SLOT_BAG_0, slot)
+                          || Inventory::IsBanked(INVENTORY_SLOT_BAG_0, slot);
+
+        bool const isBuyback = slot >= BUYBACK_SLOT_START && slot < BUYBACK_SLOT_END;
+        CHECK_MESSAGE(claimed != isBuyback, "slot ", int(slot), " is on the wrong side");
+    }
+}
+
+TEST_CASE("place: a bag hangs in four places on him and six in the bank")
+{
+    int worn = 0;
+    int banked = 0;
+    for (uint8 slot = 0; slot < KEYRING_SLOT_END; ++slot)
+    {
+        if (!Inventory::HoldsBag(Inventory::Packed(INVENTORY_SLOT_BAG_0, slot)))
+        {
+            continue;
+        }
+
+        if (slot < BANK_SLOT_BAG_START)
+        {
+            ++worn;
+        }
+        else
+        {
+            ++banked;
+        }
+    }
+
+    CHECK(worn == INVENTORY_SLOT_BAG_END - INVENTORY_SLOT_BAG_START);
+    CHECK(banked == BANK_SLOT_BAG_END - BANK_SLOT_BAG_START);
+
+    // A place inside a bag never holds a bag of its own.
+    CHECK_FALSE(Inventory::HoldsBag(Inventory::Packed(INVENTORY_SLOT_BAG_START, 0)));
+}
+
+TEST_CASE("place: three worn places feed a swing and the rest feed none")
+{
+    CHECK(Inventory::AttackFrom(EQUIPMENT_SLOT_MAINHAND) == BASE_ATTACK);
+    CHECK(Inventory::AttackFrom(EQUIPMENT_SLOT_OFFHAND) == OFF_ATTACK);
+    CHECK(Inventory::AttackFrom(EQUIPMENT_SLOT_RANGED) == RANGED_ATTACK);
+
+    CHECK(Inventory::AttackFrom(EQUIPMENT_SLOT_HEAD) == MAX_ATTACK);
+    CHECK(Inventory::AttackFrom(EQUIPMENT_SLOT_TABARD) == MAX_ATTACK);
+    CHECK(Inventory::AttackFrom(INVENTORY_SLOT_ITEM_START) == MAX_ATTACK);
+}
+
+TEST_CASE("place: the regions run end to end with no gap between them")
+{
+    CHECK(EQUIPMENT_SLOT_END == INVENTORY_SLOT_BAG_START);
+    CHECK(INVENTORY_SLOT_BAG_END == INVENTORY_SLOT_ITEM_START);
+    CHECK(INVENTORY_SLOT_ITEM_END == BANK_SLOT_ITEM_START);
+    CHECK(BANK_SLOT_ITEM_END == BANK_SLOT_BAG_START);
+    CHECK(BANK_SLOT_BAG_END == BUYBACK_SLOT_START);
+    CHECK(BUYBACK_SLOT_END == KEYRING_SLOT_START);
+}
+
+TEST_CASE("place: every region a search can reach lies below the keyring's end")
+{
+    CHECK(KEYRING_SLOT_END <= PLAYER_SLOT_END);
+}

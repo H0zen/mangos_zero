@@ -221,7 +221,7 @@ void WorldSession::HandleCancelTempEnchantmentOpcode(WorldPacket& recv_data)
     recv_data >> eslot;
 
     // apply only to equipped item
-    if (!Player::IsEquipmentPos(INVENTORY_SLOT_BAG_0, eslot))
+    if (!Inventory::IsWorn(INVENTORY_SLOT_BAG_0, eslot))
     {
         return;
     }

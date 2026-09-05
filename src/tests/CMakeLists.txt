@@ -1,10 +1,3 @@
-# Unit tests. Built only when WITH_TESTS is on, and never linked into a shipping
-# binary: doctest is an INTERFACE target carrying a single header, so nothing
-# here reaches mangosd or realmd.
-#
-# The layout mirrors the subsystem it exercises -- wire/, crypto/, terrain/,
-# combat/ -- so a failure names the layer before it names the file.
-
 set(TEST_SOURCES
     test_main.cpp
     test_globals.cpp
@@ -41,6 +34,7 @@ set(TEST_SOURCES
     unit/test_petnumbers.cpp
     unit/test_playernumbers.cpp
     unit/test_chances.cpp
+    unit/test_inventory.cpp
 
     combat/test_school.cpp
     combat/test_roll.cpp
@@ -66,10 +60,6 @@ target_link_libraries(mangos_tests
         game
 )
 
-# `game` already carries `shared`, `terrain` and `geometry` as PUBLIC
-# dependencies, so the tests reach AuthCrypt and the terrain queries through it
-# without naming them again.
-
 set_target_properties(mangos_tests
     PROPERTIES
         FOLDER "tests"
@@ -77,9 +67,6 @@ set_target_properties(mangos_tests
 
 add_test(NAME mangos_tests COMMAND mangos_tests)
 
-# The game library links the MySQL client, so the test binary does too and needs
-# the DLL beside it on Windows. Copied rather than left to PATH so that ctest
-# works in a fresh build tree.
 if(WIN32)
     get_filename_component(MYSQL_LIB_DIR ${MySQL_LIBRARIES} DIRECTORY)
     get_filename_component(MYSQL_LIB_DLL ${MySQL_LIBRARIES} NAME)

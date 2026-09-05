@@ -305,10 +305,10 @@ Corpse* Player::CreateCorpse()
     uint32 _cfi;
     for (int i = 0; i < EQUIPMENT_SLOT_END; ++i)
     {
-        if (m_items[i])
+        if (m_inventory.Own(i))
         {
-            iDisplayID = m_items[i]->GetProto()->DisplayInfoID;
-            iIventoryType = m_items[i]->GetProto()->InventoryType;
+            iDisplayID = m_inventory.Own(i)->GetProto()->DisplayInfoID;
+            iIventoryType = m_inventory.Own(i)->GetProto()->InventoryType;
 
             _cfi =  iDisplayID | (iIventoryType << 24);
             corpse->SetUInt32Value(CORPSE_FIELD_ITEM + i, _cfi);

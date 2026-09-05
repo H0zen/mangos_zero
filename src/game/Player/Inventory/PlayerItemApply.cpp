@@ -93,7 +93,7 @@ void Player::_ApplyItemMods(Item* item, uint8 slot, bool apply)
 
     DETAIL_LOG("applying mods for item %u ", item->GetGUIDLow());
 
-    uint32 attacktype = Player::GetAttackBySlot(slot);
+    uint32 attacktype = Inventory::AttackFrom(slot);
     if (attacktype < MAX_ATTACK)
     {
         _ApplyWeaponDependentAuraMods(item, WeaponAttackType(attacktype), apply);
@@ -502,10 +502,10 @@ void Player::UpdateEquipSpellsAtFormChange()
 {
     for (int i = 0; i < INVENTORY_SLOT_BAG_END; ++i)
     {
-        if (m_items[i] && !m_items[i]->IsBroken())
+        if (m_inventory.Own(i) && !m_inventory.Own(i)->IsBroken())
         {
-            ApplyItemEquipSpell(m_items[i], false, true);   // remove spells that not fit to form
-            ApplyItemEquipSpell(m_items[i], true, true);    // add spells that fit form but not active
+            ApplyItemEquipSpell(m_inventory.Own(i), false, true);   // remove spells that not fit to form
+            ApplyItemEquipSpell(m_inventory.Own(i), true, true);    // add spells that fit form but not active
         }
     }
 
@@ -707,9 +707,9 @@ void Player::_RemoveAllItemMods()
 
     for (int i = 0; i < INVENTORY_SLOT_BAG_END; ++i)
     {
-        if (m_items[i])
+        if (m_inventory.Own(i))
         {
-            ItemPrototype const* proto = m_items[i]->GetProto();
+            ItemPrototype const* proto = m_inventory.Own(i)->GetProto();
             if (!proto)
             {
                 continue;
@@ -721,34 +721,34 @@ void Player::_RemoveAllItemMods()
                 RemoveItemsSetItem(this, proto);
             }
 
-            if (m_items[i]->IsBroken())
+            if (m_inventory.Own(i)->IsBroken())
             {
                 continue;
             }
 
-            ApplyItemEquipSpell(m_items[i], false);
-            ApplyEnchantment(m_items[i], false);
+            ApplyItemEquipSpell(m_inventory.Own(i), false);
+            ApplyEnchantment(m_inventory.Own(i), false);
         }
     }
 
     for (int i = 0; i < INVENTORY_SLOT_BAG_END; ++i)
     {
-        if (m_items[i])
+        if (m_inventory.Own(i))
         {
-            if (m_items[i]->IsBroken())
+            if (m_inventory.Own(i)->IsBroken())
             {
                 continue;
             }
-            ItemPrototype const* proto = m_items[i]->GetProto();
+            ItemPrototype const* proto = m_inventory.Own(i)->GetProto();
             if (!proto)
             {
                 continue;
             }
 
-            uint32 attacktype = Player::GetAttackBySlot(i);
+            uint32 attacktype = Inventory::AttackFrom(i);
             if (attacktype < MAX_ATTACK)
             {
-                _ApplyWeaponDependentAuraMods(m_items[i], WeaponAttackType(attacktype), false);
+                _ApplyWeaponDependentAuraMods(m_inventory.Own(i), WeaponAttackType(attacktype), false);
             }
 
             _ApplyItemBonuses(proto, i, false);
@@ -772,23 +772,23 @@ void Player::_ApplyAllItemMods()
 
     for (int i = 0; i < INVENTORY_SLOT_BAG_END; ++i)
     {
-        if (m_items[i])
+        if (m_inventory.Own(i))
         {
-            if (m_items[i]->IsBroken())
+            if (m_inventory.Own(i)->IsBroken())
             {
                 continue;
             }
 
-            ItemPrototype const* proto = m_items[i]->GetProto();
+            ItemPrototype const* proto = m_inventory.Own(i)->GetProto();
             if (!proto)
             {
                 continue;
             }
 
-            uint32 attacktype = Player::GetAttackBySlot(i);
+            uint32 attacktype = Inventory::AttackFrom(i);
             if (attacktype < MAX_ATTACK)
             {
-                _ApplyWeaponDependentAuraMods(m_items[i], WeaponAttackType(attacktype), true);
+                _ApplyWeaponDependentAuraMods(m_inventory.Own(i), WeaponAttackType(attacktype), true);
             }
 
             _ApplyItemBonuses(proto, i, true);
@@ -802,9 +802,9 @@ void Player::_ApplyAllItemMods()
 
     for (int i = 0; i < INVENTORY_SLOT_BAG_END; ++i)
     {
-        if (m_items[i])
+        if (m_inventory.Own(i))
         {
-            ItemPrototype const* proto = m_items[i]->GetProto();
+            ItemPrototype const* proto = m_inventory.Own(i)->GetProto();
             if (!proto)
             {
                 continue;
@@ -813,16 +813,16 @@ void Player::_ApplyAllItemMods()
             // item set bonuses not dependent from item broken state
             if (proto->ItemSet)
             {
-                AddItemsSetItem(this, m_items[i]);
+                AddItemsSetItem(this, m_inventory.Own(i));
             }
 
-            if (m_items[i]->IsBroken())
+            if (m_inventory.Own(i)->IsBroken())
             {
                 continue;
             }
 
-            ApplyItemEquipSpell(m_items[i], true);
-            ApplyEnchantment(m_items[i], true);
+            ApplyItemEquipSpell(m_inventory.Own(i), true);
+            ApplyEnchantment(m_inventory.Own(i), true);
         }
     }
 

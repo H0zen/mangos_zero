@@ -156,14 +156,14 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
         ItemPrototype const* itemProto = pItem->GetProto();
         if (itemProto->Bonding == BIND_WHEN_PICKED_UP ||
             itemProto->Bonding == BIND_QUEST_ITEM ||
-            (itemProto->Bonding == BIND_WHEN_EQUIPPED && IsBagPos(pos)))
+            (itemProto->Bonding == BIND_WHEN_EQUIPPED && Inventory::HoldsBag(pos)))
         {
             pItem->SetBinding(true);
         }
 
         if (bag == INVENTORY_SLOT_BAG_0)
         {
-            m_items[slot] = pItem;
+            m_inventory.Own(slot, pItem);
             SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), pItem->GetObjectGuid());
             pItem->SetGuidValue(ITEM_FIELD_CONTAINED, GetObjectGuid());
             pItem->SetGuidValue(ITEM_FIELD_OWNER, GetObjectGuid());
@@ -201,7 +201,7 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
         ItemPrototype const* itemProto = pItem2->GetProto();
         if (itemProto->Bonding == BIND_WHEN_PICKED_UP ||
             itemProto->Bonding == BIND_QUEST_ITEM ||
-            (itemProto->Bonding == BIND_WHEN_EQUIPPED && IsBagPos(pos)))
+            (itemProto->Bonding == BIND_WHEN_EQUIPPED && Inventory::HoldsBag(pos)))
         {
             pItem2->SetBinding(true);
         }
@@ -446,7 +446,7 @@ void Player::VisualizeItem(uint8 slot, Item* pItem)
 
     DEBUG_LOG("STORAGE: EquipItem slot = %u, item = %u", slot, pItem->GetEntry());
 
-    m_items[slot] = pItem;
+    m_inventory.Own(slot, pItem);
     SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), pItem->GetObjectGuid());
     pItem->SetGuidValue(ITEM_FIELD_CONTAINED, GetObjectGuid());
     pItem->SetGuidValue(ITEM_FIELD_OWNER, GetObjectGuid());
@@ -510,7 +510,7 @@ void Player::RemoveItem(uint8 bag, uint8 slot, bool update)
                 }
             }
 
-            m_items[slot] = nullptr;
+            m_inventory.Own(slot, nullptr);
             SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), ObjectGuid());
 
             if (slot < EQUIPMENT_SLOT_END)
@@ -639,7 +639,7 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
                 SetVisibleItemSlot(slot, nullptr);
             }
 
-            m_items[slot] = nullptr;
+            m_inventory.Own(slot, nullptr);
         }
         else if (Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, bag))
         {
@@ -1132,7 +1132,7 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
         return;
     }
 
-    if (IsInventoryPos(dst))
+    if (Inventory::IsCarried(dst))
     {
         // change item amount before check (for unique max count check)
         pSrcItem->SetCount(pSrcItem->GetCount() - count);
@@ -1154,7 +1154,7 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
         pSrcItem->SetState(ITEM_CHANGED, this);
         StoreItem(dest, pNewItem, true);
     }
-    else if (IsBankPos(dst))
+    else if (Inventory::IsBanked(dst))
     {
         // change item amount before check (for unique max count check)
         pSrcItem->SetCount(pSrcItem->GetCount() - count);
@@ -1176,7 +1176,7 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
         pSrcItem->SetState(ITEM_CHANGED, this);
         BankItem(dest, pNewItem, true);
     }
-    else if (IsEquipmentPos(dst))
+    else if (Inventory::IsWorn(dst))
     {
         // change item amount before check (for unique max count check), provide space for splitted items
         pSrcItem->SetCount(pSrcItem->GetCount() - count);
@@ -1234,10 +1234,10 @@ void Player::SwapItem(uint16 src, uint16 dst)
     // SRC checks
 
     // check unequip potability for equipped items and bank bags
-    if (IsEquipmentPos(src) || IsBagPos(src))
+    if (Inventory::IsWorn(src) || Inventory::HoldsBag(src))
     {
         // bags can be swapped with empty bag slots, or with empty bag (items move possibility checked later)
-        InventoryResult msg = CanUnequipItem(src, !IsBagPos(src) || IsBagPos(dst) || (pDstItem && pDstItem->IsBag() && ((Bag*)pDstItem)->IsEmpty()));
+        InventoryResult msg = CanUnequipItem(src, !Inventory::HoldsBag(src) || Inventory::HoldsBag(dst) || (pDstItem && pDstItem->IsBag() && ((Bag*)pDstItem)->IsEmpty()));
         if (msg != EQUIP_ERR_OK)
         {
             SendEquipError(msg, pSrcItem, pDstItem);
@@ -1246,14 +1246,14 @@ void Player::SwapItem(uint16 src, uint16 dst)
     }
 
     // prevent put equipped/bank bag in self
-    if (IsBagPos(src) && srcslot == dstbag)
+    if (Inventory::HoldsBag(src) && srcslot == dstbag)
     {
         SendEquipError(EQUIP_ERR_NONEMPTY_BAG_OVER_OTHER_BAG, pSrcItem, pDstItem);
         return;
     }
 
     // prevent put equipped/bank bag in self
-    if (IsBagPos(dst) && dstslot == srcbag)
+    if (Inventory::HoldsBag(dst) && dstslot == srcbag)
     {
         SendEquipError(EQUIP_ERR_NONEMPTY_BAG_OVER_OTHER_BAG, pDstItem, pSrcItem);
         return;
@@ -1264,10 +1264,10 @@ void Player::SwapItem(uint16 src, uint16 dst)
     if (pDstItem)
     {
         // check unequip potability for equipped items and bank bags
-        if (IsEquipmentPos(dst) || IsBagPos(dst))
+        if (Inventory::IsWorn(dst) || Inventory::HoldsBag(dst))
         {
             // bags can be swapped with empty bag slots, or with empty bag (items move possibility checked later)
-            InventoryResult msg = CanUnequipItem(dst, !IsBagPos(dst) || IsBagPos(src) || (pSrcItem->IsBag() && ((Bag*)pSrcItem)->IsEmpty()));
+            InventoryResult msg = CanUnequipItem(dst, !Inventory::HoldsBag(dst) || Inventory::HoldsBag(src) || (pSrcItem->IsBag() && ((Bag*)pSrcItem)->IsEmpty()));
             if (msg != EQUIP_ERR_OK)
             {
                 SendEquipError(msg, pSrcItem, pDstItem);
@@ -1282,7 +1282,7 @@ void Player::SwapItem(uint16 src, uint16 dst)
     // Move case
     if (!pDstItem)
     {
-        if (IsInventoryPos(dst))
+        if (Inventory::IsCarried(dst))
         {
             ItemPosCountVec dest;
             InventoryResult msg = CanStoreItem(dstbag, dstslot, dest, pSrcItem, false);
@@ -1295,7 +1295,7 @@ void Player::SwapItem(uint16 src, uint16 dst)
             RemoveItem(srcbag, srcslot, true);
             StoreItem(dest, pSrcItem, true);
         }
-        else if (IsBankPos(dst))
+        else if (Inventory::IsBanked(dst))
         {
             ItemPosCountVec dest;
             InventoryResult msg = CanBankItem(dstbag, dstslot, dest, pSrcItem, false);
@@ -1308,7 +1308,7 @@ void Player::SwapItem(uint16 src, uint16 dst)
             RemoveItem(srcbag, srcslot, true);
             BankItem(dest, pSrcItem, true);
         }
-        else if (IsEquipmentPos(dst))
+        else if (Inventory::IsWorn(dst))
         {
             uint16 dest;
             InventoryResult msg = CanEquipItem(dstslot, dest, pSrcItem, false);
@@ -1332,15 +1332,15 @@ void Player::SwapItem(uint16 src, uint16 dst)
         InventoryResult msg;
         ItemPosCountVec sDest;
         uint16 eDest;
-        if (IsInventoryPos(dst))
+        if (Inventory::IsCarried(dst))
         {
             msg = CanStoreItem(dstbag, dstslot, sDest, pSrcItem, false);
         }
-        else if (IsBankPos(dst))
+        else if (Inventory::IsBanked(dst))
         {
             msg = CanBankItem(dstbag, dstslot, sDest, pSrcItem, false);
         }
-        else if (IsEquipmentPos(dst))
+        else if (Inventory::IsWorn(dst))
         {
             msg = CanEquipItem(dstslot, eDest, pSrcItem, false);
         }
@@ -1357,15 +1357,15 @@ void Player::SwapItem(uint16 src, uint16 dst)
             {
                 RemoveItem(srcbag, srcslot, true);
 
-                if (IsInventoryPos(dst))
+                if (Inventory::IsCarried(dst))
                 {
                     StoreItem(sDest, pSrcItem, true);
                 }
-                else if (IsBankPos(dst))
+                else if (Inventory::IsBanked(dst))
                 {
                     BankItem(sDest, pSrcItem, true);
                 }
-                else if (IsEquipmentPos(dst))
+                else if (Inventory::IsWorn(dst))
                 {
                     EquipItem(eDest, pSrcItem, true);
                     AutoUnequipOffhandIfNeed();
@@ -1393,15 +1393,15 @@ void Player::SwapItem(uint16 src, uint16 dst)
     // check src->dest move possibility
     ItemPosCountVec sDest;
     uint16 eDest = 0;
-    if (IsInventoryPos(dst))
+    if (Inventory::IsCarried(dst))
     {
         msg = CanStoreItem(dstbag, dstslot, sDest, pSrcItem, true);
     }
-    else if (IsBankPos(dst))
+    else if (Inventory::IsBanked(dst))
     {
         msg = CanBankItem(dstbag, dstslot, sDest, pSrcItem, true);
     }
-    else if (IsEquipmentPos(dst))
+    else if (Inventory::IsWorn(dst))
     {
         msg = CanEquipItem(dstslot, eDest, pSrcItem, true);
         if (msg == EQUIP_ERR_OK)
@@ -1419,15 +1419,15 @@ void Player::SwapItem(uint16 src, uint16 dst)
     // check dest->src move possibility
     ItemPosCountVec sDest2;
     uint16 eDest2 = 0;
-    if (IsInventoryPos(src))
+    if (Inventory::IsCarried(src))
     {
         msg = CanStoreItem(srcbag, srcslot, sDest2, pDstItem, true);
     }
-    else if (IsBankPos(src))
+    else if (Inventory::IsBanked(src))
     {
         msg = CanBankItem(srcbag, srcslot, sDest2, pDstItem, true);
     }
-    else if (IsEquipmentPos(src))
+    else if (Inventory::IsWorn(src))
     {
         msg = CanEquipItem(srcslot, eDest2, pDstItem, true);
         if (msg == EQUIP_ERR_OK)
@@ -1447,12 +1447,12 @@ void Player::SwapItem(uint16 src, uint16 dst)
     {
         Bag* emptyBag = nullptr;
         Bag* fullBag = nullptr;
-        if (((Bag*)pSrcItem)->IsEmpty() && !IsBagPos(src))
+        if (((Bag*)pSrcItem)->IsEmpty() && !Inventory::HoldsBag(src))
         {
             emptyBag = (Bag*)pSrcItem;
             fullBag  = (Bag*)pDstItem;
         }
-        else if (((Bag*)pDstItem)->IsEmpty() && !IsBagPos(dst))
+        else if (((Bag*)pDstItem)->IsEmpty() && !Inventory::HoldsBag(dst))
         {
             emptyBag = (Bag*)pDstItem;
             fullBag  = (Bag*)pSrcItem;
@@ -1515,29 +1515,29 @@ void Player::SwapItem(uint16 src, uint16 dst)
     RemoveItem(srcbag, srcslot, false);
 
     // add to dest
-    if (IsInventoryPos(dst))
+    if (Inventory::IsCarried(dst))
     {
         StoreItem(sDest, pSrcItem, true);
     }
-    else if (IsBankPos(dst))
+    else if (Inventory::IsBanked(dst))
     {
         BankItem(sDest, pSrcItem, true);
     }
-    else if (IsEquipmentPos(dst))
+    else if (Inventory::IsWorn(dst))
     {
         EquipItem(eDest, pSrcItem, true);
     }
 
     // add to src
-    if (IsInventoryPos(src))
+    if (Inventory::IsCarried(src))
     {
         StoreItem(sDest2, pDstItem, true);
     }
-    else if (IsBankPos(src))
+    else if (Inventory::IsBanked(src))
     {
         BankItem(sDest2, pDstItem, true);
     }
-    else if (IsEquipmentPos(src))
+    else if (Inventory::IsWorn(src))
     {
         EquipItem(eDest2, pDstItem, true);
     }
@@ -1554,9 +1554,9 @@ void Player::AddItemToBuyBackSlot(Item* pItem)
 {
     if (pItem)
     {
-        uint32 slot = m_currentBuybackSlot;
+        uint32 slot = m_inventory.NextBuyback();
         // if current back slot non-empty search oldest or free
-        if (m_items[slot])
+        if (m_inventory.Own(slot))
         {
             uint32 oldest_time = GetUInt32Value(PLAYER_FIELD_BUYBACK_TIMESTAMP_1);
             uint32 oldest_slot = BUYBACK_SLOT_START;
@@ -1564,7 +1564,7 @@ void Player::AddItemToBuyBackSlot(Item* pItem)
             for (uint32 i = BUYBACK_SLOT_START + 1; i < BUYBACK_SLOT_END; ++i)
             {
                 // found empty
-                if (!m_items[i])
+                if (!m_inventory.Own(i))
                 {
                     slot = i;
                     break;
@@ -1586,7 +1586,7 @@ void Player::AddItemToBuyBackSlot(Item* pItem)
         RemoveItemFromBuyBackSlot(slot, true);
         DEBUG_LOG("STORAGE: AddItemToBuyBackSlot item = %u, slot = %u", pItem->GetEntry(), slot);
 
-        m_items[slot] = pItem;
+        m_inventory.Own(slot, pItem);
         time_t base = time(nullptr);
         uint32 etime = uint32(base - m_logintime + (30 * 3600));
         uint32 eslot = slot - BUYBACK_SLOT_START;
@@ -1603,9 +1603,9 @@ void Player::AddItemToBuyBackSlot(Item* pItem)
         SetUInt32Value(PLAYER_FIELD_BUYBACK_TIMESTAMP_1 + eslot, (uint32)etime);
 
         // move to next (for non filled list is move most optimized choice)
-        if (m_currentBuybackSlot < BUYBACK_SLOT_END - 1)
+        if (m_inventory.NextBuyback() < BUYBACK_SLOT_END - 1)
         {
-            ++m_currentBuybackSlot;
+            m_inventory.NextBuyback(m_inventory.NextBuyback() + 1);
         }
     }
 }
@@ -1621,7 +1621,7 @@ Item* Player::GetItemFromBuyBackSlot(uint32 slot)
     DEBUG_LOG("STORAGE: GetItemFromBuyBackSlot slot = %u", slot);
     if (slot >= BUYBACK_SLOT_START && slot < BUYBACK_SLOT_END)
     {
-        return m_items[slot];
+        return m_inventory.Own(slot);
     }
     return nullptr;
 }
@@ -1637,7 +1637,7 @@ void Player::RemoveItemFromBuyBackSlot(uint32 slot, bool del)
     DEBUG_LOG("STORAGE: RemoveItemFromBuyBackSlot slot = %u", slot);
     if (slot >= BUYBACK_SLOT_START && slot < BUYBACK_SLOT_END)
     {
-        Item* pItem = m_items[slot];
+        Item* pItem = m_inventory.Own(slot);
         if (pItem)
         {
             pItem->RemoveFromWorld();
@@ -1647,7 +1647,7 @@ void Player::RemoveItemFromBuyBackSlot(uint32 slot, bool del)
             }
         }
 
-        m_items[slot] = nullptr;
+        m_inventory.Own(slot, nullptr);
 
         uint32 eslot = slot - BUYBACK_SLOT_START;
         SetGuidValue(PLAYER_FIELD_VENDORBUYBACK_SLOT_1 + (eslot * 2), ObjectGuid());
@@ -1655,9 +1655,9 @@ void Player::RemoveItemFromBuyBackSlot(uint32 slot, bool del)
         SetUInt32Value(PLAYER_FIELD_BUYBACK_TIMESTAMP_1 + eslot, 0);
 
         // if current backslot is filled set to now free slot
-        if (m_items[m_currentBuybackSlot])
+        if (m_inventory.Own(uint8(m_inventory.NextBuyback())))
         {
-            m_currentBuybackSlot = slot;
+            m_inventory.NextBuyback(slot);
         }
     }
 }

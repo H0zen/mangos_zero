@@ -247,15 +247,15 @@ bool ChatHandler::HandleListItemCommand(char* args)
             std::string owner_name = fields[5].GetCppString();
 
             char const* item_pos = 0;
-            if (Player::IsEquipmentPos(item_bag, item_slot))
+            if (Inventory::IsWorn(item_bag, item_slot))
             {
                 item_pos = "[equipped]";
             }
-            else if (Player::IsInventoryPos(item_bag, item_slot))
+            else if (Inventory::IsCarried(item_bag, item_slot))
             {
                 item_pos = "[in inventory]";
             }
-            else if (Player::IsBankPos(item_bag, item_slot))
+            else if (Inventory::IsBanked(item_bag, item_slot))
             {
                 item_pos = "[in bank]";
             }

@@ -146,7 +146,7 @@ void WorldSession::HandleAutoEquipItemSlotOpcode(WorldPacket& recv_data)
     recv_data >> itemGuid >> dstslot;
 
     // cheating attempt, client should never send opcode in that case
-    if (!Player::IsEquipmentPos(INVENTORY_SLOT_BAG_0, dstslot))
+    if (!Inventory::IsWorn(INVENTORY_SLOT_BAG_0, dstslot))
     {
         return;
     }
@@ -254,7 +254,7 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recv_data)
         // check dest->src move possibility
         ItemPosCountVec sSrc;
         uint16 eSrc = 0;
-        if (_player->IsInventoryPos(src))
+        if (Inventory::IsCarried(src))
         {
             msg = _player->CanStoreItem(srcbag, srcslot, sSrc, pDstItem, true);
             if (msg != EQUIP_ERR_OK)
@@ -266,7 +266,7 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recv_data)
                 msg = _player->CanStoreItem(NULL_BAG, NULL_SLOT, sSrc, pDstItem, true);
             }
         }
-        else if (_player->IsBankPos(src))
+        else if (Inventory::IsBanked(src))
         {
             msg = _player->CanBankItem(srcbag, srcslot, sSrc, pDstItem, true);
             if (msg != EQUIP_ERR_OK)
@@ -278,7 +278,7 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recv_data)
                 msg = _player->CanBankItem(NULL_BAG, NULL_SLOT, sSrc, pDstItem, true);
             }
         }
-        else if (_player->IsEquipmentPos(src))
+        else if (Inventory::IsWorn(src))
         {
             msg = _player->CanEquipItem(srcslot, eSrc, pDstItem, true);
             if (msg == EQUIP_ERR_OK)
@@ -301,15 +301,15 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recv_data)
         _player->EquipItem(dest, pSrcItem, true);
 
         // add to src
-        if (_player->IsInventoryPos(src))
+        if (Inventory::IsCarried(src))
         {
             _player->StoreItem(sSrc, pDstItem, true);
         }
-        else if (_player->IsBankPos(src))
+        else if (Inventory::IsBanked(src))
         {
             _player->BankItem(sSrc, pDstItem, true);
         }
-        else if (_player->IsEquipmentPos(src))
+        else if (Inventory::IsWorn(src))
         {
             _player->EquipItem(eSrc, pDstItem, true);
         }
@@ -334,7 +334,7 @@ void WorldSession::HandleDestroyItemOpcode(WorldPacket& recv_data)
     uint16 pos = (bag << 8) | slot;
 
     // prevent drop unequipable items (in combat, for example) and non-empty bags
-    if (_player->IsEquipmentPos(pos) || _player->IsBagPos(pos))
+    if (Inventory::IsWorn(pos) || Inventory::HoldsBag(pos))
     {
         InventoryResult msg = _player->CanUnequipItem(pos, false);
         if (msg != EQUIP_ERR_OK)

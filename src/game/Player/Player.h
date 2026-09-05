@@ -72,6 +72,8 @@
 #include "Unit.h"
 #include "Item.h"
 #include "ItemSaveQueue.h"
+#include "Inventory/Slots.h"
+#include "Inventory/Inventory.h"
 
 #include "Database/DatabaseEnv.h"
 #include "QuestDef.h"
@@ -641,98 +643,6 @@ struct SkillStatusData
 
 typedef std::unordered_map<uint32, SkillStatusData> SkillStatusMap;
 
-// Player slots for items
-enum PlayerSlots
-{
-    // First slot for item stored (in any way in player m_items data)
-    PLAYER_SLOT_START           = 0,
-    // Last+1 slot for item stored (in any way in player m_items data)
-    PLAYER_SLOT_END             = 118,
-    PLAYER_SLOTS_COUNT          = (PLAYER_SLOT_END - PLAYER_SLOT_START)
-};
-
-#define INVENTORY_SLOT_BAG_0    255
-
-// Equipment slots (19 slots)
-enum EquipmentSlots
-{
-    EQUIPMENT_SLOT_START        = 0,
-    EQUIPMENT_SLOT_HEAD         = 0,  // Head slot
-    EQUIPMENT_SLOT_NECK         = 1,  // Neck slot
-    EQUIPMENT_SLOT_SHOULDERS    = 2,  // Shoulders slot
-    EQUIPMENT_SLOT_BODY         = 3,  // Body slot
-    EQUIPMENT_SLOT_CHEST        = 4,  // Chest slot
-    EQUIPMENT_SLOT_WAIST        = 5,  // Waist slot
-    EQUIPMENT_SLOT_LEGS         = 6,  // Legs slot
-    EQUIPMENT_SLOT_FEET         = 7,  // Feet slot
-    EQUIPMENT_SLOT_WRISTS       = 8,  // Wrists slot
-    EQUIPMENT_SLOT_HANDS        = 9,  // Hands slot
-    EQUIPMENT_SLOT_FINGER1      = 10, // First finger slot
-    EQUIPMENT_SLOT_FINGER2      = 11, // Second finger slot
-    EQUIPMENT_SLOT_TRINKET1     = 12, // First trinket slot
-    EQUIPMENT_SLOT_TRINKET2     = 13, // Second trinket slot
-    EQUIPMENT_SLOT_BACK         = 14, // Back slot
-    EQUIPMENT_SLOT_MAINHAND     = 15, // Main hand slot
-    EQUIPMENT_SLOT_OFFHAND      = 16, // Off hand slot
-    EQUIPMENT_SLOT_RANGED       = 17, // Ranged slot
-    EQUIPMENT_SLOT_TABARD       = 18, // Tabard slot
-    EQUIPMENT_SLOT_END          = 19  // End of equipment slots
-};
-
-// Inventory slots (4 slots)
-enum InventorySlots
-{
-    INVENTORY_SLOT_BAG_START    = 19, // Start of bag slots
-    INVENTORY_SLOT_BAG_END      = 23  // End of bag slots
-};
-
-// Inventory pack slots (16 slots)
-enum InventoryPackSlots
-{
-    INVENTORY_SLOT_ITEM_START   = 23, // Start of item slots
-    INVENTORY_SLOT_ITEM_END     = 39  // End of item slots
-};
-
-// Bank item slots (28 slots)
-enum BankItemSlots
-{
-    BANK_SLOT_ITEM_START        = 39,
-    BANK_SLOT_ITEM_END          = 63
-};
-
-// Bank bag slots (7 slots)
-enum BankBagSlots
-{
-    BANK_SLOT_BAG_START         = 63,
-    BANK_SLOT_BAG_END           = 69
-};
-
-// Buy back slots (12 slots)
-enum BuyBackSlots
-{
-    // stored in m_buybackitems
-    BUYBACK_SLOT_START          = 69,
-    BUYBACK_SLOT_END            = 81
-};
-
-// Key ring slots (32 slots)
-enum KeyRingSlots
-{
-    KEYRING_SLOT_START          = 81,
-    KEYRING_SLOT_END            = 97
-};
-
-// Structure to hold item position and count
-struct ItemPosCount
-{
-    ItemPosCount(uint16 _pos, uint8 _count) : pos(_pos), count(_count) {}
-    bool isContainedIn(std::vector<ItemPosCount> const& vec) const;
-
-    uint16 pos;  // Position of the item
-    uint8 count; // Count of the item
-};
-
-typedef std::vector<ItemPosCount> ItemPosCountVec;
 
 // Trade slots
 enum TradeSlots
@@ -1511,19 +1421,22 @@ class Player : public Unit
         uint8 FindEquipSlot(ItemPrototype const* proto, uint32 slot, bool swap) const;
 
         // Get the count of the specified item
-        uint32 GetItemCount(uint32 item, bool inBankAlso = false, Item* skipItem = nullptr) const;
+        uint32 GetItemCount(uint32 item, bool inBankAlso = false, Item* skipItem = nullptr) const
+        {
+            return m_inventory.Count(item, inBankAlso ? SCOPE_EVERYWHERE : SCOPE_TO_HAND, skipItem);
+        }
 
         // Get the item by its GUID
-        Item* GetItemByGuid(ObjectGuid guid) const;
+        Item* GetItemByGuid(ObjectGuid guid) const { return m_inventory.ByGuid(guid); }
 
         // Get the item by its entry ID (only for special cases)
-        Item* GetItemByEntry(uint32 item) const;
+        Item* GetItemByEntry(uint32 item) const { return m_inventory.ByEntry(item); }
 
         // Get the item by its position
-        Item* GetItemByPos(uint16 pos) const;
+        Item* GetItemByPos(uint16 pos) const { return m_inventory.At(pos); }
 
         // Get the item by its bag and slot
-        Item* GetItemByPos(uint8 bag, uint8 slot) const;
+        Item* GetItemByPos(uint8 bag, uint8 slot) const { return m_inventory.At(bag, slot); }
         Item* GetWeaponForAttack(WeaponAttackType attackType) const
         {
             return GetWeaponForAttack(attackType, false, false);
@@ -1535,39 +1448,20 @@ class Player : public Unit
         // Get the shield (if usable)
         Item* GetShield(bool useable = false) const;
 
-        // Get the attack type by the slot
-        static uint32 GetAttackBySlot(uint8 slot);
+        /// Everything he owns that sits in a place: worn, carried, banked, and
+        /// the vendor's buyback row.
+        Inventory& Owns() { return m_inventory; }
+        Inventory const& Owns() const { return m_inventory; }
 
         /// The items this player has changed and not yet written.
         ItemSaveQueue& ItemSaves() { return m_itemSaves; }
         ItemSaveQueue const& ItemSaves() const { return m_itemSaves; }
 
-        // Check if the position is an inventory position
-        static bool IsInventoryPos(uint16 pos) { return IsInventoryPos(pos >> 8, pos & 255); }
-
-        // Check if the position is an inventory position (overloaded)
-        static bool IsInventoryPos(uint8 bag, uint8 slot);
-
-        // Check if the position is an equipment position
-        static bool IsEquipmentPos(uint16 pos) { return IsEquipmentPos(pos >> 8, pos & 255); }
-
-        // Check if the position is an equipment position (overloaded)
-        static bool IsEquipmentPos(uint8 bag, uint8 slot);
-
-        // Check if the position is a bag position
-        static bool IsBagPos(uint16 pos);
-
-        // Check if the position is a bank position
-        static bool IsBankPos(uint16 pos) { return IsBankPos(pos >> 8, pos & 255); }
-
-        // Check if the position is a bank position (overloaded)
-        static bool IsBankPos(uint8 bag, uint8 slot);
-
         // Check if the position is valid
-        bool IsValidPos(uint16 pos, bool explicit_pos) const { return IsValidPos(pos >> 8, pos & 255, explicit_pos); }
+        bool IsValidPos(uint16 pos, bool explicit_pos) const { return m_inventory.Exists(Inventory::Container(pos), Inventory::Slot(pos), explicit_pos); }
 
         // Check if the position is valid (overloaded)
-        bool IsValidPos(uint8 bag, uint8 slot, bool explicit_pos) const;
+        bool IsValidPos(uint8 bag, uint8 slot, bool explicit_pos) const { return m_inventory.Exists(bag, slot, explicit_pos); }
 
         // Get the count of bank bag slots
         uint8 GetBankBagSlotCount() const { return GetByteValue(PLAYER_BYTES_2, 2); }
@@ -1576,7 +1470,10 @@ class Player : public Unit
         void SetBankBagSlotCount(uint8 count) { SetByteValue(PLAYER_BYTES_2, 2, count); }
 
         // Check if the player has the specified item count
-        bool HasItemCount(uint32 item, uint32 count, bool inBankAlso = false) const;
+        bool HasItemCount(uint32 item, uint32 count, bool inBankAlso = false) const
+        {
+            return m_inventory.Holds(item, count, inBankAlso ? SCOPE_EVERYWHERE : SCOPE_TO_HAND);
+        }
 
         // Check if the player has an item that fits the spell requirements
         bool HasItemFitToSpellReqirements(SpellEntry const* spellInfo, Item const* ignoreItem = nullptr);
@@ -3936,8 +3833,7 @@ class Player : public Unit
 
         uint32 m_atLoginFlags; // At-login flags
 
-        Item* m_items[PLAYER_SLOTS_COUNT]; // Array of player items
-        uint32 m_currentBuybackSlot; // Current buyback slot
+        Inventory m_inventory;
 
         ItemSaveQueue m_itemSaves;
 

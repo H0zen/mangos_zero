@@ -259,8 +259,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), ObjectGuid());
         SetVisibleItemSlot(slot, nullptr);
 
-        delete m_items[slot];
-        m_items[slot] = nullptr;
+        delete m_inventory.Own(slot);
+        m_inventory.Own(slot, nullptr);
     }
 
     DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_STATS, "Load Basic value of player %s is: ", m_name.c_str());
@@ -1184,7 +1184,7 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
                 item->SetContainer(nullptr);
                 item->SetSlot(slot);
 
-                if (IsInventoryPos(INVENTORY_SLOT_BAG_0, slot))
+                if (Inventory::IsCarried(INVENTORY_SLOT_BAG_0, slot))
                 {
                     ItemPosCountVec dest;
                     if (CanStoreItem(INVENTORY_SLOT_BAG_0, slot, dest, item, false) == EQUIP_ERR_OK)
@@ -1196,7 +1196,7 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
                         success = false;
                     }
                 }
-                else if (IsEquipmentPos(INVENTORY_SLOT_BAG_0, slot))
+                else if (Inventory::IsWorn(INVENTORY_SLOT_BAG_0, slot))
                 {
                     uint16 dest;
                     if (CanEquipItem(slot, dest, item, false, false) == EQUIP_ERR_OK)
@@ -1208,7 +1208,7 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
                         success = false;
                     }
                 }
-                else if (IsBankPos(INVENTORY_SLOT_BAG_0, slot))
+                else if (Inventory::IsBanked(INVENTORY_SLOT_BAG_0, slot))
                 {
                     ItemPosCountVec dest;
                     if (CanBankItem(INVENTORY_SLOT_BAG_0, slot, dest, item, false, false) == EQUIP_ERR_OK)
@@ -1224,7 +1224,7 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
                 if (success)
                 {
                     // store bags that may contain items in them
-                    if (item->IsBag() && IsBagPos(item->GetPos()))
+                    if (item->IsBag() && Inventory::HoldsBag(item->GetPos()))
                     {
                         bagMap[item_lowguid] = (Bag*)item;
                     }
