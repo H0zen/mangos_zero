@@ -417,7 +417,7 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
  *
  * @param session The owning world session.
  */
-Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
+Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
 {
 
     m_transport = 0;
@@ -499,17 +499,8 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
 
     PlayerTalkClass = new PlayerMenu(GetSession());
 
-    m_lastLiquid = nullptr;
 
-    for (int i = 0; i < MAX_TIMERS; ++i)
-    {
-        m_MirrorTimer[i] = DISABLED_MIRROR_TIMER;
-    }
 
-    m_MirrorTimerFlags = UNDERWATER_NONE;
-    m_MirrorTimerFlagsLast = UNDERWATER_NONE;
-
-    m_isInWater = false;
     m_drunkTimer = 0;
     m_drunk = 0;
     m_restTime = 0;
@@ -1239,7 +1230,7 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     }
 
     // Handle water/drowning
-    HandleDrowning(update_diff);
+    m_perils.Run(update_diff);
 
     // Handle detect stealth players
     if (m_DetectInvTimer > 0)
@@ -1968,40 +1959,6 @@ bool Player::IsUnderWater() const
 {
     return GetMap()->GetTerrain()->IsUnderWater(Where().X(), Where().Y(), Where().Z() + 2);
 }
-
-bool Player::IsDrowning() const
-{
-    return (m_MirrorTimerFlags & UNDERWATER_INWATER) &&
-            m_MirrorTimer[BREATH_TIMER] != DISABLED_MIRROR_TIMER &&
-            !HasAuraType(SPELL_AURA_WATER_BREATHING) &&
-            m_MirrorTimer[BREATH_TIMER] < 2000 && IsAlive();
-}
-
-/**
- * @brief Updates the player's in-water state.
- *
- * @param apply True if the player is entering water; false if leaving it.
- */
-void Player::SetInWater(bool apply)
-{
-    if (m_isInWater == apply)
-    {
-        return;
-    }
-
-    // define player in water by opcodes
-    // move player's guid into HateOfflineList of those mobs
-    // which can't swim and move guid back into ThreatList when
-    // on surface.
-    // TODO: exist also swimming mobs, and function must be symmetric to enter/leave water
-    m_isInWater = apply;
-
-    // remove auras that need water/land
-    RemoveAurasWithInterruptFlags(apply ? AURA_INTERRUPT_FLAG_NOT_ABOVEWATER : AURA_INTERRUPT_FLAG_NOT_UNDERWATER);
-
-    GetHostileRefManager().updateThreatTables();
-}
-
 struct SetGameMasterOnHelper
 {
     explicit SetGameMasterOnHelper() {}
@@ -2696,7 +2653,7 @@ bool Player::SetPosition(float x, float y, float z, float orientation, bool tele
     m_positionStatusUpdateTimer = 100;
 
     // code block for underwater state update
-    UpdateUnderwaterState(m, x, y, z);
+    m_perils.Look(m, x, y, z);
 
     // code block for outdoor state and area-explore check
     CheckAreaExploreAndOutdoor();
@@ -4976,110 +4933,6 @@ void Player::SetClientControl(Unit* target, uint8 allowMove)
     data << target->GetPackGUID();
     data << uint8(allowMove);
     GetSession()->SendPacket(&data);
-}
-
-/**
- * @brief Updates liquid auras and mirror timers based on the player's position.
- *
- * @param m The current map.
- * @param x The X coordinate.
- * @param y The Y coordinate.
- * @param z The Z coordinate.
- */
-void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
-{
-    GridMapLiquidData liquid_status;
-    GridMapLiquidStatus res = m->GetTerrain()->getLiquidStatus(x, y, z, MAP_ALL_LIQUIDS, &liquid_status);
-    SetInWater(res & (LIQUID_MAP_IN_WATER | LIQUID_MAP_UNDER_WATER));
-    if (!res)
-    {
-        m_MirrorTimerFlags &= ~(UNDERWATER_INWATER | UNDERWATER_INLAVA | UNDERWATER_INSLIME | UNDERWATER_INDARKWATER);
-        if (m_lastLiquid && m_lastLiquid->SpellID)
-        {
-            RemoveAuras(m_lastLiquid->SpellID);
-        }
-        m_lastLiquid = nullptr;
-        return;
-    }
-
-    if (uint32 liqEntry = liquid_status.entry)
-    {
-        LiquidTypeEntry const* liquid = sLiquidTypeStore.LookupEntry(liqEntry);
-        if (m_lastLiquid && m_lastLiquid->SpellID && m_lastLiquid->ID != liqEntry)
-        {
-            RemoveAuras(m_lastLiquid->SpellID);
-        }
-
-        if (liquid && liquid->SpellID)
-        {
-            if (res & (LIQUID_MAP_UNDER_WATER | LIQUID_MAP_IN_WATER))
-            {
-                if (!HasAura(liquid->SpellID))
-                {
-                    CastSpell(this, liquid->SpellID, true);
-                }
-            }
-            else
-            {
-                RemoveAuras(liquid->SpellID);
-            }
-        }
-
-        m_lastLiquid = liquid;
-    }
-    else if (m_lastLiquid && m_lastLiquid->SpellID)
-    {
-        RemoveAuras(m_lastLiquid->SpellID);
-        m_lastLiquid = nullptr;
-    }
-
-    // All liquids type - check under water position
-    if (liquid_status.type_flags & (MAP_LIQUID_TYPE_WATER | MAP_LIQUID_TYPE_OCEAN | MAP_LIQUID_TYPE_MAGMA | MAP_LIQUID_TYPE_SLIME))
-    {
-        if (res & LIQUID_MAP_UNDER_WATER)
-        {
-            m_MirrorTimerFlags |= UNDERWATER_INWATER;
-        }
-        else
-        {
-            m_MirrorTimerFlags &= ~UNDERWATER_INWATER;
-        }
-    }
-
-    // Allow travel in dark water on taxi or transport
-    if ((liquid_status.type_flags & MAP_LIQUID_TYPE_DARK_WATER) && !IsTaxiFlying() && !GetTransport())
-    {
-        m_MirrorTimerFlags |= UNDERWATER_INDARKWATER;
-    }
-    else
-    {
-        m_MirrorTimerFlags &= ~UNDERWATER_INDARKWATER;
-    }
-
-    // in lava check, anywhere in lava level
-    if (liquid_status.type_flags & MAP_LIQUID_TYPE_MAGMA)
-    {
-        if (res & (LIQUID_MAP_UNDER_WATER | LIQUID_MAP_IN_WATER | LIQUID_MAP_WATER_WALK))
-        {
-            m_MirrorTimerFlags |= UNDERWATER_INLAVA;
-        }
-        else
-        {
-            m_MirrorTimerFlags &= ~UNDERWATER_INLAVA;
-        }
-    }
-    // in slime check, anywhere in slime level
-    if (liquid_status.type_flags & MAP_LIQUID_TYPE_SLIME)
-    {
-        if (res & (LIQUID_MAP_UNDER_WATER | LIQUID_MAP_IN_WATER | LIQUID_MAP_WATER_WALK))
-        {
-            m_MirrorTimerFlags |= UNDERWATER_INSLIME;
-        }
-        else
-        {
-            m_MirrorTimerFlags &= ~UNDERWATER_INSLIME;
-        }
-    }
 }
 
 /**

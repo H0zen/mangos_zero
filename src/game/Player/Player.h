@@ -76,6 +76,7 @@
 #include "Inventory/Inventory.h"
 #include "Honor/HonorLedger.h"
 #include "Offers/Invitations.h"
+#include "Perils/Perils.h"
 #include "Offers/PlayerOffers.h"
 #include "Teleport/TeleportOrder.h"
 
@@ -133,21 +134,6 @@ enum SpellModType
     SPELLMOD_PCT = 108   ///< Percentage modifier (SPELL_AURA_ADD_PCT_MODIFIER)
 };
 
-/**
- * @brief Player underwater state enumeration
- *
- * 2^n internal values, they are never sent to the client.
- */
-enum PlayerUnderwaterState
-{
-    UNDERWATER_NONE = 0x00,        ///< Not underwater
-    UNDERWATER_INWATER = 0x01,     ///< In water (terrain type is water and player is afflicted by it)
-    UNDERWATER_INLAVA = 0x02,      ///< In lava (terrain type is lava and player is afflicted by it)
-    UNDERWATER_INSLIME = 0x04,     ///< In slime (terrain type is slime and player is afflicted by it)
-    UNDERWATER_INDARKWATER = 0x08, ///< In dark water (terrain type is dark water and player is afflicted by it)
-
-    UNDERWATER_EXIST_TIMERS = 0x10 ///< Underwater timers exist
-};
 
 /**
  * @brief Buy bank slot result enumeration
@@ -509,16 +495,6 @@ enum AuraVision
     AURA_VISION_INVISIBILITY = 0x40                         // the glow an invisible unit carries
 };
 
-// Mirror timer types
-enum MirrorTimerType
-{
-    FATIGUE_TIMER               = 0, // Fatigue timer
-    BREATH_TIMER                = 1, // Breath timer
-    FIRE_TIMER                  = 2  // Probably a mistake. More likely to be FEIGN_DEATH_TIMER
-};
-
-#define MAX_TIMERS              3
-#define DISABLED_MIRROR_TIMER   -1
 
 // 2^n values for player extra flags
 enum PlayerExtraFlags
@@ -989,14 +965,17 @@ class Player : public Unit
         void Update(uint32 update_diff, uint32 time) override; // Update the player
 
 
-        void SetInWater(bool apply); // Set the player in water
 
         bool IsInWater() const override // Check if the player is in water
         {
-            return m_isInWater;
+            return m_perils.InWater();
         }
         bool IsUnderWater() const override; // Check if the player is underwater
-        bool IsDrowning() const; // Check if the player is drowning (breath timer expired)
+        bool IsDrowning() const { return m_perils.Drowning(); }
+
+        /// What the ground and the water are doing to him.
+        Perils& Dangers() { return m_perils; }
+        Perils const& Dangers() const { return m_perils; }
         bool IsFalling() // Check if the player is falling
         {
             return Where().Z() < m_lastFallZ;
@@ -2605,7 +2584,6 @@ class Player : public Unit
         bool SetPosition(float x, float y, float z, float orientation, bool teleport = false);
 
         // Update the player's underwater state
-        void UpdateUnderwaterState(Map* m, float x, float y, float z);
 
         // Send a message to the set of players
 
@@ -2654,15 +2632,12 @@ class Player : public Unit
         uint32 DurabilityRepairAll(bool cost, float discountMod);
         uint32 DurabilityRepair(uint16 pos, bool cost, float discountMod);
 
-        // Update mirror timers
-        void UpdateMirrorTimers();
-
         // Stop all mirror timers
         void StopMirrorTimers()
         {
-            StopMirrorTimer(FATIGUE_TIMER);
-            StopMirrorTimer(BREATH_TIMER);
-            StopMirrorTimer(FIRE_TIMER);
+            m_perils.Stop(FATIGUE_TIMER);
+            m_perils.Stop(BREATH_TIMER);
+            m_perils.Stop(FIRE_TIMER);
         }
 
         // Set levitate state
@@ -3640,16 +3615,12 @@ class Player : public Unit
         void HandleSobering();
 
         // Send mirror timer to the client
-        void SendMirrorTimer(MirrorTimerType Type, uint32 MaxValue, uint32 CurrentValue, int32 Regen);
 
         // Stop mirror timer
-        void StopMirrorTimer(MirrorTimerType Type);
 
         // Handle drowning effect
-        void HandleDrowning(uint32 time_diff);
 
         // Get the maximum timer value for a mirror timer
-        int32 getMaxTimer(MirrorTimerType timer);
 
         /*********************************************************/
         /***                  HONOR SYSTEM                     ***/
@@ -3818,16 +3789,13 @@ class Player : public Unit
         float  m_lastFallZ;
 
         // Last liquid type the player was in
-        LiquidTypeEntry const* m_lastLiquid;
 
         // Mirror timers for various effects
-        int32 m_MirrorTimer[MAX_TIMERS];
-        uint8 m_MirrorTimerFlags;
-        uint8 m_MirrorTimerFlagsLast;
-        bool m_isInWater;
 
         /// Where he has been sent, and what is owed when he lands.
         TeleportOrder m_teleport;
+
+        Perils m_perils;
 
         // Detect invisibility timer
         uint32 m_DetectInvTimer;

@@ -13,8 +13,8 @@ game_group(SRC_AURAS            Unit/Auras)
 game_group(SRC_PLAYER           Player)
 game_group(SRC_PLAYER_INVENTORY Player/Inventory)
 game_group(SRC_PLAYER_HONOR     Player/Honor)
-game_group(SRC_PLAYER_HONOR     Player/Honor)
 game_group(SRC_PLAYER_JOURNAL   Player/Journal)
+game_group(SRC_PLAYER_PERILS    Player/Perils)
 game_group(SRC_PLAYER_TALENTS   Player/Talents)
 game_group(SRC_CREATURE         Creature)
 game_group(SRC_CREATURE_AI      Creature/AI)
@@ -70,8 +70,8 @@ add_library(game STATIC
     ${SRC_PLAYER}
     ${SRC_PLAYER_INVENTORY}
     ${SRC_PLAYER_HONOR}
-    ${SRC_PLAYER_HONOR}
     ${SRC_PLAYER_JOURNAL}
+    ${SRC_PLAYER_PERILS}
     ${SRC_PLAYER_TALENTS}
     ${SRC_CREATURE}
     ${SRC_CREATURE_AI}
@@ -123,9 +123,9 @@ target_include_directories(game
         Unit/Auras
         Player
         Player/Honor
-        Player/Honor
         Player/Inventory
         Player/Journal
+        Player/Perils
         Creature
         Creature/AI
         GameObject

@@ -184,7 +184,7 @@ void Aura::HandleWaterBreathing(bool /*apply*/, bool /*Real*/)
     // update timers in client
     if (GetTarget()->IsPlayer())
     {
-        ((Player*)GetTarget())->UpdateMirrorTimers();
+        ((Player*)GetTarget())->Dangers().Redraw();
     }
 }
 

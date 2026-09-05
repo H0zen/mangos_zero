@@ -797,7 +797,7 @@ void movement::Relocate(Player& who, MovementInfo& movementInfo)
         if (movementInfo.HasMovementFlag(MOVEFLAG_SWIMMING) != plMover->IsInWater())
         {
             // now client not include swimming flag in case jumping under water
-            plMover->SetInWater(!plMover->IsInWater() || plMover->GetMap()->GetTerrain()->IsUnderWater(movementInfo.GetPos()->x, movementInfo.GetPos()->y, movementInfo.GetPos()->z));
+            plMover->Dangers().InWater(!plMover->IsInWater() || plMover->GetMap()->GetTerrain()->IsUnderWater(movementInfo.GetPos()->x, movementInfo.GetPos()->y, movementInfo.GetPos()->z));
         }
 
         // Aboard, the deck offset IS his position: it is what the client computed against
