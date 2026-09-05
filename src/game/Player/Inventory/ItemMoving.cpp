@@ -65,7 +65,7 @@
 #include "Mail.h"
 #include "SQLStorages.h"
 #include "DisableMgr.h"
-#include "Destination.h"
+#include "ItemDestination.h"
 
 // Return stored item (if stored to stack, it can diff. from pItem). And pItem ca be deleted in this case.
 Item* Player::StoreNewItem(ItemPosCountVec const& dest, uint32 item, bool update, int32 randomPropertyId)
@@ -887,7 +887,7 @@ void Player::SwapItem(uint16 src, uint16 dst)
         }
     }
 
-    Destination to(*this, dst);
+    ItemDestination to(*this, dst);
 
     // Nothing is there: the item simply goes across.
     if (!pDstItem)
@@ -953,7 +953,7 @@ void Player::SwapItem(uint16 src, uint16 dst)
 
     // Neither joining nor topping up will do, so the two change places. Both
     // ways are weighed before either is carried out.
-    Destination back(*this, src);
+    ItemDestination back(*this, src);
 
     InventoryResult msg = to.Weigh(pSrcItem, true);
     if (msg != EQUIP_ERR_OK)

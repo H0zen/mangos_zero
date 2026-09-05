@@ -43,10 +43,10 @@ class Player;
  * instead of the same three-way branch being written at every step. A swap needs
  * four weighings and two carryings, and without this that is six copies of it.
  */
-class Destination
+class ItemDestination
 {
     public:
-        Destination(Player& who, uint16 place) : m_who(who), m_place(place) {}
+        ItemDestination(Player& who, uint16 place) : m_who(who), m_place(place) {}
 
         /// Whether an item can go to a place of this kind at all. A place that
         /// is none of the three -- the buyback row, say -- takes nothing.

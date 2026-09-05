@@ -27,7 +27,7 @@
 
 #include "Platform/Define.h"
 #include "ObjectGuid.h"
-#include "Inventory/Slots.h"
+#include "Inventory/ItemSlots.h"
 #include "Item.h"
 #include "ItemSaveQueue.h"
 

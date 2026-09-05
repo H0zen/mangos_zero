@@ -72,7 +72,7 @@
 #include "Unit.h"
 #include "Item.h"
 #include "ItemSaveQueue.h"
-#include "Inventory/Slots.h"
+#include "Inventory/ItemSlots.h"
 #include "Inventory/Inventory.h"
 
 #include "Database/DatabaseEnv.h"

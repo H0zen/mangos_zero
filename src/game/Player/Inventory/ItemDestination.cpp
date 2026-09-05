@@ -23,17 +23,17 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#include "Destination.h"
+#include "ItemDestination.h"
 
 #include "Item.h"
 #include "Player.h"
 
-bool Destination::Reachable() const
+bool ItemDestination::Reachable() const
 {
     return Inventory::IsCarried(m_place) || Inventory::IsBanked(m_place) || Inventory::IsWorn(m_place);
 }
 
-InventoryResult Destination::Weigh(Item* item, bool swap)
+InventoryResult ItemDestination::Weigh(Item* item, bool swap)
 {
     uint8 const bag = Inventory::Container(m_place);
     uint8 const slot = Inventory::Slot(m_place);
@@ -67,7 +67,7 @@ InventoryResult Destination::Weigh(Item* item, bool swap)
     return m_who.CanUnequipItem(m_worn, true);
 }
 
-void Destination::Carry(Item* item)
+void ItemDestination::Carry(Item* item)
 {
     if (Inventory::IsCarried(m_place))
     {
