@@ -115,3 +115,6 @@ CLAUDE.md
 .codacy.yml
 .codacy.yaml
 .dockerignore
+
+# A working list, not history.
+/TODO.md
