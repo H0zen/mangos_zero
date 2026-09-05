@@ -58,6 +58,7 @@
 #include "SQLStorages.h"
 #include "GameObjectAI.h"
 #include "Geometry/Quat.h"
+#include "AnimatedTraps.h"
 
 /**
  * @brief Someone has used this object.
@@ -292,8 +293,8 @@ GameObject::Casting GameObject::UsedAsTrap(Unit* user, bool scriptReturnValue)
     // TODO: all traps can be activated, also those without spell.
     // Some may have have animation and/or are expected to despawn.
 
-    // TODO: Improve this when more information is available, currently these traps are known that must send the anim (Onyxia/ Heigan Fissures/ Trap in DireMaul)
-    if (GetDisplayId() == 4392 || GetDisplayId() == 4472 || GetDisplayId() == 4491 || GetDisplayId() == 6785 || GetDisplayId() == 3073)
+    // A few models will stand there doing nothing unless the animation is sent.
+    if (sAnimatedTraps.NeedTelling(GetDisplayId()))
     {
         SendGameObjectCustomAnim();
     }
@@ -812,13 +813,9 @@ GameObject::Casting GameObject::UsedAsFlagStand(Unit* user, bool scriptReturnVal
         {
             return Casting();
         }
-        // BG flag click
-        // AB:
-        // 15001
-        // 15002
-        // 15003
-        // 15004
-        // 15005
+        // The battleground knows its own flags: it looks this one up in the event
+        // table it was spawned from, and does nothing at all with an object that is
+        // not in it.
         bg->EventPlayerClickedOnFlag(player, this);
         return Casting();                                     // we don't need to delete flag ... it is despawned!
     }
@@ -867,27 +864,13 @@ GameObject::Casting GameObject::UsedAsDroppedFlag(Unit* user, bool scriptReturnV
         {
             return Casting();
         }
-        // BG flag dropped
-        // WS:
-        // 179785 - Silverwing Flag
-        // 179786 - Warsong Flag
-        GameObjectInfo const* info = GetGOInfo();
-        if (info)
-        {
-            switch (info->id)
-            {
-                case 179785:                        // Silverwing Flag
-                case 179786:                        // Warsong Flag
-                    // check if it's correct bg
-                    if (bg->GetTypeID() == BATTLEGROUND_WS)
-                    {
-                        bg->EventPlayerClickedOnFlag(player, this);
-                    }
-                    break;
-            }
-        }
-        // this cause to call return, all flags must be deleted here!!
-        cast.spellId = 0;
+        // Asked the same way a flag on its stand is: the battleground looks the
+        // object up in its own event table and does nothing with one that is not in
+        // it, so which battleground and which flag are both its business.
+        bg->EventPlayerClickedOnFlag(player, this);
+
+        // A flag that has been picked up off the ground is gone from the ground,
+        // whatever the battleground made of it.
         Delete();
     }
     return cast;
