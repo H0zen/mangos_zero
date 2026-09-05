@@ -34,6 +34,7 @@
  * - Character customization
  */
 
+#include "CharacterRows.h"
 #include "Common/Locales.h"
 #include <sstream>
 #include <string>
@@ -83,7 +84,7 @@ bool ChatHandler::HandleCharacterEraseCommand(char* args)
     std::string account_name;
     sAccountMgr.GetName(account_id, account_name);
 
-    Player::DeleteFromDB(target_guid, account_id, true, true);
+    CharacterRows::Delete(target_guid, account_id, true, true);
     PSendSysMessage(LANG_CHARACTER_DELETED, target_name.c_str(), target_guid.GetCounter(), account_name.c_str(), account_id);
     return true;
 }
@@ -127,7 +128,7 @@ bool ChatHandler::HandleCharacterLevelCommand(char* args)
         return false;
     }
 
-    int32 oldlevel = target ? target->getLevel() : Player::GetLevelFromDB(target_guid);
+    int32 oldlevel = target ? target->getLevel() : CharacterRows::LevelOf(target_guid);
     if (nolevel)
     {
         newlevel = oldlevel;
@@ -405,7 +406,7 @@ void ChatHandler::HandleCharacterDeletedRestoreHelper(DeletedInfo const& delInfo
  * Handles the '.character deleted delete' command, which completely deletes all deleted characters which matches the given search string
  *
  * @see Player::GetDeletedCharacterGUIDs
- * @see Player::DeleteFromDB
+ * @see CharacterRows::Delete
  * @see ChatHandler::HandleCharacterDeletedListCommand
  * @see ChatHandler::HandleCharacterDeletedRestoreCommand
  *
@@ -437,7 +438,7 @@ bool ChatHandler::HandleCharacterDeletedDeleteCommand(char* args)
     // Call the appropriate function to delete them (current account for deleted characters is 0)
     for (DeletedInfoList::const_iterator itr = foundList.begin(); itr != foundList.end(); ++itr)
     {
-        Player::DeleteFromDB(ObjectGuid(HIGHGUID_PLAYER, itr->lowguid), 0, false, true);
+        CharacterRows::Delete(ObjectGuid(HIGHGUID_PLAYER, itr->lowguid), 0, false, true);
     }
 
     return true;
@@ -549,8 +550,8 @@ bool ChatHandler::HandleCharacterDeletedRestoreCommand(char* args)
 /**
  * Handles the '.character deleted old' command, which completely deletes all deleted characters deleted with some days ago
  *
- * @see Player::DeleteOldCharacters
- * @see Player::DeleteFromDB
+ * @see CharacterRows::DeleteLongDeleted
+ * @see CharacterRows::Delete
  * @see ChatHandler::HandleCharacterDeletedDeleteCommand
  * @see ChatHandler::HandleCharacterDeletedListCommand
  * @see ChatHandler::HandleCharacterDeletedRestoreCommand
@@ -571,7 +572,7 @@ bool ChatHandler::HandleCharacterDeletedOldCommand(char* args)
         return false;
     }
 
-    Player::DeleteOldCharacters((uint32)keepDays);
+    CharacterRows::DeleteLongDeleted((uint32)keepDays);
     return true;
 }
 
@@ -1044,7 +1045,7 @@ bool ChatHandler::HandleLevelUpCommand(char* args)
         return false;
     }
 
-    int32 oldlevel = target ? target->getLevel() : Player::GetLevelFromDB(target_guid);
+    int32 oldlevel = target ? target->getLevel() : CharacterRows::LevelOf(target_guid);
     int32 newlevel = oldlevel + addlevel;
 
     if (newlevel < 1)

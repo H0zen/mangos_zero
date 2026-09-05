@@ -1006,7 +1006,6 @@ class Player : public Unit
 
         void Update(uint32 update_diff, uint32 time) override; // Update the player
 
-        static bool BuildEnumData(QueryResult* result,  WorldPacket* p_data); // Build enumeration data
 
         void SetInWater(bool apply); // Set the player in water
 
@@ -1946,7 +1945,6 @@ class Player : public Unit
         bool LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder);
 
         // Get the zone ID from the database
-        static uint32 GetZoneIdFromDB(ObjectGuid guid);
 
         /// Zone and area for wherever this player stands -- inherited from the vessel when
         /// he is aboard one, because a deck map carries no area table of its own.
@@ -1970,10 +1968,8 @@ class Player : public Unit
         void UpdateLiftMinions();
 
         // Get the level from the database
-        static uint32 GetLevelFromDB(ObjectGuid guid);
 
         // Load the position from the database
-        static bool LoadPositionFromDB(ObjectGuid guid, uint32& mapid, float& x, float& y, float& z, float& o, bool& in_flight);
 
         /*********************************************************/
         /***                   SAVE SYSTEM                     ***/
@@ -1989,19 +1985,14 @@ class Player : public Unit
         void SaveGoldToDB();
 
         // Set a uint32 value in an array
-        static void SetUInt32ValueInArray(Tokens& data, uint16 index, uint32 value);
 
         // Save the player's position in the database
-        static void SavePositionInDB(ObjectGuid guid, uint32 mapid, float x, float y, float z, float o, uint32 zone);
 
         // Delete a player from the database
-        static void DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRealmChars = true, bool deleteFinally = false);
 
         // Delete old characters from the database
-        static void DeleteOldCharacters();
 
         // Delete old characters from the database, keeping characters for a specified number of days
-        static void DeleteOldCharacters(uint32 keepDays);
 
         bool m_mailsUpdated; // Indicates if mails have been updated
 
@@ -2487,7 +2478,6 @@ class Player : public Unit
         }
 
         // Get the player's guild ID from the database
-        static uint32 GetGuildIdFromDB(ObjectGuid guid);
 
         // Get the player's guild rank
         uint32 GetRank()
@@ -2496,7 +2486,6 @@ class Player : public Unit
         }
 
         // Get the player's guild rank from the database
-        static uint32 GetRankFromDB(ObjectGuid guid);
 
         // Get the guild ID the player is invited to
         int GetGuildIdInvited()

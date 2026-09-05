@@ -34,6 +34,7 @@
  * - Guild bank management
  */
 
+#include "CharacterRows.h"
 #include <string>
 #include "Chat.h"
 #include "ObjectMgr.h"
@@ -141,7 +142,7 @@ bool ChatHandler::HandleGuildUninviteCommand(char* args)
         return false;
     }
 
-    uint32 glId = target ? target->GetGuildId() : Player::GetGuildIdFromDB(target_guid);
+    uint32 glId = target ? target->GetGuildId() : CharacterRows::GuildOf(target_guid);
     if (!glId)
     {
         return false;
@@ -180,7 +181,7 @@ bool ChatHandler::HandleGuildRankCommand(char* args)
         return false;
     }
 
-    uint32 glId = target ? target->GetGuildId() : Player::GetGuildIdFromDB(target_guid);
+    uint32 glId = target ? target->GetGuildId() : CharacterRows::GuildOf(target_guid);
     if (!glId)
     {
         return false;

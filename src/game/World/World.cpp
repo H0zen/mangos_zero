@@ -43,6 +43,7 @@
  * @ingroup world
  */
 
+#include "CharacterRows.h"
 #include "Common/Locales.h"
 #include "Utilities/Errors.h"
 #include <algorithm>
@@ -880,7 +881,7 @@ void World::SetInitialWorldSettings()
     sLog.outString();
 
     // Delete all characters which have been deleted X days before
-    Player::DeleteOldCharacters();
+    CharacterRows::DeleteLongDeleted();
 
 
 
@@ -1137,7 +1138,7 @@ void World::Update(uint32 diff)
     if (m_timers[WUPDATE_DELETECHARS].Passed())
     {
         m_timers[WUPDATE_DELETECHARS].Reset();
-        Player::DeleteOldCharacters();
+        CharacterRows::DeleteLongDeleted();
     }
 
     // execute callbacks from sql queries that were queued recently

@@ -44,6 +44,7 @@
 
 
 
+#include "CharacterRows.h"
 #include "Common/Locales.h"
 #include <string>
 #include <vector>
@@ -1243,7 +1244,7 @@ bool ChatHandler::ExtractLocationFromLink(char** text, uint32& mapid, float& x, 
                 // to point where player stay (if loaded)
                 float o;
                 bool in_flight;
-                return Player::LoadPositionFromDB(guid, mapid, x, y, z, o, in_flight);
+                return CharacterRows::PlaceOf(guid, mapid, x, y, z, o, in_flight);
             }
 
             return false;

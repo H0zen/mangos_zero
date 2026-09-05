@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Utilities/Errors.h"
 #include <sstream>
 #include <string>
@@ -113,46 +111,6 @@ void Player::_LoadBGData(QueryResult* result)
     delete result;
 }
 
-/**
- * @brief Loads a character position directly from the database.
- *
- * @param guid The player GUID to query.
- * @param mapid Output map identifier.
- * @param x Output X coordinate.
- * @param y Output Y coordinate.
- * @param z Output Z coordinate.
- * @param o Output orientation.
- * @param in_flight Output flag indicating whether the character was in flight.
- * @return True if the position was loaded successfully; otherwise, false.
- */
-bool Player::LoadPositionFromDB(ObjectGuid guid, uint32& mapid, float& x, float& y, float& z, float& o, bool& in_flight)
-{
-    QueryResult* result = CharacterDatabase.PQuery("SELECT `position_x`,`position_y`,`position_z`,`orientation`,`map`,`taxi_path` FROM `characters` WHERE `guid` = '%u'", guid.GetCounter());
-    if (!result)
-    {
-        return false;
-    }
-
-    Field* fields = result->Fetch();
-
-    x = fields[0].GetFloat();
-    y = fields[1].GetFloat();
-    z = fields[2].GetFloat();
-    o = fields[3].GetFloat();
-    mapid = fields[4].GetUInt32();
-    in_flight = !fields[5].GetCppString().empty();
-
-    delete result;
-    return true;
-}
-
-/**
- * @brief Loads the player's persisted state from the database and initializes runtime data.
- *
- * @param guid The player GUID to load.
- * @param holder The query holder containing login query results.
- * @return True if the player was loaded successfully; otherwise, false.
- */
 bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 {
     //        0     1        2     3     4      5       6      7   8      9            10            11
@@ -213,7 +171,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     uint8 gender = fields[5].GetUInt8() & 0x01;             // allowed only 1 bit values male/female cases (for fit drunk gender part)
     SetGender(gender);            // gender
-
 
     // check if race/class combination is valid
     PlayerInfo const* info = sObjectMgr.GetPlayerInfo(getRace(), getClass());

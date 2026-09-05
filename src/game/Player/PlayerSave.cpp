@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <cmath>
 #include "Utilities/Errors.h"
 #include <sstream>
@@ -116,7 +114,6 @@ void Player::SaveToDB()
     CharacterDatabase.BeginTransaction();
 
     UpdateHonor();
-
 
     static SqlStatementID delChar ;
     static SqlStatementID insChar ;
@@ -888,51 +885,6 @@ void Player::SendAttackSwingNotInRange()
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Writes a character position directly to the database.
- *
- * @param guid The character GUID to update.
- * @param mapid The destination map identifier.
- * @param x The X coordinate.
- * @param y The Y coordinate.
- * @param z The Z coordinate.
- * @param o The orientation.
- * @param zone The zone identifier.
- */
-void Player::SavePositionInDB(ObjectGuid guid, uint32 mapid, float x, float y, float z, float o, uint32 zone)
-{
-    std::ostringstream ss;
-    ss << "UPDATE `characters` SET `position_x`='" << x << "',`position_y`='" << y
-       << "',`position_z`='" << z << "',`orientation`='" << o << "',`map`='" << mapid
-       << "',`zone`='" << zone << "',`trans_x`='0',`trans_y`='0',`trans_z`='0',"
-       << "`transguid`='0',`taxi_path`='' WHERE `guid`='" << guid.GetCounter() << "'";
-    DEBUG_LOG("%s", ss.str().c_str());
-    CharacterDatabase.Execute(ss.str().c_str());
-}
-
-/**
- * @brief Replaces a tokenized uint32 field value in a serialized array.
- *
- * @param tokens The token array to modify.
- * @param index The token index to replace.
- * @param value The new uint32 value.
- */
-void Player::SetUInt32ValueInArray(Tokens& tokens, uint16 index, uint32 value)
-{
-    char buf[11];
-    snprintf(buf, 11, "%u", value);
-
-    if (index >= tokens.size())
-    {
-        return;
-    }
-
-    tokens[index] = buf;
-}
-
-/**
- * @brief Sends the error packet for attempting to attack a dead target.
- */
 void Player::SendAttackSwingDeadTarget()
 {
     WorldPacket data(SMSG_ATTACKSWING_DEADTARGET, 0);
@@ -1122,7 +1074,6 @@ void Player::UpdateDuelFlag(time_t currTime)
     {
         return;
     }
-
 
     SetUInt32Value(PLAYER_DUEL_TEAM, 1);
     duel->opponent->SetUInt32Value(PLAYER_DUEL_TEAM, 2);

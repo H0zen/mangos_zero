@@ -23,6 +23,7 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
+#include "CharacterRows.h"
 #include <string>
 #include <set>
 #include "Database/DatabaseEnv.h"
@@ -234,7 +235,7 @@ bool Guild::AddMember(ObjectGuid plGuid, uint32 plRank)
     }
     else
     {
-        if (Player::GetGuildIdFromDB(plGuid) != 0)          // player already in guild
+        if (CharacterRows::GuildOf(plGuid) != 0)          // player already in guild
         {
             return false;
         }
@@ -575,7 +576,7 @@ bool Guild::LoadMembersFromDB(QueryResult* guildMembersResult)
             sLog.outError("%s has broken zone-data", newmember.guid.GetString().c_str());
             // here it will also try the same, to get the zone from characters-table, but additional it tries to find
             // the zone through xy coords .. this is a bit redundant, but shouldn't be called often
-            newmember.ZoneId = Player::GetZoneIdFromDB(newmember.guid);
+            newmember.ZoneId = CharacterRows::ZoneOf(newmember.guid);
         }
         if (!((1 << (newmember.Class - 1)) & CLASSMASK_ALL_PLAYABLE)) // can be at broken `class` field
         {

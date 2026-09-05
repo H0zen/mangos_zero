@@ -40,6 +40,7 @@
  * appearance customization, and starting location setup.
  */
 
+#include "CharacterRows.h"
 #include "Database/SqlOperations.h"
 #include "Common/ServerDefines.h"
 #include "Platform/Define.h"
@@ -193,7 +194,7 @@ void WorldSession::HandleCharEnum(QueryResult* result)
             uint32 guidlow = (*result)[0].GetUInt32();
             uint32 advertisedMap = (*result)[9].GetUInt32();
             DETAIL_LOG("Build enum data for char guid %u from account %u.", guidlow, GetAccountId());
-            if (Player::BuildEnumData(result, &data))
+            if (CharacterRows::WriteCharacterList(result, &data))
             {
                 ++num;
                 advertisedMaps.emplace(
@@ -503,7 +504,7 @@ void WorldSession::HandleCharDeleteOpcode(WorldPacket& recv_data)
         sLog.outCharDump(dump.c_str(), GetAccountId(), lowguid, name.c_str());
     }
 
-    Player::DeleteFromDB(guid, GetAccountId());
+    CharacterRows::Delete(guid, GetAccountId());
 
     WorldPacket data(SMSG_CHAR_DELETE, 1);
     data << (uint8)CHAR_DELETE_SUCCESS;

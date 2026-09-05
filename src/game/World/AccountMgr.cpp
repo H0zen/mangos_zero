@@ -41,6 +41,7 @@
  * @see AccountMgr for the singleton interface
  */
 
+#include "CharacterRows.h"
 #include <string>
 #include "AccountMgr.h"
 #include "Database/DatabaseEnv.h"
@@ -200,7 +201,7 @@ AccountOpResult AccountMgr::DeleteAccount(uint32 accid)
 
             // kick if player currently
             sPlayerRegistry.Kick(guid);
-            Player::DeleteFromDB(guid, accid, false);       // no need to update realm characters
+            CharacterRows::Delete(guid, accid, false);       // no need to update realm characters
         }
         while (result->NextRow());
 
