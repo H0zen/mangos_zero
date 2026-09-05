@@ -798,6 +798,13 @@ class Creature : public Unit
             }
         }
 
+        // <<TODO: the flag is stored, and it says exactly what Claim().IsClaimed()
+        // says, so it could be derived where it is sent instead -- Fields::Project
+        // already rewrites this same flag per observer. What stops it is the one
+        // place that clears the flag without touching the claim, in
+        // UnitAura.cpp: whatever that means has to be established first, because
+        // deriving the flag would silently undo it.
+
         /// Who may take what is on this body, and whether a roll is running.
         LootClaim& Claim() { return m_claim; }
         LootClaim const& Claim() const { return m_claim; }

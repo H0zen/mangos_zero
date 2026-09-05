@@ -118,6 +118,10 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     // A chest the data says refills is simply always ready. Nothing
                     // ever starts the countdown, so refilling is not implemented and
                     // the restock time in the template goes unread.
+                    //
+                    // <<TODO: implement it, or say in the schema that the column is
+                    // not read. A chest with chestRestockTime set is meant to fill
+                    // again after that long rather than despawn.
                     if (m_goInfo->chest.chestRestockTime)
                     {
                         m_lootState = GO_READY;
