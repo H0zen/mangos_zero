@@ -1089,12 +1089,12 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     }
 
     // Update timed quests
-    if (!m_timedquests.empty())
+    if (!m_journal.Timed().empty())
     {
-        QuestSet::iterator iter = m_timedquests.begin();
-        while (iter != m_timedquests.end())
+        auto iter = m_journal.Timed().begin();
+        while (iter != m_journal.Timed().end())
         {
-            QuestStatusData& q_status = mQuestStatus[*iter];
+            QuestStatusData& q_status = m_journal.Of(*iter);
             if (q_status.m_timer <= update_diff)
             {
                 uint32 quest_id  = *iter;
@@ -3288,7 +3288,7 @@ void Player::SetQuestRewarded(uint32 quest_id, bool rewarded)
 {
     if (sObjectMgr.GetQuestTemplate(quest_id))
     {
-        QuestStatusData& q_status = mQuestStatus[quest_id];
+        QuestStatusData& q_status = m_journal.Of(quest_id);
 
         q_status.m_rewarded = rewarded;
     }

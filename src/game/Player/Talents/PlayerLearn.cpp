@@ -219,7 +219,7 @@ void Player::learnQuestRewardedSpells(Quest const* quest)
 void Player::learnQuestRewardedSpells()
 {
     // learn spells received from quest completing
-    for (QuestStatusMap::const_iterator itr = mQuestStatus.begin(); itr != mQuestStatus.end(); ++itr)
+    for (auto itr = m_journal.All().begin(); itr != m_journal.All().end(); ++itr)
     {
         // skip no rewarded quests
         if (!itr->second.m_rewarded)

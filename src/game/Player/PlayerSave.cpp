@@ -610,7 +610,7 @@ void Player::_SaveQuestStatus()
     static SqlStatementID updateQuestStatus ;
 
     // we don't need transactions here.
-    for (QuestStatusMap::iterator i = mQuestStatus.begin(); i != mQuestStatus.end(); ++i)
+    for (auto i = m_journal.All().begin(); i != m_journal.All().end(); ++i)
     {
         QuestStatusData &questStatus = i->second;
         switch (questStatus.uState)

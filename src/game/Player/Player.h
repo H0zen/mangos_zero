@@ -80,7 +80,7 @@
 
 #include "Database/DatabaseEnv.h"
 #include "QuestDef.h"
-#include "Journal/QuestSlots.h"
+#include "Journal/QuestJournal.h"
 #include "Group.h"
 #include "Bag.h"
 #include "WorldSession.h"
@@ -547,8 +547,6 @@ enum AtLoginFlags
     // AT_LOGIN_RESET_PET_TALENTS = 0x10, -- used in post-3.x
     AT_LOGIN_FIRST                = 0x20  // First login flag
 };
-
-typedef std::map<uint32, QuestStatusData> QuestStatusMap;
 
 // States for skill updates
 enum SkillUpdateState
@@ -1911,16 +1909,13 @@ class Player : public Unit
         void SendQuestUpdateAddCreatureOrGo(Quest const* pQuest, ObjectGuid guid, uint32 creatureOrGO_idx, uint32 count);
 
         // Get the divider GUID
-        ObjectGuid GetDividerGuid() const { return m_dividerGuid; }
+        ObjectGuid GetDividerGuid() const { return m_journal.Divider(); }
 
         // Set the divider GUID
-        void SetDividerGuid(ObjectGuid guid) { m_dividerGuid = guid; }
+        void SetDividerGuid(ObjectGuid guid) { m_journal.Divider(guid); }
 
         // Clear the divider GUID
-        void ClearDividerGuid()
-        {
-            m_dividerGuid.Clear();
-        }
+        void ClearDividerGuid() { m_journal.NoDivider(); }
 
         // Get the in-game time
         uint32 GetInGameTime()
@@ -1932,10 +1927,10 @@ class Player : public Unit
         void SetInGameTime(uint32 time) { m_ingametime = time; }
 
         // Add a timed quest
-        void AddTimedQuest(uint32 quest_id) { m_timedquests.insert(quest_id); }
+        void AddTimedQuest(uint32 quest_id) { m_journal.StartTiming(quest_id); }
 
         // Remove a timed quest
-        void RemoveTimedQuest(uint32 quest_id) { m_timedquests.erase(quest_id); }
+        void RemoveTimedQuest(uint32 quest_id) { m_journal.StopTiming(quest_id); }
 
         /*********************************************************/
         /***                   LOAD SYSTEM                     ***/
@@ -2045,10 +2040,11 @@ class Player : public Unit
         }
 
         // Get the player's quest status map
-        QuestStatusMap& getQuestStatusMap()
-        {
-            return mQuestStatus;
-        }
+        QuestStatusMap& getQuestStatusMap() { return m_journal.All(); }
+
+        /// Every quest he has taken, and how far he has got with each.
+        QuestJournal& Journal() { return m_journal; }
+        QuestJournal const& Journal() const { return m_journal; }
 
         // Get the player's current selection GUID
         ObjectGuid const& GetSelectionGuid() const { return m_curSelectionGuid; }
@@ -3620,11 +3616,8 @@ class Player : public Unit
         /***                    QUEST SYSTEM                   ***/
         /*********************************************************/
 
-        // We allow only one timed quest active at the same time. Below can then be a simple value instead of a set.
-        typedef std::set<uint32> QuestSet;
-        QuestSet m_timedquests; // Set of timed quests
+        QuestJournal m_journal;
 
-        ObjectGuid m_dividerGuid; // Divider GUID
         uint32 m_ingametime; // In-game time
 
         /*********************************************************/
@@ -3738,8 +3731,6 @@ class Player : public Unit
 
         ObjectGuid m_comboTargetGuid; // Combo target GUID
         int8 m_comboPoints; // Combo points
-
-        QuestStatusMap mQuestStatus; // Quest status map
 
         SkillStatusMap mSkillStatus; // Skill status map
 

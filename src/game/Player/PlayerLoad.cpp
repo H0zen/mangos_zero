@@ -1417,7 +1417,7 @@ void Player::LoadPet()
  */
 void Player::_LoadQuestStatus(QueryResult* result)
 {
-    mQuestStatus.clear();
+    m_journal.Clear();
 
     uint32 slot = 0;
 
@@ -1436,7 +1436,7 @@ void Player::_LoadQuestStatus(QueryResult* result)
             if (pQuest)
             {
                 // find or create
-                QuestStatusData& questStatusData = mQuestStatus[quest_id];
+                QuestStatusData& questStatusData = m_journal.Of(quest_id);
 
                 uint32 qstatus = fields[1].GetUInt32();
                 if (qstatus < MAX_QUEST_STATUS)
