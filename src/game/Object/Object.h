@@ -484,18 +484,18 @@ class Object
 
     public:
         /// It is a player, which on the wire is TypeID 4.
-        bool IsPlayer() const { return IsPlayer(); }
+        bool IsPlayer() const { return GetTypeId() == TYPEID_PLAYER; }
 
         /// A unit that is not a player. There is no creature TypeID: see the note
         /// on ToCreature below for why that is the whole of the question.
-        bool IsCreature() const { return IsCreature(); }
+        bool IsCreature() const { return GetTypeId() == TYPEID_UNIT; }
 
         /// Anything alive, a player included: the mask carries the whole chain.
         bool IsUnit() const { return isType(TYPEMASK_UNIT); }
 
-        bool IsGameObject() const { return IsGameObject(); }
-        bool IsCorpse() const { return IsCorpse(); }
-        bool IsDynObject() const { return IsDynObject(); }
+        bool IsGameObject() const { return GetTypeId() == TYPEID_GAMEOBJECT; }
+        bool IsCorpse() const { return GetTypeId() == TYPEID_CORPSE; }
+        bool IsDynObject() const { return GetTypeId() == TYPEID_DYNAMICOBJECT; }
 
         // for output helpfull error messages from ASSERTs
         bool PrintIndexError(uint32 index, bool set) const;
