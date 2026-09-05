@@ -61,7 +61,6 @@ class Transport : public GameObject
         explicit Transport();
 
         bool Create(uint32 guidlow, uint32 mapid, float x, float y, float z, float ang, uint8 animprogress);
-        bool GenerateWaypoints(uint32 pathid, std::set<uint32>& mapids);
         void Update(uint32 update_diff, uint32 p_time) override;
 
         /**
@@ -123,35 +122,8 @@ class Transport : public GameObject
         /// path, and we estimate her from the same value, so both sides agree.
         uint32 GetPathProgress() const { return m_timer; }
 
-        /// Half the longest gap between consecutive waypoints: how far the estimate can be
-        /// off, since it snaps between nodes and never interpolates. The relay widens its
-        /// grid search by it, and nothing else ever asks.
-        float NodeSlack() const { return m_nodeSlack; }
-
     private:
-        struct WayPoint
-        {
-            WayPoint() : mapid(0), x(0), y(0), z(0), teleport(false) {}
-            WayPoint(uint32 _mapid, float _x, float _y, float _z, bool _teleport)
-                : mapid(_mapid), x(_x), y(_y), z(_z), teleport(_teleport)
-            {
-            }
-
-            uint32 mapid;
-            float x;
-            float y;
-            float z;
-            bool teleport;
-        };
-
-        typedef std::map<uint32, WayPoint> WayPointMap;
-
-        WayPointMap::const_iterator m_curr;
-        WayPointMap::const_iterator m_next;
-        uint32 m_pathTime;
         uint32 m_timer;
-
-        float m_nodeSlack = 0.0f;
 
         bool m_withdrawn = false;
 
@@ -169,14 +141,12 @@ class Transport : public GameObject
         TransportMap* m_map = nullptr;
 
     public:
-        WayPointMap m_WayPoints;
-        uint32 m_nextNodeTime;
         uint32 m_period;
 
-        /// The lap she sails, and where on it she changes map.
+        /// The lap she sails: how long it takes, where she is on it, and where on it
+        /// she changes map. Everything about her motion is read from here.
         VesselRoute m_route;
 
     private:
         void TeleportTransport(uint32 newMapid, float x, float y, float z);
-        void MoveToNextWayPoint();                          // move m_next/m_cur to next points
 };

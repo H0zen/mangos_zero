@@ -769,8 +769,7 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
             {
                 Transport* vessel = plMover->m_transport;
 
-                const float reach = hull->HullRadius() + vessel->NodeSlack() +
-                                    DECK_EDGE_MARGIN;
+                const float reach = hull->HullRadius() + DECK_EDGE_MARGIN;
 
                 const bool ashore = vessel->Where().WithinDist(
                     Geometry::Vector3(movementInfo.GetPos()->x, movementInfo.GetPos()->y,

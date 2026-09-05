@@ -224,11 +224,11 @@ TEST_CASE("vessel route: the leg she is on names the map she sails")
     CHECK(route.Legs()[0].mapId == 0);
     CHECK(route.Legs()[0].startsAt == 0);
     CHECK(route.Legs()[0].endsAt == 66667);
-    CHECK(route.Legs()[0].from.x == doctest::Approx(1000.0f));
+    CHECK(route.Legs()[0].From().x == doctest::Approx(1000.0f));
 
     CHECK(route.Legs()[1].mapId == 1);
     CHECK(route.Legs()[1].startsAt == 66667);
-    CHECK(route.Legs()[1].from.x == doctest::Approx(6000.0f));
+    CHECK(route.Legs()[1].From().x == doctest::Approx(6000.0f));
 
     // And that is what the moment of the transfer is read off.
     CHECK(route.LegAt(0)->mapId == 0);
@@ -263,4 +263,80 @@ TEST_CASE("vessel route: a route with no lap has no leg to be on")
     std::vector<TaxiPathNodeEntry const*> const none;
     CHECK(VesselRoute(none, SPEED, ACCEL).LegAt(0) == nullptr);
     CHECK(VesselRoute().LegAt(1234) == nullptr);
+}
+
+TEST_CASE("vessel route: the pose is between the nodes, not on the last one passed")
+{
+    StraightRun run;
+    VesselRoute const route(run.nodes, SPEED, ACCEL);
+
+    // Three kilometres at a flat thirty: she is a kilometre along after a third of it.
+    CHECK(route.PoseAt(0).at.x == doctest::Approx(1000.0f));
+    CHECK(route.PoseAt(50000).at.x == doctest::Approx(2500.0f));
+    CHECK(route.PoseAt(99999).at.x == doctest::Approx(4000.0f).epsilon(0.001));
+
+    CHECK(route.PoseAt(50000).known);
+    CHECK(route.PoseAt(50000).mapId == 0);
+
+    // And the lap comes round to where it started.
+    CHECK(route.PoseAt(100000).at.x == doctest::Approx(route.PoseAt(0).at.x));
+}
+
+TEST_CASE("vessel route: she only ever moves forward along the leg")
+{
+    StraightRun run;
+    run.n3 = Node(3, 0, 3000.0f, TAXI_NODE_STOP, 45);
+    VesselRoute const route(run.nodes, SPEED, ACCEL);
+
+    float behind = 0.0f;
+    for (uint32 at = 0; at < route.Period(); at += 250)
+    {
+        VesselPose const pose = route.PoseAt(at);
+        REQUIRE(pose.known);
+        CHECK(pose.at.x >= behind - 0.01f);
+        CHECK(pose.at.x >= 1000.0f - 0.01f);
+        CHECK(pose.at.x <= 4000.0f + 0.01f);
+        behind = pose.at.x;
+    }
+}
+
+TEST_CASE("vessel route: berthed, she does not move at all")
+{
+    StraightRun run;
+    run.n3 = Node(3, 0, 3000.0f, TAXI_NODE_STOP, 45);
+    VesselRoute const route(run.nodes, SPEED, ACCEL);
+
+    uint32 const arrives = Once(2000.0f);
+
+    // She lies at the berth for the whole of its delay, and the berth is node 3.
+    CHECK(route.PoseAt(arrives).at.x == doctest::Approx(3000.0f));
+    CHECK(route.PoseAt(arrives + 20000).at.x == doctest::Approx(3000.0f));
+    CHECK(route.PoseAt(arrives + 44999).at.x == doctest::Approx(3000.0f));
+
+    // And pulls away from it after that.
+    CHECK(route.PoseAt(arrives + 46000).at.x > 3000.0f);
+}
+
+TEST_CASE("vessel route: she pulls away from rest, she does not jump to speed")
+{
+    StraightRun run;
+    run.n3 = Node(3, 0, 3000.0f, TAXI_NODE_STOP, 45);
+    VesselRoute const route(run.nodes, SPEED, ACCEL);
+
+    // One second out of the berth at one unit a second squared is half a unit,
+    // where a flat cruise would already have made thirty.
+    CHECK(route.PoseAt(1000).at.x == doctest::Approx(1000.5f).epsilon(0.01));
+}
+
+TEST_CASE("vessel route: the maps it touches are the maps its legs are on")
+{
+    StraightRun plain;
+    CHECK(VesselRoute(plain.nodes, SPEED, ACCEL).Maps() == std::set<uint32>{0});
+
+    StraightRun crossing;
+    crossing.n2 = Node(2, 1, 2000.0f);
+    crossing.n3 = Node(3, 1, 3000.0f);
+    crossing.n4 = Node(4, 1, 4000.0f);
+    crossing.n5 = Node(5, 1, 5000.0f);
+    CHECK(VesselRoute(crossing.nodes, SPEED, ACCEL).Maps() == std::set<uint32>{0, 1});
 }

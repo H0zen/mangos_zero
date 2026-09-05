@@ -28,6 +28,7 @@
 #include "DBCStructure.h"
 #include "Geometry/Vector3.h"
 
+#include <set>
 #include <vector>
 
 /// A taxi node the vessel arrives at and then jumps from, so the run of nodes
@@ -40,14 +41,44 @@ uint32 const TAXI_NODE_STOP     = 0x02;
 /// she is on it. A leg she crosses in no time at all is one she is never on.
 struct VesselLeg
 {
+    /// One run of water between berths, and when on the lap she sails it.
+    struct Run
+    {
+        uint32 startsAt = 0;                                // milliseconds into the lap
+        uint32 sails = 0;                                   // spent crossing it
+        uint32 waits = 0;                                   // spent lying at its far end
+        float from = 0.0f;                                  // distance along the leg
+        float to = 0.0f;
+        /// How many times she changes speed on it: none on a flat cruise, one
+        /// pulling away from a berth, two when she brakes into the next.
+        uint32 ramps = 0;
+    };
+
     uint32 mapId = 0;
     uint32 startsAt = 0;                                    // milliseconds into the lap
     uint32 endsAt = 0;
-    Geometry::Vector3 from;                                 // where she lies as it starts
+
+    /// Every node of the leg. She sails from the second to the second-to-last;
+    /// the outermost two only lend the curve its tangents.
+    std::vector<Geometry::Vector3> nodes;
+    /// How far she has come by the time she passes each node.
+    std::vector<float> reached;
+    std::vector<Run> runs;
+
+    /// Where she lies as the leg begins.
+    Geometry::Vector3 From() const;
+};
+
+/// Where a vessel is at some moment of her lap.
+struct VesselPose
+{
+    bool known = false;
+    uint32 mapId = 0;
+    Geometry::Vector3 at;
 };
 
 /**
- * How long a vessel takes to sail one lap of her taxi path, and when on that lap
+ * A vessel's taxi path: how long one lap takes, where she is on it, and when
  * she changes the map she sails.
  *
  * The route is a run of nodes that breaks into legs wherever the vessel jumps:
@@ -86,11 +117,19 @@ class VesselRoute
 
         std::vector<VesselLeg> const& Legs() const { return m_legs; }
 
+        /// Every map the route touches.
+        std::set<uint32> Maps() const;
+
         /// The leg she is on that far into the lap; nullptr when there is no lap.
         VesselLeg const* LegAt(uint32 phaseMs) const;
+
+        /// Where she is at that moment of the lap.
+        VesselPose PoseAt(uint32 phaseMs) const;
 
     private:
         uint32 m_period = 0;
         uint32 m_waiting = 0;
+        float m_speed = 0.0f;
+        float m_accel = 0.0f;
         std::vector<VesselLeg> m_legs;
 };

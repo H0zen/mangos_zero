@@ -166,19 +166,18 @@ void MapManager::LoadTransports()
         DETAIL_LOG("Transport %u (%s): lap %u ms over %u legs, %u ms of it waiting; `transports`.`period` says %u",
                    entry, name.c_str(), route.Period(), uint32(route.Legs().size()), route.Waiting(), storedPeriod);
 
-        std::set<uint32> mapsUsed;
+        std::set<uint32> mapsUsed = route.Maps();
 
-        if (!t->GenerateWaypoints(goinfo->moTransport.taxiPathId, mapsUsed))
-            // skip transports with empty waypoints list
+        VesselPose const start = route.PoseAt(0);
+        if (!start.known)
         {
             sLog.outErrorDb("Transport (path id %u) path size = 0. Transport ignored, check DBC files or transport GO data0 field.", goinfo->moTransport.taxiPathId);
             delete t;
             continue;
         }
 
-        float x, y, z, o;
-        uint32 mapid;
-        x = t->m_WayPoints[0].x; y = t->m_WayPoints[0].y; z = t->m_WayPoints[0].z; mapid = t->m_WayPoints[0].mapid; o = 1;
+        float const x = start.at.x, y = start.at.y, z = start.at.z, o = 1.0f;
+        uint32 const mapid = start.mapId;
 
         // current code does not support transports in dungeon!
         const MapEntry* pMapInfo = sMapStore.LookupEntry(mapid);
@@ -301,10 +300,8 @@ bool Transport::Create(uint32 guidlow, uint32 mapid, float x, float y, float z, 
     // despawns, whatever the row happens to say.
     SetAllGoFlags((GO_FLAG_TRANSPORT | GO_FLAG_NODESPAWN));
 
-    // THE ROUTE'S PERIOD, AND THE CLIENT READS IT FROM HERE. It interpolates the hull
-    // itself from `time % period`, so a vessel that ships a zero here is drawn stopped at
-    // her first node no matter what the server sends afterwards. GenerateWaypoints has
-    // already run and set m_period.
+    // THE ROUTE'S PERIOD. The lap is set from the route before this runs, and the client
+    // works the same number out for itself from the same DBC rows.
     SetUInt32Value(GAMEOBJECT_LEVEL, m_period);
 
     SetEntry(goinfo->id);
@@ -344,11 +341,17 @@ void Transport::PinRouteGrids()
     // in them, so what the relay finds ashore is whatever those cells hold -- and a cell that
     // had expired holds nothing, silently, and only once she was already sailing past it.
     uint32 pinned = 0;
-    for (WayPointMap::value_type const& node : m_WayPoints)
+    for (VesselLeg const& leg : m_route.Legs())
     {
-        if (Map* sailed = sMapMgr.CreateMap(node.second.mapid, this))
+        Map* sailed = sMapMgr.CreateMap(leg.mapId, this);
+        if (!sailed)
         {
-            sailed->ForceLoadGrid(node.second.x, node.second.y);
+            continue;
+        }
+
+        for (Geometry::Vector3 const& node : leg.nodes)
+        {
+            sailed->ForceLoadGrid(node.x, node.y);
             ++pinned;
         }
     }
@@ -486,301 +489,6 @@ void Transport::WithdrawFromWorld()
     m_map = nullptr;
 }
 
-struct keyFrame
-{
-    explicit keyFrame(TaxiPathNodeEntry const& _node) : node(&_node),
-        distSinceStop(-1.0f), distUntilStop(-1.0f), distFromPrev(-1.0f), tFrom(0.0f), tTo(0.0f)
-    {
-    }
-
-    TaxiPathNodeEntry const* node;
-
-    float distSinceStop;
-    float distUntilStop;
-    float distFromPrev;
-    float tFrom, tTo;
-};
-
-/**
- * @brief Builds the waypoint timeline used by a global transport route.
- *
- * @return true if waypoint generation succeeded.
- */
-bool Transport::GenerateWaypoints(uint32 pathid, std::set<uint32>& mapids)
-{
-    if (pathid >= sTaxiPathNodesByPath.size())
-    {
-        return false;
-    }
-
-    TaxiPathNodeList const& path = sTaxiPathNodesByPath[pathid];
-
-    std::vector<keyFrame> keyFrames;
-    int mapChange = 0;
-    mapids.clear();
-    for (size_t i = 1; i < path.size() - 1; ++i)
-    {
-        if (mapChange == 0)
-        {
-            TaxiPathNodeEntry const& node_i = path[i];
-            if (node_i.ContinentID == path[i + 1].ContinentID)
-            {
-                keyFrame k(node_i);
-                keyFrames.push_back(k);
-                mapids.insert(k.node->ContinentID);
-            }
-            else
-            {
-                mapChange = 1;
-            }
-        }
-        else
-        {
-            --mapChange;
-        }
-    }
-
-    int lastStop = -1;
-    int firstStop = -1;
-
-    // first cell is arrived at by teleportation :S
-    keyFrames[0].distFromPrev = 0;
-    if (keyFrames[0].node->Flags == 2)
-    {
-        lastStop = 0;
-    }
-
-    // find the rest of the distances between key points
-    for (size_t i = 1; i < keyFrames.size(); ++i)
-    {
-        if ((keyFrames[i].node->Flags == 1) || (keyFrames[i].node->ContinentID != keyFrames[i - 1].node->ContinentID))
-        {
-            keyFrames[i].distFromPrev = 0;
-        }
-        else
-        {
-            keyFrames[i].distFromPrev =
-                sqrt(pow(keyFrames[i].node->LocX - keyFrames[i - 1].node->LocX, 2) +
-                     pow(keyFrames[i].node->LocY - keyFrames[i - 1].node->LocY, 2) +
-                     pow(keyFrames[i].node->LocZ - keyFrames[i - 1].node->LocZ, 2));
-        }
-        if (keyFrames[i].node->Flags == 2)
-        {
-            // remember first stop frame
-            if (firstStop == -1)
-            {
-                firstStop = i;
-            }
-            lastStop = i;
-        }
-    }
-
-    float tmpDist = 0;
-    for (size_t i = 0; i < keyFrames.size(); ++i)
-    {
-        int j = (i + lastStop) % keyFrames.size();
-        if (keyFrames[j].node->Flags == 2)
-        {
-            tmpDist = 0;
-        }
-        else
-        {
-            tmpDist += keyFrames[j].distFromPrev;
-        }
-        keyFrames[j].distSinceStop = tmpDist;
-    }
-
-    for (int i = int(keyFrames.size()) - 1; i >= 0; --i)
-    {
-        int j = (i + (firstStop + 1)) % keyFrames.size();
-        tmpDist += keyFrames[(j + 1) % keyFrames.size()].distFromPrev;
-        keyFrames[j].distUntilStop = tmpDist;
-        if (keyFrames[j].node->Flags == 2)
-        {
-            tmpDist = 0;
-        }
-    }
-
-    for (size_t i = 0; i < keyFrames.size(); ++i)
-    {
-        if (keyFrames[i].distSinceStop < (30 * 30 * 0.5f))
-        {
-            keyFrames[i].tFrom = sqrt(2 * keyFrames[i].distSinceStop);
-        }
-        else
-        {
-            keyFrames[i].tFrom = ((keyFrames[i].distSinceStop - (30 * 30 * 0.5f)) / 30) + 30;
-        }
-
-        if (keyFrames[i].distUntilStop < (30 * 30 * 0.5f))
-        {
-            keyFrames[i].tTo = sqrt(2 * keyFrames[i].distUntilStop);
-        }
-        else
-        {
-            keyFrames[i].tTo = ((keyFrames[i].distUntilStop - (30 * 30 * 0.5f)) / 30) + 30;
-        }
-
-        keyFrames[i].tFrom *= 1000;
-        keyFrames[i].tTo *= 1000;
-    }
-
-    //    for (int i = 0; i < keyFrames.size(); ++i) {
-    //        sLog.outString("%f, %f, %f, %f, %f, %f, %f", keyFrames[i].x, keyFrames[i].y, keyFrames[i].distUntilStop, keyFrames[i].distSinceStop, keyFrames[i].distFromPrev, keyFrames[i].tFrom, keyFrames[i].tTo);
-    //    }
-
-    // Now we're completely set up; we can move along the length of each waypoint at 100 ms intervals
-    // speed = max(30, t) (remember x = 0.5s^2, and when accelerating, a = 1 unit/s^2
-    int t = 0;
-    bool teleport = false;
-    if (keyFrames[keyFrames.size() - 1].node->ContinentID != keyFrames[0].node->ContinentID)
-    {
-        teleport = true;
-    }
-
-    WayPoint pos(keyFrames[0].node->ContinentID, keyFrames[0].node->LocX, keyFrames[0].node->LocY, keyFrames[0].node->LocZ, teleport);
-    m_WayPoints[0] = pos;
-    t += keyFrames[0].node->Delay * 1000;
-
-    uint32 cM = keyFrames[0].node->ContinentID;
-    for (size_t i = 0; i < keyFrames.size() - 1; ++i)
-    {
-        float d = 0;
-        float tFrom = keyFrames[i].tFrom;
-        float tTo = keyFrames[i].tTo;
-
-        // keep the generation of all these points; we use only a few now, but may need the others later
-        if (((d < keyFrames[i + 1].distFromPrev) && (tTo > 0)))
-        {
-            while ((d < keyFrames[i + 1].distFromPrev) && (tTo > 0))
-            {
-                tFrom += 100;
-                tTo -= 100;
-
-                if (d > 0)
-                {
-                    float newX, newY, newZ;
-                    newX = keyFrames[i].node->LocX + (keyFrames[i + 1].node->LocX - keyFrames[i].node->LocX) * d / keyFrames[i + 1].distFromPrev;
-                    newY = keyFrames[i].node->LocY + (keyFrames[i + 1].node->LocY - keyFrames[i].node->LocY) * d / keyFrames[i + 1].distFromPrev;
-                    newZ = keyFrames[i].node->LocZ + (keyFrames[i + 1].node->LocZ - keyFrames[i].node->LocZ) * d / keyFrames[i + 1].distFromPrev;
-
-                    bool teleport = false;
-                    if (keyFrames[i].node->ContinentID != cM)
-                    {
-                        teleport = true;
-                        cM = keyFrames[i].node->ContinentID;
-                    }
-
-                    //                    sLog.outString("T: %d, D: %f, x: %f, y: %f, z: %f", t, d, newX, newY, newZ);
-                    WayPoint pos(keyFrames[i].node->ContinentID, newX, newY, newZ, teleport);
-                    if (teleport)
-                    {
-                        m_WayPoints[t] = pos;
-                    }
-                }
-
-                if (tFrom < tTo)                            // caught in tFrom dock's "gravitational pull"
-                {
-                    if (tFrom <= 30000)
-                    {
-                        d = 0.5f * (tFrom / 1000) * (tFrom / 1000);
-                    }
-                    else
-                    {
-                        d = 0.5f * 30 * 30 + 30 * ((tFrom - 30000) / 1000);
-                    }
-                    d = d - keyFrames[i].distSinceStop;
-                }
-                else
-                {
-                    if (tTo <= 30000)
-                    {
-                        d = 0.5f * (tTo / 1000) * (tTo / 1000);
-                    }
-                    else
-                    {
-                        d = 0.5f * 30 * 30 + 30 * ((tTo - 30000) / 1000);
-                    }
-                    d = keyFrames[i].distUntilStop - d;
-                }
-                t += 100;
-            }
-            t -= 100;
-        }
-
-        if (keyFrames[i + 1].tFrom > keyFrames[i + 1].tTo)
-        {
-            t += 100 - ((long)keyFrames[i + 1].tTo % 100);
-        }
-        else
-        {
-            t += (long)keyFrames[i + 1].tTo % 100;
-        }
-
-        bool teleport = false;
-        if ((keyFrames[i + 1].node->Flags == 1) || (keyFrames[i + 1].node->ContinentID != keyFrames[i].node->ContinentID))
-        {
-            teleport = true;
-            cM = keyFrames[i + 1].node->ContinentID;
-        }
-
-        WayPoint pos(keyFrames[i + 1].node->ContinentID, keyFrames[i + 1].node->LocX, keyFrames[i + 1].node->LocY, keyFrames[i + 1].node->LocZ, teleport);
-
-        //        sLog.outString("T: %d, x: %f, y: %f, z: %f, t:%d", t, pos.x, pos.y, pos.z, teleport);
-
-        // if (teleport)
-        m_WayPoints[t] = pos;
-
-        t += keyFrames[i + 1].node->Delay * 1000;
-        //        sLog.outString("------");
-    }
-
-    uint32 timer = t;
-
-    //    sLog.outDetail("    Generated %lu waypoints, total time %u.", (unsigned long)m_WayPoints.size(), timer);
-
-    m_next = m_WayPoints.begin();                           // will used in MoveToNextWayPoint for init m_curr
-    MoveToNextWayPoint();                                   // m_curr -> first point
-    MoveToNextWayPoint();                                   // skip first point
-
-    m_pathTime = timer;
-
-    m_nextNodeTime = m_curr->first;
-
-    // How wrong the estimate is allowed to be. The pose snaps from node to node and is
-    // never interpolated, so at worst it sits half a segment away from where the client
-    // draws the hull. Every proximity question about this vessel is widened by that.
-    m_nodeSlack = 0.0f;
-    for (WayPointMap::const_iterator it = m_WayPoints.begin(); it != m_WayPoints.end(); ++it)
-    {
-        WayPointMap::const_iterator nxt = it;
-        if (++nxt == m_WayPoints.end() || nxt->second.mapid != it->second.mapid)
-        {
-            continue;
-        }
-
-        const float dx = nxt->second.x - it->second.x;
-        const float dy = nxt->second.y - it->second.y;
-        m_nodeSlack = std::max(m_nodeSlack, std::sqrt(dx * dx + dy * dy) * 0.5f);
-    }
-
-    return true;
-}
-
-/**
- * @brief Advances the current and next transport waypoint pointers.
- */
-void Transport::MoveToNextWayPoint()
-{
-    m_curr = m_next;
-
-    ++m_next;
-    if (m_next == m_WayPoints.end())
-    {
-        m_next = m_WayPoints.begin();
-    }
-}
-
 /**
  * @brief Teleports the transport and its player passengers to another map position.
  *
@@ -885,7 +593,7 @@ void Transport::Update(uint32 update_diff, uint32 /*p_time*/)
     // her own map's tick knows WHICH GRID of the world to look in for the objects ashore.
     // What the client is sent is the path progress below and her entry, and it draws her
     // itself, from an animation the server does not have.
-    if (m_WayPoints.size() > 1)
+    if (m_period != 0)
     {
         // Absolute wall-clock, NOT milliseconds since this process started. The phase of a
         // route has to survive a restart: keyed off uptime, every vessel on the server sails
@@ -900,37 +608,27 @@ void Transport::Update(uint32 update_diff, uint32 /*p_time*/)
         // is on at this moment names the map she sails; when that changes she moves, and
         // everyone aboard follows. It is read off the same lap the client works out for
         // itself, so the hull the player sees arrives when we say it does.
-        //
-        // The waypoint walk below runs on a clock of its own, shorter than the lap because
-        // it measures the water in straight lines. It may say what it likes about maps: all
-        // that is asked of it is which grid of the world to sweep.
         if (VesselLeg const* leg = m_route.LegAt(m_timer))
         {
             if (leg->mapId != GetMapId())
             {
-                TeleportTransport(leg->mapId, leg->from.x, leg->from.y, leg->from.z);
+                Geometry::Vector3 const berth = leg->From();
+                TeleportTransport(leg->mapId, berth.x, berth.y, berth.z);
                 return;
             }
         }
 
-        while (((m_timer - m_curr->first) % m_pathTime) > ((m_next->first - m_curr->first) % m_pathTime))
+        // The pose, off the same route and the same clock: where she is between two nodes,
+        // not the last one she went past. It is still only a grid hint -- nothing is drawn
+        // from it and nothing is composed with it -- but it is now a hint that is right.
+        VesselPose const pose = m_route.PoseAt(m_timer);
+        if (pose.known && pose.mapId == GetMapId())
         {
-            MoveToNextWayPoint();
-
-            if (m_curr->second.mapid == GetMapId())
-            {
-                Place().MoveTo(m_curr->second.x, m_curr->second.y, m_curr->second.z);
-            }
-
-            m_nextNodeTime = m_curr->first;
-
-            if (m_curr == m_WayPoints.begin())
-            {
-                DETAIL_FILTER_LOG(LOG_FILTER_TRANSPORT_MOVES, " ************ BEGIN ************** %s", GetName());
-            }
-
-            DETAIL_FILTER_LOG(LOG_FILTER_TRANSPORT_MOVES, "%s moved to %f %f %f %d", GetName(), m_curr->second.x, m_curr->second.y, m_curr->second.z, m_curr->second.mapid);
+            Place().MoveTo(pose.at.x, pose.at.y, pose.at.z);
         }
+
+        DETAIL_FILTER_LOG(LOG_FILTER_TRANSPORT_MOVES, "%s at %f %f %f on map %u",
+                          GetName(), pose.at.x, pose.at.y, pose.at.z, pose.mapId);
 
         // A seam moved us, and everything below belongs to the new map's tick.
         if (GetMapId() != mapBefore)
