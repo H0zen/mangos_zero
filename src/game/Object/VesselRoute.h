@@ -40,17 +40,20 @@ uint32 const TAXI_NODE_STOP     = 0x02;
  *
  * The route is a run of nodes that breaks into legs wherever the vessel jumps:
  * at a change of map, and at a node flagged as a teleport, which happens within
- * one map as well. Each leg is a Catmull-Rom spline through its nodes, and the
- * vessel crosses each span of that spline on a trapezoidal speed profile --
- * accelerating out of the standstill she starts in, then accelerating and
- * braking again inside every span after it, or, on a span too short to reach
- * her cruising speed, a triangular one that never gets there.
+ * one map as well. Each leg is a Catmull-Rom spline through its nodes.
  *
- * The lap is the sum of those crossings plus the delay at every stop, and it is
+ * She does not slow at every node. What a speed profile is applied to is the
+ * water between one berth and the next: she pulls away from a berth, runs, and
+ * comes into the following one, so a middle stretch pays for accelerating twice
+ * and the two end stretches once each. A stretch too short to reach her
+ * cruising speed gets a triangular profile that never does. A leg with no berth
+ * on it at all is crossed at a flat cruise.
+ *
+ * The lap is the sum of those crossings plus the time spent berthed, and it is
  * the number the client divides the clock by to decide where to draw the hull.
  * It is computed, not configured: the client computes it too, from the same DBC
- * rows, and a lap the two disagree on puts the hull somewhere the server does
- * not believe it is.
+ * rows and the same moveSpeed and accelRate we send it, and a lap the two
+ * disagree on puts the hull somewhere the server does not believe it is.
  */
 class VesselRoute
 {
