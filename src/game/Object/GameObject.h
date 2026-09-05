@@ -58,6 +58,7 @@
 #include <vector>
 #include "SharedDefines.h"
 #include "Occupant.h"
+#include "Chest.h"
 #include "LootClaim.h"
 #include "LootMgr.h"
 #include "Utilities/EventProcessor.h"
@@ -753,15 +754,12 @@ class GameObject : public Occupant
         LootState getLootState() const { return m_lootState; }
         void SetLootState(LootState s);
 
-        void AddToSkillupList(Player* player);
-        bool IsInSkillupList(Player* player) const;
-        void ClearSkillupList()
-        {
-            m_SkillupSet.clear();
-        }
+        /// What is left of a chest once players have started taking from it.
+        Chest& AsChest() { return m_chest; }
+        Chest const& AsChest() const { return m_chest; }
         void ClearAllUsesData()
         {
-            ClearSkillupList();
+            m_chest.ForgetLearners();
             m_useTimes = 0;
             m_firstUser.Clear();
             m_UniqueUsers.clear();
@@ -833,7 +831,6 @@ class GameObject : public Occupant
         float       m_captureSlider;                        // capture point slider value in range of [0..100]
         CapturePointState m_captureState;
 
-        GuidSet m_SkillupSet;                               // players that already have skill-up at GO use
 
         uint32 m_useTimes;                                  // how many times the object has been used, or charges spent
 
@@ -849,10 +846,7 @@ class GameObject : public Occupant
         // Used for trap type
         time_t m_rearmTimer;                                // timer to rearm the trap once disarmed
 
-        // Used for chest type
-        bool m_isInUse;                                     // only one player at time are allowed to open chest
-        time_t m_reStockTimer;                              // timer to refill the chest
-        time_t m_despawnTimer;                              // timer to despawn the chest if something changed in it
+        Chest m_chest;
 
         bool m_AI_locked;
 

@@ -208,10 +208,10 @@ void Spell::EffectOpenLock(SpellEffectIndex eff_idx)
             if (gameObjTarget)
             {
                 // Allow one skill-up until respawned
-                if (!gameObjTarget->IsInSkillupList(player) &&
+                if (!gameObjTarget->AsChest().HasTaught(player->GetObjectGuid()) &&
                     player->UpdateGatherSkill(skillId, pureSkillValue, reqSkillValue))
                 {
-                    gameObjTarget->AddToSkillupList(player);
+                    gameObjTarget->AsChest().Taught(player->GetObjectGuid());
                 }
             }
             else if (itemTarget)

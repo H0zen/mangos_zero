@@ -115,22 +115,12 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                 }
                 case GAMEOBJECT_TYPE_CHEST:
                 {
+                    // A chest the data says refills is simply always ready. Nothing
+                    // ever starts the countdown, so refilling is not implemented and
+                    // the restock time in the template goes unread.
                     if (m_goInfo->chest.chestRestockTime)
                     {
-                        if (m_reStockTimer != 0)
-                        {
-                            if (m_reStockTimer <= time(nullptr))
-                            {
-                                m_reStockTimer = 0;
-                                m_lootState = GO_READY;
-                                loot.clear();
-                                ResendField(GAMEOBJECT_DYN_FLAGS);
-                            }
-                        }
-                        else
-                        {
-                            m_lootState = GO_READY;
-                        }
+                        m_lootState = GO_READY;
                         return;
                     }
                     m_lootState = GO_READY;
@@ -291,9 +281,9 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     {
                         if (!loot.empty())
                         {
-                            m_despawnTimer = time(nullptr) + 5 * MINUTE; // TODO:: need to add a define?
+                            m_chest.EmptyAt(time(nullptr) + CHEST_LINGER);
                         }
-                        else if (m_despawnTimer != 0 && m_despawnTimer <= time(nullptr))
+                        else if (m_chest.IsEmptyingDue(time(nullptr)))
                         {
                             m_lootState = GO_JUST_DEACTIVATED;
                         }

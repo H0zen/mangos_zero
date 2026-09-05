@@ -82,10 +82,7 @@ GameObject::GameObject() : Occupant(),
     m_captureTimer = 0;
 
 
-    m_isInUse = false;
-    m_reStockTimer = 0;
     m_rearmTimer = 0;
-    m_despawnTimer = 0;
 }
 
 /**
@@ -1268,27 +1265,6 @@ float GameObject::ComputeBoundingRadius() const
 {
     // 1.12.1 GameObjectDisplayInfo.dbc not have any info related to size
     return DEFAULT_WORLD_OBJECT_SIZE;
-}
-
-/**
- * @brief Checks whether a player has already received skillup credit from this object.
- *
- * @param player The player to test.
- * @return true if the player is in the skillup list; otherwise, false.
- */
-bool GameObject::IsInSkillupList(Player* player) const
-{
-    return m_SkillupSet.find(player->GetObjectGuid()) != m_SkillupSet.end();
-}
-
-/**
- * @brief Adds a player to the skillup tracking list.
- *
- * @param player The player to add.
- */
-void GameObject::AddToSkillupList(Player* player)
-{
-    m_SkillupSet.insert(player->GetObjectGuid());
 }
 
 struct AddGameObjectToRemoveListInMapsWorker
