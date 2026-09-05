@@ -1306,6 +1306,10 @@ class Player : public Unit
 
         // Played Time Stuff
         time_t m_logintime; // Login time
+
+        /// When this session began. Times the client is given are counted
+        /// from it rather than from the wall clock.
+        time_t LoginTime() const { return m_logintime; }
         time_t m_Last_tick; // Last tick time
 
         uint32 m_Played_time[MAX_PLAYED_TIME_INDEX]; // Played time array
@@ -1531,7 +1535,10 @@ class Player : public Unit
         Item* StoreNewItem(ItemPosCountVec const& pos, uint32 item, bool update, int32 randomPropertyId = 0);
 
         // Store an item
-        Item* StoreItem(ItemPosCountVec const& pos, Item* pItem, bool update);
+        Item* StoreItem(ItemPosCountVec const& pos, Item* pItem, bool update)
+        {
+            return m_inventory.Store(pos, pItem, update);
+        }
 
         // Equip a new item
         Item* EquipNewItem(uint16 pos, uint32 item, bool update);
@@ -1578,10 +1585,9 @@ class Player : public Unit
         bool CheckAmmoCompatibility(const ItemPrototype* ammo_proto) const;
 
         // Quickly equip an item
-        void QuickEquipItem(uint16 pos, Item* pItem);
+        void QuickEquipItem(uint16 pos, Item* pItem) { m_inventory.QuickWear(pos, pItem); }
 
         // Visualize an item
-        void VisualizeItem(uint8 slot, Item* pItem);
 
         // Bank an item
         Item* BankItem(ItemPosCountVec const& dest, Item* pItem, bool update)
@@ -1625,13 +1631,13 @@ class Player : public Unit
         void SwapItem(uint16 src, uint16 dst);
 
         // Add an item to the buyback slot
-        void AddItemToBuyBackSlot(Item* pItem);
+        void AddItemToBuyBackSlot(Item* pItem) { m_inventory.ToBuyback(pItem); }
 
         // Get an item from the buyback slot
-        Item* GetItemFromBuyBackSlot(uint32 slot);
+        Item* GetItemFromBuyBackSlot(uint32 slot) { return m_inventory.InBuyback(slot); }
 
         // Remove an item from the buyback slot
-        void RemoveItemFromBuyBackSlot(uint32 slot, bool del);
+        void RemoveItemFromBuyBackSlot(uint32 slot, bool del) { m_inventory.ClearBuyback(slot, del); }
 
         uint32 GetMaxKeyringSize() const
         {
@@ -3899,7 +3905,6 @@ class Player : public Unit
         InventoryResult _CanStoreItem_InInventorySlots(uint8 slot_begin, uint8 slot_end, ItemPosCountVec& dest, ItemPrototype const* pProto, uint32& count, bool merge, Item* pSrcItem, uint8 skip_bag, uint8 skip_slot) const;
 
         // Store an item in a specific position
-        Item* _StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool update);
 
         // Update known currencies for the player
         void UpdateKnownCurrencies(uint32 itemId, bool apply);

@@ -321,6 +321,289 @@ void Inventory::SettleClocks()
     }
 }
 
+bool Inventory::BindsOnArrival(ItemPrototype const& proto, uint16 place)
+{
+    return proto.Bonding == BIND_WHEN_PICKED_UP
+        || proto.Bonding == BIND_QUEST_ITEM
+        || (proto.Bonding == BIND_WHEN_EQUIPPED && HoldsBag(place));
+}
+
+Item* Inventory::Store(ItemPosCountVec const& plan, Item* item, bool tell)
+{
+    if (!item)
+    {
+        return nullptr;
+    }
+
+    Item* last = item;
+
+    for (auto step = plan.begin(); step != plan.end();)
+    {
+        uint16 const place = step->pos;
+        uint32 const count = step->count;
+        ++step;
+
+        // The item itself goes in the last place; the others get copies.
+        bool const isLast = step == plan.end();
+        last = Put(place, item, count, !isLast, tell);
+
+        if (isLast)
+        {
+            break;
+        }
+    }
+
+    return last;
+}
+
+Item* Inventory::Put(uint16 place, Item* item, uint32 count, bool clone, bool tell)
+{
+    if (!item)
+    {
+        return nullptr;
+    }
+
+    uint8 const bag = Container(place);
+    uint8 const slot = Slot(place);
+
+    DEBUG_LOG("STORAGE: StoreItem bag = %u, slot = %u, item = %u, count = %u",
+              bag, slot, item->GetEntry(), count);
+
+    if (Item* sitting = At(bag, slot))
+    {
+        // The same thing is already there, so the two stacks become one and the
+        // item that arrived is destroyed.
+        if (BindsOnArrival(*sitting->GetProto(), place))
+        {
+            sitting->SetBinding(true);
+        }
+
+        sitting->SetCount(sitting->GetCount() + count);
+        Changed(sitting, tell);
+
+        if (!clone)
+        {
+            Gone(item, tell);
+            StopClocks(item);
+
+            // Named as his before the state changes, or a trade, a mail or a
+            // purchase would be writing an item with no owner.
+            item->SetOwnerGuid(m_owner.GetObjectGuid());
+            item->SetState(ITEM_REMOVED, &m_owner);
+        }
+
+        // Its own life is already being counted; only the enchantments are new.
+        StartEnchantClocks(sitting);
+        sitting->SetState(ITEM_CHANGED, &m_owner);
+
+        return sitting;
+    }
+
+    item = clone ? item->CloneItem(count, &m_owner) : (item->SetCount(count), item);
+    if (!item)
+    {
+        return nullptr;
+    }
+
+    if (BindsOnArrival(*item->GetProto(), place))
+    {
+        item->SetBinding(true);
+    }
+
+    if (IsHisOwn(bag))
+    {
+        Own(slot, item);
+        item->SetGuidValue(ITEM_FIELD_CONTAINED, m_owner.GetObjectGuid());
+        item->SetGuidValue(ITEM_FIELD_OWNER, m_owner.GetObjectGuid());
+        item->SetSlot(slot);
+        item->SetContainer(nullptr);
+
+        Arrived(item, tell);
+        item->SetState(ITEM_CHANGED, &m_owner);
+    }
+    else if (Bag* holder = BagAt(bag))
+    {
+        holder->StoreItem(slot, item);
+        Arrived(item, tell);
+        item->SetState(ITEM_CHANGED, &m_owner);
+        holder->SetState(ITEM_CHANGED, &m_owner);
+    }
+
+    StartClocks(item);
+
+    return item;
+}
+
+void Inventory::Wear(uint8 slot, Item* item)
+{
+    if (!item)
+    {
+        return;
+    }
+
+    // A piece put on by a command was never picked up, so this is the first
+    // chance it has to be bound.
+    ItemPrototype const& proto = *item->GetProto();
+    if (proto.Bonding == BIND_WHEN_EQUIPPED || proto.Bonding == BIND_WHEN_PICKED_UP
+        || proto.Bonding == BIND_QUEST_ITEM)
+    {
+        item->SetBinding(true);
+    }
+
+    DEBUG_LOG("STORAGE: EquipItem slot = %u, item = %u", slot, item->GetEntry());
+
+    Own(slot, item);
+    item->SetGuidValue(ITEM_FIELD_CONTAINED, m_owner.GetObjectGuid());
+    item->SetGuidValue(ITEM_FIELD_OWNER, m_owner.GetObjectGuid());
+    item->SetSlot(slot);
+    item->SetContainer(nullptr);
+
+    item->SetState(ITEM_CHANGED, &m_owner);
+}
+
+void Inventory::QuickWear(uint16 place, Item* item)
+{
+    if (!item)
+    {
+        return;
+    }
+
+    StartClocks(item);
+    Wear(Slot(place), item);
+    Arrived(item, true);
+}
+
+void Inventory::Take(uint8 bag, uint8 slot, bool tell)
+{
+    Item* item = At(bag, slot);
+    if (!item)
+    {
+        return;
+    }
+
+    DEBUG_LOG("STORAGE: RemoveItem bag = %u, slot = %u, item = %u", bag, slot, item->GetEntry());
+
+    StopClocks(item);
+
+    if (IsHisOwn(bag))
+    {
+        Own(slot, nullptr);
+    }
+    else if (Bag* holder = BagAt(bag))
+    {
+        holder->RemoveItem(slot);
+    }
+
+    item->SetGuidValue(ITEM_FIELD_CONTAINED, ObjectGuid());
+    // The owner is left alone: it is set again at the next store, and mail and
+    // auction read it while the item is in neither place.
+    item->SetSlot(NULL_SLOT);
+
+    Changed(item, tell);
+}
+
+void Inventory::ToBuyback(Item* item)
+{
+    if (!item)
+    {
+        return;
+    }
+
+    uint32 slot = NextBuyback();
+    if (Own(uint8(slot)))
+    {
+        uint32 oldestAt = m_owner.GetUInt32Value(PLAYER_FIELD_BUYBACK_TIMESTAMP_1);
+        slot = BUYBACK_SLOT_START;
+
+        for (uint32 place = BUYBACK_SLOT_START + 1; place < BUYBACK_SLOT_END; ++place)
+        {
+            if (!Own(uint8(place)))
+            {
+                slot = place;
+                break;
+            }
+
+            uint32 const at = m_owner.GetUInt32Value(
+                uint16(PLAYER_FIELD_BUYBACK_TIMESTAMP_1 + place - BUYBACK_SLOT_START));
+            if (oldestAt > at)
+            {
+                oldestAt = at;
+                slot = place;
+            }
+        }
+    }
+
+    ClearBuyback(slot, true);
+    DEBUG_LOG("STORAGE: AddItemToBuyBackSlot item = %u, slot = %u", item->GetEntry(), slot);
+
+    Own(uint8(slot), item);
+
+    // The hour is written as seconds since he logged in, pushed ahead by a fixed
+    // amount that the client subtracts back off. What that amount stands for is
+    // not established here; it is kept as it is sent.
+    uint32 const BUYBACK_STAMP_AHEAD = 30 * HOUR;
+
+    uint16 const row = uint16(slot - BUYBACK_SLOT_START);
+    uint32 const sold = uint32(time(nullptr) - m_owner.LoginTime() + BUYBACK_STAMP_AHEAD);
+
+    m_owner.SetGuidValue(uint16(PLAYER_FIELD_VENDORBUYBACK_SLOT_1 + row * 2), item->GetObjectGuid());
+    ItemPrototype const* proto = item->GetProto();
+    m_owner.SetUInt32Value(uint16(PLAYER_FIELD_BUYBACK_PRICE_1 + row),
+                           proto ? proto->SellPrice * item->GetCount() : 0);
+    m_owner.SetUInt32Value(uint16(PLAYER_FIELD_BUYBACK_TIMESTAMP_1 + row), sold);
+
+    // The next sale takes the place after this one while the row is filling up.
+    if (NextBuyback() < BUYBACK_SLOT_END - 1)
+    {
+        NextBuyback(NextBuyback() + 1);
+    }
+}
+
+Item* Inventory::InBuyback(uint32 slot) const
+{
+    DEBUG_LOG("STORAGE: GetItemFromBuyBackSlot slot = %u", slot);
+
+    if (slot < BUYBACK_SLOT_START || slot >= BUYBACK_SLOT_END)
+    {
+        return nullptr;
+    }
+
+    return Own(uint8(slot));
+}
+
+void Inventory::ClearBuyback(uint32 slot, bool destroy)
+{
+    DEBUG_LOG("STORAGE: RemoveItemFromBuyBackSlot slot = %u", slot);
+
+    if (slot < BUYBACK_SLOT_START || slot >= BUYBACK_SLOT_END)
+    {
+        return;
+    }
+
+    if (Item* item = Own(uint8(slot)))
+    {
+        item->RemoveFromWorld();
+        if (destroy)
+        {
+            item->SetState(ITEM_REMOVED, &m_owner);
+        }
+    }
+
+    Own(uint8(slot), nullptr);
+
+    uint16 const row = uint16(slot - BUYBACK_SLOT_START);
+    m_owner.SetGuidValue(uint16(PLAYER_FIELD_VENDORBUYBACK_SLOT_1 + row * 2), ObjectGuid());
+    m_owner.SetUInt32Value(uint16(PLAYER_FIELD_BUYBACK_PRICE_1 + row), 0);
+    m_owner.SetUInt32Value(uint16(PLAYER_FIELD_BUYBACK_TIMESTAMP_1 + row), 0);
+
+    // The place just emptied is worth taking next only while the one already
+    // chosen is occupied.
+    if (Own(uint8(NextBuyback())))
+    {
+        NextBuyback(slot);
+    }
+}
+
 void Inventory::Arrived(Item* item, bool tell)
 {
     if (!item || !tell || !m_owner.IsInWorld())

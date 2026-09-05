@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Log.h"
 #include "Opcodes.h"
@@ -86,147 +84,6 @@ Item* Player::StoreNewItem(ItemPosCountVec const& dest, uint32 item, bool update
     return pItem;
 }
 
-/**
- * @brief Stores an item into one or more resolved destination positions.
- *
- * @param dest The destination positions and quantities.
- * @param pItem The item to store.
- * @param update True to send world updates for the storage change.
- * @return The final stored item instance.
- */
-Item* Player::StoreItem(ItemPosCountVec const& dest, Item* pItem, bool update)
-{
-    if (!pItem)
-    {
-        return nullptr;
-    }
-
-    Item* lastItem = pItem;
-
-    for (ItemPosCountVec::const_iterator itr = dest.begin(); itr != dest.end();)
-    {
-        uint16 pos = itr->pos;
-        uint32 count = itr->count;
-
-        ++itr;
-
-        if (itr == dest.end())
-        {
-            lastItem = _StoreItem(pos, pItem, count, false, update);
-            break;
-        }
-
-        lastItem = _StoreItem(pos, pItem, count, true, update);
-    }
-
-    return lastItem;
-}
-
-// Return stored item (if stored to stack, it can diff. from pItem). And pItem ca be deleted in this case.
-Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool update)
-{
-    if (!pItem)
-    {
-        return nullptr;
-    }
-
-    uint8 bag = pos >> 8;
-    uint8 slot = pos & 255;
-
-    DEBUG_LOG("STORAGE: StoreItem bag = %u, slot = %u, item = %u, count = %u", bag, slot, pItem->GetEntry(), count);
-
-    Item* pItem2 = GetItemByPos(bag, slot);
-
-    if (!pItem2)
-    {
-        if (clone)
-        {
-            pItem = pItem->CloneItem(count, this);
-        }
-        else
-        {
-            pItem->SetCount(count);
-        }
-
-        if (!pItem)
-        {
-            return nullptr;
-        }
-
-        ItemPrototype const* itemProto = pItem->GetProto();
-        if (itemProto->Bonding == BIND_WHEN_PICKED_UP ||
-            itemProto->Bonding == BIND_QUEST_ITEM ||
-            (itemProto->Bonding == BIND_WHEN_EQUIPPED && Inventory::HoldsBag(pos)))
-        {
-            pItem->SetBinding(true);
-        }
-
-        if (bag == INVENTORY_SLOT_BAG_0)
-        {
-            m_inventory.Own(slot, pItem);
-            pItem->SetGuidValue(ITEM_FIELD_CONTAINED, GetObjectGuid());
-            pItem->SetGuidValue(ITEM_FIELD_OWNER, GetObjectGuid());
-
-            pItem->SetSlot(slot);
-            pItem->SetContainer(nullptr);
-
-            m_inventory.Arrived(pItem, update);
-
-            pItem->SetState(ITEM_CHANGED, this);
-        }
-        else if (Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, bag))
-        {
-            pBag->StoreItem(slot, pItem);
-            m_inventory.Arrived(pItem, update);
-            pItem->SetState(ITEM_CHANGED, this);
-            pBag->SetState(ITEM_CHANGED, this);
-        }
-
-        m_inventory.StartClocks(pItem);
-
-        return pItem;
-    }
-    else
-    {
-        ItemPrototype const* itemProto = pItem2->GetProto();
-        if (itemProto->Bonding == BIND_WHEN_PICKED_UP ||
-            itemProto->Bonding == BIND_QUEST_ITEM ||
-            (itemProto->Bonding == BIND_WHEN_EQUIPPED && Inventory::HoldsBag(pos)))
-        {
-            pItem2->SetBinding(true);
-        }
-
-        pItem2->SetCount(pItem2->GetCount() + count);
-        m_inventory.Changed(pItem2, update);
-
-        if (!clone)
-        {
-            // delete item (it not in any slot currently)
-            m_inventory.Gone(pItem, update);
-
-            m_inventory.StopClocks(pItem);
-
-            pItem->SetOwnerGuid(GetObjectGuid());           // prevent error at next SetState in case trade/mail/buy from vendor
-            pItem->SetState(ITEM_REMOVED, this);
-        }
-
-        // AddItemDurations(pItem2); - pItem2 already have duration listed for player
-        m_inventory.StartEnchantClocks(pItem2);
-
-        pItem2->SetState(ITEM_CHANGED, this);
-
-        return pItem2;
-    }
-}
-
-/**
- * @brief Creates and equips a new item into a destination slot.
- *
- * @param pos The packed destination position.
- * @param item The item entry to create.
- * @param update True to send world updates for the equip action.
- * @return The equipped item, or null on failure.
- */
 Item* Player::EquipNewItem(uint16 pos, uint32 item, bool update)
 {
     if (Item* pItem = Item::CreateItem(item, 1, this))
@@ -257,7 +114,7 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
 
     if (!pItem2)
     {
-        VisualizeItem(slot, pItem);
+        m_inventory.Wear(slot, pItem);
 
         if (IsAlive())
         {
@@ -321,126 +178,45 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
 
         ApplyEquipCooldown(pItem2);
 
-
         return pItem2;
     }
 
     return pItem;
 }
 
-/**
- * @brief Equips an item without full validation, typically during loading.
- *
- * @param pos The packed destination position.
- * @param pItem The item to equip.
- */
-void Player::QuickEquipItem(uint16 pos, Item* pItem)
+void Player::RemoveItem(uint8 bag, uint8 slot, bool update)
 {
-    if (pItem)
-    {
-        m_inventory.StartClocks(pItem);
-
-        uint8 slot = pos & 255;
-        VisualizeItem(slot, pItem);
-
-        m_inventory.Arrived(pItem, true);
-    }
-}
-
-/**
- * @brief Places an item into an equipment slot and updates visible state.
- *
- * @param slot The destination equipment slot.
- * @param pItem The item to visualize.
- */
-void Player::VisualizeItem(uint8 slot, Item* pItem)
-{
+    Item* pItem = m_inventory.At(bag, slot);
     if (!pItem)
     {
         return;
     }
 
-    // check also  BIND_WHEN_PICKED_UP and BIND_QUEST_ITEM for .additem or .additemset case by GM (not binded at adding to inventory)
-    ItemPrototype const* itemProto = pItem->GetProto();
-    if (itemProto->Bonding == BIND_WHEN_EQUIPPED || itemProto->Bonding == BIND_WHEN_PICKED_UP || itemProto->Bonding == BIND_QUEST_ITEM)
+    // A worn piece stops doing whatever it was doing for him before it leaves
+    // its place. A bag slot counts as worn here, which is why the bound is the
+    // end of the bag slots and not the end of the gear.
+    if (Inventory::IsHisOwn(bag) && slot < INVENTORY_SLOT_BAG_END)
     {
-        pItem->SetBinding(true);
-    }
-
-    DEBUG_LOG("STORAGE: EquipItem slot = %u, item = %u", slot, pItem->GetEntry());
-
-    m_inventory.Own(slot, pItem);
-    pItem->SetGuidValue(ITEM_FIELD_CONTAINED, GetObjectGuid());
-    pItem->SetGuidValue(ITEM_FIELD_OWNER, GetObjectGuid());
-    pItem->SetSlot(slot);
-    pItem->SetContainer(nullptr);
-
-    pItem->SetState(ITEM_CHANGED, this);
-}
-
-/**
- * @brief Temporarily removes an item from player storage without deleting it.
- *
- * @param bag The bag containing the item.
- * @param slot The slot containing the item.
- * @param update True to send inventory updates to the client.
- */
-void Player::RemoveItem(uint8 bag, uint8 slot, bool update)
-{
-    // note: removeitem does not actually change the item
-    // it only takes the item out of storage temporarily
-    // note2: if removeitem is to be used for delinking
-    // the item must be removed from the player's updatequeue
-
-    Item* pItem = GetItemByPos(bag, slot);
-    if (pItem)
-    {
-        DEBUG_LOG("STORAGE: RemoveItem bag = %u, slot = %u, item = %u", bag, slot, pItem->GetEntry());
-
-        m_inventory.StopClocks(pItem);
-
-        if (bag == INVENTORY_SLOT_BAG_0)
+        ItemPrototype const* pProto = pItem->GetProto();
+        if (pProto && pProto->ItemSet)
         {
-            if (slot < INVENTORY_SLOT_BAG_END)
-            {
-                ItemPrototype const* pProto = pItem->GetProto();
-                // item set bonuses applied only at equip and removed at unequip, and still active for broken items
-
-                if (pProto && pProto->ItemSet)
-                {
-                    RemoveItemsSetItem(this, pProto);
-                }
-
-                _ApplyItemMods(pItem, slot, false);
-
-                // remove item dependent auras and casts (only weapon and armor slots)
-                if (slot < EQUIPMENT_SLOT_END)
-                {
-                    RemoveItemDependentAurasAndCasts(pItem);
-
-                    // remove held enchantments
-                    if (slot == EQUIPMENT_SLOT_MAINHAND)
-                    {
-                        pItem->ClearEnchantment(PROP_ENCHANTMENT_SLOT_3);
-                    }
-                }
-            }
-
-            m_inventory.Own(slot, nullptr);
+            RemoveItemsSetItem(this, pProto);
         }
-        else
+
+        _ApplyItemMods(pItem, slot, false);
+
+        if (slot < EQUIPMENT_SLOT_END)
         {
-            Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, bag);
-            if (pBag)
+            RemoveItemDependentAurasAndCasts(pItem);
+
+            if (slot == EQUIPMENT_SLOT_MAINHAND)
             {
-                pBag->RemoveItem(slot);
+                pItem->ClearEnchantment(PROP_ENCHANTMENT_SLOT_3);
             }
         }
-        pItem->SetGuidValue(ITEM_FIELD_CONTAINED, ObjectGuid());
-        // pItem->SetGuidValue(ITEM_FIELD_OWNER, ObjectGuid()); not clear owner at remove (it will be set at store). This used in mail and auction code
-        pItem->SetSlot(NULL_SLOT);
-        m_inventory.Changed(pItem, update);
     }
+
+    m_inventory.Take(bag, slot, update);
 }
 
 // Common operation need to remove item from inventory without delete in trade, auction, guild bank, mail....
@@ -1407,131 +1183,6 @@ void Player::SwapItem(uint16 src, uint16 dst)
     AutoUnequipOffhandIfNeed();
 }
 
-/**
- * @brief Adds an item to the vendor buyback list.
- *
- * @param pItem The item to place into a buyback slot.
- */
-void Player::AddItemToBuyBackSlot(Item* pItem)
-{
-    if (pItem)
-    {
-        uint32 slot = m_inventory.NextBuyback();
-        // if current back slot non-empty search oldest or free
-        if (m_inventory.Own(slot))
-        {
-            uint32 oldest_time = GetUInt32Value(PLAYER_FIELD_BUYBACK_TIMESTAMP_1);
-            uint32 oldest_slot = BUYBACK_SLOT_START;
-
-            for (uint32 i = BUYBACK_SLOT_START + 1; i < BUYBACK_SLOT_END; ++i)
-            {
-                // found empty
-                if (!m_inventory.Own(i))
-                {
-                    slot = i;
-                    break;
-                }
-
-                uint32 i_time = GetUInt32Value(PLAYER_FIELD_BUYBACK_TIMESTAMP_1 + i - BUYBACK_SLOT_START);
-
-                if (oldest_time > i_time)
-                {
-                    oldest_time = i_time;
-                    oldest_slot = i;
-                }
-            }
-
-            // find oldest
-            slot = oldest_slot;
-        }
-
-        RemoveItemFromBuyBackSlot(slot, true);
-        DEBUG_LOG("STORAGE: AddItemToBuyBackSlot item = %u, slot = %u", pItem->GetEntry(), slot);
-
-        m_inventory.Own(slot, pItem);
-        time_t base = time(nullptr);
-        uint32 etime = uint32(base - m_logintime + (30 * 3600));
-        uint32 eslot = slot - BUYBACK_SLOT_START;
-
-        SetGuidValue(PLAYER_FIELD_VENDORBUYBACK_SLOT_1 + (eslot * 2), pItem->GetObjectGuid());
-        if (ItemPrototype const* pProto = pItem->GetProto())
-        {
-            SetUInt32Value(PLAYER_FIELD_BUYBACK_PRICE_1 + eslot, pProto->SellPrice * pItem->GetCount());
-        }
-        else
-        {
-            SetUInt32Value(PLAYER_FIELD_BUYBACK_PRICE_1 + eslot, 0);
-        }
-        SetUInt32Value(PLAYER_FIELD_BUYBACK_TIMESTAMP_1 + eslot, (uint32)etime);
-
-        // move to next (for non filled list is move most optimized choice)
-        if (m_inventory.NextBuyback() < BUYBACK_SLOT_END - 1)
-        {
-            m_inventory.NextBuyback(m_inventory.NextBuyback() + 1);
-        }
-    }
-}
-
-/**
- * @brief Gets an item from a vendor buyback slot.
- *
- * @param slot The buyback slot index.
- * @return The item in the slot, or null if none exists.
- */
-Item* Player::GetItemFromBuyBackSlot(uint32 slot)
-{
-    DEBUG_LOG("STORAGE: GetItemFromBuyBackSlot slot = %u", slot);
-    if (slot >= BUYBACK_SLOT_START && slot < BUYBACK_SLOT_END)
-    {
-        return m_inventory.Own(slot);
-    }
-    return nullptr;
-}
-
-/**
- * @brief Removes an item from a vendor buyback slot.
- *
- * @param slot The buyback slot index.
- * @param del True to mark the removed item for deletion.
- */
-void Player::RemoveItemFromBuyBackSlot(uint32 slot, bool del)
-{
-    DEBUG_LOG("STORAGE: RemoveItemFromBuyBackSlot slot = %u", slot);
-    if (slot >= BUYBACK_SLOT_START && slot < BUYBACK_SLOT_END)
-    {
-        Item* pItem = m_inventory.Own(slot);
-        if (pItem)
-        {
-            pItem->RemoveFromWorld();
-            if (del)
-            {
-                pItem->SetState(ITEM_REMOVED, this);
-            }
-        }
-
-        m_inventory.Own(slot, nullptr);
-
-        uint32 eslot = slot - BUYBACK_SLOT_START;
-        SetGuidValue(PLAYER_FIELD_VENDORBUYBACK_SLOT_1 + (eslot * 2), ObjectGuid());
-        SetUInt32Value(PLAYER_FIELD_BUYBACK_PRICE_1 + eslot, 0);
-        SetUInt32Value(PLAYER_FIELD_BUYBACK_TIMESTAMP_1 + eslot, 0);
-
-        // if current backslot is filled set to now free slot
-        if (m_inventory.Own(uint8(m_inventory.NextBuyback())))
-        {
-            m_inventory.NextBuyback(slot);
-        }
-    }
-}
-
-/**
- * @brief Sends an inventory error packet to the client.
- *
- * @param msg The inventory error code.
- * @param pItem The primary item involved in the error.
- * @param pItem2 The secondary item involved in the error.
- * @param itemid An optional item entry used for some error variants.
- */
 void Player::SendEquipError(InventoryResult msg, Item* pItem, Item* pItem2, uint32 itemid /*= 0*/) const
 {
     DEBUG_LOG("WORLD: Sent SMSG_INVENTORY_CHANGE_FAILURE (%u)", msg);

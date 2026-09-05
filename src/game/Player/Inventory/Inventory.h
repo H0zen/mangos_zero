@@ -244,6 +244,46 @@ class Inventory
         /// that whoever writes the item down records where it had got to.
         void SettleClocks();
 
+        /**
+         * Puts an item away, in as many places as the plan says.
+         *
+         * A plan is a list of places and how much of the stack goes in each,
+         * worked out beforehand by what will fit. Every place but the last gets
+         * a copy of the stack, and the last gets the item itself, so a stack
+         * that splits across three places ends up as three items. Where a place
+         * already holds the same thing the two stacks are added instead, and the
+         * item that arrived is destroyed.
+         *
+         * What comes back is the last item written, which is not always the item
+         * handed in.
+         */
+        Item* Store(ItemPosCountVec const& plan, Item* item, bool tell);
+
+        /// Puts an item in a worn place and makes it his. The place is not
+         /// checked against what the item is: that is settled before this.
+        void Wear(uint8 slot, Item* item);
+
+        /// The same, for a character being brought back into the world, where
+        /// nothing has to be weighed because it was already his when he left.
+        void QuickWear(uint16 place, Item* item);
+
+        /// Takes an item out of its place without destroying it. Whatever the
+        /// item was doing for him -- a set bonus, a stat, an aura -- is undone
+        /// before this, not here.
+        void Take(uint8 bag, uint8 slot, bool tell);
+
+        /**
+         * The vendor's buyback row: twelve places holding what he has sold, with
+         * the price and the hour beside each.
+         *
+         * A sale takes the next place in the row, or the emptiest one, or failing
+         * that the oldest -- so what is lost to a thirteenth sale is always what
+         * was sold longest ago.
+         */
+        void ToBuyback(Item* item);
+        Item* InBuyback(uint32 slot) const;
+        void ClearBuyback(uint32 slot, bool destroy);
+
     private:
         /// Hands every item in the wanted regions to the visitor and stops when
         /// the visitor returns false. Every search above is this walk with a
@@ -255,6 +295,15 @@ class Inventory
         /// two enchantments and its random suffix. Nineteen places have one; the
         /// rest of what he owns is his own business.
         void Shows(uint8 slot, Item const* item);
+
+        /// One place of a plan. A copy of the stack goes in unless this is the
+        /// last place, which takes the item itself.
+        Item* Put(uint16 place, Item* item, uint32 count, bool clone, bool tell);
+
+        /// An item picked up or bought is bound to him then, rather than when he
+        /// first wears it, if that is how it was made. A bag is the exception:
+        /// one that binds on being worn binds when it is hung up.
+        static bool BindsOnArrival(ItemPrototype const& proto, uint16 place);
 
         Player& m_owner;
         Item* m_place[PLAYER_SLOTS_COUNT];
