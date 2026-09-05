@@ -25,6 +25,10 @@
 
 #include "Unit.h"
 #include "Stats/PetNumbers.h"
+#include "Stats/PlayerNumbers.h"
+
+/// The talent that pays a druid per level for the shape it is in.
+uint32 const ICON_PREDATORY_STRIKES = 1563;
 
 /// The one pet whose attack power is not doubled.
 uint32 const ENTRY_IMP = 416;
@@ -169,28 +173,20 @@ void Player::UpdateResistances(uint32 school)
  */
 void Player::UpdateArmor()
 {
-    float value;
-    UnitMods unitMod = UNIT_MOD_ARMOR;
+    // What turns a stat into armour: a share of intellect, per aura that says so.
+    float fromIntellect = 0.0f;
 
-    value  = GetModifierValue(unitMod, BASE_VALUE);         // base armor (from items)
-    value *= GetModifierValue(unitMod, BASE_PCT);           // armor percent from items
-    value += GetStat(STAT_AGILITY) * 2.0f;                  // armor bonus from stats
-    value += GetModifierValue(unitMod, TOTAL_VALUE);
-
-    // add dynamic flat mods
-    const auto mResbyIntellect = GetAurasByType(SPELL_AURA_MOD_RESISTANCE_OF_STAT_PERCENT);
-    for (auto* aura : mResbyIntellect)
+    for (auto* aura : GetAurasByType(SPELL_AURA_MOD_RESISTANCE_OF_STAT_PERCENT))
     {
         Modifier* mod = aura->GetModifier();
         if (mod->m_miscvalue & SPELL_SCHOOL_MASK_NORMAL)
         {
-            value += int32(GetStat(STAT_INTELLECT) * mod->m_amount / 100.0f);
+            fromIntellect += int32(GetStat(STAT_INTELLECT) * mod->m_amount / 100.0f);
         }
     }
 
-    value *= GetModifierValue(unitMod, TOTAL_PCT);
-
-    SetArmor(int32(value));
+    SetArmor(int32(stats::PlayerArmour(ModifiersOf(UNIT_MOD_ARMOR),
+                                       GetStat(STAT_AGILITY), fromIntellect)));
 }
 
 /**
@@ -200,12 +196,7 @@ void Player::UpdateArmor()
  */
 float Player::GetHealthBonusFromStamina()
 {
-    float stamina = GetStat(STAT_STAMINA);
-
-    float baseStam = stamina < 20 ? stamina : 20;
-    float moreStam = stamina - baseStam;
-
-    return baseStam + (moreStam * 10.0f);
+    return stats::HealthFromStamina(GetStat(STAT_STAMINA));
 }
 
 /**
@@ -215,12 +206,7 @@ float Player::GetHealthBonusFromStamina()
  */
 float Player::GetManaBonusFromIntellect()
 {
-    float intellect = GetStat(STAT_INTELLECT);
-
-    float baseInt = intellect < 20 ? intellect : 20;
-    float moreInt = intellect - baseInt;
-
-    return baseInt + (moreInt * 15.0f);
+    return stats::ManaFromIntellect(GetStat(STAT_INTELLECT));
 }
 
 /**
@@ -228,14 +214,8 @@ float Player::GetManaBonusFromIntellect()
  */
 void Player::UpdateMaxHealth()
 {
-    UnitMods unitMod = UNIT_MOD_HEALTH;
-
-    float value = GetModifierValue(unitMod, BASE_VALUE) + GetCreateHealth();
-    value *= GetModifierValue(unitMod, BASE_PCT);
-    value += GetModifierValue(unitMod, TOTAL_VALUE) + GetHealthBonusFromStamina();
-    value *= GetModifierValue(unitMod, TOTAL_PCT);
-
-    SetMaxHealth((uint32)value);
+    SetMaxHealth(uint32(stats::PlayerMaxHealth(ModifiersOf(UNIT_MOD_HEALTH), GetCreateHealth(),
+                                               GetHealthBonusFromStamina())));
 }
 
 /**
@@ -245,19 +225,15 @@ void Player::UpdateMaxHealth()
  */
 void Player::UpdateMaxPower(Powers power)
 {
-    UnitMods unitMod = UnitMods(UNIT_MOD_POWER_START + power);
+    UnitMods const unitMod = UnitMods(UNIT_MOD_POWER_START + power);
+    uint32 const created = GetCreatePowers(power);
 
-    uint32 create_power = GetCreatePowers(power);
+    // A class with no mana of its own gains none from intellect either.
+    float const fromIntellect = (power == POWER_MANA && created > 0)
+                                    ? GetManaBonusFromIntellect()
+                                    : 0.0f;
 
-    // ignore classes without mana
-    float bonusPower = (power == POWER_MANA && create_power > 0) ? GetManaBonusFromIntellect() : 0;
-
-    float value = GetModifierValue(unitMod, BASE_VALUE) + create_power;
-    value *= GetModifierValue(unitMod, BASE_PCT);
-    value += GetModifierValue(unitMod, TOTAL_VALUE) +  bonusPower;
-    value *= GetModifierValue(unitMod, TOTAL_PCT);
-
-    SetMaxPower(power, uint32(value));
+    SetMaxPower(power, uint32(stats::PlayerMaxPower(ModifiersOf(unitMod), float(created), fromIntellect)));
 }
 
 /**
@@ -267,87 +243,31 @@ void Player::UpdateMaxPower(Powers power)
  */
 void Player::UpdateAttackPowerAndDamage(bool ranged)
 {
-    float val2 = 0.0f;
-    float level = float(getLevel());
-
     UnitMods unitMod = ranged ? UNIT_MOD_ATTACK_POWER_RANGED : UNIT_MOD_ATTACK_POWER;
 
-    if (ranged)
-    {
-        switch (getClass())
-        {
-            case CLASS_HUNTER: val2 = level * 2.0f + GetStat(STAT_AGILITY) * 2.0f - 10.0f;    break;
-            case CLASS_ROGUE:  val2 = level        + GetStat(STAT_AGILITY) - 10.0f;    break;
-            case CLASS_WARRIOR: val2 = level        + GetStat(STAT_AGILITY) - 10.0f;    break;
-            case CLASS_DRUID:
-                switch (GetShapeshiftForm())
-                {
-                    case FORM_CAT:
-                    case FORM_BEAR:
-                    case FORM_DIREBEAR:
-                        val2 = 0.0f; break;
-                    default:
-                        val2 = GetStat(STAT_AGILITY) - 10.0f; break;
-                }
-                break;
-            default: val2 = GetStat(STAT_AGILITY) - 10.0f; break;
-        }
-    }
-    else
-    {
-        switch (getClass())
-        {
-            case CLASS_WARRIOR:      val2 = level * 3.0f + GetStat(STAT_STRENGTH) * 2.0f                    - 20.0f; break;
-            case CLASS_PALADIN:      val2 = level * 3.0f + GetStat(STAT_STRENGTH) * 2.0f                    - 20.0f; break;
-            case CLASS_ROGUE:        val2 = level * 2.0f + GetStat(STAT_STRENGTH) + GetStat(STAT_AGILITY) - 20.0f; break;
-            case CLASS_HUNTER:       val2 = level * 2.0f + GetStat(STAT_STRENGTH) + GetStat(STAT_AGILITY) - 20.0f; break;
-            case CLASS_SHAMAN:       val2 = level * 2.0f + GetStat(STAT_STRENGTH) * 2.0f                    - 20.0f; break;
-            case CLASS_DRUID:
-            {
-                ShapeshiftForm form = GetShapeshiftForm();
-                // Check if Predatory Strikes is skilled
-                float mLevelMult = 0.0;
-                switch (form)
-                {
-                    case FORM_CAT:
-                    case FORM_BEAR:
-                    case FORM_DIREBEAR:
-                    case FORM_MOONKIN:
-                    {
-                        const auto mDummy = GetAurasByType(SPELL_AURA_DUMMY);
-                        for (auto* aura : mDummy)
-                        {
-                            // Predatory Strikes
-                            if (aura->GetSpellProto()->SpellIconID == 1563)
-                            {
-                                mLevelMult = aura->GetModifier()->m_amount / 100.0f;
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                    default: break;
-                }
+    stats::Physique who;
+    who.klass = getClass();
+    who.level = float(getLevel());
+    who.strength = GetStat(STAT_STRENGTH);
+    who.agility = GetStat(STAT_AGILITY);
+    who.form = GetShapeshiftForm();
 
-                switch (form)
-                {
-                    case FORM_CAT:
-                        val2 = getLevel() * mLevelMult + GetStat(STAT_STRENGTH) * 2.0f + GetStat(STAT_AGILITY) - 20.0f; break;
-                    case FORM_BEAR:
-                    case FORM_DIREBEAR:
-                        val2 = getLevel() * mLevelMult + GetStat(STAT_STRENGTH) * 2.0f - 20.0f; break;
-                    case FORM_MOONKIN:
-                        val2 = getLevel() * (mLevelMult + 1.5f) + GetStat(STAT_STRENGTH) * 2.0f - 20.0f; break;
-                    default:
-                        val2 = GetStat(STAT_STRENGTH) * 2.0f - 20.0f; break;
-                }
+    // Predatory Strikes, which is the only talent that pays per level for the
+    // shape its owner is in. Nobody else can have it, so nobody else is searched:
+    // this walks every dummy aura a player carries, and there can be many.
+    if (who.klass == CLASS_DRUID)
+    {
+        for (auto* aura : GetAurasByType(SPELL_AURA_DUMMY))
+        {
+            if (aura->GetSpellProto()->SpellIconID == ICON_PREDATORY_STRIKES)
+            {
+                who.predatoryStrikes = aura->GetModifier()->m_amount / 100.0f;
                 break;
             }
-            case CLASS_MAGE:    val2 =              GetStat(STAT_STRENGTH)                         - 10.0f; break;
-            case CLASS_PRIEST:  val2 =              GetStat(STAT_STRENGTH)                         - 10.0f; break;
-            case CLASS_WARLOCK: val2 =              GetStat(STAT_STRENGTH)                         - 10.0f; break;
         }
     }
+
+    float const val2 = ranged ? stats::RangedAttackPower(who) : stats::MeleeAttackPower(who);
 
     SetModifierValue(unitMod, BASE_VALUE, val2);
 

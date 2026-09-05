@@ -39,6 +39,7 @@ set(TEST_SOURCES
     unit/test_trapsight.cpp
     unit/test_creaturenumbers.cpp
     unit/test_petnumbers.cpp
+    unit/test_playernumbers.cpp
 
     combat/test_school.cpp
     combat/test_roll.cpp
