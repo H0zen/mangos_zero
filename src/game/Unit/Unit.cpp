@@ -4183,7 +4183,7 @@ bool Unit::CanDetectInvisibilityOf(Unit const* u) const
             int32 invLevel = GetMaxPositiveAuraModifierByMiscValue(SPELL_AURA_MOD_INVISIBILITY, i);
 
             // find invisibility detect level + special drunk detection case
-            int32 detectLevel = (i == 6 && IsPlayer()) ? ((Player*)this)->GetDrunkValue() : GetMaxPositiveAuraModifierByMiscValue(SPELL_AURA_MOD_INVISIBILITY_DETECTION, i);
+            int32 detectLevel = (i == 6 && IsPlayer()) ? ((Player*)this)->Drinking().Amount() : GetMaxPositiveAuraModifierByMiscValue(SPELL_AURA_MOD_INVISIBILITY_DETECTION, i);
 
             if (invLevel <= detectLevel)
             {

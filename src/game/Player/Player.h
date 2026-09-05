@@ -76,6 +76,7 @@
 #include "Inventory/Inventory.h"
 #include "Honor/HonorLedger.h"
 #include "Offers/Invitations.h"
+#include "Drink.h"
 #include "Perils/Perils.h"
 #include "Offers/PlayerOffers.h"
 #include "Teleport/TeleportOrder.h"
@@ -438,16 +439,6 @@ enum RaidGroupError
     ERR_RAID_GROUP_FULL     = 2
 };
 
-enum DrunkenState
-{
-    DRUNKEN_SOBER               = 0,
-    DRUNKEN_TIPSY               = 1,
-    DRUNKEN_DRUNK               = 2,
-    DRUNKEN_SMASHED             = 3
-};
-
-#define MAX_DRUNKEN             4
-
 enum PlayerFlags
 {
     PLAYER_FLAGS_NONE                   = 0x00000000,
@@ -596,18 +587,6 @@ enum TeleportToOptions
     TELE_TO_NOT_LEAVE_COMBAT    = 0x04, // Do not leave combat
     TELE_TO_NOT_UNSUMMON_PET    = 0x08, // Do not unsummon pet
     TELE_TO_SPELL               = 0x10  // Teleport by spell
-};
-
-/// Type of environmental damages
-enum EnvironmentalDamageType
-{
-    DAMAGE_EXHAUSTED            = 0, // Exhausted damage
-    DAMAGE_DROWNING             = 1, // Drowning damage
-    DAMAGE_FALL                 = 2, // Fall damage
-    DAMAGE_LAVA                 = 3, // Lava damage
-    DAMAGE_SLIME                = 4, // Slime damage
-    DAMAGE_FIRE                 = 5, // Fire damage
-    DAMAGE_FALL_TO_VOID         = 6  // Custom case for fall without durability loss
 };
 
 // Played time indices
@@ -976,6 +955,10 @@ class Player : public Unit
         /// What the ground and the water are doing to him.
         Perils& Dangers() { return m_perils; }
         Perils const& Dangers() const { return m_perils; }
+
+        /// How much he has had to drink.
+        Drink& Drinking() { return m_drink; }
+        Drink const& Drinking() const { return m_drink; }
         bool IsFalling() // Check if the player is falling
         {
             return Where().Z() < m_lastFallZ;
@@ -2848,13 +2831,10 @@ class Player : public Unit
         /*********************************************************/
 
         // Set the player's drunk value
-        void SetDrunkValue(uint16 newDrunkValue, uint32 itemid = 0);
 
         // Get the player's drunk value
-        uint16 GetDrunkValue() const { return m_drunk; }
 
         // Get the drunken state by value
-        static DrunkenState GetDrunkenstateByValue(uint16 value);
 
         // Get the player's death timer
         uint32 GetDeathTimer() const { return m_deathTimer; }
@@ -3204,7 +3184,6 @@ class Player : public Unit
         /***              ENVIRONMENTAL SYSTEM                  ***/
         /*********************************************************/
 
-        uint32 EnvironmentalDamage(EnvironmentalDamageType type, uint32 damage);
 
         /*********************************************************/
         /***               FLOOD FILTER SYSTEM                 ***/
@@ -3612,7 +3591,6 @@ class Player : public Unit
         /*********************************************************/
 
         // Handle sobering effect
-        void HandleSobering();
 
         // Send mirror timer to the client
 
@@ -3674,8 +3652,6 @@ class Player : public Unit
 
         TradeData* m_trade; // Trade data
 
-        uint32 m_drunkTimer;
-        uint16 m_drunk;
         uint32 m_weaponChangeTimer;
 
         uint32 m_zoneUpdateId; // Zone update ID
@@ -3796,6 +3772,8 @@ class Player : public Unit
         TeleportOrder m_teleport;
 
         Perils m_perils;
+
+        Drink m_drink;
 
         // Detect invisibility timer
         uint32 m_DetectInvTimer;

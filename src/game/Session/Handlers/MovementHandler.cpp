@@ -840,7 +840,7 @@ void movement::Relocate(Player& who, MovementInfo& movementInfo)
                 // TODO: discard movement packets after the player is rooted
                 if (plMover->IsAlive())
                 {
-                    plMover->EnvironmentalDamage(DAMAGE_FALL_TO_VOID, plMover->GetMaxHealth());
+                    plMover->Dangers().Harm(DAMAGE_FALL_TO_VOID, plMover->GetMaxHealth());
                     // pl can be alive if GM/etc
                     if (!plMover->IsAlive())
                     {

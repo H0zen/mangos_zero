@@ -3348,6 +3348,19 @@ class Unit : public Occupant
         uint32 m_detectInvisibilityMask;
         uint32 m_invisibilityMask;
 
+        /// Says whether he can make out one kind of invisibility.
+        void SeesInvisibility(uint8 kind, bool can)
+        {
+            if (can)
+            {
+                m_detectInvisibilityMask |= (1 << kind);
+            }
+            else
+            {
+                m_detectInvisibilityMask &= ~(1 << kind);
+            }
+        }
+
         ShapeshiftForm GetShapeshiftForm() const { return ShapeshiftForm(GetByteValue(UNIT_FIELD_BYTES_1, 2)); }
         void  SetShapeshiftForm(ShapeshiftForm form) { SetByteValue(UNIT_FIELD_BYTES_1, 2, form); }
 

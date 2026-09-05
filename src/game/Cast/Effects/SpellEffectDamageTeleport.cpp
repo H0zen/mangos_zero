@@ -163,7 +163,7 @@ void Spell::EffectEnvironmentalDMG(SpellEffectIndex eff_idx)
     m_caster->SendSpellNonMeleeDamageLog(m_caster, m_spellInfo->ID, damage, GetSpellSchoolMask(m_spellInfo), absorb, resist, false, 0, false);
     if (m_caster->IsPlayer())
     {
-        ((Player*)m_caster)->EnvironmentalDamage(DAMAGE_FIRE, damage);
+        ((Player*)m_caster)->Dangers().Harm(DAMAGE_FIRE, damage);
     }
 }
 

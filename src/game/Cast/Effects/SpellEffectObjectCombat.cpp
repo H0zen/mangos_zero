@@ -662,7 +662,7 @@ void Spell::EffectInebriate(SpellEffectIndex /*eff_idx*/)
     }
 
     Player* player = (Player*)unitTarget;
-    uint16 currentDrunk = player->GetDrunkValue();
+    uint16 currentDrunk = player->Drinking().Amount();
     uint16 drunkMod = damage * 256;
     if (currentDrunk + drunkMod > 0xFFFF)
     {
@@ -672,7 +672,7 @@ void Spell::EffectInebriate(SpellEffectIndex /*eff_idx*/)
     {
         currentDrunk += drunkMod;
     }
-    player->SetDrunkValue(currentDrunk, m_CastItem ? m_CastItem->GetEntry() : 0);
+    player->Drinking().Amount(currentDrunk);
 }
 
 /**

@@ -417,7 +417,7 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
  *
  * @param session The owning world session.
  */
-Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
+Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
 {
 
     m_transport = 0;
@@ -501,8 +501,6 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
 
 
 
-    m_drunkTimer = 0;
-    m_drunk = 0;
     m_restTime = 0;
     m_deathTimer = 0;
     // Initialize death expire time to 0
@@ -1256,15 +1254,7 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     }
 
     // Handle sobering if the player is drunk
-    if (m_drunk)
-    {
-        m_drunkTimer += update_diff;
-
-        if (m_drunkTimer > 10 * IN_MILLISECONDS)
-        {
-            HandleSobering();
-        }
-    }
+    m_drink.Run(update_diff);
 
     // Handle ghost auto-free from body in instances
     if (m_deathTimer > 0 && !GetMap()->Instanceable())
@@ -1310,7 +1300,7 @@ void Player::SetDeathState(DeathState s)
     if (s == JUST_DIED && cur)
     {
         // drunken state is cleared on death
-        SetDrunkValue(0);
+        Drinking().Amount(0);
         // lost combo points at any target (targeted combo points clear in Unit::SetDeathState)
         ClearComboPoints();
 
@@ -5332,7 +5322,7 @@ void Player::HandleFall(MovementInfo const& movementInfo)
                     damage = GetMaxHealth() / 2;
                 }
 
-                EnvironmentalDamage(DAMAGE_FALL, damage);
+                Dangers().Harm(DAMAGE_FALL, damage);
             }
 
             // Z given by moveinfo, LastZ, FallTime, WaterZ, MapZ, Damage, Safefall reduction

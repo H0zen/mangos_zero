@@ -142,6 +142,67 @@ int32 Perils::Longest(MirrorTimerType which) const
     return 0;
 }
 
+uint32 Perils::Harm(EnvironmentalDamageType type, uint32 damage)
+{
+    if (!m_owner.IsAlive() || m_owner.isGameMaster())
+    {
+        return 0;
+    }
+
+    // Absorb and resist some environmental damage types
+    uint32 absorb = 0;
+    uint32 resist = 0;
+    if (type == DAMAGE_LAVA)
+    {
+        if (m_owner.IsImmuneToDamage(SPELL_SCHOOL_MASK_FIRE))
+        {
+            return 0;
+        }
+
+        m_owner.CalculateDamageAbsorbAndResist(&m_owner, SPELL_SCHOOL_MASK_FIRE, DIRECT_DAMAGE, damage, &absorb, &resist);
+    }
+    else if (type == DAMAGE_SLIME)
+    {
+        if (m_owner.IsImmuneToDamage(SPELL_SCHOOL_MASK_NATURE))
+        {
+            return 0;
+        }
+
+        m_owner.CalculateDamageAbsorbAndResist(&m_owner, SPELL_SCHOOL_MASK_NATURE, DIRECT_DAMAGE, damage, &absorb, &resist);
+    }
+
+    damage -= absorb + resist;
+
+    m_owner.DealDamageMods(&m_owner, damage, &absorb);
+
+    WorldPacket data(SMSG_ENVIRONMENTALDAMAGELOG, (21));
+    data << m_owner.GetObjectGuid();
+    data << uint8(type != DAMAGE_FALL_TO_VOID ? type : DAMAGE_FALL);
+    data << uint32(damage);
+    data << uint32(absorb);
+    data << uint32(resist);
+    Broadcast(m_owner, &data, true);
+
+    DamageEffectType damageType = SELF_DAMAGE;
+    if (type == DAMAGE_FALL && m_owner.getClass() == CLASS_ROGUE)
+    {
+        damageType = SELF_DAMAGE_ROGUE_FALL;
+    }
+
+    uint32 final_damage = m_owner.DealDamage(&m_owner, damage, nullptr, damageType, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);
+
+    if (type == DAMAGE_FALL && !m_owner.IsAlive()) // DealDamage does not apply item durability loss at self-damage
+    {
+        DEBUG_LOG("We fell to death, losing 10 percent durability");
+        m_owner.DurabilityLossAll(0.10f, false);
+        // Durability lost message
+        WorldPacket data2(SMSG_DURABILITY_DAMAGE_DEATH, 0);
+        m_owner.GetSession()->SendPacket(&data2);
+    }
+
+    return final_damage;
+}
+
 void Perils::Emptied(MirrorTimerType which)
 {
     // TODO: Check this formula
@@ -149,13 +210,13 @@ void Perils::Emptied(MirrorTimerType which)
 
     if (which == BREATH_TIMER)
     {
-        m_owner.EnvironmentalDamage(DAMAGE_DROWNING, damage);
+        Harm(DAMAGE_DROWNING, damage);
         return;
     }
 
     if (m_owner.IsAlive())
     {
-        m_owner.EnvironmentalDamage(DAMAGE_EXHAUSTED, damage);
+        Harm(DAMAGE_EXHAUSTED, damage);
     }
     else if (m_owner.HasPlayerFlag(PLAYER_FLAGS_GHOST))
     {
@@ -228,7 +289,7 @@ void Perils::RunFire(uint32 elapsed)
     {
         m_left[FIRE_TIMER] += 2 * IN_MILLISECONDS;
         // TODO: Check this formula
-        m_owner.EnvironmentalDamage(DAMAGE_LAVA, urand(600, 700));
+        Harm(DAMAGE_LAVA, urand(600, 700));
     }
 }
 

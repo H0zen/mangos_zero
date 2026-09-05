@@ -2425,7 +2425,7 @@ bool ChatHandler::HandleModifyDrunkCommand(char* args)
 
     uint16 drunkMod = drunklevel * 0xFFFF / 100;
 
-    m_session->GetPlayer()->SetDrunkValue(drunkMod);
+    m_session->GetPlayer()->Drinking().Amount(drunkMod);
 
     return true;
 }
@@ -2608,7 +2608,7 @@ bool ChatHandler::HandleModifyGenderCommand(char* args)
 
     // Set gender
     player->SetGender(gender);
-    player->SetDrunkAndGender(player->GetDrunkValue(), static_cast<uint8>(gender));
+    player->SetDrunkAndGender(player->Drinking().Amount(), static_cast<uint8>(gender));
 
     // Change display ID
     player->InitDisplayIds();

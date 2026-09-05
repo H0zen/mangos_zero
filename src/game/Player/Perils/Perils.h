@@ -27,6 +27,18 @@
 
 #include "Platform/Define.h"
 
+/// What the world can cost him.
+enum EnvironmentalDamageType
+{
+    DAMAGE_EXHAUSTED            = 0,
+    DAMAGE_DROWNING             = 1,
+    DAMAGE_FALL                 = 2,
+    DAMAGE_LAVA                 = 3,
+    DAMAGE_SLIME                = 4,
+    DAMAGE_FIRE                 = 5,
+    DAMAGE_FALL_TO_VOID         = 6  // fall without durability loss
+};
+
 class Map;
 class Player;
 struct LiquidTypeEntry;
@@ -107,6 +119,9 @@ class Perils
 
         /// The liquid he was last standing in, which may carry a spell.
         LiquidTypeEntry const* Liquid() const { return m_liquid; }
+
+        /// What the world costs him: drowning, exhaustion, lava, a fall.
+        uint32 Harm(EnvironmentalDamageType type, uint32 damage);
 
         /// Everything stands down, and nothing is drawn.
         void Clear();

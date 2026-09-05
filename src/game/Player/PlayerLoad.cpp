@@ -198,9 +198,9 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     SetUInt32Value(PLAYER_BYTES, fields[9].GetUInt32());
     SetUInt32Value(PLAYER_BYTES_2, fields[10].GetUInt32());
 
-    m_drunk = fields[44].GetUInt16();
+    Drinking().Amount(fields[44].GetUInt16());
 
-    SetDrunkAndGender(m_drunk, gender);
+    SetDrunkAndGender(Drinking().Amount(), gender);
 
     SetAllPlayerFlags(fields[11].GetUInt32());
     SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, fields[43].GetInt32());
@@ -461,8 +461,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     {
         soberFactor = 1 - time_diff / (15.0f * MINUTE);
     }
-    uint16 newDrunkenValue = uint16(soberFactor * m_drunk);
-    SetDrunkValue(newDrunkenValue);
+    uint16 newDrunkenValue = uint16(soberFactor * Drinking().Amount());
+    Drinking().Amount(newDrunkenValue);
 
     m_cinematic = fields[18].GetUInt32();
     m_Played_time[PLAYED_TIME_TOTAL] = fields[19].GetUInt32();
