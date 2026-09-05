@@ -4370,7 +4370,8 @@ bool Unit::IsInvisibleForAlive() const
         return true;
     }
     // TODO: maybe spiritservices also have just an aura
-    return IsSpiritService();
+    Creature const* creature = ToCreature(this);
+    return creature && creature->IsSpiritService();
 }
 
 /**

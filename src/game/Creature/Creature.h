@@ -810,6 +810,142 @@ class Creature : public Unit
         // be set for the holder rather than TAPPED being cleared for him, which is
         // the same picture drawn the other way round and the way retail draws it.
 
+        /* ****************** What this NPC will do for you ******************* */
+        //
+        // UNIT_NPC_FLAGS is written on creatures and pets and on nothing else, so
+        // every one of these is a creature's question. A player is a unit too and
+        // has no answer to any of them.
+
+        /**
+         * @return true if this unit is a vendor, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsVendor()       const { return HasNpcFlag(UNIT_NPC_FLAG_VENDOR); }
+        /**
+         * @return true if this unit is a trainer, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsTrainer()      const { return HasNpcFlag(UNIT_NPC_FLAG_TRAINER); }
+        /**
+         * @return true if this unit is a QuestGiver, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsQuestGiver()   const { return HasNpcFlag(UNIT_NPC_FLAG_QUESTGIVER); }
+        /**
+         * @return true if this unit is a gossip, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsGossip()       const { return HasNpcFlag(UNIT_NPC_FLAG_GOSSIP); }
+        /**
+         * @return true if this unit is a taxi, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsTaxi()         const { return HasNpcFlag(UNIT_NPC_FLAG_FLIGHTMASTER); }
+        /**
+         * @return true if this unit is a banker, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsBanker()       const { return HasNpcFlag(UNIT_NPC_FLAG_BANKER); }
+        /**
+         * @return true if this unit is a innkeeper, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsInnkeeper()    const { return HasNpcFlag(UNIT_NPC_FLAG_INNKEEPER); }
+        /**
+         * @return true if this unit is a SpiritGuide, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsSpiritGuide()  const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITGUIDE); }
+        /**
+         * @return true if this unit is a TabardDesigner, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsTabardDesigner()const { return HasNpcFlag(UNIT_NPC_FLAG_TABARDDESIGNER); }
+        /**
+         * Returns if this is a service provider or not, a service provider has one of the
+         * following flags:
+         * - \ref UNIT_NPC_FLAG_VENDOR
+         * - \ref UNIT_NPC_FLAG_TRAINER
+         * - \ref UNIT_NPC_FLAG_FLIGHTMASTER
+         * - \ref UNIT_NPC_FLAG_PETITIONER
+         * - \ref UNIT_NPC_FLAG_BATTLEMASTER
+         * - \ref UNIT_NPC_FLAG_BANKER
+         * - \ref UNIT_NPC_FLAG_INNKEEPER
+         * - \ref UNIT_NPC_FLAG_SPIRITHEALER
+         * - \ref UNIT_NPC_FLAG_SPIRITGUIDE
+         * - \ref UNIT_NPC_FLAG_TABARDDESIGNER
+         * - \ref UNIT_NPC_FLAG_AUCTIONEER
+         *
+         * @return true if this unit is a ServiceProvider, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsServiceProvider() const
+        {
+            return HasNpcFlag(UNIT_NPC_FLAG_VENDOR | UNIT_NPC_FLAG_TRAINER | UNIT_NPC_FLAG_FLIGHTMASTER |
+                UNIT_NPC_FLAG_PETITIONER | UNIT_NPC_FLAG_BATTLEMASTER | UNIT_NPC_FLAG_BANKER |
+                UNIT_NPC_FLAG_INNKEEPER | UNIT_NPC_FLAG_SPIRITHEALER |
+                UNIT_NPC_FLAG_SPIRITGUIDE | UNIT_NPC_FLAG_TABARDDESIGNER | UNIT_NPC_FLAG_AUCTIONEER);
+        }
+        /**
+         * Returns if this is a spirit service or not, a spirit service has one of the
+         * following flags:
+         * - \ref UNIT_NPC_FLAG_SPIRITHEALER
+         * - \ref UNIT_NPC_FLAG_SPIRITGUIDE
+         * @return true if this unit is a spirit service, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsSpiritService() const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER | UNIT_NPC_FLAG_SPIRITGUIDE); }
+        /**
+         * @return true if this unit is a GuildMaster, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsGuildMaster()  const { return HasNpcFlag(UNIT_NPC_FLAG_PETITIONER); }
+        /**
+         * @return true if this unit is a BattleMaster, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsBattleMaster() const { return HasNpcFlag(UNIT_NPC_FLAG_BATTLEMASTER); }
+        /**
+         * @return true if this unit is a armorer, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsArmorer()      const { return HasNpcFlag(UNIT_NPC_FLAG_REPAIR); }
+        /**
+         * @return true if this unit is a SpiritHealer, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsSpiritHealer() const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER); }
+
         /// Who may take what is on this body, and whether a roll is running.
         LootClaim& Claim() { return m_claim; }
         LootClaim const& Claim() const { return m_claim; }
