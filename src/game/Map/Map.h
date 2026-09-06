@@ -77,6 +77,7 @@
 #include "MapMailbox.h"
 #include "Metrics/Distribution.h"
 #include "Metrics/TickPhases.h"
+#include "Metrics/TickRecord.h"
 #include "DynamicCollision.h"
 
 #include <bitset>
@@ -209,37 +210,14 @@ class Map : public GridRefManager<NGridType>
 
         /// Packets waiting for this map's next tick.
 
-        /**
-         * @brief Record how long this map's tick took.
-         *
-         * Called by whoever ran it, so one place times every kind of map. What
-         * is kept is the shape of the tail: a map that ticks in four
-         * milliseconds and once a minute takes three hundred averages fine and
-         * stutters visibly.
-         */
-        void RecordTick(uint32 elapsedMs, uint32 budgetMs)
-        {
-            m_tickMs.Add(elapsedMs);
-            if (elapsedMs > budgetMs)
-            {
-                ++m_tickOverruns;
-            }
-        }
-
-        uint32 TickMs(float percentile) const { return m_tickMs.Percentile(percentile); }
-        uint32 TickMsMax() const { return m_tickMs.Max(); }
-        uint32 TickOverruns() const { return m_tickOverruns; }
-
-        /// Where a tick's time went. Recorded by Update as it crosses each
-        /// boundary, so one slow phase can be named instead of guessed at.
-        void RecordPhase(metrics::TickPhase phase, uint32 ms) { m_phases.Add(phase, ms); }
-        const metrics::TickBreakdown& Phases() const { return m_phases; }
+        /// How long this map's ticks take, and where the time went.
+        metrics::TickRecord& Ticks() { return m_ticks; }
+        metrics::TickRecord const& Ticks() const { return m_ticks; }
 
         /// How many objects keep themselves awake here. A continent with nobody
         /// on it should have very few, and the number says whether the grid
         /// phase has a reason to be busy.
         size_t ActiveObjectCount() const { return m_activeNonPlayers.size(); }
-        size_t TickSamples() const { return m_tickMs.Count(); }
 
         /// Hand a packet to the sessions the reach admits around its subject.
         void DeliverPacket(WorldPacket* msg, PacketReach const& reach);
@@ -576,9 +554,7 @@ class Map : public GridRefManager<NGridType>
         UpdateBacklog m_backlog;
 
         /// The last few hundred ticks of this map, and how many ran long.
-        metrics::Distribution<256> m_tickMs;
-        uint32 m_tickOverruns = 0;
-        metrics::TickBreakdown m_phases;
+        metrics::TickRecord m_ticks;
 
         struct PendingCellUnload
         {

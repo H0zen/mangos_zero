@@ -940,7 +940,7 @@ void Map::VisitNearbyCellsOf(Occupant* obj,
  */
 void Map::Update(const uint32& t_diff)
 {
-    metrics::PhaseClock<Map> phases(*this, getMSTime());
+    metrics::PhaseClock<metrics::TickRecord> phases(m_ticks, getMSTime());
 
     /// Run the packets the serial phase routed here.
     ///

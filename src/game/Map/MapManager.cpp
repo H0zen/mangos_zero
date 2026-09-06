@@ -321,13 +321,13 @@ std::string MapManager::ReportTickTimes() const
     for (const auto& entry : i_maps)
     {
         const Map* map = entry.second;
-        if (!map || map->TickSamples() == 0)
+        if (!map || map->Ticks().Samples() == 0)
         {
             continue;
         }
 
-        const uint32 p99 = map->TickMs(0.99f);
-        if (p99 < INTERESTING_MS && map->TickOverruns() == 0)
+        const uint32 p99 = map->Ticks().Ms(0.99f);
+        if (p99 < INTERESTING_MS && map->Ticks().Overruns() == 0)
         {
             continue;
         }
@@ -335,12 +335,12 @@ std::string MapManager::ReportTickTimes() const
         // Naming the phase is the whole point: a tick time says a map is slow,
         // and only the breakdown says which part of it is awake.
         uint32 worstMs = 0;
-        const metrics::TickPhase worst = map->Phases().Worst(worstMs);
+        const metrics::TickPhase worst = map->Ticks().Phases().Worst(worstMs);
 
         std::snprintf(buf, sizeof(buf),
                       "  map %u tick p50/p99/max %u/%u/%u ms over %u [%s %u ms] active %u",
-                      map->GetId(), map->TickMs(0.5f), p99, map->TickMsMax(),
-                      map->TickOverruns(), metrics::PhaseName(worst), worstMs,
+                      map->GetId(), map->Ticks().Ms(0.5f), p99, map->Ticks().MsMax(),
+                      map->Ticks().Overruns(), metrics::PhaseName(worst), worstMs,
                       uint32(map->ActiveObjectCount()));
         out += buf;
     }

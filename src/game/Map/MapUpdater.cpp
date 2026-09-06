@@ -169,7 +169,7 @@ void MapUpdater::workerLoop()
 
         const uint32 startMs = getMSTime();
         task.first->Update(task.second);
-        task.first->RecordTick(getMSTimeDiff(startMs, getMSTime()),
+        task.first->Ticks().Record(getMSTimeDiff(startMs, getMSTime()),
                                MAP_TICK_BUDGET_MS);
 
         {
