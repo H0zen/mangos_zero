@@ -540,9 +540,47 @@ class World
             return m_stopEvent;
         }
 
+        /**
+         * @brief One tick, and the four steps it is made of.
+         *
+         * The shape is `ARCH.md` §10: a serial phase, then one thread per map, then
+         * what can only be done once no map is running. Written as named calls rather
+         * than as one body, so that a system added later has somewhere it belongs and
+         * the question "where does this go" has an answer that can be checked.
+         */
         void Update(uint32 diff);
 
         void UpdateSessions(uint32 diff);
+
+        /// The tick's own clocks, wound before anything reads them.
+        void AdvanceClocks(uint32 diff);
+
+        /**
+         * @brief PHASE A -- serial, one thread.
+         *
+         * The systems that belong to no map: auctions, mail, the battleground and
+         * meeting-stone queues. And the session drain, which is what feeds the maps
+         * their work for this tick.
+         *
+         * Nothing here may touch a map's contents. A system that needs to is in the
+         * wrong phase.
+         */
+        void RunOffMapSystems(uint32 diff);
+
+        /**
+         * @brief PHASE B -- one thread per map, and the barrier at the end of it.
+         *
+         * Everything that lives on a map moves here and nowhere else.
+         */
+        void RunMaps(uint32 diff);
+
+        /**
+         * @brief After the barrier, where no map is running.
+         *
+         * Deferred removals, persistence, and the housekeeping that must see a tick
+         * already finished rather than one in progress.
+         */
+        void SettleTick(uint32 diff);
 
         /// Get a server configuration element (see #eConfigFloatValues)
         void setConfig(eConfigFloatValues index, float value) { m_configFloatValues[index] = value; }

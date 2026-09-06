@@ -1015,6 +1015,14 @@ void World::DetectDBCLang()
 /// Update the World !
 void World::Update(uint32 diff)
 {
+    AdvanceClocks(diff);
+    RunOffMapSystems(diff);
+    RunMaps(diff);
+    SettleTick(diff);
+}
+
+void World::AdvanceClocks(uint32 diff)
+{
     ///- Update the different timers
     for (int i = 0; i < WUPDATE_COUNT; ++i)
     {
@@ -1054,7 +1062,7 @@ void World::Update(uint32 diff)
     ///- Flush buffered log files about once per second. The file sinks are
     ///  fully buffered (setvbuf), so this bounds how long a buffered line waits
     ///  to reach disk; error paths still flush immediately at emit time. Safe as
-    ///  a function-local static: World::Update runs only on the world thread.
+    ///  a function-local static: the tick runs only on the world thread.
     static uint32 logFlushTimer = 0;
     logFlushTimer += diff;
     if (logFlushTimer >= 1000)
@@ -1062,7 +1070,10 @@ void World::Update(uint32 diff)
         logFlushTimer = 0;
         sLog.Flush();
     }
+}
 
+void World::RunOffMapSystems(uint32 diff)
+{
     ///-Update mass mailer tasks if any
     sMassMailMgr.Update();
 
@@ -1126,14 +1137,27 @@ void World::Update(uint32 diff)
         LoginDatabase.PExecute("UPDATE `uptime` SET `uptime` = %u, `maxplayers` = %u WHERE `realmid` = %u AND `starttime` = " UI64FMTD, tmpDiff, maxClientsNum, realmID, uint64(m_startTime));
     }
 
+    // Queue work, and nothing on any map: the battleground brackets and the meeting
+    // stones only match people to each other. They run after the session drain that
+    // filled them and before the maps that will carry the result.
+    sBattleGroundMgr.Update(diff);
+    sLFGMgr.Update(diff);
+}
+
+void World::RunMaps(uint32 diff)
+{
     /// <li> Handle all other objects
     ///- Update objects (maps, transport, creatures,...)
     sMapMgr.Update(diff);
-    sBattleGroundMgr.Update(diff);
-    sLFGMgr.Update(diff);
+
+    // AFTER the maps, deliberately. This drives the outdoor PvP scripts, and those
+    // reach into capture points that live on a map -- so it is not off-map work and
+    // cannot move into phase A without changing which tick's state it reads.
     sOutdoorPvPMgr.Update(diff);
+}
 
-
+void World::SettleTick(uint32 diff)
+{
     ///- Delete all characters which have been deleted X days before
     if (m_timers[WUPDATE_DELETECHARS].Passed())
     {
