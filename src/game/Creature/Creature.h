@@ -56,6 +56,7 @@
 #include "LootClaim.h"
 #include "VendorStock.h"
 #include "Unit.h"
+#include "Tenure.h"
 #include "CreatureLinks.h"
 #include "Stats/CreatureSheet.h"
 #include "SharedDefines.h"
@@ -575,6 +576,10 @@ class Creature : public Unit
         CreatureLinks& Links() { return m_links; }
         CreatureLinks const& Links() const { return m_links; }
 
+        /// The term it stays on, for one that was called up rather than spawned.
+        Tenure& Term() { return m_tenure; }
+        Tenure const& Term() const { return m_tenure; }
+
         static float _GetHealthMod(int32 Rank);             ///< Get custom factor to scale health (default 1, CONFIG_FLOAT_RATE_CREATURE_*_HP)
         static float _GetDamageMod(int32 Rank);             ///< Get custom factor to scale damage (default 1, CONFIG_FLOAT_RATE_*_DAMAGE)
         static float _GetSpellDamageMod(int32 Rank);        ///< Get custom factor to scale spell damage (default 1, CONFIG_FLOAT_RATE_*_SPELLDAMAGE)
@@ -778,6 +783,7 @@ class Creature : public Unit
         CreatureSheet m_sheet;
         CreatureLinks m_links;
         Pace m_pace;
+        Tenure m_tenure;
         GridReference<Creature> m_gridRef;
 };
 

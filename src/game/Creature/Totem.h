@@ -44,11 +44,11 @@ class Totem : public Creature
         void Summon(Unit* owner);
         void UnSummon();
         uint32 GetSpell() const { return Knowing().Slot(0); }
-        uint32 GetTotemDuration() const { return m_duration; }
+        uint32 GetTotemDuration() const { return Term().Left(); }
         Unit* GetOwner();
         TotemType GetTotemType() const { return m_type; }
         void SetTypeBySummonSpell(SpellEntry const* spellProto);
-        void SetDuration(uint32 dur) { m_duration = dur; }
+        void SetDuration(uint32 dur) { Term().Grant(TEMPSPAWN_TIMED_DESPAWN, dur); }
         void SetOwner(Unit* owner);
 
         /// A totem fights with no numbers of its own.
@@ -59,7 +59,6 @@ class Totem : public Creature
 
     protected:
         TotemType m_type;
-        uint32 m_duration;
 
     private:
         BlankSheet m_sheet;

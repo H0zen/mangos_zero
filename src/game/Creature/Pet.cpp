@@ -67,7 +67,7 @@ uint32 const LevelStartLoyalty[6] =
  */
 Pet::Pet(PetType type) : Creature(CREATURE_SUBTYPE_PET),
     m_TrainingPoints(0), m_resetTalentsCost(0), m_resetTalentsTime(0),
-    m_removed(false), m_happinessTimer(7500), m_loyaltyTimer(12000), m_petType(type), m_duration(0),
+    m_removed(false), m_happinessTimer(7500), m_loyaltyTimer(12000), m_petType(type),
     m_loyaltyPoints(0), m_bonusdamage(0), m_auraUpdateMask(0), m_loading(false),
     m_petModeFlags(PET_MODE_DEFAULT), m_sheet(*this), m_pace(*this)
 {
@@ -215,17 +215,10 @@ void Pet::Update(uint32 update_diff, uint32 diff)
                 }
             }
 
-            if (m_duration > 0)
+            if (Term().Bounded() && Term().RunsOut(update_diff, tenure::BodyOf(*this)))
             {
-                if (m_duration > (int32)update_diff)
-                {
-                    m_duration -= (int32)update_diff;
-                }
-                else
-                {
-                    Unsummon(getPetType() != SUMMON_PET ? PET_SAVE_AS_DELETED : PET_SAVE_NOT_IN_SLOT, owner);
-                    return;
-                }
+                Unsummon(getPetType() != SUMMON_PET ? PET_SAVE_AS_DELETED : PET_SAVE_NOT_IN_SLOT, owner);
+                return;
             }
 
             break;

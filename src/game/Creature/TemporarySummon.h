@@ -39,13 +39,8 @@ class TemporarySummon : public Creature
         void  UnSummon();
         void SaveToDB() override;
         void RemoveFromWorld() override;
-        ObjectGuid const& GetSummonerGuid() const { return m_summoner ; }
-        Unit* GetSummoner() const { return ObjectLookup::GetUnit(*this, m_summoner); }
-    private:
-        TempSpawnType m_type;
-        uint32 m_timer;
-        uint32 m_lifetime;
-        ObjectGuid m_summoner;
+        ObjectGuid const& GetSummonerGuid() const { return Term().Summoner(); }
+        Unit* GetSummoner() const { return ObjectLookup::GetUnit(*this, Term().Summoner()); }
 };
 
 class TemporarySummonWaypoint : public TemporarySummon

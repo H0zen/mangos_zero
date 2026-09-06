@@ -41,7 +41,6 @@
  */
 Totem::Totem() : Creature(CREATURE_SUBTYPE_TOTEM), m_sheet(*this)
 {
-    m_duration = 0;
     m_type = TOTEM_PASSIVE;
 }
 
@@ -112,14 +111,10 @@ void Totem::Update(uint32 update_diff, uint32 time)
         return;
     }
 
-    if (m_duration <= update_diff)
+    if (Term().RunsOut(update_diff, tenure::BodyOf(*this)))
     {
         UnSummon();                                         // remove self
         return;
-    }
-    else
-    {
-        m_duration -= update_diff;
     }
 
     Creature::Update(update_diff, time);
@@ -226,6 +221,7 @@ void Totem::SetOwner(Unit* owner)
 {
     SetCreatorGuid(owner->GetObjectGuid());
     SetOwnerGuid(owner->GetObjectGuid());
+    Term().SummonedBy(owner->GetObjectGuid());
     setFaction(owner->getFaction());
     SetLevel(owner->getLevel());
 }

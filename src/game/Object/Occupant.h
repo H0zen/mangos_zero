@@ -26,6 +26,7 @@
 #pragma once
 
 #include "Object.h"
+#include "Tenure.h"
 
 #define CONTACT_DISTANCE            0.5f
 #define INTERACTION_DISTANCE        5.0f
@@ -44,25 +45,6 @@
 // job is to reject the absolute continent coordinates a leaving zeppelin sometimes reports.
 #define MAX_DECK_EXTENT             250.0f
 #define DECK_EDGE_MARGIN            10.0f
-
-/**
- * @brief Temporary spawn type enumeration
- *
- * Defines when and how temporary spawns should despawn.
- */
-enum TempSpawnType
-{
-    TEMPSPAWN_MANUAL_DESPAWN = 0,             ///< Despawns when UnSummon() is called
-    TEMPSPAWN_DEAD_DESPAWN = 1,               ///< Despawns when the creature disappears
-    TEMPSPAWN_CORPSE_DESPAWN = 2,             ///< Despawns instantly after death
-    TEMPSPAWN_CORPSE_TIMED_DESPAWN = 3,       ///< Despawns after a specified time after death (or when the creature disappears)
-    TEMPSPAWN_TIMED_DESPAWN = 4,              ///< Despawns after a specified time
-    TEMPSPAWN_TIMED_OOC_DESPAWN = 5,          ///< Despawns after a specified time after the creature is out of combat
-    TEMPSPAWN_TIMED_OR_DEAD_DESPAWN = 6,      ///< Despawns after a specified time OR when the creature disappears
-    TEMPSPAWN_TIMED_OR_CORPSE_DESPAWN = 7,    ///< Despawns after a specified time OR when the creature dies
-    TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN = 8,  ///< Despawns after a specified time (OOC) OR when the creature disappears
-    TEMPSPAWN_TIMED_OOC_OR_CORPSE_DESPAWN = 9 ///< Despawns after a specified time (OOC) OR when the creature dies
-};
 
 /**
  * @brief World update counter

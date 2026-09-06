@@ -34,195 +34,34 @@
  * @param summoner The GUID of the summoning object.
  */
 TemporarySummon::TemporarySummon(ObjectGuid summoner)
-    : Creature(CREATURE_SUBTYPE_TEMPORARY_SUMMON), m_type(TEMPSPAWN_TIMED_OOC_OR_CORPSE_DESPAWN), m_timer(0), m_lifetime(0), m_summoner(summoner)
+    : Creature(CREATURE_SUBTYPE_TEMPORARY_SUMMON)
 {
+    Term().SummonedBy(summoner);
+    Term().Grant(TEMPSPAWN_TIMED_OOC_OR_CORPSE_DESPAWN, 0);
 }
 
 /**
- * @brief Updates the temporary summon lifetime state.
- *
- * Handles despawn policies based on timers, combat state, death state, and charm distance.
+ * @brief Reads the term against the clock, and the charm against sight.
  *
  * @param update_diff The elapsed time since the last update in milliseconds.
  * @param diff The world update time forwarded to the base creature update.
  */
 void TemporarySummon::Update(uint32 update_diff,  uint32 diff)
 {
-    switch (m_type)
+    if (Term().RunsOut(update_diff, tenure::BodyOf(*this)))
     {
-        case TEMPSPAWN_MANUAL_DESPAWN:
-            break;
-        case TEMPSPAWN_TIMED_DESPAWN:
-        {
-            if (m_timer <= update_diff)
-            {
-                UnSummon();
-                return;
-            }
-
-            m_timer -= update_diff;
-            break;
-        }
-        case TEMPSPAWN_TIMED_OOC_DESPAWN:
-        {
-            if (!IsInCombat())
-            {
-                if (m_timer <= update_diff)
-                {
-                    UnSummon();
-                    return;
-                }
-
-                m_timer -= update_diff;
-            }
-            else if (m_timer != m_lifetime)
-            {
-                m_timer = m_lifetime;
-            }
-
-            break;
-        }
-
-        case TEMPSPAWN_CORPSE_TIMED_DESPAWN:
-        {
-            if (IsCorpse())
-            {
-                if (m_timer <= update_diff)
-                {
-                    UnSummon();
-                    return;
-                }
-
-                m_timer -= update_diff;
-            }
-            if (IsDespawned())
-            {
-                UnSummon();
-                return;
-            }
-            break;
-        }
-        case TEMPSPAWN_CORPSE_DESPAWN:
-        {
-            // if m_deathState is DEAD, CORPSE was skipped
-            if (IsDead())
-            {
-                UnSummon();
-                return;
-            }
-
-            break;
-        }
-        case TEMPSPAWN_DEAD_DESPAWN:
-        {
-            if (IsDespawned())
-            {
-                UnSummon();
-                return;
-            }
-            break;
-        }
-        case TEMPSPAWN_TIMED_OOC_OR_CORPSE_DESPAWN:
-        {
-            // if m_deathState is DEAD, CORPSE was skipped
-            if (IsDead())
-            {
-                UnSummon();
-                return;
-            }
-
-            if (!IsInCombat())
-            {
-                if (m_timer <= update_diff)
-                {
-                    UnSummon();
-                    return;
-                }
-                else
-                {
-                    m_timer -= update_diff;
-                }
-            }
-            else if (m_timer != m_lifetime)
-            {
-                m_timer = m_lifetime;
-            }
-            break;
-        }
-        case TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN:
-        {
-            // if m_deathState is DEAD, CORPSE was skipped
-            if (IsDespawned())
-            {
-                UnSummon();
-                return;
-            }
-
-            if (!IsInCombat() && IsAlive())
-            {
-                if (m_timer <= update_diff)
-                {
-                    UnSummon();
-                    return;
-                }
-                else
-                {
-                    m_timer -= update_diff;
-                }
-            }
-            else if (m_timer != m_lifetime)
-            {
-                m_timer = m_lifetime;
-            }
-            break;
-        }
-        case TEMPSPAWN_TIMED_OR_CORPSE_DESPAWN:
-        {
-            // if m_deathState is DEAD, CORPSE was skipped
-            if (IsDead())
-            {
-                UnSummon();
-                return;
-            }
-            if (m_timer <= update_diff)
-            {
-                UnSummon();
-                return;
-            }
-            m_timer -= update_diff;
-            break;
-        }
-        case TEMPSPAWN_TIMED_OR_DEAD_DESPAWN:
-        {
-            // if m_deathState is DEAD, CORPSE was skipped
-            if (IsDespawned())
-            {
-                UnSummon();
-                return;
-            }
-            if (m_timer <= update_diff)
-            {
-                UnSummon();
-                return;
-            }
-            m_timer -= update_diff;
-            break;
-        }
+        UnSummon();
+        return;
     }
 
-    switch (m_deathState)
+    // One held on a charm goes when whoever holds it is out of sight.
+    if (IsAlive() && GetCharmerGuid())
     {
-        case ALIVE:
+        Unit* charmer = GetCharmer();
+        if (!charmer || !InReach(*this, *charmer, GetMap()->GetVisibilityDistance()))
         {
-            if (GetCharmerGuid())
-            {
-                Unit* charmer = GetCharmer();
-                if (!charmer || !InReach(*this, *charmer, GetMap()->GetVisibilityDistance()))
-                {
-                    UnSummon();
-                    return;
-                }
-            }
+            UnSummon();
+            return;
         }
     }
 
@@ -237,9 +76,7 @@ void TemporarySummon::Update(uint32 update_diff,  uint32 diff)
  */
 void TemporarySummon::Summon(TempSpawnType type, uint32 lifetime)
 {
-    m_type = type;
-    m_timer = lifetime;
-    m_lifetime = lifetime;
+    Term().Grant(type, lifetime);
 
     GetMap()->Add((Creature*)this);
     AIM_Initialize();

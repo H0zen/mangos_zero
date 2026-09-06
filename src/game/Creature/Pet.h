@@ -225,7 +225,7 @@ class Pet : public Creature
         PetType getPetType() const { return m_petType; }
         void setPetType(PetType type) { m_petType = type; }
         bool isControlled() const { return getPetType() == SUMMON_PET || getPetType() == HUNTER_PET; }
-        bool isTemporarySummoned() const { return m_duration > 0; }
+        bool isTemporarySummoned() const { return Term().Bounded(); }
         bool IsPermanentPetFor(Player* owner);              // pet have tab in character windows and set UNIT_FIELD_PETNUMBER
 
         bool Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo const* cinfo, uint32 pet_number);
@@ -288,7 +288,7 @@ class Pet : public Creature
         bool InitStatsForLevel(uint32 level, Unit* owner = nullptr);
         bool HaveInDiet(ItemPrototype const* item) const;
         uint32 GetCurrentFoodBenefitLevel(uint32 itemlevel);
-        void SetDuration(int32 dur) { m_duration = dur; }
+        void SetDuration(int32 dur) { Term().Grant(TEMPSPAWN_TIMED_DESPAWN, dur > 0 ? uint32(dur) : 0); }
 
         int32 GetBonusDamage()
         {
@@ -362,7 +362,6 @@ class Pet : public Creature
         uint32  m_happinessTimer;
         uint32  m_loyaltyTimer;
         PetType m_petType;
-        int32   m_duration;                                 // time until unsummon (used mostly for summoned guardians and not used for controlled pets)
         int32   m_loyaltyPoints;
         int32   m_bonusdamage;
         uint64  m_auraUpdateMask;
