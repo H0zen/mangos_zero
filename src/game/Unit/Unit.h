@@ -73,6 +73,7 @@
 #include "Unit/Auras/Diminishing.h"
 #include "UpdateFields.h"
 #include "SharedDefines.h"
+#include "Stats/StatSheet.h"
 #include "ThreatManager.h"
 #include "HostileRefManager.h"
 #include "FollowerReference.h"
@@ -3411,14 +3412,10 @@ class Unit : public Occupant
         Powers GetPowerTypeByAuraGroup(UnitMods unitMod) const;
         bool CanModifyStats() const { return m_canModifyStats; }
         void SetCanModifyStats(bool modifyStats) { m_canModifyStats = modifyStats; }
-        virtual bool UpdateStats(Stats stat) = 0;
-        virtual bool UpdateAllStats() = 0;
-        virtual void UpdateResistances(uint32 school) = 0;
-        virtual void UpdateArmor() = 0;
-        virtual void UpdateMaxHealth() = 0;
-        virtual void UpdateMaxPower(Powers power) = 0;
-        virtual void UpdateAttackPowerAndDamage(bool ranged = false) = 0;
-        virtual void UpdateDamagePhysical(WeaponAttackType attType) = 0;
+
+        /// The numbers it fights with, and how they are worked out.
+        virtual StatSheet& Sheet() = 0;
+
         float GetTotalAttackPowerValue(WeaponAttackType attType) const;
         float GetWeaponDamageRange(WeaponAttackType attType , WeaponDamageRange type) const;
         void SetBaseWeaponDamage(WeaponAttackType attType , WeaponDamageRange damageRange, float value) { m_weaponDamage[attType][damageRange] = value; }

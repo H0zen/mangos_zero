@@ -360,7 +360,7 @@ uint32 Unit::CalculateDamage(WeaponAttackType attType, bool normalized)
 
     if (normalized && IsPlayer())
     {
-        ((Player*)this)->CalculateMinMaxDamage(attType, normalized, min_damage, max_damage);
+        ((Player*)this)->Sheet().SwingRange(attType, normalized, min_damage, max_damage);
     }
     else
     {

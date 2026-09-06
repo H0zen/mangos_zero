@@ -539,7 +539,7 @@ void Aura::HandleAuraModDisarm(bool apply, bool Real)
         ((Player*)target)->SetRegularAttackTime();
     }
 
-    target->UpdateDamagePhysical(BASE_ATTACK);
+    target->Sheet().Swing(BASE_ATTACK);
 }
 
 /**

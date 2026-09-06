@@ -244,7 +244,7 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
     m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false),
     m_AI_locked(false), m_IsDeadByDefault(false), m_temporaryFactionFlags(TEMPFACTION_NONE),
     m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0),
-    m_creatureInfo(nullptr), m_PlayerDamageReq(0)
+    m_creatureInfo(nullptr), m_PlayerDamageReq(0), m_sheet(*this)
 {
     /* Loot data */
     hasBeenLootedOnce = false;
@@ -667,7 +667,7 @@ bool Creature::UpdateEntry(uint32 Entry, Team team, const CreatureData* data /*=
     SetModifierValue(UNIT_MOD_RESISTANCE_ARCANE, BASE_VALUE, float(GetCreatureInfo()->ResistanceArcane));
 
     SetCanModifyStats(true);
-    UpdateAllStats();
+    Sheet().Everything();
 
     // checked and error show at loading templates
     if (FactionTemplateEntry const* factionTemplate = sFactionTemplateStore.LookupEntry(GetCreatureInfo()->FactionAlliance))
@@ -808,7 +808,7 @@ void Creature::Update(uint32 update_diff, uint32 diff)
                 CreatureInfo const* cinfo = GetCreatureInfo();
 
                 SelectLevel();
-                UpdateAllStats();  // to be sure stats is correct regarding level of the creature
+                Sheet().Everything();  // to be sure stats is correct regarding level of the creature
                 SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
                 if (m_IsDeadByDefault)
                 {

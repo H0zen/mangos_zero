@@ -55,6 +55,7 @@
 #include <map>
 #include "LootClaim.h"
 #include "Unit.h"
+#include "Stats/CreatureSheet.h"
 #include "SharedDefines.h"
 #include "LootMgr.h"
 #include "DBCEnums.h"
@@ -665,14 +666,7 @@ class Creature : public Unit
         bool UpdateEntry(uint32 entry, Team team = ALLIANCE, const CreatureData* data = nullptr, GameEventCreatureData const* eventData = nullptr, bool preserveHPAndPower = true);
 
         void ApplyGameEventSpells(GameEventCreatureData const* eventData, bool activated);
-        bool UpdateStats(Stats stat) override;
-        bool UpdateAllStats() override;
-        void UpdateResistances(uint32 school) override;
-        void UpdateArmor() override;
-        void UpdateMaxHealth() override;
-        void UpdateMaxPower(Powers power) override;
-        void UpdateAttackPowerAndDamage(bool ranged = false) override;
-        void UpdateDamagePhysical(WeaponAttackType attType) override;
+        StatSheet& Sheet() override { return m_sheet; }
         uint32 GetCurrentEquipmentId() const { return m_equipmentId; }
 
         static float _GetHealthMod(int32 Rank);             ///< Get custom factor to scale health (default 1, CONFIG_FLOAT_RATE_CREATURE_*_HP)
@@ -1109,6 +1103,7 @@ class Creature : public Unit
         bool DisableReputationGain;
 
     private:
+        CreatureSheet m_sheet;
         GridReference<Creature> m_gridRef;
         CreatureInfo const* m_creatureInfo;                 // in difficulty mode > 0 can different from ObjMgr::GetCreatureTemplate(GetEntry())
 };

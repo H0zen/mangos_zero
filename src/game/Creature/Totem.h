@@ -51,18 +51,15 @@ class Totem : public Creature
         void SetDuration(uint32 dur) { m_duration = dur; }
         void SetOwner(Unit* owner);
 
-        bool UpdateStats(Stats /*stat*/) override { return true; }
-        bool UpdateAllStats() override { return true; }
-        void UpdateResistances(uint32 /*school*/) override {}
-        void UpdateArmor() override {}
-        void UpdateMaxHealth() override {}
-        void UpdateMaxPower(Powers /*power*/) override {}
-        void UpdateAttackPowerAndDamage(bool /*ranged*/) override {}
-        void UpdateDamagePhysical(WeaponAttackType /*attType*/) override {}
+        /// A totem fights with no numbers of its own.
+        StatSheet& Sheet() override { return m_sheet; }
 
         bool IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex index, bool castOnSelf) const override;
 
     protected:
         TotemType m_type;
         uint32 m_duration;
+
+    private:
+        BlankSheet m_sheet;
 };

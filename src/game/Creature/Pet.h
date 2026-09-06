@@ -61,6 +61,7 @@
 #include <map>
 #include "ObjectGuid.h"
 #include "Creature.h"
+#include "Stats/PetSheet.h"
 #include "Unit.h"
 
 class Transport;
@@ -295,14 +296,7 @@ class Pet : public Creature
         }
         void SetBonusDamage(int32 damage) { m_bonusdamage = damage; }
 
-        bool UpdateStats(Stats stat) override;
-        bool UpdateAllStats() override;
-        void UpdateResistances(uint32 school) override;
-        void UpdateArmor() override;
-        void UpdateMaxHealth() override;
-        void UpdateMaxPower(Powers power) override;
-        void UpdateAttackPowerAndDamage(bool ranged = false) override;
-        void UpdateDamagePhysical(WeaponAttackType attType) override;
+        StatSheet& Sheet() override { return m_sheet; }
         void UpdateSpeed(UnitMoveType mtype, bool forced, float ratio = 1.0f) override;
 
         bool   CanTakeMoreActiveSpells(uint32 SpellIconID);
@@ -373,7 +367,7 @@ class Pet : public Creature
 
     private:
 
-
+        PetSheet m_sheet;
         PetModeFlags m_petModeFlags;
 
         void SaveToDB(uint32) override                      // overwrited of Creature::SaveToDB     - don't must be called

@@ -15,28 +15,20 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#include "Weaponry.h"
+#include "StatSheet.h"
 
-#include "Player.h"
+#include "CreatureNumbers.h"
+#include "Unit.h"
 
-void Weaponry::CanParry(bool can)
+void StatSheet::Resistance(uint32 school)
 {
-    if (m_canParry == can)
+    // The normal school is armour, and armour is kept in its own field.
+    if (school == SPELL_SCHOOL_NORMAL)
     {
+        Armour();
         return;
     }
 
-    m_canParry = can;
-    m_owner.Sheet().Parry();
-}
-
-void Weaponry::CanBlock(bool can)
-{
-    if (m_canBlock == can)
-    {
-        return;
-    }
-
-    m_canBlock = can;
-    m_owner.Sheet().Block();
+    UnitMods const unitMod = UnitMods(UNIT_MOD_RESISTANCE_START + school);
+    m_unit.SetResistance(SpellSchools(school), int32(stats::Simple(m_unit.ModifiersOf(unitMod))));
 }

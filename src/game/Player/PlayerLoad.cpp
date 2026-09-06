@@ -633,7 +633,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     // apply all stat bonuses from items and auras
     SetCanModifyStats(true);
-    UpdateAllStats();
+    Sheet().Everything();
 
     // restore remembered power/health values (but not more max values)
     uint32 savedhealth = fields[45].GetUInt32();

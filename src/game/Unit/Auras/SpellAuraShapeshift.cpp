@@ -665,7 +665,7 @@ void Aura::HandleAuraModSkill(bool apply, bool /*Real*/)
     ((Player*)GetTarget())->ModifySkillBonus(prot, (apply ? points : -points), m_modifier.m_auraname == SPELL_AURA_MOD_SKILL_TALENT);
     if (prot == SKILL_DEFENSE)
     {
-        ((Player*)GetTarget())->UpdateDefenseBonusesMod();
+        ((Player*)GetTarget())->Sheet().Defences();
     }
 }
 

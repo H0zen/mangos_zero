@@ -10,6 +10,7 @@ game_group(SRC_VISIBILITY       Visibility)
 
 game_group(SRC_UNIT             Unit)
 game_group(SRC_AURAS            Unit/Auras)
+game_group(SRC_UNIT_STATS       Unit/Stats)
 game_group(SRC_PLAYER           Player)
 game_group(SRC_PLAYER_INVENTORY Player/Inventory)
 game_group(SRC_PLAYER_HONOR     Player/Honor)
@@ -67,6 +68,7 @@ add_library(game STATIC
     ${SRC_VISIBILITY}
     ${SRC_UNIT}
     ${SRC_AURAS}
+    ${SRC_UNIT_STATS}
     ${SRC_PLAYER}
     ${SRC_PLAYER_INVENTORY}
     ${SRC_PLAYER_HONOR}
@@ -121,6 +123,7 @@ target_include_directories(game
         Visibility
         Unit
         Unit/Auras
+        Unit/Stats
         Player
         Player/Honor
         Player/Inventory

@@ -417,7 +417,7 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
  *
  * @param session The owning world session.
  */
-Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_arms(*this), m_spellMods(*this), m_duel(*this), m_battle(*this), m_binds(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
+Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_arms(*this), m_spellMods(*this), m_duel(*this), m_battle(*this), m_binds(*this), m_sheet(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
 {
 
     m_transport = 0;
@@ -450,16 +450,9 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
 
     m_usedTalentCount = 0;
 
-    m_modManaRegen = 0;
-    m_modManaRegenInterrupt = 0;
-
     m_rageDecayRate = 1.25f;
     m_rageDecayMultiplier = 19.50f;
 
-    for (int s = 0; s < MAX_SPELL_SCHOOL; s++)
-    {
-        m_SpellCritPercentage[s] = 0.0f;
-    }
     m_regenTimer = 0;
 
     m_zoneUpdateId = 0;
@@ -757,12 +750,12 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     InitPrimaryProfessions(); // To max set before any spell added
 
     // Apply original stats mods before spell loading or item equipment
-    UpdateMaxHealth(); // Update max Health (for add bonus from stamina)
+    Sheet().MaxHealth(); // Update max Health (for add bonus from stamina)
     SetHealth(GetMaxHealth());
 
     if (GetPowerType() == POWER_MANA)
     {
-        UpdateMaxPower(POWER_MANA); // Update max Mana (for add bonus from intellect)
+        Sheet().MaxPower(POWER_MANA); // Update max Mana (for add bonus from intellect)
         SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
     }
 
@@ -2145,7 +2138,7 @@ void Player::GiveLevel(uint32 level)
 
     InitTalentForLevel();
 
-    UpdateAllStats();
+    Sheet().Everything();
 
     // set current level health and mana/energy to maximum after applying all mods.
     if (IsAlive())
@@ -2304,15 +2297,9 @@ void Player::InitStatsForLevel(bool reapplyMods)
     SetAttackPower(false, 0, 0, 0.0f);
     SetAttackPower(true, 0, 0, 0.0f);
 
-    // Base crit values (will be recalculated in UpdateAllStats() at loading and in _ApplyAllStatBonuses() at reset
+    // Base crit values; the sheet works them out at login and at every reset
     SetFloatValue(PLAYER_CRIT_PERCENTAGE, 0.0f);
     SetFloatValue(PLAYER_RANGED_CRIT_PERCENTAGE, 0.0f);
-
-    // Init spell schools (will be recalculated in UpdateAllStats() at loading and in _ApplyAllStatBonuses() at reset
-    for (uint8 i = 0; i < MAX_SPELL_SCHOOL; ++i)
-    {
-        m_SpellCritPercentage[i] = 0.0f;
-    }
 
     SetFloatValue(PLAYER_PARRY_PERCENTAGE, 0.0f);
     SetFloatValue(PLAYER_BLOCK_PERCENTAGE, 0.0f);
@@ -2512,7 +2499,7 @@ void Player::UpdateDefense()
     if (UpdateSkill(SKILL_DEFENSE, defense_skill_gain))
     {
         // update dependent from defense skill part
-        UpdateDefenseBonusesMod();
+        Sheet().Defences();
     }
 }
 
@@ -3581,8 +3568,8 @@ void Player::InitDataForForm(bool reapplyMods)
         UpdateEquipSpellsAtFormChange();
     }
 
-    UpdateAttackPowerAndDamage();
-    UpdateAttackPowerAndDamage(true);
+    Sheet().AttackPower(false);
+    Sheet().AttackPower(true);
 }
 
 /**

@@ -103,30 +103,30 @@ bool Unit::HandleStatModifier(UnitMods unitMod, UnitModifierType modifierType, f
         case UNIT_MOD_STAT_AGILITY:
         case UNIT_MOD_STAT_STAMINA:
         case UNIT_MOD_STAT_INTELLECT:
-        case UNIT_MOD_STAT_SPIRIT:         UpdateStats(GetStatByAuraGroup(unitMod));  break;
+        case UNIT_MOD_STAT_SPIRIT:         Sheet().Stat(GetStatByAuraGroup(unitMod));  break;
 
-        case UNIT_MOD_ARMOR:               UpdateArmor();           break;
-        case UNIT_MOD_HEALTH:              UpdateMaxHealth();       break;
+        case UNIT_MOD_ARMOR:               Sheet().Armour();     break;
+        case UNIT_MOD_HEALTH:              Sheet().MaxHealth();  break;
 
         case UNIT_MOD_MANA:
         case UNIT_MOD_RAGE:
         case UNIT_MOD_FOCUS:
         case UNIT_MOD_ENERGY:
-        case UNIT_MOD_HAPPINESS:           UpdateMaxPower(GetPowerTypeByAuraGroup(unitMod)); break;
+        case UNIT_MOD_HAPPINESS:           Sheet().MaxPower(GetPowerTypeByAuraGroup(unitMod)); break;
 
         case UNIT_MOD_RESISTANCE_HOLY:
         case UNIT_MOD_RESISTANCE_FIRE:
         case UNIT_MOD_RESISTANCE_NATURE:
         case UNIT_MOD_RESISTANCE_FROST:
         case UNIT_MOD_RESISTANCE_SHADOW:
-        case UNIT_MOD_RESISTANCE_ARCANE:   UpdateResistances(GetSpellSchoolByAuraGroup(unitMod)); break;
+        case UNIT_MOD_RESISTANCE_ARCANE:   Sheet().Resistance(GetSpellSchoolByAuraGroup(unitMod)); break;
 
-        case UNIT_MOD_ATTACK_POWER:        UpdateAttackPowerAndDamage();         break;
-        case UNIT_MOD_ATTACK_POWER_RANGED: UpdateAttackPowerAndDamage(true);     break;
+        case UNIT_MOD_ATTACK_POWER:        Sheet().AttackPower(false);  break;
+        case UNIT_MOD_ATTACK_POWER_RANGED: Sheet().AttackPower(true);   break;
 
-        case UNIT_MOD_DAMAGE_MAINHAND:     UpdateDamagePhysical(BASE_ATTACK);    break;
-        case UNIT_MOD_DAMAGE_OFFHAND:      UpdateDamagePhysical(OFF_ATTACK);     break;
-        case UNIT_MOD_DAMAGE_RANGED:       UpdateDamagePhysical(RANGED_ATTACK);  break;
+        case UNIT_MOD_DAMAGE_MAINHAND:     Sheet().Swing(BASE_ATTACK);    break;
+        case UNIT_MOD_DAMAGE_OFFHAND:      Sheet().Swing(OFF_ATTACK);     break;
+        case UNIT_MOD_DAMAGE_RANGED:       Sheet().Swing(RANGED_ATTACK);  break;
 
         default:
             break;

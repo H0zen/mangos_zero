@@ -256,7 +256,7 @@ void Player::_ApplyItemBonuses(ItemPrototype const* proto, uint8 slot, bool appl
 
     if (CanModifyStats() && (damage || proto->Delay))
     {
-        UpdateDamagePhysical(attType);
+        Sheet().Swing(attType);
     }
 }
 
@@ -865,7 +865,7 @@ void Player::_ApplyAmmoBonuses()
 
     if (CanModifyStats())
     {
-        UpdateDamagePhysical(RANGED_ATTACK);
+        Sheet().Swing(RANGED_ATTACK);
     }
 }
 

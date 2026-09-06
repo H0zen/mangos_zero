@@ -39,7 +39,7 @@
 /**
  * @brief Initializes a totem creature instance.
  */
-Totem::Totem() : Creature(CREATURE_SUBTYPE_TOTEM)
+Totem::Totem() : Creature(CREATURE_SUBTYPE_TOTEM), m_sheet(*this)
 {
     m_duration = 0;
     m_type = TOTEM_PASSIVE;

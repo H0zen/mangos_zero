@@ -1459,7 +1459,7 @@ void Aura::HandleAuraModBlockPercent(bool /*apply*/, bool /*Real*/)
         return;
     }
 
-    ((Player*)GetTarget())->UpdateBlockPercentage();
+    ((Player*)GetTarget())->Sheet().Block();
     // sLog.outError("BONUS BLOCK CHANCE: + %f", float(m_modifier.m_amount));
 }
 

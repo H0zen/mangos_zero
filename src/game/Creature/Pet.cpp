@@ -69,7 +69,7 @@ Pet::Pet(PetType type) : Creature(CREATURE_SUBTYPE_PET),
     m_TrainingPoints(0), m_resetTalentsCost(0), m_resetTalentsTime(0),
     m_removed(false), m_happinessTimer(7500), m_loyaltyTimer(12000), m_petType(type), m_duration(0),
     m_loyaltyPoints(0), m_bonusdamage(0), m_auraUpdateMask(0), m_loading(false),
-    m_petModeFlags(PET_MODE_DEFAULT)
+    m_petModeFlags(PET_MODE_DEFAULT), m_sheet(*this)
 {
     m_name = "Pet";
     m_regenTimer = 4000;
@@ -1069,7 +1069,7 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
         SetModifierValue(UnitMods(UNIT_MOD_RESISTANCE_START + i), BASE_VALUE, float(createResistance[i]));
     }
 
-    UpdateAllStats();
+    Sheet().Everything();
 
     SetHealth(GetMaxHealth());
     SetPower(GetPowerType(), GetMaxPower(GetPowerType()));

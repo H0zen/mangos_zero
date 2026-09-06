@@ -83,6 +83,7 @@
 #include "Duel.h"
 #include "BattleGroundStay.h"
 #include "DungeonBinds.h"
+#include "Stats/PlayerSheet.h"
 #include "QueueSlots.h"
 #include "Trade.h"
 #include "SpellModifiers.h"
@@ -2100,41 +2101,8 @@ class Player : public Unit
         // Get the player's base weapon skill value
         uint32 GetBaseWeaponSkillValue(WeaponAttackType attType) const;
 
-        float GetHealthBonusFromStamina();
-
-        // Get the mana bonus from intellect
-        float GetManaBonusFromIntellect();
-
-        // Update the player's stats
-        bool UpdateStats(Stats stat) override;
-
-        // Update all of the player's stats
-        bool UpdateAllStats() override;
-
-        // Update the player's resistances
-        void UpdateResistances(uint32 school) override;
-
-        // Update the player's armor
-        void UpdateArmor() override;
-
-        // Update the player's maximum health
-        void UpdateMaxHealth() override;
-
-        // Update the player's maximum power
-        void UpdateMaxPower(Powers power) override;
-
-        // Update the player's attack power and damage
-        void UpdateAttackPowerAndDamage(bool ranged = false) override;
-        void UpdateDamagePhysical(WeaponAttackType attType) override;
-
-        // Update the player's spell damage and healing bonus
-        void UpdateSpellDamageAndHealingBonus();
-
-        // Calculate the minimum and maximum damage
-        void CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, float& min_damage, float& max_damage);
-
-        // Update defense bonuses modifier
-        void UpdateDefenseBonusesMod();
+        /// The numbers he fights with, and how they are worked out.
+        PlayerSheet& Sheet() override { return m_sheet; }
 
         // Get melee critical chance from agility
         float GetMeleeCritFromAgility();
@@ -2150,27 +2118,6 @@ class Player : public Unit
 
         // Get mana regeneration per spirit
         float OCTRegenMPPerSpirit();
-
-        void UpdateBlockPercentage();
-
-        // Update critical percentage
-        void UpdateCritPercentage(WeaponAttackType attType);
-
-        // Update all critical percentages
-        void UpdateAllCritPercentages();
-
-        // Update parry percentage
-        void UpdateParryPercentage();
-
-        // Update dodge percentage
-        void UpdateDodgePercentage();
-
-        // Update all spell critical chances
-        void UpdateAllSpellCritChances();
-
-        // Update spell critical chance for a specific school
-        void UpdateSpellCritChance(uint32 school);
-        void UpdateManaRegen();
 
         // Get the GUID of the loot
         ObjectGuid const& GetLootGuid() const
@@ -2716,13 +2663,9 @@ class Player : public Unit
         /*********************************************************/
         /***                 VARIOUS SYSTEMS                   ***/
         /*********************************************************/
-        float m_modManaRegen;
-        float m_modManaRegenInterrupt;
-
         float m_rageDecayRate;
         float m_rageDecayMultiplier;
 
-        float m_SpellCritPercentage[MAX_SPELL_SCHOOL];
         bool HasMovementFlag(MovementFlags f) const;        // for script access to m_movementInfo.HasMovementFlag
         void UpdateFallInformationIfNeed(MovementInfo const& minfo, uint16 opcode);
 
@@ -3051,6 +2994,8 @@ class Player : public Unit
         BattleGroundStay m_battle;
 
         DungeonBinds m_binds;
+
+        PlayerSheet m_sheet;
 
         /*********************************************************/
         /***                    QUEST SYSTEM                   ***/

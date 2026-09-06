@@ -490,6 +490,6 @@ void Player::RemoveAmmo()
 
     if (CanModifyStats())
     {
-        UpdateDamagePhysical(RANGED_ATTACK);
+        Sheet().Swing(RANGED_ATTACK);
     }
 }

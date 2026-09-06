@@ -132,8 +132,8 @@ void Player::HandleBaseModValue(BaseModGroup modGroup, BaseModType modType, floa
 
     switch (modGroup)
     {
-        case CRIT_PERCENTAGE:              UpdateCritPercentage(BASE_ATTACK);                          break;
-        case RANGED_CRIT_PERCENTAGE:       UpdateCritPercentage(RANGED_ATTACK);                        break;
+        case CRIT_PERCENTAGE:              Sheet().Crit(BASE_ATTACK);                          break;
+        case RANGED_CRIT_PERCENTAGE:       Sheet().Crit(RANGED_ATTACK);                        break;
         default: break;
     }
 }
@@ -707,7 +707,7 @@ void Player::UpdateWeaponSkill(WeaponAttackType attType)
         UpdateSkill(SKILL_UNARMED, weaponSkillGain);
     }
 
-    UpdateAllCritPercentages();
+    Sheet().AllCrits();
 }
 
 /**
@@ -897,7 +897,7 @@ void Player::UpdateSkillsToMaxSkillsForLevel()
 
         if (pskill == SKILL_DEFENSE)
         {
-            UpdateDefenseBonusesMod();
+            Sheet().Defences();
         }
     }
 }
@@ -1243,4 +1243,34 @@ int16 Player::GetSkillTempBonusValue(uint32 skill) const
     }
 
     return SKILL_TEMP_BONUS(GetUInt32Value(PLAYER_SKILL_BONUS_INDEX(skillStatus.pos)));
+}
+
+/**
+ * @brief Applies all aura and item stat bonuses, then works his numbers out afresh.
+ */
+void Player::_ApplyAllStatBonuses()
+{
+    SetCanModifyStats(false);
+
+    _ApplyAllAuraMods();
+    _ApplyAllItemMods();
+
+    SetCanModifyStats(true);
+
+    Sheet().Everything();
+}
+
+/**
+ * @brief Removes all aura and item stat bonuses, then works his numbers out afresh.
+ */
+void Player::_RemoveAllStatBonuses()
+{
+    SetCanModifyStats(false);
+
+    _RemoveAllItemMods();
+    _RemoveAllAuraMods();
+
+    SetCanModifyStats(true);
+
+    Sheet().Everything();
 }

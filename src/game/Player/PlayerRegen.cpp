@@ -153,11 +153,11 @@ void Player::Regenerate(Powers power)
             if (recentCast)
             {
                 // Mangos Updates Mana in intervals of 2s, which is correct
-                addvalue = m_modManaRegenInterrupt *  ManaIncreaseRate * 2.00f;
+                addvalue = Sheet().ManaRegenCasting() * ManaIncreaseRate * 2.00f;
             }
             else
             {
-                addvalue = m_modManaRegen * ManaIncreaseRate * 2.00f;
+                addvalue = Sheet().ManaRegenStanding() * ManaIncreaseRate * 2.00f;
             }
         }   break;
         case POWER_RAGE:                                    // Regenerate rage
@@ -178,7 +178,7 @@ void Player::Regenerate(Powers power)
             break;
     }
 
-    // Mana regen calculated in Player::UpdateManaRegen()
+    // The two mana rates are worked out by the sheet
     // Exist only for POWER_MANA, POWER_ENERGY, POWER_FOCUS auras
     if (power != POWER_MANA)
     {

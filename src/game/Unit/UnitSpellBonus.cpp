@@ -451,7 +451,7 @@ bool Unit::IsSpellCrit(Unit* pVictim, SpellEntry const* spellProto, SpellSchoolM
             // For other schools
             else if (IsPlayer())
             {
-                crit_chance = ((Player*)this)->m_SpellCritPercentage[GetFirstSchoolInMask(schoolMask)];
+                crit_chance = ((Player*)this)->Sheet().SpellCritChance(GetFirstSchoolInMask(schoolMask));
             }
             else
             {

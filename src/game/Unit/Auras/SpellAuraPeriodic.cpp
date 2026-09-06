@@ -599,7 +599,7 @@ void Aura::HandleModSpellDamagePercentFromStat(bool /*apply*/, bool /*Real*/)
     // Magic damage modifiers implemented in Unit::SpellDamageBonusDone
     // This information for client side use only
     // Recalculate bonus
-    ((Player*)GetTarget())->UpdateSpellDamageAndHealingBonus();
+    ((Player*)GetTarget())->Sheet().SpellDamageAndHealing();
 }
 
 /**
@@ -616,7 +616,7 @@ void Aura::HandleModSpellHealingPercentFromStat(bool /*apply*/, bool /*Real*/)
     }
 
     // Recalculate bonus
-    ((Player*)GetTarget())->UpdateSpellDamageAndHealingBonus();
+    ((Player*)GetTarget())->Sheet().SpellDamageAndHealing();
 }
 
 /**
@@ -633,7 +633,7 @@ void Aura::HandleModHealingDone(bool /*apply*/, bool /*Real*/)
     }
     // implemented in Unit::SpellHealingBonusDone
     // this information is for client side only
-    ((Player*)GetTarget())->UpdateSpellDamageAndHealingBonus();
+    ((Player*)GetTarget())->Sheet().SpellDamageAndHealing();
 }
 
 /**
@@ -692,14 +692,14 @@ void Aura::HandleAuraModResistenceOfStatPercent(bool /*apply*/, bool /*Real*/)
 
     if (m_modifier.m_miscvalue != SPELL_SCHOOL_MASK_NORMAL)
     {
-        // support required adding replace UpdateArmor by loop by UpdateResistence at intellect update
-        // and include in UpdateResistence same code as in UpdateArmor for aura mod apply.
+        // Only armour reads this aura: the sheet works a school's resistance
+        // out from modifiers alone and never asks a stat for a share of it.
         sLog.outError("Aura SPELL_AURA_MOD_RESISTANCE_OF_STAT_PERCENT(182) need adding support for non-armor resistances!");
         return;
     }
 
     // Recalculate Armor
-    GetTarget()->UpdateArmor();
+    GetTarget()->Sheet().Armour();
 }
 
 /********************************/
@@ -763,7 +763,7 @@ void Aura::HandleModPowerRegen(bool apply, bool Real)       // drinking
 
     if (GetTarget()->IsPlayer() && m_modifier.m_miscvalue == POWER_MANA)
     {
-        ((Player*)GetTarget())->UpdateManaRegen();
+        ((Player*)GetTarget())->Sheet().ManaRegen();
     }
 
     m_isPeriodic = apply;
@@ -791,7 +791,7 @@ void Aura::HandleModPowerRegenPCT(bool /*apply*/, bool Real)
     // Update manaregen value
     if (m_modifier.m_miscvalue == POWER_MANA)
     {
-        ((Player*)GetTarget())->UpdateManaRegen();
+        ((Player*)GetTarget())->Sheet().ManaRegen();
     }
 }
 
@@ -912,7 +912,7 @@ void Aura::HandleAuraModParryPercent(bool /*apply*/, bool /*Real*/)
         return;
     }
 
-    ((Player*)GetTarget())->UpdateParryPercentage();
+    ((Player*)GetTarget())->Sheet().Parry();
 }
 
 /**
@@ -928,7 +928,7 @@ void Aura::HandleAuraModDodgePercent(bool /*apply*/, bool /*Real*/)
         return;
     }
 
-    ((Player*)GetTarget())->UpdateDodgePercentage();
+    ((Player*)GetTarget())->Sheet().Dodge();
     // sLog.outError("BONUS DODGE CHANCE: + %f", float(m_modifier.m_amount));
 }
 
@@ -951,7 +951,7 @@ void Aura::HandleAuraModRegenInterrupt(bool /*apply*/, bool Real)
         return;
     }
 
-    ((Player*)GetTarget())->UpdateManaRegen();
+    ((Player*)GetTarget())->Sheet().ManaRegen();
 }
 
 /**
@@ -1049,7 +1049,7 @@ void Aura::HandleModSpellCritChance(bool apply, bool Real)
 
     if (GetTarget()->IsPlayer())
     {
-        ((Player*)GetTarget())->UpdateAllSpellCritChances();
+        ((Player*)GetTarget())->Sheet().AllSpellCrits();
     }
     else
     {
@@ -1080,7 +1080,7 @@ void Aura::HandleModSpellCritChanceShool(bool /*apply*/, bool Real)
     {
         if (m_modifier.m_miscvalue & (1 << school))
         {
-            ((Player*)GetTarget())->UpdateSpellCritChance(school);
+            ((Player*)GetTarget())->Sheet().SpellCrit(school);
         }
     }
 }
@@ -1393,7 +1393,7 @@ void Aura::HandleModDamageDone(bool apply, bool Real)
         Pet* pet = target->GetPet();
         if (pet)
         {
-            pet->UpdateAttackPowerAndDamage();
+            pet->Sheet().AttackPower(false);
         }
     }
 }
