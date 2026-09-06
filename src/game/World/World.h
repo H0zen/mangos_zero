@@ -547,6 +547,12 @@ class World
          * what can only be done once no map is running. Written as named calls rather
          * than as one body, so that a system added later has somewhere it belongs and
          * the question "where does this go" has an answer that can be checked.
+         *
+         * §10's phase C -- one gathered write per session -- is not a step here and must
+         * not become one. It lives in `net::SendQueue`, which coalesces everything a tick
+         * queued into the next single write by swapping a pending buffer for an in-flight
+         * one. The loop does not need to know when a socket is writable, and the
+         * transport does not need to know when a tick ended.
          */
         void Update(uint32 diff);
 
