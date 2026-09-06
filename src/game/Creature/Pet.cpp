@@ -72,7 +72,7 @@ Pet::Pet(PetType type) : Creature(CREATURE_SUBTYPE_PET),
     m_petModeFlags(PET_MODE_DEFAULT), m_sheet(*this), m_pace(*this)
 {
     m_name = "Pet";
-    m_regenTimer = 4000;
+    m_recovery.NextIn(4000);
 
     // a pet always has a bar, whether anyone is driving it or not
     CharmInfo& charmInfo = InitCharmInfo();
@@ -239,7 +239,9 @@ void Pet::Update(uint32 update_diff, uint32 diff)
 void Pet::RegenerateAll(uint32 update_diff)
 {
     // regenerate focus
-    if (m_regenTimer <= update_diff)
+    m_recovery.Run(update_diff);
+
+    if (m_recovery.Due())
     {
         if (!IsInCombat() || IsPolymorphed())
         {
@@ -248,11 +250,7 @@ void Pet::RegenerateAll(uint32 update_diff)
 
         RegeneratePower();
 
-        m_regenTimer = 4000;
-    }
-    else
-    {
-        m_regenTimer -= update_diff;
+        m_recovery.NextIn(4000);
     }
 
     if (getPetType() != HUNTER_PET)

@@ -453,7 +453,6 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
     m_rageDecayRate = 1.25f;
     m_rageDecayMultiplier = 19.50f;
 
-    m_regenTimer = 0;
 
     m_zoneUpdateId = 0;
     m_zoneUpdateTimer = 0;
@@ -1076,17 +1075,7 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     }
 
     // Update regeneration timer
-    if (m_regenTimer)
-    {
-        if (update_diff >= m_regenTimer)
-        {
-            m_regenTimer = 0;
-        }
-        else
-        {
-            m_regenTimer -= update_diff;
-        }
-    }
+    m_recovery.Run(update_diff);
 
     // Update position status timer
     if (m_positionStatusUpdateTimer)

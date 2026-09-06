@@ -49,6 +49,7 @@ set(TEST_SOURCES
     unit/test_repertoire.cpp
     unit/test_tenure.cpp
     unit/test_tallies.cpp
+    unit/test_recovery.cpp
 
     combat/test_school.cpp
     combat/test_roll.cpp

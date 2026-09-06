@@ -87,6 +87,7 @@
 #include "CharmInfo.h"
 #include "Stats/Modifiers.h"
 #include "Stats/Tallies.h"
+#include "Stats/Recovery.h"
 #include "Creature/CreatureRecord.h"
 #include "Cell.h"
 #include "Creature/VendorStock.h"
@@ -3726,9 +3727,9 @@ class Unit : public Occupant
 
         void SetLastManaUse()
         {
-            m_lastManaUseTimer = 5000;
+            m_recovery.ManaSpent();
         }
-        bool IsUnderLastManaUseEffect() const { return m_lastManaUseTimer; }
+        bool IsUnderLastManaUseEffect() const { return m_recovery.HoldingBack(); }
 
         void SetContestedPvP(Player* attackedPlayer = nullptr);
 
@@ -3918,8 +3919,7 @@ class Unit : public Occupant
         MotionMaster i_motionMaster;
 
         uint32 m_reactiveTimer[MAX_REACTIVE];
-        uint32 m_regenTimer;
-        uint32 m_lastManaUseTimer;
+        Recovery m_recovery;
 
         /// Hit points are the unit's own; the client is told a figure derived
         /// from them, which is not always the figure itself.

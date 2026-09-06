@@ -242,7 +242,7 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
 {
     m_subtype = subtype;
 
-    m_regenTimer = 200;
+    m_recovery.NextIn(200);
 
     // Zero sentinel: lets waypoint evade tell "combat start never recorded"
     // apart from a real recorded position (set in Unit::Attack), so it can
@@ -900,18 +900,9 @@ void Creature::Update(uint32 update_diff, uint32 diff)
  */
 void Creature::RegenerateAll(uint32 update_diff)
 {
-    if (m_regenTimer > 0)
-    {
-        if (update_diff >= m_regenTimer)
-        {
-            m_regenTimer = 0;
-        }
-        else
-        {
-            m_regenTimer -= update_diff;
-        }
-    }
-    if (m_regenTimer != 0)
+    m_recovery.Run(update_diff);
+
+    if (!m_recovery.Due())
     {
         return;
     }
@@ -923,7 +914,7 @@ void Creature::RegenerateAll(uint32 update_diff)
 
     RegeneratePower();
 
-    m_regenTimer = REGEN_TIME_FULL;
+    m_recovery.NextIn(REGEN_TIME_FULL);
 }
 
 /**
@@ -945,37 +936,20 @@ void Creature::RegeneratePower()
         return;
     }
 
-    float addValue = 0.0f;
+    regen::Rates rates;
+    rates.mana = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_MANA);
+    rates.energy = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_ENERGY);
+    rates.focus = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_FOCUS);
 
-    switch (powerType)
+    regen::Share const share = regen::PowerTick(powerType, GetStat(STAT_SPIRIT), maxValue,
+                                                IsInCombat() || GetCharmerOrOwnerGuid(),
+                                                IsUnderLastManaUseEffect(), rates);
+    if (!share.any)
     {
-        case POWER_MANA:
-            // Combat and any controlled creature
-            if (IsInCombat() || GetCharmerOrOwnerGuid())
-            {
-                if (!IsUnderLastManaUseEffect())
-                {
-                    float ManaIncreaseRate = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_MANA);
-                    float Spirit = GetStat(STAT_SPIRIT);
-
-                    addValue = (Spirit / 5.0f + 17.0f) * ManaIncreaseRate;
-                }
-            }
-            else
-            {
-                addValue = maxValue / 3.0f;
-            }
-            break;
-        case POWER_ENERGY:
-            // ToDo: for vehicle this is different - NEEDS TO BE FIXED!
-            addValue = 20 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_ENERGY);
-            break;
-        case POWER_FOCUS:
-            addValue = 24 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_FOCUS);
-            break;
-        default:
-            return;
+        return;
     }
+
+    float addValue = share.amount;
 
     // Apply modifiers (if any)
     const auto ModPowerRegenAuras = GetAurasByType(SPELL_AURA_MOD_POWER_REGEN);
@@ -1019,29 +993,10 @@ void Creature::RegenerateHealth()
         return;
     }
 
-    uint32 addvalue = 0;
-
     // Not only pet, but any controlled creature
-    if (GetCharmerOrOwnerGuid())
-    {
-        float HealthIncreaseRate = sWorld.getConfig(CONFIG_FLOAT_RATE_HEALTH);
-        float Spirit = GetStat(STAT_SPIRIT); //for charmed creatures, spirit = 0!
-        if (GetPower(POWER_MANA) > 0)
-        {
-            addvalue = uint32(Spirit * 0.25 * HealthIncreaseRate);
-        }
-        else
-        {
-            addvalue = uint32(Spirit * 0.80 * HealthIncreaseRate);
-        }
-    }
-
-    if (addvalue == 0)
-    {
-        addvalue = maxValue / 3;
-    }
-
-    ModifyHealth(addvalue);
+    ModifyHealth(regen::HealthTick(GetStat(STAT_SPIRIT), maxValue,
+                                   GetCharmerOrOwnerGuid(), GetPower(POWER_MANA) > 0,
+                                   sWorld.getConfig(CONFIG_FLOAT_RATE_HEALTH)));
 }
 
 /**

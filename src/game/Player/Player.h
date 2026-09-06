@@ -1706,7 +1706,7 @@ class Player : public Unit
         // Set the regeneration timer
         void setRegenTimer(uint32 time)
         {
-            m_regenTimer = time;
+            m_recovery.NextIn(time);
         }
 
 

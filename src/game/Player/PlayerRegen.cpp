@@ -108,7 +108,7 @@ void Player::RewardRage(uint32 damage, bool attacker)
  */
 void Player::RegenerateAll()
 {
-    if (m_regenTimer != 0 ||
+    if (!m_recovery.Due() ||
         (GetPower(POWER_RAGE) < 1 && GetPowerType() == POWER_RAGE && GetHealth() == GetMaxHealth()))
     {
         return;
@@ -129,7 +129,7 @@ void Player::RegenerateAll()
 
     Regenerate(POWER_MANA);
 
-    m_regenTimer = REGEN_TIME_FULL;
+    m_recovery.NextIn(REGEN_TIME_FULL);
 }
 
 /**
