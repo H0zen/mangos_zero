@@ -906,6 +906,7 @@ void TransportMap::RetractVessel(Transport* vessel, Player* observer)
     }
 
     vessel->BuildOutOfRangeUpdateBlock(&data);
+    observer->ForgetAtClient(vessel->GetObjectGuid());
 
     WorldPacket packet;
     data.BuildPacket(&packet);

@@ -178,6 +178,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     // includes the vessel he is standing on, which exists on both sides of the seam and so
     // keeps its guid across it.
     GetPlayer()->m_clientGUIDs.clear();
+    GetPlayer()->m_clientPlatforms.clear();
 
     GetPlayer()->SendInitialPacketsBeforeAddToMap();
     // the CanEnter checks are done in TeleporTo but conditions may change

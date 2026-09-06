@@ -2813,8 +2813,31 @@ class Player : public Unit
         // Currently visible objects at the player's client
         GuidSet m_clientGUIDs;
 
+        /// The ships, zeppelins and lifts his client already holds. A SECOND ledger, and
+        /// the separation is the point: the sweep's elimination walks m_clientGUIDs and
+        /// would take a platform away by distance, which is the one thing that must never
+        /// happen to something the client is animating from its own data. Kept out of that
+        /// set, a platform was also never remembered as sent -- so every sweep built it a
+        /// fresh create block, and each one reset the hull's phase under the passengers.
+        GuidSet m_clientPlatforms;
+
         // Check if an object is visible to the client
-        bool HaveAtClient(Occupant const* u) { return u == this || m_clientGUIDs.find(u->GetObjectGuid()) != m_clientGUIDs.end(); }
+        bool HaveAtClient(Occupant const* u)
+        {
+            return u == this ||
+                   m_clientGUIDs.find(u->GetObjectGuid()) != m_clientGUIDs.end() ||
+                   m_clientPlatforms.find(u->GetObjectGuid()) != m_clientPlatforms.end();
+        }
+
+        /// Writes down that the client now holds it, in whichever ledger suits its kind.
+        void Remember(Occupant* target);
+
+        /// Whichever ledger holds it, the client is done with it.
+        void ForgetAtClient(ObjectGuid guid)
+        {
+            m_clientGUIDs.erase(guid);
+            m_clientPlatforms.erase(guid);
+        }
 
         // Check if the player is visible in the grid for another player
         bool IsVisibleInGridForPlayer(Player* pl) const override;

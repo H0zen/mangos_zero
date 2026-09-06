@@ -1913,6 +1913,7 @@ void Map::SendRemoveTransports(Player* player)
             if ((*i) != player->GetTransport() && (*i)->GetMapId() != i_id)
             {
                 (*i)->BuildOutOfRangeUpdateBlock(&transData);
+                player->ForgetAtClient((*i)->GetObjectGuid());
             }
         }
 

@@ -188,6 +188,23 @@ inline void BeforeVisibilityDestroy(Occupant* o, Player* p)
  * @param viewPoint The viewpoint used for visibility checks.
  * @param target The target object whose visibility is being updated.
  */
+void Player::Remember(Occupant* target)
+{
+    // A ship, a zeppelin or a lift goes in the OTHER ledger. The client draws it from its
+    // own animation data and must never be told it went out of range, so it is kept away
+    // from the set the sweep eliminates from -- but it is still written down, or the next
+    // sweep sends it a fresh create and the phase in that block jerks the platform back
+    // under whoever is standing on it.
+    GameObject* platform = ToGameObject(target);
+    if (platform && platform->IsMovingPlatform())
+    {
+        m_clientPlatforms.insert(platform->GetObjectGuid());
+        return;
+    }
+
+    m_clientGUIDs.insert(target->GetObjectGuid());
+}
+
 void Player::UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target)
 {
     if (HaveAtClient(target))
@@ -212,10 +229,7 @@ void Player::UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target)
         if (target->IsVisibleForInState(this, viewPoint, false))
         {
             target->SendCreateUpdateToPlayer(this);
-            if (!target->IsGameObject() || !((GameObject*)target)->IsMovingPlatform())
-            {
-                m_clientGUIDs.insert(target->GetObjectGuid());
-            }
+            Remember(target);
 
             DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "UpdateVisibilityOf(2p): %s is visible now for player %u. Distance = %f", target->GetGuidStr().c_str(), GetGUIDLow(), Where().DistanceTo(target->Where()));
 
@@ -254,17 +268,7 @@ void Player::UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target, Upd
             visibleNow.insert(target);
             target->BuildCreateUpdateBlockForPlayer(&data, this);
             metrics::Server().sightCreates.Add();
-            if (GameObject* g = ToGameObject(target))
-            {
-                if (!g->IsMovingPlatform())
-                {
-                    m_clientGUIDs.insert(g->GetObjectGuid());
-                }
-            }
-            else
-            {
-                m_clientGUIDs.insert(target->GetObjectGuid());
-            }
+            Remember(target);
             DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "UpdateVisibilityOf(4p): %s is visible now for %s. Distance = %f", target->GetGuidStr().c_str(), GetGuidStr().c_str(), Where().DistanceTo(target->Where()));
         }
     }
