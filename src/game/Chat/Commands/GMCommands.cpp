@@ -78,7 +78,7 @@ bool ChatHandler::HandlePInfoCommand(char* args)
 
         accId = target->GetSession()->GetAccountId();
         money = target->GetMoney();
-        total_player_time = target->GetTotalPlayedTime();
+        total_player_time = target->Played().Total();
         level = target->getLevel();
         latency = target->GetSession()->GetLatency();
         race = target->getRace();

@@ -519,9 +519,8 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
     }
 
     // Set login time to current time
-    m_logintime = time(nullptr);
+    m_played.StartAt(time(nullptr));
     // Set last tick time to login time
-    m_Last_tick = m_logintime;
     // Initialize weapon proficiency to 0
     m_WeaponProficiency = 0;
     // Initialize armor proficiency to 0
@@ -773,9 +772,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     SetUInt32Value(PLAYER_FIELD_COINAGE, sWorld.getConfig(CONFIG_UINT32_START_PLAYER_MONEY));
 
     // Initialize played time
-    m_Last_tick = time(nullptr);
-    m_Played_time[PLAYED_TIME_TOTAL] = 0;
-    m_Played_time[PLAYED_TIME_LEVEL] = 0;
+    m_played.Fresh(time(nullptr));
 
     // Initialize base stats and related field values
     InitStatsForLevel();
@@ -1048,9 +1045,9 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     CheckDuelDistance(now);
 
     // Update items that have just a limited lifetime
-    if (now > m_Last_tick)
+    if (uint32 const since = m_played.Since(now))
     {
-        m_inventory.RunClocks(uint32(now - m_Last_tick), false);
+        m_inventory.RunClocks(since, false);
     }
 
     // Update timed quests
@@ -1222,12 +1219,9 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     }
 
     // Update played time
-    if (now > m_Last_tick)
+    if (uint32 const elapsed = m_played.Since(now))
     {
-        uint32 elapsed = uint32(now - m_Last_tick);
-        m_Played_time[PLAYED_TIME_TOTAL] += elapsed; // Total played time
-        m_Played_time[PLAYED_TIME_LEVEL] += elapsed; // Level played time
-        m_Last_tick = now;
+        m_played.Advance(now);
     }
 
     // Handle sobering if the player is drunk
@@ -2160,7 +2154,7 @@ void Player::GiveLevel(uint32 level)
     // update level, max level of skills
     if (getLevel() != level)
     {
-        m_Played_time[PLAYED_TIME_LEVEL] = 0; // Level Played Time reset
+        m_played.NewLevel();
     }
     SetLevel(level);
     UpdateSkillsForLevel();

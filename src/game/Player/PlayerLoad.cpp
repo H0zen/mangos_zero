@@ -465,8 +465,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     Drinking().Amount(newDrunkenValue);
 
     m_cinematic = fields[18].GetUInt32();
-    m_Played_time[PLAYED_TIME_TOTAL] = fields[19].GetUInt32();
-    m_Played_time[PLAYED_TIME_LEVEL] = fields[20].GetUInt32();
+    Played().Total(fields[19].GetUInt32());
+    Played().AtThisLevel(fields[20].GetUInt32());
 
     m_resetTalentsCost = fields[24].GetUInt32();
     m_resetTalentsTime = time_t(fields[25].GetUInt64());

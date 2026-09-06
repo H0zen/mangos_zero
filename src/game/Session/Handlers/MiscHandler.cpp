@@ -1086,8 +1086,8 @@ void WorldSession::HandleSetActionBarTogglesOpcode(WorldPacket& recv_data)
 void WorldSession::HandlePlayedTime(WorldPacket& /*recv_data*/)
 {
     WorldPacket data(SMSG_PLAYED_TIME, 4 + 4);
-    data << uint32(_player->GetTotalPlayedTime());
-    data << uint32(_player->GetLevelPlayedTime());
+    data << uint32(_player->Played().Total());
+    data << uint32(_player->Played().AtThisLevel());
     SendPacket(&data);
 }
 

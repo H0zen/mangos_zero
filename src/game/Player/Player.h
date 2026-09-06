@@ -79,6 +79,7 @@
 #include "Drink.h"
 #include "Hearth.h"
 #include "Mailbox.h"
+#include "PlayedTime.h"
 #include "Rest.h"
 #include "Perils/Perils.h"
 #include "Offers/PlayerOffers.h"
@@ -583,15 +584,6 @@ enum TeleportToOptions
     TELE_TO_NOT_UNSUMMON_PET    = 0x08, // Do not unsummon pet
     TELE_TO_SPELL               = 0x10  // Teleport by spell
 };
-
-// Played time indices
-enum PlayedTimeIndex
-{
-    PLAYED_TIME_TOTAL           = 0, // Total played time
-    PLAYED_TIME_LEVEL           = 1  // Played time at current level
-};
-
-#define MAX_PLAYED_TIME_INDEX   2
 
 // Used at player loading query list preparing, and later result selection
 enum PlayerLoginQueryIndex
@@ -1187,26 +1179,14 @@ class Player : public Unit
         void InitStatsForLevel(bool reapplyMods = false);
 
         // Played Time Stuff
-        time_t m_logintime; // Login time
 
         /// When this session began. Times the client is given are counted
         /// from it rather than from the wall clock.
-        time_t LoginTime() const { return m_logintime; }
-        time_t m_Last_tick; // Last tick time
 
-        uint32 m_Played_time[MAX_PLAYED_TIME_INDEX]; // Played time array
 
         // Get the total played time
-        uint32 GetTotalPlayedTime()
-        {
-            return m_Played_time[PLAYED_TIME_TOTAL];
-        }
 
         // Get the played time at the current level
-        uint32 GetLevelPlayedTime()
-        {
-            return m_Played_time[PLAYED_TIME_LEVEL];
-        }
 
         // Set the death state of the player
         void SetDeathState(DeathState s) override; // overwrite Unit::SetDeathState
@@ -3199,6 +3179,12 @@ class Player : public Unit
         Mailbox& Post() { return m_post; }
         Mailbox const& Post() const { return m_post; }
 
+        /// How long he has been played, and since when.
+        PlayedTime& Played() { return m_played; }
+        PlayedTime const& Played() const { return m_played; }
+
+        time_t LoginTime() const { return m_played.LoggedInAt(); }
+
         // Get an object by type mask
         Object* GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask);
 
@@ -3674,6 +3660,8 @@ class Player : public Unit
         Rest m_rest;
 
         Mailbox m_post;
+
+        PlayedTime m_played;
 
         // Detect invisibility timer
         uint32 m_DetectInvTimer;

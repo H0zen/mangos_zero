@@ -42,6 +42,7 @@ set(TEST_SOURCES
     unit/test_worksentry.cpp
     unit/test_drink.cpp
     unit/test_rest.cpp
+    unit/test_playedtime.cpp
 
     combat/test_school.cpp
     combat/test_roll.cpp

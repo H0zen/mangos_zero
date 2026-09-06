@@ -214,8 +214,8 @@ void Player::SaveToDB()
 
     uberInsert.addUInt32(m_cinematic);
 
-    uberInsert.addUInt32(m_Played_time[PLAYED_TIME_TOTAL]);
-    uberInsert.addUInt32(m_Played_time[PLAYED_TIME_LEVEL]);
+    uberInsert.addUInt32(Played().Total());
+    uberInsert.addUInt32(Played().AtThisLevel());
 
     uberInsert.addFloat(finiteAlways(Resting().Bonus()));
     uberInsert.addUInt64(uint64(time(nullptr)));
