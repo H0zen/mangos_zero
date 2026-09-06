@@ -418,7 +418,6 @@ struct TrainerSpellData
     }
 };
 
-typedef std::map<uint32, time_t> CreatureSpellCooldowns;
 
 // max different by z coordinate for creature aggro reaction
 #define CREATURE_Z_ATTACK_RANGE 3
@@ -561,14 +560,7 @@ class Creature : public Unit
         void SetWaterWalk(bool enable) override;
 
 
-        void _AddCreatureSpellCooldown(uint32 spell_id, time_t end_time);
-        void _AddCreatureCategoryCooldown(uint32 category, time_t apply_time);
-        void AddCreatureSpellCooldown(uint32 spellid);
-        bool HasSpellCooldown(uint32 spell_id) const;
-        bool HasCategoryCooldown(uint32 spell_id) const;
-        uint32 GetCreatureSpellCooldownDelay(uint32 spellId) const;
 
-        bool HasSpell(uint32 spellID) const override;
 
         bool UpdateEntry(uint32 entry, Team team = ALLIANCE, const CreatureData* data = nullptr, GameEventCreatureData const* eventData = nullptr, bool preserveHPAndPower = true);
 
@@ -679,9 +671,6 @@ class Creature : public Unit
         SpellEntry const* ReachWithSpellAttack(Unit* pVictim);
         SpellEntry const* ReachWithSpellCure(Unit* pVictim);
 
-        uint32 m_spells[CREATURE_MAX_SPELLS];
-        CreatureSpellCooldowns m_CreatureSpellCooldowns;
-        CreatureSpellCooldowns m_CreatureCategoryCooldowns;
 
         // Used by Creature Spells system to always know result of cast
         SpellCastResult TryToCast(Unit* pTarget, uint32 uiSpell, uint32 uiCastFlags, uint8 uiChance);

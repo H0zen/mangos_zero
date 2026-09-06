@@ -1204,29 +1204,29 @@ void Player::PetSpellInitialize()
 
     data.put<uint8>(spellsCountPos, addlist);
 
-    uint8 cooldownsCount = pet->m_CreatureSpellCooldowns.size() + pet->m_CreatureCategoryCooldowns.size();
+    uint8 cooldownsCount = uint8(pet->Knowing().StillDown().size() + pet->Knowing().CategoriesUsed().size());
     data << uint8(cooldownsCount);
 
     time_t curTime = time(nullptr);
 
-    for (CreatureSpellCooldowns::const_iterator itr = pet->m_CreatureSpellCooldowns.begin(); itr != pet->m_CreatureSpellCooldowns.end(); ++itr)
+    for (auto const& down : pet->Knowing().StillDown())
     {
-        time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
+        time_t const left = down.second > curTime ? (down.second - curTime) * IN_MILLISECONDS : 0;
 
-        data << uint16(itr->first);                         // spellid
+        data << uint16(down.first);                         // spellid
         data << uint16(0);                                  // spell category?
-        data << uint32(cooldown);                           // cooldown
+        data << uint32(left);                               // cooldown
         data << uint32(0);                                  // category cooldown
     }
 
-    for (CreatureSpellCooldowns::const_iterator itr = pet->m_CreatureCategoryCooldowns.begin(); itr != pet->m_CreatureCategoryCooldowns.end(); ++itr)
+    for (auto const& held : pet->Knowing().CategoriesUsed())
     {
-        time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
+        time_t const left = held.second > curTime ? (held.second - curTime) * IN_MILLISECONDS : 0;
 
-        data << uint16(itr->first);                         // spellid
+        data << uint16(held.first);                         // spellid
         data << uint16(0);                                  // spell category?
         data << uint32(0);                                  // cooldown
-        data << uint32(cooldown);                           // category cooldown
+        data << uint32(left);                               // category cooldown
     }
 
     GetSession()->SendPacket(&data);

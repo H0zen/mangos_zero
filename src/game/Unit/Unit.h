@@ -90,6 +90,7 @@
 #include "Cell.h"
 #include "Creature/VendorStock.h"
 #include "Creature/Disguise.h"
+#include "Creature/Repertoire.h"
 #include "LootClaim.h"
 #include "Creature/Pickings.h"
 #include "Creature/Station.h"
@@ -1710,6 +1711,17 @@ class Unit : public Occupant
         Disguise& Colours() { return m_disguise; }
         Disguise const& Colours() const { return m_disguise; }
 
+        /// What it was made knowing, and when it may cast each again.
+        Repertoire& Knowing() { return m_repertoire; }
+        Repertoire const& Knowing() const { return m_repertoire; }
+
+        void _AddCreatureSpellCooldown(uint32 spellId, time_t readyAt) { m_repertoire.ReadyAt(spellId, readyAt); }
+        void _AddCreatureCategoryCooldown(uint32 category, time_t usedAt) { m_repertoire.CategoryUsedAt(category, usedAt); }
+        void AddCreatureSpellCooldown(uint32 spellId);
+        bool HasSpellCooldown(uint32 spellId) const;
+        bool HasCategoryCooldown(uint32 spellId) const;
+        uint32 GetCreatureSpellCooldownDelay(uint32 spellId) const { return m_repertoire.Left(spellId, time(nullptr)); }
+
         /* ****************** What this NPC will do for you ******************* */
         //
         // UNIT_NPC_FLAGS is written on creatures and pets and on nothing else, so
@@ -2569,7 +2581,7 @@ class Unit : public Occupant
          * This is overridden in \ref Player::HasSpell, \ref Creature::HasSpell and \ref Pet::HasSpell
          * @return false in this implementation
          */
-        virtual bool HasSpell(uint32 /*spellID*/) const { return false; }
+        virtual bool HasSpell(uint32 spellId) const { return m_repertoire.Knows(spellId); }
 
         /**
          * Check is this \ref Unit has a stealth modified applied
@@ -3893,6 +3905,8 @@ class Unit : public Occupant
         bool m_searchedForHelp = false;
 
         Disguise m_disguise;
+
+        Repertoire m_repertoire;
 
         VendorItemCounts m_vendorItemCounts;
         Cell m_currentCell;

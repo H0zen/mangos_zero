@@ -248,14 +248,6 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
     // resume from the departure point instead of the last reached waypoint.
     Stationed().Anchor(Geometry::Vector3());
 
-    for (int i = 0; i < CREATURE_MAX_SPELLS; ++i)
-    {
-        m_spells[i] = 0;
-    }
-
-    m_CreatureSpellCooldowns.clear();
-    m_CreatureCategoryCooldowns.clear();
-
     SetWalk(true, true);
 }
 
@@ -682,7 +674,7 @@ bool Creature::UpdateEntry(uint32 Entry, Team team, const CreatureData* data /*=
     {
         for (int i = 0; i < CREATURE_MAX_SPELLS; ++i)
         {
-            m_spells[i] = templateSpells->spells[i];
+            Knowing().Slot(i, templateSpells->spells[i]);
         }
     }
 
@@ -2073,14 +2065,14 @@ SpellEntry const* Creature::ReachWithSpellAttack(Unit* pVictim)
 
     for (uint32 i = 0; i < CREATURE_MAX_SPELLS; ++i)
     {
-        if (!m_spells[i])
+        if (!Knowing().Slot(i))
         {
             continue;
         }
-        SpellEntry const* spellInfo = sSpellStore.LookupEntry(m_spells[i]);
+        SpellEntry const* spellInfo = sSpellStore.LookupEntry(Knowing().Slot(i));
         if (!spellInfo)
         {
-            sLog.outError("WORLD: unknown spell id %i", m_spells[i]);
+            sLog.outError("WORLD: unknown spell id %i", Knowing().Slot(i));
             continue;
         }
 
@@ -2149,14 +2141,14 @@ SpellEntry const* Creature::ReachWithSpellCure(Unit* pVictim)
 
     for (uint32 i = 0; i < CREATURE_MAX_SPELLS; ++i)
     {
-        if (!m_spells[i])
+        if (!Knowing().Slot(i))
         {
             continue;
         }
-        SpellEntry const* spellInfo = sSpellStore.LookupEntry(m_spells[i]);
+        SpellEntry const* spellInfo = sSpellStore.LookupEntry(Knowing().Slot(i));
         if (!spellInfo)
         {
-            sLog.outError("WORLD: unknown spell id %i", m_spells[i]);
+            sLog.outError("WORLD: unknown spell id %i", Knowing().Slot(i));
             continue;
         }
 
@@ -2768,25 +2760,6 @@ Unit* Creature::SelectAttackingTarget(AttackingTarget target, uint32 position, S
 bool Creature::IsInEvadeMode() const
 {
     return !i_motionMaster.empty() && i_motionMaster.GetCurrentMovementGeneratorType() == HOME_MOTION_TYPE;
-}
-
-/**
- * @brief Checks whether the creature knows a specific spell.
- *
- * @param spellID The spell identifier.
- * @return true if the spell is present in the creature spell list; otherwise, false.
- */
-bool Creature::HasSpell(uint32 spellID) const
-{
-    uint8 i;
-    for (i = 0; i < CREATURE_MAX_SPELLS; ++i)
-    {
-        if (spellID == m_spells[i])
-        {
-            break;
-        }
-    }
-    return i < CREATURE_MAX_SPELLS;                         // break before end of iteration of known spells
 }
 
 /**

@@ -62,33 +62,11 @@
 #include "Policies/Singleton.h"
 
 /**
- * @brief Stores an absolute cooldown end time for a creature spell.
- *
- * @param spell_id The spell identifier.
- * @param end_time The cooldown end time.
- */
-void Creature::_AddCreatureSpellCooldown(uint32 spell_id, time_t end_time)
-{
-    m_CreatureSpellCooldowns[spell_id] = end_time;
-}
-
-/**
- * @brief Stores the application time for a spell category cooldown.
- *
- * @param category The spell category.
- * @param apply_time The time when the category cooldown started.
- */
-void Creature::_AddCreatureCategoryCooldown(uint32 category, time_t apply_time)
-{
-    m_CreatureCategoryCooldowns[category] = apply_time;
-}
-
-/**
  * @brief Adds cooldown tracking for a creature spell and its category.
  *
  * @param spellid The spell identifier.
  */
-void Creature::AddCreatureSpellCooldown(uint32 spellid)
+void Unit::AddCreatureSpellCooldown(uint32 spellid)
 {
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellid);
     if (!spellInfo)
@@ -96,15 +74,16 @@ void Creature::AddCreatureSpellCooldown(uint32 spellid)
         return;
     }
 
-    uint32 cooldown = GetSpellRecoveryTime(spellInfo);
-    if (cooldown)
+    time_t const now = time(nullptr);
+
+    if (uint32 const cooldown = GetSpellRecoveryTime(spellInfo))
     {
-        _AddCreatureSpellCooldown(spellid, time(nullptr) + cooldown / IN_MILLISECONDS);
+        m_repertoire.ReadyAt(spellid, now + cooldown / IN_MILLISECONDS);
     }
 
     if (spellInfo->Category)
     {
-        _AddCreatureCategoryCooldown(spellInfo->Category, time(nullptr));
+        m_repertoire.CategoryUsedAt(spellInfo->Category, now);
     }
 }
 
@@ -114,7 +93,7 @@ void Creature::AddCreatureSpellCooldown(uint32 spellid)
  * @param spell_id The spell identifier.
  * @return true if the category cooldown is active; otherwise, false.
  */
-bool Creature::HasCategoryCooldown(uint32 spell_id) const
+bool Unit::HasCategoryCooldown(uint32 spell_id) const
 {
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(spell_id);
     if (!spellInfo)
@@ -122,21 +101,9 @@ bool Creature::HasCategoryCooldown(uint32 spell_id) const
         return false;
     }
 
-    CreatureSpellCooldowns::const_iterator itr = m_CreatureCategoryCooldowns.find(spellInfo->Category);
-    return (itr != m_CreatureCategoryCooldowns.end() && time_t(itr->second + (spellInfo->CategoryRecoveryTime / IN_MILLISECONDS)) > time(nullptr));
-}
-
-/**
- * @brief Gets the remaining cooldown delay for a creature spell.
- *
- * @param spellId The spell identifier.
- * @return Remaining cooldown in seconds.
- */
-uint32 Creature::GetCreatureSpellCooldownDelay(uint32 spellId) const
-{
-    CreatureSpellCooldowns::const_iterator itr = m_CreatureSpellCooldowns.find(spellId);
-    time_t t = time(nullptr);
-    return uint32(itr != m_CreatureSpellCooldowns.end() && itr->second > t ? itr->second - t : 0);
+    return m_repertoire.CategoryDown(spellInfo->Category,
+                                     spellInfo->CategoryRecoveryTime / IN_MILLISECONDS,
+                                     time(nullptr));
 }
 
 /**
@@ -145,8 +112,7 @@ uint32 Creature::GetCreatureSpellCooldownDelay(uint32 spellId) const
  * @param spell_id The spell identifier.
  * @return true if a cooldown is active; otherwise, false.
  */
-bool Creature::HasSpellCooldown(uint32 spell_id) const
+bool Unit::HasSpellCooldown(uint32 spell_id) const
 {
-    CreatureSpellCooldowns::const_iterator itr = m_CreatureSpellCooldowns.find(spell_id);
-    return (itr != m_CreatureSpellCooldowns.end() && itr->second > time(nullptr)) || HasCategoryCooldown(spell_id);
+    return m_repertoire.SpellDown(spell_id, time(nullptr)) || HasCategoryCooldown(spell_id);
 }

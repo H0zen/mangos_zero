@@ -45,8 +45,7 @@
  */
 void Pet::_LoadSpellCooldowns()
 {
-    m_CreatureSpellCooldowns.clear();
-    m_CreatureCategoryCooldowns.clear();
+    Knowing().Clear();
 
     QueryResult* result = CharacterDatabase.PQuery("SELECT `spell`,`time` FROM `pet_spell_cooldown` WHERE `guid` = '%u'", m_charmInfo->GetPetNumber());
 
@@ -87,7 +86,7 @@ void Pet::_LoadSpellCooldowns()
 
         delete result;
 
-        if (!m_CreatureSpellCooldowns.empty() && GetOwner())
+        if (!Knowing().NothingDown() && GetOwner())
         {
             ((Player*)GetOwner())->GetSession()->SendPacket(&data);
         }
@@ -107,19 +106,13 @@ void Pet::_SaveSpellCooldowns()
 
     time_t curTime = time(nullptr);
 
-    // remove oudated and save active
-    for (CreatureSpellCooldowns::iterator itr = m_CreatureSpellCooldowns.begin(); itr != m_CreatureSpellCooldowns.end();)
+    // what has already come back is not worth writing down
+    Knowing().ForgetExpired(curTime);
+
+    for (auto const& down : Knowing().StillDown())
     {
-        if (itr->second <= curTime)
-        {
-            m_CreatureSpellCooldowns.erase(itr++);
-        }
-        else
-        {
-            stmt = CharacterDatabase.CreateStatement(insSpellCD, "INSERT INTO `pet_spell_cooldown` (`guid`,`spell`,`time`) VALUES (?, ?, ?)");
-            stmt.PExecute(m_charmInfo->GetPetNumber(), itr->first, uint64(itr->second));
-            ++itr;
-        }
+        stmt = CharacterDatabase.CreateStatement(insSpellCD, "INSERT INTO `pet_spell_cooldown` (`guid`,`spell`,`time`) VALUES (?, ?, ?)");
+        stmt.PExecute(m_charmInfo->GetPetNumber(), down.first, uint64(down.second));
     }
 }
 

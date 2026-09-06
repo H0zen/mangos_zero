@@ -4489,7 +4489,7 @@ void CharmInfo::InitPossessCreateSpells()
 
     for (uint32 x = 0; x < CREATURE_MAX_SPELLS; ++x)
     {
-        uint32 const spellId = static_cast<Creature&>(m_driven).m_spells[x];
+        uint32 const spellId = m_driven.Knowing().Slot(x);
 
         if (IsPassiveSpell(spellId))
         {
@@ -4517,7 +4517,7 @@ void CharmInfo::InitCharmCreateSpells()
 
     for (uint32 x = 0; x < CREATURE_MAX_SPELLS; ++x)
     {
-        uint32 spellId = static_cast<Creature&>(m_driven).m_spells[x];
+        uint32 spellId = m_driven.Knowing().Slot(x);
 
         if (!spellId)
         {
