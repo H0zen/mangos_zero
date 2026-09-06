@@ -90,11 +90,11 @@ void instances::ResetInstances(Player& who, WorldPacket& /*recv_data*/)
     {
         if (pGroup->IsLeader(who.GetObjectGuid()))
         {
-            pGroup->ResetInstances(INSTANCE_RESET_ALL, &who);
+            pGroup->Binds().Reset(INSTANCE_RESET_ALL, &who);
         }
     }
     else
     {
-        who.ResetInstances(INSTANCE_RESET_ALL);
+        who.Binds().Reset(INSTANCE_RESET_ALL);
     }
 }

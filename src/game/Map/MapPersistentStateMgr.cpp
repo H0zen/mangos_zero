@@ -332,12 +332,12 @@ void DungeonPersistentState::UnbindThisState()
     while (!m_playerList.empty())
     {
         Player* player = *(m_playerList.begin());
-        player->UnbindInstance(GetMapId(), true);
+        player->Binds().Release(GetMapId(), true);
     }
     while (!m_groupList.empty())
     {
         Group* group = *(m_groupList.begin());
-        group->UnbindInstance(GetMapId(), true);
+        group->Binds().Release(GetMapId(), true);
     }
 }
 
@@ -773,7 +773,7 @@ MapPersistentStateManager::~MapPersistentStateManager()
 
 /**
  - adding instance into manager
- - called from DungeonMap::Add, _LoadBoundInstances, LoadGroups
+ - called from DungeonMap::Add, DungeonBinds::Load, LoadGroups
  */
 MapPersistentState* MapPersistentStateManager::AddPersistentState(MapEntry const* mapEntry, uint32 instanceId, time_t resetTime, bool canReset, bool load /*=false*/, bool initPools /*= true*/)
 {
@@ -1062,7 +1062,7 @@ void MapPersistentStateManager::PackInstances()
 void MapPersistentStateManager::_ResetSave(PersistentStateMap& holder, PersistentStateMap::iterator& itr)
 {
     // unbind all players bound to the instance
-    // do not allow UnbindInstance to automatically unload the InstanceSaves
+    // giving up a hold must not unload the copies while the map is walked
     lock_instLists = true;
     delete itr->second;
     holder.erase(itr++);

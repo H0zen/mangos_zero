@@ -362,7 +362,7 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea, bool sendInitialWorldSta
 void Player::UpdateHomebindTime(uint32 time)
 {
     // GMs never get homebind timer online
-    if (m_InstanceValid || isGameMaster())
+    if (Binds().StillWelcome() || isGameMaster())
     {
         if (Home().Countdown())                                // instance valid, but timer not reset
         {

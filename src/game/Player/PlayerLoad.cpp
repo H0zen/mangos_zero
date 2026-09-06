@@ -258,7 +258,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     _LoadHonorCP(holder->GetResult(PLAYER_LOGIN_QUERY_LOADHONORCP));
 
-    _LoadBoundInstances(holder->GetResult(PLAYER_LOGIN_QUERY_LOADBOUNDINSTANCES));
+    m_binds.Load(holder->GetResult(PLAYER_LOGIN_QUERY_LOADBOUNDINSTANCES));
 
     if (!IsPlaceable(*this))
     {
@@ -390,8 +390,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         }
     }
 
-    // player bounded instance saves loaded in _LoadBoundInstances, group versions at group loading
-    DungeonPersistentState* state = GetBoundInstanceSaveForSelfOrGroup(GetMapId());
+    // his own holds are read above; his group's are read when the group is
+    DungeonPersistentState* state = Binds().CopyForHimOrHisGroup(GetMapId());
 
     // load the player's map here if it's not already loaded
     SetMap(sMapMgr.CreateMap(GetMapId(), this));
@@ -1584,276 +1584,6 @@ void Player::_LoadGroup(QueryResult* result)
     }
 }
 
-/**
- * @brief Loads the player's saved dungeon and raid instance bindings.
- *
- * @param result The query result containing character instance bind rows.
- */
-void Player::_LoadBoundInstances(QueryResult* result)
-{
-    m_boundInstances.clear();
-
-    Group* group = GetGroup();
-
-    // QueryResult *result = CharacterDatabase.PQuery("SELECT `id`, `permanent`, `map`, `resettime` FROM `character_instance` LEFT JOIN `instance` ON `instance` = `id` WHERE `guid` = '%u'", GUID_LOPART(m_guid));
-    if (result)
-    {
-        do
-        {
-            Field* fields = result->Fetch();
-            bool perm = fields[1].GetBool();
-            uint32 mapId = fields[2].GetUInt32();
-            uint32 instanceId = fields[0].GetUInt32();
-            time_t resetTime = (time_t)fields[3].GetUInt64();
-            // the resettime for normal instances is only saved when the InstanceSave is unloaded
-            // so the value read from the DB may be wrong here but only if the InstanceSave is loaded
-            // and in that case it is not used
-
-            MapEntry const* mapEntry = sMapStore.LookupEntry(mapId);
-            if (!mapEntry || !mapEntry->IsDungeon())
-            {
-                sLog.outError("_LoadBoundInstances: player %s(%d) has bind to nonexistent or not dungeon map %d", GetName(), GetGUIDLow(), mapId);
-                CharacterDatabase.PExecute("DELETE FROM `character_instance` WHERE `guid` = '%u' AND `instance` = '%u'", GetGUIDLow(), instanceId);
-                continue;
-            }
-
-            if (!perm && group)
-            {
-                sLog.outError("_LoadBoundInstances: %s is in group (Id: %d) but has a non-permanent character bind to map %d,%d",
-                    GetGuidStr().c_str(), group->GetId(), mapId, instanceId);
-                CharacterDatabase.PExecute("DELETE FROM `character_instance` WHERE `guid` = '%u' AND `instance` = '%u'",
-                    GetGUIDLow(), instanceId);
-                continue;
-            }
-
-            // since non permanent binds are always solo bind, they can always be reset
-            DungeonPersistentState* state = (DungeonPersistentState*)sMapPersistentStateMgr.AddPersistentState(mapEntry, instanceId, resetTime, !perm, true);
-            if (state)
-            {
-                BindToInstance(state, perm, true);
-            }
-        }
-        while (result->NextRow());
-        delete result;
-    }
-}
-
-/**
- * @brief Finds the player's instance bind for a specific map.
- *
- * @param mapid The map identifier to look up.
- * @return The matching bind entry, or nullptr if none exists.
- */
-InstancePlayerBind* Player::GetBoundInstance(uint32 mapid)
-{
-
-    BoundInstancesMap::iterator itr = m_boundInstances.find(mapid);
-    if (itr != m_boundInstances.end())
-    {
-        return &itr->second;
-    }
-    else
-    {
-        return nullptr;
-    }
-}
-
-/**
- * @brief Removes the player's instance bind for a map.
- *
- * @param mapid The bound map identifier.
- * @param unload True when called during load or unload paths that should skip DB deletion.
- */
-void Player::UnbindInstance(uint32 mapid, bool unload)
-{
-    BoundInstancesMap::iterator itr = m_boundInstances.find(mapid);
-    UnbindInstance(itr, unload);
-}
-
-/**
- * @brief Removes the instance bind referenced by an iterator.
- *
- * @param itr Iterator pointing at the bind to remove.
- * @param unload True when called during load or unload paths that should skip DB deletion.
- */
-void Player::UnbindInstance(BoundInstancesMap::iterator& itr, bool unload)
-{
-    if (itr != m_boundInstances.end())
-    {
-        if (!unload)
-        {
-            CharacterDatabase.PExecute("DELETE FROM `character_instance` WHERE `guid` = '%u' AND `instance` = '%u'",
-                GetGUIDLow(), itr->second.state->GetInstanceId());
-        }
-        itr->second.state->RemovePlayer(this);              // state can become invalid
-        m_boundInstances.erase(itr++);
-    }
-}
-
-/**
- * @brief Binds the player to a dungeon persistent state.
- *
- * @param state The persistent instance state to bind.
- * @param permanent True for a permanent lock, false for a temporary one.
- * @param load True when rebuilding the bind from saved data.
- * @return The resulting bind entry, or nullptr if the state was invalid.
- */
-InstancePlayerBind* Player::BindToInstance(DungeonPersistentState* state, bool permanent, bool load)
-{
-    if (state)
-    {
-        InstancePlayerBind& bind = m_boundInstances[state->GetMapId()];
-        if (bind.state)
-        {
-            // update the state when the group kills a boss
-            if (permanent != bind.perm || state != bind.state)
-            {
-                if (!load)
-                {
-                    CharacterDatabase.PExecute("UPDATE `character_instance` SET `instance` = '%u', `permanent` = '%u' WHERE `guid` = '%u' AND `instance` = '%u'",
-                        state->GetInstanceId(), permanent, GetGUIDLow(), bind.state->GetInstanceId());
-                }
-            }
-        }
-        else
-        {
-            if (!load)
-            {
-                CharacterDatabase.PExecute("INSERT INTO `character_instance` (`guid`, `instance`, `permanent`) VALUES ('%u', '%u', '%u')",
-                    GetGUIDLow(), state->GetInstanceId(), permanent);
-            }
-        }
-
-        if (bind.state != state)
-        {
-            if (bind.state)
-            {
-                bind.state->RemovePlayer(this);
-            }
-            state->AddPlayer(this);
-        }
-
-        if (permanent)
-        {
-            state->SetCanReset(false);
-        }
-
-        bind.state = state;
-        bind.perm = permanent;
-        if (!load)
-        {
-            DEBUG_LOG("Player::BindToInstance: %s(%d) is now bound to map %d, instance %d",
-                GetName(), GetGUIDLow(), state->GetMapId(), state->GetInstanceId());
-        }
-
-        return &bind;
-    }
-    else
-    {
-        return nullptr;
-    }
-}
-
-/**
- * @brief Resolves the instance save that applies to the player or the player's group.
- *
- * @param mapid The map identifier to inspect.
- * @return The applicable persistent state, or nullptr if none exists.
- */
-DungeonPersistentState* Player::GetBoundInstanceSaveForSelfOrGroup(uint32 mapid)
-{
-    MapEntry const* mapEntry = sMapStore.LookupEntry(mapid);
-    if (!mapEntry)
-    {
-        return nullptr;
-    }
-
-    InstancePlayerBind* pBind = GetBoundInstance(mapid);
-    DungeonPersistentState* state = pBind ? pBind->state : nullptr;
-
-    // the player's permanent player bind is taken into consideration first
-    // then the player's group bind and finally the solo bind.
-    if (!pBind || !pBind->perm)
-    {
-        InstanceGroupBind* groupBind = nullptr;
-        if (Group* group = GetGroup())
-        {
-            if ((groupBind = group->GetBoundInstance(mapid)))
-            {
-                state = groupBind->state;
-            }
-        }
-    }
-
-    return state;
-}
-
-/**
- * @brief Sends the player's permanent raid instance lock information to the client.
- */
-void Player::SendRaidInfo()
-{
-    uint32 counter = 0;
-
-    WorldPacket data(SMSG_RAID_INSTANCE_INFO, 4);
-
-    size_t p_counter = data.wpos();
-    data << uint32(counter);                                // placeholder
-
-    for (BoundInstancesMap::const_iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end(); ++itr)
-    {
-        if (itr->second.perm)
-        {
-            DungeonPersistentState* state = itr->second.state;
-            data << uint32(state->GetMapId());              // map id
-            data << uint32(state->GetResetTime() - time(nullptr));
-            data << uint32(state->GetInstanceId());         // instance id
-            counter++;
-        }
-    }
-
-    data.put<uint32>(p_counter, counter);
-    GetSession()->SendPacket(&data);
-}
-
-/**
- - called on every successful teleportation to a map
- */
-void Player::SendSavedInstances()
-{
-    bool hasBeenSaved = false;
-    WorldPacket data;
-
-    for (BoundInstancesMap::const_iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end(); ++itr)
-    {
-        if (itr->second.perm)                               // only permanent binds are sent
-        {
-            hasBeenSaved = true;
-            break;
-        }
-    }
-
-    // Send opcode 811. true or false means, whether you have current raid instances
-    data.Initialize(SMSG_UPDATE_INSTANCE_OWNERSHIP, 4);
-    data << uint32(hasBeenSaved);
-    GetSession()->SendPacket(&data);
-
-    if (!hasBeenSaved)
-    {
-        return;
-    }
-
-    for (BoundInstancesMap::const_iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end(); ++itr)
-    {
-        if (itr->second.perm)
-        {
-            data.Initialize(SMSG_UPDATE_LAST_INSTANCE, 4);
-            data << uint32(itr->second.state->GetMapId());
-            GetSession()->SendPacket(&data);
-        }
-    }
-}
-
 /// convert the player's binds to the group
 void Player::ConvertInstancesToGroup(Player* player, Group* group, ObjectGuid player_guid)
 {
@@ -1876,20 +1606,21 @@ void Player::ConvertInstancesToGroup(Player* player, Group* group, ObjectGuid pl
 
     if (player)
     {
-        for (BoundInstancesMap::iterator itr = player->m_boundInstances.begin(); itr != player->m_boundInstances.end();)
+        DungeonHolds& held = player->Binds().All();
+        for (DungeonHolds::iterator itr = held.begin(); itr != held.end();)
         {
             has_binds = true;
 
             if (group)
             {
-                group->BindToInstance(itr->second.state, itr->second.perm, true);
+                group->Binds().BindTo(itr->second.state, itr->second.permanent, true);
             }
 
-            // permanent binds are not removed
-            if (!itr->second.perm)
+            // a permanent hold is not given up
+            if (!itr->second.permanent)
             {
                 // increments itr in call
-                player->UnbindInstance(itr, true);
+                player->Binds().Release(itr, true);
                 has_solo = true;
             }
             else

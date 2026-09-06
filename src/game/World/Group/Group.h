@@ -70,6 +70,7 @@
 #include "SharedDefines.h"
 #include "LFGHandler.h"
 #include "LFGMgr.h"
+#include "GroupBinds.h"
 
 class WorldSession;
 class Map;
@@ -219,15 +220,6 @@ class Roll : public LootValidatorRef
         uint8 itemSlot;
 };
 
-struct InstanceGroupBind
-{
-    DungeonPersistentState* state;
-    bool perm;
-    /**  permanent InstanceGroupBinds exist iff the leader has a permanent
-     *   PlayerInstanceBind for the same instance. */
-    InstanceGroupBind() : state(nullptr), perm(false) {}
-};
-
 /** request member stats checken **/
 
 /** todo: uninvite people that not accepted invite **/
@@ -254,7 +246,6 @@ class Group
         typedef std::list<MemberSlot> MemberSlotList;
         typedef MemberSlotList::const_iterator member_citerator;
 
-        typedef std::unordered_map < uint32 /*mapId*/, InstanceGroupBind > BoundInstancesMap;
     protected:
         typedef MemberSlotList::iterator member_witerator;
         typedef std::set<Player*> InvitesList;
@@ -468,7 +459,6 @@ class Group
 
         void SetTargetIcon(uint8 id, ObjectGuid targetGuid);
         bool InCombatToInstance(uint32 instanceId);
-        void ResetInstances(InstanceResetMethod method, Player* SendMsgTo);
 
         void SendTargetIconList(WorldSession* session);
         void SendUpdate();
@@ -534,13 +524,9 @@ class Group
         }
         void DelinkMember(GroupReference* /*pRef*/) {}
 
-        InstanceGroupBind* BindToInstance(DungeonPersistentState* save, bool permanent, bool load = false);
-        void UnbindInstance(uint32 mapid, bool unload = false);
-        InstanceGroupBind* GetBoundInstance(uint32 mapid);
-        BoundInstancesMap& GetBoundInstances()
-        {
-            return m_boundInstances;
-        }
+        /// The dungeons the group is held to.
+        GroupBinds& Binds() { return m_binds; }
+        GroupBinds const& Binds() const { return m_binds; }
 
 
     protected:
@@ -632,7 +618,7 @@ class Group
         ItemQualities       m_lootThreshold;
         ObjectGuid          m_looterGuid;
         Rolls               RollId;
-        BoundInstancesMap   m_boundInstances;
+        GroupBinds          m_binds;
         uint8*              m_subGroupsCounts;
         uint32              m_LFGAreaId;
 };

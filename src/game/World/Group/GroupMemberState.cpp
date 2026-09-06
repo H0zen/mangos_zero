@@ -153,11 +153,11 @@ bool Group::_addMember(ObjectGuid guid, const char* name, bool isAssistant, uint
         if (player->IsInWorld())
         {
             // if the same group invites the player back, cancel the homebind timer
-            if (InstanceGroupBind* bind = GetBoundInstance(player->GetMapId()))
+            if (DungeonHold* bind = m_binds.To(player->GetMapId()))
             {
                 if (bind->state->GetInstanceId() == player->GetInstanceId())
                 {
-                    player->m_InstanceValid = true;
+                    player->Binds().StillWelcome(true);
                 }
             }
         }
@@ -274,18 +274,7 @@ void Group::_setLeader(ObjectGuid guid)
 
         if (player)
         {
-            for (BoundInstancesMap::iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end();)
-            {
-                if (itr->second.perm)
-                {
-                    itr->second.state->RemoveGroup(this);
-                    m_boundInstances.erase(itr++);
-                }
-                else
-                {
-                    ++itr;
-                }
-            }
+            m_binds.ReleasePermanent();
         }
 
         // update the group's solo binds to the new leader

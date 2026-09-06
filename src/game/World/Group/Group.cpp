@@ -85,7 +85,7 @@ void Roll::targetObjectBuildLink()
 
 Group::Group() : m_Id(0), m_groupType(GROUPTYPE_NORMAL),
     m_bgGroup(nullptr), m_lootMethod(FREE_FOR_ALL), m_lootThreshold(ITEM_QUALITY_UNCOMMON),
-    m_subGroupsCounts(nullptr), m_LFGAreaId(0)
+    m_binds(*this), m_subGroupsCounts(nullptr), m_LFGAreaId(0)
 {
 }
 
@@ -114,14 +114,6 @@ Group::~Group()
         Roll* r = *itr;
         RollId.erase(itr);
         delete(r);
-    }
-
-    // it is undefined whether objectmgr (which stores the groups) or instancesavemgr
-    // will be unloaded first so we must be prepared for both cases
-    // this may unload some dungeon persistent state
-    for (BoundInstancesMap::iterator itr2 = m_boundInstances.begin(); itr2 != m_boundInstances.end(); ++itr2)
-    {
-        itr2->second.state->RemoveGroup(this);
     }
 
     // Sub group counters clean up
@@ -421,7 +413,7 @@ bool Group::AddMember(ObjectGuid guid, const char* name, uint8 joinMethod)
         {
             // reset the new member's instances, unless he is currently in one of them
             // including raid instances that they are not permanently bound to!
-            player->ResetInstances(INSTANCE_RESET_GROUP_JOIN);
+            player->Binds().Reset(INSTANCE_RESET_GROUP_JOIN);
         }
         player->SetGroupUpdateFlag(GROUP_UPDATE_FULL);
         UpdatePlayerOutOfRange(player);
@@ -654,7 +646,7 @@ void Group::Disband(bool hideDestroy)
         CharacterDatabase.PExecute("DELETE FROM `groups` WHERE `groupId`='%u'", m_Id);
         CharacterDatabase.PExecute("DELETE FROM `group_member` WHERE `groupId`='%u'", m_Id);
         CharacterDatabase.CommitTransaction();
-        ResetInstances(INSTANCE_RESET_GROUP_DISBAND, nullptr);
+        m_binds.Reset(INSTANCE_RESET_GROUP_DISBAND, nullptr);
     }
 
 

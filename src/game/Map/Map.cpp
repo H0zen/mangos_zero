@@ -2365,8 +2365,8 @@ bool DungeonMap::Add(Player* player, InitialWorldEntryHook* initialEntry)
     }
 
     // check for existing instance binds
-    InstancePlayerBind* playerBind = player->GetBoundInstance(GetId());
-    if (playerBind && playerBind->perm)
+    DungeonHold* playerBind = player->Binds().To(GetId());
+    if (playerBind && playerBind->permanent)
     {
         // can not enter other instances if bound permanently
         if (playerBind->state != GetPersistanceState())
@@ -2388,7 +2388,7 @@ bool DungeonMap::Add(Player* player, InitialWorldEntryHook* initialEntry)
         if (pGroup)
         {
             // solo saves should be reset when entering a group
-            InstanceGroupBind* groupBind = pGroup->GetBoundInstance(GetId());
+            DungeonHold* groupBind = pGroup->Binds().To(GetId());
             if (playerBind)
             {
                 sLog.outError("InstanceMap::Add: %s is being put in instance %d,%d,%d,%d,%d but he is in group (Id: %d) and is bound to instance %d,%d,%d,%d,%d!",
@@ -2407,13 +2407,13 @@ bool DungeonMap::Add(Player* player, InitialWorldEntryHook* initialEntry)
                 }
 
                 // no reason crash if we can fix state
-                player->UnbindInstance(GetId());
+                player->Binds().Release(GetId());
             }
 
             // bind to the group or keep using the group save
             if (!groupBind)
             {
-                pGroup->BindToInstance(GetPersistanceState(), false);
+                pGroup->Binds().BindTo(GetPersistanceState(), false);
             }
             else
             {
@@ -2441,12 +2441,12 @@ bool DungeonMap::Add(Player* player, InitialWorldEntryHook* initialEntry)
                 }
                 // if the group/leader is permanently bound to the instance
                 // players also become permanently bound when they enter
-                if (groupBind->perm)
+                if (groupBind->permanent)
                 {
                     WorldPacket data(SMSG_INSTANCE_SAVE_CREATED, 4);
                     data << uint32(0);
                     player->GetSession()->SendPacket(&data);
-                    player->BindToInstance(GetPersistanceState(), true);
+                    player->Binds().BindTo(GetPersistanceState(), true);
                 }
             }
         }
@@ -2455,7 +2455,7 @@ bool DungeonMap::Add(Player* player, InitialWorldEntryHook* initialEntry)
             // set up a solo bind or continue using it
             if (!playerBind)
             {
-                player->BindToInstance(GetPersistanceState(), false);
+                player->Binds().BindTo(GetPersistanceState(), false);
             }
             else
                 // can not jump to a different instance without resetting it
@@ -2545,7 +2545,7 @@ bool DungeonMap::Reset(InstanceResetMethod method)
                 // set the homebind timer for players inside (1 minute)
                 for (MapRefManager::iterator itr = m_mapRefManager.begin(); itr != m_mapRefManager.end(); ++itr)
                 {
-                    itr->getSource()->m_InstanceValid = false;
+                    itr->getSource()->Binds().StillWelcome(false);
                 }
             }
 
@@ -2579,10 +2579,10 @@ void DungeonMap::PermBindAllPlayers(Player* player)
         Player* plr = itr->getSource();
         // players inside an instance can not be bound to other instances
         // some players may already be permanently bound, in this case nothing happens
-        InstancePlayerBind* bind = plr->GetBoundInstance(GetId());
-        if (!bind || !bind->perm)
+        DungeonHold* bind = plr->Binds().To(GetId());
+        if (!bind || !bind->permanent)
         {
-            plr->BindToInstance(GetPersistanceState(), true);
+            plr->Binds().BindTo(GetPersistanceState(), true);
             WorldPacket data(SMSG_INSTANCE_SAVE_CREATED, 4);
             data << uint32(0);
             plr->GetSession()->SendPacket(&data);
@@ -2591,7 +2591,7 @@ void DungeonMap::PermBindAllPlayers(Player* player)
         // if the leader is not in the instance the group will not get a perm bind
         if (group && group->GetLeaderGuid() == plr->GetObjectGuid())
         {
-            group->BindToInstance(GetPersistanceState(), true);
+            group->Binds().BindTo(GetPersistanceState(), true);
         }
     }
 }
@@ -2747,7 +2747,7 @@ bool BattleGroundMap::Add(Player* player, InitialWorldEntryHook* initialEntry)
     }
 
     // reset instance validity, battleground maps do not homebind
-    player->m_InstanceValid = true;
+    player->Binds().StillWelcome(true);
 
     return Map::Add(player, initialEntry);
 }

@@ -417,7 +417,7 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
  *
  * @param session The owning world session.
  */
-Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_arms(*this), m_spellMods(*this), m_duel(*this), m_battle(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
+Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_arms(*this), m_spellMods(*this), m_duel(*this), m_battle(*this), m_binds(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
 {
 
     m_transport = 0;
@@ -545,7 +545,6 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
 
     /////////////////// Instance System /////////////////////
     // Initialize instance validity to true
-    m_InstanceValid = true;
 
     // Initialize aura base modifiers
     for (int i = 0; i < BASEMOD_END; ++i)
@@ -597,11 +596,6 @@ Player::~Player()
         delete ItemSetEff[x];
     }
 
-    // clean up player-instance binds, may unload some instance saves
-    for (BoundInstancesMap::iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end(); ++itr)
-    {
-        itr->second.state->RemovePlayer(this);
-    }
 }
 
 /**
@@ -1533,7 +1527,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
 
         // If the map is not created, assume it is possible to enter it.
         // It will be created in the WorldPortAck.
-        DungeonPersistentState* state = GetBoundInstanceSaveForSelfOrGroup(mapid);
+        DungeonPersistentState* state = Binds().CopyForHimOrHisGroup(mapid);
         Map* map = sMapMgr.FindMap(mapid, state ? state->GetInstanceId() : 0);
         if (!map || map->CanEnter(this))
         {
@@ -1667,7 +1661,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
                 }
 
                 GetSession()->SendPacket(&data);
-                SendSavedInstances();
+                Binds().TellSaved();
             }
         }
         else                                                // !map->CanEnter(this)

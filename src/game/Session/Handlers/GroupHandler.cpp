@@ -1205,7 +1205,7 @@ void groups::RequestPartyMemberStats(Player& who, WorldPacket& recv_data)
 void groups::RequestRaidInfo(Player& who, WorldPacket& /*recv_data*/)
 {
     // every time the player checks the character screen
-    who.SendRaidInfo();
+    who.Binds().TellRaidInfo();
 }
 
 /**

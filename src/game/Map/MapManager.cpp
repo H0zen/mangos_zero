@@ -575,7 +575,7 @@ Map* MapManager::CreateInstance(uint32 id, Player* player)
         map = FindMap(id, NewInstanceId);
         MANGOS_ASSERT(map);
     }
-    else if (DungeonPersistentState* pSave = player->GetBoundInstanceSaveForSelfOrGroup(id))
+    else if (DungeonPersistentState* pSave = player->Binds().CopyForHimOrHisGroup(id))
     {
         // solo/perm/group
         NewInstanceId = pSave->GetInstanceId();

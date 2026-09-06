@@ -953,54 +953,6 @@ void Player::SendResetFailedNotify(uint32 mapid)
     GetSession()->SendPacket(&data);
 }
 
-/// Reset all solo instances and optionally send a message on success for each
-void Player::ResetInstances(InstanceResetMethod method)
-{
-    // method can be INSTANCE_RESET_ALL, INSTANCE_RESET_GROUP_JOIN
-
-    for (BoundInstancesMap::iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end();)
-    {
-        DungeonPersistentState* state = itr->second.state;
-        const MapEntry* entry = sMapStore.LookupEntry(itr->first);
-        if (!entry || !state->CanReset())
-        {
-            ++itr;
-            continue;
-        }
-
-        if (method == INSTANCE_RESET_ALL)
-        {
-            // the "reset all instances" method can only reset normal maps
-            if (entry->InstanceType == MAP_RAID)
-            {
-                ++itr;
-                continue;
-            }
-        }
-
-        // if the map is loaded, reset it
-        if (Map* map = sMapMgr.FindMap(state->GetMapId(), state->GetInstanceId()))
-        {
-            if (map->IsDungeon())
-            {
-                ((DungeonMap*)map)->Reset(method);
-            }
-        }
-
-        // since this is a solo instance there should not be any players inside
-        if (method == INSTANCE_RESET_ALL)
-        {
-            SendResetInstanceSuccess(state->GetMapId());
-        }
-
-        state->DeleteFromDB();
-        m_boundInstances.erase(itr++);
-
-        // the following should remove the instance save from the manager and delete it as well
-        state->RemovePlayer(this);
-    }
-}
-
 /**
  * @brief Sends a successful instance reset notification to the client.
  *

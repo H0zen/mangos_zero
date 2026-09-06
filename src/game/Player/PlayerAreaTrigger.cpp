@@ -250,7 +250,7 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, uint32& m
     }
 
     // If the map is not created, assume it is possible to enter it.
-    DungeonPersistentState* state = GetBoundInstanceSaveForSelfOrGroup(at->target_mapId);
+    DungeonPersistentState* state = Binds().CopyForHimOrHisGroup(at->target_mapId);
     Map* map = sMapMgr.FindMap(at->target_mapId, state ? state->GetInstanceId() : 0);
 
     // Map's state check
@@ -269,12 +269,12 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, uint32& m
         }
 
         // Bind Checks
-        InstancePlayerBind* pBind = GetBoundInstance(at->target_mapId);
-        if (pBind && pBind->perm && pBind->state != state)
+        DungeonHold* pBind = Binds().To(at->target_mapId);
+        if (pBind && pBind->permanent && pBind->state != state)
         {
             return AREA_LOCKSTATUS_HAS_BIND;
         }
-        if (pBind && pBind->perm && pBind->state != map->GetPersistentState())
+        if (pBind && pBind->permanent && pBind->state != map->GetPersistentState())
         {
             return AREA_LOCKSTATUS_HAS_BIND;
         }

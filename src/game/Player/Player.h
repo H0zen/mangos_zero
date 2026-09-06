@@ -82,6 +82,7 @@
 #include "PlayedTime.h"
 #include "Duel.h"
 #include "BattleGroundStay.h"
+#include "DungeonBinds.h"
 #include "QueueSlots.h"
 #include "Trade.h"
 #include "SpellModifiers.h"
@@ -599,17 +600,6 @@ enum ReputationSource
 
 // Player summoning auto-decline time (in seconds)
 #define MAX_MONEY_AMOUNT        (0x7FFFFFFF-1) // Maximum money amount
-
-// Structure to hold instance player bind information
-struct InstancePlayerBind
-{
-    DungeonPersistentState* state;
-    bool perm;
-    /**  permanent PlayerInstanceBinds are created in Raid instances for players
-     *   that aren't already permanently bound when they are inside when a boss is killed
-     *   or when they enter an instance that the group leader is permanently bound to. */
-    InstancePlayerBind() : state(nullptr), perm(false) {}
-};
 
 // Enum to represent player rest states
 enum PlayerRestState
@@ -2230,7 +2220,6 @@ class Player : public Unit
         void SendAutoRepeatCancel();
         void SendExplorationExperience(uint32 Area, uint32 Experience);
 
-        void ResetInstances(InstanceResetMethod method);
 
         // Send reset instance success
         void SendResetInstanceSuccess(uint32 MapId);
@@ -2863,6 +2852,10 @@ class Player : public Unit
         BattleGroundStay& Battle() { return m_battle; }
         BattleGroundStay const& Battle() const { return m_battle; }
 
+        /// The dungeons he is held to.
+        DungeonBinds& Binds() { return m_binds; }
+        DungeonBinds const& Binds() const { return m_binds; }
+
         /// Puts off something that must wait until he has arrived.
         void ScheduleDelayedOperation(uint32 operation) { m_teleport.OnArrival(operation); }
 
@@ -2935,35 +2928,15 @@ class Player : public Unit
         /***                 INSTANCE SYSTEM                   ***/
         /*********************************************************/
 
-        typedef std::unordered_map < uint32 /*mapId*/, InstancePlayerBind > BoundInstancesMap;
 
         // Update the homebind time
         void UpdateHomebindTime(uint32 time);
 
-        bool m_InstanceValid;
-        // permanent binds and solo binds
-        BoundInstancesMap m_boundInstances;
-        InstancePlayerBind* GetBoundInstance(uint32 mapid);
-        BoundInstancesMap& GetBoundInstances()
-        {
-            return m_boundInstances;
-        }
 
-        void UnbindInstance(uint32 mapid, bool unload = false);
-        void UnbindInstance(BoundInstancesMap::iterator& itr, bool unload = false);
-        InstancePlayerBind* BindToInstance(DungeonPersistentState* save, bool permanent, bool load = false);
-
-        // Send raid information to the client
-        void SendRaidInfo();
-
-        // Send saved instances to the client
-        void SendSavedInstances();
 
         // Convert instances to group
         static void ConvertInstancesToGroup(Player* player, Group* group = nullptr, ObjectGuid player_guid = ObjectGuid());
 
-        // Get the bound instance save for self or group
-        DungeonPersistentState* GetBoundInstanceSaveForSelfOrGroup(uint32 mapid);
 
         // Get the area trigger lock status
         AreaLockStatus GetAreaTriggerLockStatus(AreaTrigger const* at, uint32& miscRequirement);
@@ -3077,6 +3050,8 @@ class Player : public Unit
 
         BattleGroundStay m_battle;
 
+        DungeonBinds m_binds;
+
         /*********************************************************/
         /***                    QUEST SYSTEM                   ***/
         /*********************************************************/
@@ -3096,7 +3071,6 @@ class Player : public Unit
         void _LoadAuras(QueryResult* result, uint32 timediff);
 
         // Load bound instances from the database
-        void _LoadBoundInstances(QueryResult* result);
         void _LoadHonorCP(QueryResult* result) { m_honor.LoadFromDB(result); }
         void _LoadInventory(QueryResult* result, uint32 timediff);
 

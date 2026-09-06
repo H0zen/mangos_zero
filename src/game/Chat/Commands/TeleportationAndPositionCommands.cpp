@@ -391,12 +391,12 @@ bool ChatHandler::HandleAppearCommand(char* args)
 
             // if the player or the player's group is bound to another instance
             // the player will not be bound to another one
-            InstancePlayerBind* pBind = _player->GetBoundInstance(target->GetMapId());
+            DungeonHold* pBind = _player->Binds().To(target->GetMapId());
             if (!pBind)
             {
                 Group* group = _player->GetGroup();
                 // if no bind exists, create a solo bind
-                InstanceGroupBind* gBind = group ? group->GetBoundInstance(target->GetMapId()) : nullptr;
+                DungeonHold* gBind = group ? group->Binds().To(target->GetMapId()) : nullptr;
                 // if no bind exists, create a solo bind
                 if (!gBind)
                 {
@@ -405,11 +405,11 @@ bool ChatHandler::HandleAppearCommand(char* args)
                     // if player is group leader then we need add group bind
                     if (group && group->IsLeader(_player->GetObjectGuid()))
                     {
-                        group->BindToInstance(save, !save->CanReset());
+                        group->Binds().BindTo(save, !save->CanReset());
                     }
                     else
                     {
-                        _player->BindToInstance(save, !save->CanReset());
+                        _player->Binds().BindTo(save, !save->CanReset());
                     }
                 }
             }

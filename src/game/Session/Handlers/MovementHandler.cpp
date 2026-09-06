@@ -149,9 +149,9 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     InstanceTemplate const* mInstance = ObjectMgr::GetInstanceTemplate(loc.MapId());
 
     // reset instance validity, except if going to an instance inside an instance
-    if (GetPlayer()->m_InstanceValid == false && !mInstance)
+    if (!GetPlayer()->Binds().StillWelcome() && !mInstance)
     {
-        GetPlayer()->m_InstanceValid = true;
+        GetPlayer()->Binds().StillWelcome(true);
     }
 
     GetPlayer()->SetSemaphoreTeleportFar(false);
