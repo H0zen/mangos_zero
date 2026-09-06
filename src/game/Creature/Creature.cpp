@@ -244,7 +244,7 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
     m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false),
     m_AI_locked(false), m_IsDeadByDefault(false), m_temporaryFactionFlags(TEMPFACTION_NONE),
     m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0),
-    m_creatureInfo(nullptr), m_PlayerDamageReq(0), m_sheet(*this), m_links(*this)
+    m_creatureInfo(nullptr), m_PlayerDamageReq(0), m_sheet(*this), m_links(*this), m_pace(*this)
 {
     /* Loot data */
     hasBeenLootedOnce = false;
@@ -566,8 +566,8 @@ bool Creature::InitEntry(uint32 Entry, Team team, CreatureData const* data /*=nu
     SetCastSpeedMod(1.0f);
 
     // update speed for the new CreatureInfo base speed mods
-    UpdateSpeed(MOVE_WALK, false);
-    UpdateSpeed(MOVE_RUN,  false);
+    Pacing().Reckon(MOVE_WALK, false);
+    Pacing().Reckon(MOVE_RUN,  false);
 
     SetLevitate(cinfo->InhabitType & INHABIT_AIR); // TODO: may not be correct to send opcode at this point (already handled by UPDATE_OBJECT createObject)
 
@@ -1089,7 +1089,7 @@ void Creature::DoFleeToGetAssistance()
         Cell::VisitGridObjects(this, searcher, radius);
 
         SetNoSearchAssistance(true);
-        UpdateSpeed(MOVE_RUN, false);
+        Pacing().Reckon(MOVE_RUN, false);
 
         if (!pCreature)
         {
@@ -1899,7 +1899,7 @@ void Creature::SetDeathState(DeathState s)
         if (HasSearchedAssistance())
         {
             SetNoSearchAssistance(false);
-            UpdateSpeed(MOVE_RUN, false);
+            Pacing().Reckon(MOVE_RUN, false);
         }
 
         if (CanFly())

@@ -69,7 +69,7 @@ Pet::Pet(PetType type) : Creature(CREATURE_SUBTYPE_PET),
     m_TrainingPoints(0), m_resetTalentsCost(0), m_resetTalentsTime(0),
     m_removed(false), m_happinessTimer(7500), m_loyaltyTimer(12000), m_petType(type), m_duration(0),
     m_loyaltyPoints(0), m_bonusdamage(0), m_auraUpdateMask(0), m_loading(false),
-    m_petModeFlags(PET_MODE_DEFAULT), m_sheet(*this)
+    m_petModeFlags(PET_MODE_DEFAULT), m_sheet(*this), m_pace(*this)
 {
     m_name = "Pet";
     m_regenTimer = 4000;
@@ -1418,119 +1418,6 @@ void Pet::ApplyModeFlags(PetModeFlags mode, bool apply)
     data << GetObjectGuid();
     data << uint32(m_petModeFlags);
     ToPlayer(owner)->SendDirectMessage(&data);
-}
-
-/**
- * @brief Updates pet movement speed relative to owner modifiers.
- *
- * @param mtype The movement type to update.
- * @param forced true to force an update packet.
- * @param ratio Additional speed ratio multiplier.
- */
-void Pet::UpdateSpeed(UnitMoveType mtype, bool forced, float ratio)
-{
-    Unit* unitOwner = GetOwner();
-    Player *owner = unitOwner ? ToPlayer(unitOwner) : nullptr;
-    if (!owner)
-    {
-        return Unit::UpdateSpeed(mtype, forced, ratio);         // NPC pets are usual creatures
-    }
-
-    int32 main_speed_mod  = 0;
-    float stack_bonus     = 1.0f;
-    float non_stack_bonus = 1.0f;
-
-    switch (mtype)
-    {
-        case MOVE_WALK:
-            break;
-        case MOVE_RUN:
-            if (!m_attacking && owner->HasAura(19596))   // Bestial Swiftness: prevent while following
-            {
-                const auto auras = GetAurasByType(SPELL_AURA_MOD_INCREASE_SPEED);
-                for (auto* auraOf : auras)
-                {
-                    if (auraOf->GetId() != 19582)                        // exclude the aura influenced by Bestial Swiftness
-                    {
-                        main_speed_mod = std::max(auraOf->GetBasePoints(), main_speed_mod);
-                    }
-                }
-            }
-            else
-            {
-                main_speed_mod = GetMaxPositiveAuraModifier(SPELL_AURA_MOD_INCREASE_SPEED);
-            }
-
-            stack_bonus     = GetTotalAuraMultiplier(SPELL_AURA_MOD_SPEED_ALWAYS);
-            non_stack_bonus = (100.0f + GetMaxPositiveAuraModifier(SPELL_AURA_MOD_SPEED_NOT_STACK)) / 100.0f;
-            break;
-        case MOVE_RUN_BACK:
-            return;
-        case MOVE_SWIM:
-        {
-            main_speed_mod  = GetMaxPositiveAuraModifier(SPELL_AURA_MOD_INCREASE_SWIM_SPEED);
-            break;
-        }
-        case MOVE_SWIM_BACK:
-            return;
-        default:
-            sLog.outError("Pet::UpdateSpeed: Unsupported move type (%d)", mtype);
-            return;
-    }
-
-    // Get owner current speed
-    float ownerSpeed = owner->GetSpeedRate(mtype);
-    int32 slow = owner->GetMaxNegativeAuraModifier(SPELL_AURA_MOD_DECREASE_SPEED);
-
-    // If owner is affected by speed reduction effects, do not take them into account
-    // (a dazed hunter does not affect pet's speed)
-    if (slow)
-    {
-        ownerSpeed *= 100.0f / (100.0f + slow) ;
-    }
-
-    float speed = std::max(non_stack_bonus, stack_bonus) * ownerSpeed;
-
-    if (main_speed_mod)
-    {
-        speed = speed * (100.0f + main_speed_mod) / 100.0f;
-    }
-
-    switch (mtype)
-    {
-        case MOVE_RUN:
-        case MOVE_SWIM:
-        {
-            // Normalize speed by 191 aura SPELL_AURA_USE_NORMAL_MOVEMENT_SPEED if need
-            // TODO: possible affect only on MOVE_RUN
-            if (int32 normalization = GetMaxPositiveAuraModifier(SPELL_AURA_USE_NORMAL_MOVEMENT_SPEED))
-            {
-                // Use speed from aura
-                float max_speed = normalization / baseMoveSpeed[mtype];
-                if (speed > max_speed)
-                {
-                    speed = max_speed;
-                }
-            }
-            break;
-        }
-        default:
-            break;
-    }
-
-    // Apply strongest slow aura mod to speed
-    slow = GetMaxNegativeAuraModifier(SPELL_AURA_MOD_DECREASE_SPEED);
-    if (slow)
-    {
-        speed *= (100.0f + slow) / 100.0f;
-    }
-
-    if (mtype == MOVE_RUN)
-    {
-        speed *= 1.14286f;
-    }
-
-    SetSpeedRate(mtype, speed * ratio, forced);
 }
 
 /**

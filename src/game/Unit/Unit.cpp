@@ -30,6 +30,7 @@
 #include "Utilities/MathDefines.h"
 #include <cstdlib>
 #include "Unit.h"
+#include "MovementDefines.h"
 #include "Log.h"
 #include "Opcodes.h"
 #include "WorldPacket.h"
@@ -287,10 +288,6 @@ Unit::Unit()
         m_threatModifier[i] = 1.0f;
     }
     m_isSorted = true;
-    for (int i = 0; i < MAX_MOVE_TYPE; ++i)
-    {
-        m_speed_rate[i] = 1.0f;
-    }
 
     // remove aurastates allowing special moves
     for (int i = 0; i < MAX_REACTIVE; ++i)
@@ -3035,7 +3032,7 @@ bool Unit::AttackStop(bool targetSwitch /*=false*/)
         if (((Creature*)this)->HasSearchedAssistance())
         {
             ((Creature*)this)->SetNoSearchAssistance(false);
-            UpdateSpeed(MOVE_RUN, false);
+            Pacing().Reckon(MOVE_RUN, false);
         }
     }
 
@@ -6538,4 +6535,96 @@ void Unit::DisableSpline()
 {
     m_movementInfo.RemoveMovementFlag(MovementFlags(MOVEFLAG_SPLINE_ENABLED | MOVEFLAG_FORWARD));
     movespline->_Interrupt();
+}
+
+/**
+ * @brief Applies or removes the feared state.
+ *
+ * @param apply True to apply fear; false to remove it.
+ * @param casterGuid The caster responsible for the effect.
+ * @param spellID The spell that caused the effect.
+ * @param time The remaining flee duration.
+ */
+void Unit::SetFeared(bool apply, ObjectGuid casterGuid, uint32 spellID, uint32 time)
+{
+    SetIncapacitatedState(apply, UNIT_FLAG_FLEEING, casterGuid, spellID, time);
+}
+
+/**
+ * @brief Applies or removes the confused state.
+ *
+ * @param apply True to apply confusion; false to remove it.
+ * @param casterGuid The caster responsible for the effect.
+ * @param spellID The spell that caused the effect.
+ */
+void Unit::SetConfused(bool apply, ObjectGuid casterGuid, uint32 spellID)
+{
+    SetIncapacitatedState(apply, UNIT_FLAG_CONFUSED, casterGuid, spellID);
+}
+
+/**
+ * @brief Applies or removes feign death state handling.
+ *
+ * @param apply True to enable feign death; false to clear it.
+ * @param casterGuid The caster responsible for the effect.
+ */
+void Unit::SetFeignDeath(bool apply, ObjectGuid casterGuid /*= ObjectGuid()*/)
+{
+    if (apply)
+    {
+        if (!IsPlayer())
+        {
+            StopMoving();
+        }
+        else
+        {
+            ((Player*)this)->m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
+        }
+
+        SetUnitFlag(UNIT_FLAG_UNK_29);
+        // blizz like 2.0.x
+        // SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);  [-ZERO] remove/replace ?
+
+        SetDynFlag(UNIT_DYNFLAG_DEAD);
+
+        addUnitState(UNIT_STAT_DIED);
+        CombatStop();
+        RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION);
+
+        // prevent interrupt message
+        if (casterGuid == GetObjectGuid())
+        {
+            FinishSpell(CURRENT_GENERIC_SPELL, false);
+        }
+        InterruptNonMeleeSpells(true);
+        GetHostileRefManager().deleteReferences();
+    }
+    else
+    {
+        /* when appropriate! not within this method
+        WorldPacket data(SMSG_FEIGN_DEATH_RESISTED, 0);
+        SendDirectMessage(&data);
+        */
+
+        RemoveUnitFlag(UNIT_FLAG_UNK_29);
+        // blizz like 2.0.x
+        // SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH); [-ZERO] remove/replace ?
+
+        RemoveDynFlag(UNIT_DYNFLAG_DEAD);
+
+        clearUnitState(UNIT_STAT_DIED);
+
+        if (!IsPlayer() && IsAlive())
+        {
+            // restore appropriate movement generator
+            if (getVictim())
+            {
+                GetMotionMaster()->MoveChase(getVictim());
+            }
+            else
+            {
+                GetMotionMaster()->Initialize();
+            }
+        }
+    }
 }

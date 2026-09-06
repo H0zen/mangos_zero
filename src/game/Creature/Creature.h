@@ -665,6 +665,9 @@ class Creature : public Unit
         StatSheet& Sheet() override { return m_sheet; }
         StatSheet const& Sheet() const override { return m_sheet; }
 
+        Pace& Pacing() override { return m_pace; }
+        Pace const& Pacing() const override { return m_pace; }
+
         /// What its fortunes do to the creatures tied to it.
         CreatureLinks& Links() { return m_links; }
         CreatureLinks const& Links() const { return m_links; }
@@ -1106,6 +1109,7 @@ class Creature : public Unit
     private:
         CreatureSheet m_sheet;
         CreatureLinks m_links;
+        Pace m_pace;
         GridReference<Creature> m_gridRef;
         CreatureInfo const* m_creatureInfo;                 // in difficulty mode > 0 can different from ObjMgr::GetCreatureTemplate(GetEntry())
 };

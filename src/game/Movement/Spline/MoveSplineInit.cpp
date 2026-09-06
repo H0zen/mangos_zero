@@ -130,7 +130,7 @@ namespace Movement
 
         if (args.velocity == 0.f)
         {
-            args.velocity = unit.GetSpeed(SelectSpeedType(moveFlags));
+            args.velocity = unit.Pacing().At(SelectSpeedType(moveFlags));
         }
 
         if (!args.Validate(&unit))

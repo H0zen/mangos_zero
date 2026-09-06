@@ -417,7 +417,7 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
  *
  * @param session The owning world session.
  */
-Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_arms(*this), m_spellMods(*this), m_duel(*this), m_battle(*this), m_binds(*this), m_sheet(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
+Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_arms(*this), m_spellMods(*this), m_duel(*this), m_battle(*this), m_binds(*this), m_sheet(*this), m_pace(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
 {
 
     m_transport = 0;

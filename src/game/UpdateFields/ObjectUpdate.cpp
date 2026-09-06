@@ -345,12 +345,12 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const
         // not, the unit lands wherever the guess pointed.
         unit->WriteMovementInfo(*data);
         // Unit speeds
-        *data << float(unit->GetSpeed(MOVE_WALK));
-        *data << float(unit->GetSpeed(MOVE_RUN));
-        *data << float(unit->GetSpeed(MOVE_RUN_BACK));
-        *data << float(unit->GetSpeed(MOVE_SWIM));
-        *data << float(unit->GetSpeed(MOVE_SWIM_BACK));
-        *data << float(unit->GetSpeed(MOVE_TURN_RATE));
+        *data << float(unit->Pacing().At(MOVE_WALK));
+        *data << float(unit->Pacing().At(MOVE_RUN));
+        *data << float(unit->Pacing().At(MOVE_RUN_BACK));
+        *data << float(unit->Pacing().At(MOVE_SWIM));
+        *data << float(unit->Pacing().At(MOVE_SWIM_BACK));
+        *data << float(unit->Pacing().At(MOVE_TURN_RATE));
 
         if (unit->m_movementInfo.HasMovementFlag(MOVEFLAG_SPLINE_ENABLED))
         {

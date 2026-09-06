@@ -2105,6 +2105,9 @@ class Player : public Unit
         PlayerSheet& Sheet() override { return m_sheet; }
         PlayerSheet const& Sheet() const override { return m_sheet; }
 
+        Pace& Pacing() override { return m_pace; }
+        Pace const& Pacing() const override { return m_pace; }
+
         // Get melee critical chance from agility
         float GetMeleeCritFromAgility();
 
@@ -2996,6 +2999,7 @@ class Player : public Unit
         DungeonBinds m_binds;
 
         PlayerSheet m_sheet;
+        Pace m_pace;
 
         /*********************************************************/
         /***                    QUEST SYSTEM                   ***/

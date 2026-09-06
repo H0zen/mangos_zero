@@ -1102,7 +1102,7 @@ void Aura::HandleAuraModIncreaseSpeed(bool /*apply*/, bool Real)
         }
     }
 
-    GetTarget()->UpdateSpeed(MOVE_RUN, true);
+    GetTarget()->Pacing().Reckon(MOVE_RUN, true);
 }
 
 /**
@@ -1119,7 +1119,7 @@ void Aura::HandleAuraModIncreaseMountedSpeed(bool /*apply*/, bool Real)
         return;
     }
 
-    GetTarget()->UpdateSpeed(MOVE_RUN, true);
+    GetTarget()->Pacing().Reckon(MOVE_RUN, true);
 }
 
 /**
@@ -1136,7 +1136,7 @@ void Aura::HandleAuraModIncreaseSwimSpeed(bool /*apply*/, bool Real)
         return;
     }
 
-    GetTarget()->UpdateSpeed(MOVE_SWIM, true);
+    GetTarget()->Pacing().Reckon(MOVE_SWIM, true);
 }
 
 /**
@@ -1163,8 +1163,8 @@ void Aura::HandleAuraModDecreaseSpeed(bool apply, bool Real)
 
     Unit* target = GetTarget();
 
-    target->UpdateSpeed(MOVE_RUN, true);
-    target->UpdateSpeed(MOVE_SWIM, true);
+    target->Pacing().Reckon(MOVE_RUN, true);
+    target->Pacing().Reckon(MOVE_SWIM, true);
 }
 
 /**
@@ -1183,8 +1183,8 @@ void Aura::HandleAuraModUseNormalSpeed(bool /*apply*/, bool Real)
 
     Unit* target = GetTarget();
 
-    target->UpdateSpeed(MOVE_RUN, true);
-    target->UpdateSpeed(MOVE_SWIM, true);
+    target->Pacing().Reckon(MOVE_RUN, true);
+    target->Pacing().Reckon(MOVE_SWIM, true);
 }
 
 void Aura::HandleModMechanicImmunity(bool apply, bool /*Real*/)

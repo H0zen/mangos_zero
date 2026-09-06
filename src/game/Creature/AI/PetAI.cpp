@@ -126,7 +126,7 @@ void PetAI::AttackStart(Unit* u)
         // thus with the following clear the original TMG gets invalidated and crash, doh
         // hope it doesn't start to leak memory without this :-/
         // i_pet->Clear();
-        m_creature->UpdateSpeed(MOVE_RUN, false);
+        m_creature->Pacing().Reckon(MOVE_RUN, false);
         // range and action choices handled by UpdateAI
         inCombat = true;
     }

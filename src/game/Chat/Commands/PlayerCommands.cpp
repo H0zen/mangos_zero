@@ -1826,10 +1826,10 @@ bool ChatHandler::HandleModifyASpeedCommand(char* args)
         ChatHandler(chr).PSendSysMessage(LANG_YOURS_ASPEED_CHANGED, GetNameLink().c_str(), modSpeed);
     }
 
-    chr->UpdateSpeed(MOVE_WALK, true, modSpeed);
-    chr->UpdateSpeed(MOVE_RUN, true, modSpeed);
-    chr->UpdateSpeed(MOVE_SWIM, true, modSpeed);
-    // chr->UpdateSpeed(MOVE_TURN,   true, modSpeed);
+    chr->Pacing().Reckon(MOVE_WALK, true, modSpeed);
+    chr->Pacing().Reckon(MOVE_RUN, true, modSpeed);
+    chr->Pacing().Reckon(MOVE_SWIM, true, modSpeed);
+    // chr->Pacing().Reckon(MOVE_TURN,   true, modSpeed);
     return true;
 }
 
@@ -1884,7 +1884,7 @@ bool ChatHandler::HandleModifySpeedCommand(char* args)
         ChatHandler(chr).PSendSysMessage(LANG_YOURS_SPEED_CHANGED, GetNameLink().c_str(), modSpeed);
     }
 
-    chr->UpdateSpeed(MOVE_RUN, true, modSpeed);
+    chr->Pacing().Reckon(MOVE_RUN, true, modSpeed);
 
     return true;
 }
@@ -1940,7 +1940,7 @@ bool ChatHandler::HandleModifySwimCommand(char* args)
         ChatHandler(chr).PSendSysMessage(LANG_YOURS_SWIM_SPEED_CHANGED, GetNameLink().c_str(), modSpeed);
     }
 
-    chr->UpdateSpeed(MOVE_SWIM, true, modSpeed);
+    chr->Pacing().Reckon(MOVE_SWIM, true, modSpeed);
 
     return true;
 }
@@ -1996,7 +1996,7 @@ bool ChatHandler::HandleModifyBWalkCommand(char* args)
         ChatHandler(chr).PSendSysMessage(LANG_YOURS_BACK_SPEED_CHANGED, GetNameLink().c_str(), modSpeed);
     }
 
-    chr->UpdateSpeed(MOVE_RUN_BACK, true, modSpeed);
+    chr->Pacing().Reckon(MOVE_RUN_BACK, true, modSpeed);
 
     return true;
 }

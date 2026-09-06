@@ -298,7 +298,9 @@ class Pet : public Creature
 
         StatSheet& Sheet() override { return m_sheet; }
         StatSheet const& Sheet() const override { return m_sheet; }
-        void UpdateSpeed(UnitMoveType mtype, bool forced, float ratio = 1.0f) override;
+
+        Pace& Pacing() override { return m_pace; }
+        Pace const& Pacing() const override { return m_pace; }
 
         bool   CanTakeMoreActiveSpells(uint32 SpellIconID);
         void   ToggleAutocast(uint32 spellid, bool apply);
@@ -369,6 +371,7 @@ class Pet : public Creature
     private:
 
         PetSheet m_sheet;
+        PetPace m_pace;
         PetModeFlags m_petModeFlags;
 
         void SaveToDB(uint32) override                      // overwrited of Creature::SaveToDB     - don't must be called

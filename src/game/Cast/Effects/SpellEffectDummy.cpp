@@ -789,7 +789,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                         return;
                     }
 
-                    float speed = m_caster->GetSpeedRate(MOVE_RUN);
+                    float speed = m_caster->Pacing().RateOf(MOVE_RUN);
 
                     m_caster->RemoveAurasOfType(SPELL_AURA_MOUNTED);
 

@@ -74,6 +74,7 @@
 #include "UpdateFields.h"
 #include "SharedDefines.h"
 #include "Conjurations.h"
+#include "Pace.h"
 #include "Stats/StatSheet.h"
 #include "ThreatManager.h"
 #include "HostileRefManager.h"
@@ -515,20 +516,6 @@ enum UnitState
     UNIT_STAT_ALL_STATE       = 0xFFFFFFFF,
     UNIT_STAT_ALL_DYN_STATES  = UNIT_STAT_ALL_STATE & ~(UNIT_STAT_NO_COMBAT_MOVEMENT | UNIT_STAT_RUNNING | UNIT_STAT_WAYPOINT_PAUSED | UNIT_STAT_IGNORE_PATHFINDING)
 };
-
-enum UnitMoveType
-{
-    MOVE_WALK           = 0,
-    MOVE_RUN            = 1,
-    MOVE_RUN_BACK       = 2,
-    MOVE_SWIM           = 3,
-    MOVE_SWIM_BACK      = 4,
-    MOVE_TURN_RATE      = 5
-};
-
-#define MAX_MOVE_TYPE     6
-
-extern float baseMoveSpeed[MAX_MOVE_TYPE];
 
 /// internal used flags for marking special auras - for example some dummy-auras
 enum UnitAuraFlags
@@ -3590,10 +3577,9 @@ class Unit : public Occupant
         void CalculateDamageAbsorbAndResist(Unit* pCaster, SpellSchoolMask schoolMask, DamageEffectType damagetype, const uint32 damage, uint32* absorb, uint32* resist, bool canReflect = false);
         void CalculateAbsorbResistBlock(Unit* pCaster, SpellNonMeleeDamage* damageInfo, SpellEntry const* spellProto, WeaponAttackType attType = BASE_ATTACK);
 
-        virtual void UpdateSpeed(UnitMoveType mtype, bool forced, float ratio = 1.0f);
-        float GetSpeed(UnitMoveType mtype) const;
-        float GetSpeedRate(UnitMoveType mtype) const { return m_speed_rate[mtype]; }
-        void SetSpeedRate(UnitMoveType mtype, float rate, bool forced = false);
+        /// How fast it goes, and how that is worked out.
+        virtual Pace& Pacing() = 0;
+        virtual Pace const& Pacing() const = 0;
 
         bool IsHover() const { return HasAuraType(SPELL_AURA_HOVER); }
 
@@ -3730,7 +3716,6 @@ class Unit : public Occupant
         bool m_canModifyStats;
         // std::list< spellEffectPair > AuraSpells[TOTAL_AURAS];  // TODO: use this if ok for mem
 
-        float m_speed_rate[MAX_MOVE_TYPE];
 
         CharmInfo* m_charmInfo;
 

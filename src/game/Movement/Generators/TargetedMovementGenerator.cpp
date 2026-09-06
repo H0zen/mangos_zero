@@ -308,9 +308,9 @@ void FollowMovementGenerator::SyncSpeedWithMaster(Unit& owner) const
         return;
     }
 
-    creature.UpdateSpeed(MOVE_RUN, true);
-    creature.UpdateSpeed(MOVE_WALK, true);
-    creature.UpdateSpeed(MOVE_SWIM, true);
+    creature.Pacing().Reckon(MOVE_RUN, true);
+    creature.Pacing().Reckon(MOVE_WALK, true);
+    creature.Pacing().Reckon(MOVE_SWIM, true);
 }
 
 float FollowMovementGenerator::TargetDistance(Unit& owner, bool forRangeCheck) const

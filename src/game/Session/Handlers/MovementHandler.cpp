@@ -440,18 +440,18 @@ void movement::ForceSpeedChangeAckOpcodes(Player& who, WorldPacket& recv_data)
         }
     }
 
-    if (!who.GetTransport() && fabs(who.GetSpeed(move_type) - newspeed) > 0.01f)
+    if (!who.GetTransport() && fabs(who.Pacing().At(move_type) - newspeed) > 0.01f)
     {
-        if (who.GetSpeed(move_type) > newspeed)        // must be greater - just correct
+        if (who.Pacing().At(move_type) > newspeed)        // must be greater - just correct
         {
             sLog.outError("%sSpeedChange player %s is NOT correct (must be %f instead %f), force set to correct value",
-                move_type_name[move_type], who.GetName(), who.GetSpeed(move_type), newspeed);
-            who.SetSpeedRate(move_type, who.GetSpeedRate(move_type), true);
+                move_type_name[move_type], who.GetName(), who.Pacing().At(move_type), newspeed);
+            who.Pacing().SetRate(move_type, who.Pacing().RateOf(move_type), true);
         }
         else                                                // must be lesser - cheating
         {
             BASIC_LOG("Player %s from account id %u kicked for incorrect speed (must be %f instead %f)",
-                who.GetName(), who.GetSession()->GetAccountId(), who.GetSpeed(move_type), newspeed);
+                who.GetName(), who.GetSession()->GetAccountId(), who.Pacing().At(move_type), newspeed);
             who.GetSession()->KickPlayer();
         }
     }

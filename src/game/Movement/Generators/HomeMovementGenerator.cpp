@@ -316,7 +316,7 @@ bool HomeMovementGenerator::RefreshSpeedRates(Unit const& owner)
 
     for (uint32 i = 0; i < m_speedRates.size(); ++i)
     {
-        const float rate = owner.GetSpeedRate(UnitMoveType(i));
+        const float rate = owner.Pacing().RateOf(UnitMoveType(i));
         changed = changed || m_speedRates[i] != rate;
         m_speedRates[i] = rate;
     }
