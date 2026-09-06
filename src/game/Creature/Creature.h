@@ -1017,14 +1017,14 @@ class Creature : public Unit
         virtual uint8 GetPetAutoSpellSize() const { return CREATURE_MAX_SPELLS; }
         virtual uint32 GetPetAutoSpellOnPos(uint8 pos) const
         {
-            if (pos >= CREATURE_MAX_SPELLS || m_charmInfo->GetCharmSpell(pos)->GetType() != ACT_ENABLED)
+            CharmInfo const* bar = GetCharmInfo();
+            if (!bar || pos >= CREATURE_MAX_SPELLS)
             {
                 return 0;
             }
-            else
-            {
-                return m_charmInfo->GetCharmSpell(pos)->GetAction();
-            }
+
+            CharmSpellEntry const* spell = bar->GetCharmSpell(pos);
+            return spell->GetType() == ACT_ENABLED ? spell->GetAction() : 0;
         }
 
         /// Where combat began, in the frame it began in. The leash point, and nothing

@@ -74,16 +74,16 @@ Pet::Pet(PetType type) : Creature(CREATURE_SUBTYPE_PET),
     m_name = "Pet";
     m_regenTimer = 4000;
 
-    // pets always have a charminfo, even if they are not actually charmed
-    CharmInfo* charmInfo = InitCharmInfo(this);
+    // a pet always has a bar, whether anyone is driving it or not
+    CharmInfo& charmInfo = InitCharmInfo();
 
     if (type == MINI_PET)                                   // always passive
     {
-        charmInfo->SetReactState(REACT_PASSIVE);
+        charmInfo.SetReactState(REACT_PASSIVE);
     }
     else if (type == GUARDIAN_PET)                          // always aggressive
     {
-        charmInfo->SetReactState(REACT_AGGRESSIVE);
+        charmInfo.SetReactState(REACT_AGGRESSIVE);
     }
 }
 

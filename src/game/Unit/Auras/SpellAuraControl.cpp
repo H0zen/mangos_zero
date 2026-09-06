@@ -131,12 +131,10 @@ void Aura::HandleModPossess(bool apply, bool Real)
         target->DeleteThreatList();
         target->GetHostileRefManager().deleteReferences();
 
-        if (CharmInfo* charmInfo = target->InitCharmInfo(target))
-        {
-            charmInfo->InitPossessCreateSpells();
-            charmInfo->SetReactState(REACT_PASSIVE);
-            charmInfo->SetCommandState(COMMAND_STAY);
-        }
+        CharmInfo& charmInfo = target->InitCharmInfo();
+        charmInfo.InitPossessCreateSpells();
+        charmInfo.SetReactState(REACT_PASSIVE);
+        charmInfo.SetCommandState(COMMAND_STAY);
 
         p_caster->PossessSpellInitialize();
 
@@ -329,9 +327,9 @@ void Aura::HandleModCharm(bool apply, bool Real)
         if (target->IsCreature())
         {
             ((Creature*)target)->AIM_Initialize();
-            CharmInfo* charmInfo = target->InitCharmInfo(target);
-            charmInfo->InitCharmCreateSpells();
-            charmInfo->SetReactState(REACT_DEFENSIVE);
+            CharmInfo& charmInfo = target->InitCharmInfo();
+            charmInfo.InitCharmCreateSpells();
+            charmInfo.SetReactState(REACT_DEFENSIVE);
 
             if (caster->IsPlayer() && caster->getClass() == CLASS_WARLOCK)
             {
@@ -354,7 +352,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
                     }
 
                     // just to enable stat window
-                    charmInfo->SetPetNumber(sObjectMgr.GeneratePetNumber(), true);
+                    charmInfo.SetPetNumber(sObjectMgr.GeneratePetNumber(), true);
                     // if charmed two demons the same session, the 2nd gets the 1st one's name
                     target->SetUInt32Value(UNIT_FIELD_PET_NAME_TIMESTAMP, uint32(time(nullptr)));
                 }

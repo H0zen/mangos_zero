@@ -769,10 +769,7 @@ void Spell::EffectSummonPossessed(SpellEffectIndex eff_idx)
         player->SetClientControl(spawnCreature, 1);
         player->SetMover(spawnCreature);
 
-        if (CharmInfo* charmInfo = spawnCreature->InitCharmInfo(spawnCreature))
-        {
-            charmInfo->InitPossessCreateSpells();
-        }
+        spawnCreature->InitCharmInfo().InitPossessCreateSpells();
         player->PossessSpellInitialize();
     }
 

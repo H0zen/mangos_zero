@@ -119,10 +119,10 @@ enum ActionBarIndex
  * someone else, to get the charmed ones action bar, the spells and such. It also takes care
  * of pets the charmed one has etc.
  */
-struct CharmInfo
+class CharmInfo
 {
     public:
-        explicit CharmInfo(Unit* unit);
+        explicit CharmInfo(Unit& driven);
         uint32 GetPetNumber() const { return m_petnumber; }
         void SetPetNumber(uint32 petnumber, bool statwindow);
 
@@ -160,6 +160,7 @@ struct CharmInfo
         void ToggleCreatureAutocast(uint32 spellid, bool apply);
 
         CharmSpellEntry* GetCharmSpell(uint8 index) { return &(m_charmspells[index]); }
+        CharmSpellEntry const* GetCharmSpell(uint8 index) const { return &(m_charmspells[index]); }
 
         GlobalCooldownMgr& GetGlobalCooldownMgr()
         {
@@ -167,7 +168,7 @@ struct CharmInfo
         }
 
     private:
-        Unit* m_unit;
+        Unit& m_driven;
         UnitActionBarEntry PetActionBar[MAX_UNIT_ACTION_BAR_INDEX];
         CharmSpellEntry m_charmspells[CREATURE_MAX_SPELLS];
         CommandStates   m_CommandState;

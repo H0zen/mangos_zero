@@ -93,6 +93,7 @@
 #include "Log.h"
 
 #include <list>
+#include <optional>
 
 /**
  * @brief Spell interrupt flags
@@ -3014,16 +3015,15 @@ class Unit : public Occupant
          */
         CharmInfo* GetCharmInfo()
         {
-            return m_charmInfo;
+            return m_charmInfo ? &m_charmInfo.value() : nullptr;
+        }
+        CharmInfo const* GetCharmInfo() const
+        {
+            return m_charmInfo ? &m_charmInfo.value() : nullptr;
         }
 
-        /**
-         * Init the \ref CharmInfo struct with data about the \ref Unit that will be charmed
-         * @param charm the \ref Unit that is to be charmed
-         * @return the created \ref CharmInfo
-         * \todo Is the charm param really the unit to be charmed?
-         */
-        CharmInfo* InitCharmInfo(Unit* charm);
+        /// The bar it is driven from, made the first time it is asked for.
+        CharmInfo& InitCharmInfo();
 
         /**
          * Get's the \ref ObjectGuid for a certain totem type that this \ref Unit has spawned
@@ -3717,7 +3717,7 @@ class Unit : public Occupant
         // std::list< spellEffectPair > AuraSpells[TOTAL_AURAS];  // TODO: use this if ok for mem
 
 
-        CharmInfo* m_charmInfo;
+        std::optional<CharmInfo> m_charmInfo;
 
         /// Owned outright, not shared and not allocated: a component is state
         /// this unit has, and its lifetime is the unit's.

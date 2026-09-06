@@ -201,7 +201,6 @@ void GlobalCooldownMgr::CancelGlobalCooldown(SpellEntry const* spellInfo)
 
 Unit::Unit()
     : movespline(new Movement::MoveSpline()),
-    m_charmInfo(nullptr),
     m_conjured(*this),
     i_motionMaster(this),
     m_ThreatManager(this),
@@ -310,7 +309,6 @@ Unit::~Unit()
         }
     }
 
-    delete m_charmInfo;
     delete movespline;
 
     // those should be already removed at "RemoveFromWorld()" call
@@ -4569,23 +4567,18 @@ void Unit::CleanupsBeforeDelete()
     Occupant::CleanupsBeforeDelete();
 }
 
-/**
- * @brief Ensures charm information exists for the unit.
- *
- * @param charm The charmed or possessed unit.
- * @return The initialized charm info instance.
- */
-CharmInfo* Unit::InitCharmInfo(Unit* charm)
+CharmInfo& Unit::InitCharmInfo()
 {
     if (!m_charmInfo)
     {
-        m_charmInfo = new CharmInfo(charm);
+        m_charmInfo.emplace(*this);
     }
-    return m_charmInfo;
+
+    return m_charmInfo.value();
 }
 
-CharmInfo::CharmInfo(Unit* unit)
-    : m_unit(unit), m_CommandState(COMMAND_FOLLOW), m_reactState(REACT_PASSIVE), m_petnumber(0)
+CharmInfo::CharmInfo(Unit& driven)
+    : m_driven(driven), m_CommandState(COMMAND_FOLLOW), m_reactState(REACT_PASSIVE), m_petnumber(0)
 {
     for (int i = 0; i < CREATURE_MAX_SPELLS; ++i)
     {
@@ -4635,7 +4628,7 @@ void CharmInfo::InitPossessCreateSpells()
 {
     InitEmptyActionBar();                                   // charm action bar
 
-    if (m_unit->IsPlayer())               // possessed players don't have spells, keep the action bar empty
+    if (m_driven.IsPlayer())              // a possessed character keeps his own bar, so this one stays empty
     {
         return;
     }
@@ -4644,13 +4637,15 @@ void CharmInfo::InitPossessCreateSpells()
 
     for (uint32 x = 0; x < CREATURE_MAX_SPELLS; ++x)
     {
-        if (IsPassiveSpell(((Creature*)m_unit)->m_spells[x]))
+        uint32 const spellId = static_cast<Creature&>(m_driven).m_spells[x];
+
+        if (IsPassiveSpell(spellId))
         {
-            m_unit->CastSpell(m_unit, ((Creature*)m_unit)->m_spells[x], true);
+            m_driven.CastSpell(&m_driven, spellId, true);
         }
         else
         {
-            AddSpellToActionBar(((Creature*)m_unit)->m_spells[x], ACT_PASSIVE);
+            AddSpellToActionBar(spellId, ACT_PASSIVE);
         }
     }
 }
@@ -4660,7 +4655,7 @@ void CharmInfo::InitPossessCreateSpells()
  */
 void CharmInfo::InitCharmCreateSpells()
 {
-    if (m_unit->IsPlayer())               // charmed players don't have spells
+    if (m_driven.IsPlayer())              // a charmed character keeps his own bar
     {
         InitEmptyActionBar();
         return;
@@ -4670,7 +4665,7 @@ void CharmInfo::InitCharmCreateSpells()
 
     for (uint32 x = 0; x < CREATURE_MAX_SPELLS; ++x)
     {
-        uint32 spellId = ((Creature*)m_unit)->m_spells[x];
+        uint32 spellId = static_cast<Creature&>(m_driven).m_spells[x];
 
         if (!spellId)
         {
@@ -4680,7 +4675,7 @@ void CharmInfo::InitCharmCreateSpells()
 
         if (IsPassiveSpell(spellId))
         {
-            m_unit->CastSpell(m_unit, spellId, true);
+            m_driven.CastSpell(&m_driven, spellId, true);
             m_charmspells[x].SetActionAndType(spellId, ACT_PASSIVE);
         }
         else
@@ -4807,11 +4802,11 @@ void CharmInfo::SetPetNumber(uint32 petnumber, bool statwindow)
     m_petnumber = petnumber;
     if (statwindow)
     {
-        m_unit->SetUInt32Value(UNIT_FIELD_PETNUMBER, m_petnumber);
+        m_driven.SetUInt32Value(UNIT_FIELD_PETNUMBER, m_petnumber);
     }
     else
     {
-        m_unit->SetUInt32Value(UNIT_FIELD_PETNUMBER, 0);
+        m_driven.SetUInt32Value(UNIT_FIELD_PETNUMBER, 0);
     }
 }
 
