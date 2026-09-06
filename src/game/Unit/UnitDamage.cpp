@@ -228,7 +228,7 @@ void Unit::CalculateAbsorbResistBlock(Unit* pCaster, SpellNonMeleeDamage* damage
 
     if (blocked)
     {
-        damageInfo->blocked = GetShieldBlockValue();
+        damageInfo->blocked = Sheet().ShieldBlock();
         if (damageInfo->damage < damageInfo->blocked)
         {
             damageInfo->blocked = damageInfo->damage;

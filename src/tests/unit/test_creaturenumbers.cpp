@@ -168,3 +168,15 @@ TEST_CASE("creature numbers: armour, health and power are the fold and no more")
 
     CHECK(stats::Simple(mods) == doctest::Approx(480.0f));
 }
+
+TEST_CASE("creature shield block: half its level and a twentieth of its strength")
+{
+    CHECK(stats::CreatureShieldBlock(60, 200.0f) == 40u);   // 30 + 10
+    CHECK(stats::CreatureShieldBlock(1, 0.0f) == 0u);
+}
+
+TEST_CASE("creature shield block: both halves are counted down, not rounded")
+{
+    // level 5 gives two, not two and a half; strength 39 gives one, not two
+    CHECK(stats::CreatureShieldBlock(5, 39.0f) == 3u);
+}

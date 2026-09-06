@@ -188,15 +188,6 @@ float Player::GetTotalBaseModValue(BaseModGroup modGroup) const
  *
  * @return The effective shield block amount.
  */
-uint32 Player::GetShieldBlockValue() const
-{
-    float value = (m_auraBaseMod[SHIELD_BLOCK_VALUE][FLAT_MOD] + GetStat(STAT_STRENGTH) / 0.5f - 10) * m_auraBaseMod[SHIELD_BLOCK_VALUE][PCT_MOD];
-
-    value = (value < 0) ? 0 : value;
-
-    return uint32(value);
-}
-
 /**
  * @brief Calculates melee critical strike chance gained from agility.
  *

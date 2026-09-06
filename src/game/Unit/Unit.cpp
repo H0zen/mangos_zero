@@ -297,8 +297,6 @@ Unit::Unit()
         m_reactiveTimer[i] = 0;
     }
 
-    m_isCreatureLinkingTrigger = false;
-    m_isSpawningLinked = false;
     m_dummyCombatState = false;
 }
 
@@ -1286,10 +1284,7 @@ void Unit::JustKilledCreature(Creature* victim, Player* responsiblePlayer)
     // Start creature death script
     GetMap()->ScriptsStart(DBS_ON_CREATURE_DEATH, victim->GetEntry(), victim, responsiblePlayer ? responsiblePlayer : this);
 
-    if (victim->IsLinkingEventTrigger())
-    {
-        victim->GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_DIE, victim);
-    }
+    victim->Links().Died();
 
     // Dungeon specific stuff
     if (victim->GetInstanceId())
@@ -4011,10 +4006,7 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy)
             mapInstance->OnCreatureEnterCombat(pCreature);
         }
 
-        if (m_isCreatureLinkingTrigger)
-        {
-            GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_AGGRO, pCreature, enemy);
-        }
+        pCreature->Links().Aggroed(enemy);
     }
 
 

@@ -86,11 +86,8 @@ Creature* SummonCreature(Occupant& summoner, uint32 id, float x, float y, float 
         }
     }
 
-    // Creature Linking, Initial load is handled like respawn
-    if (pCreature->IsLinkingEventTrigger())
-    {
-        map->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_RESPAWN, pCreature);
-    }
+    // coming into the world for the first time counts as coming back
+    pCreature->Links().Respawned();
 
     // return the creature therewith the summoner has access to it
     return pCreature;

@@ -217,7 +217,7 @@ void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, Weapo
         {
             damageInfo->TargetState = VICTIMSTATE_NORMAL;
             damageInfo->procEx     |= PROC_EX_BLOCK;
-            damageInfo->blocked_amount = damageInfo->target->GetShieldBlockValue();
+            damageInfo->blocked_amount = damageInfo->target->Sheet().ShieldBlock();
             if (damageInfo->blocked_amount >= damageInfo->damage)
             {
                 damageInfo->TargetState = VICTIMSTATE_BLOCKS;

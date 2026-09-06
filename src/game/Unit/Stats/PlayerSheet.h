@@ -46,6 +46,7 @@ class PlayerSheet : public StatSheet
         void MaxPower(Powers power) override;
         void AttackPower(bool ranged) override;
         void Swing(WeaponAttackType attType) override;
+        uint32 ShieldBlock() const override;
 
         /// What a swing of that hand comes to, without writing it down. This is
         /// the one the blow itself is rolled from.

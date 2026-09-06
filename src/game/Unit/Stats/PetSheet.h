@@ -42,6 +42,7 @@ class PetSheet : public StatSheet
         void MaxPower(Powers power) override;
         void AttackPower(bool ranged) override;
         void Swing(WeaponAttackType attType) override;
+        uint32 ShieldBlock() const override;
 
     private:
 

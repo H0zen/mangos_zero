@@ -355,7 +355,7 @@ void MotionMaster::MoveTargetedHome()
     if (m_owner->IsCreature() && !((Creature*)m_owner)->GetCharmerOrOwnerGuid())
     {
         // Manual exception for linked mobs
-        if (m_owner->IsLinkingEventTrigger() && m_owner->GetMap()->GetCreatureLinkingHolder()->TryFollowMaster((Creature*)m_owner))
+        if (static_cast<Creature*>(m_owner)->Links().RefollowMaster())
         {
             DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "%s refollowed linked master", m_owner->GetGuidStr().c_str());
         }

@@ -141,3 +141,8 @@ void PetSheet::Swing(WeaponAttackType attType)
     m_owner.SetStatFloatValue(UNIT_FIELD_MINDAMAGE, swing.least);
     m_owner.SetStatFloatValue(UNIT_FIELD_MAXDAMAGE, swing.most);
 }
+
+uint32 PetSheet::ShieldBlock() const
+{
+    return stats::CreatureShieldBlock(m_owner.getLevel(), m_owner.GetStat(STAT_STRENGTH));
+}

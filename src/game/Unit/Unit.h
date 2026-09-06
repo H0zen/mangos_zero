@@ -2084,7 +2084,6 @@ class Unit : public Occupant
          * for \ref STAT_STRENGTH. Seems to be implemented only in Player.cpp
          * @return Currently equipped shield block value
          */
-        virtual uint32 GetShieldBlockValue() const = 0;
 
         /**
          * The melee skill for the given Unit. For units this is always their maximum possible
@@ -3415,6 +3414,7 @@ class Unit : public Occupant
 
         /// The numbers it fights with, and how they are worked out.
         virtual StatSheet& Sheet() = 0;
+        virtual StatSheet const& Sheet() const = 0;
 
         float GetTotalAttackPowerValue(WeaponAttackType attType) const;
         float GetWeaponDamageRange(WeaponAttackType attType , WeaponDamageRange type) const;
@@ -3683,11 +3683,6 @@ class Unit : public Occupant
         void _SetAINotifyScheduled(bool on) { m_AINotifyScheduled = on;}       // only for call from RelocationNotifyEvent code
         void OnRelocated();
 
-        bool IsLinkingEventTrigger()
-        {
-            return m_isCreatureLinkingTrigger;
-        }
-
         virtual bool CanSwim() const = 0;
         virtual bool CanFly() const = 0;
 
@@ -3771,8 +3766,6 @@ class Unit : public Occupant
         uint32 m_maxHealth;
 
         void DisableSpline();
-        bool m_isCreatureLinkingTrigger;
-        bool m_isSpawningLinked;
 
     private:
 

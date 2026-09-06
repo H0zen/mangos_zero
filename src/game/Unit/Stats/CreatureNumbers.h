@@ -40,6 +40,13 @@
  */
 namespace stats
 {
+    /// What a creature stops with a shield it does not carry. It has no shield
+    /// and no shield value in its row, so the game answers from its size.
+    inline uint32 CreatureShieldBlock(uint32 level, float strength)
+    {
+        return level / 2 + uint32(strength / 20.0f);
+    }
+
     /// Armour, health, a school's resistance, a pool of power: the fold, no more.
     inline float Simple(Modifiers const& mods) { return mods.Folded(); }
 

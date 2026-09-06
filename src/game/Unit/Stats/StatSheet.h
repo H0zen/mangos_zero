@@ -59,6 +59,9 @@ class StatSheet
         /// What a swing of that hand does, at its least and its most.
         virtual void Swing(WeaponAttackType attType) = 0;
 
+        /// What it stops with a shield when a blow is blocked.
+        virtual uint32 ShieldBlock() const = 0;
+
     protected:
 
         explicit StatSheet(Unit& whose) : m_unit(whose) {}
@@ -87,4 +90,5 @@ class BlankSheet : public StatSheet
         void MaxPower(Powers /*power*/) override {}
         void AttackPower(bool /*ranged*/) override {}
         void Swing(WeaponAttackType /*attType*/) override {}
+        uint32 ShieldBlock() const override { return 0; }
 };

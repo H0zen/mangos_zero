@@ -101,3 +101,8 @@ void CreatureSheet::Swing(WeaponAttackType attType)
     m_owner.SetStatFloatValue(attType == BASE_ATTACK ? UNIT_FIELD_MINDAMAGE : UNIT_FIELD_MINOFFHANDDAMAGE, swing.least);
     m_owner.SetStatFloatValue(attType == BASE_ATTACK ? UNIT_FIELD_MAXDAMAGE : UNIT_FIELD_MAXOFFHANDDAMAGE, swing.most);
 }
+
+uint32 CreatureSheet::ShieldBlock() const
+{
+    return stats::CreatureShieldBlock(m_owner.getLevel(), m_owner.GetStat(STAT_STRENGTH));
+}

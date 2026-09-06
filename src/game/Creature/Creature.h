@@ -55,6 +55,7 @@
 #include <map>
 #include "LootClaim.h"
 #include "Unit.h"
+#include "CreatureLinks.h"
 #include "Stats/CreatureSheet.h"
 #include "SharedDefines.h"
 #include "LootMgr.h"
@@ -646,11 +647,6 @@ class Creature : public Unit
         void SetRoot(bool enable) override;
         void SetWaterWalk(bool enable) override;
 
-        uint32 GetShieldBlockValue() const override         // dunno mob block value
-        {
-            return (getLevel() / 2 + uint32(GetStat(STAT_STRENGTH) / 20));
-        }
-
         SpellSchoolMask GetMeleeDamageSchoolMask() const override { return m_meleeDamageSchoolMask; }
         void SetMeleeDamageSchool(SpellSchools school) { m_meleeDamageSchoolMask = GetSchoolMask(school); }
 
@@ -667,6 +663,11 @@ class Creature : public Unit
 
         void ApplyGameEventSpells(GameEventCreatureData const* eventData, bool activated);
         StatSheet& Sheet() override { return m_sheet; }
+        StatSheet const& Sheet() const override { return m_sheet; }
+
+        /// What its fortunes do to the creatures tied to it.
+        CreatureLinks& Links() { return m_links; }
+        CreatureLinks const& Links() const { return m_links; }
         uint32 GetCurrentEquipmentId() const { return m_equipmentId; }
 
         static float _GetHealthMod(int32 Rank);             ///< Get custom factor to scale health (default 1, CONFIG_FLOAT_RATE_CREATURE_*_HP)
@@ -1104,6 +1105,7 @@ class Creature : public Unit
 
     private:
         CreatureSheet m_sheet;
+        CreatureLinks m_links;
         GridReference<Creature> m_gridRef;
         CreatureInfo const* m_creatureInfo;                 // in difficulty mode > 0 can different from ObjMgr::GetCreatureTemplate(GetEntry())
 };

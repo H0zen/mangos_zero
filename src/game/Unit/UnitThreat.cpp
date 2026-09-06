@@ -203,10 +203,7 @@ void Unit::TauntFadeOut(Unit* taunter)
             mapInstance->OnCreatureEvade((Creature*)this);
         }
 
-        if (m_isCreatureLinkingTrigger)
-        {
-            GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_EVADE, (Creature*)this);
-        }
+        static_cast<Creature*>(this)->Links().Evaded();
 
         return;
     }
@@ -384,10 +381,7 @@ bool Unit::SelectHostileTarget()
         mapInstance->OnCreatureEvade((Creature*)this);
     }
 
-    if (m_isCreatureLinkingTrigger)
-    {
-        GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_EVADE, (Creature*)this);
-    }
+    static_cast<Creature*>(this)->Links().Evaded();
 
     return false;
 }

@@ -53,6 +53,7 @@ class Totem : public Creature
 
         /// A totem fights with no numbers of its own.
         StatSheet& Sheet() override { return m_sheet; }
+        StatSheet const& Sheet() const override { return m_sheet; }
 
         bool IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex index, bool castOnSelf) const override;
 

@@ -192,3 +192,20 @@ TEST_CASE("ranged attack power: a feral druid has none at all, not merely less")
     druid.form = FORM_MOONKIN;
     CHECK(stats::RangedAttackPower(druid) == doctest::Approx(30.0f));
 }
+
+TEST_CASE("shield block: the shield's own worth, and two for every point of strength")
+{
+    // a shield worth 60, no percentage bonus, 100 strength
+    CHECK(stats::PlayerShieldBlock(60.0f, 1.0f, 100.0f) == 250u);   // 60 + 200 - 10
+}
+
+TEST_CASE("shield block: the percentage multiplies everything, the shield included")
+{
+    CHECK(stats::PlayerShieldBlock(60.0f, 1.3f, 100.0f) == 325u);
+}
+
+TEST_CASE("shield block: nothing is stopped by a negative amount")
+{
+    CHECK(stats::PlayerShieldBlock(0.0f, 1.0f, 0.0f) == 0u);        // 0 + 0 - 10
+    CHECK(stats::PlayerShieldBlock(60.0f, -1.0f, 100.0f) == 0u);
+}

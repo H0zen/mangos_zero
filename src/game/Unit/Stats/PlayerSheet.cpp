@@ -401,3 +401,10 @@ void PlayerSheet::ManaRegen()
     m_manaRegenStanding = regen.standing;
     m_manaRegenCasting = regen.casting;
 }
+
+uint32 PlayerSheet::ShieldBlock() const
+{
+    return stats::PlayerShieldBlock(m_owner.GetBaseModValue(SHIELD_BLOCK_VALUE, FLAT_MOD),
+                                    m_owner.GetBaseModValue(SHIELD_BLOCK_VALUE, PCT_MOD),
+                                    m_owner.GetStat(STAT_STRENGTH));
+}

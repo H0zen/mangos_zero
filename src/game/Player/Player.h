@@ -2103,6 +2103,7 @@ class Player : public Unit
 
         /// The numbers he fights with, and how they are worked out.
         PlayerSheet& Sheet() override { return m_sheet; }
+        PlayerSheet const& Sheet() const override { return m_sheet; }
 
         // Get melee critical chance from agility
         float GetMeleeCritFromAgility();
@@ -2463,7 +2464,6 @@ class Player : public Unit
         void SendCorpseReclaimDelay(bool load = false);
 
         // Get the player's shield block value
-        uint32 GetShieldBlockValue() const override;
 
         // Check if the player can parry
 

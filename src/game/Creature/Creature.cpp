@@ -244,7 +244,7 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
     m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false),
     m_AI_locked(false), m_IsDeadByDefault(false), m_temporaryFactionFlags(TEMPFACTION_NONE),
     m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0),
-    m_creatureInfo(nullptr), m_PlayerDamageReq(0), m_sheet(*this)
+    m_creatureInfo(nullptr), m_PlayerDamageReq(0), m_sheet(*this), m_links(*this)
 {
     /* Loot data */
     hasBeenLootedOnce = false;
@@ -428,10 +428,7 @@ void Creature::RemoveCorpse(bool inPlace)
         AI()->CorpseRemoved(respawnDelay);
     }
 
-    if (m_isCreatureLinkingTrigger)
-    {
-        GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_DESPAWN, this);
-    }
+    m_links.Despawned();
 
     if (InstanceData* mapInstance = GetInstanceData())
     {
@@ -786,7 +783,7 @@ void Creature::Update(uint32 update_diff, uint32 diff)
             break;
         case DEAD:
         {
-            if (m_respawnTime <= time(nullptr) && (!m_isSpawningLinked || GetMap()->GetCreatureLinkingHolder()->CanSpawn(this)))
+            if (m_respawnTime <= time(nullptr) && m_links.MayRespawn())
             {
                 DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Respawning...");
                 m_respawnTime = 0;
@@ -829,10 +826,7 @@ void Creature::Update(uint32 update_diff, uint32 diff)
                     AI()->JustRespawned();
                 }
 
-                if (m_isCreatureLinkingTrigger)
-                {
-                    GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_RESPAWN, this);
-                }
+                m_links.Respawned();
 
                 GetMap()->Add(this);
             }
@@ -1190,16 +1184,7 @@ bool Creature::Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo cons
             break;
     }
 
-    // Add to CreatureLinkingHolder if needed
-    if (sCreatureLinkingMgr.GetLinkedTriggerInformation(this))
-    {
-        cPos.GetMap()->GetCreatureLinkingHolder()->AddSlaveToHolder(this);
-    }
-    if (sCreatureLinkingMgr.IsLinkedEventTrigger(this))
-    {
-        m_isCreatureLinkingTrigger = true;
-        cPos.GetMap()->GetCreatureLinkingHolder()->AddMasterToHolder(this);
-    }
+    m_links.Enrol(*cPos.GetMap());
 
     LoadCreatureAddon(false);
 
@@ -1671,8 +1656,8 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
 
     if (sCreatureLinkingMgr.IsSpawnedByLinkedMob(this))
     {
-        m_isSpawningLinked = true;
-        if (m_deathState == ALIVE && !GetMap()->GetCreatureLinkingHolder()->CanSpawn(this))
+        m_links.WaitsOnAnother();
+        if (m_deathState == ALIVE && !m_links.MayRespawn())
         {
             m_deathState = DEAD;
 
@@ -1701,10 +1686,10 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
 
     AIM_Initialize();
 
-    // Creature Linking, Initial load is handled like respawn
-    if (m_isCreatureLinkingTrigger && IsAlive())
+    // coming into the world for the first time counts as coming back
+    if (IsAlive())
     {
-        GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_RESPAWN, this);
+        m_links.Respawned();
     }
 
     // check if it is rabbit day

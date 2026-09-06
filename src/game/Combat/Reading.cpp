@@ -157,7 +157,7 @@ namespace combat
             }
         }
 
-        d.blockValue = static_cast<int32>(victim.GetShieldBlockValue());
+        d.blockValue = static_cast<int32>(victim.Sheet().ShieldBlock());
 
         for (const Aura* aura : victim.GetAurasByType(SPELL_AURA_SCHOOL_ABSORB))
         {

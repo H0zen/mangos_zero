@@ -39,6 +39,14 @@
  */
 namespace stats
 {
+    /// What his shield stops: what the shield itself is worth, what his auras
+    /// add to it, and two points for every point of strength above five.
+    inline uint32 PlayerShieldBlock(float flat, float pct, float strength)
+    {
+        float const value = (flat + strength / 0.5f - 10.0f) * pct;
+        return value < 0.0f ? 0u : uint32(value);
+    }
+
     /**
      * @brief The health the first twenty stamina buy, and the rest.
      *

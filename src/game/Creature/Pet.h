@@ -297,6 +297,7 @@ class Pet : public Creature
         void SetBonusDamage(int32 damage) { m_bonusdamage = damage; }
 
         StatSheet& Sheet() override { return m_sheet; }
+        StatSheet const& Sheet() const override { return m_sheet; }
         void UpdateSpeed(UnitMoveType mtype, bool forced, float ratio = 1.0f) override;
 
         bool   CanTakeMoreActiveSpells(uint32 SpellIconID);

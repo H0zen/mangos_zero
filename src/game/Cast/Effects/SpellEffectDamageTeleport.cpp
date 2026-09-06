@@ -233,7 +233,7 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                 // Shield Slam
                 else if (m_spellInfo->SpellClassMask & UI64LIT(0x100000000))
                 {
-                    damage += int32(m_caster->GetShieldBlockValue());
+                    damage += int32(m_caster->Sheet().ShieldBlock());
                 }
                 break;
             }
