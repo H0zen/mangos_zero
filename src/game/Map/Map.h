@@ -65,6 +65,7 @@
 #include "DBCStructure.h"
 #include "GridDefines.h"
 #include "Script/ScriptSchedule.h"
+#include "UpdateBacklog.h"
 #include "Cell.h"
 #include "Occupant.h"
 #include "SharedDefines.h"
@@ -207,7 +208,6 @@ class Map : public GridRefManager<NGridType>
         }
 
         /// Packets waiting for this map's next tick.
-        size_t MailboxDepth() const { return m_mailbox.Depth(); }
 
         /**
          * @brief Record how long this map's tick took.
@@ -346,7 +346,6 @@ class Map : public GridRefManager<NGridType>
         bool ActiveObjectsNearGrid(uint32 x, uint32 y) const;
 
         /// Send a Packet to all players on a map
-        void SendToPlayers(WorldPacket const* data) const;
         /// Send a Packet to all players in a zone. Return false if no player found
         bool SendToPlayersInZone(WorldPacket const* data, uint32 zoneId) const;
 
@@ -377,15 +376,8 @@ class Map : public GridRefManager<NGridType>
             return m_objectsStore;
         }
 
-        void AddUpdateObject(Object* obj)
-        {
-            i_objectsToClientUpdate.insert(obj);
-        }
-
-        void RemoveUpdateObject(Object* obj)
-        {
-            i_objectsToClientUpdate.erase(obj);
-        }
+        /// The objects here whose changed fields still owe their observers a packet.
+        UpdateBacklog& Backlog() { return m_backlog; }
 
         // DynObjects currently
         uint32 GenerateLocalLowGuid(HighGuid guidhigh);
@@ -541,8 +533,6 @@ class Map : public GridRefManager<NGridType>
 
         void setNGrid(NGridType* grid, uint32 x, uint32 y);
 
-        void SendObjectUpdates();
-        std::set<Object*> i_objectsToClientUpdate;
 
     protected:
         /// A vessel writes her own Add(Player*): her passengers arrive on a map their client
@@ -583,6 +573,7 @@ class Map : public GridRefManager<NGridType>
 
         /// Written in the serial phase, drained by this map in the parallel one.
         MapMailbox m_mailbox;
+        UpdateBacklog m_backlog;
 
         /// The last few hundred ticks of this map, and how many ran long.
         metrics::Distribution<256> m_tickMs;

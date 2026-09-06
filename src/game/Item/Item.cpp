@@ -853,7 +853,7 @@ void Item::AddToClientUpdateList()
 {
     if (Player* pl = GetOwner())
     {
-        pl->GetMap()->AddUpdateObject(this);
+        pl->GetMap()->Backlog().Add(this);
     }
 }
 
@@ -864,7 +864,7 @@ void Item::RemoveFromClientUpdateList()
 {
     if (Player* pl = GetOwner())
     {
-        pl->GetMap()->RemoveUpdateObject(this);
+        pl->GetMap()->Backlog().Forget(this);
     }
 }
 

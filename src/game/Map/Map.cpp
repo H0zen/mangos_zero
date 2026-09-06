@@ -1072,7 +1072,7 @@ void Map::Update(const uint32& t_diff)
     phases.Mark(metrics::TickPhase::ActiveObjects, getMSTime());
 
     // Send world objects and item update field changes
-    SendObjectUpdates();
+    m_backlog.Send();
 
     // Don't unload grids if it's battleground, since we may have manually added GOs,creatures, those doesn't load from DB at grid re-load !
     // This isn't really bother us, since as soon as we have instanced BG-s, the whole map unloads as the BG gets ended
@@ -2149,19 +2149,6 @@ uint32 Map::GetPlayersCountExceptGMs() const
 }
 
 /**
- * @brief Sends a packet to every player currently on the map.
- *
- * @param data The packet to broadcast.
- */
-void Map::SendToPlayers(WorldPacket const* data) const
-{
-    for (MapRefManager::const_iterator itr = m_mapRefManager.begin(); itr != m_mapRefManager.end(); ++itr)
-    {
-        itr->getSource()->GetSession()->SendPacket(data);
-    }
-}
-
-/**
  * @brief Sends a packet to all players in a specific zone on the map.
  *
  * @param data The packet to send.
@@ -3074,45 +3061,6 @@ Occupant* Map::GetOccupant(ObjectGuid guid)
     }
 
     return nullptr;
-}
-
-/**
- * @brief Builds and sends pending object update packets to affected players.
- */
-void Map::SendObjectUpdates()
-{
-    UpdateDataMapType update_players;
-
-    // A passenger's block names its hull by guid and carries (0,0,0) for a world
-    // position, so the client can only place it once that hull exists. Hulls go
-    // into every observer's batch first; the set this came from is ordered by
-    // pointer, which says nothing about either.
-    std::vector<Object*> hulls;
-    std::vector<Object*> rest;
-    rest.reserve(i_objectsToClientUpdate.size());
-
-    for (Object* obj : i_objectsToClientUpdate)
-    {
-        (obj->GetObjectGuid().IsMOTransport() ? hulls : rest).push_back(obj);
-    }
-    i_objectsToClientUpdate.clear();
-
-    for (Object* obj : hulls)
-    {
-        obj->BuildUpdateData(update_players);
-    }
-    for (Object* obj : rest)
-    {
-        obj->BuildUpdateData(update_players);
-    }
-
-    WorldPacket packet;                                     // here we allocate a std::vector with a size of 0x10000
-    for (UpdateDataMapType::iterator iter = update_players.begin(); iter != update_players.end(); ++iter)
-    {
-        iter->second.BuildPacket(&packet);
-        iter->first->GetSession()->SendPacket(&packet);
-        packet.clear();                                     // clean the string
-    }
 }
 
 /**

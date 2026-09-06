@@ -128,7 +128,7 @@ void Occupant::UpdateObjectVisibility()
  */
 void Occupant::AddToClientUpdateList()
 {
-    GetMap()->AddUpdateObject(this);
+    GetMap()->Backlog().Add(this);
 }
 
 /**
@@ -138,7 +138,7 @@ void Occupant::AddToClientUpdateList()
  */
 void Occupant::RemoveFromClientUpdateList()
 {
-    GetMap()->RemoveUpdateObject(this);
+    GetMap()->Backlog().Forget(this);
 }
 
 /**
