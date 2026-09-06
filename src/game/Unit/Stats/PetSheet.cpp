@@ -40,7 +40,7 @@ void PetSheet::Stat(Stats stat)
         return;
     }
 
-    m_owner.SetStat(stat, int32(m_owner.GetTotalStatValue(stat)));
+    m_owner.SetStat(stat, int32(m_owner.Tallied().FoldedOver(stat)));
 
     switch (stat)
     {
@@ -74,14 +74,14 @@ void PetSheet::Everything()
 
 void PetSheet::Armour()
 {
-    m_owner.SetArmor(int32(stats::PetArmour(m_owner.ModifiersOf(UNIT_MOD_ARMOR), m_owner.GetStat(STAT_AGILITY))));
+    m_owner.SetArmor(int32(stats::PetArmour(m_owner.Tallied().Of(UNIT_MOD_ARMOR), m_owner.GetStat(STAT_AGILITY))));
 }
 
 void PetSheet::MaxHealth()
 {
-    float const gained = m_owner.GetStat(STAT_STAMINA) - m_owner.GetCreateStat(STAT_STAMINA);
+    float const gained = m_owner.GetStat(STAT_STAMINA) - m_owner.Tallied().Made(STAT_STAMINA);
 
-    m_owner.SetMaxHealth(uint32(stats::PetMaxHealth(m_owner.ModifiersOf(UNIT_MOD_HEALTH),
+    m_owner.SetMaxHealth(uint32(stats::PetMaxHealth(m_owner.Tallied().Of(UNIT_MOD_HEALTH),
                                                     m_owner.GetCreateHealth(), gained)));
 }
 
@@ -89,11 +89,11 @@ void PetSheet::MaxPower(Powers power)
 {
     // Only mana grows from a stat, and only from intellect gained since creation.
     float const gained = power == POWER_MANA
-                             ? m_owner.GetStat(STAT_INTELLECT) - m_owner.GetCreateStat(STAT_INTELLECT)
+                             ? m_owner.GetStat(STAT_INTELLECT) - m_owner.Tallied().Made(STAT_INTELLECT)
                              : 0.0f;
 
     UnitMods const unitMod = UnitMods(UNIT_MOD_POWER_START + power);
-    m_owner.SetMaxPower(power, uint32(stats::PetMaxPower(m_owner.ModifiersOf(unitMod),
+    m_owner.SetMaxPower(power, uint32(stats::PetMaxPower(m_owner.Tallied().Of(unitMod),
                                                          m_owner.GetCreatePowers(power), gained)));
 }
 
@@ -107,9 +107,9 @@ void PetSheet::AttackPower(bool ranged)
 
     float const fromStrength = stats::PetAttackPowerFromStrength(m_owner.GetStat(STAT_STRENGTH),
                                                                  m_owner.GetEntry() == ENTRY_IMP);
-    m_owner.SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, fromStrength);
+    m_owner.Tallied().Value(UNIT_MOD_ATTACK_POWER, BASE_VALUE, fromStrength);
 
-    stats::AttackPower const power = stats::CreatureAttackPower(m_owner.ModifiersOf(UNIT_MOD_ATTACK_POWER));
+    stats::AttackPower const power = stats::CreatureAttackPower(m_owner.Tallied().Of(UNIT_MOD_ATTACK_POWER));
     m_owner.SetAttackPower(false, power.base, power.added, power.share);
 
     // what it swings for follows from what it swings with
@@ -124,7 +124,7 @@ void PetSheet::Swing(WeaponAttackType attType)
     }
 
     stats::Swing swing = stats::PetSwing(
-        m_owner.ModifiersOf(UNIT_MOD_DAMAGE_MAINHAND),
+        m_owner.Tallied().Of(UNIT_MOD_DAMAGE_MAINHAND),
         m_owner.GetWeaponDamageRange(BASE_ATTACK, MINDAMAGE),
         m_owner.GetWeaponDamageRange(BASE_ATTACK, MAXDAMAGE),
         m_owner.GetTotalAttackPowerValue(attType),

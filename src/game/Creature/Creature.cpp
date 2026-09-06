@@ -637,15 +637,15 @@ bool Creature::UpdateEntry(uint32 Entry, Team team, const CreatureData* data /*=
     uint32 dynFlags = GetUInt32Value(UNIT_DYNAMIC_FLAGS);
     SetUInt32Value(UNIT_DYNAMIC_FLAGS, dynFlags ? dynFlags : GetCreatureInfo()->DynamicFlags);
 
-    SetModifierValue(UNIT_MOD_ARMOR, BASE_VALUE, float(GetCreatureInfo()->Armor));
-    SetModifierValue(UNIT_MOD_RESISTANCE_HOLY, BASE_VALUE, float(GetCreatureInfo()->ResistanceHoly));
-    SetModifierValue(UNIT_MOD_RESISTANCE_FIRE, BASE_VALUE, float(GetCreatureInfo()->ResistanceFire));
-    SetModifierValue(UNIT_MOD_RESISTANCE_NATURE, BASE_VALUE, float(GetCreatureInfo()->ResistanceNature));
-    SetModifierValue(UNIT_MOD_RESISTANCE_FROST, BASE_VALUE, float(GetCreatureInfo()->ResistanceFrost));
-    SetModifierValue(UNIT_MOD_RESISTANCE_SHADOW, BASE_VALUE, float(GetCreatureInfo()->ResistanceShadow));
-    SetModifierValue(UNIT_MOD_RESISTANCE_ARCANE, BASE_VALUE, float(GetCreatureInfo()->ResistanceArcane));
+    Tallied().Value(UNIT_MOD_ARMOR, BASE_VALUE, float(GetCreatureInfo()->Armor));
+    Tallied().Value(UNIT_MOD_RESISTANCE_HOLY, BASE_VALUE, float(GetCreatureInfo()->ResistanceHoly));
+    Tallied().Value(UNIT_MOD_RESISTANCE_FIRE, BASE_VALUE, float(GetCreatureInfo()->ResistanceFire));
+    Tallied().Value(UNIT_MOD_RESISTANCE_NATURE, BASE_VALUE, float(GetCreatureInfo()->ResistanceNature));
+    Tallied().Value(UNIT_MOD_RESISTANCE_FROST, BASE_VALUE, float(GetCreatureInfo()->ResistanceFrost));
+    Tallied().Value(UNIT_MOD_RESISTANCE_SHADOW, BASE_VALUE, float(GetCreatureInfo()->ResistanceShadow));
+    Tallied().Value(UNIT_MOD_RESISTANCE_ARCANE, BASE_VALUE, float(GetCreatureInfo()->ResistanceArcane));
 
-    SetCanModifyStats(true);
+    Tallied().Ready(true);
     Sheet().Everything();
 
     // checked and error show at loading templates

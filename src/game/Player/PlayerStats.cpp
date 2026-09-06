@@ -125,7 +125,7 @@ void Player::HandleBaseModValue(BaseModGroup modGroup, BaseModType modType, floa
             break;
     }
 
-    if (!CanModifyStats())
+    if (!Tallied().Ready())
     {
         return;
     }
@@ -1241,12 +1241,12 @@ int16 Player::GetSkillTempBonusValue(uint32 skill) const
  */
 void Player::_ApplyAllStatBonuses()
 {
-    SetCanModifyStats(false);
+    Tallied().Ready(false);
 
     _ApplyAllAuraMods();
     _ApplyAllItemMods();
 
-    SetCanModifyStats(true);
+    Tallied().Ready(true);
 
     Sheet().Everything();
 }
@@ -1256,12 +1256,12 @@ void Player::_ApplyAllStatBonuses()
  */
 void Player::_RemoveAllStatBonuses()
 {
-    SetCanModifyStats(false);
+    Tallied().Ready(false);
 
     _RemoveAllItemMods();
     _RemoveAllAuraMods();
 
-    SetCanModifyStats(true);
+    Tallied().Ready(true);
 
     Sheet().Everything();
 }

@@ -1027,7 +1027,7 @@ uint32 Unit::MeleeDamageBonusDone(Unit* pVictim, uint32 pdamage, WeaponAttackTyp
 
         if (attType == OFF_ATTACK)
         {
-            DonePercent *= GetModifierValue(UNIT_MOD_DAMAGE_OFFHAND, TOTAL_PCT); // no school check required
+            DonePercent *= Tallied().Value(UNIT_MOD_DAMAGE_OFFHAND, TOTAL_PCT); // no school check required
         }
     }
 
@@ -1073,7 +1073,7 @@ uint32 Unit::MeleeDamageBonusDone(Unit* pVictim, uint32 pdamage, WeaponAttackTyp
 
         DoneTotal += DoneFlat;
 
-        DoneTotal *= GetModifierValue(unitMod, TOTAL_PCT);
+        DoneTotal *= Tallied().Value(unitMod, TOTAL_PCT);
     }
 
     float tmpDamage = float(int32(pdamage) + DoneTotal * int32(stack)) * DonePercent;

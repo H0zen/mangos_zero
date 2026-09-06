@@ -887,7 +887,7 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
 
     SetMeleeDamageSchool(SpellSchools(cinfo->DamageSchool));
 
-    SetModifierValue(UNIT_MOD_ARMOR, BASE_VALUE, float(petlevel * 50));
+    Tallied().Value(UNIT_MOD_ARMOR, BASE_VALUE, float(petlevel * 50));
 
     SetAttackTime(BASE_ATTACK, cinfo->MeleeBaseAttackTime);
     SetAttackTime(OFF_ATTACK, cinfo->MeleeBaseAttackTime);
@@ -967,7 +967,7 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
             SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float(petlevel - (petlevel / 4)));
             SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel + (petlevel / 4)));
 
-            // SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, float(cinfo->attackpower));
+            // Tallied().Value(UNIT_MOD_ATTACK_POWER, BASE_VALUE, float(cinfo->attackpower));
 
             PetLevelInfo const* pInfo = sObjectMgr.GetPetLevelInfo(creature_ID, petlevel);
             if (pInfo)                                      // exist in DB
@@ -977,12 +977,12 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
 
                 if (pInfo->armor > 0)
                 {
-                    SetModifierValue(UNIT_MOD_ARMOR, BASE_VALUE, float(pInfo->armor));
+                    Tallied().Value(UNIT_MOD_ARMOR, BASE_VALUE, float(pInfo->armor));
                 }
 
                 for (int stat = 0; stat < MAX_STATS; ++stat)
                 {
-                    SetCreateStat(Stats(stat), float(pInfo->stats[stat]));
+                    Tallied().Made(Stats(stat), float(pInfo->stats[stat]));
                 }
             }
             else                                            // not exist in DB, use some default fake data
@@ -993,11 +993,11 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
                 SetCreateHealth(uint32(((float(cinfo->MaxLevelHealth) / cinfo->MaxLevel) / (1 + 2 * cinfo->Rank)) * petlevel));
                 SetCreateMana(uint32(((float(cinfo->MaxLevelMana)   / cinfo->MaxLevel) / (1 + 2 * cinfo->Rank)) * petlevel));
 
-                SetCreateStat(STAT_STRENGTH, 22);
-                SetCreateStat(STAT_AGILITY, 22);
-                SetCreateStat(STAT_STAMINA, 25);
-                SetCreateStat(STAT_INTELLECT, 28);
-                SetCreateStat(STAT_SPIRIT, 27);
+                Tallied().Made(STAT_STRENGTH, 22);
+                Tallied().Made(STAT_AGILITY, 22);
+                Tallied().Made(STAT_STAMINA, 25);
+                Tallied().Made(STAT_INTELLECT, 28);
+                Tallied().Made(STAT_SPIRIT, 27);
             }
             break;
         }
@@ -1015,12 +1015,12 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
             if (pInfo)                                      // exist in DB
             {
                 SetCreateHealth(pInfo->health);
-                SetModifierValue(UNIT_MOD_ARMOR, BASE_VALUE, float(pInfo->armor));
-                // SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, float(cinfo->attackpower));
+                Tallied().Value(UNIT_MOD_ARMOR, BASE_VALUE, float(pInfo->armor));
+                // Tallied().Value(UNIT_MOD_ATTACK_POWER, BASE_VALUE, float(cinfo->attackpower));
 
                 for (int i = STAT_STRENGTH; i < MAX_STATS; ++i)
                 {
-                    SetCreateStat(Stats(i),  float(pInfo->stats[i]));
+                    Tallied().Made(Stats(i),  float(pInfo->stats[i]));
                 }
             }
             else                                            // not exist in DB, use some default fake data
@@ -1030,11 +1030,11 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
                 // remove elite bonuses included in DB values
                 SetCreateHealth(uint32(((float(cinfo->MaxLevelHealth) / cinfo->MaxLevel) / (1 + 2 * cinfo->Rank)) * petlevel));
 
-                SetCreateStat(STAT_STRENGTH, 22);
-                SetCreateStat(STAT_AGILITY, 22);
-                SetCreateStat(STAT_STAMINA, 25);
-                SetCreateStat(STAT_INTELLECT, 28);
-                SetCreateStat(STAT_SPIRIT, 27);
+                Tallied().Made(STAT_STRENGTH, 22);
+                Tallied().Made(STAT_AGILITY, 22);
+                Tallied().Made(STAT_STAMINA, 25);
+                Tallied().Made(STAT_INTELLECT, 28);
+                Tallied().Made(STAT_SPIRIT, 27);
             }
             break;
         }
@@ -1059,7 +1059,7 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
 
     for (int i = SPELL_SCHOOL_HOLY; i < MAX_SPELL_SCHOOL; ++i)
     {
-        SetModifierValue(UnitMods(UNIT_MOD_RESISTANCE_START + i), BASE_VALUE, float(createResistance[i]));
+        Tallied().Value(UnitMods(UNIT_MOD_RESISTANCE_START + i), BASE_VALUE, float(createResistance[i]));
     }
 
     Sheet().Everything();

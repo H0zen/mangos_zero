@@ -61,240 +61,58 @@
 #include <math.h>
 #include <stdarg.h>
 
-bool Unit::HandleStatModifier(UnitMods unitMod, UnitModifierType modifierType, float amount, bool apply)
+bool stats::Apply(Unit& who, UnitMods group, UnitModifierType which, float amount, bool apply)
 {
-    if (unitMod >= UNIT_MOD_END || modifierType >= MODIFIER_TYPE_END)
+    if (group >= UNIT_MOD_END || which >= MODIFIER_TYPE_END)
     {
-        sLog.outError("ERROR in HandleStatModifier(): nonexistent UnitMods or wrong UnitModifierType!");
+        sLog.outError("ERROR in stats::Apply(): nonexistent UnitMods or wrong UnitModifierType!");
         return false;
     }
 
-    float val;
+    who.Tallied().Put(group, which, amount, apply);
 
-    switch (modifierType)
-    {
-        case BASE_VALUE:
-        case TOTAL_VALUE:
-            m_auraModifiersGroup[unitMod][modifierType] += apply ? amount : -amount;
-            break;
-        case BASE_PCT:
-        case TOTAL_PCT:
-            if (amount <= -100.0f)                          // small hack-fix for -100% modifiers
-            {
-                amount = -200.0f;
-            }
-
-            val = (100.0f + amount) / 100.0f;
-            m_auraModifiersGroup[unitMod][modifierType] *= apply ? val : (1.0f / val);
-            break;
-
-        default:
-            break;
-    }
-
-    if (!CanModifyStats())
+    // Until the sheet is built there is nothing to tell.
+    if (!who.Tallied().Ready())
     {
         return false;
     }
 
-    switch (unitMod)
+    switch (group)
     {
         case UNIT_MOD_STAT_STRENGTH:
         case UNIT_MOD_STAT_AGILITY:
         case UNIT_MOD_STAT_STAMINA:
         case UNIT_MOD_STAT_INTELLECT:
-        case UNIT_MOD_STAT_SPIRIT:         Sheet().Stat(GetStatByAuraGroup(unitMod));  break;
+        case UNIT_MOD_STAT_SPIRIT:         who.Sheet().Stat(stats::StatOf(group));  break;
 
-        case UNIT_MOD_ARMOR:               Sheet().Armour();     break;
-        case UNIT_MOD_HEALTH:              Sheet().MaxHealth();  break;
+        case UNIT_MOD_ARMOR:               who.Sheet().Armour();     break;
+        case UNIT_MOD_HEALTH:              who.Sheet().MaxHealth();  break;
 
         case UNIT_MOD_MANA:
         case UNIT_MOD_RAGE:
         case UNIT_MOD_FOCUS:
         case UNIT_MOD_ENERGY:
-        case UNIT_MOD_HAPPINESS:           Sheet().MaxPower(GetPowerTypeByAuraGroup(unitMod)); break;
+        case UNIT_MOD_HAPPINESS:           who.Sheet().MaxPower(stats::PowerOf(group)); break;
 
         case UNIT_MOD_RESISTANCE_HOLY:
         case UNIT_MOD_RESISTANCE_FIRE:
         case UNIT_MOD_RESISTANCE_NATURE:
         case UNIT_MOD_RESISTANCE_FROST:
         case UNIT_MOD_RESISTANCE_SHADOW:
-        case UNIT_MOD_RESISTANCE_ARCANE:   Sheet().Resistance(GetSpellSchoolByAuraGroup(unitMod)); break;
+        case UNIT_MOD_RESISTANCE_ARCANE:   who.Sheet().Resistance(stats::SchoolOf(group)); break;
 
-        case UNIT_MOD_ATTACK_POWER:        Sheet().AttackPower(false);  break;
-        case UNIT_MOD_ATTACK_POWER_RANGED: Sheet().AttackPower(true);   break;
+        case UNIT_MOD_ATTACK_POWER:        who.Sheet().AttackPower(false);  break;
+        case UNIT_MOD_ATTACK_POWER_RANGED: who.Sheet().AttackPower(true);   break;
 
-        case UNIT_MOD_DAMAGE_MAINHAND:     Sheet().Swing(BASE_ATTACK);    break;
-        case UNIT_MOD_DAMAGE_OFFHAND:      Sheet().Swing(OFF_ATTACK);     break;
-        case UNIT_MOD_DAMAGE_RANGED:       Sheet().Swing(RANGED_ATTACK);  break;
+        case UNIT_MOD_DAMAGE_MAINHAND:     who.Sheet().Swing(BASE_ATTACK);    break;
+        case UNIT_MOD_DAMAGE_OFFHAND:      who.Sheet().Swing(OFF_ATTACK);     break;
+        case UNIT_MOD_DAMAGE_RANGED:       who.Sheet().Swing(RANGED_ATTACK);  break;
 
         default:
             break;
     }
 
     return true;
-}
-
-/**
- * @brief Gets a raw stored modifier value for a unit stat bucket.
- *
- * @param unitMod The unit modifier group.
- * @param modifierType The modifier type within the group.
- * @return The stored modifier value.
- */
-float Unit::GetModifierValue(UnitMods unitMod, UnitModifierType modifierType) const
-{
-    if (unitMod >= UNIT_MOD_END || modifierType >= MODIFIER_TYPE_END)
-    {
-        sLog.outError("attempt to access nonexistent modifier value from UnitMods!");
-        return 0.0f;
-    }
-
-    if (modifierType == TOTAL_PCT && m_auraModifiersGroup[unitMod][modifierType] <= 0.0f)
-    {
-        return 0.0f;
-    }
-
-    return m_auraModifiersGroup[unitMod][modifierType];
-}
-
-/**
- * @brief Computes the fully modified value of a primary stat.
- *
- * @param stat The stat to evaluate.
- * @return The resulting total stat value.
- */
-float Unit::GetTotalStatValue(Stats stat) const
-{
-    UnitMods unitMod = UnitMods(UNIT_MOD_STAT_START + stat);
-
-    if (m_auraModifiersGroup[unitMod][TOTAL_PCT] <= 0.0f)
-    {
-        return 0.0f;
-    }
-
-    // value = ((base_value * base_pct) + total_value) * total_pct
-    float value  = m_auraModifiersGroup[unitMod][BASE_VALUE] + GetCreateStat(stat);
-    value *= m_auraModifiersGroup[unitMod][BASE_PCT];
-    value += m_auraModifiersGroup[unitMod][TOTAL_VALUE];
-    value *= m_auraModifiersGroup[unitMod][TOTAL_PCT];
-
-    return value;
-}
-
-/**
- * @brief Computes the fully modified aura contribution for a unit modifier group.
- *
- * @param unitMod The unit modifier group.
- * @return The resulting total modified value.
- */
-Modifiers Unit::ModifiersOf(UnitMods unitMod) const
-{
-    Modifiers mods;
-
-    if (unitMod >= UNIT_MOD_END)
-    {
-        sLog.outError("attempt to access nonexistent UnitMods in ModifiersOf()!");
-        return mods;
-    }
-
-    mods.baseValue = m_auraModifiersGroup[unitMod][BASE_VALUE];
-    mods.basePct = m_auraModifiersGroup[unitMod][BASE_PCT];
-    mods.totalValue = m_auraModifiersGroup[unitMod][TOTAL_VALUE];
-    mods.totalPct = m_auraModifiersGroup[unitMod][TOTAL_PCT];
-
-    return mods;
-}
-
-float Unit::GetTotalAuraModValue(UnitMods unitMod) const
-{
-    if (unitMod >= UNIT_MOD_END)
-    {
-        sLog.outError("attempt to access nonexistent UnitMods in GetTotalAuraModValue()!");
-        return 0.0f;
-    }
-
-    if (m_auraModifiersGroup[unitMod][TOTAL_PCT] <= 0.0f)
-    {
-        return 0.0f;
-    }
-
-    float value  = m_auraModifiersGroup[unitMod][BASE_VALUE];
-    value *= m_auraModifiersGroup[unitMod][BASE_PCT];
-    value += m_auraModifiersGroup[unitMod][TOTAL_VALUE];
-    value *= m_auraModifiersGroup[unitMod][TOTAL_PCT];
-
-    return value;
-}
-
-/**
- * @brief Maps a resistance unit modifier group to its spell school.
- *
- * @param unitMod The unit modifier group.
- * @return The associated spell school.
- */
-SpellSchools Unit::GetSpellSchoolByAuraGroup(UnitMods unitMod) const
-{
-    SpellSchools school = SPELL_SCHOOL_NORMAL;
-
-    switch (unitMod)
-    {
-        case UNIT_MOD_RESISTANCE_HOLY:     school = SPELL_SCHOOL_HOLY;          break;
-        case UNIT_MOD_RESISTANCE_FIRE:     school = SPELL_SCHOOL_FIRE;          break;
-        case UNIT_MOD_RESISTANCE_NATURE:   school = SPELL_SCHOOL_NATURE;        break;
-        case UNIT_MOD_RESISTANCE_FROST:    school = SPELL_SCHOOL_FROST;         break;
-        case UNIT_MOD_RESISTANCE_SHADOW:   school = SPELL_SCHOOL_SHADOW;        break;
-        case UNIT_MOD_RESISTANCE_ARCANE:   school = SPELL_SCHOOL_ARCANE;        break;
-
-        default:
-            break;
-    }
-
-    return school;
-}
-
-/**
- * @brief Maps a stat unit modifier group to its primary stat.
- *
- * @param unitMod The unit modifier group.
- * @return The associated stat.
- */
-Stats Unit::GetStatByAuraGroup(UnitMods unitMod) const
-{
-    Stats stat = STAT_STRENGTH;
-
-    switch (unitMod)
-    {
-        case UNIT_MOD_STAT_STRENGTH:    stat = STAT_STRENGTH;      break;
-        case UNIT_MOD_STAT_AGILITY:     stat = STAT_AGILITY;       break;
-        case UNIT_MOD_STAT_STAMINA:     stat = STAT_STAMINA;       break;
-        case UNIT_MOD_STAT_INTELLECT:   stat = STAT_INTELLECT;     break;
-        case UNIT_MOD_STAT_SPIRIT:      stat = STAT_SPIRIT;        break;
-
-        default:
-            break;
-    }
-
-    return stat;
-}
-
-/**
- * @brief Maps a power unit modifier group to its power type.
- *
- * @param unitMod The unit modifier group.
- * @return The associated power type.
- */
-Powers Unit::GetPowerTypeByAuraGroup(UnitMods unitMod) const
-{
-    switch (unitMod)
-    {
-        case UNIT_MOD_MANA:       return POWER_MANA;
-        case UNIT_MOD_RAGE:       return POWER_RAGE;
-        case UNIT_MOD_FOCUS:      return POWER_FOCUS;
-        case UNIT_MOD_ENERGY:     return POWER_ENERGY;
-        case UNIT_MOD_HAPPINESS:  return POWER_HAPPINESS;
-        default:                  return POWER_MANA;
-    }
 }
 
 /**

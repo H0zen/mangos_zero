@@ -488,7 +488,7 @@ void Player::RemoveAmmo()
 
     Arms().Ammo(0.0f, 0.0f);
 
-    if (CanModifyStats())
+    if (Tallied().Ready())
     {
         Sheet().Swing(RANGED_ATTACK);
     }

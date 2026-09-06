@@ -46,7 +46,7 @@ void PlayerSheet::Stat(Stats stat)
         return;
     }
 
-    m_owner.SetStat(stat, int32(m_owner.GetTotalStatValue(stat)));
+    m_owner.SetStat(stat, int32(m_owner.Tallied().FoldedOver(stat)));
 
     switch (stat)
     {
@@ -84,7 +84,7 @@ void PlayerSheet::Everything()
 {
     for (int stat = STAT_STRENGTH; stat < MAX_STATS; ++stat)
     {
-        m_owner.SetStat(Stats(stat), int32(m_owner.GetTotalStatValue(Stats(stat))));
+        m_owner.SetStat(Stats(stat), int32(m_owner.Tallied().FoldedOver(Stats(stat))));
     }
 
     AttackPower(false);
@@ -123,13 +123,13 @@ void PlayerSheet::Armour()
         }
     }
 
-    m_owner.SetArmor(int32(stats::PlayerArmour(m_owner.ModifiersOf(UNIT_MOD_ARMOR),
+    m_owner.SetArmor(int32(stats::PlayerArmour(m_owner.Tallied().Of(UNIT_MOD_ARMOR),
                                                m_owner.GetStat(STAT_AGILITY), fromIntellect)));
 }
 
 void PlayerSheet::MaxHealth()
 {
-    m_owner.SetMaxHealth(uint32(stats::PlayerMaxHealth(m_owner.ModifiersOf(UNIT_MOD_HEALTH),
+    m_owner.SetMaxHealth(uint32(stats::PlayerMaxHealth(m_owner.Tallied().Of(UNIT_MOD_HEALTH),
                                                        m_owner.GetCreateHealth(), HealthFromStamina())));
 }
 
@@ -141,7 +141,7 @@ void PlayerSheet::MaxPower(Powers power)
     // A class with no mana of its own gains none from intellect either.
     float const fromIntellect = (power == POWER_MANA && created > 0) ? ManaFromIntellect() : 0.0f;
 
-    m_owner.SetMaxPower(power, uint32(stats::PlayerMaxPower(m_owner.ModifiersOf(unitMod),
+    m_owner.SetMaxPower(power, uint32(stats::PlayerMaxPower(m_owner.Tallied().Of(unitMod),
                                                             float(created), fromIntellect)));
 }
 
@@ -171,12 +171,12 @@ void PlayerSheet::AttackPower(bool ranged)
         }
     }
 
-    m_owner.SetModifierValue(unitMod, BASE_VALUE, ranged ? stats::RangedAttackPower(who)
+    m_owner.Tallied().Value(unitMod, BASE_VALUE, ranged ? stats::RangedAttackPower(who)
                                                          : stats::MeleeAttackPower(who));
 
-    float const base = m_owner.GetModifierValue(unitMod, BASE_VALUE) * m_owner.GetModifierValue(unitMod, BASE_PCT);
-    float const added = m_owner.GetModifierValue(unitMod, TOTAL_VALUE);
-    float const share = m_owner.GetModifierValue(unitMod, TOTAL_PCT) - 1.0f;
+    float const base = m_owner.Tallied().Value(unitMod, BASE_VALUE) * m_owner.Tallied().Value(unitMod, BASE_PCT);
+    float const added = m_owner.Tallied().Value(unitMod, TOTAL_VALUE);
+    float const share = m_owner.Tallied().Value(unitMod, TOTAL_PCT) - 1.0f;
 
     m_owner.SetAttackPower(ranged, static_cast<int32>(base), static_cast<int32>(added), share);
 
@@ -214,11 +214,11 @@ void PlayerSheet::SwingRange(WeaponAttackType attType, bool normalized, float& l
 
     float const speed = m_owner.GetAPMultiplier(attType, normalized);
 
-    float const base_value = m_owner.GetModifierValue(unitMod, BASE_VALUE)
+    float const base_value = m_owner.Tallied().Value(unitMod, BASE_VALUE)
                              + m_owner.GetTotalAttackPowerValue(attType) / 14.0f * speed;
-    float const base_pct = m_owner.GetModifierValue(unitMod, BASE_PCT);
-    float const total_value = m_owner.GetModifierValue(unitMod, TOTAL_VALUE);
-    float const total_pct = m_owner.GetModifierValue(unitMod, TOTAL_PCT);
+    float const base_pct = m_owner.Tallied().Value(unitMod, BASE_PCT);
+    float const total_value = m_owner.Tallied().Value(unitMod, TOTAL_VALUE);
+    float const total_pct = m_owner.Tallied().Value(unitMod, TOTAL_PCT);
 
     float weaponLeast = m_owner.GetWeaponDamageRange(attType, MINDAMAGE);
     float weaponMost = m_owner.GetWeaponDamageRange(attType, MAXDAMAGE);

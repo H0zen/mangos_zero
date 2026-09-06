@@ -148,7 +148,7 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
     SetMaxHealth(health);
     SetHealth(health);
 
-    SetModifierValue(UNIT_MOD_HEALTH, BASE_VALUE, float(health));
+    Tallied().Value(UNIT_MOD_HEALTH, BASE_VALUE, float(health));
 
     // all power types
     for (int i = POWER_MANA; i <= POWER_HAPPINESS; ++i)
@@ -180,7 +180,7 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
 
         SetMaxPower(Powers(i), maxValue);
         SetPower(Powers(i), value);
-        SetModifierValue(UnitMods(UNIT_MOD_POWER_START + i), BASE_VALUE, float(value));
+        Tallied().Value(UnitMods(UNIT_MOD_POWER_START + i), BASE_VALUE, float(value));
     }
 
     // damage
@@ -195,7 +195,7 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
     SetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE, cinfo->MinRangedDmg * damagemod);
     SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, cinfo->MaxRangedDmg * damagemod);
 
-    SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, cinfo->MeleeAttackPower * damagemod);
+    Tallied().Value(UNIT_MOD_ATTACK_POWER, BASE_VALUE, cinfo->MeleeAttackPower * damagemod);
 }
 
 /**

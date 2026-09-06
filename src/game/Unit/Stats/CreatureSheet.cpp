@@ -46,25 +46,25 @@ void CreatureSheet::Everything()
 
 void CreatureSheet::Armour()
 {
-    m_owner.SetArmor(int32(stats::Simple(m_owner.ModifiersOf(UNIT_MOD_ARMOR))));
+    m_owner.SetArmor(int32(stats::Simple(m_owner.Tallied().Of(UNIT_MOD_ARMOR))));
 }
 
 void CreatureSheet::MaxHealth()
 {
-    m_owner.SetMaxHealth(uint32(stats::Simple(m_owner.ModifiersOf(UNIT_MOD_HEALTH))));
+    m_owner.SetMaxHealth(uint32(stats::Simple(m_owner.Tallied().Of(UNIT_MOD_HEALTH))));
 }
 
 void CreatureSheet::MaxPower(Powers power)
 {
     UnitMods const unitMod = UnitMods(UNIT_MOD_POWER_START + power);
-    m_owner.SetMaxPower(power, uint32(stats::Simple(m_owner.ModifiersOf(unitMod))));
+    m_owner.SetMaxPower(power, uint32(stats::Simple(m_owner.Tallied().Of(unitMod))));
 }
 
 void CreatureSheet::AttackPower(bool ranged)
 {
     UnitMods const unitMod = ranged ? UNIT_MOD_ATTACK_POWER_RANGED : UNIT_MOD_ATTACK_POWER;
 
-    stats::AttackPower const power = stats::CreatureAttackPower(m_owner.ModifiersOf(unitMod));
+    stats::AttackPower const power = stats::CreatureAttackPower(m_owner.Tallied().Of(unitMod));
     m_owner.SetAttackPower(ranged, power.base, power.added, power.share);
 
     if (ranged)
@@ -91,7 +91,7 @@ void CreatureSheet::Swing(WeaponAttackType attType)
     float const gained = m_owner.GetTotalAttackPowerValue(attType) - m_owner.GetCreatureInfo()->MeleeAttackPower;
 
     stats::Swing const swing = stats::CreatureSwing(
-        m_owner.ModifiersOf(unitMod),
+        m_owner.Tallied().Of(unitMod),
         m_owner.GetWeaponDamageRange(attType, MINDAMAGE),
         m_owner.GetWeaponDamageRange(attType, MAXDAMAGE),
         gained,

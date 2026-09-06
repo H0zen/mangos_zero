@@ -30,5 +30,5 @@ void StatSheet::Resistance(uint32 school)
     }
 
     UnitMods const unitMod = UnitMods(UNIT_MOD_RESISTANCE_START + school);
-    m_unit.SetResistance(SpellSchools(school), int32(stats::Simple(m_unit.ModifiersOf(unitMod))));
+    m_unit.SetResistance(SpellSchools(school), int32(stats::Simple(m_unit.Tallied().Of(unitMod))));
 }

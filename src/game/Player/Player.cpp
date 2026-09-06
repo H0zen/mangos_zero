@@ -2101,7 +2101,7 @@ void Player::GiveLevel(uint32 level)
     WorldPacket data(SMSG_LEVELUP_INFO, (4 + 4 + MAX_POWERS * 4 + MAX_STATS * 4));
     data << uint32(level);
     data << uint32((int32(classInfo.basehealth) - int32(GetCreateHealth())) +
-        ((int32(info.stats[STAT_STAMINA]) - GetCreateStat(STAT_STAMINA)) * 10));
+        ((int32(info.stats[STAT_STAMINA]) - Tallied().Made(STAT_STAMINA)) * 10));
     // for (int i = 0; i < MAX_POWERS; ++i)                  // Powers loop (0-6)
     data << uint32(int32(classInfo.basemana)   - int32(GetCreateMana()));
     data << uint32(0);
@@ -2111,7 +2111,7 @@ void Player::GiveLevel(uint32 level)
     // end for
     for (int i = STAT_STRENGTH; i < MAX_STATS; ++i)         // Stats loop (0-4)
     {
-        data << uint32(int32(info.stats[i]) - GetCreateStat(Stats(i)));
+        data << uint32(int32(info.stats[i]) - Tallied().Made(Stats(i)));
     }
 
     GetSession()->SendPacket(&data);
@@ -2129,7 +2129,7 @@ void Player::GiveLevel(uint32 level)
     // save base values (bonuses already included in stored stats
     for (int i = STAT_STRENGTH; i < MAX_STATS; ++i)
     {
-        SetCreateStat(Stats(i), info.stats[i]);
+        Tallied().Made(Stats(i), info.stats[i]);
     }
 
     SetCreateHealth(classInfo.basehealth);
@@ -2256,7 +2256,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     // save base values (bonuses already included in stored stats
     for (int i = STAT_STRENGTH; i < MAX_STATS; ++i)
     {
-        SetCreateStat(Stats(i), info.stats[i]);
+        Tallied().Made(Stats(i), info.stats[i]);
     }
 
     for (int i = STAT_STRENGTH; i < MAX_STATS; ++i)
@@ -2269,7 +2269,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     // set create powers
     SetCreateMana(classInfo.basemana);
 
-    SetArmor(int32(m_createStats[STAT_AGILITY] * 2));
+    SetArmor(int32(Tallied().Made(STAT_AGILITY) * 2));
 
     InitStatBuffMods();
 
@@ -2307,7 +2307,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     SetFloatValue(PLAYER_DODGE_PERCENTAGE, 0.0f);
 
     // set armor (resistance 0) to original value (create_agility*2)
-    SetArmor(int32(m_createStats[STAT_AGILITY] * 2));
+    SetArmor(int32(Tallied().Made(STAT_AGILITY) * 2));
     SetResistanceBuffMods(SpellSchools(0), true, 0.0f);
     SetResistanceBuffMods(SpellSchools(0), false, 0.0f);
     // set other resistance to original value (0)

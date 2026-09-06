@@ -1055,7 +1055,7 @@ void Spell::EffectWeaponDmg(SpellEffectIndex eff_idx)
             case RANGED_ATTACK: unitMod = UNIT_MOD_DAMAGE_RANGED;   break;
         }
 
-        float weapon_total_pct  = m_caster->GetModifierValue(unitMod, TOTAL_PCT);
+        float weapon_total_pct  = m_caster->Tallied().Value(unitMod, TOTAL_PCT);
         bonus = int32(bonus * weapon_total_pct);
     }
 

@@ -86,6 +86,7 @@
 #include "GlobalCooldown.h"
 #include "CharmInfo.h"
 #include "Stats/Modifiers.h"
+#include "Stats/Tallies.h"
 #include "Creature/CreatureRecord.h"
 #include "Cell.h"
 #include "Creature/VendorStock.h"
@@ -354,15 +355,6 @@ struct SpellImmune
 
 typedef std::list<SpellImmune> SpellImmuneList;
 
-enum UnitModifierType
-{
-    BASE_VALUE = 0,
-    BASE_PCT = 1,
-    TOTAL_VALUE = 2,
-    TOTAL_PCT = 3,
-    MODIFIER_TYPE_END = 4
-};
-
 enum WeaponDamageRange
 {
     MINDAMAGE,
@@ -391,42 +383,6 @@ enum AuraRemoveMode
     AURA_REMOVE_BY_EXPIRE,          ///< at duration end
     AURA_REMOVE_BY_TRACKING         ///< aura is removed because of a conflicting tracked aura
 };
-
-enum UnitMods
-{
-    UNIT_MOD_STAT_STRENGTH,                                 // UNIT_MOD_STAT_STRENGTH..UNIT_MOD_STAT_SPIRIT must be in existing order, it's accessed by index values of Stats enum.
-    UNIT_MOD_STAT_AGILITY,
-    UNIT_MOD_STAT_STAMINA,
-    UNIT_MOD_STAT_INTELLECT,
-    UNIT_MOD_STAT_SPIRIT,
-    UNIT_MOD_HEALTH,
-    UNIT_MOD_MANA,                                          // UNIT_MOD_MANA..UNIT_MOD_HAPPINESS must be in existing order, it's accessed by index values of Powers enum.
-    UNIT_MOD_RAGE,
-    UNIT_MOD_FOCUS,
-    UNIT_MOD_ENERGY,
-    UNIT_MOD_HAPPINESS,
-    UNIT_MOD_ARMOR,                                         // UNIT_MOD_ARMOR..UNIT_MOD_RESISTANCE_ARCANE must be in existing order, it's accessed by index values of SpellSchools enum.
-    UNIT_MOD_RESISTANCE_HOLY,
-    UNIT_MOD_RESISTANCE_FIRE,
-    UNIT_MOD_RESISTANCE_NATURE,
-    UNIT_MOD_RESISTANCE_FROST,
-    UNIT_MOD_RESISTANCE_SHADOW,
-    UNIT_MOD_RESISTANCE_ARCANE,
-    UNIT_MOD_ATTACK_POWER,
-    UNIT_MOD_ATTACK_POWER_RANGED,
-    UNIT_MOD_DAMAGE_MAINHAND,
-    UNIT_MOD_DAMAGE_OFFHAND,
-    UNIT_MOD_DAMAGE_RANGED,
-    UNIT_MOD_END,
-    // synonyms
-    UNIT_MOD_STAT_START = UNIT_MOD_STAT_STRENGTH,
-    UNIT_MOD_STAT_END = UNIT_MOD_STAT_SPIRIT + 1,
-    UNIT_MOD_RESISTANCE_START = UNIT_MOD_ARMOR,
-    UNIT_MOD_RESISTANCE_END = UNIT_MOD_RESISTANCE_ARCANE + 1,
-    UNIT_MOD_POWER_START = UNIT_MOD_MANA,
-    UNIT_MOD_POWER_END = UNIT_MOD_HAPPINESS + 1
-};
-
 enum BaseModGroup
 {
     CRIT_PERCENTAGE,
@@ -3518,13 +3474,11 @@ class Unit : public Occupant
 
         void DelaySpellAuraHolder(uint32 spellId, int32 delaytime, ObjectGuid casterGuid);
 
-        void SetCreateStat(Stats stat, float val) { m_createStats[stat] = val; }
         void SetCreateHealth(uint32 val) { SetUInt32Value(UNIT_FIELD_BASE_HEALTH, val); }
         uint32 GetCreateHealth() const { return GetUInt32Value(UNIT_FIELD_BASE_HEALTH); }
         void SetCreateMana(uint32 val) { SetUInt32Value(UNIT_FIELD_BASE_MANA, val); }
         uint32 GetCreateMana() const { return GetUInt32Value(UNIT_FIELD_BASE_MANA); }
         uint32 GetCreatePowers(Powers power) const;
-        float GetCreateStat(Stats stat) const { return m_createStats[stat]; }
 
         void SetCurrentCastedSpell(Spell* pSpell);
         virtual void ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs);
@@ -3608,21 +3562,9 @@ class Unit : public Occupant
         SpellSchoolMask m_schoolLockoutMask;
         time_t m_schoolLockoutExpire;
 
-        // stat system
-        bool HandleStatModifier(UnitMods unitMod, UnitModifierType modifierType, float amount, bool apply);
-        void SetModifierValue(UnitMods unitMod, UnitModifierType modifierType, float value) { m_auraModifiersGroup[unitMod][modifierType] = value; }
-        float GetModifierValue(UnitMods unitMod, UnitModifierType modifierType) const;
-
-        /// The four modifiers of one number, gathered as they are read: a total
-        /// percentage that is not positive comes back as nothing at all.
-        Modifiers ModifiersOf(UnitMods unitMod) const;
-        float GetTotalStatValue(Stats stat) const;
-        float GetTotalAuraModValue(UnitMods unitMod) const;
-        SpellSchools GetSpellSchoolByAuraGroup(UnitMods unitMod) const;
-        Stats GetStatByAuraGroup(UnitMods unitMod) const;
-        Powers GetPowerTypeByAuraGroup(UnitMods unitMod) const;
-        bool CanModifyStats() const { return m_canModifyStats; }
-        void SetCanModifyStats(bool modifyStats) { m_canModifyStats = modifyStats; }
+        /// What the auras have put on each of its numbers.
+        Tallies& Tallied() { return m_tallies; }
+        Tallies const& Tallied() const { return m_tallies; }
 
         /// The numbers it fights with, and how they are worked out.
         virtual StatSheet& Sheet() = 0;
@@ -3943,8 +3885,6 @@ class Unit : public Occupant
 
         uint32 m_attackTimer[MAX_ATTACK];
 
-        float m_createStats[MAX_STATS];
-
         AttackerSet m_attackers;
         Unit* m_attacking;
 
@@ -3963,11 +3903,9 @@ class Unit : public Occupant
         uint32 m_transform;
 
         auras::Index m_auraIndex;
-        float m_auraModifiersGroup[UNIT_MOD_END][MODIFIER_TYPE_END];
+        Tallies m_tallies;
         float m_weaponDamage[MAX_ATTACK][2];
         WeaponDamageInfo m_weaponDamageInfo;
-
-        bool m_canModifyStats;
         // std::list< spellEffectPair > AuraSpells[TOTAL_AURAS];  // TODO: use this if ok for mem
 
 

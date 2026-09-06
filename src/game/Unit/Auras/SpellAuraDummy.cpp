@@ -441,7 +441,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             // Seal of the Crusader deals less damage with each attack. -28% damage,multiple tests.
             if (GetSpellProto()->SpellIconID == 237 && GetSpellProto()->SpellClassMask & UI64LIT(0x00000200))
             {
-                target->HandleStatModifier(UNIT_MOD_DAMAGE_MAINHAND, TOTAL_PCT, -28.0f, apply);
+                stats::Apply(*target, UNIT_MOD_DAMAGE_MAINHAND, TOTAL_PCT, -28.0f, apply);
             }
 
             break;
