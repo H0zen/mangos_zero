@@ -240,12 +240,14 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
     lootForPickPocketed(false), lootForBody(false), lootForSkin(false),
     m_lootMoney(0),
     m_corpseRemoveTime(0), m_respawnTime(0), m_respawnDelay(25), m_corpseDelay(60), m_aggroDelay(0), m_respawnradius(5.0f),
-    m_subtype(subtype), m_defaultMovementType(IDLE_MOTION_TYPE), m_equipmentId(0),
+    m_defaultMovementType(IDLE_MOTION_TYPE), m_equipmentId(0),
     m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false),
     m_AI_locked(false), m_IsDeadByDefault(false), m_temporaryFactionFlags(TEMPFACTION_NONE),
     m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0),
-    m_creatureInfo(nullptr), m_PlayerDamageReq(0), m_sheet(*this), m_links(*this), m_pace(*this)
+    m_PlayerDamageReq(0), m_sheet(*this), m_links(*this), m_pace(*this)
 {
+    m_subtype = subtype;
+
     /* Loot data */
     hasBeenLootedOnce = false;
     assignedLooter = 0;

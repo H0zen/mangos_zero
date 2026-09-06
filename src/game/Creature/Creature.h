@@ -523,14 +523,6 @@ struct CreatureCreatePos
         float m_dist;
 };
 
-enum CreatureSubtype
-{
-    CREATURE_SUBTYPE_GENERIC,                               // new Creature
-    CREATURE_SUBTYPE_PET,                                   // new Pet
-    CREATURE_SUBTYPE_TOTEM,                                 // new Totem
-    CREATURE_SUBTYPE_TEMPORARY_SUMMON,                      // new TemporarySummon
-};
-
 enum TemporaryFactionFlags                                  // Used at real faction changes
 {
     TEMPFACTION_NONE                    = 0x00,             // When no flag is used in temporary faction change, faction will be persistent. It will then require manual change back to default/another faction when changed once
@@ -576,10 +568,6 @@ class Creature : public Unit
         virtual void RegenerateAll(uint32 update_diff);
         uint32 GetEquipmentId() const { return m_equipmentId; }
 
-        CreatureSubtype GetSubtype() const { return m_subtype; }
-        bool IsPet() const { return m_subtype == CREATURE_SUBTYPE_PET; }
-        bool IsTotem() const { return m_subtype == CREATURE_SUBTYPE_TOTEM; }
-        bool IsTemporarySummon() const { return m_subtype == CREATURE_SUBTYPE_TEMPORARY_SUMMON; }
 
         bool IsCorpse() const { return GetDeathState() ==  CORPSE; }
         bool IsDespawned() const { return GetDeathState() ==  DEAD; }
@@ -685,7 +673,6 @@ class Creature : public Unit
         TrainerSpellData const* GetTrainerTemplateSpells() const;
         TrainerSpellData const* GetTrainerSpells() const;
 
-        CreatureInfo const* GetCreatureInfo() const { return m_creatureInfo; }
         CreatureDataAddon const* GetCreatureAddon() const;
 
         static uint32 ChooseDisplayId(const CreatureInfo* cinfo, const CreatureData* data = nullptr, GameEventCreatureData const* eventData = nullptr);
@@ -1082,7 +1069,6 @@ class Creature : public Unit
 
         time_t m_killedTime;                                // Exact time of the death.
 
-        CreatureSubtype m_subtype;                          // set in Creatures subclasses for fast it detect without dynamic_cast use
         void RegeneratePower();
         void RegenerateHealth();
         MovementGeneratorType m_defaultMovementType;
@@ -1111,7 +1097,6 @@ class Creature : public Unit
         CreatureLinks m_links;
         Pace m_pace;
         GridReference<Creature> m_gridRef;
-        CreatureInfo const* m_creatureInfo;                 // in difficulty mode > 0 can different from ObjMgr::GetCreatureTemplate(GetEntry())
 };
 
 class ForcedDespawnDelayEvent : public BasicEvent

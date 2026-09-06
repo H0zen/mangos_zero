@@ -29,47 +29,77 @@
 
 char const* CreatureRecord::Name() const
 {
-    return m_of->Name;
+    return m_of ? m_of->Name : "";
 }
 
 char const* CreatureRecord::Title() const
 {
-    return m_of->SubName;
+    return m_of ? m_of->SubName : "";
 }
 
 uint32 CreatureRecord::Kind() const
 {
-    return m_of->CreatureType;
+    return m_of ? m_of->CreatureType : 0;
 }
 
 uint32 CreatureRecord::Family() const
 {
-    return m_of->Family;
+    return m_of ? m_of->Family : 0;
 }
 
 uint32 CreatureRecord::Rank() const
 {
-    return m_of->Rank;
+    return m_of ? m_of->Rank : CREATURE_ELITE_NORMAL;
 }
 
 uint32 CreatureRecord::PetSpells() const
 {
-    return m_of->PetSpellDataId;
+    return m_of ? m_of->PetSpellDataId : 0;
 }
 
 uint32 CreatureRecord::Flags() const
 {
-    return m_of->CreatureTypeFlags;
+    return m_of ? m_of->CreatureTypeFlags : 0;
+}
+
+uint32 CreatureRecord::ExtraFlags() const
+{
+    return m_of ? m_of->ExtraFlags : 0;
+}
+
+uint32 CreatureRecord::Inhabits() const
+{
+    return m_of ? m_of->InhabitType : 0;
+}
+
+uint32 CreatureRecord::RegeneratesWhat() const
+{
+    return m_of ? m_of->RegenerateStats : 0;
+}
+
+bool CreatureRecord::IsGuard() const
+{
+    return (ExtraFlags() & CREATURE_FLAG_EXTRA_GUARD) != 0;
+}
+
+bool CreatureRecord::IsElite() const
+{
+    return Rank() != CREATURE_ELITE_NORMAL && Rank() != CREATURE_ELITE_RARE;
+}
+
+bool CreatureRecord::IsWorldBoss() const
+{
+    return Rank() == CREATURE_ELITE_WORLDBOSS;
 }
 
 bool CreatureRecord::IsCivilian() const
 {
-    return m_of->civilian != 0;
+    return m_of && m_of->civilian != 0;
 }
 
 bool CreatureRecord::IsRacialLeader() const
 {
-    return m_of->RacialLeader;
+    return m_of && m_of->RacialLeader;
 }
 
 bool CreatureRecord::IsTameable() const
@@ -100,6 +130,11 @@ bool CreatureRecord::IsMoreAudible() const
 
 SkillType CreatureRecord::RequiredLootSkill() const
 {
+    if (!m_of)
+    {
+        return SKILL_NONE;
+    }
+
     // Skinning, on everything this core has: the herbalism and mining answers are
     // carried by flags no row in `creature_template` sets, because gathering from
     // a corpse arrives with the expansions.

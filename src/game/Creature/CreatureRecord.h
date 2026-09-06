@@ -31,7 +31,27 @@
 struct CreatureInfo;
 
 /**
+ * What sort of unit this is, as this core divides them.
+ *
+ * The wire knows nothing of it: every one of these is TypeID 3 to the client,
+ * and a player is too. It is here so that asking what a unit is costs a
+ * comparison rather than a cast, and so a player can answer no to all three
+ * without being a case.
+ */
+enum CreatureSubtype
+{
+    CREATURE_SUBTYPE_GENERIC,
+    CREATURE_SUBTYPE_PET,
+    CREATURE_SUBTYPE_TOTEM,
+    CREATURE_SUBTYPE_TEMPORARY_SUMMON,
+};
+
+/**
  * What the client is told when it asks what kind of thing this is.
+ *
+ * An empty record answers for a player: no name, no kind, no family, a normal
+ * rank, and no to every question about what a creature is. That is what makes it
+ * safe to ask any unit anything here without first asking what it is.
  *
  * This is SMSG_CREATURE_QUERY_RESPONSE, field for field and in its order, and it
  * is the whole of what the client keeps about a creature outside the update
@@ -83,6 +103,15 @@ class CreatureRecord
 
         uint32 Flags() const;
 
+        /// The flags this core keeps for itself, which the client never sees.
+        uint32 ExtraFlags() const;
+
+        /// Ground, water, air: where it may be.
+        uint32 Inhabits() const;
+
+        /// Which of health and power it wins back out of combat.
+        uint32 RegeneratesWhat() const;
+
         /// It will not fight back, and killing it is a crime.
         bool IsCivilian() const;
 
@@ -98,6 +127,15 @@ class CreatureRecord
 
         /// Its tooltip says Boss where a level would be.
         bool IsBoss() const;
+
+        /// It keeps the peace: it comes when a citizen is attacked.
+        bool IsGuard() const;
+
+        /// Its portrait carries the dragon: elite, rare elite, or a world boss.
+        bool IsElite() const;
+
+        /// One of the handful that stand alone at the end of a raid.
+        bool IsWorldBoss() const;
 
         /// A dead player can see it: spirit healers, spirit guides, and the few
         /// others that only have business with the dead.

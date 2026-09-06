@@ -1644,6 +1644,26 @@ class Unit : public Occupant
          */
         CreatureRecord Record() const;
 
+        /**
+         * The `creature_template` row this unit was made from, or nothing.
+         *
+         * A player has none: he is made from a race and a class instead. Every
+         * question that would need this of a player has another answer, so the
+         * pointer being empty is the answer rather than a case to guard.
+         *
+         * It is not always the row `GetEntry` names. A creature that changes
+         * what it is -- a shapeshift, a difficulty mode -- keeps the entry it
+         * was spawned with and points here at the row it is behaving as.
+         */
+        CreatureInfo const* GetCreatureInfo() const { return m_creatureInfo; }
+
+        /// What sort of unit this is. A player is generic: none of the three
+        /// special kinds is ever a player.
+        CreatureSubtype GetSubtype() const { return m_subtype; }
+        bool IsPet() const { return m_subtype == CREATURE_SUBTYPE_PET; }
+        bool IsTotem() const { return m_subtype == CREATURE_SUBTYPE_TOTEM; }
+        bool IsTemporarySummon() const { return m_subtype == CREATURE_SUBTYPE_TEMPORARY_SUMMON; }
+
         uint32 GetCreatureTypeMask() const
         {
             uint32 creatureType = GetCreatureType();
@@ -3607,6 +3627,12 @@ class Unit : public Occupant
         virtual bool CanFly() const = 0;
 
     protected:
+        /// The row it was made from; empty for a player.
+        CreatureInfo const* m_creatureInfo = nullptr;
+
+        /// Set once, by whichever constructor made it.
+        CreatureSubtype m_subtype = CREATURE_SUBTYPE_GENERIC;
+
         struct WeaponDamageInfo
         {
             struct Weapon

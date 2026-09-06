@@ -4204,8 +4204,7 @@ bool Unit::IsInvisibleForAlive() const
  */
 CreatureRecord Unit::Record() const
 {
-    Creature const* creature = ToCreature(this);
-    return creature ? CreatureRecord(*creature->GetCreatureInfo()) : CreatureRecord();
+    return m_creatureInfo ? CreatureRecord(*m_creatureInfo) : CreatureRecord();
 }
 
 uint32 Unit::GetCreatureType() const
