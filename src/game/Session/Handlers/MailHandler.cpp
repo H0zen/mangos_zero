@@ -47,6 +47,7 @@
 #include "Log.h"
 #include "ObjectGuid.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "Item.h"
 #include "Player.h"
 #include "World.h"
@@ -762,7 +763,7 @@ void mail::MailCreateTextItem(Player& who, WorldPacket& recv_data)
     }
 
     Item* bodyItem = new Item;                              // This is not bag and then can be used new Item.
-    if (!bodyItem->Create(sObjectMgr.GenerateItemLowGuid(), MAIL_BODY_ITEM_TEMPLATE, pl))
+    if (!bodyItem->Create(sMint.ItemGuids().Next(), MAIL_BODY_ITEM_TEMPLATE, pl))
     {
         delete bodyItem;
         return;

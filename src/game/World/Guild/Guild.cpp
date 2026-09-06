@@ -32,6 +32,7 @@
 #include "Player.h"
 #include "Opcodes.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "Guild.h"
 #include "GuildMgr.h"
 #include "Chat.h"
@@ -167,7 +168,7 @@ bool Guild::Create(Player* leader, std::string gname)
     m_Name = gname;
     GINFO.clear();
     MOTD = "No message set.";
-    m_Id = sObjectMgr.GenerateGuildId();
+    m_Id = sMint.GuildIds().Next();
 
     // creating data
     time_t now = time(0);

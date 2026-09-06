@@ -38,6 +38,7 @@
 #include "Movement/Generators/MotionMaster.h"  // WAYPOINT_MOTION_TYPE
 #include "Database/DatabaseEnv.h"
 #include "Policies/Singleton.h"
+#include "Mint.h"
 
 #include "SQLStorages.h"
 #include "Log.h"
@@ -249,14 +250,7 @@ bool AreaTrigger::IsLessOrEqualThan(AreaTrigger const* l) const      // Expected
  * @brief Initializes the global object manager.
  */
 ObjectMgr::ObjectMgr()
-    : m_AuctionIds("Auction ids"),
-    m_GuildIds("Guild ids"),
-    m_MailIds("Mail ids"),
-    m_PetNumbers("Pet numbers"),
-    m_GroupIds("Group ids"),
-    m_FirstTemporaryCreatureGuid(1),
-    m_FirstTemporaryGameObjectGuid(1),
-    DBCLocaleIndex(LOCALE_enUS)
+    : DBCLocaleIndex(LOCALE_enUS)
 {
 }
 
@@ -1751,7 +1745,7 @@ void ObjectMgr::PackGroupIds()
         bar.step();
     }
 
-    m_GroupIds.Set(groupId);
+    sMint.GroupIds().Set(groupId);
 
     sLog.outString(">> Group Ids remapped, next group id is %u", groupId);
     sLog.outString();
@@ -1765,79 +1759,81 @@ void ObjectMgr::SetHighestGuids()
     QueryResult* result = CharacterDatabase.Query("SELECT MAX(`guid`) FROM `characters`");
     if (result)
     {
-        m_CharGuids.Set((*result)[0].GetUInt32() + 1);
+        sMint.PlayerGuids().Set((*result)[0].GetUInt32() + 1);
         delete result;
     }
 
     result = WorldDatabase.Query("SELECT MAX(`guid`) FROM `creature`");
     if (result)
     {
-        m_FirstTemporaryCreatureGuid = (*result)[0].GetUInt32() + 1;
+        sMint.FirstTemporaryCreature((*result)[0].GetUInt32() + 1);
         delete result;
     }
 
     result = CharacterDatabase.Query("SELECT MAX(`guid`) FROM `item_instance`");
     if (result)
     {
-        m_ItemGuids.Set((*result)[0].GetUInt32() + 1);
+        sMint.ItemGuids().Set((*result)[0].GetUInt32() + 1);
         delete result;
     }
 
     // Cleanup other tables from nonexistent guids (>=m_hiItemGuid)
     CharacterDatabase.BeginTransaction();
-    CharacterDatabase.PExecute("DELETE FROM `character_inventory` WHERE `item` >= '%u'", m_ItemGuids.GetNextAfterMaxUsed());
-    CharacterDatabase.PExecute("DELETE FROM `mail_items` WHERE `item_guid` >= '%u'", m_ItemGuids.GetNextAfterMaxUsed());
-    CharacterDatabase.PExecute("DELETE FROM `auction` WHERE `itemguid` >= '%u'", m_ItemGuids.GetNextAfterMaxUsed());
+    CharacterDatabase.PExecute("DELETE FROM `character_inventory` WHERE `item` >= '%u'", sMint.ItemGuids().NextAfterMaxUsed());
+    CharacterDatabase.PExecute("DELETE FROM `mail_items` WHERE `item_guid` >= '%u'", sMint.ItemGuids().NextAfterMaxUsed());
+    CharacterDatabase.PExecute("DELETE FROM `auction` WHERE `itemguid` >= '%u'", sMint.ItemGuids().NextAfterMaxUsed());
     CharacterDatabase.CommitTransaction();
 
     result = WorldDatabase.Query("SELECT MAX(`guid`) FROM `gameobject`");
     if (result)
     {
-        m_FirstTemporaryGameObjectGuid = (*result)[0].GetUInt32() + 1;
+        sMint.FirstTemporaryGameObject((*result)[0].GetUInt32() + 1);
         delete result;
     }
 
     result = CharacterDatabase.Query("SELECT MAX(`id`) FROM `auction`");
     if (result)
     {
-        m_AuctionIds.Set((*result)[0].GetUInt32() + 1);
+        sMint.AuctionIds().Set((*result)[0].GetUInt32() + 1);
         delete result;
     }
 
     result = CharacterDatabase.Query("SELECT MAX(`id`) FROM `mail`");
     if (result)
     {
-        m_MailIds.Set((*result)[0].GetUInt32() + 1);
+        sMint.MailIds().Set((*result)[0].GetUInt32() + 1);
         delete result;
     }
 
     result = CharacterDatabase.Query("SELECT MAX(`guid`) FROM `corpse`");
     if (result)
     {
-        m_CorpseGuids.Set((*result)[0].GetUInt32() + 1);
+        sMint.CorpseGuids().Set((*result)[0].GetUInt32() + 1);
         delete result;
     }
 
     result = CharacterDatabase.Query("SELECT MAX(`guildid`) FROM `guild`");
     if (result)
     {
-        m_GuildIds.Set((*result)[0].GetUInt32() + 1);
+        sMint.GuildIds().Set((*result)[0].GetUInt32() + 1);
         delete result;
     }
 
     result = CharacterDatabase.Query("SELECT MAX(`groupId`) FROM `groups`");
     if (result)
     {
-        m_GroupIds.Set((*result)[0].GetUInt32() + 1);
+        sMint.GroupIds().Set((*result)[0].GetUInt32() + 1);
         delete result;
     }
 
     // setup reserved ranges for static guids spawn
-    m_StaticCreatureGuids.Set(m_FirstTemporaryCreatureGuid);
-    m_FirstTemporaryCreatureGuid += sWorld.getConfig(CONFIG_UINT32_GUID_RESERVE_SIZE_CREATURE);
+    sMint.StaticCreatureGuids().Set(sMint.FirstTemporaryCreature());
+    sMint.FirstTemporaryCreature(sMint.FirstTemporaryCreature()
+                                 + sWorld.getConfig(CONFIG_UINT32_GUID_RESERVE_SIZE_CREATURE));
 
-    m_StaticGameObjectGuids.Set(m_FirstTemporaryGameObjectGuid);
-    m_FirstTemporaryGameObjectGuid += sWorld.getConfig(CONFIG_UINT32_GUID_RESERVE_SIZE_GAMEOBJECT);
+    sMint.StaticGameObjectGuids().Set(sMint.FirstTemporaryGameObject());
+    sMint.FirstTemporaryGameObject(sMint.FirstTemporaryGameObject()
+                                   + sWorld.getConfig(CONFIG_UINT32_GUID_RESERVE_SIZE_GAMEOBJECT));
 }
 
 
@@ -1967,14 +1963,14 @@ void ObjectMgr::LoadPetNumber()
     if (result)
     {
         Field* fields = result->Fetch();
-        m_PetNumbers.Set(fields[0].GetUInt32() + 1);
+        sMint.PetNumbers().Set(fields[0].GetUInt32() + 1);
         delete result;
     }
 
     BarGoLink bar(1);
     bar.step();
 
-    sLog.outString(">> Loaded the max pet number: %d", m_PetNumbers.GetNextAfterMaxUsed() - 1);
+    sLog.outString(">> Loaded the max pet number: %d", sMint.PetNumbers().NextAfterMaxUsed() - 1);
     sLog.outString();
 }
 

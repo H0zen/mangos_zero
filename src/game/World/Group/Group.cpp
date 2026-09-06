@@ -55,6 +55,7 @@
 #include "WorldSession.h"
 #include "Player.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "ObjectGuid.h"
 #include "Group.h"
 #include "Formulas.h"
@@ -145,7 +146,7 @@ bool Group::Create(ObjectGuid guid, const char* name)
 
     if (!isBGGroup())
     {
-        m_Id = sObjectMgr.GenerateGroupId();
+        m_Id = sMint.GroupIds().Next();
 
         Player* leader = sObjectMgr.GetPlayer(guid);
 

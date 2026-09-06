@@ -67,6 +67,7 @@
 #include "PlayerRegistry.h"
 #include "CorpseManager.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "World.h"
 #include "Group.h"
 #include "MapRefManager.h"
@@ -172,8 +173,8 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId)
     i_data(nullptr)
 {
 
-    m_CreatureGuids.Set(sObjectMgr.GetFirstTemporaryCreatureLowGuid());
-    m_GameObjectGuids.Set(sObjectMgr.GetFirstTemporaryGameObjectLowGuid());
+    m_CreatureGuids.Set(sMint.FirstTemporaryCreature());
+    m_GameObjectGuids.Set(sMint.FirstTemporaryGameObject());
 
     for (unsigned int j = 0; j < MAX_NUMBER_OF_GRIDS; ++j)
     {

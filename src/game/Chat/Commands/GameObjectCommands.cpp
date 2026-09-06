@@ -42,6 +42,7 @@
 #include "MapManager.h"
 #include "GameEventMgr.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "Geometry/Quat.h"
 #include "ObjectLookup.h"
 
@@ -317,7 +318,7 @@ bool ChatHandler::HandleGameObjectAddCommand(char* args)
     Map* map = plr->GetMap();
 
     // used guids from specially reserved range (can be 0 if no free values)
-    uint32 db_lowGUID = sObjectMgr.GenerateStaticGameObjectLowGuid();
+    uint32 db_lowGUID = sMint.StaticGameObjectGuid();
     if (!db_lowGUID)
     {
         SendSysMessage(LANG_NO_FREE_STATIC_GUID_FOR_SPAWN);

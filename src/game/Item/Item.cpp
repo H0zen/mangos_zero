@@ -27,6 +27,7 @@
 #include <cassert>
 #include "Item.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "ObjectGuid.h"
 #include "WorldPacket.h"
 #include "Database/DatabaseEnv.h"
@@ -777,7 +778,7 @@ Item* Item::CreateItem(uint32 item, uint32 count, Player const* player, uint32 r
         MANGOS_ASSERT(count != 0);                              // count != 0 && pProto->Stackable == 0 but checked at loading already
 
         Item* pItem = NewItemOrBag(pProto);
-        if (pItem->Create(sObjectMgr.GenerateItemLowGuid(), item, player))
+        if (pItem->Create(sMint.ItemGuids().Next(), item, player))
         {
             pItem->SetCount(count);
             if (uint32 randId = randomPropertyId ? randomPropertyId : Item::GenerateItemRandomPropertyId(item))

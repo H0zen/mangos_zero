@@ -31,6 +31,7 @@
 #include "Log.h"
 #include "WorldPacket.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "SpellMgr.h"
 #include "Formulas.h"
 #include "SpellAuras.h"
@@ -783,7 +784,7 @@ bool Pet::CreateBaseAtCreature(Creature* creature)
 
     uint32 guid = creature->GetMap()->GenerateLocalLowGuid(HIGHGUID_PET);
 
-    uint32 pet_number = sObjectMgr.GeneratePetNumber();
+    uint32 pet_number = sMint.PetNumbers().Next();
     if (!Create(guid, pos, creature->GetCreatureInfo(), pet_number))
     {
         return false;

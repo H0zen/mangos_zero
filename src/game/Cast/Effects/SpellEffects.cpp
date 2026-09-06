@@ -33,6 +33,7 @@
 #include "Log.h"
 #include "World.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "SpellMgr.h"
 #include "Player.h"
 #include "Unit.h"
@@ -305,7 +306,7 @@ void Spell::EffectSummon(SpellEffectIndex eff_idx)
     }
 
     Map* map = m_caster->GetMap();
-    uint32 pet_number = sObjectMgr.GeneratePetNumber();
+    uint32 pet_number = sMint.PetNumbers().Next();
     if (!spawnCreature->Create(map->GenerateLocalLowGuid(HIGHGUID_PET), pos, cInfo, pet_number))
     {
         sLog.outErrorDb("Spell::EffectSummon: can't create creature with entry %u for spell %u", cInfo->Entry, m_spellInfo->ID);
@@ -555,7 +556,7 @@ void Spell::EffectSummonGuardian(SpellEffectIndex eff_idx)
         }
 
         Map* map = m_caster->GetMap();
-        uint32 pet_number = sObjectMgr.GeneratePetNumber();
+        uint32 pet_number = sMint.PetNumbers().Next();
         if (!spawnCreature->Create(map->GenerateLocalLowGuid(HIGHGUID_PET), pos, cInfo, pet_number))
         {
             sLog.outError("Spell::DoSummonGuardian: can't create creature entry %u for spell %u.", pet_entry, m_spellInfo->ID);
@@ -847,7 +848,7 @@ void Spell::EffectSummonCritter(SpellEffectIndex eff_idx)
     Pet* critter = new Pet(MINI_PET);
 
     Map* map = m_caster->GetMap();
-    uint32 pet_number = sObjectMgr.GeneratePetNumber();
+    uint32 pet_number = sMint.PetNumbers().Next();
     if (!critter->Create(map->GenerateLocalLowGuid(HIGHGUID_PET), pos, cInfo, pet_number))
     {
         sLog.outError("Spell::EffectSummonCritter, spellid %u: no such creature entry %u", m_spellInfo->ID, pet_entry);

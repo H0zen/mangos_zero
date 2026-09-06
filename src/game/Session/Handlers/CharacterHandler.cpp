@@ -57,6 +57,7 @@
 #include "Log.h"
 #include "World.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "Player.h"
 #include "DBCStores.h"
 #include "InitialWorldEntry.h"
@@ -413,7 +414,7 @@ void characters::CharCreate(WorldSession& session, WorldPacket& recv_data)
     uint32 createdDate = GetUnixTimeStamp(); // Unix Timestamp in seconds
     pNewChar->SetCreatedDate(createdDate); // TODO get currentTimeStamp for createdTime
 
-    if (!pNewChar->Create(sObjectMgr.GeneratePlayerLowGuid(), name, race_, class_, gender, skin, face, hairStyle, hairColor, facialHair, outfitId))
+    if (!pNewChar->Create(sMint.PlayerGuids().Next(), name, race_, class_, gender, skin, face, hairStyle, hairColor, facialHair, outfitId))
     {
         // Player not create (race/class problem?)
         delete pNewChar;

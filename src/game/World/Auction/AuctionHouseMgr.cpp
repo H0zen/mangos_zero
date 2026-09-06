@@ -36,6 +36,7 @@
 #include "Language.h"
 #include "Log.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "ObjectGuid.h"
 #include "Player.h"
 #include "World.h"
@@ -933,7 +934,7 @@ AuctionEntry* AuctionHouseObject::AddAuction(AuctionHouseEntry const* auctionHou
     uint32 auction_time = uint32(etime * sWorld.getConfig(CONFIG_FLOAT_RATE_AUCTION_TIME));
 
     AuctionEntry* AH = new AuctionEntry;
-    AH->Id = sObjectMgr.GenerateAuctionID();
+    AH->Id = sMint.AuctionIds().Next();
     AH->itemGuidLow = newItem->GetObjectGuid().GetCounter();
     AH->itemTemplate = newItem->GetEntry();
     AH->itemCount = newItem->GetCount();
@@ -998,7 +999,7 @@ AuctionEntry* AuctionHouseObject::AddAuctionByGuid(AuctionHouseEntry const* auct
     uint32 auction_time = uint32(etime * sWorld.getConfig(CONFIG_FLOAT_RATE_AUCTION_TIME));
 
     AuctionEntry* AH = new AuctionEntry;
-    AH->Id = sObjectMgr.GenerateAuctionID();
+    AH->Id = sMint.AuctionIds().Next();
     AH->itemGuidLow = newItem->GetObjectGuid().GetCounter();
     AH->itemTemplate = newItem->GetEntry();
     AH->itemCount = newItem->GetCount();

@@ -56,6 +56,7 @@
 #include "Log.h"
 #include "World.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "SpellMgr.h"
 #include "Player.h"
 #include "Unit.h"
@@ -352,7 +353,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
                     }
 
                     // just to enable stat window
-                    charmInfo.SetPetNumber(sObjectMgr.GeneratePetNumber(), true);
+                    charmInfo.SetPetNumber(sMint.PetNumbers().Next(), true);
                     // if charmed two demons the same session, the 2nd gets the 1st one's name
                     target->SetUInt32Value(UNIT_FIELD_PET_NAME_TIMESTAMP, uint32(time(nullptr)));
                 }

@@ -30,6 +30,7 @@
 #include "Map.h"
 #include "MapManager.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "Opcodes.h"
 #include "Player.h"
 #include "Movement/Generators/MotionMaster.h"
@@ -106,7 +107,7 @@ namespace synthetic
             // A human warrior: the race and class matter only in that they must
             // exist, and a melee class keeps the bot out of the spell paths
             // while movement is what is being measured.
-            const uint32 lowGuid = sObjectMgr.GeneratePlayerLowGuid();
+            const uint32 lowGuid = sMint.PlayerGuids().Next();
             if (!bot->Create(lowGuid, name, RACE_HUMAN, CLASS_WARRIOR, GENDER_MALE,
                              0, 0, 0, 0, 0, 0))
             {

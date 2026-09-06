@@ -529,7 +529,6 @@ template<typename T>
 
 class ObjectMgr
 {
-    friend class PlayerDumpReader;
 
     public:
         ObjectMgr();
@@ -828,67 +827,6 @@ class ObjectMgr
 
         void SetHighestGuids();
 
-        // used for set initial guid counter for map local guids
-        uint32 GetFirstTemporaryCreatureLowGuid() const
-        {
-            return m_FirstTemporaryCreatureGuid;
-        }
-        uint32 GetFirstTemporaryGameObjectLowGuid() const
-        {
-            return m_FirstTemporaryGameObjectGuid;
-        }
-
-        // used in .npc add/.gobject add commands for adding static spawns
-        uint32 GenerateStaticCreatureLowGuid()
-        {
-            if (m_StaticCreatureGuids.GetNextAfterMaxUsed() >= m_FirstTemporaryCreatureGuid)
-            {
-                return 0;
-            }
-            return m_StaticCreatureGuids.Generate();
-        }
-        uint32 GenerateStaticGameObjectLowGuid()
-        {
-            if (m_StaticGameObjectGuids.GetNextAfterMaxUsed() >= m_FirstTemporaryGameObjectGuid)
-            {
-                return 0;
-            }
-            return m_StaticGameObjectGuids.Generate();
-        }
-
-        uint32 GeneratePlayerLowGuid()
-        {
-            return m_CharGuids.Generate();
-        }
-        uint32 GenerateItemLowGuid()
-        {
-            return m_ItemGuids.Generate();
-        }
-        uint32 GenerateCorpseLowGuid()
-        {
-            return m_CorpseGuids.Generate();
-        }
-
-        uint32 GenerateAuctionID()
-        {
-            return m_AuctionIds.Generate();
-        }
-        uint32 GenerateGuildId()
-        {
-            return m_GuildIds.Generate();
-        }
-        uint32 GenerateGroupId()
-        {
-            return m_GroupIds.Generate();
-        }
-        uint32 GenerateMailID()
-        {
-            return m_MailIds.Generate();
-        }
-        uint32 GeneratePetNumber()
-        {
-            return m_PetNumbers.Generate();
-        }
         std::string GetItemText(uint32 id)
         {
             if (QueryResult* result = CharacterDatabase.PQuery("SELECT `body` FROM `mail` WHERE `id` = '%u'", id))
@@ -1303,24 +1241,12 @@ class ObjectMgr
     protected:
 
         // first free id for selected id type
-        IdGenerator<uint32> m_AuctionIds;
-        IdGenerator<uint32> m_GuildIds;
-        IdGenerator<uint32> m_MailIds;
-        IdGenerator<uint32> m_PetNumbers;
-        IdGenerator<uint32> m_GroupIds;
 
         // initial free low guid for selected guid type for map local guids
-        uint32 m_FirstTemporaryCreatureGuid;
-        uint32 m_FirstTemporaryGameObjectGuid;
 
         // guids from reserved range for use in .npc add/.gobject add commands for adding new static spawns (saved in DB) from client.
-        ObjectGuidGenerator<HIGHGUID_UNIT>        m_StaticCreatureGuids;
-        ObjectGuidGenerator<HIGHGUID_GAMEOBJECT>  m_StaticGameObjectGuids;
 
         // first free low guid for selected guid type
-        ObjectGuidGenerator<HIGHGUID_PLAYER>     m_CharGuids;
-        ObjectGuidGenerator<HIGHGUID_ITEM>       m_ItemGuids;
-        ObjectGuidGenerator<HIGHGUID_CORPSE>     m_CorpseGuids;
 
         QuestMap            mQuestTemplates;
 

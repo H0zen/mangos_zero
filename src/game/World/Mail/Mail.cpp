@@ -54,6 +54,7 @@
 #include "Log.h"
 #include "World.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "ObjectGuid.h"
 #include "Player.h"
 #include "Unit.h"
@@ -310,7 +311,7 @@ void MailDraft::SendMailTo(MailReceiver const& receiver, MailSender const& sende
         }
     }
 
-    uint32 mailId = sObjectMgr.GenerateMailID();
+    uint32 mailId = sMint.MailIds().Next();
 
     time_t deliver_time = time(nullptr) + deliver_delay;
 

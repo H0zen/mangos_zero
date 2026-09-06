@@ -43,6 +43,7 @@
 #include "Log.h"
 #include "World.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "SpellMgr.h"
 #include "Player.h"
 #include "Unit.h"
@@ -660,7 +661,7 @@ void Spell::EffectTameCreature(SpellEffectIndex /*eff_idx*/)
         return;
     }
 
-    pet->GetCharmInfo()->SetPetNumber(sObjectMgr.GeneratePetNumber(), true);
+    pet->GetCharmInfo()->SetPetNumber(sMint.PetNumbers().Next(), true);
     // this enables pet details window (Shift+P)
     pet->SetHealth(pet->GetMaxHealth());
 
@@ -773,7 +774,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
     CreatureCreatePos pos(m_caster, m_caster->Where().Facing());
 
     Map* map = m_caster->GetMap();
-    uint32 pet_number = sObjectMgr.GeneratePetNumber();
+    uint32 pet_number = sMint.PetNumbers().Next();
     if (!NewSummon->Create(map->GenerateLocalLowGuid(HIGHGUID_PET), pos, cInfo, pet_number))
     {
         delete NewSummon;

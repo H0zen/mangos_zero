@@ -62,6 +62,7 @@
 #include "SQLStorages.h"
 #include "UpdateFields.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "AccountMgr.h"
 
 /**
@@ -696,12 +697,12 @@ DumpReturn PlayerDumpReader::LoadDump(const std::string& file, uint32 account, s
 
     // make sure the same guid doesn't already exist and is safe to use
     bool incHighest = true;
-    if (guid != 0 && guid < sObjectMgr.m_CharGuids.GetNextAfterMaxUsed())
+    if (guid != 0 && guid < sMint.PlayerGuids().NextAfterMaxUsed())
     {
         result = CharacterDatabase.PQuery("SELECT * FROM `characters` WHERE `guid` = '%u'", guid);
         if (result)
         {
-            guid = sObjectMgr.m_CharGuids.GetNextAfterMaxUsed();
+            guid = sMint.PlayerGuids().NextAfterMaxUsed();
             delete result;
         }
         else
@@ -711,7 +712,7 @@ DumpReturn PlayerDumpReader::LoadDump(const std::string& file, uint32 account, s
     }
     else
     {
-        guid = sObjectMgr.m_CharGuids.GetNextAfterMaxUsed();
+        guid = sMint.PlayerGuids().NextAfterMaxUsed();
     }
 
     // normalize the name if specified and check if it exists
@@ -739,7 +740,7 @@ DumpReturn PlayerDumpReader::LoadDump(const std::string& file, uint32 account, s
 
     snprintf(newguid, 20, "%u", guid);
     snprintf(chraccount, 20, "%u", account);
-    snprintf(newpetid, 20, "%u", sObjectMgr.GeneratePetNumber());
+    snprintf(newpetid, 20, "%u", sMint.PetNumbers().Next());
     snprintf(lastpetid, 20, "%s", "");
 
     std::map<uint32, uint32> items;
@@ -889,11 +890,11 @@ DumpReturn PlayerDumpReader::LoadDump(const std::string& file, uint32 account, s
                     ROLLBACK(DUMP_FILE_BROKEN);
                 }
 
-                if (!changeGuid(line, 2, items, sObjectMgr.m_ItemGuids.GetNextAfterMaxUsed(), true))
+                if (!changeGuid(line, 2, items, sMint.ItemGuids().NextAfterMaxUsed(), true))
                 {
                     ROLLBACK(DUMP_FILE_BROKEN);              // character_inventory.bag update
                 }
-                if (!changeGuid(line, 4, items, sObjectMgr.m_ItemGuids.GetNextAfterMaxUsed()))
+                if (!changeGuid(line, 4, items, sMint.ItemGuids().NextAfterMaxUsed()))
                 {
                     ROLLBACK(DUMP_FILE_BROKEN);              // character_inventory.item update
                 }
@@ -902,7 +903,7 @@ DumpReturn PlayerDumpReader::LoadDump(const std::string& file, uint32 account, s
             case DTT_ITEM:
             {
                 // item, owner, data field:item, owner guid
-                if (!changeGuid(line, 1, items, sObjectMgr.m_ItemGuids.GetNextAfterMaxUsed()))
+                if (!changeGuid(line, 1, items, sMint.ItemGuids().NextAfterMaxUsed()))
                 {
                     ROLLBACK(DUMP_FILE_BROKEN);              // item_instance.guid update
                 }
@@ -911,7 +912,7 @@ DumpReturn PlayerDumpReader::LoadDump(const std::string& file, uint32 account, s
                     ROLLBACK(DUMP_FILE_BROKEN);
                 }
                 std::string vals = getnth(line, 3);         // item_instance.data get
-                if (!changetokGuid(vals, OBJECT_FIELD_GUID + 1, items, sObjectMgr.m_ItemGuids.GetNextAfterMaxUsed()))
+                if (!changetokGuid(vals, OBJECT_FIELD_GUID + 1, items, sMint.ItemGuids().NextAfterMaxUsed()))
                 {
                     ROLLBACK(DUMP_FILE_BROKEN);              // item_instance.data.OBJECT_FIELD_GUID update
                 }
@@ -931,7 +932,7 @@ DumpReturn PlayerDumpReader::LoadDump(const std::string& file, uint32 account, s
                 {
                     ROLLBACK(DUMP_FILE_BROKEN);
                 }
-                if (!changeGuid(line, 2, items, sObjectMgr.m_ItemGuids.GetNextAfterMaxUsed()))
+                if (!changeGuid(line, 2, items, sMint.ItemGuids().NextAfterMaxUsed()))
                 {
                     ROLLBACK(DUMP_FILE_BROKEN);              // character_gifts.item_guid update
                 }
@@ -940,7 +941,7 @@ DumpReturn PlayerDumpReader::LoadDump(const std::string& file, uint32 account, s
             case DTT_ITEM_LOOT:
             {
                 // item, owner
-                if (!changeGuid(line, 1, items, sObjectMgr.m_ItemGuids.GetNextAfterMaxUsed()))
+                if (!changeGuid(line, 1, items, sMint.ItemGuids().NextAfterMaxUsed()))
                 {
                     ROLLBACK(DUMP_FILE_BROKEN);              // item_loot.guid update
                 }
@@ -961,7 +962,7 @@ DumpReturn PlayerDumpReader::LoadDump(const std::string& file, uint32 account, s
 
                 if (strcmp(lastpetid, currpetid) != 0)
                 {
-                    snprintf(newpetid, 20, "%d", sObjectMgr.GeneratePetNumber());
+                    snprintf(newpetid, 20, "%d", sMint.PetNumbers().Next());
                     snprintf(lastpetid, 20, "%s", currpetid);
                 }
 
@@ -1005,7 +1006,7 @@ DumpReturn PlayerDumpReader::LoadDump(const std::string& file, uint32 account, s
             }
             case DTT_MAIL:                                  // mail
             {
-                if (!changeGuid(line, 1, mails, sObjectMgr.m_MailIds.GetNextAfterMaxUsed()))
+                if (!changeGuid(line, 1, mails, sMint.MailIds().NextAfterMaxUsed()))
                 {
                     ROLLBACK(DUMP_FILE_BROKEN);              // mail.id update
                 }
@@ -1017,11 +1018,11 @@ DumpReturn PlayerDumpReader::LoadDump(const std::string& file, uint32 account, s
             }
             case DTT_MAIL_ITEM:                             // mail_items
             {
-                if (!changeGuid(line, 1, mails, sObjectMgr.m_MailIds.GetNextAfterMaxUsed()))
+                if (!changeGuid(line, 1, mails, sMint.MailIds().NextAfterMaxUsed()))
                 {
                     ROLLBACK(DUMP_FILE_BROKEN);              // mail_items.id
                 }
-                if (!changeGuid(line, 2, items, sObjectMgr.m_ItemGuids.GetNextAfterMaxUsed()))
+                if (!changeGuid(line, 2, items, sMint.ItemGuids().NextAfterMaxUsed()))
                 {
                     ROLLBACK(DUMP_FILE_BROKEN);              // mail_items.item_guid
                 }
@@ -1044,13 +1045,14 @@ DumpReturn PlayerDumpReader::LoadDump(const std::string& file, uint32 account, s
 
     CharacterDatabase.CommitTransaction();
 
-    // FIXME: current code with post-updating guids not safe for future per-map threads
-    sObjectMgr.m_ItemGuids.Set(sObjectMgr.m_ItemGuids.GetNextAfterMaxUsed() + items.size());
-    sObjectMgr.m_MailIds.Set(sObjectMgr.m_MailIds.GetNextAfterMaxUsed() +  mails.size());
+    // A read, an add and a write: safe only because a dump is read on the serial
+    // phase, where no map is running. It is not safe to move this onto a map.
+    sMint.ItemGuids().Set(sMint.ItemGuids().NextAfterMaxUsed() + items.size());
+    sMint.MailIds().Set(sMint.MailIds().NextAfterMaxUsed() +  mails.size());
 
     if (incHighest)
     {
-        sObjectMgr.m_CharGuids.Set(sObjectMgr.m_CharGuids.GetNextAfterMaxUsed() + 1);
+        sMint.PlayerGuids().Set(sMint.PlayerGuids().NextAfterMaxUsed() + 1);
     }
 
     fclose(fin);

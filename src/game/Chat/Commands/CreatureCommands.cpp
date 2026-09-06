@@ -39,6 +39,7 @@
 #include "SpawnRecord.h"
 #include "Language.h"
 #include "World.h"
+#include "Mint.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 #include "TargetedMovementGenerator.h"                      // for HandleNpcUnFollowCommand
@@ -226,7 +227,7 @@ bool ChatHandler::HandleNpcAddCommand(char* args)
     Creature* pCreature = new Creature;
 
     // used guids from specially reserved range (can be 0 if no free values)
-    uint32 lowguid = sObjectMgr.GenerateStaticCreatureLowGuid();
+    uint32 lowguid = sMint.StaticCreatureGuid();
     if (!lowguid)
     {
         SendSysMessage(LANG_NO_FREE_STATIC_GUID_FOR_SPAWN);

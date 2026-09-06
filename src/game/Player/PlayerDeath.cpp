@@ -47,6 +47,7 @@
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 #include "ObjectMgr.h"
+#include "Mint.h"
 #include "CorpseManager.h"
 #include "CreatureAI.h"
 #include "Formulas.h"
@@ -260,7 +261,7 @@ Corpse* Player::CreateCorpse()
     Corpse* corpse = new Corpse((m_ExtraFlags & PLAYER_EXTRA_PVP_DEATH) ? CORPSE_RESURRECTABLE_PVP : CORPSE_RESURRECTABLE_PVE);
     SetPvPDeath(false);
 
-    if (!corpse->Create(sObjectMgr.GenerateCorpseLowGuid(), this))
+    if (!corpse->Create(sMint.CorpseGuids().Next(), this))
     {
         delete corpse;
         return nullptr;
