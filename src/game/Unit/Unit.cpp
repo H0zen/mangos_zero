@@ -5013,16 +5013,6 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* pTarget, uint32 procFlag, 
 }
 
 /**
- * @brief Gets the default melee damage school mask for the unit.
- *
- * @return The melee damage school mask.
- */
-SpellSchoolMask Unit::GetMeleeDamageSchoolMask() const
-{
-    return SPELL_SCHOOL_MASK_NORMAL;
-}
-
-/**
  * @brief Gets the player whose spell modifiers apply to this unit.
  *
  * @return The owning player for spell mods, or null if none exists.

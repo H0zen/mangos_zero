@@ -237,9 +237,7 @@ bool CreatureCreatePos::PlaceOn(Creature* cr) const
 Creature::Creature(CreatureSubtype subtype) : Unit(),
     i_AI(nullptr),
     loot(this),
-    m_equipmentId(0),
-    m_AI_locked(false),
-    m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0),
+
     m_sheet(*this), m_links(*this), m_pace(*this)
 {
     m_subtype = subtype;
@@ -258,7 +256,6 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
 
     m_CreatureSpellCooldowns.clear();
     m_CreatureCategoryCooldowns.clear();
-    DisableReputationGain = false;
 
     SetWalk(true, true);
 }
@@ -884,9 +881,9 @@ void Creature::Update(uint32 update_diff, uint32 diff)
                 if (AI())
                 {
                     // do not allow the AI to be changed during update
-                    m_AI_locked = true;
+                    m_aiLocked = true;
                     AI()->UpdateAI(diff);   // AI not react good at real update delays (while freeze in non-active part of map)
-                    m_AI_locked = false;
+                    m_aiLocked = false;
                 }
             }
 
@@ -1097,7 +1094,7 @@ void Creature::DoFleeToGetAssistance()
 bool Creature::AIM_Initialize()
 {
     // make sure nothing can change the AI during AI update
-    if (m_AI_locked)
+    if (m_aiLocked)
     {
         DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "AIM_Initialize: failed to init, locked.");
         return false;

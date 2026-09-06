@@ -87,6 +87,8 @@
 #include "CharmInfo.h"
 #include "Stats/Modifiers.h"
 #include "Creature/CreatureRecord.h"
+#include "Cell.h"
+#include "Creature/VendorStock.h"
 #include "Creature/Disguise.h"
 #include "LootClaim.h"
 #include "Creature/Pickings.h"
@@ -1707,6 +1709,180 @@ class Unit : public Occupant
         /// Another side's colours, worn for a while.
         Disguise& Colours() { return m_disguise; }
         Disguise const& Colours() const { return m_disguise; }
+
+        /* ****************** What this NPC will do for you ******************* */
+        //
+        // UNIT_NPC_FLAGS is written on creatures and pets and on nothing else, so
+        // every one of these is a creature's question. A player is a unit too and
+        // has no answer to any of them.
+
+        /**
+         * @return true if this unit is a vendor, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsVendor()       const { return HasNpcFlag(UNIT_NPC_FLAG_VENDOR); }
+        /**
+         * @return true if this unit is a trainer, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsTrainer()      const { return HasNpcFlag(UNIT_NPC_FLAG_TRAINER); }
+        /**
+         * @return true if this unit is a QuestGiver, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsQuestGiver()   const { return HasNpcFlag(UNIT_NPC_FLAG_QUESTGIVER); }
+        /**
+         * @return true if this unit is a gossip, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsGossip()       const { return HasNpcFlag(UNIT_NPC_FLAG_GOSSIP); }
+        /**
+         * @return true if this unit is a taxi, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsTaxi()         const { return HasNpcFlag(UNIT_NPC_FLAG_FLIGHTMASTER); }
+        /**
+         * @return true if this unit is a banker, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsBanker()       const { return HasNpcFlag(UNIT_NPC_FLAG_BANKER); }
+        /**
+         * @return true if this unit is a innkeeper, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsInnkeeper()    const { return HasNpcFlag(UNIT_NPC_FLAG_INNKEEPER); }
+        /**
+         * @return true if this unit is a SpiritGuide, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsSpiritGuide()  const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITGUIDE); }
+        /**
+         * @return true if this unit is a TabardDesigner, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsTabardDesigner()const { return HasNpcFlag(UNIT_NPC_FLAG_TABARDDESIGNER); }
+        /**
+         * Returns if this is a service provider or not, a service provider has one of the
+         * following flags:
+         * - \ref UNIT_NPC_FLAG_VENDOR
+         * - \ref UNIT_NPC_FLAG_TRAINER
+         * - \ref UNIT_NPC_FLAG_FLIGHTMASTER
+         * - \ref UNIT_NPC_FLAG_PETITIONER
+         * - \ref UNIT_NPC_FLAG_BATTLEMASTER
+         * - \ref UNIT_NPC_FLAG_BANKER
+         * - \ref UNIT_NPC_FLAG_INNKEEPER
+         * - \ref UNIT_NPC_FLAG_SPIRITHEALER
+         * - \ref UNIT_NPC_FLAG_SPIRITGUIDE
+         * - \ref UNIT_NPC_FLAG_TABARDDESIGNER
+         * - \ref UNIT_NPC_FLAG_AUCTIONEER
+         *
+         * @return true if this unit is a ServiceProvider, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsServiceProvider() const
+        {
+            return HasNpcFlag(UNIT_NPC_FLAG_VENDOR | UNIT_NPC_FLAG_TRAINER | UNIT_NPC_FLAG_FLIGHTMASTER |
+                UNIT_NPC_FLAG_PETITIONER | UNIT_NPC_FLAG_BATTLEMASTER | UNIT_NPC_FLAG_BANKER |
+                UNIT_NPC_FLAG_INNKEEPER | UNIT_NPC_FLAG_SPIRITHEALER |
+                UNIT_NPC_FLAG_SPIRITGUIDE | UNIT_NPC_FLAG_TABARDDESIGNER | UNIT_NPC_FLAG_AUCTIONEER);
+        }
+        /**
+         * Returns if this is a spirit service or not, a spirit service has one of the
+         * following flags:
+         * - \ref UNIT_NPC_FLAG_SPIRITHEALER
+         * - \ref UNIT_NPC_FLAG_SPIRITGUIDE
+         * @return true if this unit is a spirit service, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsSpiritService() const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER | UNIT_NPC_FLAG_SPIRITGUIDE); }
+        /**
+         * @return true if this unit is a GuildMaster, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsGuildMaster()  const { return HasNpcFlag(UNIT_NPC_FLAG_PETITIONER); }
+        /**
+         * @return true if this unit is a BattleMaster, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsBattleMaster() const { return HasNpcFlag(UNIT_NPC_FLAG_BATTLEMASTER); }
+        /**
+         * @return true if this unit is a armorer, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsArmorer()      const { return HasNpcFlag(UNIT_NPC_FLAG_REPAIR); }
+        /**
+         * @return true if this unit is a SpiritHealer, false otherwise
+         * \see Object::HasFlag
+         * \see EUnitFields
+         * \see NPCFlags
+         */
+        bool IsSpiritHealer() const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER); }
+
+        /// Which suit of gear from `creature_equip_template` it is wearing.
+        uint32 GetEquipmentId() const { return m_equipmentId; }
+        uint32 GetCurrentEquipmentId() const { return m_equipmentId; }
+
+        /// The entry it was spawned as, which is not always the one it is
+        /// behaving as: a creature that changes what it is keeps this.
+        uint32 GetOriginalEntry() const { return m_originalEntry; }
+        void SetOriginalEntry(uint32 entry) { m_originalEntry = entry; }
+
+        /// The school its blows land in. Normal for nearly everything; a few
+        /// creatures strike as fire or shadow instead.
+        SpellSchoolMask GetMeleeDamageSchoolMask() const { return m_meleeDamageSchoolMask; }
+        void SetMeleeDamageSchool(SpellSchools school) { m_meleeDamageSchoolMask = GetSchoolMask(school); }
+
+        /// Killing it wins nobody any standing. Set by scripts on things that
+        /// would otherwise be farmed for reputation.
+        bool IsReputationGainDisabled() const { return m_noReputationGain; }
+        void SetDisableReputationGain(bool disable) { m_noReputationGain = disable; }
+
+        /// Its mind is being changed and must not be asked anything meanwhile.
+        bool AiLocked() const { return m_aiLocked; }
+        void AiLocked(bool locked) { m_aiLocked = locked; }
+
+        // for use only in LoadHelper, Map::Add Map::CreatureCellRelocation
+        Cell const& GetCurrentCell() const { return m_currentCell; }
+        void SetCurrentCell(Cell const& cell) { m_currentCell = cell; }
+
+        /**
+         * How many of a vendor's wares are left, and when the next comes in.
+         *
+         * A vendor with a limited stock is not restocked on a clock of its own:
+         * the count is worked out from the hour it was last asked for, so a
+         * vendor nobody visits for a day has a full shelf the moment someone
+         * does.
+         */
+        uint32 GetVendorItemCurrentCount(VendorItem const* vItem);
+        uint32 UpdateVendorItemCurrentCount(VendorItem const* vItem, uint32 used_count);
 
         void SetFactionTemporary(uint32 factionId, uint32 flags = TEMPFACTION_ALL) { m_disguise.Wear(factionId, flags); }
         void ClearTemporaryFaction() { m_disguise.TakeOff(); }
@@ -3718,6 +3894,16 @@ class Unit : public Occupant
 
         Disguise m_disguise;
 
+        VendorItemCounts m_vendorItemCounts;
+        Cell m_currentCell;
+
+        uint32 m_equipmentId = 0;
+        uint32 m_originalEntry = 0;
+        SpellSchoolMask m_meleeDamageSchoolMask = SPELL_SCHOOL_MASK_NORMAL;
+
+        bool m_noReputationGain = false;
+        bool m_aiLocked = false;
+
         struct WeaponDamageInfo
         {
             struct Weapon
@@ -3776,8 +3962,6 @@ class Unit : public Occupant
         /// Owned outright, not shared and not allocated: a component is state
         /// this unit has, and its lifetime is the unit's.
         unit::Diminishing m_diminishing;
-
-        virtual SpellSchoolMask GetMeleeDamageSchoolMask() const;
 
         MotionMaster i_motionMaster;
 

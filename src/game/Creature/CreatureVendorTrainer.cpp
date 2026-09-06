@@ -87,7 +87,7 @@ VendorItemData const* Creature::GetVendorTemplateItems() const
  * @param vItem The vendor item definition.
  * @return The currently available count.
  */
-uint32 Creature::GetVendorItemCurrentCount(VendorItem const* vItem)
+uint32 Unit::GetVendorItemCurrentCount(VendorItem const* vItem)
 {
     if (!vItem->maxcount)
     {
@@ -137,7 +137,7 @@ uint32 Creature::GetVendorItemCurrentCount(VendorItem const* vItem)
  * @param used_count The amount being purchased.
  * @return The remaining count after the update.
  */
-uint32 Creature::UpdateVendorItemCurrentCount(VendorItem const* vItem, uint32 used_count)
+uint32 Unit::UpdateVendorItemCurrentCount(VendorItem const* vItem, uint32 used_count)
 {
     if (!vItem->maxcount)
     {

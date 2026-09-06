@@ -54,6 +54,7 @@
 #include <vector>
 #include <map>
 #include "LootClaim.h"
+#include "VendorStock.h"
 #include "Unit.h"
 #include "CreatureLinks.h"
 #include "Stats/CreatureSheet.h"
@@ -384,62 +385,6 @@ enum RegenStatsFlags
     REGEN_FLAG_POWER                = 0x002,
 };
 
-// Vendors
-struct VendorItem
-{
-    VendorItem(uint32 _item, uint32 _maxcount, uint32 _incrtime, uint16 _conditionId)
-        : item(_item), maxcount(_maxcount), incrtime(_incrtime), conditionId(_conditionId) {}
-
-    uint32 item;
-    uint32 maxcount;                                        // 0 for infinity item amount
-    uint32 incrtime;                                        // time for restore items amount if maxcount != 0
-    uint16 conditionId;                                     // condition to check for this item
-};
-typedef std::vector<VendorItem*> VendorItemList;
-
-struct VendorItemData
-{
-    VendorItemList m_items;
-
-    VendorItem* GetItem(uint32 slot) const
-    {
-        if (slot >= m_items.size())
-        {
-            return nullptr;
-        }
-        return m_items[slot];
-    }
-    bool Empty() const { return m_items.empty(); }
-    uint8 GetItemCount() const { return m_items.size(); }
-    void AddItem(uint32 item, uint32 maxcount, uint32 ptime, uint16 conditonId)
-    {
-        m_items.push_back(new VendorItem(item, maxcount, ptime, conditonId));
-    }
-    bool RemoveItem(uint32 item_id);
-    VendorItem const* FindItem(uint32 item_id) const;
-    size_t FindItemSlot(uint32 item_id) const;
-
-    void Clear()
-    {
-        for (VendorItemList::const_iterator itr = m_items.begin(); itr != m_items.end(); ++itr)
-        {
-            delete(*itr);
-        }
-        m_items.clear();
-    }
-};
-
-struct VendorItemCount
-{
-    explicit VendorItemCount(uint32 _item, uint32 _count)
-        : itemId(_item), count(_count), lastIncrementTime(time(nullptr)) {}
-
-    uint32 itemId;
-    uint32 count;
-    time_t lastIncrementTime;
-};
-
-typedef std::list<VendorItemCount> VendorItemCounts;
 
 struct TrainerSpell
 {
@@ -549,7 +494,6 @@ class Creature : public Unit
         void Update(uint32 update_diff, uint32 time) override;  // overwrite Unit::Update
 
         virtual void RegenerateAll(uint32 update_diff);
-        uint32 GetEquipmentId() const { return m_equipmentId; }
 
 
         bool IsCorpse() const { return GetDeathState() ==  CORPSE; }
@@ -616,8 +560,6 @@ class Creature : public Unit
         void SetRoot(bool enable) override;
         void SetWaterWalk(bool enable) override;
 
-        SpellSchoolMask GetMeleeDamageSchoolMask() const override { return m_meleeDamageSchoolMask; }
-        void SetMeleeDamageSchool(SpellSchools school) { m_meleeDamageSchoolMask = GetSchoolMask(school); }
 
         void _AddCreatureSpellCooldown(uint32 spell_id, time_t end_time);
         void _AddCreatureCategoryCooldown(uint32 category, time_t apply_time);
@@ -640,7 +582,6 @@ class Creature : public Unit
         /// What its fortunes do to the creatures tied to it.
         CreatureLinks& Links() { return m_links; }
         CreatureLinks const& Links() const { return m_links; }
-        uint32 GetCurrentEquipmentId() const { return m_equipmentId; }
 
         static float _GetHealthMod(int32 Rank);             ///< Get custom factor to scale health (default 1, CONFIG_FLOAT_RATE_CREATURE_*_HP)
         static float _GetDamageMod(int32 Rank);             ///< Get custom factor to scale damage (default 1, CONFIG_FLOAT_RATE_*_DAMAGE)
@@ -648,8 +589,6 @@ class Creature : public Unit
 
         VendorItemData const* GetVendorItems() const;
         VendorItemData const* GetVendorTemplateItems() const;
-        uint32 GetVendorItemCurrentCount(VendorItem const* vItem);
-        uint32 UpdateVendorItemCurrentCount(VendorItem const* vItem, uint32 used_count);
 
         TrainerSpellData const* GetTrainerTemplateSpells() const;
         TrainerSpellData const* GetTrainerSpells() const;
@@ -734,142 +673,6 @@ class Creature : public Unit
         // be set for the holder rather than TAPPED being cleared for him, which is
         // the same picture drawn the other way round and the way retail draws it.
 
-        /* ****************** What this NPC will do for you ******************* */
-        //
-        // UNIT_NPC_FLAGS is written on creatures and pets and on nothing else, so
-        // every one of these is a creature's question. A player is a unit too and
-        // has no answer to any of them.
-
-        /**
-         * @return true if this unit is a vendor, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsVendor()       const { return HasNpcFlag(UNIT_NPC_FLAG_VENDOR); }
-        /**
-         * @return true if this unit is a trainer, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsTrainer()      const { return HasNpcFlag(UNIT_NPC_FLAG_TRAINER); }
-        /**
-         * @return true if this unit is a QuestGiver, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsQuestGiver()   const { return HasNpcFlag(UNIT_NPC_FLAG_QUESTGIVER); }
-        /**
-         * @return true if this unit is a gossip, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsGossip()       const { return HasNpcFlag(UNIT_NPC_FLAG_GOSSIP); }
-        /**
-         * @return true if this unit is a taxi, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsTaxi()         const { return HasNpcFlag(UNIT_NPC_FLAG_FLIGHTMASTER); }
-        /**
-         * @return true if this unit is a banker, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsBanker()       const { return HasNpcFlag(UNIT_NPC_FLAG_BANKER); }
-        /**
-         * @return true if this unit is a innkeeper, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsInnkeeper()    const { return HasNpcFlag(UNIT_NPC_FLAG_INNKEEPER); }
-        /**
-         * @return true if this unit is a SpiritGuide, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsSpiritGuide()  const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITGUIDE); }
-        /**
-         * @return true if this unit is a TabardDesigner, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsTabardDesigner()const { return HasNpcFlag(UNIT_NPC_FLAG_TABARDDESIGNER); }
-        /**
-         * Returns if this is a service provider or not, a service provider has one of the
-         * following flags:
-         * - \ref UNIT_NPC_FLAG_VENDOR
-         * - \ref UNIT_NPC_FLAG_TRAINER
-         * - \ref UNIT_NPC_FLAG_FLIGHTMASTER
-         * - \ref UNIT_NPC_FLAG_PETITIONER
-         * - \ref UNIT_NPC_FLAG_BATTLEMASTER
-         * - \ref UNIT_NPC_FLAG_BANKER
-         * - \ref UNIT_NPC_FLAG_INNKEEPER
-         * - \ref UNIT_NPC_FLAG_SPIRITHEALER
-         * - \ref UNIT_NPC_FLAG_SPIRITGUIDE
-         * - \ref UNIT_NPC_FLAG_TABARDDESIGNER
-         * - \ref UNIT_NPC_FLAG_AUCTIONEER
-         *
-         * @return true if this unit is a ServiceProvider, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsServiceProvider() const
-        {
-            return HasNpcFlag(UNIT_NPC_FLAG_VENDOR | UNIT_NPC_FLAG_TRAINER | UNIT_NPC_FLAG_FLIGHTMASTER |
-                UNIT_NPC_FLAG_PETITIONER | UNIT_NPC_FLAG_BATTLEMASTER | UNIT_NPC_FLAG_BANKER |
-                UNIT_NPC_FLAG_INNKEEPER | UNIT_NPC_FLAG_SPIRITHEALER |
-                UNIT_NPC_FLAG_SPIRITGUIDE | UNIT_NPC_FLAG_TABARDDESIGNER | UNIT_NPC_FLAG_AUCTIONEER);
-        }
-        /**
-         * Returns if this is a spirit service or not, a spirit service has one of the
-         * following flags:
-         * - \ref UNIT_NPC_FLAG_SPIRITHEALER
-         * - \ref UNIT_NPC_FLAG_SPIRITGUIDE
-         * @return true if this unit is a spirit service, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsSpiritService() const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER | UNIT_NPC_FLAG_SPIRITGUIDE); }
-        /**
-         * @return true if this unit is a GuildMaster, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsGuildMaster()  const { return HasNpcFlag(UNIT_NPC_FLAG_PETITIONER); }
-        /**
-         * @return true if this unit is a BattleMaster, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsBattleMaster() const { return HasNpcFlag(UNIT_NPC_FLAG_BATTLEMASTER); }
-        /**
-         * @return true if this unit is a armorer, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsArmorer()      const { return HasNpcFlag(UNIT_NPC_FLAG_REPAIR); }
-        /**
-         * @return true if this unit is a SpiritHealer, false otherwise
-         * \see Object::HasFlag
-         * \see EUnitFields
-         * \see NPCFlags
-         */
-        bool IsSpiritHealer() const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER); }
-
         /// Who may take what is on this body, and whether a roll is running.
         void AllLootRemovedFromCorpse();
 
@@ -896,9 +699,6 @@ class Creature : public Unit
         bool CanInitiateAttack();
 
 
-        // for use only in LoadHelper, Map::Add Map::CreatureCellRelocation
-        Cell const& GetCurrentCell() const { return m_currentCell; }
-        void SetCurrentCell(Cell const& cell) { m_currentCell = cell; }
 
         bool IsVisibleInGridForPlayer(Player* pl) const override;
 
@@ -966,11 +766,6 @@ class Creature : public Unit
         void SetVirtualItem(VirtualItemSlot slot, uint32 item_id);
         void SetVirtualItemRaw(VirtualItemSlot slot, uint32 display_id, uint32 info0, uint32 info1);
 
-        void SetDisableReputationGain(bool disable) { DisableReputationGain = disable; }
-        bool IsReputationGainDisabled()
-        {
-            return DisableReputationGain;
-        }
 
     protected:
         bool MeetsSelectAttackingRequirement(Unit* pTarget, SpellEntry const* pSpellInfo, uint32 selectFlags) const;
@@ -979,24 +774,16 @@ class Creature : public Unit
         bool InitEntry(uint32 entry, Team team = ALLIANCE, const CreatureData* data = nullptr, GameEventCreatureData const* eventData = nullptr);
 
 
-        // vendor items
-        VendorItemCounts m_vendorItemCounts;
 
 
 
         void RegeneratePower();
         void RegenerateHealth();
-        Cell m_currentCell;                                 // store current cell where creature listed
-        uint32 m_equipmentId;
-
-        bool m_AI_locked;
-
-        SpellSchoolMask m_meleeDamageSchoolMask;
-        uint32 m_originalEntry;
 
 
 
-        bool DisableReputationGain;
+
+
 
     private:
         CreatureSheet m_sheet;
