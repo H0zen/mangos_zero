@@ -41,7 +41,7 @@ class QueueSlots
     public:
 
         /// What SlotOf answers when he holds no slot for that queue.
-        static uint32 const NOWHERE = PLAYER_MAX_BATTLEGROUND_QUEUES;
+        static constexpr uint32 NOWHERE = PLAYER_MAX_BATTLEGROUND_QUEUES;
 
         /// He is waiting in at least one queue.
         bool AnyHeld() const
