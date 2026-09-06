@@ -88,6 +88,7 @@
 #include "Stats/Modifiers.h"
 #include "Creature/CreatureRecord.h"
 #include "Creature/Disguise.h"
+#include "LootClaim.h"
 #include "Creature/Pickings.h"
 #include "Creature/Station.h"
 #include "Creature/Vigil.h"
@@ -1683,9 +1684,25 @@ class Unit : public Occupant
         Station& Stationed() { return m_station; }
         Station const& Stationed() const { return m_station; }
 
+        /// Who staked the claim on what it leaves behind.
+        LootClaim& Claim() { return m_claim; }
+        LootClaim const& Claim() const { return m_claim; }
+
         /// What can still be taken off it, and what has been already.
         Pickings& Taking() { return m_pickings; }
         Pickings const& Taking() const { return m_pickings; }
+
+        /**
+         * Whether it has already shouted for its neighbours, and whether it has
+         * already looked for one to flee to.
+         *
+         * Both are once per fight, not once per life: a creature that has called
+         * does not call again while the same fight lasts, and both are cleared
+         * when it goes home.
+         */
+        void SetNoCallAssistance(bool called) { m_calledForHelp = called; }
+        void SetNoSearchAssistance(bool searched) { m_searchedForHelp = searched; }
+        bool HasSearchedAssistance() const { return m_searchedForHelp; }
 
         /// Another side's colours, worn for a while.
         Disguise& Colours() { return m_disguise; }
@@ -3692,7 +3709,12 @@ class Unit : public Occupant
 
         Station m_station;
 
+        LootClaim m_claim;
+
         Pickings m_pickings;
+
+        bool m_calledForHelp = false;
+        bool m_searchedForHelp = false;
 
         Disguise m_disguise;
 

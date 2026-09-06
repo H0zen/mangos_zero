@@ -871,8 +871,6 @@ class Creature : public Unit
         bool IsSpiritHealer() const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER); }
 
         /// Who may take what is on this body, and whether a roll is running.
-        LootClaim& Claim() { return m_claim; }
-        LootClaim const& Claim() const { return m_claim; }
         void AllLootRemovedFromCorpse();
 
         SpellEntry const* ReachWithSpellAttack(Unit* pVictim);
@@ -893,12 +891,6 @@ class Creature : public Unit
         void DoFleeToGetAssistance();
         void CallForHelp(float fRadius);
         void CallAssistance();
-        void SetNoCallAssistance(bool val) { m_AlreadyCallAssistance = val; }
-        void SetNoSearchAssistance(bool val) { m_AlreadySearchedAssistance = val; }
-        bool HasSearchedAssistance()
-        {
-            return m_AlreadySearchedAssistance;
-        }
 
         bool CanAssistTo(const Unit* u, const Unit* enemy, bool checkfaction = true) const;
         bool CanInitiateAttack();
@@ -986,7 +978,6 @@ class Creature : public Unit
         bool CreateFromProto(uint32 guidlow, CreatureInfo const* cinfo, Team team, const CreatureData* data = nullptr, GameEventCreatureData const* eventData = nullptr);
         bool InitEntry(uint32 entry, Team team = ALLIANCE, const CreatureData* data = nullptr, GameEventCreatureData const* eventData = nullptr);
 
-        LootClaim m_claim;
 
         // vendor items
         VendorItemCounts m_vendorItemCounts;
@@ -998,9 +989,6 @@ class Creature : public Unit
         Cell m_currentCell;                                 // store current cell where creature listed
         uint32 m_equipmentId;
 
-        // below fields has potential for optimization
-        bool m_AlreadyCallAssistance;
-        bool m_AlreadySearchedAssistance;
         bool m_AI_locked;
 
         SpellSchoolMask m_meleeDamageSchoolMask;

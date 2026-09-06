@@ -238,7 +238,6 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
     i_AI(nullptr),
     loot(this),
     m_equipmentId(0),
-    m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false),
     m_AI_locked(false),
     m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0),
     m_sheet(*this), m_links(*this), m_pace(*this)
@@ -2275,7 +2274,7 @@ void Creature::SendAIReaction(AiReaction reactionType)
 void Creature::CallAssistance()
 {
     // FIXME: should player pets call for assistance?
-    if (!m_AlreadyCallAssistance && getVictim() && !IsCharmed())
+    if (!m_calledForHelp && getVictim() && !IsCharmed())
     {
         SetNoCallAssistance(true);
 
