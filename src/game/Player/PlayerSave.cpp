@@ -217,7 +217,7 @@ void Player::SaveToDB()
     uberInsert.addUInt32(m_Played_time[PLAYED_TIME_TOTAL]);
     uberInsert.addUInt32(m_Played_time[PLAYED_TIME_LEVEL]);
 
-    uberInsert.addFloat(finiteAlways(m_rest_bonus));
+    uberInsert.addFloat(finiteAlways(Resting().Bonus()));
     uberInsert.addUInt64(uint64(time(nullptr)));
     uberInsert.addUInt32(HasPlayerFlag(PLAYER_FLAGS_RESTING) ? 1 : 0);
     // save, far from tavern/city
@@ -1497,49 +1497,6 @@ void Player::RemovePetitionsAndSigns(ObjectGuid guid)
     CharacterDatabase.PExecute("DELETE FROM `petition` WHERE `ownerguid` = '%u'", lowguid);
     CharacterDatabase.PExecute("DELETE FROM `petition_sign` WHERE `ownerguid` = '%u'", lowguid);
     CharacterDatabase.CommitTransaction();
-}
-
-/**
- * @brief Sets the player's accumulated rested experience bonus.
- *
- * @param rest_bonus_new The new rested bonus amount.
- */
-void Player::SetRestBonus(float rest_bonus_new)
-{
-    // Prevent resting on max level
-    if (getLevel() >= sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
-    {
-        rest_bonus_new = 0;
-    }
-
-    if (rest_bonus_new < 0)
-    {
-        rest_bonus_new = 0;
-    }
-
-    float rest_bonus_max = (float)GetUInt32Value(PLAYER_NEXT_LEVEL_XP) * 1.5f / 2.0f;
-
-    if (rest_bonus_new > rest_bonus_max)
-    {
-        m_rest_bonus = rest_bonus_max;
-    }
-    else
-    {
-        m_rest_bonus = rest_bonus_new;
-    }
-
-    // update data for client
-    if (m_rest_bonus > 10)
-    {
-        SetByteValue(PLAYER_BYTES_2, 3, REST_STATE_RESTED);
-    }
-    else if (m_rest_bonus <= 1)
-    {
-        SetByteValue(PLAYER_BYTES_2, 3, REST_STATE_NORMAL);
-    }
-
-    // RestTickUpdate
-    SetUInt32Value(PLAYER_REST_STATE_EXPERIENCE, uint32(m_rest_bonus));
 }
 
 /**

@@ -78,6 +78,7 @@
 #include "Offers/Invitations.h"
 #include "Drink.h"
 #include "Hearth.h"
+#include "Rest.h"
 #include "Perils/Perils.h"
 #include "Offers/PlayerOffers.h"
 #include "Teleport/TeleportOrder.h"
@@ -563,13 +564,6 @@ enum InstanceResetWarningType
     RAID_INSTANCE_WARNING_MIN       = 2, // WARNING! %s is scheduled to reset in %d minute(s)!
     RAID_INSTANCE_WARNING_MIN_SOON  = 3, // WARNING! %s is scheduled to reset in %d minute(s). Please exit the zone or you will be returned to your bind location!
     RAID_INSTANCE_WELCOME           = 4  // Welcome to %s. This raid instance is scheduled to reset in %s.
-};
-
-enum RestType
-{
-    REST_TYPE_NO                = 0, // No rest
-    REST_TYPE_IN_TAVERN         = 1, // Resting in a tavern
-    REST_TYPE_IN_CITY           = 2  // Resting in a city
 };
 
 // Duel completion types
@@ -1217,15 +1211,6 @@ class Player : public Unit
         // Set the death state of the player
         void SetDeathState(DeathState s) override; // overwrite Unit::SetDeathState
 
-        // Get the rest bonus
-        float GetRestBonus() const
-        {
-            return m_rest_bonus;
-        }
-
-        // Set the rest bonus
-        void SetRestBonus(float rest_bonus_new);
-
         /**
          * \brief: compute rest bonus
          * \param: time_t timePassed > time from last check
@@ -1233,28 +1218,9 @@ class Player : public Unit
          * \param: bool inRestPlace  > if it was offline, is the player was in city/tavern/inn?
          * \returns: float
          **/
-        float ComputeRest(time_t timePassed, bool offline = false, bool inRestPlace = false);
 
         // Get the rest type
-        RestType GetRestType() const
-        {
-            return rest_type;
-        }
 
-        // Set the rest type
-        void SetRestType(RestType n_r_type, uint32 areaTriggerId = 0);
-
-        // Get the time the player entered the inn
-        time_t GetTimeInnEnter() const
-        {
-            return time_inn_enter;
-        }
-
-        // Update the inn enter time
-        void UpdateInnerTime(time_t time)
-        {
-            time_inn_enter = time;
-        }
 
         // Remove the player's pet
         void RemovePet(PetSaveMode mode) { m_petMgr.Remove(mode); }
@@ -3169,17 +3135,6 @@ class Player : public Unit
         /***                    REST SYSTEM                    ***/
         /*********************************************************/
 
-        // Check if the player is rested
-        bool isRested() const { return GetRestTime() >= 10 * IN_MILLISECONDS; }
-
-        // Get the XP rest bonus
-        uint32 GetXPRestBonus(uint32 xp);
-
-        // Get the rest time
-        uint32 GetRestTime() const { return m_restTime; }
-
-        // Set the rest time
-        void SetRestTime(uint32 v) { m_restTime = v; }
 
         /*********************************************************/
         /***              ENVIRONMENTAL SYSTEM                  ***/
@@ -3301,6 +3256,10 @@ class Player : public Unit
         /// The inn he is bound to.
         Hearth& Home() { return m_hearth; }
         Hearth const& Home() const { return m_hearth; }
+
+        /// The rest he has stored up, and where he is storing it.
+        Rest& Resting() { return m_rest; }
+        Rest const& Resting() const { return m_rest; }
 
         // Get an object by type mask
         Object* GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask);
@@ -3670,7 +3629,6 @@ class Player : public Unit
         uint32 m_deathTimer; // Death timer
         time_t m_deathExpireTime; // Death expire time
 
-        uint32 m_restTime; // Rest time
 
         uint32 m_WeaponProficiency;
         uint32 m_ArmorProficiency;
@@ -3682,10 +3640,6 @@ class Player : public Unit
         float m_ammoDPSMax;
 
         //////////////////// Rest System/////////////////////
-        time_t time_inn_enter; // Time entered inn
-        uint32 inn_trigger_id; // Inn trigger ID
-        float m_rest_bonus; // Rest bonus
-        RestType rest_type; // Rest type
         //////////////////// Rest System/////////////////////
 
         // Transports
@@ -3779,6 +3733,8 @@ class Player : public Unit
         Drink m_drink;
 
         Hearth m_hearth;
+
+        Rest m_rest;
 
         // Detect invisibility timer
         uint32 m_DetectInvTimer;

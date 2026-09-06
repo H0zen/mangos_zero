@@ -41,6 +41,7 @@ set(TEST_SOURCES
     unit/test_questslots.cpp
     unit/test_worksentry.cpp
     unit/test_drink.cpp
+    unit/test_rest.cpp
 
     combat/test_school.cpp
     combat/test_roll.cpp

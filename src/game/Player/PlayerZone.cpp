@@ -102,13 +102,13 @@ void Player::CheckAreaExploreAndOutdoor()
 
     if (isOutdoor)
     {
-        if (HasPlayerFlag(PLAYER_FLAGS_RESTING) && GetRestType() == REST_TYPE_IN_TAVERN)
+        if (HasPlayerFlag(PLAYER_FLAGS_RESTING) && Resting().Kind() == REST_TYPE_IN_TAVERN)
         {
-            AreaTriggerEntry const* at = sAreaTriggerStore.LookupEntry(inn_trigger_id);
+            AreaTriggerEntry const* at = sAreaTriggerStore.LookupEntry(Resting().InnTrigger());
             if (!at || !IsPointInAreaTriggerZone(at, GetMapId(), Where().X(), Where().Y(), Where().Z()))
             {
                 // Player left inn (REST_TYPE_IN_CITY overrides REST_TYPE_IN_TAVERN, so just clear rest)
-                SetRestType(REST_TYPE_NO);
+                Resting().Kind(REST_TYPE_NO);
             }
         }
         // Check if we need to reaply outdoor only passive spells
@@ -322,12 +322,12 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea, bool sendInitialWorldSta
 
     if (zone->Flags & AREA_FLAG_CAPITAL)                    // in capital city
     {
-        SetRestType(REST_TYPE_IN_CITY);
+        Resting().Kind(REST_TYPE_IN_CITY);
     }
-    else if (HasPlayerFlag(PLAYER_FLAGS_RESTING) && GetRestType() != REST_TYPE_IN_TAVERN)
+    else if (HasPlayerFlag(PLAYER_FLAGS_RESTING) && Resting().Kind() != REST_TYPE_IN_TAVERN)
     {
         // resting and not in tavern (leave city then); tavern leave handled in CheckAreaExploreAndOutdoor
-        SetRestType(REST_TYPE_NO);
+        Resting().Kind(REST_TYPE_NO);
     }
 
     // remove items with area/map limitations (delete only for alive player to allow back in ghost mode)

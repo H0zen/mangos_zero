@@ -417,7 +417,7 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
  *
  * @param session The owning world session.
  */
-Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
+Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
 {
 
     m_transport = 0;
@@ -501,7 +501,6 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
 
 
 
-    m_restTime = 0;
     m_deathTimer = 0;
     // Initialize death expire time to 0
     m_deathExpireTime = 0;
@@ -540,13 +539,9 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
 
     //////////////////// Rest System/////////////////////
     // Initialize time of entering inn to 0
-    time_inn_enter = 0;
     // Initialize inn trigger ID to 0
-    inn_trigger_id = 0;
     // Initialize rest bonus to 0
-    m_rest_bonus = 0;
     // Initialize rest type to no rest
-    rest_type = REST_TYPE_NO;
     //////////////////// Rest System/////////////////////
 
     // Initialize mails updated flag to false
@@ -1119,13 +1114,13 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     // Speed collect rest bonus (section/in hour)
     if (HasPlayerFlag(PLAYER_FLAGS_RESTING))
     {
-        if (GetTimeInnEnter() > 0) // Freeze update
+        if (Resting().EnteredInn() > 0) // Freeze update
         {
-            time_t time_inn = now - GetTimeInnEnter();
+            time_t time_inn = now - Resting().EnteredInn();
             if (time_inn >= 10) // Freeze update
             {
-                SetRestBonus(GetRestBonus() + ComputeRest(time_inn));
-                UpdateInnerTime(now);
+                Resting().Bonus(Resting().Bonus() + Resting().Over(time_inn));
+                m_rest.EnteredInn(now);
             }
         }
     }
@@ -2111,7 +2106,7 @@ void Player::GiveXP(uint32 xp, Unit* victim)
     }
 
     // XP resting bonus for kill
-    uint32 rested_bonus_xp = victim ? GetXPRestBonus(xp) : 0;
+    uint32 rested_bonus_xp = victim ? Resting().SpendOn(xp) : 0;
 
     SendLogXPGain(xp, victim, rested_bonus_xp);
 

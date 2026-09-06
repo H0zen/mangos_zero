@@ -527,11 +527,11 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     InitStatsForLevel();
 
     // rest bonus can only be calculated after InitStatsForLevel()
-    m_rest_bonus = fields[21].GetFloat();
+    Resting().Bonus(fields[21].GetFloat());
 
     if (time_diff > 0)
     {
-        SetRestBonus(GetRestBonus() + ComputeRest(time_diff, true, (fields[23].GetInt32() > 0)));
+        Resting().Bonus(Resting().Bonus() + Resting().Over(time_diff, true, (fields[23].GetInt32() > 0)));
     }
 
     // load skills after InitStatsForLevel because it triggering aura apply also
