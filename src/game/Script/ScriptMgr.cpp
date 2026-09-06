@@ -279,17 +279,17 @@ bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool
         }
     }
 
-    Map::ScriptExecutionParam execParam = Map::SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE_TARGET;
+    ScriptExecutionParam execParam = SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE_TARGET;
     if (source->isType(TYPEMASK_CREATURE_OR_GAMEOBJECT))
     {
-        execParam = Map::SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE;
+        execParam = SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE;
     }
     else if (target && target->isType(TYPEMASK_CREATURE_OR_GAMEOBJECT))
     {
-        execParam = Map::SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET;
+        execParam = SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET;
     }
 
-    return map->ScriptsStart(DBS_ON_EVENT, id, source, target, execParam);
+    return map->Scripts().Start(DBS_ON_EVENT, id, source, target, execParam);
 }
 
 // Wrappers

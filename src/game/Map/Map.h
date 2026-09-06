@@ -64,6 +64,7 @@
 #include "Platform/Define.h"
 #include "DBCStructure.h"
 #include "GridDefines.h"
+#include "Script/ScriptSchedule.h"
 #include "Cell.h"
 #include "Occupant.h"
 #include "SharedDefines.h"
@@ -352,16 +353,8 @@ class Map : public GridRefManager<NGridType>
         typedef MapRefManager PlayerList;
         PlayerList const& GetPlayers() const { return m_mapRefManager; }
 
-        // per-map script storage
-        enum ScriptExecutionParam
-        {
-            SCRIPT_EXEC_PARAM_NONE                    = 0x00,   // Start regardless if already started
-            SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE        = 0x01,   // Start Script only if not yet started (uniqueness identified by id and source)
-            SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET        = 0x02,   // Start Script only if not yet started (uniqueness identified by id and target)
-            SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE_TARGET = 0x03,   // Start Script only if not yet started (uniqueness identified by id, source and target)
-        };
-        bool ScriptsStart(DBScriptType type, uint32 id, Object* source, Object* target, ScriptExecutionParam execParams = SCRIPT_EXEC_PARAM_NONE);
-        void ScriptCommandStart(ScriptInfo const& script, uint32 delay, Object* source, Object* target);
+        /// The script steps queued on this map, and the hour each falls due.
+        ScriptSchedule& Scripts() { return m_scripts; }
 
         // must called with AddToWorld
         void AddToActive(Occupant* obj);
@@ -547,7 +540,6 @@ class Map : public GridRefManager<NGridType>
         void setGridObjectDataLoaded(bool pLoaded, uint32 x, uint32 y) { getNGrid(x, y)->setGridObjectDataLoaded(pLoaded); }
 
         void setNGrid(NGridType* grid, uint32 x, uint32 y);
-        void ScriptsProcess();
 
         void SendObjectUpdates();
         std::set<Object*> i_objectsToClientUpdate;
@@ -616,8 +608,7 @@ class Map : public GridRefManager<NGridType>
 
         std::set<Occupant*> i_objectsToRemove;
 
-        typedef std::multimap<time_t, ScriptAction> ScriptScheduleMap;
-        ScriptScheduleMap m_scriptSchedule;
+        ScriptSchedule m_scripts;
 
         InstanceData* i_data;
 

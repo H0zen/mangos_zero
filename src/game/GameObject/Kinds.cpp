@@ -83,7 +83,7 @@ GameObjectBehaviour::Casting DoorBehaviour::UsedBy(Unit* user, bool scriptSaidYe
     // activate script
     if (!scriptSaidYes)
     {
-        It().GetMap()->ScriptsStart(DBS_ON_GO_USE, It().GetGUIDLow(), cast.caster, &It());
+        It().GetMap()->Scripts().Start(DBS_ON_GO_USE, It().GetGUIDLow(), cast.caster, &It());
     }
     return Casting();
 }
@@ -103,7 +103,7 @@ GameObjectBehaviour::Casting ButtonBehaviour::UsedBy(Unit* user, bool scriptSaid
     // activate script
     if (!scriptSaidYes)
     {
-        It().GetMap()->ScriptsStart(DBS_ON_GO_USE, It().GetGUIDLow(), cast.caster, &It());
+        It().GetMap()->Scripts().Start(DBS_ON_GO_USE, It().GetGUIDLow(), cast.caster, &It());
     }
 
     return Casting();
@@ -394,7 +394,7 @@ GameObjectBehaviour::Casting GooberBehaviour::UsedBy(Unit* user, bool scriptSaid
     // activate script
     if (!scriptSaidYes)
     {
-        It().GetMap()->ScriptsStart(DBS_ON_GO_USE, It().GetGUIDLow(), cast.caster, &It());
+        It().GetMap()->Scripts().Start(DBS_ON_GO_USE, It().GetGUIDLow(), cast.caster, &It());
     }
     else
     {

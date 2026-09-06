@@ -464,11 +464,11 @@ void Player::OnGossipSelect(Occupant* pSource, uint32 gossipListId)
     {
         if (pSource->IsCreature())
         {
-            GetMap()->ScriptsStart(DBS_ON_GOSSIP, menuData.m_gAction_script, pSource, this, Map::SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE);
+            GetMap()->Scripts().Start(DBS_ON_GOSSIP, menuData.m_gAction_script, pSource, this, SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE);
         }
         else if (pSource->IsGameObject())
         {
-            GetMap()->ScriptsStart(DBS_ON_GOSSIP, menuData.m_gAction_script, this, pSource, Map::SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET);
+            GetMap()->Scripts().Start(DBS_ON_GOSSIP, menuData.m_gAction_script, this, pSource, SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET);
         }
     }
 }
@@ -531,7 +531,7 @@ uint32 Player::GetGossipTextId(uint32 menuId, Occupant* pSource)
     // Start related script
     if (scriptId)
     {
-        GetMap()->ScriptsStart(DBS_ON_GOSSIP, scriptId, this, pSource, Map::SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET);
+        GetMap()->Scripts().Start(DBS_ON_GOSSIP, scriptId, this, pSource, SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET);
     }
 
     return textId;

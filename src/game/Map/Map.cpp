@@ -102,11 +102,6 @@ Map::~Map()
 
     UnloadAll(true);
 
-    if (!m_scriptSchedule.empty())
-    {
-        sScriptMgr.DecreaseScheduledScriptCount(m_scriptSchedule.size());
-    }
-
     if (m_persistentState)
     {
         m_persistentState->SetUsedByMapState(nullptr);          // field pointer can be deleted after this
@@ -174,6 +169,7 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId)
     m_cinematicViewerRadius(0.0f), m_persistentState(nullptr),
     m_activeNonPlayersIter(m_activeNonPlayers.end()),
     i_gridExpiry(expiry), m_TerrainData(sTerrainMgr.LoadTerrain(id)),
+    m_scripts(*this),
     i_data(nullptr)
 {
 
@@ -1097,9 +1093,9 @@ void Map::Update(const uint32& t_diff)
     phases.Mark(metrics::TickPhase::ObjectUpdates, getMSTime());
 
     ///- Process necessary scripts
-    if (!m_scriptSchedule.empty())
+    if (!m_scripts.Empty())
     {
-        ScriptsProcess();
+        m_scripts.RunDue();
     }
 
 
@@ -2950,138 +2946,7 @@ bool Map::CanEnter(Player* player)
 
 /// Put scripts in the execution queue
 
-/**
- * @brief Queues all steps of a database script chain for later execution.
- *
- * @param type The script table type.
- * @param id The script chain identifier.
- * @param source The source object used by the script.
- * @param target The optional target object used by the script.
- * @param execParams Flags controlling uniqueness checks for queued scripts.
- * @return true if the script chain exists and was queued or intentionally skipped as duplicate.
- */
-bool Map::ScriptsStart(DBScriptType type, uint32 id, Object* source, Object* target, ScriptExecutionParam execParams /*=SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE_TARGET*/)
-{
-    MANGOS_ASSERT(source);
-
-    ///- Find the script chain map
-    ScriptChainMap const *scm = sScriptMgr.GetScriptChainMap(type);
-    if (!scm)
-    {
-        return false;
-    }
-
-    ScriptChainMap::const_iterator s = scm->find(id);
-    if (s == scm->end())
-    {
-        return false;
-    }
-
-    // prepare static data
-    ObjectGuid sourceGuid = source->GetObjectGuid();
-    ObjectGuid targetGuid = target ? target->GetObjectGuid() : ObjectGuid();
-    ObjectGuid ownerGuid  = source->isType(TYPEMASK_ITEM) ? ((Item*)source)->GetOwnerGuid() : ObjectGuid();
-
-    if (execParams)                                         // Check if the execution should be uniquely
-    {
-        for (ScriptScheduleMap::const_iterator searchItr = m_scriptSchedule.begin(); searchItr != m_scriptSchedule.end(); ++searchItr)
-        {
-            if (searchItr->second.IsSameScript(type, id,
-                (execParams & SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE) ? sourceGuid : ObjectGuid(),
-                (execParams & SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET) ? targetGuid : ObjectGuid(), ownerGuid))
-            {
-                DEBUG_FILTER_LOG(LOG_FILTER_DB_SCRIPTS, "DB-SCRIPTS: Process table `dbscripts [type=%d]` id %u. Skip script as script already started for source %s, target %s - ScriptsStartParams %u", type, id, sourceGuid.GetString().c_str(), targetGuid.GetString().c_str(), execParams);
-                return true;
-            }
-        }
-    }
-
-    ///- Schedule script execution for all scripts in the script map
-    ScriptChain const* s2 = &(s->second);
-    for (ScriptChain::const_iterator iter = s2->begin(); iter != s2->end(); ++iter)
-    {
-        ScriptAction sa(type, this, sourceGuid, targetGuid, ownerGuid, &(*iter));
-
-        m_scriptSchedule.insert(ScriptScheduleMap::value_type(time_t(sWorld.GetGameTime() + iter->delay), sa));
-
-        sScriptMgr.IncreaseScheduledScriptsCount();
-    }
-
-    return true;
-}
-
-/**
- * @brief Queues an internally generated script command for delayed execution.
- *
- * @param script The script command data to execute.
- * @param delay The execution delay in seconds.
- * @param source The source object associated with the command.
- * @param target The optional target object associated with the command.
- */
-void Map::ScriptCommandStart(ScriptInfo const& script, uint32 delay, Object* source, Object* target)
-{
-    // NOTE: script record _must_ exist until command executed
-
-    // prepare static data
-    ObjectGuid sourceGuid = source->GetObjectGuid();
-    ObjectGuid targetGuid = target ? target->GetObjectGuid() : ObjectGuid();
-    ObjectGuid ownerGuid  = source->isType(TYPEMASK_ITEM) ? ((Item*)source)->GetOwnerGuid() : ObjectGuid();
-
-    ScriptAction sa(DBS_INTERNAL, this, sourceGuid, targetGuid, ownerGuid, &script);
-
-    m_scriptSchedule.insert(ScriptScheduleMap::value_type(time_t(sWorld.GetGameTime() + delay), sa));
-
-    sScriptMgr.IncreaseScheduledScriptsCount();
-}
-
 /// Process queued scripts
-
-/**
- * @brief Processes queued scripts whose scheduled execution time has arrived.
- */
-void Map::ScriptsProcess()
-{
-    if (m_scriptSchedule.empty())
-    {
-        return;
-    }
-
-    ///- Process overdue queued scripts
-    ScriptScheduleMap::iterator iter = m_scriptSchedule.begin();
-    // ok as multimap is a *sorted* associative container
-    while (!m_scriptSchedule.empty() && (iter->first <= sWorld.GetGameTime()))
-    {
-        if (iter->second.HandleScriptStep())
-        {
-            // Terminate following script steps of this script
-            DBScriptType type = iter->second.GetType();
-            uint32 id = iter->second.GetId();
-            ObjectGuid sourceGuid = iter->second.GetSourceGuid();
-            ObjectGuid targetGuid = iter->second.GetTargetGuid();
-            ObjectGuid ownerGuid = iter->second.GetOwnerGuid();
-
-            for (ScriptScheduleMap::iterator rmItr = m_scriptSchedule.begin(); rmItr != m_scriptSchedule.end();)
-            {
-                if (rmItr->second.IsSameScript(type, id, sourceGuid, targetGuid, ownerGuid))
-                {
-                    m_scriptSchedule.erase(rmItr++);
-                    sScriptMgr.DecreaseScheduledScriptCount();
-                }
-                else
-                {
-                    ++rmItr;
-                }
-            }
-        }
-        else
-        {
-            m_scriptSchedule.erase(iter);
-
-            sScriptMgr.DecreaseScheduledScriptCount();
-        }
-        iter = m_scriptSchedule.begin();
-    }
-}
 
 /**
  * Function return player that in world at CURRENT map
@@ -3486,64 +3351,6 @@ void Map::RemoveGameObjectModel(const GameObjectModel& mdl)
     m_dyn_tree.Remove(const_cast<GameObjectModel&>(mdl));
 }
 
-/**
- * @brief Checks whether a game object collision model is present in the dynamic tree.
- *
- * @param mdl The model to test.
- * @return true if the model is currently tracked; otherwise false.
- */
-bool Map::ContainsGameObjectModel(const GameObjectModel& mdl) const
-{
-    return m_dyn_tree.Contains(mdl);
-}
-
-/// Re-files a body whose world box changed. The POSE is set here and the index only
-/// re-files: a spatial index has no business reading a game object.
-void Map::RefreshGameObjectModel(GameObjectModel& mdl)
-{
-    mdl.UpdatePose();
-    m_dyn_tree.Refresh(mdl);
-}
-
-// This will generate a random point to all directions in water for the provided point in radius range.
-bool Map::GetRandomPointUnderWater(float& x, float& y, float& z, float radius, GridMapLiquidData& liquid_status)
-{
-    const float angle = rand_norm_f() * (M_PI_F * 2.0f);
-    const float range = rand_norm_f() * radius;
-
-    float i_x = x + range * cos(angle);
-    float i_y = y + range * sin(angle);
-
-    // get real ground of new point
-    // the code consider cylinder instead of sphere for possible z
-    float ground = GetHeight(i_x, i_y, z);
-    if (ground > INVALID_HEIGHT) // GetHeight can fail
-    {
-        float min_z = z - 0.7f * radius; // 0.7 to have a bit a "flat" cylinder, TODO which value looks nicest
-        if (min_z < ground)
-        {
-            min_z = ground + 0.5f; // Get some space to prevent under map
-        }
-
-        float liquidLevel = liquid_status.level - 2.0f; // just to make the generated point is in water and not on surface or a bit above
-
-        // if not enough space to fit the creature better is to return from here
-        if (min_z > liquidLevel)
-        {
-            return false;
-        }
-
-        float max_z = std::max(z + 0.7f * radius, min_z);
-        max_z = std::min(max_z, liquidLevel);
-        x = i_x;
-        y = i_y;
-        z = min_z + rand_norm_f() * (max_z - min_z);
-        return true;
-    }
-    return false;
-}
-
-// This will generate a random point to all directions in air for the provided point in radius range.
 bool Map::GetRandomPointInTheAir(float& x, float& y, float& z, float radius)
 {
     const float angle = rand_norm_f() * (M_PI_F * 2.0f);
@@ -3571,7 +3378,6 @@ bool Map::GetRandomPointInTheAir(float& x, float& y, float& z, float radius)
     return false;
 }
 
-// supposed to be used for not big radius, usually less than 20.0f
 bool Map::GetReachableRandomPointOnGround(float& x, float& y, float& z, float radius)
 {
     // Generate a random range and direction for the new point
@@ -3634,6 +3440,67 @@ bool Map::GetReachableRandomPointOnGround(float& x, float& y, float& z, float ra
 
     return false;
 }
+
+/**
+ * @brief Checks whether a game object collision model is present in the dynamic tree.
+ *
+ * @param mdl The model to test.
+ * @return true if the model is currently tracked; otherwise false.
+ */
+bool Map::ContainsGameObjectModel(const GameObjectModel& mdl) const
+{
+    return m_dyn_tree.Contains(mdl);
+}
+
+/// Re-files a body whose world box changed. The POSE is set here and the index only
+/// re-files: a spatial index has no business reading a game object.
+void Map::RefreshGameObjectModel(GameObjectModel& mdl)
+{
+    mdl.UpdatePose();
+    m_dyn_tree.Refresh(mdl);
+}
+
+// This will generate a random point to all directions in water for the provided point in radius range.
+bool Map::GetRandomPointUnderWater(float& x, float& y, float& z, float radius, GridMapLiquidData& liquid_status)
+{
+    const float angle = rand_norm_f() * (M_PI_F * 2.0f);
+    const float range = rand_norm_f() * radius;
+
+    float i_x = x + range * cos(angle);
+    float i_y = y + range * sin(angle);
+
+    // get real ground of new point
+    // the code consider cylinder instead of sphere for possible z
+    float ground = GetHeight(i_x, i_y, z);
+    if (ground > INVALID_HEIGHT) // GetHeight can fail
+    {
+        float min_z = z - 0.7f * radius; // 0.7 to have a bit a "flat" cylinder, TODO which value looks nicest
+        if (min_z < ground)
+        {
+            min_z = ground + 0.5f; // Get some space to prevent under map
+        }
+
+        float liquidLevel = liquid_status.level - 2.0f; // just to make the generated point is in water and not on surface or a bit above
+
+        // if not enough space to fit the creature better is to return from here
+        if (min_z > liquidLevel)
+        {
+            return false;
+        }
+
+        float max_z = std::max(z + 0.7f * radius, min_z);
+        max_z = std::min(max_z, liquidLevel);
+        x = i_x;
+        y = i_y;
+        z = min_z + rand_norm_f() * (max_z - min_z);
+        return true;
+    }
+    return false;
+}
+
+// This will generate a random point to all directions in air for the provided point in radius range.
+
+// supposed to be used for not big radius, usually less than 20.0f
 
 // Get random point by handling different situation depending of if the unit is flying/swimming/walking
 bool Map::GetReachableRandomPosition(Unit* unit, float& x, float& y, float& z, float radius)

@@ -1239,5 +1239,5 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
     }
 
     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell ScriptStart spellid %u in EffectDummy", m_spellInfo->ID);
-    m_caster->GetMap()->ScriptsStart(DBS_ON_SPELL, m_spellInfo->ID, m_caster, unitTarget);
+    m_caster->GetMap()->Scripts().Start(DBS_ON_SPELL, m_spellInfo->ID, m_caster, unitTarget);
 }

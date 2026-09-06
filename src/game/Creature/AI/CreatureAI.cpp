@@ -414,7 +414,7 @@ void CreatureAI::DoSpellsListCasts(uint32 const uiDiff)
                     // If there is a script for this spell, run it.
                     if (spell.scriptId)
                     {
-                        m_creature->GetMap()->ScriptsStart(DBS_ON_CREATURE_SPELL, spell.scriptId, m_creature, pTarget);
+                        m_creature->GetMap()->Scripts().Start(DBS_ON_CREATURE_SPELL, spell.scriptId, m_creature, pTarget);
                     }
                     break;
                 }

@@ -248,7 +248,7 @@ void WaypointMovementGenerator::OnArrived(Creature& creature)
     if (node.script_id)
     {
         DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature movement start script %u at point %u for %s.", node.script_id, m_currentNode, creature.GetGuidStr().c_str());
-        creature.GetMap()->ScriptsStart(DBS_ON_CREATURE_MOVEMENT, node.script_id, &creature, &creature);
+        creature.GetMap()->Scripts().Start(DBS_ON_CREATURE_MOVEMENT, node.script_id, &creature, &creature);
     }
 
     if (WaypointBehavior* behavior = node.behavior)

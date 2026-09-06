@@ -89,7 +89,7 @@ void GameObject::Use(Unit* user)
 
     if (!scriptReturnValue)
     {
-        GetMap()->ScriptsStart(DBS_ON_GOT_USE, GetEntry(), user, this);
+        GetMap()->Scripts().Start(DBS_ON_GOT_USE, GetEntry(), user, this);
     }
 
     // WHAT KIND IT IS WAS DECIDED WHEN ITS TEMPLATE WAS FIXED TO IT, not here. A door
