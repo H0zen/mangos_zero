@@ -239,7 +239,7 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
     loot(this),
     lootForPickPocketed(false), lootForBody(false), lootForSkin(false),
     m_lootMoney(0),
-    m_defaultMovementType(IDLE_MOTION_TYPE), m_equipmentId(0),
+    m_equipmentId(0),
     m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false),
     m_AI_locked(false), m_temporaryFactionFlags(TEMPFACTION_NONE),
     m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0),
@@ -257,7 +257,7 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
     // Zero sentinel: lets waypoint evade tell "combat start never recorded"
     // apart from a real recorded position (set in Unit::Attack), so it can
     // resume from the departure point instead of the last reached waypoint.
-    m_combatStart = Geometry::Vector3();
+    Stationed().Anchor(Geometry::Vector3());
 
     for (int i = 0; i < CREATURE_MAX_SPELLS; ++i)
     {
@@ -580,7 +580,7 @@ bool Creature::InitEntry(uint32 Entry, Team team, CreatureData const* data /*=nu
         m_movementInfo.AddMovementFlag(MOVEFLAG_SWIMMING);                      // add swimming movement
 
     // checked at loading
-    m_defaultMovementType = MovementGeneratorType(cinfo->MovementType);
+    Stationed().Wander(MovementGeneratorType(cinfo->MovementType));
 
     return true;
 }
@@ -1490,13 +1490,13 @@ void Creature::SaveToDB(uint32 mapid)
     data.orientation = Where().Facing();
     data.spawntimesecs = Watch().RespawnDelay();
     // prevent add data integrity problems
-    data.spawndist = GetDefaultMovementType() == IDLE_MOTION_TYPE ? 0 : Watch().Radius();
+    data.spawndist = GetDefaultMovementType() == IDLE_MOTION_TYPE ? 0 : Stationed().Radius();
     data.currentwaypoint = 0;
     data.curhealth = GetHealth();
     data.curmana = GetPower(POWER_MANA);
     data.is_dead = Watch().DeadByDefault();
     // prevent add data integrity problems
-    data.movementType = !Watch().Radius() && GetDefaultMovementType() == RANDOM_MOTION_TYPE
+    data.movementType = !Stationed().Radius() && GetDefaultMovementType() == RANDOM_MOTION_TYPE
         ? IDLE_MOTION_TYPE : GetDefaultMovementType();
 
     // updated in DB
@@ -1609,7 +1609,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
     }
 
     SetSpawn(pos);
-    Watch().Radius(data->spawndist);
+    Stationed().Radius(data->spawndist);
 
     Watch().RespawnDelay(data->spawntimesecs);
     Watch().CorpseDelay(std::min(Watch().RespawnDelay() * 9 / 10, Watch().CorpseDelay())); // set corpse delay to 90% of the respawn delay
@@ -1674,7 +1674,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
     SetMeleeDamageSchool(SpellSchools(GetCreatureInfo()->DamageSchool));
 
     // checked at creature_template loading
-    m_defaultMovementType = MovementGeneratorType(data->movementType);
+    Stationed().Wander(MovementGeneratorType(data->movementType));
 
     map->Add(this);
 
@@ -2819,7 +2819,7 @@ void Creature::SetSpawn(CreatureCreatePos const& pos)
 
 void Creature::SetSpawn(Geometry::Vector3 const& at, float facing)
 {
-    m_spawn.EnterFrameOf(Where(), at, facing);
+    Stationed().PlaceInFrameOf(Where(), at, facing);
 
     MANGOS_ASSERT(MaNGOS::IsValidMapCoord(at.x, at.y, at.z) ||
                   PrintCoordinatesError(at.x, at.y, at.z, "respawn"));

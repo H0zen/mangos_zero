@@ -934,8 +934,6 @@ class Creature : public Unit
         bool CanAssistTo(const Unit* u, const Unit* enemy, bool checkfaction = true) const;
         bool CanInitiateAttack();
 
-        MovementGeneratorType GetDefaultMovementType() const { return m_defaultMovementType; }
-        void SetDefaultMovementType(MovementGeneratorType mgt) { m_defaultMovementType = mgt; }
 
         // for use only in LoadHelper, Map::Add Map::CreatureCellRelocation
         Cell const& GetCurrentCell() const { return m_currentCell; }
@@ -995,14 +993,7 @@ class Creature : public Unit
             return spell->GetType() == ACT_ENABLED ? spell->GetAction() : 0;
         }
 
-        /// Where combat began, in the frame it began in. The leash point, and nothing
-        /// composes it -- a creature pulled on a deck leashes to a deck spot.
-        Geometry::Vector3 const& CombatAnchor() const { return m_combatStart; }
-        void SetCombatAnchor(Geometry::Vector3 const& at) { m_combatStart = at; }
 
-        /// Where this creature belongs: its spawn pose, in the frame it spawned in.
-        /// Home movement, wander and leashing all read it, and nothing composes it.
-        Geometry::Placement const& Spawn() const { return m_spawn; }
         void SetSpawn(CreatureCreatePos const& pos);
         void SetSpawn(Geometry::Vector3 const& at, float facing);
         void ResetSpawn();
@@ -1042,7 +1033,6 @@ class Creature : public Unit
 
         void RegeneratePower();
         void RegenerateHealth();
-        MovementGeneratorType m_defaultMovementType;
         Cell m_currentCell;                                 // store current cell where creature listed
         uint32 m_equipmentId;
         uint32 m_PlayerDamageReq;
@@ -1056,9 +1046,7 @@ class Creature : public Unit
         SpellSchoolMask m_meleeDamageSchoolMask;
         uint32 m_originalEntry;
 
-        Geometry::Vector3 m_combatStart;
 
-        Geometry::Placement m_spawn;
 
         bool DisableReputationGain;
 

@@ -70,10 +70,6 @@ class Vigil
         uint32 AggroDelay() const { return m_aggroDelay; }
         void AggroDelay(uint32 milliseconds) { m_aggroDelay = milliseconds; }
 
-        /// How far from where it was put it may wander, and be found.
-        float Radius() const { return m_radius; }
-        void Radius(float yards) { m_radius = yards; }
-
         /// The hour it was killed, to the second.
         time_t KilledAt() const { return m_killedAt; }
         void KilledAt(time_t when) { m_killedAt = when; }
@@ -126,8 +122,6 @@ class Vigil
         uint32 m_respawnDelay = 25;
         uint32 m_corpseDelay = 60;
         uint32 m_aggroDelay = 0;
-
-        float m_radius = 5.0f;
 
         bool m_deadByDefault = false;
 };

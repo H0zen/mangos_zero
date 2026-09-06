@@ -45,6 +45,7 @@ set(TEST_SOURCES
     unit/test_playedtime.cpp
     unit/test_queueslots.cpp
     unit/test_vigil.cpp
+    unit/test_station.cpp
 
     combat/test_school.cpp
     combat/test_roll.cpp

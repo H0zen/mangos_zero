@@ -87,6 +87,7 @@
 #include "CharmInfo.h"
 #include "Stats/Modifiers.h"
 #include "Creature/CreatureRecord.h"
+#include "Creature/Station.h"
 #include "Creature/Vigil.h"
 #include "MotionMaster.h"
 #include "DBCStructure.h"
@@ -1673,8 +1674,23 @@ class Unit : public Occupant
         uint32 GetCorpseDelay() const { return m_vigil.CorpseDelay(); }
         void SetCorpseDelay(uint32 delay) { m_vigil.CorpseDelay(delay); }
 
-        float GetRespawnRadius() const { return m_vigil.Radius(); }
-        void SetRespawnRadius(float dist) { m_vigil.Radius(dist); }
+        float GetRespawnRadius() const { return m_station.Radius(); }
+        void SetRespawnRadius(float dist) { m_station.Radius(dist); }
+
+        /// Where it belongs, how far it may stray, how it moves when left alone.
+        Station& Stationed() { return m_station; }
+        Station const& Stationed() const { return m_station; }
+
+        /// Where this unit belongs: its spawn pose, in the frame it spawned in.
+        Geometry::Placement const& Spawn() const { return m_station.Where(); }
+
+        /// Where combat began, in the frame it began in. The leash point, and
+        /// nothing composes it -- a creature pulled on a deck leashes to a deck spot.
+        Geometry::Vector3 const& CombatAnchor() const { return m_station.Anchor(); }
+        void SetCombatAnchor(Geometry::Vector3 const& at) { m_station.Anchor(at); }
+
+        MovementGeneratorType GetDefaultMovementType() const { return m_station.Wander(); }
+        void SetDefaultMovementType(MovementGeneratorType mgt) { m_station.Wander(mgt); }
 
         time_t GetKilledTime() const { return m_vigil.KilledAt(); }
         void SetKilledTime(time_t when) { m_vigil.KilledAt(when); }
@@ -3659,6 +3675,8 @@ class Unit : public Occupant
         CreatureSubtype m_subtype = CREATURE_SUBTYPE_GENERIC;
 
         Vigil m_vigil;
+
+        Station m_station;
 
         struct WeaponDamageInfo
         {

@@ -109,7 +109,6 @@ TEST_CASE("vigil: a fresh watch carries the world's defaults")
 
     CHECK(watch.RespawnDelay() == 25);
     CHECK(watch.CorpseDelay() == 60);
-    CHECK(watch.Radius() == doctest::Approx(5.0f));
     CHECK_FALSE(watch.DeadByDefault());
     CHECK(watch.KilledAt() == 0);
 }
