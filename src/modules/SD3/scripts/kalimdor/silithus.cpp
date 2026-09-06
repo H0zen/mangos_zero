@@ -910,7 +910,7 @@ struct npc_solenor_the_slayer : public CreatureScript
 
         void EnterEvadeMode() override
         {
-            m_creature->RemoveGuardians();
+            m_creature->Retainers().RemoveGuardians();
 
             ScriptedAI::EnterEvadeMode();
         }
@@ -933,7 +933,7 @@ struct npc_solenor_the_slayer : public CreatureScript
 
         void DemonDespawn(Unit * playerFacing = nullptr,  bool triggered = true)
         {
-            m_creature->RemoveGuardians();
+            m_creature->Retainers().RemoveGuardians();
             uint32 respawnTime = urand(12,15);
             m_creature->SetRespawnDelay(respawnTime * MINUTE);
             m_creature->SetRespawnTime(respawnTime * MINUTE);

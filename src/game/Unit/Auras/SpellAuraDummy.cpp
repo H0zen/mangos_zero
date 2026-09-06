@@ -420,7 +420,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         return;
                     }
 
-                    Totem* totem = target->GetTotem(TOTEM_SLOT_AIR);
+                    Totem* totem = target->Retainers().TotemIn(TOTEM_SLOT_AIR);
 
                     if (totem && apply)
                     {

@@ -202,6 +202,7 @@ void GlobalCooldownMgr::CancelGlobalCooldown(SpellEntry const* spellInfo)
 Unit::Unit()
     : movespline(new Movement::MoveSpline()),
     m_conjured(*this),
+    m_retinue(*this),
     i_motionMaster(this),
     m_ThreatManager(this),
     m_HostileRefManager(this),
@@ -3394,152 +3395,6 @@ void Unit::SetCharm(Unit* pet)
 }
 
 /**
- * @brief Registers a guardian pet under the unit.
- *
- * @param pet The guardian pet to add.
- */
-void Unit::AddGuardian(Pet* pet)
-{
-    m_guardianPets.insert(pet->GetObjectGuid());
-}
-
-/**
- * @brief Unregisters a guardian pet from the unit.
- *
- * @param pet The guardian pet to remove.
- */
-void Unit::RemoveGuardian(Pet* pet)
-{
-    m_guardianPets.erase(pet->GetObjectGuid());
-}
-
-/**
- * @brief Unsummons and unregisters all guardian pets.
- */
-void Unit::RemoveGuardians()
-{
-    while (!m_guardianPets.empty())
-    {
-        ObjectGuid guid = *m_guardianPets.begin();
-
-        if (Pet* pet = GetMap()->GetPet(guid))
-        {
-            pet->Unsummon(PET_SAVE_AS_DELETED, this); // can remove pet guid from m_guardianPets
-        }
-
-        m_guardianPets.erase(guid);
-    }
-}
-
-/**
- * @brief Finds a guardian pet with a given creature entry.
- *
- * @param entry The creature entry to search for.
- * @return The matching guardian pet, or nullptr if none exists.
- */
-Pet* Unit::FindGuardianWithEntry(uint32 entry)
-{
-    for (GuidSet::const_iterator itr = m_guardianPets.begin(); itr != m_guardianPets.end(); ++itr)
-    {
-        if (Pet* pet = GetMap()->GetPet(*itr))
-        {
-            if (pet->GetEntry() == entry)
-            {
-                return pet;
-            }
-        }
-    }
-    return nullptr;
-}
-
-/**
- * @brief Gets a totem unit from a totem slot.
- *
- * @param slot The totem slot.
- * @return The totem unit, or nullptr if none exists.
- */
-Unit* Unit::_GetTotem(TotemSlot slot) const
-{
-    return GetTotem(slot);
-}
-
-/**
- * @brief Gets a totem from a totem slot.
- *
- * @param slot The totem slot.
- * @return The totem, or nullptr if none exists.
- */
-Totem* Unit::GetTotem(TotemSlot slot) const
-{
-    if (!IsInWorld() || !m_TotemSlot[slot])
-    {
-        return nullptr;
-    }
-
-    Creature* totem = GetMap()->GetCreature(m_TotemSlot[slot]);
-    return totem && totem->IsTotem() ? (Totem*)totem : nullptr;
-}
-
-/**
- * @brief Checks whether all totem slots are occupied.
- *
- * @return True if all totem slots are used; otherwise, false.
- */
-bool Unit::IsAllTotemSlotsUsed() const
-{
-    for (int i = 0; i < MAX_TOTEM_SLOT; ++i)
-    {
-        if (!m_TotemSlot[i])
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-/**
- * @brief Registers a totem in a specific slot.
- *
- * @param slot The totem slot.
- * @param totem The totem to register.
- */
-void Unit::_AddTotem(TotemSlot slot, Totem* totem)
-{
-    m_TotemSlot[slot] = totem->GetObjectGuid();
-}
-
-/**
- * @brief Removes a totem from its registered slot.
- *
- * @param totem The totem to unregister.
- */
-void Unit::_RemoveTotem(Totem* totem)
-{
-    for (int i = 0; i < MAX_TOTEM_SLOT; ++i)
-    {
-        if (m_TotemSlot[i] == totem->GetObjectGuid())
-        {
-            m_TotemSlot[i].Clear();
-            break;
-        }
-    }
-}
-
-/**
- * @brief Unsummons all active totems owned by the unit.
- */
-void Unit::UnsummonAllTotems()
-{
-    for (int i = 0; i < MAX_TOTEM_SLOT; ++i)
-    {
-        if (Totem* totem = GetTotem(TotemSlot(i)))
-        {
-            totem->UnSummon();
-        }
-    }
-}
-
-/**
  * @brief Applies healing to a victim and sends the corresponding heal log.
  *
  * @param pVictim The healed unit.
@@ -4189,8 +4044,8 @@ void Unit::SetDeathState(DeathState s)
     if (s == JUST_DIED)
     {
         RemoveAllAurasOnDeath();
-        RemoveGuardians();
-        UnsummonAllTotems();
+        m_retinue.RemoveGuardians();
+        m_retinue.UnsummonAllTotems();
 
         StopMoving(true);
         i_motionMaster.Clear(false, true);
@@ -4531,7 +4386,7 @@ void Unit::RemoveFromWorld()
     {
         Uncharm();
         RemoveTrackedAurasOfOthers();
-        RemoveGuardians();
+        m_retinue.RemoveGuardians();
         m_conjured.RemoveAllObjects();
         m_conjured.RemoveAllAreas();
         CleanupDeletedAuras();

@@ -174,7 +174,7 @@ void Spell::EffectDestroyAllTotems(SpellEffectIndex /*eff_idx*/)
 {
     for (int slot = 0;  slot < MAX_TOTEM_SLOT; ++slot)
     {
-        if (Totem* totem = m_caster->GetTotem(TotemSlot(slot)))
+        if (Totem* totem = m_caster->Retainers().TotemIn(TotemSlot(slot)))
         {
             totem->UnSummon();
         }

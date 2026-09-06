@@ -621,7 +621,7 @@ void spells::TotemDestroyed(Player& who, WorldPacket& recvPacket)
         return;
     }
 
-    if (Totem* totem = who.GetTotem(TotemSlot(slotId)))
+    if (Totem* totem = who.Retainers().TotemIn(TotemSlot(slotId)))
     {
         totem->UnSummon();
     }

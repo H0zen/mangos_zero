@@ -682,7 +682,7 @@ void Pet::Unsummon(PetSaveMode mode, Unit* owner /*= nullptr*/)
                 }
                 break;
             case GUARDIAN_PET:
-                owner->RemoveGuardian(this);
+                owner->Retainers().RemoveGuardian(*this);
                 break;
             default:
                 if (owner->GetPetGuid() == GetObjectGuid())

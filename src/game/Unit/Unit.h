@@ -75,6 +75,7 @@
 #include "SharedDefines.h"
 #include "Conjurations.h"
 #include "Pace.h"
+#include "Retinue.h"
 #include "Stats/StatSheet.h"
 #include "ThreatManager.h"
 #include "HostileRefManager.h"
@@ -2974,33 +2975,9 @@ class Unit : public Occupant
          */
         void SetCharm(Unit* pet);
 
-        /**
-         * Adds a guardian to this \ref Unit which will generally defend this \ref Unit when on a
-         * threat list.
-         * @param pet the guardian to add
-         * \see Unit::m_guardianPets
-         */
-        void AddGuardian(Pet* pet);
-
-        /**
-         * Removes a guardian from this \ref Unit
-         * @param pet the guardian to remove
-         * \see Unit::m_guardianPets
-         */
-        void RemoveGuardian(Pet* pet);
-
-        /**
-         * Removes all current guardians from this \ref Unit
-         */
-        void RemoveGuardians();
-
-        /**
-         * Finds a guardian by it's entry, this is the entry in character.character_pet
-         * @param entry the entry to find
-         * @return the guardian/\ref Pet found or nullptr if there's no such entry in the db
-         * \todo Is it the correct entry
-         */
-        Pet* FindGuardianWithEntry(uint32 entry);
+        /// The guardians it keeps and the totems it has planted.
+        Retinue& Retainers() { return m_retinue; }
+        Retinue const& Retainers() const { return m_retinue; }
 
         /**
          * Is this \ref Unit charmed?
@@ -3025,39 +3002,6 @@ class Unit : public Occupant
         /// The bar it is driven from, made the first time it is asked for.
         CharmInfo& InitCharmInfo();
 
-        /**
-         * Get's the \ref ObjectGuid for a certain totem type that this \ref Unit has spawned
-         * @param slot the slot to get the \ref ObjectGuid for
-         * @return the \ref ObjectGuid for the given totem slot
-         */
-        ObjectGuid const& GetTotemGuid(TotemSlot slot) const { return m_TotemSlot[slot]; }
-
-        /**
-         * Gets a certain \ref Totem that this \ref Unit has spawned
-         * @param slot the slot to get the \ref Totem for
-         * @return The requested totem if there is any spawned, nullptr otherwise
-         */
-        Totem* GetTotem(TotemSlot slot) const;
-
-        /**
-         * @return True if all totems slots are used (spawned), false otherwise
-         */
-        bool IsAllTotemSlotsUsed() const;
-
-        /**
-         * This is internal code that should only be called from the \ref Totem summon code
-         * @param slot
-         * @param totem
-         * \internal
-         */
-        void _AddTotem(TotemSlot slot, Totem* totem);       // only for call from Totem summon code
-
-        /**
-         * This is internal code that should only be called from the \ref Totem class.
-         * @param totem
-         * \internal
-         */
-        void _RemoveTotem(Totem* totem);                    // only for call from Totem class
 
         /**
          * This will call the given function for all controlled \ref Unit s, for an example of
@@ -3514,7 +3458,6 @@ class Unit : public Occupant
         float GetAPMultiplier(WeaponAttackType attType, bool normalized);
         void ModifyAuraState(AuraState flag, bool apply);
         bool HasAuraState(AuraState flag) const { return HasFlag(UNIT_FIELD_AURASTATE, 1 << (flag - 1)); }
-        void UnsummonAllTotems();
         Unit* SelectMagnetTarget(Unit* victim, Spell* spell = nullptr, SpellEffectIndex eff = EFFECT_INDEX_0);
 
         int32 SpellBonusWithCoeffs(Unit* pCaster, SpellEntry const* spellProto, int32 total, int32 benefit, int32 ap_benefit, DamageEffectType damagetype, bool donePart, Spell const* spell = nullptr);
@@ -3743,7 +3686,6 @@ class Unit : public Occupant
         void CleanupDeletedAuras();
         void UpdateSplineMovement(uint32 t_diff);
 
-        Unit* _GetTotem(TotemSlot slot) const;              // for templated function without include need
         Pet* _GetPet(ObjectGuid guid) const;                // for templated function without include need
 
         // Wrapper called by DealDamage when a creature is killed
@@ -3770,9 +3712,8 @@ class Unit : public Occupant
 
         ComboPointHolderSet m_ComboPointHolders;
 
-        GuidSet m_guardianPets;
+        Retinue m_retinue;
 
-        ObjectGuid m_TotemSlot[MAX_TOTEM_SLOT];
 
         ObjectGuid m_fixateTargetGuid;                      //< Stores the Guid of a fixated target
 
@@ -3814,7 +3755,8 @@ template<typename Func>
 
     if (controlledMask & CONTROLLED_GUARDIANS)
     {
-        for (GuidSet::const_iterator itr = m_guardianPets.begin(); itr != m_guardianPets.end();)
+        GuidSet const& guardians = m_retinue.Guardians();
+        for (GuidSet::const_iterator itr = guardians.begin(); itr != guardians.end();)
         {
             if (Pet* guardian = _GetPet(*(itr++)))
             {
@@ -3827,7 +3769,7 @@ template<typename Func>
     {
         for (int i = 0; i < MAX_TOTEM_SLOT; ++i)
         {
-            if (Unit* totem = _GetTotem(TotemSlot(i)))
+            if (Unit* totem = m_retinue.UnitIn(TotemSlot(i)))
             {
                 func(totem);
             }
@@ -3870,7 +3812,8 @@ template<typename Func>
 
     if (controlledMask & CONTROLLED_GUARDIANS)
     {
-        for (GuidSet::const_iterator itr = m_guardianPets.begin(); itr != m_guardianPets.end();)
+        GuidSet const& guardians = m_retinue.Guardians();
+        for (GuidSet::const_iterator itr = guardians.begin(); itr != guardians.end();)
         {
             if (Pet const* guardian = _GetPet(*(itr++)))
             {
@@ -3886,7 +3829,7 @@ template<typename Func>
     {
         for (int i = 0; i < MAX_TOTEM_SLOT; ++i)
         {
-            if (Unit const* totem = _GetTotem(TotemSlot(i)))
+            if (Unit const* totem = m_retinue.UnitIn(TotemSlot(i)))
             {
                 if (func(totem))
                 {

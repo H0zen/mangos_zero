@@ -180,7 +180,7 @@ void Totem::UnSummon()
 
     if (Unit* owner = GetOwner())
     {
-        owner->_RemoveTotem(this);
+        owner->Retainers().TakeTotem(*this);
         owner->RemoveAuras(GetSpell());
 
         // remove aura all party members too

@@ -1729,7 +1729,7 @@ void Player::RemoveFromWorld()
     if (IsInWorld())
     {
         ///- Release charmed creatures, unsummon totems and remove pets/guardians
-        UnsummonAllTotems();
+        Retainers().UnsummonAllTotems();
         RemoveMiniPet();
     }
 
