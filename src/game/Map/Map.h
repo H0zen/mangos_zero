@@ -440,43 +440,8 @@ class Map : public GridRefManager<NGridType>
         bool GetRandomPointUnderWater(float& x, float& y, float& z, float radius, GridMapLiquidData& liquid_status);
 
 
-        struct CellEnvelopeStats
-        {
-            uint32 envelopeLoads = 0;     // cells loaded via the anchor/envelope path
-            uint32 accretions = 0;        // same-grid accretion events
-            uint32 fills = 0;             // ENVELOPE→FULL fills triggered by players
-            uint32 cellsUnloaded = 0;     // cells torn down (downgrade + trailing)
-            uint32 downgrades = 0;        // FULL→ENVELOPE downgrades performed
-            uint32 trailingUnloads = 0;   // trailing-unload events (mover advanced)
-            uint32 anomalyAnchorOutside = 0;
-            uint32 anomalyScanPartial = 0;
-        };
-        CellEnvelopeStats const& GetCellEnvelopeStats() const { return m_cellEnvStats; }
-        CellEnvelopeStats& CellEnvStats() { return m_cellEnvStats; }
-
-        // true if the grid is in ENVELOPE state (exists, not FULL, has loaded cells)
-        bool IsGridEnvelope(uint32 gridX, uint32 gridY) const
-        {
-            NGridType* grid = getNGrid(gridX, gridY);
-            return grid && !grid->isGridObjectDataLoaded() && grid->loadedCellCount() > 0;
-        }
-
-        static bool ShouldUseLivingWorldCellEnvelope(bool cellEnvelopeEnabled, bool isContinent, bool forceLoadMap)
-        {
-            return cellEnvelopeEnabled && isContinent && !forceLoadMap;
-        }
-
-        bool UseLivingWorldCellEnvelope() const;
-        uint32 GetGridLoadedCellCount(uint32 gridX, uint32 gridY) const
-        {
-            NGridType* grid = getNGrid(gridX, gridY);
-            return grid ? grid->loadedCellCount() : 0;
-        }
-
-        bool IsCellAnchorProtected(uint32 gridX, uint32 gridY, uint32 cellX, uint32 cellY) const;
         bool HasPlayerInOrAroundGrid(uint32 gridX, uint32 gridY) const;
         bool IsCellLoaded(float x, float y) const;
-        void DowngradeGridToEnvelope(NGridType* grid, uint32 gridX, uint32 gridY);
 
 
     private:
@@ -490,14 +455,10 @@ class Map : public GridRefManager<NGridType>
         void SendRemoveTransports(Player* player);
 
         bool CreatureCellRelocation(Creature* creature, const Cell &new_cell);
-        void MaybePromoteEnvelopeGridForPlayer(uint32 gridX, uint32 gridY);
 
         bool loaded(const GridPair&) const;
         void EnsureGridCreated(const GridPair&);
         bool EnsureGridLoaded(Cell const&);
-        bool EnsureCellEnvelopeLoaded(const Cell& centerCell);
-        void UnloadCell(NGridType* grid, uint32 cellX, uint32 cellY);
-        void ProcessPendingCellUnloads();
 
         void buildNGridLinkage(NGridType* pNGridType) { pNGridType->link(this); }
 
@@ -516,7 +477,6 @@ class Map : public GridRefManager<NGridType>
         /// A vessel writes her own Add(Player*): her passengers arrive on a map their client
         /// has never heard of, so nothing an ordinary map sends on entry applies.
         void EnsureGridLoadedAtEnter(Cell const&, Player* player = nullptr);
-        void PromoteEnvelopeNeighboursToFull(uint32 gridX, uint32 gridY);
 
         NGridType* getNGrid(uint32 x, uint32 y) const
         {
@@ -547,7 +507,6 @@ class Map : public GridRefManager<NGridType>
 
     private:
         time_t i_gridExpiry;
-        CellEnvelopeStats m_cellEnvStats;
 
         /// Written in the serial phase, drained by this map in the parallel one.
         MapMailbox m_mailbox;
@@ -556,14 +515,6 @@ class Map : public GridRefManager<NGridType>
         /// The last few hundred ticks of this map, and how many ran long.
         metrics::TickRecord m_ticks;
 
-        struct PendingCellUnload
-        {
-            uint32 gridX;
-            uint32 gridY;
-            uint32 cellX;
-            uint32 cellY;
-        };
-        std::vector<PendingCellUnload> m_pendingCellUnloads;
 
         NGridType* i_grids[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 

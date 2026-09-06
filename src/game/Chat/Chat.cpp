@@ -287,7 +287,6 @@ ChatCommand* ChatHandler::getCommandTable()
     {
         { "info",           SEC_GAMEMASTER,     false, &ChatHandler::HandleGridInfoCommand,            "", nullptr },
         { "anchors",        SEC_GAMEMASTER,     false, &ChatHandler::HandleGridAnchorsCommand,         "", nullptr },
-        { "lwstats",        SEC_GAMEMASTER,     false, &ChatHandler::HandleGridLwStatsCommand,         "", nullptr },
         { nullptr,             0,                  false, nullptr,                                           "", nullptr }
     };
 

@@ -144,11 +144,6 @@ class NGrid
             i_cellLoaded.set(x * N + y, on);
         }
 
-        uint32 loadedCellCount() const
-        {
-            return uint32(i_cellLoaded.count());
-        }
-
         void markGridObjectDataLoading()
         {
             i_GridObjectDataLoaded = true;
@@ -181,7 +176,6 @@ class NGrid
                 --i_playerCount;
             }
         }
-        TimeTracker& getDowngradeTimer() { return i_downgradeTimer; }
 
         template<class SPECIFIC_OBJECT>
         void AddWorldObject(const uint32 x, const uint32 y, SPECIFIC_OBJECT* obj)
@@ -258,5 +252,4 @@ class NGrid
         bool i_GridObjectDataLoaded;
         std::bitset<N * N> i_cellLoaded; /**< per-cell DB-object-loaded flags; bit (x*N+y) set ⇔ cell (x,y) instantiated */
         uint16 i_playerCount = 0;
-        TimeTracker i_downgradeTimer;
 };

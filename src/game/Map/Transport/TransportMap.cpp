@@ -426,7 +426,6 @@ bool TransportMap::Add(Player* passenger, InitialWorldEntryHook* initialEntry)
     CellPair p = MaNGOS::ComputeCellPair(passenger->Where().X(), passenger->Where().Y());
     Cell cell(p);
     EnsureGridLoadedAtEnter(cell, passenger);
-    PromoteEnvelopeNeighboursToFull(cell.GridX(), cell.GridY());
     passenger->AddToWorld();
 
     // As on an ordinary map, derive the client-visible world anchor only after

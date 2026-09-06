@@ -95,7 +95,6 @@ LogFilterData logFilterData[LOG_FILTER_COUNT] =
     { "map_loading",         "LogFilter_MapsLoading",        true  },
     { "event_ai_dev",        "LogFilter_EventAiDev",         true  },
     { "calendar",            "LogFilter_Calendar",           true  },
-    { "cell_envelope",       "LogFilter_CellEnvelope",       true  },
     { "grid_add",            "LogFilter_GridAdd",            true  },
     { "db_scripts",          "LogFilter_DbScripts",          true  },
     { "deck_minions",        "LogFilter_DeckMinions",        true  },
