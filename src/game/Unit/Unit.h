@@ -73,6 +73,7 @@
 #include "Unit/Auras/Diminishing.h"
 #include "UpdateFields.h"
 #include "SharedDefines.h"
+#include "Conjurations.h"
 #include "Stats/StatSheet.h"
 #include "ThreatManager.h"
 #include "HostileRefManager.h"
@@ -3518,19 +3519,9 @@ class Unit : public Occupant
         void UpdateModelData();
         float GetObjectScaleMod() const;
 
-        DynamicObject* GetDynObject(uint32 spellId, SpellEffectIndex effIndex);
-        DynamicObject* GetDynObject(uint32 spellId);
-        void AddDynObject(DynamicObject* dynObj);
-        void RemoveDynObject(uint32 spellid);
-        void RemoveDynObjectWithGUID(ObjectGuid guid) { m_dynObjGUIDs.remove(guid); }
-        void RemoveAllDynObjects();
-
-        GameObject* GetGameObject(uint32 spellId) const;
-        void AddGameObject(GameObject* gameObj);
-        void AddWildGameObject(GameObject* gameObj);
-        void RemoveGameObject(GameObject* gameObj, bool del);
-        void RemoveGameObject(uint32 spellid, bool del);
-        void RemoveAllGameObjects();
+        /// What its spells have left standing in the world.
+        Conjurations& Conjured() { return m_conjured; }
+        Conjurations const& Conjured() const { return m_conjured; }
 
         uint32 CalculateDamage(WeaponAttackType attType, bool normalized);
         float GetAPMultiplier(WeaponAttackType attType, bool normalized);
@@ -3727,12 +3718,7 @@ class Unit : public Occupant
         // Store Auras for which the target must be tracked
         TrackedAuraTargetMap m_trackedAuraTargets[MAX_TRACKED_AURA_TYPES];
 
-        GuidList m_dynObjGUIDs;
-
-        typedef std::list<GameObject*> GameObjectList;
-        GameObjectList m_gameObj;
-        typedef std::map<uint32, ObjectGuid> WildGameObjectMap;
-        WildGameObjectMap m_wildGameObjs;
+        Conjurations m_conjured;
         bool m_isSorted;
         uint32 m_transform;
 

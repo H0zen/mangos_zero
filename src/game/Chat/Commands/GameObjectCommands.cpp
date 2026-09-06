@@ -90,7 +90,7 @@ bool ChatHandler::HandleGameObjectDeleteCommand(char* args)
             return false;
         }
 
-        owner->RemoveGameObject(obj, false);
+        owner->Conjured().RemoveObject(obj, false);
     }
 
     obj->SetRespawnTime(0);                                 // not save respawn time

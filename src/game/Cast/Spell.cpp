@@ -848,7 +848,7 @@ void Spell::DelayedChannel()
     for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
     {
         // partially interrupt persistent area auras
-        if (DynamicObject* dynObj = m_caster->GetDynObject(m_spellInfo->ID, SpellEffectIndex(j)))
+        if (DynamicObject* dynObj = m_caster->Conjured().AreaOf(m_spellInfo->ID, SpellEffectIndex(j)))
         {
             dynObj->Delay(delaytime);
         }

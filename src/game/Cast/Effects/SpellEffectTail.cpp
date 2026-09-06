@@ -364,7 +364,7 @@ void Spell::EffectTransmitted(SpellEffectIndex eff_idx)
         case GAMEOBJECT_TYPE_FISHINGNODE:
         {
             m_caster->SetChannelObjectGuid(pGameObj->GetObjectGuid());
-            m_caster->AddGameObject(pGameObj);              // will removed at spell cancel
+            m_caster->Conjured().AddObject(pGameObj);              // will removed at spell cancel
 
             // end time of range when possible catch fish (FISHING_BOBBER_READY_TIME..GetDuration(m_spellInfo))
             // start time == fish-FISHING_BOBBER_READY_TIME (0..GetDuration(m_spellInfo)-FISHING_BOBBER_READY_TIME)
@@ -385,13 +385,13 @@ void Spell::EffectTransmitted(SpellEffectIndex eff_idx)
             if (m_caster->IsPlayer())
             {
                 pGameObj->Behaves<RitualBehaviour>()->Tally().UsedBy(m_caster->GetObjectGuid());
-                m_caster->AddGameObject(pGameObj);          // will removed at spell cancel
+                m_caster->Conjured().AddObject(pGameObj);          // will removed at spell cancel
             }
             break;
         }
         case GAMEOBJECT_TYPE_SPELLCASTER:
         {
-            m_caster->AddGameObject(pGameObj);
+            m_caster->Conjured().AddObject(pGameObj);
             break;
         }
         case GAMEOBJECT_TYPE_FISHINGHOLE:
@@ -408,7 +408,7 @@ void Spell::EffectTransmitted(SpellEffectIndex eff_idx)
     pGameObj->SetSpellId(m_spellInfo->ID);
 
     DEBUG_LOG("AddObject at SpellEfects.cpp EffectTransmitted");
-    // m_caster->AddGameObject(pGameObj);
+    // m_caster->Conjured().AddObject(pGameObj);
     // m_ObjToDel.push_back(pGameObj);
 
     cMap->Add(pGameObj);

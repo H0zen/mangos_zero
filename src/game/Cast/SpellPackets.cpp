@@ -571,7 +571,7 @@ void Spell::SendChannelStart(uint32 duration)
     // select dynobject created by first effect if any
     if (m_spellInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_PERSISTENT_AREA_AURA)
     {
-        target = m_caster->GetDynObject(m_spellInfo->ID, EFFECT_INDEX_0);
+        target = m_caster->Conjured().AreaOf(m_spellInfo->ID, EFFECT_INDEX_0);
     }
     // select first not resisted target from target list for _0_ effect
     else if (!m_UniqueTargetInfo.empty())

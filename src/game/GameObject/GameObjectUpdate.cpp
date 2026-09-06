@@ -104,7 +104,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     {
                         if (Unit* owner = GetOwner())
                         {
-                            owner->RemoveGameObject(this, false);
+                            owner->Conjured().RemoveObject(this, false);
                         }
                         Delete();
                     }
@@ -161,7 +161,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
             {
                 if (Unit* owner = GetOwner())
                 {
-                    owner->RemoveGameObject(this, false);
+                    owner->Conjured().RemoveObject(this, false);
                 }
                 Delete();
                 return;

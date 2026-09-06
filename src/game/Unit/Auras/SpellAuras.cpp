@@ -706,7 +706,7 @@ void PersistentAreaAura::Update(uint32 diff)
     // or if the target moves too far from the dynamic object
     if (Unit* caster = GetCaster())
     {
-        DynamicObject* dynObj = caster->GetDynObject(GetId(), GetEffIndex());
+        DynamicObject* dynObj = caster->Conjured().AreaOf(GetId(), GetEffIndex());
         if (dynObj)
         {
             if (!InReach(*(GetTarget()), *dynObj, dynObj->GetRadius()))
@@ -2423,7 +2423,7 @@ void SpellAuraHolder::_RemoveSpellAuraHolder()
 
     if (caster && IsPersistent())
     {
-        DynamicObject* dynObj = caster->GetDynObject(GetId());
+        DynamicObject* dynObj = caster->Conjured().AreaOf(GetId());
         if (dynObj)
         {
             dynObj->RemoveAffected(m_target);

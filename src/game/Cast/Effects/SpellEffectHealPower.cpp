@@ -575,7 +575,7 @@ void Spell::EffectPersistentAA(SpellEffectIndex eff_idx)
         return;
     }
 
-    pCaster->AddDynObject(dynObj);
+    pCaster->Conjured().AddArea(dynObj);
     pCaster->GetMap()->Add(dynObj);
 }
 

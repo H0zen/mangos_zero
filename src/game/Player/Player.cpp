@@ -1572,7 +1572,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
                 }
             }
             // remove all dyn objects
-            RemoveAllDynObjects();
+            Conjured().RemoveAllAreas();
 
             // stop spellcasting
             // not attempt interrupt teleportation spell at caster teleport
@@ -1752,8 +1752,7 @@ void Player::RemoveFromWorld()
         }
     }
 
-    // remove duel before calling Unit::RemoveFromWorld
-    // otherwise there will be an existing duel flag pointer but no entry in m_gameObj
+    // the duel goes first, or its flag is left pointed at and no longer his
     Duelling().Complete(DUEL_INTERRUPTED);
 
     ///- Do not add/remove the player from the object storage

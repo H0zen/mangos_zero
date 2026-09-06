@@ -483,7 +483,7 @@ ObjectGridStoper::Visit(CreatureMapType& m)
     {
         iter->getSource()->CombatStop();
         iter->getSource()->DeleteThreatList();
-        iter->getSource()->RemoveAllDynObjects();
+        iter->getSource()->Conjured().RemoveAllAreas();
     }
 }
 

@@ -201,6 +201,7 @@ void GlobalCooldownMgr::CancelGlobalCooldown(SpellEntry const* spellInfo)
 Unit::Unit()
     : movespline(new Movement::MoveSpline()),
     m_charmInfo(nullptr),
+    m_conjured(*this),
     i_motionMaster(this),
     m_ThreatManager(this),
     m_HostileRefManager(this),
@@ -316,8 +317,7 @@ Unit::~Unit()
     delete movespline;
 
     // those should be already removed at "RemoveFromWorld()" call
-    MANGOS_ASSERT(m_gameObj.size() == 0);
-    MANGOS_ASSERT(m_dynObjGUIDs.size() == 0);
+    MANGOS_ASSERT(m_conjured.Empty());
     MANGOS_ASSERT(m_deletedAuras.size() == 0);
     MANGOS_ASSERT(m_deletedHolders.size() == 0);
 }
@@ -2046,26 +2046,7 @@ void Unit::_UpdateSpells(uint32 time)
         }
     }
 
-    if (!m_gameObj.empty())
-    {
-        GameObjectList::iterator ite1, dnext1;
-        for (ite1 = m_gameObj.begin(); ite1 != m_gameObj.end(); ite1 = dnext1)
-        {
-            dnext1 = ite1;
-            //(*i)->Update( difftime );
-            if (!(*ite1)->isSpawned())
-            {
-                (*ite1)->SetOwnerGuid(ObjectGuid());
-                (*ite1)->SetRespawnTime(0);
-                (*ite1)->Delete();
-                dnext1 = m_gameObj.erase(ite1);
-            }
-            else
-            {
-                ++dnext1;
-            }
-        }
-    }
+    m_conjured.RemoveDespawnedObjects();
 }
 
 /**
@@ -4556,8 +4537,8 @@ void Unit::RemoveFromWorld()
         Uncharm();
         RemoveTrackedAurasOfOthers();
         RemoveGuardians();
-        RemoveAllGameObjects();
-        RemoveAllDynObjects();
+        m_conjured.RemoveAllObjects();
+        m_conjured.RemoveAllAreas();
         CleanupDeletedAuras();
         GetViewPoint().Event_RemovedFromWorld();
     }

@@ -133,7 +133,7 @@ void GameObject::RemoveFromWorld()
         {
             if (Unit* owner = ObjectLookup::GetUnit(*this, owner_guid))
             {
-                owner->RemoveGameObject(this, false);
+                owner->Conjured().RemoveObject(this, false);
             }
             else
             {

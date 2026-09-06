@@ -142,7 +142,7 @@ void Duel::Complete(DuelCompleteType type)
 
     if (GameObject* flag = m_owner.GetMap()->GetGameObject(m_owner.GetDuelArbiterGuid()))
     {
-        m_initiator->RemoveGameObject(flag, true);
+        m_initiator->Conjured().RemoveObject(flag, true);
     }
 
     // everything harmful either man laid on the other since it began comes off

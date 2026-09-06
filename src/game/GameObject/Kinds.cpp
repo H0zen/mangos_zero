@@ -521,7 +521,7 @@ GameObjectBehaviour::Casting FishingNodeBehaviour::UsedBy(Unit* user, bool scrip
             if (success || sWorld.getConfig(CONFIG_BOOL_SKILL_FAIL_LOOT_FISHING))
             {
                 // prevent removing GO at spell cancel
-                player->RemoveGameObject(&It(), false);
+                player->Conjured().RemoveObject(&It(), false);
                 It().SetOwnerGuid(player->GetObjectGuid());
 
                 if (fishingHole)                    // will set at success only

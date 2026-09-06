@@ -136,8 +136,8 @@ void Spell::cancel()
     }
 
     finish(false);
-    m_caster->RemoveDynObject(m_spellInfo->ID);
-    m_caster->RemoveGameObject(m_spellInfo->ID, true);
+    m_caster->Conjured().RemoveAreas(m_spellInfo->ID);
+    m_caster->Conjured().RemoveObjects(m_spellInfo->ID, true);
 }
 
 /**

@@ -396,7 +396,7 @@ void Spell::EffectAddFarsight(SpellEffectIndex eff_idx)
         return;
     }
 
-    m_caster->AddDynObject(dynObj);
+    m_caster->Conjured().AddArea(dynObj);
     m_caster->GetMap()->Add(dynObj);
 
     ((Player*)m_caster)->GetCamera().SetView(dynObj);

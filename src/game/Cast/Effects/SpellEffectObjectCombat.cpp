@@ -348,7 +348,7 @@ void Spell::EffectDuel(SpellEffectIndex eff_idx)
     pGameObj->SetRespawnTime(duration > 0 ? duration / IN_MILLISECONDS : 0);
     pGameObj->SetSpellId(m_spellInfo->ID);
 
-    m_caster->AddGameObject(pGameObj);
+    m_caster->Conjured().AddObject(pGameObj);
     map->Add(pGameObj);
     pGameObj->AIM_Initialize();
     // END
@@ -785,7 +785,7 @@ void Spell::EffectSummonObject(SpellEffectIndex eff_idx)
     int32 duration = GetSpellDuration(m_spellInfo);
     pGameObj->SetRespawnTime(duration > 0 ? duration / IN_MILLISECONDS : 0);
     pGameObj->SetSpellId(m_spellInfo->ID);
-    m_caster->AddGameObject(pGameObj);
+    m_caster->Conjured().AddObject(pGameObj);
 
     map->Add(pGameObj);
     pGameObj->AIM_Initialize();

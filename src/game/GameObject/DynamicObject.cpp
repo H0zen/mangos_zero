@@ -229,7 +229,7 @@ void DynamicObject::Update(uint32 /*update_diff*/, uint32 p_time)
 
     if (deleteThis)
     {
-        caster->RemoveDynObjectWithGUID(GetObjectGuid());
+        caster->Conjured().Forget(GetObjectGuid());
         Delete();
     }
 }
