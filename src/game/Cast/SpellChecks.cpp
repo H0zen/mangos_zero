@@ -1137,7 +1137,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 }
 
                 Creature* creature = (Creature*)m_targets.getUnitTarget();
-                if (creature->GetCreatureType() != CREATURE_TYPE_CRITTER && (!creature->lootForBody || creature->lootForSkin || !creature->loot.empty()))
+                if (creature->GetCreatureType() != CREATURE_TYPE_CRITTER && (!creature->Taking().BodyTaken() || creature->Taking().Skinned() || !creature->loot.empty()))
                 {
                     return SPELL_FAILED_TARGET_NOT_LOOTED;
                 }

@@ -237,21 +237,14 @@ bool CreatureCreatePos::PlaceOn(Creature* cr) const
 Creature::Creature(CreatureSubtype subtype) : Unit(),
     i_AI(nullptr),
     loot(this),
-    lootForPickPocketed(false), lootForBody(false), lootForSkin(false),
-    m_lootMoney(0),
     m_equipmentId(0),
     m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false),
     m_AI_locked(false), m_temporaryFactionFlags(TEMPFACTION_NONE),
     m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0),
-    m_PlayerDamageReq(0), m_sheet(*this), m_links(*this), m_pace(*this)
+    m_sheet(*this), m_links(*this), m_pace(*this)
 {
     m_subtype = subtype;
 
-    /* Loot data */
-    hasBeenLootedOnce = false;
-    assignedLooter = 0;
-
-    Watch().KilledAt(0);
     m_regenTimer = 200;
 
     // Zero sentinel: lets waypoint evade tell "combat start never recorded"
@@ -416,8 +409,8 @@ void Creature::RemoveCorpse(bool inPlace)
 
     /* Loot data */
     Watch().KilledAt(0);
-    hasBeenLootedOnce = false;
-    assignedLooter = 0;
+    Taking().Opened(false);
+    Taking().AssignedTo(0);
     m_claim.StakedBy(nullptr);
 
     RemoveDynFlag(UNIT_DYNFLAG_TAPPED);
@@ -789,9 +782,9 @@ void Creature::Update(uint32 update_diff, uint32 diff)
                 DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Respawning...");
                 Watch().RespawnsAt(0);
                 Watch().AggroDelay(sWorld.getConfig(CONFIG_UINT32_CREATURE_RESPAWN_AGGRO_DELAY));
-                lootForPickPocketed = false;
-                lootForBody         = false;
-                lootForSkin         = false;
+                Taking().PocketsPicked(false);
+                Taking().BodyTaken(false);
+                Taking().Skinned(false);
 
                 // Clear possible auras having IsDeathPersistent() attribute
                 RemoveAllAuras();
@@ -1353,7 +1346,7 @@ void Creature::PrepareBodyLootState()
     loot.clear();
 
     // if have normal loot then prepare it access
-    if (!lootForBody)
+    if (!Taking().BodyTaken())
     {
         // have normal loot
         if (GetCreatureInfo()->MaxLootGold > 0 || GetCreatureInfo()->LootId || (GetCreatureType() != CREATURE_TYPE_CRITTER && (GetCreatureInfo()->SkinningLootId && sWorld.getConfig(CONFIG_BOOL_CORPSE_EMPTY_LOOT_SHOW))))
@@ -1363,10 +1356,10 @@ void Creature::PrepareBodyLootState()
         }
     }
 
-    lootForBody = true; // pass this loot mode
+    Taking().BodyTaken(true); // pass this loot mode
 
     // if not have normal loot allow skinning if need
-    if (!lootForSkin && GetCreatureInfo()->SkinningLootId)
+    if (!Taking().Skinned() && GetCreatureInfo()->SkinningLootId)
     {
         RemoveDynFlag(UNIT_DYNFLAG_LOOTABLE);
         SetUnitFlag(UNIT_FLAG_SKINNABLE);
@@ -1538,10 +1531,8 @@ void Creature::SaveToDB(uint32 mapid)
  */
 void Creature::LowerPlayerDamageReq(uint32 unDamage)
 {
-    if (m_PlayerDamageReq)
-    {
-        m_PlayerDamageReq > unDamage ? m_PlayerDamageReq -= unDamage : m_PlayerDamageReq = 0;
-    }
+    uint32 const owed = Taking().DamageOwed();
+    Taking().DamageOwed(owed > unDamage ? owed - unDamage : 0);
 }
 
 
@@ -1927,7 +1918,7 @@ void Creature::SetDeathState(DeathState s)
         // Dynamic flags must be set on Tapped by default.
         SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
         LoadCreatureAddon(true);
-        ResetPlayerDamageReq();
+        Taking().DamageOwed(GetHealth() / 2);
 
         // Flags after LoadCreatureAddon. Any spell in *addon
         // will not be able to adjust these.
@@ -2843,7 +2834,7 @@ void Creature::AllLootRemovedFromCorpse()
         if (LootTemplates_Skinning.HaveLootFor(GetCreatureInfo()->LootId))
         {
             // Check for Skinning Loot, and set flag is loot exists
-            if (!lootForSkin)
+            if (!Taking().Skinned())
             {
                 HasUnitFlag(UNIT_FLAG_SKINNABLE);
             }

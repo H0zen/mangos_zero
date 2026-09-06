@@ -361,9 +361,9 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 
             if (loot_type == LOOT_PICKPOCKETING)
             {
-                if (!creature->lootForPickPocketed)
+                if (!creature->Taking().PocketsPicked())
                 {
-                    creature->lootForPickPocketed = true;
+                    creature->Taking().PocketsPicked(true);
                     loot->clear();
 
                     if (uint32 lootid = creatureInfo->PickpocketLootId)
@@ -388,15 +388,15 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
                     recipient = this;
                 }
 
-                if (creature->lootForPickPocketed)
+                if (creature->Taking().PocketsPicked())
                 {
-                    creature->lootForPickPocketed = false;
+                    creature->Taking().PocketsPicked(false);
                     loot->clear();
                 }
 
-                if (!creature->lootForBody)
+                if (!creature->Taking().BodyTaken())
                 {
-                    creature->lootForBody = true;
+                    creature->Taking().BodyTaken(true);
                     loot->clear();
 
                     if (uint32 lootid = creatureInfo->LootId)
@@ -429,17 +429,17 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
                 }
 
                 //if loot for skin is true loot type must be skinning, so loot_type skinning needs to be set in case of reopening the loot window, after bags full or loot not taken
-                if (creature->lootForSkin)
+                if (creature->Taking().Skinned())
                 {
                     loot_type = LOOT_SKINNING;
                 }
 
-                // possible only if creature->lootForBody && loot->empty() at spell cast check
+                // possible only if creature->Taking().BodyTaken() && loot->empty() at spell cast check
                 if (loot_type == LOOT_SKINNING)
                 {
-                    if (!creature->lootForSkin)
+                    if (!creature->Taking().Skinned())
                     {
-                        creature->lootForSkin = true;
+                        creature->Taking().Skinned(true);
                         loot->clear();
                         loot->FillLoot(creatureInfo->SkinningLootId, LootTemplates_Skinning, this, false);
 

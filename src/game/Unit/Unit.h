@@ -87,6 +87,7 @@
 #include "CharmInfo.h"
 #include "Stats/Modifiers.h"
 #include "Creature/CreatureRecord.h"
+#include "Creature/Pickings.h"
 #include "Creature/Station.h"
 #include "Creature/Vigil.h"
 #include "MotionMaster.h"
@@ -1680,6 +1681,10 @@ class Unit : public Occupant
         /// Where it belongs, how far it may stray, how it moves when left alone.
         Station& Stationed() { return m_station; }
         Station const& Stationed() const { return m_station; }
+
+        /// What can still be taken off it, and what has been already.
+        Pickings& Taking() { return m_pickings; }
+        Pickings const& Taking() const { return m_pickings; }
 
         /// Where this unit belongs: its spawn pose, in the frame it spawned in.
         Geometry::Placement const& Spawn() const { return m_station.Where(); }
@@ -3677,6 +3682,8 @@ class Unit : public Occupant
         Vigil m_vigil;
 
         Station m_station;
+
+        Pickings m_pickings;
 
         struct WeaponDamageInfo
         {

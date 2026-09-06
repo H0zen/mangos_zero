@@ -62,7 +62,7 @@ CreatureAI::~CreatureAI()
  */
 void CreatureAI::EnterEvadeMode()
 {
-    m_creature->ResetPlayerDamageReq();
+    m_creature->Taking().DamageOwed(m_creature->GetHealth() / 2);
 }
 
 /**

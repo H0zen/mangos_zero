@@ -734,7 +734,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 bool Player::isAllowedToLoot(Creature* creature)
 {
     /* Nobody tapped the monster (kill either solo or mostly by another NPC) */
-    if (!creature->HasDynFlag(UNIT_DYNFLAG_TAPPED) || !creature->IsDamageEnoughForLootingAndReward())
+    if (!creature->HasDynFlag(UNIT_DYNFLAG_TAPPED) || !creature->Taking().EnoughPlayerDamage())
     {
         return false;
     }
@@ -795,17 +795,17 @@ bool Player::isAllowedToLoot(Creature* creature)
                     }
                     /** This is set to true after the looter (chosen below) has closed their loot window
                      * If this is true, allow everyone else in the group to loot the corpse */
-                    else if (creature->hasBeenLootedOnce)
+                    else if (creature->Taking().Opened())
                     {
                         return true;
                     }
                     /* If the assigned looter's GUID is equal to ours */
-                    else if (creature->assignedLooter == GetGUIDLow())
+                    else if (creature->Taking().AssignedTo() == GetGUIDLow())
                     {
                         return true;
                     }
                     /* If the creature already has an assigned looter and that looter isn't us */
-                    else if (creature->assignedLooter != 0 && !hasSharedLoot && !hasStartingQuestLoot)
+                    else if (creature->Taking().AssignedTo() != 0 && !hasSharedLoot && !hasStartingQuestLoot)
                     {
                         return false;
                     }
@@ -848,7 +848,7 @@ bool Player::isAllowedToLoot(Creature* creature)
                     final_looter->lastTimeLooted = time(nullptr);
 
                     /* Update the creature with the looter that has been assigned to them */
-                    creature->assignedLooter = final_looter->GetGUIDLow();
+                    creature->Taking().AssignedTo(final_looter->GetGUIDLow());
                     final_looter->GetGroup()->SetLooterGuid(final_looter->GetObjectGuid());
 
                     /* Finally, return if we are the assigned looter */

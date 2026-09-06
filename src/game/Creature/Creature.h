@@ -543,10 +543,6 @@ class Creature : public Unit
 
     public:
 
-        /* Loot Variables */
-        bool hasBeenLootedOnce;
-        uint32 assignedLooter;
-
         explicit Creature(CreatureSubtype subtype = CREATURE_SUBTYPE_GENERIC);
         virtual ~Creature();
 
@@ -694,15 +690,6 @@ class Creature : public Unit
         /// Represent the loots available on the creature.
         Loot loot;
 
-        /// Indicates whether the creature has has been pickpocked.
-        bool lootForPickPocketed;
-
-        /// Indicates whether the creature has been checked.
-        bool lootForBody;
-
-        /// Indicates whether the creature has been skinned.
-        bool lootForSkin;
-
         /**
          * Method preparing the creature for the loot state. Based on the previous loot state, the loot ID provided in the database and the creature's type,
          * this method updates the state of the creature for loots.
@@ -726,12 +713,7 @@ class Creature : public Unit
          * \return uint32 Group ID.
          */
         bool IsTappedBy(Player const* player) const;
-        bool IsDamageEnoughForLootingAndReward() const { return m_PlayerDamageReq == 0; }
         void LowerPlayerDamageReq(uint32 unDamage);
-        void ResetPlayerDamageReq()
-        {
-            m_PlayerDamageReq = GetHealth() / 2;
-        }
 
         /**
          * function indicating whether the whether the creature has a looter recipient defined (either a group ID, either a player GUID).
@@ -1028,14 +1010,12 @@ class Creature : public Unit
         // vendor items
         VendorItemCounts m_vendorItemCounts;
 
-        uint32 m_lootMoney;
 
 
         void RegeneratePower();
         void RegenerateHealth();
         Cell m_currentCell;                                 // store current cell where creature listed
         uint32 m_equipmentId;
-        uint32 m_PlayerDamageReq;
 
         // below fields has potential for optimization
         bool m_AlreadyCallAssistance;

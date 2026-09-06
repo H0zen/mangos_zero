@@ -861,7 +861,7 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
         bool isRewardAllowed = true;
         if (Creature* creature = ToCreature(pVictim))
         {
-            isRewardAllowed = creature->IsDamageEnoughForLootingAndReward();
+            isRewardAllowed = creature->Taking().EnoughPlayerDamage();
             if (!isRewardAllowed)
             {
                 creature->Claim().StakedBy(nullptr);

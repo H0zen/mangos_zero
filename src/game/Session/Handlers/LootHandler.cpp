@@ -114,7 +114,7 @@ void spoils::AutostoreItem(Player& who, WorldPacket& recv_data)
         {
             Creature* pCreature = who.GetMap()->GetCreature(lguid);
 
-            bool ok_loot = pCreature && pCreature->IsAlive() == (player->getClass() == CLASS_ROGUE && pCreature->lootForPickPocketed);
+            bool ok_loot = pCreature && pCreature->IsAlive() == (player->getClass() == CLASS_ROGUE && pCreature->Taking().PocketsPicked());
 
             if (!ok_loot || !InReach(*pCreature, who, INTERACTION_DISTANCE))
             {
@@ -310,7 +310,7 @@ void spoils::Money(Player& who, WorldPacket& /*recv_data*/)
         {
             Creature* pCreature = who.GetMap()->GetCreature(guid);
 
-            bool ok_loot = pCreature && pCreature->IsAlive() == (player->getClass() == CLASS_ROGUE && pCreature->lootForPickPocketed);
+            bool ok_loot = pCreature && pCreature->IsAlive() == (player->getClass() == CLASS_ROGUE && pCreature->Taking().PocketsPicked());
 
             if (ok_loot && InReach(*pCreature, who, INTERACTION_DISTANCE))
             {
@@ -330,7 +330,7 @@ void spoils::Money(Player& who, WorldPacket& /*recv_data*/)
         if (!guid.IsItem() && player->GetGroup())
         {
             // Pickpocket case
-            if (player->getClass() == CLASS_ROGUE && who.GetMap()->GetCreature(guid)->lootForPickPocketed)
+            if (player->getClass() == CLASS_ROGUE && who.GetMap()->GetCreature(guid)->Taking().PocketsPicked())
             {
                 player->ModifyMoney(pLoot->gold);
             }
@@ -611,7 +611,7 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
 
             bool ok_loot = (pCreature && // The creature exists (we dont have a null pointer)
                 pCreature->IsAlive() == // Creature is alive and we're a rogue and creature can be pickpocketed
-                (player->getClass() == CLASS_ROGUE && pCreature->lootForPickPocketed));
+                (player->getClass() == CLASS_ROGUE && pCreature->Taking().PocketsPicked()));
             if (!ok_loot || !InReach(*pCreature, *_player, INTERACTION_DISTANCE))
             {
                 return;
@@ -624,7 +624,7 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
             if (!loot->isLooted())
             {
                 Group const* group = pCreature->Claim().HoldingGroup();
-                if (group && !pCreature->hasBeenLootedOnce)
+                if (group && !pCreature->Taking().Opened())
                 {
                     // Checking whether it has been looted once by the designed looter (master loot case).
                     switch (group->GetLootMethod())
@@ -634,12 +634,12 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
                         case ROUND_ROBIN:
                         case GROUP_LOOT:
                         {
-                            pCreature->hasBeenLootedOnce = true;
+                            pCreature->Taking().Opened(true);
                             break;
                         }
                         case MASTER_LOOT:
                         {
-                            pCreature->hasBeenLootedOnce = (group->GetLooterGuid() == player->GetObjectGuid());
+                            pCreature->Taking().Opened((group->GetLooterGuid() == player->GetObjectGuid()));
                             break;
                         }
 
