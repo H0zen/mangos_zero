@@ -196,7 +196,7 @@ namespace combat
             {
                 if (auto* modOwner = mutableVictim.GetSpellModOwner())
                 {
-                    modOwner->ApplySpellMod(aura->GetId(), SPELLMOD_MULTIPLE_VALUE, multiplier);
+                    modOwner->SpellMods().Apply(aura->GetId(), SPELLMOD_MULTIPLE_VALUE, multiplier);
                 }
             }
             shield.manaMultiplier = multiplier;

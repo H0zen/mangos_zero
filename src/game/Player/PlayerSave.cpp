@@ -1405,53 +1405,6 @@ void Player::CharmSpellInitialize()
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Applies or removes a spell modifier and notifies the client.
- *
- * @param mod The modifier to add or remove.
- * @param apply True to apply the modifier; false to remove it.
- */
-void Player::AddSpellMod(SpellModifier* mod, bool apply)
-{
-    uint16 opcode = (mod->type == SPELLMOD_FLAT) ? SMSG_SET_FLAT_SPELL_MODIFIER : SMSG_SET_PCT_SPELL_MODIFIER;
-
-    for (int eff = 0; eff < 64; ++eff)
-    {
-        uint64 _mask = uint64(1) << eff;
-        if (mod->mask.IsFitToFamilyMask(_mask))
-        {
-            int32 val = 0;
-            for (SpellModList::const_iterator itr = m_spellMods[mod->op].begin(); itr != m_spellMods[mod->op].end(); ++itr)
-            {
-                if ((*itr)->type == mod->type && ((*itr)->mask.IsFitToFamilyMask(_mask)))
-                {
-                    val += (*itr)->value;
-                }
-            }
-            val += apply ? mod->value : -(mod->value);
-            WorldPacket data(opcode, (1 + 1 + 4));
-            data << uint8(eff);
-            data << uint8(mod->op);
-            data << int32(val);
-            SendDirectMessage(&data);
-        }
-    }
-
-    if (apply)
-    {
-        m_spellMods[mod->op].push_back(mod);
-    }
-    else
-    {
-        if (mod->charges == -1)
-        {
-            --m_SpellModRemoveCount;
-        }
-        m_spellMods[mod->op].remove(mod);
-        delete mod;
-    }
-}
-
 // send Proficiency
 void Player::SendProficiency(ItemClass itemClass, uint32 itemSubclassMask)
 {

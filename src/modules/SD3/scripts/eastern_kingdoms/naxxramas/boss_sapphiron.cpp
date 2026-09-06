@@ -122,7 +122,7 @@ struct boss_sapphiron : public CreatureScript
 
             SetCombatMovement(true);
             m_creature->SetLevitate(false);
-            // m_creature->ApplySpellMod(SPELL_FROST_AURA, SPELLMOD_DURATION, -1);
+            // m_creature->SpellMods().Apply(SPELL_FROST_AURA, SPELLMOD_DURATION, -1);
         }
 
         void Aggro(Unit* /*pWho*/) override

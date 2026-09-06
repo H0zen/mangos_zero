@@ -347,7 +347,7 @@ bool Unit::IsTriggeredAtSpellProcEvent(Unit* pVictim, SpellAuraHolder* holder, S
     // Apply chance modifier aura
     if (Player* modOwner = GetSpellModOwner())
     {
-        modOwner->ApplySpellMod(spellProto->ID, SPELLMOD_CHANCE_OF_SUCCESS, chance);
+        modOwner->SpellMods().Apply(spellProto->ID, SPELLMOD_CHANCE_OF_SUCCESS, chance);
     }
 
     if (!roll_chance_f(chance))

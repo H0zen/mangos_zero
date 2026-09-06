@@ -417,7 +417,7 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
  *
  * @param session The owning world session.
  */
-Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_arms(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
+Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_arms(*this), m_spellMods(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
 {
 
     m_transport = 0;
@@ -476,7 +476,6 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
 
     clearResurrectRequestData();
 
-    m_SpellModRemoveCount = 0;
 
     m_social = nullptr;
 
@@ -3412,131 +3411,6 @@ Pet* Player::GetMiniPet() const
     }
 
     return GetMap()->GetPet(m_miniPetGuid);
-}
-
-/**
- * @brief Checks whether a spell modifier currently applies to a spell.
- *
- * @param spellInfo The spell entry being evaluated.
- * @param mod The modifier to test.
- * @param spell The active spell instance, if any.
- * @return True if the modifier applies; otherwise, false.
- */
-bool Player::IsAffectedBySpellmod(SpellEntry const* spellInfo, SpellModifier* mod, Spell const* spell)
-{
-    if (!mod || !spellInfo)
-    {
-        return false;
-    }
-
-    if (mod->charges == -1 && mod->lastAffected)            // marked as expired but locked until spell casting finish
-    {
-        // prevent apply to any spell except spell that trigger expire
-        if (spell)
-        {
-            if (mod->lastAffected != spell)
-            {
-                return false;
-            }
-        }
-        else if (mod->lastAffected != FindCurrentSpellBySpellId(spellInfo->ID))
-        {
-            return false;
-        }
-    }
-
-    return mod->isAffectedOnSpell(spellInfo);
-}
-
-/**
- * @brief Finds a spell modifier by operation and owning spell.
- *
- * @param op The modifier operation bucket.
- * @param spellId The spell that created the modifier.
- * @return The matching modifier, or nullptr if none exists.
- */
-SpellModifier* Player::GetSpellMod(SpellModOp op, uint32 spellId) const
-{
-    for (SpellModList::const_iterator itr = m_spellMods[op].begin(); itr != m_spellMods[op].end(); ++itr)
-    {
-        if ((*itr)->spellId == spellId)
-        {
-            return *itr;
-        }
-    }
-
-    return nullptr;
-}
-
-/**
- * @brief Removes expired spell modifiers associated with a spell cast.
- *
- * @param spell The spell whose pending modifiers should be consumed.
- */
-void Player::RemoveSpellMods(Spell const* spell)
-{
-    if (!spell || (m_SpellModRemoveCount == 0))
-    {
-        return;
-    }
-
-    for (int i = 0; i < MAX_SPELLMOD; ++i)
-    {
-        for (SpellModList::const_iterator itr = m_spellMods[i].begin(); itr != m_spellMods[i].end();)
-        {
-            SpellModifier* mod = *itr;
-            ++itr;
-
-            if (mod && mod->charges == -1 && (mod->lastAffected == spell || mod->lastAffected == nullptr))
-            {
-                RemoveAuras(mod->spellId);
-                if (m_spellMods[i].empty())
-                {
-                    break;
-                }
-                else
-                {
-                    itr = m_spellMods[i].begin();
-                }
-            }
-        }
-    }
-}
-
-/**
- * @brief Restores cancellable spell modifiers when a spell cast is interrupted.
- *
- * @param spell The canceled spell instance.
- */
-void Player::ResetSpellModsDueToCanceledSpell(Spell const* spell)
-{
-    for (int i = 0; i < MAX_SPELLMOD; ++i)
-    {
-        for (SpellModList::const_iterator itr = m_spellMods[i].begin(); itr != m_spellMods[i].end(); ++itr)
-        {
-            SpellModifier *mod = *itr;
-
-            if (mod->lastAffected != spell)
-            {
-                continue;
-            }
-
-            mod->lastAffected = nullptr;
-
-            if (mod->charges == -1)
-            {
-                mod->charges = 1;
-                if (m_SpellModRemoveCount > 0)
-                {
-                    --m_SpellModRemoveCount;
-                }
-            }
-            else if (mod->charges > 0)
-            {
-                ++mod->charges;
-            }
-        }
-    }
 }
 
 /**

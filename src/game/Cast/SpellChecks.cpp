@@ -2033,7 +2033,7 @@ SpellCastResult Spell::CheckRange(bool strict)
                 if (Player* modOwner = m_caster->GetSpellModOwner())
                 {
                     float base = ATTACK_DISTANCE;
-                    range_mod += modOwner->ApplySpellMod(m_spellInfo->ID, SPELLMOD_RANGE, base, this);
+                    range_mod += modOwner->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_RANGE, base, this);
                 }
 
                 // with additional 5 dist for non stricted case (some melee spells have delay in apply
@@ -2065,7 +2065,7 @@ SpellCastResult Spell::CheckRange(bool strict)
 
     if (Player* modOwner = m_caster->GetSpellModOwner())
     {
-        modOwner->ApplySpellMod(m_spellInfo->ID, SPELLMOD_RANGE, max_range, this);
+        modOwner->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_RANGE, max_range, this);
     }
 
     if (target && target != m_caster)
@@ -2167,7 +2167,7 @@ uint32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spel
     {
         if (Player* modOwner = caster->GetSpellModOwner())
         {
-            modOwner->ApplySpellMod(spellInfo->ID, SPELLMOD_COST, powerCost, spell);
+            modOwner->SpellMods().Apply(spellInfo->ID, SPELLMOD_COST, powerCost, spell);
         }
     }
 

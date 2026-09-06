@@ -318,7 +318,7 @@ Aura::Aura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* currentBas
     // Apply periodic time mod
     if (modOwner && m_modifier.periodictime)
     {
-        modOwner->ApplySpellMod(spellproto->ID, SPELLMOD_ACTIVATION_TIME, m_modifier.periodictime);
+        modOwner->SpellMods().Apply(spellproto->ID, SPELLMOD_ACTIVATION_TIME, m_modifier.periodictime);
     }
 
     // Start periodic on next tick
@@ -341,7 +341,7 @@ AreaAura::AreaAura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* cu
     m_radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(spellproto->EffectRadiusIndex[m_effIndex]));
     if (Player* modOwner = caster_ptr->GetSpellModOwner())
     {
-        modOwner->ApplySpellMod(spellproto->ID, SPELLMOD_RADIUS, m_radius);
+        modOwner->SpellMods().Apply(spellproto->ID, SPELLMOD_RADIUS, m_radius);
     }
 
     switch (spellproto->Effect[eff])
@@ -1740,7 +1740,7 @@ void Aura::PeriodicTick()
 
             if (Player* modOwner = pCaster->GetSpellModOwner())
             {
-                modOwner->ApplySpellMod(GetId(), SPELLMOD_MULTIPLE_VALUE, multiplier);
+                modOwner->SpellMods().Apply(GetId(), SPELLMOD_MULTIPLE_VALUE, multiplier);
             }
 
             uint32 heal = pCaster->SpellHealingBonusTaken(pCaster, spellProto, int32(new_damage * multiplier), DOT, GetStackAmount());
@@ -1894,7 +1894,7 @@ void Aura::PeriodicTick()
 
                 if (Player* modOwner = pCaster->GetSpellModOwner())
                 {
-                    modOwner->ApplySpellMod(GetId(), SPELLMOD_MULTIPLE_VALUE, gain_multiplier);
+                    modOwner->SpellMods().Apply(GetId(), SPELLMOD_MULTIPLE_VALUE, gain_multiplier);
                 }
             }
 
@@ -2249,7 +2249,7 @@ SpellAuraHolder::SpellAuraHolder(SpellEntry const* spellproto, Unit* target, Occ
     {
         if (Player* modOwner = unitCaster->GetSpellModOwner())
         {
-            modOwner->ApplySpellMod(GetId(), SPELLMOD_CHARGES, m_procCharges);
+            modOwner->SpellMods().Apply(GetId(), SPELLMOD_CHARGES, m_procCharges);
         }
     }
 
@@ -2835,9 +2835,9 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     if (m_target->IsPlayer() && !apply)
                     {
                         // reflection chance (effect 1) of Frost Ward, applied in dummy effect
-                        if (SpellModifier* mod = ((Player*)m_target)->GetSpellMod(SPELLMOD_RESIST_MISS_CHANCE, GetId()))
+                        if (SpellModifier* mod = ((Player*)m_target)->SpellMods().From(SPELLMOD_RESIST_MISS_CHANCE, GetId()))
                         {
-                            ((Player*)m_target)->AddSpellMod(mod, false);
+                            ((Player*)m_target)->SpellMods().Add(mod, false);
                         }
                     }
                     return;
@@ -3005,7 +3005,7 @@ void SpellAuraHolder::Update(uint32 diff)
 
             if (Player* modOwner = caster->GetSpellModOwner())
             {
-                modOwner->ApplySpellMod(GetId(), SPELLMOD_RANGE, max_range, nullptr);
+                modOwner->SpellMods().Apply(GetId(), SPELLMOD_RANGE, max_range, nullptr);
             }
 
             if (!InReach(*caster, *m_target, max_range))

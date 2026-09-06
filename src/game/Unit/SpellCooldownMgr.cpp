@@ -96,12 +96,12 @@ void SpellCooldownMgr::AddSpellAndCategoryCooldowns(SpellEntry const* spellInfo,
         // Now we have cooldown data (if found any), time to apply mods
         if (rec > 0)
         {
-            m_owner->ApplySpellMod(spellInfo->ID, SPELLMOD_COOLDOWN, rec, spell);
+            m_owner->SpellMods().Apply(spellInfo->ID, SPELLMOD_COOLDOWN, rec, spell);
         }
 
         if (catrec > 0)
         {
-            m_owner->ApplySpellMod(spellInfo->ID, SPELLMOD_COOLDOWN, catrec, spell);
+            m_owner->SpellMods().Apply(spellInfo->ID, SPELLMOD_COOLDOWN, catrec, spell);
         }
 
         // replace negative cooldowns by 0

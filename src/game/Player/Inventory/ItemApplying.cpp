@@ -636,7 +636,7 @@ void Player::CastItemCombatSpell(Unit* Target, WeaponAttackType attType)
                 ? GetPPMProcChance(proto->Delay, ppmRate)
                 : pEnchant->EffectPointsMin[s] != 0 ? float(pEnchant->EffectPointsMin[s]) : GetWeaponProcChance();
 
-            ApplySpellMod(spellInfo->ID, SPELLMOD_CHANCE_OF_SUCCESS, chance);
+            SpellMods().Apply(spellInfo->ID, SPELLMOD_CHANCE_OF_SUCCESS, chance);
 
             if (roll_chance_f(chance))
             {

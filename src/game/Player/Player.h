@@ -80,6 +80,7 @@
 #include "Hearth.h"
 #include "Mailbox.h"
 #include "PlayedTime.h"
+#include "SpellModifiers.h"
 #include "Weaponry.h"
 #include "Rest.h"
 #include "Perils/Perils.h"
@@ -251,7 +252,6 @@ struct SpellModifier
     Spell const* lastAffected; ///< Last affected spell (used for cleanup delayed remove spellmods at spell success or restore charges at cast fail)
 };
 
-typedef std::list<SpellModifier*> SpellModList;
 
 // SpellCooldown struct and SpellCooldowns typedef moved to SpellCooldownMgr.h.
 
@@ -2029,22 +2029,16 @@ class Player : public Unit
         SpellCooldowns const& GetSpellCooldownMap() const { return m_spellCooldownMgr.GetSpellCooldownMap(); }
 
         // Add a spell modifier to the player
-        void AddSpellMod(SpellModifier* mod, bool apply);
 
         // Check if the player is affected by a spell modifier
-        bool IsAffectedBySpellmod(SpellEntry const* spellInfo, SpellModifier* mod, Spell const* spell = nullptr);
 
         // Apply a spell modifier to a value
-        template <class T> T ApplySpellMod(uint32 spellId, SpellModOp op, T& basevalue, Spell const* spell = nullptr);
 
         // Get a spell modifier for a specific operation and spell ID
-        SpellModifier* GetSpellMod(SpellModOp op, uint32 spellId) const;
 
         // Remove spell modifiers for a specific spell
-        void RemoveSpellMods(Spell const* spell);
 
         // Reset spell modifiers due to a canceled spell
-        void ResetSpellModsDueToCanceledSpell(Spell const* spell);
 
         static uint32 const infinityCooldownDelay = MONTH; // used for set "infinity cooldowns" for spells and check
         static uint32 const infinityCooldownDelayCheck = MONTH / 2;
@@ -3144,6 +3138,10 @@ class Player : public Unit
         Weaponry& Arms() { return m_arms; }
         Weaponry const& Arms() const { return m_arms; }
 
+        /// The standing changes his talents and auras make to his own spells.
+        SpellModifiers& SpellMods() { return m_spellMods; }
+        SpellModifiers const& SpellMods() const { return m_spellMods; }
+
         time_t LoginTime() const { return m_played.LoggedInAt(); }
 
         // Get an object by type mask
@@ -3489,8 +3487,6 @@ class Player : public Unit
         float m_auraBaseMod[BASEMOD_END][MOD_END];
         ActionButtonList m_actionButtons; // Action button list
 
-        SpellModList m_spellMods[MAX_SPELLMOD]; // Spell modifiers
-        int32 m_SpellModRemoveCount; // Spell modifier remove count
 
         ResurrectOffer m_resurrect;
 
@@ -3617,6 +3613,8 @@ class Player : public Unit
 
         Weaponry m_arms;
 
+        SpellModifiers m_spellMods;
+
         // Detect invisibility timer
         uint32 m_DetectInvTimer;
 
@@ -3643,52 +3641,54 @@ void AddItemsSetItem(Player* player, Item* item);
 void RemoveItemsSetItem(Player* player, ItemPrototype const* proto);
 
 // "the bodies of template functions must be made available in a header file"
-template <class T> T Player::ApplySpellMod(uint32 spellId, SpellModOp op, T& basevalue, Spell const* spell)
+template <class T>
+T SpellModifiers::Apply(uint32 spellId, SpellModOp op, T& base, Spell const* spell)
 {
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellId);
     if (!spellInfo)
     {
         return 0;
     }
-    int32 totalpct = 0;
-    int32 totalflat = 0;
-    for (SpellModList::iterator itr = m_spellMods[op].begin(); itr != m_spellMods[op].end(); ++itr)
-    {
-        SpellModifier* mod = *itr;
 
-        if (!IsAffectedBySpellmod(spellInfo, mod, spell))
+    int32 byHundred = 0;
+    int32 flat = 0;
+
+    for (auto* mod : m_byNumber[op])
+    {
+        if (!Affects(spellInfo, mod, spell))
         {
             continue;
         }
+
         if (mod->type == SPELLMOD_FLAT)
         {
-            totalflat += mod->value;
+            flat += mod->value;
         }
         else if (mod->type == SPELLMOD_PCT)
         {
-            // Skip percent mods for null basevalue (most important for spell mods with charges)
-            if (basevalue == T(0))
+            // a share of nothing is nothing, and it must not cost a charge
+            if (base == T(0))
             {
                 continue;
             }
 
-            // Special case (skip >10sec spell casts for instant cast setting)
-            if (mod->op == SPELLMOD_CASTING_TIME  && basevalue >= T(10 * IN_MILLISECONDS) && mod->value <= -100)
+            // an instant-cast talent leaves casts over ten seconds alone
+            if (mod->op == SPELLMOD_CASTING_TIME && base >= T(10 * IN_MILLISECONDS) && mod->value <= -100)
             {
                 continue;
             }
 
-            totalpct += mod->value;
+            byHundred += mod->value;
         }
 
         if (mod->charges > 0)
         {
             if (!spell)
             {
-                spell = FindCurrentSpellBySpellId(spellId);
+                spell = m_owner.FindCurrentSpellBySpellId(spellId);
             }
 
-            // Avoid double use spellmod charge by same spell
+            // one charge per spell, however many numbers it asks about
             if (!mod->lastAffected || mod->lastAffected != spell)
             {
                 --mod->charges;
@@ -3696,7 +3696,7 @@ template <class T> T Player::ApplySpellMod(uint32 spellId, SpellModOp op, T& bas
                 if (mod->charges == 0)
                 {
                     mod->charges = -1;
-                    ++m_SpellModRemoveCount;
+                    ++m_awaitingRemoval;
                 }
 
                 mod->lastAffected = spell;
@@ -3704,7 +3704,7 @@ template <class T> T Player::ApplySpellMod(uint32 spellId, SpellModOp op, T& bas
         }
     }
 
-    float diff = (float)basevalue * (float)totalpct / 100.0f + (float)totalflat;
-    basevalue = T((float)basevalue + diff);
-    return T(diff);
+    float const difference = float(base) * float(byHundred) / 100.0f + float(flat);
+    base = T(float(base) + difference);
+    return T(difference);
 }

@@ -87,7 +87,7 @@ float ThreatCalcHelper::CalcThreat(Unit* pHatedUnit, Unit* /*pHatingUnit*/, floa
 
         if (Player* modOwner = pHatedUnit->GetSpellModOwner())
         {
-            modOwner->ApplySpellMod(pThreatSpell->ID, SPELLMOD_THREAT, threat);
+            modOwner->SpellMods().Apply(pThreatSpell->ID, SPELLMOD_THREAT, threat);
         }
 
         if (crit)

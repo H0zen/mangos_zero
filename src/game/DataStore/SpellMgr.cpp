@@ -146,7 +146,7 @@ int32 CalculateSpellDuration(SpellEntry const* spellInfo, Unit const* caster)
 
         if (Player* modOwner = caster->GetSpellModOwner())
         {
-            modOwner->ApplySpellMod(spellInfo->ID, SPELLMOD_DURATION, duration);
+            modOwner->SpellMods().Apply(spellInfo->ID, SPELLMOD_DURATION, duration);
 
             if (duration < 0)
             {
@@ -206,7 +206,7 @@ uint32 GetSpellCastTime(SpellEntry const* spellInfo, Spell const* spell)
     {
         if (Player* modOwner = spell->GetCaster()->GetSpellModOwner())
         {
-            modOwner->ApplySpellMod(spellInfo->ID, SPELLMOD_CASTING_TIME, castTime, spell);
+            modOwner->SpellMods().Apply(spellInfo->ID, SPELLMOD_CASTING_TIME, castTime, spell);
         }
 
         if (!spellInfo->HasAttribute(SPELL_ATTR_ABILITY) && !spellInfo->HasAttribute(SPELL_ATTR_TRADESPELL))

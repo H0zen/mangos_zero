@@ -1093,7 +1093,7 @@ void Aura::HandleModCastingSpeed(bool apply, bool /*Real*/)
         {
             if (Player* modOwner = caster->GetSpellModOwner())
             {
-                modOwner->ApplySpellMod(GetSpellProto()->ID, SPELLMOD_HASTE, m_modifier.m_amount);
+                modOwner->SpellMods().Apply(GetSpellProto()->ID, SPELLMOD_HASTE, m_modifier.m_amount);
             }
         }
     }
@@ -1115,7 +1115,7 @@ void Aura::HandleModAttackSpeed(bool apply, bool /*Real*/)
         {
             if (Player* modOwner = caster->GetSpellModOwner())
             {
-                modOwner->ApplySpellMod(GetSpellProto()->ID, SPELLMOD_HASTE, m_modifier.m_amount);
+                modOwner->SpellMods().Apply(GetSpellProto()->ID, SPELLMOD_HASTE, m_modifier.m_amount);
             }
         }
     }
@@ -1137,7 +1137,7 @@ void Aura::HandleModMeleeSpeedPct(bool apply, bool /*Real*/)
         {
             if (Player* modOwner = caster->GetSpellModOwner())
             {
-                modOwner->ApplySpellMod(GetSpellProto()->ID, SPELLMOD_HASTE, m_modifier.m_amount);
+                modOwner->SpellMods().Apply(GetSpellProto()->ID, SPELLMOD_HASTE, m_modifier.m_amount);
             }
         }
     }
@@ -1161,7 +1161,7 @@ void Aura::HandleAuraModRangedHaste(bool apply, bool /*Real*/)
         {
             if (Player* modOwner = caster->GetSpellModOwner())
             {
-                modOwner->ApplySpellMod(GetSpellProto()->ID, SPELLMOD_HASTE, m_modifier.m_amount);
+                modOwner->SpellMods().Apply(GetSpellProto()->ID, SPELLMOD_HASTE, m_modifier.m_amount);
             }
         }
     }
@@ -1195,7 +1195,7 @@ void Aura::HandleRangedAmmoHaste(bool apply, bool /*Real*/)
         {
             if (Player* modOwner = caster->GetSpellModOwner())
             {
-                modOwner->ApplySpellMod(GetSpellProto()->ID, SPELLMOD_HASTE, m_modifier.m_amount);
+                modOwner->SpellMods().Apply(GetSpellProto()->ID, SPELLMOD_HASTE, m_modifier.m_amount);
             }
         }
     }
@@ -1211,7 +1211,7 @@ void Aura::HandleAuraModAttackPower(bool apply, bool /*Real*/)
         {
             if (Player* modOwner = caster->GetSpellModOwner())
             {
-                modOwner->ApplySpellMod(GetSpellProto()->ID, SPELLMOD_ATTACK_POWER, m_modifier.m_amount);
+                modOwner->SpellMods().Apply(GetSpellProto()->ID, SPELLMOD_ATTACK_POWER, m_modifier.m_amount);
             }
         }
     }
@@ -1238,7 +1238,7 @@ void Aura::HandleAuraModRangedAttackPower(bool apply, bool /*Real*/)
         {
             if (Player* modOwner = caster->GetSpellModOwner())
             {
-                modOwner->ApplySpellMod(GetSpellProto()->ID, SPELLMOD_ATTACK_POWER, m_modifier.m_amount);
+                modOwner->SpellMods().Apply(GetSpellProto()->ID, SPELLMOD_ATTACK_POWER, m_modifier.m_amount);
             }
         }
     }
@@ -1260,7 +1260,7 @@ void Aura::HandleAuraModAttackPowerPercent(bool apply, bool /*Real*/)
         {
             if (Player* modOwner = caster->GetSpellModOwner())
             {
-                modOwner->ApplySpellMod(GetSpellProto()->ID, SPELLMOD_ATTACK_POWER, m_modifier.m_amount);
+                modOwner->SpellMods().Apply(GetSpellProto()->ID, SPELLMOD_ATTACK_POWER, m_modifier.m_amount);
             }
         }
     }
@@ -1288,7 +1288,7 @@ void Aura::HandleAuraModRangedAttackPowerPercent(bool apply, bool /*Real*/)
     {
         if (Player* modOwner = caster->GetSpellModOwner())
         {
-            modOwner->ApplySpellMod(GetSpellProto()->ID, SPELLMOD_ATTACK_POWER, amount);
+            modOwner->SpellMods().Apply(GetSpellProto()->ID, SPELLMOD_ATTACK_POWER, amount);
         }
     }
 

@@ -171,7 +171,7 @@ void Spell::EffectPowerDrain(SpellEffectIndex eff_idx)
 
         if (Player* modOwner = m_caster->GetSpellModOwner())
         {
-            modOwner->ApplySpellMod(m_spellInfo->ID, SPELLMOD_MULTIPLE_VALUE, manaMultiplier);
+            modOwner->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_MULTIPLE_VALUE, manaMultiplier);
         }
 
         int32 gain = int32(new_damage * manaMultiplier);
@@ -236,7 +236,7 @@ void Spell::EffectPowerBurn(SpellEffectIndex eff_idx)
 
     if (Player* modOwner = m_caster->GetSpellModOwner())
     {
-        modOwner->ApplySpellMod(m_spellInfo->ID, SPELLMOD_MULTIPLE_VALUE, multiplier);
+        modOwner->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_MULTIPLE_VALUE, multiplier);
     }
 
     new_damage = int32(new_damage * multiplier);
@@ -373,7 +373,7 @@ void Spell::EffectHealthLeech(SpellEffectIndex eff_idx)
 
     if (Player* modOwner = m_caster->GetSpellModOwner())
     {
-        modOwner->ApplySpellMod(m_spellInfo->ID, SPELLMOD_MULTIPLE_VALUE, multiplier);
+        modOwner->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_MULTIPLE_VALUE, multiplier);
     }
 
     uint32 heal = uint32(damage * multiplier);
@@ -564,7 +564,7 @@ void Spell::EffectPersistentAA(SpellEffectIndex eff_idx)
 
     if (Player* modOwner = pCaster->GetSpellModOwner())
     {
-        modOwner->ApplySpellMod(m_spellInfo->ID, SPELLMOD_RADIUS, radius);
+        modOwner->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_RADIUS, radius);
     }
 
     DynamicObject* dynObj = new DynamicObject;

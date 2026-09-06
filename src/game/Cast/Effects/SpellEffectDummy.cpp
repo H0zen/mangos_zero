@@ -901,7 +901,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                     // increase reflection chance (effect 1) of Frost Ward, removed in aura boosts
                     SpellModifier *mod = new SpellModifier(SPELLMOD_RESIST_MISS_CHANCE, SPELLMOD_FLAT, damage, m_spellInfo->ID, UI64LIT(0x0000000000000100));
-                    ((Player*)unitTarget)->AddSpellMod(mod, true);
+                    ((Player*)unitTarget)->SpellMods().Add(mod, true);
                     break;
                 }
                 case 12472:                                 // Cold Snap
@@ -970,7 +970,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                 if (Player* modOwner = m_caster->GetSpellModOwner())
                 {
-                    modOwner->ApplySpellMod(m_spellInfo->ID, SPELLMOD_COST, cost, this);
+                    modOwner->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_COST, cost, this);
                 }
 
                 int32 dmg = m_caster->SpellDamageBonusDone(m_caster, m_spellInfo, uint32(cost > 0 ? cost : 0), SPELL_DIRECT_DAMAGE);

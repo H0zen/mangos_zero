@@ -524,7 +524,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
                 {
                     if (Player* modOwner = realCaster->GetSpellModOwner())
                     {
-                        modOwner->ApplySpellMod(m_spellInfo->ID, SPELLMOD_EFFECT_PAST_FIRST, multiplier, this);
+                        modOwner->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_EFFECT_PAST_FIRST, multiplier, this);
                     }
                 }
                 m_damageMultipliers[effectNumber] *= multiplier;
@@ -689,7 +689,7 @@ void Spell::HandleDelayedSpellLaunch(TargetInfo* target)
                     {
                         if (Player* modOwner = real_caster->GetSpellModOwner())
                         {
-                            modOwner->ApplySpellMod(m_spellInfo->ID, SPELLMOD_EFFECT_PAST_FIRST, multiplier, this);
+                            modOwner->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_EFFECT_PAST_FIRST, multiplier, this);
                         }
                     }
                     m_damageMultipliers[effectNumber] *= multiplier;
@@ -724,7 +724,7 @@ void Spell::InitializeDamageMultipliers()
         {
             if (Player* modOwner = realCaster->GetSpellModOwner())
             {
-                modOwner->ApplySpellMod(m_spellInfo->ID, SPELLMOD_JUMP_TARGETS, EffectChainTarget, this);
+                modOwner->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_JUMP_TARGETS, EffectChainTarget, this);
             }
         }
         m_damageMultipliers[i] = 1.0f;

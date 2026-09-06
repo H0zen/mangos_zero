@@ -777,11 +777,11 @@ void Spell::finish(bool ok)
     {
         if (ok || m_spellState != SPELL_STATE_PREPARING)    // fail after start channeling or throw to target not affect spell mods
         {
-            modOwner->RemoveSpellMods(this);
+            modOwner->SpellMods().Spent(this);
         }
         else
         {
-            modOwner->ResetSpellModsDueToCanceledSpell(this);
+            modOwner->SpellMods().Restore(this);
         }
     }
 

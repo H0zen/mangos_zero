@@ -4330,7 +4330,7 @@ int32 Unit::CalculateSpellDamage(Unit const* target, SpellEntry const* spellProt
 
     if (Player* modOwner = GetSpellModOwner())
     {
-        modOwner->ApplySpellMod(spellProto->ID, SPELLMOD_ALL_EFFECTS, value);
+        modOwner->SpellMods().Apply(spellProto->ID, SPELLMOD_ALL_EFFECTS, value);
 
     }
 

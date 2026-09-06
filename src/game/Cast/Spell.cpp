@@ -770,7 +770,7 @@ void Spell::Delayed()
 
     // check resist chance
     int32 resistChance = 100;                               // must be initialized to 100 for percent modifiers
-    ((Player*)m_caster)->ApplySpellMod(m_spellInfo->ID, SPELLMOD_NOT_LOSE_CASTING_TIME, resistChance, this);
+    ((Player*)m_caster)->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_NOT_LOSE_CASTING_TIME, resistChance, this);
     resistChance += m_caster->GetTotalAuraModifier(SPELL_AURA_RESIST_PUSHBACK) - 100;
     if (roll_chance_i(resistChance))
     {
@@ -813,7 +813,7 @@ void Spell::DelayedChannel()
 
     // check resist chance
     int32 resistChance = 100;                               // must be initialized to 100 for percent modifiers
-    ((Player*)m_caster)->ApplySpellMod(m_spellInfo->ID, SPELLMOD_NOT_LOSE_CASTING_TIME, resistChance, this);
+    ((Player*)m_caster)->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_NOT_LOSE_CASTING_TIME, resistChance, this);
     resistChance += m_caster->GetTotalAuraModifier(SPELL_AURA_RESIST_PUSHBACK) - 100;
     if (roll_chance_i(resistChance))
     {
@@ -1282,8 +1282,8 @@ void Spell::GetSpellRangeAndRadius(SpellEffectIndex effIndex, float& radius, uin
     {
         if (Player* modOwner = realCaster->GetSpellModOwner())
         {
-            modOwner->ApplySpellMod(m_spellInfo->ID, SPELLMOD_RADIUS, radius, this);
-            modOwner->ApplySpellMod(m_spellInfo->ID, SPELLMOD_JUMP_TARGETS, EffectChainTarget, this);
+            modOwner->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_RADIUS, radius, this);
+            modOwner->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_JUMP_TARGETS, EffectChainTarget, this);
         }
     }
 

@@ -115,7 +115,7 @@ void Aura::HandleAddModifier(bool apply, bool Real)
             spellProto->CumulativeAura > 1 ? 0 : GetHolder()->GetAuraCharges());
     }
 
-    ((Player*)GetTarget())->AddSpellMod(m_spellmod, apply);
+    ((Player*)GetTarget())->SpellMods().Add(m_spellmod, apply);
 
     ReapplyAffectedPassiveAuras();
 }

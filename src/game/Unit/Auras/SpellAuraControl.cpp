@@ -1098,7 +1098,7 @@ void Aura::HandleAuraModIncreaseSpeed(bool /*apply*/, bool Real)
     {
         if (Player* modOwner = caster->GetSpellModOwner())
         {
-            modOwner->ApplySpellMod(GetSpellProto()->ID, SPELLMOD_SPEED, m_modifier.m_amount);
+            modOwner->SpellMods().Apply(GetSpellProto()->ID, SPELLMOD_SPEED, m_modifier.m_amount);
         }
     }
 
@@ -1157,7 +1157,7 @@ void Aura::HandleAuraModDecreaseSpeed(bool apply, bool Real)
     {
         if (Player* modOwner = caster->GetSpellModOwner())
         {
-            modOwner->ApplySpellMod(GetSpellProto()->ID, SPELLMOD_SPEED, m_modifier.m_amount);
+            modOwner->SpellMods().Apply(GetSpellProto()->ID, SPELLMOD_SPEED, m_modifier.m_amount);
         }
     }
 
