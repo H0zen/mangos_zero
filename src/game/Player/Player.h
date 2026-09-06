@@ -78,6 +78,7 @@
 #include "Offers/Invitations.h"
 #include "Drink.h"
 #include "Hearth.h"
+#include "Mailbox.h"
 #include "Rest.h"
 #include "Perils/Perils.h"
 #include "Offers/PlayerOffers.h"
@@ -121,7 +122,6 @@ struct AreaTrigger;
 #include "CinematicFlyover.h"
 
 
-typedef std::deque<Mail*> PlayerMails;
 
 #define PLAYER_MAX_SKILLS           127
 #define PLAYER_EXPLORED_ZONES_SIZE  64
@@ -1875,7 +1875,6 @@ class Player : public Unit
 
         // Delete old characters from the database, keeping characters for a specified number of days
 
-        bool m_mailsUpdated; // Indicates if mails have been updated
 
         // Send a pet tame failure message
         void SendPetTameFailure(PetTameFailureReason reason);
@@ -1954,76 +1953,11 @@ class Player : public Unit
         // Send a mail result message
         void SendMailResult(uint32 mailId, MailResponseType mailAction, MailResponseResult mailError, uint32 equipError = 0, uint32 item_guid = 0, uint32 item_count = 0);
 
-        // Send a new mail notification
-        void SendNewMail();
-
-        // Update the next mail delivery time and unread mails
-        void UpdateNextMailTimeAndUnreads();
-
-        // Add a new mail delivery time
-        void AddNewMailDeliverTime(time_t deliver_time);
-
-        // Remove a mail by ID
-        void RemoveMail(uint32 id);
-
-        // Add a mail to the player's mail list
-        void AddMail(Mail* mail)
-        {
-            m_mail.push_front(mail);   // for call from WorldSession::SendMailTo
-        }
-
-        // Get the size of the player's mail list
-        uint32 GetMailSize()
-        {
-            return m_mail.size();
-        }
-
-        // Get a mail by ID
-        Mail* GetMail(uint32 id);
-
-        // Get the beginning iterator of the player's mail list
-        PlayerMails::iterator GetMailBegin()
-        {
-            return m_mail.begin();
-        }
-
-        // Get the end iterator of the player's mail list
-        PlayerMails::iterator GetMailEnd()
-        {
-            return m_mail.end();
-        }
-
         /*********************************************************/
         /*** MAILED ITEMS SYSTEM ***/
         /*********************************************************/
 
-        uint8 unReadMails; // Number of unread mails
-        time_t m_nextMailDelivereTime; // Time of the next mail delivery
 
-        typedef std::unordered_map<uint32, Item*> ItemMap;
-
-        ItemMap mMitems; // Map of mailed items
-
-        // Get a mailed item by ID
-        Item* GetMItem(uint32 id)
-        {
-            ItemMap::const_iterator itr = mMitems.find(id);
-            return itr != mMitems.end() ? itr->second : nullptr;
-        }
-
-        // Add a mailed item
-        void AddMItem(Item* it)
-        {
-            MANGOS_ASSERT(it);
-            // ASSERT deleted, because items can be added before loading
-            mMitems[it->GetGUIDLow()] = it;
-        }
-
-        // Remove a mailed item by ID
-        bool RemoveMItem(uint32 id)
-        {
-            return mMitems.erase(id) ? true : false;
-        }
 
         // Initialize pet spells
         void PetSpellInitialize();
@@ -3261,6 +3195,10 @@ class Player : public Unit
         Rest& Resting() { return m_rest; }
         Rest const& Resting() const { return m_rest; }
 
+        /// The letters waiting for him.
+        Mailbox& Post() { return m_post; }
+        Mailbox const& Post() const { return m_post; }
+
         // Get an object by type mask
         Object* GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask);
 
@@ -3596,7 +3534,6 @@ class Player : public Unit
         SkillStatusMap mSkillStatus; // Skill status map
 
 
-        PlayerMails m_mail; // Player mails
         PlayerSpellMap m_spells; // Player spells
         // Spell-cooldown map now owned by m_spellCooldownMgr.
 
@@ -3735,6 +3672,8 @@ class Player : public Unit
         Hearth m_hearth;
 
         Rest m_rest;
+
+        Mailbox m_post;
 
         // Detect invisibility timer
         uint32 m_DetectInvTimer;

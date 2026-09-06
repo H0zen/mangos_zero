@@ -417,7 +417,7 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
  *
  * @param session The owning world session.
  */
-Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
+Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
 {
 
     m_transport = 0;
@@ -545,11 +545,8 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
     //////////////////// Rest System/////////////////////
 
     // Initialize mails updated flag to false
-    m_mailsUpdated = false;
     // Initialize unread mails count to 0
-    unReadMails = 0;
     // Initialize next mail delivery time to 0
-    m_nextMailDelivereTime = 0;
 
     // Initialize reset talents cost to 0
     m_resetTalentsCost = 0;
@@ -609,18 +606,6 @@ Player::~Player()
 
     // Clean up communication channels
     CleanupChannels();
-
-    // Delete all mailed items and deallocate mail objects
-    for (PlayerMails::const_iterator itr = m_mail.begin(); itr != m_mail.end(); ++itr)
-    {
-        delete *itr;
-    }
-
-    // Delete all items in the player's item map
-    for (ItemMap::const_iterator iter = mMitems.begin(); iter != mMitems.end(); ++iter)
-    {
-        delete iter->second; // Ensure no duplicated items to avoid crashes
-    }
 
     // Delete the player's talk class
     delete PlayerTalkClass;
@@ -1001,13 +986,12 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     }
 
     // Handle undelivered mail
-    if (m_nextMailDelivereTime && m_nextMailDelivereTime <= time(nullptr))
+    if (Post().NextDelivery() && Post().NextDelivery() <= time(nullptr))
     {
-        SendNewMail();
-        ++unReadMails;
+        Post().Expecting(time(nullptr));
 
-        // It will be recalculate at mailbox open (for unReadMails important non-0 until mailbox open, it also will be recalculated)
-        m_nextMailDelivereTime = 0;
+        // the count is worked out again when he opens the box; what matters
+        // until then is that it is not zero
     }
 
     // Used to implement delayed far teleports
@@ -3316,7 +3300,7 @@ void Player::SaveMail()
     static SqlStatementID deleteMail ;
     static SqlStatementID deleteItems ;
 
-    for (PlayerMails::iterator itr = m_mail.begin(); itr != m_mail.end(); ++itr)
+    for (PlayerMails::iterator itr = Post().Letters().begin(); itr != Post().Letters().end(); ++itr)
     {
         Mail* m = (*itr);
         if (m->state == MAIL_STATE_CHANGED)
@@ -3365,14 +3349,14 @@ void Player::SaveMail()
     }
 
     // deallocate deleted mails...
-    for (PlayerMails::iterator itr = m_mail.begin(); itr != m_mail.end();)
+    for (PlayerMails::iterator itr = Post().Letters().begin(); itr != Post().Letters().end();)
     {
         if ((*itr)->state == MAIL_STATE_DELETED)
         {
             Mail* m = *itr;
-            m_mail.erase(itr);
+            Post().Letters().erase(itr);
             delete m;
-            itr = m_mail.begin();
+            itr = Post().Letters().begin();
         }
         else
         {
@@ -3380,7 +3364,6 @@ void Player::SaveMail()
         }
     }
 
-    m_mailsUpdated = false;
 }
 
 /*********************************************************/

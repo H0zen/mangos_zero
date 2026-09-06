@@ -542,7 +542,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     // Mail
     _LoadMails(holder->GetResult(PLAYER_LOGIN_QUERY_LOADMAILS));
     _LoadMailedItems(holder->GetResult(PLAYER_LOGIN_QUERY_LOADMAILEDITEMS));
-    UpdateNextMailTimeAndUnreads();
+    Post().Recount();
 
     _LoadAuras(holder->GetResult(PLAYER_LOGIN_QUERY_LOADAURAS), time_diff);
 
@@ -1305,7 +1305,7 @@ void Player::_LoadMailedItems(QueryResult* result)
         uint32 item_guid_low = fields[2].GetUInt32();
         uint32 item_template = fields[3].GetUInt32();
 
-        Mail* mail = GetMail(mail_id);
+        Mail* mail = Post().Find(mail_id);
         if (!mail)
         {
             continue;
@@ -1333,7 +1333,7 @@ void Player::_LoadMailedItems(QueryResult* result)
             continue;
         }
 
-        AddMItem(item);
+        Post().Keep(item);
     }
     while (result->NextRow());
 
@@ -1347,7 +1347,7 @@ void Player::_LoadMailedItems(QueryResult* result)
  */
 void Player::_LoadMails(QueryResult* result)
 {
-    m_mail.clear();
+    Post().Letters().clear();
     //        0  1           2      3        4       5    6           7            8     9   10      11         12             13
     //"SELECT id,messageType,sender,receiver,subject,body,expire_time,deliver_time,money,cod,checked,stationery,mailTemplateId,has_items FROM mail WHERE receiver = '%u' ORDER BY id DESC", GetGUIDLow()
     if (!result)
@@ -1382,7 +1382,7 @@ void Player::_LoadMails(QueryResult* result)
 
         m->state = MAIL_STATE_UNCHANGED;
 
-        m_mail.push_back(m);
+        Post().Letters().push_back(m);
 
         if (m->mailTemplateId && !m->has_items)
         {

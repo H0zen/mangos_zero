@@ -896,24 +896,6 @@ bool Player::resetTalents(bool no_cost)
 }
 
 /**
- * @brief Finds a mail entry by message identifier.
- *
- * @param id The message identifier to search for.
- * @return The matching mail entry, or null if none exists.
- */
-Mail* Player::GetMail(uint32 id)
-{
-    for (PlayerMails::iterator itr = m_mail.begin(); itr != m_mail.end(); ++itr)
-    {
-        if ((*itr)->messageID == id)
-        {
-            return (*itr);
-        }
-    }
-    return nullptr;
-}
-
-/**
  * @brief Builds the create update block for a player observer.
  *
  * @param data The update data buffer to append to.

@@ -72,24 +72,6 @@
 #include <cmath>
 
 /**
- * @brief Removes a mail entry from the player's in-memory mailbox.
- *
- * @param id The message identifier to remove.
- */
-void Player::RemoveMail(uint32 id)
-{
-    for (PlayerMails::iterator itr = m_mail.begin(); itr != m_mail.end(); ++itr)
-    {
-        if ((*itr)->messageID == id)
-        {
-            // do not delete item, because Player::removeMail() is called when returning mail to sender.
-            m_mail.erase(itr);
-            return;
-        }
-    }
-}
-
-/**
  * @brief Sends the result of a mail operation to the client.
  *
  * @param mailId The mail message identifier.
@@ -110,62 +92,4 @@ void Player::SendMailResult(uint32 mailId, MailResponseType mailAction, MailResp
         data << (uint32) equipError;
     }
     GetSession()->SendPacket(&data);
-}
-
-/**
- * @brief Notifies the client that new mail is available.
- */
-void Player::SendNewMail()
-{
-    // deliver undelivered mail
-    WorldPacket data(SMSG_RECEIVED_MAIL, 4);
-    data << float(0);
-    GetSession()->SendPacket(&data);
-}
-
-/**
- * @brief Recalculates unread mail count and the next pending delivery time.
- */
-void Player::UpdateNextMailTimeAndUnreads()
-{
-    // calculate next delivery time (min. from non-delivered mails
-    // and recalculate unReadMail
-    time_t cTime = time(nullptr);
-    m_nextMailDelivereTime = 0;
-    unReadMails = 0;
-    for (PlayerMails::iterator itr = m_mail.begin(); itr != m_mail.end(); ++itr)
-    {
-        if ((*itr)->deliver_time > cTime)
-        {
-            if (!m_nextMailDelivereTime || m_nextMailDelivereTime > (*itr)->deliver_time)
-            {
-                m_nextMailDelivereTime = (*itr)->deliver_time;
-            }
-        }
-        else if (((*itr)->checked & MAIL_CHECK_MASK_READ) == 0)
-        {
-            ++unReadMails;
-        }
-    }
-}
-
-/**
- * @brief Tracks a newly scheduled mail delivery time.
- *
- * @param deliver_time The time when the mail should be delivered.
- */
-void Player::AddNewMailDeliverTime(time_t deliver_time)
-{
-    if (deliver_time <= time(nullptr))                         // ready now
-    {
-        ++unReadMails;
-        SendNewMail();
-    }
-    else                                                    // not ready and no have ready mails
-    {
-        if (!m_nextMailDelivereTime || m_nextMailDelivereTime > deliver_time)
-        {
-            m_nextMailDelivereTime =  deliver_time;
-        }
-    }
 }

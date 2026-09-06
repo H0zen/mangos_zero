@@ -192,7 +192,7 @@ void mail::SendMail(WorldSession& session, WorldPacket& recv_data)
     if (receive)
     {
         rc_team = receive->GetTeam();
-        mails_count = receive->GetMailSize();
+        mails_count = receive->Post().Count();
     }
     else
     {
@@ -343,14 +343,11 @@ void mail::MailMarkAsRead(Player& who, WorldPacket& recv_data)
 
     Player* pl = &who;
 
-    if (Mail* m = pl->GetMail(mailId))
+    if (Mail* m = pl->Post().Find(mailId))
     {
-        if (pl->unReadMails)
-        {
-            --pl->unReadMails;
-        }
+        pl->Post().Read();
         m->checked = m->checked | MAIL_CHECK_MASK_READ;
-        pl->m_mailsUpdated = true;
+        pl->Post().Changed(true);
         m->state = MAIL_STATE_CHANGED;
     }
 }
@@ -376,9 +373,9 @@ void mail::MailDelete(Player& who, WorldPacket& recv_data)
     }
 
     Player* pl = &who;
-    pl->m_mailsUpdated = true;
+    pl->Post().Changed(true);
 
-    if (Mail* m = pl->GetMail(mailId))
+    if (Mail* m = pl->Post().Find(mailId))
     {
         // delete shouldn't show up for COD mails
         if (m->COD)
@@ -414,7 +411,7 @@ void mail::MailReturnToSender(WorldSession& session, WorldPacket& recv_data)
     }
 
     Player* pl = session.GetPlayer();
-    Mail* m = pl->GetMail(mailId);
+    Mail* m = pl->Post().Find(mailId);
     if (!m || m->state == MAIL_STATE_DELETED || m->deliver_time > time(nullptr))
     {
         pl->SendMailResult(mailId, MAIL_RETURNED_TO_SENDER, MAIL_ERR_INTERNAL_ERROR);
@@ -428,7 +425,7 @@ void mail::MailReturnToSender(WorldSession& session, WorldPacket& recv_data)
     // needed?
     CharacterDatabase.PExecute("DELETE FROM `mail_items` WHERE `mail_id` = '%u'", mailId);
     CharacterDatabase.CommitTransaction();
-    pl->RemoveMail(mailId);
+    pl->Post().Remove(mailId);
 
     // send back only to existing players and simple drop for other cases
     if (m->messageType == MAIL_NORMAL && m->sender)
@@ -447,12 +444,12 @@ void mail::MailReturnToSender(WorldSession& session, WorldPacket& recv_data)
         {
             for (MailItemInfoVec::iterator itr2 = m->items.begin(); itr2 != m->items.end(); ++itr2)
             {
-                if (Item* item = pl->GetMItem(itr2->item_guid))
+                if (Item* item = pl->Post().Attachment(itr2->item_guid))
                 {
                     draft.AddItem(item);
                 }
 
-                pl->RemoveMItem(itr2->item_guid);
+                pl->Post().Drop(itr2->item_guid);
             }
         }
 
@@ -480,7 +477,7 @@ void mail::MailTakeItem(WorldSession& session, WorldPacket& recv_data)
 
     Player* pl = session.GetPlayer();
 
-    Mail* m = pl->GetMail(mailId);
+    Mail* m = pl->Post().Find(mailId);
     if (!m || m->state == MAIL_STATE_DELETED || m->deliver_time > time(nullptr))
     {
         pl->SendMailResult(mailId, MAIL_ITEM_TAKEN, MAIL_ERR_INTERNAL_ERROR);
@@ -497,7 +494,7 @@ void mail::MailTakeItem(WorldSession& session, WorldPacket& recv_data)
     uint32 itemId = m->items[0].item_template;
     uint32 itemGuid = m->items[0].item_guid;
 
-    Item* it = pl->GetMItem(itemGuid);
+    Item* it = pl->Post().Attachment(itemGuid);
 
     ItemPosCountVec dest;
     InventoryResult msg = session.GetPlayer()->CanStoreItem(NULL_BAG, NULL_SLOT, dest, it, false);
@@ -551,8 +548,8 @@ void mail::MailTakeItem(WorldSession& session, WorldPacket& recv_data)
         }
         m->COD = 0;
         m->state = MAIL_STATE_CHANGED;
-        pl->m_mailsUpdated = true;
-        pl->RemoveMItem(it->GetGUIDLow());
+        pl->Post().Changed(true);
+        pl->Post().Drop(it->GetGUIDLow());
 
         uint32 count = it->GetCount();                      // save counts before store and possible merge with deleting
         pl->MoveItemToInventory(dest, it, true);
@@ -587,7 +584,7 @@ void mail::MailTakeMoney(Player& who, WorldPacket& recv_data)
 
     Player* pl = &who;
 
-    Mail* m = pl->GetMail(mailId);
+    Mail* m = pl->Post().Find(mailId);
     if (!m || m->state == MAIL_STATE_DELETED || m->deliver_time > time(nullptr))
     {
         pl->SendMailResult(mailId, MAIL_MONEY_TAKEN, MAIL_ERR_INTERNAL_ERROR);
@@ -599,7 +596,7 @@ void mail::MailTakeMoney(Player& who, WorldPacket& recv_data)
     pl->ModifyMoney(m->money);
     m->money = 0;
     m->state = MAIL_STATE_CHANGED;
-    pl->m_mailsUpdated = true;
+    pl->Post().Changed(true);
 
     // save money and mail to prevent cheating
     CharacterDatabase.BeginTransaction();
@@ -631,7 +628,7 @@ void mail::GetMailList(Player& who, WorldPacket& recv_data)
     data << uint8(0);                                       // mail's count
     time_t cur_time = time(nullptr);
 
-    for (PlayerMails::iterator itr = who.GetMailBegin(); itr != who.GetMailEnd(); ++itr)
+    for (PlayerMails::iterator itr = who.Post().begin(); itr != who.Post().end(); ++itr)
     {
         // packet send mail count as uint8, prevent overflow
         if (mailsCount >= 254)
@@ -677,7 +674,7 @@ void mail::GetMailList(Player& who, WorldPacket& recv_data)
         data << uint32((*itr)->stationery);                 // stationery (Stationery.dbc)
 
         // 1.12.1 can have only single item
-        Item* item = (*itr)->items.size() > 0 ? who.GetMItem((*itr)->items[0].item_guid) : nullptr;
+        Item* item = (*itr)->items.size() > 0 ? who.Post().Attachment((*itr)->items[0].item_guid) : nullptr;
         if (item)
         {
             data << uint32(item->GetEntry());
@@ -706,8 +703,8 @@ void mail::GetMailList(Player& who, WorldPacket& recv_data)
     data.put<uint8>(0, mailsCount);                         // set real send mails to client
     who.GetSession()->SendPacket(&data);
 
-    // recalculate m_nextMailDelivereTime and unReadMails
-    who.UpdateNextMailTimeAndUnreads();
+    // recalculate Post().NextDelivery() and Post().Unread()
+    who.Post().Recount();
 }
 
 /**
@@ -757,7 +754,7 @@ void mail::MailCreateTextItem(Player& who, WorldPacket& recv_data)
 
     Player* pl = &who;
 
-    Mail* m = pl->GetMail(mailId);
+    Mail* m = pl->Post().Find(mailId);
     if (!m || (m->body.empty() && !m->mailTemplateId) || m->state == MAIL_STATE_DELETED || m->deliver_time > time(nullptr))
     {
         pl->SendMailResult(mailId, MAIL_MADE_PERMANENT, MAIL_ERR_INTERNAL_ERROR);
@@ -782,7 +779,7 @@ void mail::MailCreateTextItem(Player& who, WorldPacket& recv_data)
     {
         m->checked = m->checked | MAIL_CHECK_MASK_COPIED;
         m->state = MAIL_STATE_CHANGED;
-        pl->m_mailsUpdated = true;
+        pl->Post().Changed(true);
 
         pl->StoreItem(dest, bodyItem, true);
         pl->SendMailResult(mailId, MAIL_MADE_PERMANENT, MAIL_OK);
@@ -800,7 +797,7 @@ void mail::MailCreateTextItem(Player& who, WorldPacket& recv_data)
 void mail::QueryNextMailTime(Player& who, WorldPacket& /**recv_data*/)
 {
     WorldPacket data(MSG_QUERY_NEXT_MAIL_TIME, 4);
-    data << (who.unReadMails > 0 ? float(0) : float(-1));
+    data << (who.Post().Unread() > 0 ? float(0) : float(-1));
     who.GetSession()->SendPacket(&data);
 }
 

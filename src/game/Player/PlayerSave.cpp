@@ -294,7 +294,7 @@ void Player::SaveToDB()
 
     uberInsert.Execute();
 
-    if (m_mailsUpdated)                                     // save mails only when needed
+    if (Post().Changed())                                     // save mails only when needed
     {
         SaveMail();
     }

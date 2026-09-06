@@ -690,7 +690,7 @@ bool ChatHandler::HandleResetMailCommand(char* args)
         senderGuid = from_sender_guid;
     }
 
-    for (PlayerMails::iterator itr = player->GetMailBegin(); itr != player->GetMailEnd(); ++itr)
+    for (PlayerMails::iterator itr = player->Post().begin(); itr != player->Post().end(); ++itr)
     {
         // Flag the mail as "deleted"
         Mail* m = (*itr);
@@ -750,7 +750,7 @@ bool ChatHandler::HandleResetMailCommand(char* args)
 
     if (totalDeletedMailCount > 0)
     {
-        player->m_mailsUpdated = true;
+        player->Post().Changed(true);
     }
 
     // Notification

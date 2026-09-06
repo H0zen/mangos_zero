@@ -351,7 +351,7 @@ void MailDraft::SendMailTo(MailReceiver const& receiver, MailSender const& sende
     // For online receiver update in game mail status and data
     if (pReceiver)
     {
-        pReceiver->AddNewMailDeliverTime(deliver_time);
+        pReceiver->Post().Expecting(deliver_time);
 
         Mail* m = new Mail;
         m->messageID = mailId;
@@ -376,13 +376,13 @@ void MailDraft::SendMailTo(MailReceiver const& receiver, MailSender const& sende
         m->checked = checked;
         m->state = MAIL_STATE_UNCHANGED;
 
-        pReceiver->AddMail(m);                           // to insert new mail to beginning of maillist
+        pReceiver->Post().Add(m);                           // to insert new mail to beginning of maillist
 
         if (!m_items.empty())
         {
             for (MailItemMap::iterator mailItemIter = m_items.begin(); mailItemIter != m_items.end(); ++mailItemIter)
             {
-                pReceiver->AddMItem(mailItemIter->second);
+                pReceiver->Post().Keep(mailItemIter->second);
             }
         }
     }
@@ -461,7 +461,7 @@ void Mail::prepareTemplateItems(Player* receiver)
 
                 AddItem(item->GetGUIDLow(), item->GetEntry());
 
-                receiver->AddMItem(item);
+                receiver->Post().Keep(item);
 
                 CharacterDatabase.PExecute("INSERT INTO `mail_items` (`mail_id`,`item_guid`,`item_template`,`receiver`) VALUES ('%u', '%u', '%u','%u')",
                     messageID, item->GetGUIDLow(), item->GetEntry(), receiver->GetGUIDLow());
