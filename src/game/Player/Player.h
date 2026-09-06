@@ -80,6 +80,7 @@
 #include "Hearth.h"
 #include "Mailbox.h"
 #include "PlayedTime.h"
+#include "Weaponry.h"
 #include "Rest.h"
 #include "Perils/Perils.h"
 #include "Offers/PlayerOffers.h"
@@ -1420,10 +1421,6 @@ class Player : public Unit
 
         // Remove the ammo
         void RemoveAmmo();
-        std::pair<float, float> GetAmmoDPS() const
-        {
-            return {m_ammoDPSMin, m_ammoDPSMax};
-        }
 
         // Check if the ammo is compatible
         bool CheckAmmoCompatibility(const ItemPrototype* ammo_proto) const;
@@ -1497,28 +1494,9 @@ class Player : public Unit
         // Send a sell error message
         void SendSellError(SellResult msg, Creature* pCreature, ObjectGuid itemGuid, uint32 param);
         void SendOpenContainer();
-        void AddWeaponProficiency(uint32 newflag)
-        {
-            m_WeaponProficiency |= newflag;
-        }
 
-        // Add an armor proficiency
-        void AddArmorProficiency(uint32 newflag)
-        {
-            m_ArmorProficiency |= newflag;
-        }
 
-        // Get the weapon proficiency
-        uint32 GetWeaponProficiency() const
-        {
-            return m_WeaponProficiency;
-        }
 
-        // Get the armor proficiency
-        uint32 GetArmorProficiency() const
-        {
-            return m_ArmorProficiency;
-        }
 
         // Check if a two-handed weapon is used
         bool IsTwoHandUsed() const
@@ -1882,11 +1860,6 @@ class Player : public Unit
             m_regenTimer = time;
         }
 
-        // Set the weapon change timer
-        void setWeaponChangeTimer(uint32 time)
-        {
-            m_weaponChangeTimer = time;
-        }
 
         // Get the player's money
         uint32 GetMoney() const
@@ -2411,17 +2384,7 @@ class Player : public Unit
         // Send log XP gain
         void SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 RestXP);
 
-        // Get the last swing error message
-        uint8 LastSwingErrorMsg() const
-        {
-            return m_swingErrorMsg;
-        }
 
-        // Set the swing error message
-        void SwingErrorMsg(uint8 val)
-        {
-            m_swingErrorMsg = val;
-        }
 
         // Notifiers for various attack swing errors
         void SendAttackSwingCantAttack();
@@ -2733,22 +2696,16 @@ class Player : public Unit
         uint32 GetShieldBlockValue() const override;
 
         // Check if the player can parry
-        bool CanParry() const { return m_canParry; }
 
         // Set the player's ability to parry
-        void SetCanParry(bool value);
 
         // Check if the player can block
-        bool CanBlock() const { return m_canBlock; }
 
         // Set the player's ability to block
-        void SetCanBlock(bool value);
 
         // Check if the player can dual wield
-        bool CanDualWield() const { return m_canDualWield; }
 
         // Set the player's ability to dual wield
-        void SetCanDualWield(bool value) { m_canDualWield = value; }
 
         // in 0.12 and later in Unit
         void InitStatBuffMods()
@@ -3183,6 +3140,10 @@ class Player : public Unit
         PlayedTime& Played() { return m_played; }
         PlayedTime const& Played() const { return m_played; }
 
+        /// What he is trained to wear and wield, and what he can do so armed.
+        Weaponry& Arms() { return m_arms; }
+        Weaponry const& Arms() const { return m_arms; }
+
         time_t LoginTime() const { return m_played.LoggedInAt(); }
 
         // Get an object by type mask
@@ -3542,7 +3503,6 @@ class Player : public Unit
 
         TradeData* m_trade; // Trade data
 
-        uint32 m_weaponChangeTimer;
 
         uint32 m_zoneUpdateId; // Zone update ID
         uint32 m_zoneUpdateTimer; // Zone update timer
@@ -3553,14 +3513,6 @@ class Player : public Unit
         time_t m_deathExpireTime; // Death expire time
 
 
-        uint32 m_WeaponProficiency;
-        uint32 m_ArmorProficiency;
-        bool m_canParry;
-        bool m_canBlock;
-        bool m_canDualWield;
-        uint8 m_swingErrorMsg;
-        float m_ammoDPSMin;
-        float m_ammoDPSMax;
 
         //////////////////// Rest System/////////////////////
         //////////////////// Rest System/////////////////////
@@ -3662,6 +3614,8 @@ class Player : public Unit
         Mailbox m_post;
 
         PlayedTime m_played;
+
+        Weaponry m_arms;
 
         // Detect invisibility timer
         uint32 m_DetectInvTimer;

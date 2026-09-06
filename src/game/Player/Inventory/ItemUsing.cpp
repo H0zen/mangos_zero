@@ -143,7 +143,7 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool
                     return EQUIP_ERR_YOU_ARE_STUNNED;
                 }
 
-                if (IsInCombat() && pProto->Class == ITEM_CLASS_WEAPON && m_weaponChangeTimer != 0)
+                if (IsInCombat() && pProto->Class == ITEM_CLASS_WEAPON && Arms().ChangeTimer() != 0)
                 {
                     return EQUIP_ERR_CANT_DO_RIGHT_NOW; // maybe exist better err
                 }
@@ -211,7 +211,7 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool
             {
                 if (type == INVTYPE_WEAPON || type == INVTYPE_WEAPONOFFHAND)
                 {
-                    if (!CanDualWield())
+                    if (!Arms().CanDualWield())
                     {
                         return EQUIP_ERR_CANT_DUAL_WIELD;
                     }
@@ -486,8 +486,7 @@ void Player::RemoveAmmo()
 {
     SetUInt32Value(PLAYER_AMMO_ID, 0);
 
-    m_ammoDPSMin = 0.0f;
-    m_ammoDPSMax = 0.0f;
+    Arms().Ammo(0.0f, 0.0f);
 
     if (CanModifyStats())
     {

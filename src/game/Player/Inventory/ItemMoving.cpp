@@ -130,7 +130,7 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
             _ApplyItemMods(pItem, slot, true);
 
             // Weapons and also Totem/Relic/Sigil/etc
-            if (pProto && IsInCombat() && (pProto->Class == ITEM_CLASS_WEAPON || pProto->InventoryType == INVTYPE_RELIC) && m_weaponChangeTimer == 0)
+            if (pProto && IsInCombat() && (pProto->Class == ITEM_CLASS_WEAPON || pProto->InventoryType == INVTYPE_RELIC) && Arms().ChangeTimer() == 0)
             {
                 uint32 cooldownSpell = SPELL_ID_WEAPON_SWITCH_COOLDOWN_1_5s;
 
@@ -147,7 +147,7 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
                 }
                 else
                 {
-                    m_weaponChangeTimer = spellProto->StartRecoveryTime;
+                    Arms().ChangeTimer(spellProto->StartRecoveryTime);
 
                     WorldPacket data(SMSG_SPELL_COOLDOWN, 8 + 4 + 4);
                     data << GetObjectGuid();

@@ -280,15 +280,15 @@ void Spell::EffectProficiency(SpellEffectIndex /*eff_idx*/)
     Player* p_target = (Player*)unitTarget;
 
     uint32 subClassMask = m_spellInfo->EquippedItemSubclass;
-    if (m_spellInfo->EquippedItemClass == ITEM_CLASS_WEAPON && !(p_target->GetWeaponProficiency() & subClassMask))
+    if (m_spellInfo->EquippedItemClass == ITEM_CLASS_WEAPON && !(p_target->Arms().WeaponTraining() & subClassMask))
     {
-        p_target->AddWeaponProficiency(subClassMask);
-        p_target->SendProficiency(ITEM_CLASS_WEAPON, p_target->GetWeaponProficiency());
+        p_target->Arms().LearnWeapon(subClassMask);
+        p_target->SendProficiency(ITEM_CLASS_WEAPON, p_target->Arms().WeaponTraining());
     }
-    if (m_spellInfo->EquippedItemClass == ITEM_CLASS_ARMOR && !(p_target->GetArmorProficiency() & subClassMask))
+    if (m_spellInfo->EquippedItemClass == ITEM_CLASS_ARMOR && !(p_target->Arms().ArmourTraining() & subClassMask))
     {
-        p_target->AddArmorProficiency(subClassMask);
-        p_target->SendProficiency(ITEM_CLASS_ARMOR, p_target->GetArmorProficiency());
+        p_target->Arms().LearnArmour(subClassMask);
+        p_target->SendProficiency(ITEM_CLASS_ARMOR, p_target->Arms().ArmourTraining());
     }
 }
 

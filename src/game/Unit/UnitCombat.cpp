@@ -995,7 +995,7 @@ float Unit::GetUnitParryChance() const
     if (IsPlayer())
     {
         Player const* player = (Player const*)this;
-        if (player->CanParry())
+        if (player->Arms().CanParry())
         {
             Item* tmpitem = player->GetWeaponForAttack(BASE_ATTACK, true, true);
             if (!tmpitem)
@@ -1036,7 +1036,7 @@ float Unit::GetUnitBlockChance() const
     if (IsPlayer())
     {
         Player const* player = (Player const*)this;
-        if (player->CanBlock() && player->CanUseEquippedWeapon(OFF_ATTACK))
+        if (player->Arms().CanBlock() && player->CanUseEquippedWeapon(OFF_ATTACK))
         {
             Item* tmpitem = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
             if (tmpitem && !tmpitem->IsBroken() && tmpitem->GetProto()->Block)

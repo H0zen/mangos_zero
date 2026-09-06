@@ -289,7 +289,7 @@ void Spell::EffectDualWield(SpellEffectIndex /*eff_idx*/)
 {
     if (unitTarget && unitTarget->IsPlayer())
     {
-        ((Player*)unitTarget)->SetCanDualWield(true);
+        ((Player*)unitTarget)->Arms().CanDualWield(true);
     }
 }
 

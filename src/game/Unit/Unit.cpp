@@ -467,7 +467,7 @@ bool Unit::UpdateMeleeAttackingState()
     }
 
     Player* player = (IsPlayer() ? (Player*)this : nullptr);
-    if (player && swingError != player->LastSwingErrorMsg())
+    if (player && swingError != player->Arms().SwingError())
     {
         if (swingError == 1)
         {
@@ -477,7 +477,7 @@ bool Unit::UpdateMeleeAttackingState()
         {
             player->SendAttackSwingBadFacingAttack();
         }
-        player->SwingErrorMsg(swingError);
+        player->Arms().SwingError(swingError);
     }
 
     return swingError == 0;

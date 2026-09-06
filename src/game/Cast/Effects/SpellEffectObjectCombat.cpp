@@ -910,7 +910,7 @@ void Spell::EffectParry(SpellEffectIndex /*eff_idx*/)
 {
     if (unitTarget && unitTarget->IsPlayer())
     {
-        ((Player*)unitTarget)->SetCanParry(true);
+        ((Player*)unitTarget)->Arms().CanParry(true);
     }
 }
 
@@ -923,7 +923,7 @@ void Spell::EffectBlock(SpellEffectIndex /*eff_idx*/)
 {
     if (unitTarget && unitTarget->IsPlayer())
     {
-        ((Player*)unitTarget)->SetCanBlock(true);
+        ((Player*)unitTarget)->Arms().CanBlock(true);
     }
 }
 

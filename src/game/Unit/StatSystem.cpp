@@ -288,7 +288,7 @@ void Player::UpdateAttackPowerAndDamage(bool ranged)
     else
     {
         UpdateDamagePhysical(BASE_ATTACK);
-        if (CanDualWield() && haveOffhandWeapon())          // allow update offhand damage only if player knows DualWield Spec and has equipped offhand weapon
+        if (Arms().CanDualWield() && haveOffhandWeapon())          // allow update offhand damage only if player knows DualWield Spec and has equipped offhand weapon
         {
             UpdateDamagePhysical(OFF_ATTACK);
         }
@@ -349,7 +349,7 @@ void Player::CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, fl
     }
     else if (attType == RANGED_ATTACK)                      // add ammo DPS to ranged damage
     {
-        std::pair<float,float> ammoDps = GetAmmoDPS();
+        std::pair<float,float> ammoDps = Arms().Ammo();
         weapon_mindamage += ammoDps.first * att_speed;
         weapon_maxdamage += ammoDps.second * att_speed;
     }
@@ -404,7 +404,7 @@ void Player::UpdateDefenseBonusesMod()
 void Player::UpdateBlockPercentage()
 {
     // Nothing at all for anyone holding no shield.
-    float const value = CanBlock()
+    float const value = Arms().CanBlock()
         ? stats::Chance(stats::GUARD_FROM_NOTHING,
                         int32(GetDefenseSkillValue()), int32(GetMaxSkillValueForLevel()),
                         float(GetTotalAuraModifier(SPELL_AURA_MOD_BLOCK_PERCENT)))
@@ -468,7 +468,7 @@ void Player::UpdateAllCritPercentages()
 void Player::UpdateParryPercentage()
 {
     // Nothing at all for anyone who cannot parry, which is most classes.
-    float const value = CanParry()
+    float const value = Arms().CanParry()
         ? stats::Chance(stats::GUARD_FROM_NOTHING,
                         int32(GetDefenseSkillValue()), int32(GetMaxSkillValueForLevel()),
                         float(GetTotalAuraModifier(SPELL_AURA_MOD_PARRY_PERCENT)))

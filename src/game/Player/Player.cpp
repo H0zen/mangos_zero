@@ -417,7 +417,7 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
  *
  * @param session The owning world session.
  */
-Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
+Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_arms(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
 {
 
     m_transport = 0;
@@ -461,7 +461,6 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
         m_SpellCritPercentage[s] = 0.0f;
     }
     m_regenTimer = 0;
-    m_weaponChangeTimer = 0;
 
     m_zoneUpdateId = 0;
     m_zoneUpdateTimer = 0;
@@ -506,7 +505,6 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
     m_deathExpireTime = 0;
 
     // Initialize swing error message to 0
-    m_swingErrorMsg = 0;
 
     // Initialize detection invisibility timer to 1 millisecond
     m_DetectInvTimer = 1 * IN_MILLISECONDS;
@@ -522,17 +520,10 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
     m_played.StartAt(time(nullptr));
     // Set last tick time to login time
     // Initialize weapon proficiency to 0
-    m_WeaponProficiency = 0;
     // Initialize armor proficiency to 0
-    m_ArmorProficiency = 0;
     // Initialize parry ability to false
-    m_canParry = false;
     // Initialize block ability to false
-    m_canBlock = false;
     // Initialize dual wield ability to false
-    m_canDualWield = false;
-    m_ammoDPSMin = 0.0f;
-    m_ammoDPSMax = 0.0f;
 
     // Temporary-unsummoned pet number now initialized by m_petMgr's constructor.
 
@@ -1133,15 +1124,14 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     }
 
     // Update weapon change timer
-    if (m_weaponChangeTimer > 0)
+    if (Arms().ChangeTimer() > 0)
     {
-        if (update_diff >= m_weaponChangeTimer)
+        if (update_diff >= Arms().ChangeTimer())
         {
-            m_weaponChangeTimer = 0;
         }
         else
         {
-            m_weaponChangeTimer -= update_diff;
+            Arms().ChangeTimer(Arms().ChangeTimer() - update_diff);
         }
     }
 
@@ -3010,9 +3000,9 @@ bool Player::ViableEquipSlots(ItemPrototype const* proto, uint8 *viable_slots) c
                 viable_slots[0] = EQUIPMENT_SLOT_MAINHAND;
 
                 //DEBUG_LOG("**** [Player::ViableEquipSlots] INVTYPE_WEAPON/Determining if can dual weild ****");
-                if (CanDualWield())
+                if (Arms().CanDualWield())
                 {
-                    //DEBUG_LOG("**** [Player::ViableEquipSlots] INVTYPE_WEAPON/CanDualWield() == TRUE  ****");
+                    //DEBUG_LOG("**** [Player::ViableEquipSlots] INVTYPE_WEAPON/Arms().CanDualWield() == TRUE  ****");
                     viable_slots[1] = EQUIPMENT_SLOT_OFFHAND;
                 }
                 break;
@@ -3029,9 +3019,9 @@ bool Player::ViableEquipSlots(ItemPrototype const* proto, uint8 *viable_slots) c
                 viable_slots[0] = EQUIPMENT_SLOT_MAINHAND;
 
                 //DEBUG_LOG("**** [Player::ViableEquipSlots] INVTYPE_2HWEAPON/Determining if can dual weild and Titian Grip ****");
-                if (CanDualWield())
+                if (Arms().CanDualWield())
                 {
-                    //DEBUG_LOG("**** [Player::ViableEquipSlots] INVTYPE_2HWEAPON/CanDualWield() && CanTitanGrip() == TRUE  ****");
+                    //DEBUG_LOG("**** [Player::ViableEquipSlots] INVTYPE_2HWEAPON/Arms().CanDualWield() && CanTitanGrip() == TRUE  ****");
                     viable_slots[1] = EQUIPMENT_SLOT_OFFHAND;
                 }
                 break;
@@ -4893,38 +4883,6 @@ void Player::SetClientControl(Unit* target, uint8 allowMove)
     data << target->GetPackGUID();
     data << uint8(allowMove);
     GetSession()->SendPacket(&data);
-}
-
-/**
- * @brief Enables or disables the player's ability to parry.
- *
- * @param value True to allow parry; false to disable it.
- */
-void Player::SetCanParry(bool value)
-{
-    if (m_canParry == value)
-    {
-        return;
-    }
-
-    m_canParry = value;
-    UpdateParryPercentage();
-}
-
-/**
- * @brief Enables or disables the player's ability to block.
- *
- * @param value True to allow block; false to disable it.
- */
-void Player::SetCanBlock(bool value)
-{
-    if (m_canBlock == value)
-    {
-        return;
-    }
-
-    m_canBlock = value;
-    UpdateBlockPercentage();
 }
 
 /**

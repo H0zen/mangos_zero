@@ -202,7 +202,7 @@ uint8 Player::FindEquipSlot(ItemPrototype const* proto, uint32 slot, bool swap) 
 
             // suggest offhand slot only if know dual wielding
             // (this will be replace mainhand weapon at auto equip instead unwonted "you don't known dual wielding" ...
-            if (CanDualWield())
+            if (Arms().CanDualWield())
             {
                 slots[1] = EQUIPMENT_SLOT_OFFHAND;
             }

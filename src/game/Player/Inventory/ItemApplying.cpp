@@ -856,13 +856,12 @@ void Player::_ApplyAmmoBonuses()
         currentAmmoDPSMax = ammo_proto->Damage[0].DamageMax;
     }
 
-    if (std::make_pair(currentAmmoDPSMin, currentAmmoDPSMax) == GetAmmoDPS())
+    if (std::make_pair(currentAmmoDPSMin, currentAmmoDPSMax) == Arms().Ammo())
     {
         return;
     }
 
-    m_ammoDPSMin = currentAmmoDPSMin;
-    m_ammoDPSMax = currentAmmoDPSMax;
+    Arms().Ammo(currentAmmoDPSMin, currentAmmoDPSMax);
 
     if (CanModifyStats())
     {
