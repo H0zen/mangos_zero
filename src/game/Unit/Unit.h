@@ -87,6 +87,7 @@
 #include "CharmInfo.h"
 #include "Stats/Modifiers.h"
 #include "Creature/CreatureRecord.h"
+#include "Creature/Vigil.h"
 #include "MotionMaster.h"
 #include "DBCStructure.h"
 #include "WorldPacket.h"
@@ -1656,6 +1657,30 @@ class Unit : public Occupant
          * was spawned with and points here at the row it is behaving as.
          */
         CreatureInfo const* GetCreatureInfo() const { return m_creatureInfo; }
+
+        /// The watch kept from its death to its return. A player has one and
+        /// never uses it.
+        Vigil& Watch() { return m_vigil; }
+        Vigil const& Watch() const { return m_vigil; }
+
+        time_t GetRespawnTime() const { return m_vigil.RespawnsAt(); }
+        time_t GetRespawnTimeEx() const { return m_vigil.BackAt(time(nullptr)); }
+        void SetRespawnTime(uint32 respawn) { m_vigil.RespawnsAt(respawn ? time(nullptr) + respawn : 0); }
+
+        uint32 GetRespawnDelay() const { return m_vigil.RespawnDelay(); }
+        void SetRespawnDelay(uint32 delay) { m_vigil.RespawnDelay(delay); }
+
+        uint32 GetCorpseDelay() const { return m_vigil.CorpseDelay(); }
+        void SetCorpseDelay(uint32 delay) { m_vigil.CorpseDelay(delay); }
+
+        float GetRespawnRadius() const { return m_vigil.Radius(); }
+        void SetRespawnRadius(float dist) { m_vigil.Radius(dist); }
+
+        time_t GetKilledTime() const { return m_vigil.KilledAt(); }
+        void SetKilledTime(time_t when) { m_vigil.KilledAt(when); }
+
+        bool IsDeadByDefault() const { return m_vigil.DeadByDefault(); }
+        void SetDeadByDefault(bool dead) { m_vigil.DeadByDefault(dead); }
 
         /// What sort of unit this is. A player is generic: none of the three
         /// special kinds is ever a player.
@@ -3632,6 +3657,8 @@ class Unit : public Occupant
 
         /// Set once, by whichever constructor made it.
         CreatureSubtype m_subtype = CREATURE_SUBTYPE_GENERIC;
+
+        Vigil m_vigil;
 
         struct WeaponDamageInfo
         {

@@ -239,10 +239,9 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
     loot(this),
     lootForPickPocketed(false), lootForBody(false), lootForSkin(false),
     m_lootMoney(0),
-    m_corpseRemoveTime(0), m_respawnTime(0), m_respawnDelay(25), m_corpseDelay(60), m_aggroDelay(0), m_respawnradius(5.0f),
     m_defaultMovementType(IDLE_MOTION_TYPE), m_equipmentId(0),
     m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false),
-    m_AI_locked(false), m_IsDeadByDefault(false), m_temporaryFactionFlags(TEMPFACTION_NONE),
+    m_AI_locked(false), m_temporaryFactionFlags(TEMPFACTION_NONE),
     m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0),
     m_PlayerDamageReq(0), m_sheet(*this), m_links(*this), m_pace(*this)
 {
@@ -252,7 +251,7 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
     hasBeenLootedOnce = false;
     assignedLooter = 0;
 
-    m_killedTime = 0;
+    Watch().KilledAt(0);
     m_regenTimer = 200;
 
     // Zero sentinel: lets waypoint evade tell "combat start never recorded"
@@ -399,14 +398,14 @@ void Creature::RemoveCorpse(bool inPlace)
         }
     }
 
-    if ((GetDeathState() != CORPSE && !m_IsDeadByDefault) || (GetDeathState() != ALIVE && m_IsDeadByDefault))
+    if ((GetDeathState() != CORPSE && !Watch().DeadByDefault()) || (GetDeathState() != ALIVE && Watch().DeadByDefault()))
     {
         return;
     }
 
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Removing corpse of %s ", GetGuidStr().c_str());
 
-    m_corpseRemoveTime = time(nullptr);
+    Watch().CorpseGoesAt(time(nullptr));
     SetDeathState(DEAD);
     UpdateObjectVisibility();
 
@@ -416,7 +415,7 @@ void Creature::RemoveCorpse(bool inPlace)
     loot.clear();
 
     /* Loot data */
-    m_killedTime = 0;
+    Watch().KilledAt(0);
     hasBeenLootedOnce = false;
     assignedLooter = 0;
     m_claim.StakedBy(nullptr);
@@ -440,7 +439,7 @@ void Creature::RemoveCorpse(bool inPlace)
     // script can set time (in seconds) explicit, override the original
     if (respawnDelay)
     {
-        m_respawnTime = time(nullptr) + respawnDelay;
+        Watch().RespawnsAt(time(nullptr) + respawnDelay);
     }
 
     float x, y, z, o;
@@ -785,11 +784,11 @@ void Creature::Update(uint32 update_diff, uint32 diff)
             break;
         case DEAD:
         {
-            if (m_respawnTime <= time(nullptr) && m_links.MayRespawn())
+            if (Watch().RespawnsAt() <= time(nullptr) && m_links.MayRespawn())
             {
                 DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Respawning...");
-                m_respawnTime = 0;
-                m_aggroDelay = sWorld.getConfig(CONFIG_UINT32_CREATURE_RESPAWN_AGGRO_DELAY);
+                Watch().RespawnsAt(0);
+                Watch().AggroDelay(sWorld.getConfig(CONFIG_UINT32_CREATURE_RESPAWN_AGGRO_DELAY));
                 lootForPickPocketed = false;
                 lootForBody         = false;
                 lootForSkin         = false;
@@ -809,7 +808,7 @@ void Creature::Update(uint32 update_diff, uint32 diff)
                 SelectLevel();
                 Sheet().Everything();  // to be sure stats is correct regarding level of the creature
                 SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
-                if (m_IsDeadByDefault)
+                if (Watch().DeadByDefault())
                 {
                     SetDeathState(JUST_DIED);
                     SetHealth(0);
@@ -838,7 +837,7 @@ void Creature::Update(uint32 update_diff, uint32 diff)
         {
             Unit::Update(update_diff, diff);
 
-            if (m_IsDeadByDefault)
+            if (Watch().DeadByDefault())
             {
                 break;
             }
@@ -846,7 +845,7 @@ void Creature::Update(uint32 update_diff, uint32 diff)
             // Loot is stopped already if the corpse got removed.
             m_claim.TickRoll(update_diff);
 
-            if (m_corpseRemoveTime <= time(nullptr))
+            if (Watch().CorpseGoesAt() <= time(nullptr))
             {
                 RemoveCorpse();
             }
@@ -868,18 +867,11 @@ void Creature::Update(uint32 update_diff, uint32 diff)
                     return;
                 }
             }
-            if (m_aggroDelay <= update_diff)
-            {
-                m_aggroDelay = 0;
-            }
-            else
-            {
-                m_aggroDelay -= update_diff;
-            }
+            Watch().StillDazed(update_diff);
 
-            if (m_IsDeadByDefault)
+            if (Watch().DeadByDefault())
             {
-                if (m_corpseRemoveTime <= time(nullptr))
+                if (Watch().CorpseGoesAt() <= time(nullptr))
                 {
                     RemoveCorpse();
                     break;
@@ -1170,19 +1162,19 @@ bool Creature::Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo cons
     switch (GetCreatureInfo()->Rank)
     {
         case CREATURE_ELITE_RARE:
-            m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_RARE);
+            Watch().CorpseDelay(sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_RARE));
             break;
         case CREATURE_ELITE_ELITE:
-            m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_ELITE);
+            Watch().CorpseDelay(sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_ELITE));
             break;
         case CREATURE_ELITE_RAREELITE:
-            m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_RAREELITE);
+            Watch().CorpseDelay(sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_RAREELITE));
             break;
         case CREATURE_ELITE_WORLDBOSS:
-            m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_WORLDBOSS);
+            Watch().CorpseDelay(sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_WORLDBOSS));
             break;
         default:
-            m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_NORMAL);
+            Watch().CorpseDelay(sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_NORMAL));
             break;
     }
 
@@ -1496,15 +1488,15 @@ void Creature::SaveToDB(uint32 mapid)
     data.posY = Where().Y();
     data.posZ = Where().Z();
     data.orientation = Where().Facing();
-    data.spawntimesecs = m_respawnDelay;
+    data.spawntimesecs = Watch().RespawnDelay();
     // prevent add data integrity problems
-    data.spawndist = GetDefaultMovementType() == IDLE_MOTION_TYPE ? 0 : m_respawnradius;
+    data.spawndist = GetDefaultMovementType() == IDLE_MOTION_TYPE ? 0 : Watch().Radius();
     data.currentwaypoint = 0;
     data.curhealth = GetHealth();
     data.curmana = GetPower(POWER_MANA);
-    data.is_dead = m_IsDeadByDefault;
+    data.is_dead = Watch().DeadByDefault();
     // prevent add data integrity problems
-    data.movementType = !m_respawnradius && GetDefaultMovementType() == RANDOM_MOTION_TYPE
+    data.movementType = !Watch().Radius() && GetDefaultMovementType() == RANDOM_MOTION_TYPE
         ? IDLE_MOTION_TYPE : GetDefaultMovementType();
 
     // updated in DB
@@ -1617,16 +1609,16 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
     }
 
     SetSpawn(pos);
-    m_respawnradius = data->spawndist;
+    Watch().Radius(data->spawndist);
 
-    m_respawnDelay = data->spawntimesecs;
-    m_corpseDelay = std::min(m_respawnDelay * 9 / 10, m_corpseDelay); // set corpse delay to 90% of the respawn delay
-    m_IsDeadByDefault = data->is_dead;
-    m_deathState = m_IsDeadByDefault ? DEAD : ALIVE;
+    Watch().RespawnDelay(data->spawntimesecs);
+    Watch().CorpseDelay(std::min(Watch().RespawnDelay() * 9 / 10, Watch().CorpseDelay())); // set corpse delay to 90% of the respawn delay
+    Watch().DeadByDefault(data->is_dead);
+    m_deathState = Watch().DeadByDefault() ? DEAD : ALIVE;
 
-    m_respawnTime  = map->GetPersistentState()->GetCreatureRespawnTime(GetGUIDLow());
+    Watch().RespawnsAt(map->GetPersistentState()->GetCreatureRespawnTime(GetGUIDLow()));
 
-    if (m_respawnTime > time(nullptr))                         // not ready to respawn
+    if (Watch().RespawnsAt() > time(nullptr))                         // not ready to respawn
     {
         m_deathState = DEAD;
         if (CanFly())
@@ -1639,9 +1631,9 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
             }
         }
     }
-    else if (m_respawnTime)                                 // respawn time set but expired
+    else if (Watch().RespawnsAt())                                 // respawn time set but expired
     {
-        m_respawnTime = 0;
+        Watch().RespawnsAt(0);
 
         GetMap()->GetPersistentState()->SaveCreatureRespawnTime(GetGUIDLow(), 0);
     }
@@ -1879,10 +1871,10 @@ float Creature::GetAttackDistance(Unit const* pl) const
  */
 void Creature::SetDeathState(DeathState s)
 {
-    if ((s == JUST_DIED && !m_IsDeadByDefault) || (s == JUST_ALIVED && m_IsDeadByDefault))
+    if ((s == JUST_DIED && !Watch().DeadByDefault()) || (s == JUST_ALIVED && Watch().DeadByDefault()))
     {
-        m_corpseRemoveTime = time(nullptr) + m_corpseDelay; // the max/default time for corpse decay (before creature is looted/AllLootRemovedFromCorpse() is called)
-        m_respawnTime = time(nullptr) + m_respawnDelay;        // respawn delay (spawntimesecs)
+        Watch().CorpseGoesAt(time(nullptr) + Watch().CorpseDelay()); // the max/default time for corpse decay (before creature is looted/AllLootRemovedFromCorpse() is called)
+        Watch().RespawnsAt(time(nullptr) + Watch().RespawnDelay());        // respawn delay (spawntimesecs)
 
         // always save boss respawn time at death to prevent crash cheating
         if (sWorld.getConfig(CONFIG_BOOL_SAVE_RESPAWN_TIME_IMMEDIATELY) || IsWorldBoss())
@@ -1964,7 +1956,7 @@ void Creature::Respawn()
         {
             GetMap()->GetPersistentState()->SaveCreatureRespawnTime(GetGUIDLow(), 0);
         }
-        m_respawnTime = time(nullptr);                         // respawn at next tick
+        Watch().RespawnsAt(time(nullptr));                         // respawn at next tick
     }
 }
 
@@ -2242,7 +2234,7 @@ bool Creature::IsVisibleInGridForPlayer(Player* pl) const
     // Live player (or with not release body see live creatures or death creatures with corpse disappearing time > 0
     if (pl->IsAlive() || pl->GetDeathTimer() > 0)
     {
-        return (IsAlive() || m_corpseRemoveTime > time(nullptr) || (m_IsDeadByDefault && m_deathState == CORPSE));
+        return (IsAlive() || Watch().CorpseGoesAt() > time(nullptr) || (Watch().DeadByDefault() && m_deathState == CORPSE));
     }
 
     // Dead player see live creatures near own corpse
@@ -2410,7 +2402,7 @@ bool Creature::CanInitiateAttack()
         return false;
     }
 
-    if (m_aggroDelay != 0)
+    if (Watch().AggroDelay() != 0)
     {
         return false;
     }
@@ -2428,13 +2420,13 @@ void Creature::SaveRespawnTime()
         return;
     }
 
-    if (m_respawnTime > time(nullptr))                         // dead (no corpse)
+    if (Watch().RespawnsAt() > time(nullptr))                         // dead (no corpse)
     {
-        GetMap()->GetPersistentState()->SaveCreatureRespawnTime(GetGUIDLow(), m_respawnTime);
+        GetMap()->GetPersistentState()->SaveCreatureRespawnTime(GetGUIDLow(), Watch().RespawnsAt());
     }
-    else if (m_corpseRemoveTime > time(nullptr))               // dead (corpse)
+    else if (Watch().CorpseGoesAt() > time(nullptr))               // dead (corpse)
     {
-        GetMap()->GetPersistentState()->SaveCreatureRespawnTime(GetGUIDLow(), m_corpseRemoveTime + m_respawnDelay);
+        GetMap()->GetPersistentState()->SaveCreatureRespawnTime(GetGUIDLow(), Watch().CorpseGoesAt() + Watch().RespawnDelay());
     }
 }
 
@@ -2812,28 +2804,6 @@ bool Creature::HasSpell(uint32 spellID) const
 }
 
 /**
- * @brief Gets the effective respawn time, accounting for corpse decay.
- *
- * @return The next respawn-related time value.
- */
-time_t Creature::GetRespawnTimeEx() const
-{
-    time_t now = time(nullptr);
-    if (m_respawnTime > now)                                // dead (no corpse)
-    {
-        return m_respawnTime;
-    }
-    else if (m_corpseRemoveTime > time(nullptr))               // dead (corpse)
-    {
-        return m_corpseRemoveTime + m_respawnDelay;
-    }
-    else
-    {
-        return now;
-    }
-}
-
-/**
  * @brief Gets the stored respawn coordinates and optional orientation/radius.
  *
  * @param x Receives the respawn x coordinate.
@@ -2881,7 +2851,7 @@ void Creature::AllLootRemovedFromCorpse()
     }
 
     time_t now = time(nullptr);
-    if (m_corpseRemoveTime <= now)
+    if (Watch().CorpseGoesAt() <= now)
     {
         return;
     }
@@ -2891,14 +2861,14 @@ void Creature::AllLootRemovedFromCorpse()
     // corpse skinnable, but without skinning flag, and then skinned, corpse will despawn next update
     if (loot.loot_type == LOOT_SKINNING)
     {
-        m_corpseRemoveTime = now;
+        Watch().CorpseGoesAt(now);
     }
     else
     {
-        m_corpseRemoveTime = now + uint32(m_corpseDelay * decayRate);
+        Watch().CorpseGoesAt(now + uint32(Watch().CorpseDelay() * decayRate));
     }
 
-    m_respawnTime = m_corpseRemoveTime + m_respawnDelay;
+    Watch().RespawnsAt(Watch().CorpseGoesAt() + Watch().RespawnDelay());
 }
 
 /**

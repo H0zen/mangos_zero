@@ -178,7 +178,7 @@ void Pet::Update(uint32 update_diff, uint32 diff)
     {
         case CORPSE:
         {
-            if (getPetType() != HUNTER_PET || m_corpseRemoveTime <= time(nullptr))
+            if (getPetType() != HUNTER_PET || Watch().CorpseGoesAt() <= time(nullptr))
             {
                 Unsummon(PET_SAVE_NOT_IN_SLOT);
                 return;

@@ -571,8 +571,6 @@ class Creature : public Unit
 
         bool IsCorpse() const { return GetDeathState() ==  CORPSE; }
         bool IsDespawned() const { return GetDeathState() ==  DEAD; }
-        void SetCorpseDelay(uint32 delay) { m_corpseDelay = delay; }
-        uint32 GetCorpseDelay() const { return m_corpseDelay; }
         bool IsRacialLeader() const { return Record().IsRacialLeader(); }
         bool IsCivilian() const { return Record().IsCivilian(); }
         bool IsGuard() const { return GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_GUARD; }
@@ -946,31 +944,14 @@ class Creature : public Unit
         bool IsVisibleInGridForPlayer(Player* pl) const override;
 
         void RemoveCorpse(bool inPlace = false);
-        bool IsDeadByDefault() const { return m_IsDeadByDefault; };
 
         void ForcedDespawn(uint32 timeMSToDespawn = 0);
 
-        time_t const& GetRespawnTime() const { return m_respawnTime; }
-        time_t GetRespawnTimeEx() const;
-        void SetRespawnTime(uint32 respawn) { m_respawnTime = respawn ? time(nullptr) + respawn : 0; }
         void Respawn();
         void SaveRespawnTime();
 
-        uint32 GetRespawnDelay() const { return m_respawnDelay; }
-        void SetRespawnDelay(uint32 delay) { m_respawnDelay = delay; }
 
-        /**
-         * Returns the time when the creature has been killed.
-         */
-        time_t GetKilledTime() const { return m_killedTime; }
 
-        /**
-         * Set the time when the creature has been killed.
-         */
-        void SetKilledTime(time_t time) { m_killedTime = time; }
-
-        float GetRespawnRadius() const { return m_respawnradius; }
-        void SetRespawnRadius(float dist) { m_respawnradius = dist; }
 
         // Functions spawn/remove creature with DB guid in all loaded map copies (if point grid loaded in map)
         static void AddToRemoveListInMaps(uint32 db_guid, CreatureData const* data);
@@ -1026,7 +1007,6 @@ class Creature : public Unit
         void SetSpawn(Geometry::Vector3 const& at, float facing);
         void ResetSpawn();
 
-        void SetDeadByDefault(bool death_state) { m_IsDeadByDefault = death_state; }
 
         void SetFactionTemporary(uint32 factionId, uint32 tempFactionFlags = TEMPFACTION_ALL);
         void ClearTemporaryFaction();
@@ -1059,15 +1039,6 @@ class Creature : public Unit
 
         uint32 m_lootMoney;
 
-        /// Timers
-        time_t m_corpseRemoveTime;                          // (secs) time for death or corpse disappearance
-        time_t m_respawnTime;                               // (secs) time of next respawn
-        uint32 m_respawnDelay;                              // (secs) delay between corpse disappearance and respawning
-        uint32 m_corpseDelay;                               // (secs) delay between death and corpse disappearance
-        uint32 m_aggroDelay;                                // (msecs)delay between respawn and aggro due to movement
-        float m_respawnradius;
-
-        time_t m_killedTime;                                // Exact time of the death.
 
         void RegeneratePower();
         void RegenerateHealth();
@@ -1080,7 +1051,6 @@ class Creature : public Unit
         bool m_AlreadyCallAssistance;
         bool m_AlreadySearchedAssistance;
         bool m_AI_locked;
-        bool m_IsDeadByDefault;
         uint32 m_temporaryFactionFlags;                     // used for real faction changes (not auras etc)
 
         SpellSchoolMask m_meleeDamageSchoolMask;
