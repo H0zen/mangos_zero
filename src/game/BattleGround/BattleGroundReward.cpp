@@ -307,7 +307,7 @@ void BattleGround::EndBattleGround(Team winner)
         plr->GetSession()->SendPacket(&data);
 
         BattleGroundQueueTypeId bgQueueTypeId = BattleGroundMgr::BGQueueTypeId(GetTypeID());
-        sBattleGroundMgr.BuildBattleGroundStatusPacket(&data, this, plr->GetBattleGroundQueueIndex(bgQueueTypeId), STATUS_IN_PROGRESS, TIME_TO_AUTOREMOVE, GetStartTime());
+        sBattleGroundMgr.BuildBattleGroundStatusPacket(&data, this, plr->Queues().SlotOf(bgQueueTypeId), STATUS_IN_PROGRESS, TIME_TO_AUTOREMOVE, GetStartTime());
         plr->GetSession()->SendPacket(&data);
     }
 

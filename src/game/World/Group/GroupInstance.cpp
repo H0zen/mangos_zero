@@ -205,7 +205,7 @@ uint32 Group::CanJoinBattleGroundQueue(BattleGroundTypeId bgTypeId, BattleGround
             return BG_JOIN_ERR_MIXED_LEVELS;
         }
         // don't let join if someone from the group is already in that bg queue
-        if (member->InBattleGroundQueueForBattleGroundQueueType(bgQueueTypeId))
+        if (member->Queues().Holds(bgQueueTypeId))
         {
             return BG_JOIN_ERR_GROUP_MEMBER_ALREADY_IN_QUEUE;
         }
@@ -215,7 +215,7 @@ uint32 Group::CanJoinBattleGroundQueue(BattleGroundTypeId bgTypeId, BattleGround
             return BG_JOIN_ERR_GROUP_DESERTER;
         }
         // check if member can join any more battleground queues
-        if (!member->HasFreeBattleGroundQueueId())
+        if (!member->Queues().AnyFree())
         {
             return BG_JOIN_ERR_ALL_QUEUES_USED;
         }

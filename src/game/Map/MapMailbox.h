@@ -27,12 +27,12 @@
 
 #include "Platform/Define.h"
 #include "ObjectGuid.h"
+#include "WorldPacket.h"
 
 #include <memory>
 #include <utility>
 #include <vector>
 
-class WorldPacket;
 class WorldSession;
 
 /**

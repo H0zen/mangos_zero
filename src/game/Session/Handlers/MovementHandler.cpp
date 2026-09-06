@@ -216,7 +216,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
         // join to bg case
         else if (BattleGround* bg = _player->GetBattleGround())
         {
-            if (_player->IsInvitedForBattleGroundInstance(_player->GetBattleGroundId()))
+            if (_player->Queues().CalledToInstance(_player->GetBattleGroundId()))
             {
                 bg->AddPlayer(_player);
             }

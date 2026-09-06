@@ -507,13 +507,6 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
     // Initialize detection invisibility timer to 1 millisecond
     m_DetectInvTimer = 1 * IN_MILLISECONDS;
 
-    // Initialize battleground queue IDs and invited instances
-    for (int j = 0; j < PLAYER_MAX_BATTLEGROUND_QUEUES; ++j)
-    {
-        m_bgBattleGroundQueueID[j].bgQueueTypeId  = BATTLEGROUND_QUEUE_NONE;
-        m_bgBattleGroundQueueID[j].invitedToInstance = 0;
-    }
-
     // Set login time to current time
     m_played.StartAt(time(nullptr));
     // Set last tick time to login time

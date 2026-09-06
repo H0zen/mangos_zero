@@ -778,12 +778,12 @@ void BattleGround::RemovePlayerAtLeave(ObjectGuid guid, bool Transport, bool Sen
             if (SendPacket)
             {
                 WorldPacket data;
-                sBattleGroundMgr.BuildBattleGroundStatusPacket(&data, this, plr->GetBattleGroundQueueIndex(bgQueueTypeId), STATUS_NONE, 0, 0);
+                sBattleGroundMgr.BuildBattleGroundStatusPacket(&data, this, plr->Queues().SlotOf(bgQueueTypeId), STATUS_NONE, 0, 0);
                 plr->GetSession()->SendPacket(&data);
             }
 
             // this call is important, because player, when joins to battleground, this method is not called, so it must be called when leaving bg
-            plr->RemoveBattleGroundQueueId(bgQueueTypeId);
+            plr->Queues().Give(bgQueueTypeId);
         }
 
         // remove from raid group if player is member
@@ -1315,7 +1315,7 @@ void BattleGround::PlayerAddedToBGCheckIfBGIsRunning(Player* plr)
     sBattleGroundMgr.BuildPvpLogDataPacket(&data, this);
     plr->GetSession()->SendPacket(&data);
 
-    sBattleGroundMgr.BuildBattleGroundStatusPacket(&data, this, plr->GetBattleGroundQueueIndex(bgQueueTypeId), STATUS_IN_PROGRESS, GetEndTime(), GetStartTime());
+    sBattleGroundMgr.BuildBattleGroundStatusPacket(&data, this, plr->Queues().SlotOf(bgQueueTypeId), STATUS_IN_PROGRESS, GetEndTime(), GetStartTime());
     plr->GetSession()->SendPacket(&data);
 }
 

@@ -203,13 +203,13 @@ void battlegrounds::BattlemasterJoin(Player& who, WorldPacket& recv_data)
             return;
         }
         // check if already in queue
-        if (who.GetBattleGroundQueueIndex(bgQueueTypeId) < PLAYER_MAX_BATTLEGROUND_QUEUES)
+        if (who.Queues().SlotOf(bgQueueTypeId) < PLAYER_MAX_BATTLEGROUND_QUEUES)
         {
             // player is already in this queue
             return;
         }
         // check if has free queue slots
-        if (!who.HasFreeBattleGroundQueueId())
+        if (!who.Queues().AnyFree())
         {
             return;
         }
@@ -248,7 +248,7 @@ void battlegrounds::BattlemasterJoin(Player& who, WorldPacket& recv_data)
                 continue; // this should never happen
             }
 
-            uint32 queueSlot = member->AddBattleGroundQueueId(bgQueueTypeId);           // add to queue
+            uint32 queueSlot = member->Queues().Take(bgQueueTypeId);           // add to queue
 
             // store entry point coords (same as leader entry point)
             member->SetBattleGroundEntryPoint(&who);
@@ -268,7 +268,7 @@ void battlegrounds::BattlemasterJoin(Player& who, WorldPacket& recv_data)
         GroupQueueInfo* ginfo = bgQueue.AddGroup(&who, nullptr, bgTypeId, bgBracketId, isPremade);
         uint32 avgTime = bgQueue.GetAverageQueueWaitTime(ginfo, who.GetBattleGroundBracketIdFromLevel(bgTypeId));
         // already checked if queueSlot is valid, now just get it
-        uint32 queueSlot = who.AddBattleGroundQueueId(bgQueueTypeId);
+        uint32 queueSlot = who.Queues().Take(bgQueueTypeId);
         // store entry point coords
         who.SetBattleGroundEntryPoint();
 
@@ -431,7 +431,7 @@ void battlegrounds::BattleFieldPort(Player& who, WorldPacket& recv_data)
         sLog.outError("BattlegroundHandler: invalid bg map (%u) received.", mapId);
         return;
     }
-    if (!who.InBattleGroundQueue())
+    if (!who.Queues().AnyHeld())
     {
         sLog.outError("BattlegroundHandler: Invalid CMSG_BATTLEFIELD_PORT received from player (%u), he is not in bg_queue.", who.GetGUIDLow());
         return;
@@ -488,12 +488,12 @@ void battlegrounds::BattleFieldPort(Player& who, WorldPacket& recv_data)
             action = 0;
         }
     }
-    uint32 queueSlot = who.GetBattleGroundQueueIndex(bgQueueTypeId);
+    uint32 queueSlot = who.Queues().SlotOf(bgQueueTypeId);
     WorldPacket data;
     switch (action)
     {
         case 1:                                         // port to battleground
-            if (!who.IsInvitedForBattleGroundQueueType(bgQueueTypeId))
+            if (!who.Queues().Called(bgQueueTypeId))
             {
                 return; // cheating?
             }
@@ -533,7 +533,7 @@ void battlegrounds::BattleFieldPort(Player& who, WorldPacket& recv_data)
             DEBUG_LOG("Battleground: player %s (%u) joined battle for bg %u, bgtype %u, queue type %u.", who.GetName(), who.GetGUIDLow(), bg->GetInstanceID(), bg->GetTypeID(), bgQueueTypeId);
             break;
         case 0:                                         // leave queue
-            who.RemoveBattleGroundQueueId(bgQueueTypeId);  // must be called this way, because if you move this call to queue->removeplayer, it causes bugs
+            who.Queues().Give(bgQueueTypeId);  // must be called this way, because if you move this call to queue->removeplayer, it causes bugs
             sBattleGroundMgr.BuildBattleGroundStatusPacket(&data, bg, queueSlot, STATUS_NONE, 0, 0);
             bgQueue.RemovePlayer(who.GetObjectGuid(), true);
             // player left queue, we should update it
@@ -597,7 +597,7 @@ void WorldSession::HandleBattlefieldStatusOpcode(WorldPacket & /*recv_data*/)
     BattleGround* bg;
     for (uint8 i = 0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
     {
-        BattleGroundQueueTypeId bgQueueTypeId = _player->GetBattleGroundQueueTypeId(i);
+        BattleGroundQueueTypeId bgQueueTypeId = _player->Queues().Kind(i);
         if (!bgQueueTypeId)
         {
             continue;

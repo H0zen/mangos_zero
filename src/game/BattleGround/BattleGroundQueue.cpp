@@ -505,7 +505,7 @@ bool BattleGroundQueue::InviteGroupToBG(GroupQueueInfo* ginfo, BattleGround* bg,
             // set invited player counters
             bg->IncreaseInvitedCount(ginfo->GroupTeam);
 
-            plr->SetInviteForBattleGroundQueueType(bgQueueTypeId, ginfo->IsInvitedToBGInstanceGUID);
+            plr->Queues().CalledTo(bgQueueTypeId, ginfo->IsInvitedToBGInstanceGUID);
 
             // create remind invite events
             BGQueueInviteEvent* inviteEvent = new BGQueueInviteEvent(plr->GetObjectGuid(), ginfo->IsInvitedToBGInstanceGUID, bgTypeId, ginfo->RemoveInviteTime);
@@ -516,7 +516,7 @@ bool BattleGroundQueue::InviteGroupToBG(GroupQueueInfo* ginfo, BattleGround* bg,
 
             WorldPacket data;
 
-            uint32 queueSlot = plr->GetBattleGroundQueueIndex(bgQueueTypeId);
+            uint32 queueSlot = plr->Queues().SlotOf(bgQueueTypeId);
 
             DEBUG_LOG("Battleground: invited %s to BG instance %u queueindex %u bgtype %u, I can't help it if they don't press the enter battle button.",
                 plr->GetGuidStr().c_str(), bg->GetInstanceID(), queueSlot, bg->GetTypeID());
@@ -935,7 +935,7 @@ bool BGQueueInviteEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
     }
 
     BattleGroundQueueTypeId bgQueueTypeId = BattleGroundMgr::BGQueueTypeId(bg->GetTypeID());
-    uint32 queueSlot = plr->GetBattleGroundQueueIndex(bgQueueTypeId);
+    uint32 queueSlot = plr->Queues().SlotOf(bgQueueTypeId);
     if (queueSlot < PLAYER_MAX_BATTLEGROUND_QUEUES)         // player is in queue or in battleground
     {
         // check if player is invited to this bg
@@ -987,7 +987,7 @@ bool BGQueueRemoveEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
     // battleground can be deleted already when we are removing queue info
     // bg pointer can be nullptr! so use it carefully!
 
-    uint32 queueSlot = plr->GetBattleGroundQueueIndex(m_BgQueueTypeId);
+    uint32 queueSlot = plr->Queues().SlotOf(m_BgQueueTypeId);
     if (queueSlot < PLAYER_MAX_BATTLEGROUND_QUEUES)         // player is in queue, or in Battleground
     {
         // check if player is in queue for this BG and if we are removing his invite event
@@ -996,7 +996,7 @@ bool BGQueueRemoveEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
         {
             DEBUG_LOG("Battleground: removing player %u from bg queue for instance %u because of not pressing enter battle in time.", plr->GetGUIDLow(), m_BgInstanceGUID);
 
-            plr->RemoveBattleGroundQueueId(m_BgQueueTypeId);
+            plr->Queues().Give(m_BgQueueTypeId);
             bgQueue.RemovePlayer(m_PlayerGuid, true);
             // update queues if battleground isn't ended
             if (bg && bg->GetStatus() != STATUS_WAIT_LEAVE)

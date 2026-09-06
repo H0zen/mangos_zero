@@ -282,7 +282,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         if (player_at_bg && currentBg->GetStatus() != STATUS_WAIT_LEAVE)
         {
             BattleGroundQueueTypeId bgQueueTypeId = sBattleGroundMgr.BGQueueTypeId(currentBg->GetTypeID());
-            AddBattleGroundQueueId(bgQueueTypeId);
+            Queues().Take(bgQueueTypeId);
 
             m_bgData.bgTypeID = currentBg->GetTypeID();     // bg data not marked as modified
 
@@ -290,7 +290,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
             currentBg->EventPlayerLoggedIn(this);
             currentBg->AddOrSetPlayerToCorrectBgGroup(this, GetObjectGuid(), m_bgData.bgTeam);
 
-            SetInviteForBattleGroundQueueType(bgQueueTypeId, currentBg->GetInstanceID());
+            Queues().CalledTo(bgQueueTypeId, currentBg->GetInstanceID());
         }
         else
         {

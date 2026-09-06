@@ -81,6 +81,7 @@
 #include "Mailbox.h"
 #include "PlayedTime.h"
 #include "Duel.h"
+#include "QueueSlots.h"
 #include "Trade.h"
 #include "SpellModifiers.h"
 #include "Weaponry.h"
@@ -2702,127 +2703,12 @@ class Player : public Unit
         // Get the battleground bracket ID from the player's level
         BattleGroundBracketId GetBattleGroundBracketIdFromLevel(BattleGroundTypeId bgTypeId) const;
 
-        // Check if the player is in a battleground queue
-        bool InBattleGroundQueue() const
-        {
-            for (int i = 0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
-            {
-                if (m_bgBattleGroundQueueID[i].bgQueueTypeId != BATTLEGROUND_QUEUE_NONE)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        // Get the battleground queue type ID
-        BattleGroundQueueTypeId GetBattleGroundQueueTypeId(uint32 index) const { return m_bgBattleGroundQueueID[index].bgQueueTypeId; }
-
-        // Get the battleground queue index
-        uint32 GetBattleGroundQueueIndex(BattleGroundQueueTypeId bgQueueTypeId) const
-        {
-            for (int i = 0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
-            {
-                if (m_bgBattleGroundQueueID[i].bgQueueTypeId == bgQueueTypeId)
-                {
-                    return i;
-                }
-            }
-            return PLAYER_MAX_BATTLEGROUND_QUEUES;
-        }
-
-        // Check if the player is invited for a battleground queue type
-        bool IsInvitedForBattleGroundQueueType(BattleGroundQueueTypeId bgQueueTypeId) const
-        {
-            for (int i = 0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
-            {
-                if (m_bgBattleGroundQueueID[i].bgQueueTypeId == bgQueueTypeId)
-                {
-                    return m_bgBattleGroundQueueID[i].invitedToInstance != 0;
-                }
-            }
-            return false;
-        }
-
-        // Check if the player is in a battleground queue for a specific queue type
-        bool InBattleGroundQueueForBattleGroundQueueType(BattleGroundQueueTypeId bgQueueTypeId) const
-        {
-            return GetBattleGroundQueueIndex(bgQueueTypeId) < PLAYER_MAX_BATTLEGROUND_QUEUES;
-        }
-
         // Set the battleground ID and type
         void SetBattleGroundId(uint32 val, BattleGroundTypeId bgTypeId)
         {
             m_bgData.bgInstanceID = val;
             m_bgData.bgTypeID = bgTypeId;
             m_bgData.m_needSave = true;
-        }
-
-        // Add a battleground queue ID
-        uint32 AddBattleGroundQueueId(BattleGroundQueueTypeId val)
-        {
-            for (int i = 0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
-            {
-                if (m_bgBattleGroundQueueID[i].bgQueueTypeId == BATTLEGROUND_QUEUE_NONE || m_bgBattleGroundQueueID[i].bgQueueTypeId == val)
-                {
-                    m_bgBattleGroundQueueID[i].bgQueueTypeId = val;
-                    m_bgBattleGroundQueueID[i].invitedToInstance = 0;
-                    return i;
-                }
-            }
-            return PLAYER_MAX_BATTLEGROUND_QUEUES;
-        }
-
-        // Check if the player has a free battleground queue ID
-        bool HasFreeBattleGroundQueueId()
-        {
-            for (int i = 0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
-            {
-                if (m_bgBattleGroundQueueID[i].bgQueueTypeId == BATTLEGROUND_QUEUE_NONE)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        // Remove a battleground queue ID
-        void RemoveBattleGroundQueueId(BattleGroundQueueTypeId val)
-        {
-            for (int i = 0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
-            {
-                if (m_bgBattleGroundQueueID[i].bgQueueTypeId == val)
-                {
-                    m_bgBattleGroundQueueID[i].bgQueueTypeId = BATTLEGROUND_QUEUE_NONE;
-                    m_bgBattleGroundQueueID[i].invitedToInstance = 0;
-                    return;
-                }
-            }
-        }
-
-        // Set the invite for a battleground queue type
-        void SetInviteForBattleGroundQueueType(BattleGroundQueueTypeId bgQueueTypeId, uint32 instanceId)
-        {
-            for (int i = 0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
-            {
-                if (m_bgBattleGroundQueueID[i].bgQueueTypeId == bgQueueTypeId)
-                {
-                    m_bgBattleGroundQueueID[i].invitedToInstance = instanceId;
-                }
-            }
-        }
-
-        // Check if the player is invited for a specific battleground instance
-        bool IsInvitedForBattleGroundInstance(uint32 instanceId) const
-        {
-            for (int i = 0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
-            {
-                if (m_bgBattleGroundQueueID[i].invitedToInstance == instanceId)
-                {
-                    return true;
-                }
-            }
-            return false;
         }
 
         // Get the battleground entry point
@@ -3004,6 +2890,10 @@ class Player : public Unit
         /// His side of the duel he is in.
         Duel& Duelling() { return m_duel; }
         Duel const& Duelling() const { return m_duel; }
+
+        /// The places he holds in battleground queues.
+        QueueSlots& Queues() { return m_queues; }
+        QueueSlots const& Queues() const { return m_queues; }
 
         time_t LoginTime() const { return m_played.LoggedInAt(); }
 
@@ -3212,16 +3102,7 @@ class Player : public Unit
         /***               BATTLEGROUND SYSTEM                 ***/
         /*********************************************************/
 
-        /**
-         * This is an array of BG queues (BgTypeIDs) in which the player is queued
-         */
-        struct BgBattleGroundQueueID_Rec
-        {
-            BattleGroundQueueTypeId bgQueueTypeId; // Battleground queue type ID
-            uint32 invitedToInstance; // Instance ID the player is invited to
-        };
-
-        BgBattleGroundQueueID_Rec m_bgBattleGroundQueueID[PLAYER_MAX_BATTLEGROUND_QUEUES]; // Array of battleground queue IDs
+        QueueSlots m_queues;
         BGData m_bgData; // Battleground data
 
         /*********************************************************/
