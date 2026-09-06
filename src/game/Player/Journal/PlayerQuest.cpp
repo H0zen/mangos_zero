@@ -921,7 +921,7 @@ void Player::RewardQuest(Quest const* pQuest, uint32 reward, Object* questGiver,
 
     RemoveTimedQuest(quest_id);
 
-    if (BattleGround* bg = GetBattleGround())
+    if (BattleGround* bg = Battle().Ground())
     {
         if (bg->GetTypeID() == BATTLEGROUND_AV)
         {

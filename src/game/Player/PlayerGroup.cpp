@@ -255,7 +255,7 @@ PartyResult Player::CanUninviteFromGroup() const
         return ERR_NOT_LEADER;
     }
 
-    if (InBattleGround())
+    if (Battle().InOne())
     {
         return ERR_NOT_IN_GROUP; // error message is not so appropriated but no other option for classic
     }

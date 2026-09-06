@@ -741,7 +741,7 @@ bool GameObject::HoldsQuestLootFor(Player* seeker) const
 
     // A battleground may hold its own objects back from one side: an Alterac
     // Valley mine counts only for the team that holds it.
-    if (BattleGround* bg = seeker->GetBattleGround())
+    if (BattleGround* bg = seeker->Battle().Ground())
     {
         return bg->AllowsQuestObject(GetEntry(), seeker->GetTeam());
     }

@@ -494,7 +494,7 @@ void WorldSession::LogoutPlayer(bool Save)
             // this can't be called for all attackers.
             if (!aset.empty())
             {
-                if (BattleGround* bg = _player->GetBattleGround())
+                if (BattleGround* bg = _player->Battle().Ground())
                 {
                     bg->HandleKillPlayer(_player, *aset.begin());
                 }
@@ -510,7 +510,7 @@ void WorldSession::LogoutPlayer(bool Save)
             _player->RepopAtGraveyard();
         }
         // drop a flag if player is carrying it
-        if (BattleGround* bg = _player->GetBattleGround())
+        if (BattleGround* bg = _player->Battle().Ground())
         {
             bg->EventPlayerLoggedOut(_player);
         }

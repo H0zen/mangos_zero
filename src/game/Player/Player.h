@@ -81,6 +81,7 @@
 #include "Mailbox.h"
 #include "PlayedTime.h"
 #include "Duel.h"
+#include "BattleGroundStay.h"
 #include "QueueSlots.h"
 #include "Trade.h"
 #include "SpellModifiers.h"
@@ -736,26 +737,6 @@ class PlayerTaxi
  */
 std::ostringstream& operator<< (std::ostringstream& ss, PlayerTaxi const& taxi);
 
-/// Structure to hold battleground data
-struct BGData
-{
-    BGData() : bgInstanceID(0), bgTypeID(BATTLEGROUND_TYPE_NONE), bgAfkReportedCount(0), bgAfkReportedTimer(0),
-        bgTeam(TEAM_NONE), m_needSave(false) {}
-
-    uint32 bgInstanceID; // Battleground instance ID
-    ///  when player is teleported to BG - (it is battleground's GUID)
-    BattleGroundTypeId bgTypeID; // Battleground type ID
-
-    std::set<uint32> bgAfkReporter; // Set of players who reported AFK
-    uint8 bgAfkReportedCount; // Count of AFK reports
-    time_t bgAfkReportedTimer; // Timer for AFK reports
-
-    Team bgTeam; // Team of the player in the battleground
-
-    Geometry::Placement joinPos; // Position where the player joined the battleground
-
-    bool m_needSave; // Indicates if the data needs to be saved
-};
 
 // Structure to hold trade status information
 struct TradeStatusInfo
@@ -795,7 +776,6 @@ class Player : public Unit
             return TeleportTo(loc.MapId(), loc.X(), loc.Y(), loc.Z(), loc.Facing(), options);
         }
 
-        bool TeleportToBGEntryPoint(); // Teleport the player to the battleground entry point
 
         // Set the summon point for the player
         void SetSummonPoint(uint32 mapid, float x, float y, float z)
@@ -2680,19 +2660,15 @@ class Player : public Unit
         /*********************************************************/
 
         // Check if the player is in a battleground
-        bool InBattleGround() const { return m_bgData.bgInstanceID != 0; }
 
         // Check if the player is in an arena
         bool InArena() const;
 
         // Get the battleground ID
-        uint32 GetBattleGroundId() const { return m_bgData.bgInstanceID; }
 
         // Get the battleground type ID
-        BattleGroundTypeId GetBattleGroundTypeId() const { return m_bgData.bgTypeID; }
 
         // Get the battleground instance
-        BattleGround* GetBattleGround() const;
 
         // Get the minimum level for a battleground bracket
         static uint32 GetMinLevelForBattleGroundBracketId(BattleGroundBracketId bracket_id, BattleGroundTypeId bgTypeId);
@@ -2704,30 +2680,18 @@ class Player : public Unit
         BattleGroundBracketId GetBattleGroundBracketIdFromLevel(BattleGroundTypeId bgTypeId) const;
 
         // Set the battleground ID and type
-        void SetBattleGroundId(uint32 val, BattleGroundTypeId bgTypeId)
-        {
-            m_bgData.bgInstanceID = val;
-            m_bgData.bgTypeID = bgTypeId;
-            m_bgData.m_needSave = true;
-        }
 
         // Get the battleground entry point
-        Geometry::Placement const& GetBattleGroundEntryPoint() const { return m_bgData.joinPos; }
 
         // Set the battleground entry point
-        void SetBattleGroundEntryPoint(Player* leader = nullptr);
 
         // Set the battleground team
-        void SetBGTeam(Team team) { m_bgData.bgTeam = team; m_bgData.m_needSave = true; }
 
         // Get the battleground team
-        Team GetBGTeam() const { return m_bgData.bgTeam ? m_bgData.bgTeam : GetTeam(); }
 
         // Leave the battleground
-        void LeaveBattleground(bool teleportToEntryPoint = true);
 
         // Check if the player can join a battleground
-        bool CanJoinToBattleground() const;
 
         // Check if the player has access to a battleground by level
         bool GetBGAccessByLevel(BattleGroundTypeId bgTypeId) const;
@@ -2894,6 +2858,13 @@ class Player : public Unit
         /// The places he holds in battleground queues.
         QueueSlots& Queues() { return m_queues; }
         QueueSlots const& Queues() const { return m_queues; }
+
+        /// His stay in a battleground: which one, which side, the way back.
+        BattleGroundStay& Battle() { return m_battle; }
+        BattleGroundStay const& Battle() const { return m_battle; }
+
+        /// Puts off something that must wait until he has arrived.
+        void ScheduleDelayedOperation(uint32 operation) { m_teleport.OnArrival(operation); }
 
         time_t LoginTime() const { return m_played.LoggedInAt(); }
 
@@ -3103,7 +3074,8 @@ class Player : public Unit
         /*********************************************************/
 
         QueueSlots m_queues;
-        BGData m_bgData; // Battleground data
+
+        BattleGroundStay m_battle;
 
         /*********************************************************/
         /***                    QUEST SYSTEM                   ***/
@@ -3307,7 +3279,6 @@ class Player : public Unit
         bool SetDelayedTeleportFlagIfCan() { return m_teleport.WaitIfItMay(IsAlive()); }
 
         // Schedule a delayed operation
-        void ScheduleDelayedOperation(uint32 operation) { m_teleport.OnArrival(operation); }
 
         // The unit that is currently moving the player
         Unit* m_mover;

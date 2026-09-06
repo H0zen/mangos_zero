@@ -81,7 +81,7 @@
  */
 void Player::RemovedInsignia(Player* looterPlr)
 {
-    if (!GetBattleGroundId())
+    if (!Battle().Id())
     {
         return;
     }
@@ -181,7 +181,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 
                 // A battleground may keep its own objects for the side that holds
                 // the ground they stand on.
-                if (BattleGround* bg = GetBattleGround())
+                if (BattleGround* bg = Battle().Ground())
                 {
                     if (!bg->AllowsQuestObject(go->GetEntry(), GetTeam()))
                     {
@@ -320,7 +320,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
                 bones->lootForBody = true;
                 uint32 pLevel = bones->loot.gold;
                 bones->loot.clear();
-                if (GetBattleGround()->GetTypeID() == BATTLEGROUND_AV)
+                if (Battle().Ground()->GetTypeID() == BATTLEGROUND_AV)
                 {
                     loot->FillLoot(0, LootTemplates_Creature, this, false);
                 }

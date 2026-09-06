@@ -676,7 +676,7 @@ void WorldSession::HandleReclaimCorpseOpcode(WorldPacket& recv_data)
     }
 
     // resurrect
-    GetPlayer()->ResurrectPlayer(GetPlayer()->InBattleGround() ? 1.0f : 0.5f);
+    GetPlayer()->ResurrectPlayer(GetPlayer()->Battle().InOne() ? 1.0f : 0.5f);
 
     // spawn bones
     GetPlayer()->SpawnCorpseBones();
@@ -782,7 +782,7 @@ void WorldSession::HandleAreaTriggerOpcode(WorldPacket& recv_data)
         return;
     }
 
-    if (BattleGround* bg = player->GetBattleGround())
+    if (BattleGround* bg = player->Battle().Ground())
     {
         if (bg->HandleAreaTrigger(player, Trigger_ID))
         {

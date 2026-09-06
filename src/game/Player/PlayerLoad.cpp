@@ -99,14 +99,14 @@ void Player::_LoadBGData(QueryResult* result)
     // Expecting only one row
     Field* fields = result->Fetch();
     /* bgInstanceID, bgTeam, x, y, z, o, map */
-    m_bgData.bgInstanceID = fields[0].GetUInt32();
-    m_bgData.bgTeam       = Team(fields[1].GetUInt32());
-    m_bgData.joinPos      = Geometry::Placement::Somewhere(
-        fields[6].GetUInt32(),                                  // Map
-        Geometry::Vector3(fields[2].GetFloat(),                 // X
-                          fields[3].GetFloat(),                 // Y
-                          fields[4].GetFloat()),                // Z
-        fields[5].GetFloat());                                  // Orientation
+    Battle().FromRow(fields[0].GetUInt32(),
+                     Team(fields[1].GetUInt32()),
+                     Geometry::Placement::Somewhere(
+                         fields[6].GetUInt32(),                 // Map
+                         Geometry::Vector3(fields[2].GetFloat(),  // X
+                                           fields[3].GetFloat(),  // Y
+                                           fields[4].GetFloat()), // Z
+                         fields[5].GetFloat()));                // Orientation
 
     delete result;
 }
@@ -273,9 +273,9 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     _LoadBGData(holder->GetResult(PLAYER_LOGIN_QUERY_LOADBGDATA));
 
-    if (m_bgData.bgInstanceID)                              // saved in BattleGround
+    if (Battle().InOne())                                   // saved in BattleGround
     {
-        BattleGround* currentBg = sBattleGroundMgr.GetBattleGround(m_bgData.bgInstanceID, BATTLEGROUND_TYPE_NONE);
+        BattleGround* currentBg = sBattleGroundMgr.GetBattleGround(Battle().Id(), BATTLEGROUND_TYPE_NONE);
 
         bool player_at_bg = currentBg && currentBg->IsPlayerInBattleGround(GetObjectGuid());
 
@@ -284,11 +284,11 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
             BattleGroundQueueTypeId bgQueueTypeId = sBattleGroundMgr.BGQueueTypeId(currentBg->GetTypeID());
             Queues().Take(bgQueueTypeId);
 
-            m_bgData.bgTypeID = currentBg->GetTypeID();     // bg data not marked as modified
+            Battle().KindIsKnown(currentBg->GetTypeID());
 
             // join player to battleground group
             currentBg->EventPlayerLoggedIn(this);
-            currentBg->AddOrSetPlayerToCorrectBgGroup(this, GetObjectGuid(), m_bgData.bgTeam);
+            currentBg->AddOrSetPlayerToCorrectBgGroup(this, GetObjectGuid(), Battle().SideAsSet());
 
             Queues().CalledTo(bgQueueTypeId, currentBg->GetInstanceID());
         }
@@ -301,12 +301,12 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
             }
 
             // move to bg enter point
-            const Geometry::Placement& _loc = GetBattleGroundEntryPoint();
+            const Geometry::Placement& _loc = Battle().CameFrom();
             SetLocationMapId(_loc.MapId());
             Place().MoveTo(_loc.X(), _loc.Y(), _loc.Z(), _loc.Facing());
 
             // We are not in BG anymore
-            SetBattleGroundId(0, BATTLEGROUND_TYPE_NONE);
+            Battle().In(0, BATTLEGROUND_TYPE_NONE);
             // remove outdated DB data in DB
             _SaveBGData();
         }
@@ -318,12 +318,12 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         // player can have current coordinates in to BG map, fix this
         if (!mapEntry || mapEntry->IsBattleGround())
         {
-            const Geometry::Placement& _loc = GetBattleGroundEntryPoint();
+            const Geometry::Placement& _loc = Battle().CameFrom();
             SetLocationMapId(_loc.MapId());
             Place().MoveTo(_loc.X(), _loc.Y(), _loc.Z(), _loc.Facing());
 
             // We are not in BG anymore
-            SetBattleGroundId(0, BATTLEGROUND_TYPE_NONE);
+            Battle().In(0, BATTLEGROUND_TYPE_NONE);
             // remove outdated DB data in DB
             _SaveBGData();
         }

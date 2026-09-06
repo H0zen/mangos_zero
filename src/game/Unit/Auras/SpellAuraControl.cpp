@@ -1230,7 +1230,7 @@ void Aura::HandleAuraModEffectImmunity(bool apply, bool /*Real*/)
         (GetSpellProto()->AuraInterruptFlags & AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION))
     {
         Player* player = (Player*)target;
-        if (BattleGround* bg = player->GetBattleGround())
+        if (BattleGround* bg = player->Battle().Ground())
         {
             bg->EventPlayerDroppedFlag(player);
         }

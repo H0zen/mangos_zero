@@ -160,7 +160,7 @@ void battlegrounds::BattlemasterJoin(Player& who, WorldPacket& recv_data)
     BattleGroundQueueTypeId bgQueueTypeId = BattleGroundMgr::BGQueueTypeId(bgTypeId);
 
     // ignore if player is already in BG
-    if (who.InBattleGround())
+    if (who.Battle().InOne())
     {
         return;
     }
@@ -195,7 +195,7 @@ void battlegrounds::BattlemasterJoin(Player& who, WorldPacket& recv_data)
     if (!joinAsGroup)
     {
         // check Deserter debuff
-        if (!who.CanJoinToBattleground())
+        if (!who.Battle().MayJoin())
         {
             WorldPacket data(SMSG_GROUP_JOINED_BATTLEGROUND, 4);
             data << uint32(0xFFFFFFFE);
@@ -251,7 +251,7 @@ void battlegrounds::BattlemasterJoin(Player& who, WorldPacket& recv_data)
             uint32 queueSlot = member->Queues().Take(bgQueueTypeId);           // add to queue
 
             // store entry point coords (same as leader entry point)
-            member->SetBattleGroundEntryPoint(&who);
+            member->Battle().RecordTheWayBack(&who);
 
             WorldPacket data;
             // send status packet (in queue)
@@ -270,7 +270,7 @@ void battlegrounds::BattlemasterJoin(Player& who, WorldPacket& recv_data)
         // already checked if queueSlot is valid, now just get it
         uint32 queueSlot = who.Queues().Take(bgQueueTypeId);
         // store entry point coords
-        who.SetBattleGroundEntryPoint();
+        who.Battle().RecordTheWayBack();
 
         WorldPacket data;
         // send status packet (in queue)
@@ -294,7 +294,7 @@ void WorldSession::HandleBattleGroundPlayerPositionsOpcode(WorldPacket & /*recv_
     // empty opcode
     DEBUG_LOG("WORLD: Received opcode MSG_BATTLEGROUND_PLAYER_POSITIONS");
 
-    BattleGround* bg = _player->GetBattleGround();
+    BattleGround* bg = _player->Battle().Ground();
     if (!bg)                                                // can't be received if player not in battleground
     {
         return;
@@ -366,7 +366,7 @@ void WorldSession::HandlePVPLogDataOpcode(WorldPacket & /*recv_data*/)
 {
     DEBUG_LOG("WORLD: Received opcode MSG_PVP_LOG_DATA");
 
-    BattleGround* bg = _player->GetBattleGround();
+    BattleGround* bg = _player->Battle().Ground();
     if (!bg)
     {
         return;
@@ -471,7 +471,7 @@ void battlegrounds::BattleFieldPort(Player& who, WorldPacket& recv_data)
     if (action == 1)
     {
         // if player is trying to enter battleground (not arena!) and he has deserter debuff, we must just remove him from queue
-        if (!who.CanJoinToBattleground())
+        if (!who.Battle().MayJoin())
         {
             // send bg command result to show nice message
             WorldPacket data2(SMSG_GROUP_JOINED_BATTLEGROUND, 4);
@@ -517,15 +517,15 @@ void battlegrounds::BattleFieldPort(Player& who, WorldPacket& recv_data)
             bgQueue.RemovePlayer(who.GetObjectGuid(), false);
             // this is still needed here if battleground "jumping" shouldn't add deserter debuff
             // also this is required to prevent stuck at old battleground after SetBattleGroundId set to new
-            if (BattleGround* currentBg = who.GetBattleGround())
+            if (BattleGround* currentBg = who.Battle().Ground())
             {
                 currentBg->RemovePlayerAtLeave(who.GetObjectGuid(), false, true);
             }
 
             // set the destination instance id
-            who.SetBattleGroundId(bg->GetInstanceID(), bgTypeId);
+            who.Battle().In(bg->GetInstanceID(), bgTypeId);
             // set the destination team
-            who.SetBGTeam(ginfo.GroupTeam);
+            who.Battle().Side(ginfo.GroupTeam);
             // bg->HandleBeforeTeleportToBattleGround(&who);
             sBattleGroundMgr.SendToBattleGround(&who, ginfo.IsInvitedToBGInstanceGUID, bgTypeId);
             // add only in HandleMoveWorldPortAck()
@@ -566,7 +566,7 @@ void battlegrounds::LeaveBattlefield(Player& who, WorldPacket& recv_data)
     // not allow leave battleground in combat
     if (who.IsInCombat())
     {
-        if (BattleGround* bg = who.GetBattleGround())
+        if (BattleGround* bg = who.Battle().Ground())
         {
             if (bg->GetStatus() != STATUS_WAIT_LEAVE)
             {
@@ -575,7 +575,7 @@ void battlegrounds::LeaveBattlefield(Player& who, WorldPacket& recv_data)
         }
     }
 
-    who.LeaveBattleground();
+    who.Battle().Leave();
 }
 
 /**
@@ -604,9 +604,9 @@ void WorldSession::HandleBattlefieldStatusOpcode(WorldPacket & /*recv_data*/)
         }
 
         BattleGroundTypeId bgTypeId = BattleGroundMgr::BGTemplateId(bgQueueTypeId);
-        if (bgTypeId == _player->GetBattleGroundTypeId())
+        if (bgTypeId == _player->Battle().Kind())
         {
-            bg = _player->GetBattleGround();
+            bg = _player->Battle().Ground();
             // i can not check any variable from player class because player class doesn't know if player is in 2v2 / 3v3 or 5v5 arena
             // so i must use bg pointer to get that information
             if (bg)
@@ -666,7 +666,7 @@ void battlegrounds::AreaSpiritHealerQuery(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_AREA_SPIRIT_HEALER_QUERY");
 
-    BattleGround* bg = who.GetBattleGround();
+    BattleGround* bg = who.Battle().Ground();
     if (!bg)
     {
         return;
@@ -701,7 +701,7 @@ void battlegrounds::AreaSpiritHealerQueue(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_AREA_SPIRIT_HEALER_QUEUE");
 
-    BattleGround* bg = who.GetBattleGround();
+    BattleGround* bg = who.Battle().Ground();
     if (!bg)
     {
         return;

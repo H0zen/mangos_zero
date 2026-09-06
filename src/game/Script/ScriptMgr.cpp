@@ -248,7 +248,7 @@ bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool
         OutdoorPvP* opvp = nullptr;
         if (forwardToPvp->IsPlayer())
         {
-            bg = ((Player*)forwardToPvp)->GetBattleGround();
+            bg = ((Player*)forwardToPvp)->Battle().Ground();
             if (!bg)
             {
                 opvp = sOutdoorPvPMgr.GetScript(((Player*)forwardToPvp)->GetCachedZoneId());

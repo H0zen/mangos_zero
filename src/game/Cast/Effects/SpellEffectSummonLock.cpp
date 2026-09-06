@@ -143,7 +143,7 @@ void Spell::EffectOpenLock(SpellEffectIndex eff_idx)
         {
             // CanUseBattleGroundObject() already called in CheckCast()
             // in battleground check
-            if (BattleGround* bg = player->GetBattleGround())
+            if (BattleGround* bg = player->Battle().Ground())
             {
                 // check if it's correct bg
                 if (bg->GetTypeID() == BATTLEGROUND_AB || bg->GetTypeID() == BATTLEGROUND_AV)
@@ -157,7 +157,7 @@ void Spell::EffectOpenLock(SpellEffectIndex eff_idx)
         {
             // CanUseBattleGroundObject() already called in CheckCast()
             // in battleground check
-            if (player->GetBattleGround())
+            if (player->Battle().Ground())
             {
                 return;
             }

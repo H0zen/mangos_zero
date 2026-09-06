@@ -573,7 +573,7 @@ bool QuestJournal::NeedsItem(uint32 itemId) const
         }
 
         // hide quest if player is in raid-group and quest is no raid quest
-        if (BarredByRaid(m_owner, quest) && !m_owner.InBattleGround())
+        if (BarredByRaid(m_owner, quest) && !m_owner.Battle().InOne())
         {
             return true;
         }

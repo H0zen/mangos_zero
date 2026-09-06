@@ -190,7 +190,7 @@ void Spell::EffectSummonObjectWild(SpellEffectIndex eff_idx)
     if (pGameObj->GetGoType() == GAMEOBJECT_TYPE_FLAGDROP && m_caster->IsPlayer())
     {
         Player* pl = (Player*)m_caster;
-        BattleGround* bg = ((Player*)m_caster)->GetBattleGround();
+        BattleGround* bg = ((Player*)m_caster)->Battle().Ground();
 
         switch (pGameObj->GetMapId())
         {

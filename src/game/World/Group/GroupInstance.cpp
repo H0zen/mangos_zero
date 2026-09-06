@@ -210,7 +210,7 @@ uint32 Group::CanJoinBattleGroundQueue(BattleGroundTypeId bgTypeId, BattleGround
             return BG_JOIN_ERR_GROUP_MEMBER_ALREADY_IN_QUEUE;
         }
         // check for deserter debuff
-        if (!member->CanJoinToBattleground())
+        if (!member->Battle().MayJoin())
         {
             return BG_JOIN_ERR_GROUP_DESERTER;
         }

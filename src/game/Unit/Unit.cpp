@@ -972,7 +972,7 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
 
             // 10% durability loss on death
             // only if not player and not controlled by player pet. And not at BG
-            if (durabilityLoss && !player_tap && !playerVictim->InBattleGround())
+            if (durabilityLoss && !player_tap && !playerVictim->Battle().InOne())
             {
                 DEBUG_LOG("DealDamage: Killed %s, looing 10 percents durability", pVictim->GetGuidStr().c_str());
                 playerVictim->DurabilityLossAll(0.10f, false);
@@ -999,7 +999,7 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
 
             if (player_tap)                                 // PvP kill
             {
-                if (BattleGround* bg = playerVictim->GetBattleGround())
+                if (BattleGround* bg = playerVictim->Battle().Ground())
                 {
                     bg->HandleKillPlayer(playerVictim, player_tap);
                 }
@@ -1270,7 +1270,7 @@ void Unit::JustKilledCreature(Creature* victim, Player* responsiblePlayer)
 
     if (responsiblePlayer)                                  // killedby Player, inform BG
     {
-        if (BattleGround* bg = responsiblePlayer->GetBattleGround())
+        if (BattleGround* bg = responsiblePlayer->Battle().Ground())
         {
             bg->HandleKillUnit(victim, responsiblePlayer);
         }

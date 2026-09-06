@@ -552,7 +552,7 @@ bool BattleGroundAV::HandleAreaTrigger(Player* source, uint32 trigger)
             }
             else
             {
-                source->LeaveBattleground();
+                source->Battle().Leave();
             }
             break;
         case 2606:
@@ -562,7 +562,7 @@ bool BattleGroundAV::HandleAreaTrigger(Player* source, uint32 trigger)
             }
             else
             {
-                source->LeaveBattleground();
+                source->Battle().Leave();
             }
             break;
         default:

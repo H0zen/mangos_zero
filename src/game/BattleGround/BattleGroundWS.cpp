@@ -662,7 +662,7 @@ bool BattleGroundWS::HandleAreaTrigger(Player* source, uint32 trigger)
             }
             else
             {
-                source->LeaveBattleground();
+                source->Battle().Leave();
             }
             break;
         case 3671: // alliance portal
@@ -672,7 +672,7 @@ bool BattleGroundWS::HandleAreaTrigger(Player* source, uint32 trigger)
             }
             else
             {
-                source->LeaveBattleground();
+                source->Battle().Leave();
             }
             break;
         default:

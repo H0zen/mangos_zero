@@ -570,7 +570,7 @@ Map* MapManager::CreateInstance(uint32 id, Player* player)
     if (entry->IsBattleGround())
     {
         // find existing bg map for player
-        NewInstanceId = player->GetBattleGroundId();
+        NewInstanceId = player->Battle().Id();
         MANGOS_ASSERT(NewInstanceId);
         map = FindMap(id, NewInstanceId);
         MANGOS_ASSERT(map);

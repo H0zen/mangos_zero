@@ -432,7 +432,7 @@ void groups::GroupDisband(Player& who, WorldPacket& /*recv_data*/)
         return;
     }
 
-    if (who.InBattleGround())
+    if (who.Battle().InOne())
     {
         who.GetSession()->SendPartyResult(PARTY_OP_INVITE, "", ERR_NOT_LEADER);  // error message is not so appropriated but no other option for classic
         return;
@@ -633,7 +633,7 @@ void groups::GroupRaidConvert(Player& who, WorldPacket& /*recv_data*/)
         return;
     }
 
-    if (who.InBattleGround())
+    if (who.Battle().InOne())
     {
         return;
     }

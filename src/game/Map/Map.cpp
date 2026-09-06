@@ -2278,7 +2278,7 @@ void Map::TeleportAllPlayersTo(TeleportLocation loc)
                     plr->TeleportToHomebind();
                     break;
                 case TELEPORT_LOCATION_BG_ENTRY_POINT:
-                    plr->TeleportToBGEntryPoint();
+                    plr->Battle().TeleportBack();
                     break;
                 default:
                     break;
@@ -2724,7 +2724,7 @@ bool BattleGroundMap::CanEnter(Player* player)
         return false;
     }
 
-    if (player->GetBattleGroundId() != GetInstanceId())
+    if (player->Battle().Id() != GetInstanceId())
     {
         return false;
     }

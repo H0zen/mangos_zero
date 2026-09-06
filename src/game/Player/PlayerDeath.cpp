@@ -290,7 +290,7 @@ Corpse* Player::CreateCorpse()
     {
         flags |= CORPSE_FLAG_HIDE_CLOAK;
     }
-    if (InBattleGround())
+    if (Battle().InOne())
     {
         flags |= CORPSE_FLAG_LOOTABLE; // to be able to remove insignia
     }
@@ -377,7 +377,7 @@ void Player::RepopAtGraveyard()
     WorldSafeLocsEntry const* ClosestGrave = nullptr;
 
     // Special handle for battleground maps
-    if (BattleGround* bg = GetBattleGround())
+    if (BattleGround* bg = Battle().Ground())
     {
         ClosestGrave = bg->GetClosestGraveYard(this);
     }

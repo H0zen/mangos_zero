@@ -816,7 +816,7 @@ void BattleGroundMgr::SendToBattleGround(Player* pl, uint32 instanceId, BattleGr
     {
         uint32 mapid = bg->GetMapId();
         float x, y, z, O;
-        Team team = pl->GetBGTeam();
+        Team team = pl->Battle().Side();
         if (team == 0)
         {
             team = pl->GetTeam();

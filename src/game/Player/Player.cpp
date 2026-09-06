@@ -417,7 +417,7 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
  *
  * @param session The owning world session.
  */
-Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_arms(*this), m_spellMods(*this), m_duel(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
+Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_arms(*this), m_spellMods(*this), m_duel(*this), m_battle(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
 {
 
     m_transport = 0;
@@ -1308,9 +1308,9 @@ void Player::ToggleAFK()
     TogglePlayerFlag(PLAYER_FLAGS_AFK);
 
     // afk player not allowed in battleground
-    if (isAFK() && InBattleGround())
+    if (isAFK() && Battle().InOne())
     {
-        LeaveBattleground();
+        Battle().Leave();
     }
 }
 
@@ -1408,7 +1408,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
 
     // don't let enter battlegrounds without assigned battleground id (for example through areatrigger)...
     // don't let gm level > 1 either
-    if (!InBattleGround() && mEntry->IsBattleGround())
+    if (!Battle().InOne() && mEntry->IsBattleGround())
     {
         return false;
     }
@@ -1560,14 +1560,14 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
             ResetContestedPvP();
 
             // remove player from battleground on far teleport (when changing maps)
-            if (BattleGround const* bg = GetBattleGround())
+            if (BattleGround const* bg = Battle().Ground())
             {
                 // Note: at battleground join battleground id set before teleport
                 // and we already will found "current" battleground
                 // just need check that this is targeted map or leave
                 if (bg->GetMapId() != mapid)
                 {
-                    LeaveBattleground(false); // don't teleport to entry point
+                    Battle().Leave(false); // don't teleport to entry point
                 }
             }
 
@@ -2808,7 +2808,7 @@ void Player::SendInitWorldStates(uint32 zoneid)
 void Player::SendInitWorldStates(uint32 mapid, uint32 zoneid)
 {
     // data depends on zoneid/mapid...
-    BattleGround* bg = GetBattleGround();
+    BattleGround* bg = Battle().Ground();
 
     DEBUG_LOG("Sending SMSG_INIT_WORLD_STATES to Map:%u, Zone: %u", mapid, zoneid);
 
@@ -4436,7 +4436,7 @@ void Player::SummonIfPossible(bool agree)
 
     // drop flag at summon
     // this code can be reached only when GM is summoning player who carries flag, because player should be immune to summoning spells when he carries flag
-    if (BattleGround* bg = GetBattleGround())
+    if (BattleGround* bg = Battle().Ground())
     {
         bg->EventPlayerDroppedFlag(this);
     }
@@ -4733,7 +4733,7 @@ bool Player::IsClientControl(Unit* target) const
 {
     return (target && !target->IsFleeing() && !target->IsConfused() && !target->IsTaxiFlying() &&
         (!target->IsPlayer() ||
-        !((Player*)target)->InBattleGround() || ((Player*)target)->GetBattleGround()->GetStatus() != STATUS_WAIT_LEAVE) &&
+        !((Player*)target)->Battle().InOne() || ((Player*)target)->Battle().Ground()->GetStatus() != STATUS_WAIT_LEAVE) &&
         target->GetCharmerOrOwnerOrOwnGuid() == GetObjectGuid());
 }
 

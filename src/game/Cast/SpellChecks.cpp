@@ -110,7 +110,7 @@ SpellCastResult Spell::CheckCast(bool strict)
     // only allow triggered spells if at an ended battleground
     if (!m_IsTriggeredSpell && m_caster->IsPlayer())
     {
-        if (BattleGround* bg = ((Player*)m_caster)->GetBattleGround())
+        if (BattleGround* bg = ((Player*)m_caster)->Battle().Ground())
         {
             if (bg->GetStatus() == STATUS_WAIT_LEAVE)
             {
@@ -1190,7 +1190,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     }
 
                     // In BattleGround players can use only flags and banners
-                    if (((Player*)m_caster)->InBattleGround() &&
+                    if (((Player*)m_caster)->Battle().InOne() &&
                         !((Player*)m_caster)->CanUseBattleGroundObject())
                     {
                         return SPELL_FAILED_TRY_AGAIN;
@@ -1397,7 +1397,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     }
 
                     // not allow use this effect at battleground until battleground start
-                    if (BattleGround const* bg = ((Player*)m_caster)->GetBattleGround())
+                    if (BattleGround const* bg = ((Player*)m_caster)->Battle().Ground())
                     {
                         if (bg->GetStatus() != STATUS_IN_PROGRESS)
                         {

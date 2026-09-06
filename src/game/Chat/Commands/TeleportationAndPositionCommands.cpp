@@ -218,7 +218,7 @@ bool ChatHandler::HandleSummonCommand(char* args)
                 return false;
             }
             // if both players are in different bgs
-            else if (target->GetBattleGroundId() && player->GetBattleGroundId() != target->GetBattleGroundId())
+            else if (target->Battle().Id() && player->Battle().Id() != target->Battle().Id())
             {
                 PSendSysMessage(LANG_CANNOT_GO_TO_BG_FROM_BG, nameLink.c_str());
                 SetSentErrorMessage(true);
@@ -226,11 +226,11 @@ bool ChatHandler::HandleSummonCommand(char* args)
             }
             // all's well, set bg id
             // when porting out from the bg, it will be reset to 0
-            target->SetBattleGroundId(player->GetBattleGroundId(), player->GetBattleGroundTypeId());
+            target->Battle().In(player->Battle().Id(), player->Battle().Kind());
             // remember current position as entry point for return at bg end teleportation
             if (!target->GetMap()->IsBattleGround())
             {
-                target->SetBattleGroundEntryPoint();
+                target->Battle().RecordTheWayBack();
             }
         }
         else if (pMap->IsDungeon())
@@ -348,7 +348,7 @@ bool ChatHandler::HandleAppearCommand(char* args)
                 return false;
             }
             // if both players are in different bgs
-            else if (_player->GetBattleGroundId() && _player->GetBattleGroundId() != target->GetBattleGroundId())
+            else if (_player->Battle().Id() && _player->Battle().Id() != target->Battle().Id())
             {
                 PSendSysMessage(LANG_CANNOT_GO_TO_BG_FROM_BG, chrNameLink.c_str());
                 SetSentErrorMessage(true);
@@ -356,11 +356,11 @@ bool ChatHandler::HandleAppearCommand(char* args)
             }
             // all's well, set bg id
             // when porting out from the bg, it will be reset to 0
-            _player->SetBattleGroundId(target->GetBattleGroundId(), target->GetBattleGroundTypeId());
+            _player->Battle().In(target->Battle().Id(), target->Battle().Kind());
             // remember current position as entry point for return at bg end teleportation
             if (!_player->GetMap()->IsBattleGround())
             {
-                _player->SetBattleGroundEntryPoint();
+                _player->Battle().RecordTheWayBack();
             }
         }
         else if (cMap->IsDungeon())

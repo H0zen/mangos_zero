@@ -309,7 +309,7 @@ bool BattleGroundAB::HandleAreaTrigger(Player* source, uint32 trigger)
             }
             else
             {
-                source->LeaveBattleground();
+                source->Battle().Leave();
             }
             break;
         case 3949: // Arathi Basin Horde Exit
@@ -319,7 +319,7 @@ bool BattleGroundAB::HandleAreaTrigger(Player* source, uint32 trigger)
             }
             else
             {
-                source->LeaveBattleground();
+                source->Battle().Leave();
             }
             break;
         default:

@@ -122,9 +122,9 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     // prevent crash at attempt landing to not existed battleground instance
     if (mEntry->IsBattleGround())
     {
-        if (GetPlayer()->GetBattleGroundId())
+        if (GetPlayer()->Battle().Id())
         {
-            map = sMapMgr.FindMap(loc.MapId(), GetPlayer()->GetBattleGroundId());
+            map = sMapMgr.FindMap(loc.MapId(), GetPlayer()->Battle().Id());
         }
 
         if (!map)
@@ -203,20 +203,20 @@ void WorldSession::HandleMoveWorldportAckOpcode()
 
     // battleground state prepare (in case join to BG), at relogin/tele player not invited
     // only add to bg group and object, if the player was invited (else he entered through command)
-    if (_player->InBattleGround())
+    if (_player->Battle().InOne())
     {
         // cleanup setting if outdated
         if (!mEntry->IsBattleGround())
         {
             // We're not in BG
-            _player->SetBattleGroundId(0, BATTLEGROUND_TYPE_NONE);
+            _player->Battle().In(0, BATTLEGROUND_TYPE_NONE);
             // reset destination bg team
-            _player->SetBGTeam(TEAM_NONE);
+            _player->Battle().Side(TEAM_NONE);
         }
         // join to bg case
-        else if (BattleGround* bg = _player->GetBattleGround())
+        else if (BattleGround* bg = _player->Battle().Ground())
         {
-            if (_player->Queues().CalledToInstance(_player->GetBattleGroundId()))
+            if (_player->Queues().CalledToInstance(_player->Battle().Id()))
             {
                 bg->AddPlayer(_player);
             }
@@ -228,7 +228,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     // flight fast teleport case
     if (GetPlayer()->GetMotionMaster()->GetCurrentMovementGeneratorType() == FLIGHT_MOTION_TYPE)
     {
-        if (!_player->InBattleGround())
+        if (!_player->Battle().InOne())
         {
             // short preparations to continue flight
             FlightPathMovementGenerator* flight = (FlightPathMovementGenerator*)(GetPlayer()->GetMotionMaster()->top());
@@ -828,8 +828,8 @@ void movement::Relocate(Player& who, MovementInfo& movementInfo)
 
         if (movementInfo.GetPos()->z < -500.0f)
         {
-            if (plMover->GetBattleGround() &&
-                plMover->GetBattleGround()->HandlePlayerUnderMap(&who))
+            if (plMover->Battle().Ground() &&
+                plMover->Battle().Ground()->HandlePlayerUnderMap(&who))
             {
                 // do nothing, the handle already did if returned true
             }

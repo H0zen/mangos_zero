@@ -209,7 +209,7 @@ GameObjectBehaviour::Casting TrapBehaviour::UsedBy(Unit* user, bool scriptSaidYe
     if (IsBattleGroundTrap && user->IsPlayer())
     {
         // BattleGround gameobjects case
-        if (BattleGround* bg = static_cast<Player*>(user)->GetBattleGround())
+        if (BattleGround* bg = static_cast<Player*>(user)->Battle().Ground())
         {
             bg->HandleTriggerBuff(It().GetObjectGuid());
         }
@@ -725,7 +725,7 @@ GameObjectBehaviour::Casting FlagStandBehaviour::UsedBy(Unit* user, bool scriptS
     if (player->CanUseBattleGroundObject())
     {
         // in battleground check
-        BattleGround* bg = player->GetBattleGround();
+        BattleGround* bg = player->Battle().Ground();
         if (!bg)
         {
             return Casting();
@@ -774,7 +774,7 @@ GameObjectBehaviour::Casting FlagDropBehaviour::UsedBy(Unit* user, bool scriptSa
     if (player->CanUseBattleGroundObject())
     {
         // in battleground check
-        BattleGround* bg = player->GetBattleGround();
+        BattleGround* bg = player->Battle().Ground();
         if (!bg)
         {
             return Casting();

@@ -1775,7 +1775,7 @@ void Player::ContinueTaxiFlight()
 void Player::_SaveBGData()
 {
     // nothing save
-    if (!m_bgData.m_needSave)
+    if (!Battle().Unsaved())
     {
         return;
     }
@@ -1787,21 +1787,21 @@ void Player::_SaveBGData()
 
     stmt.PExecute(GetGUIDLow());
 
-    if (m_bgData.bgInstanceID)
+    if (Battle().InOne())
     {
         stmt = CharacterDatabase.CreateStatement(insBGData, "INSERT INTO `character_battleground_data` VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         /* guid, bgInstanceID, bgTeam, x, y, z, o, map */
         stmt.addUInt32(GetGUIDLow());
-        stmt.addUInt32(m_bgData.bgInstanceID);
-        stmt.addUInt32(uint32(m_bgData.bgTeam));
-        stmt.addFloat(m_bgData.joinPos.X());
-        stmt.addFloat(m_bgData.joinPos.Y());
-        stmt.addFloat(m_bgData.joinPos.Z());
-        stmt.addFloat(m_bgData.joinPos.Facing());
-        stmt.addUInt32(m_bgData.joinPos.MapId());
+        stmt.addUInt32(Battle().Id());
+        stmt.addUInt32(uint32(Battle().SideAsSet()));
+        stmt.addFloat(Battle().CameFrom().X());
+        stmt.addFloat(Battle().CameFrom().Y());
+        stmt.addFloat(Battle().CameFrom().Z());
+        stmt.addFloat(Battle().CameFrom().Facing());
+        stmt.addUInt32(Battle().CameFrom().MapId());
 
         stmt.Execute();
     }
 
-    m_bgData.m_needSave = false;
+    Battle().Saved();
 }
