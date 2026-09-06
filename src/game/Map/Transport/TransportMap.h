@@ -42,6 +42,34 @@ class UpdateData;
 /// all the same picture from the client and all a different answer here.
 std::string DescribeSpatially(Unit* u);
 
+namespace vessels
+{
+    /**
+     * @brief A step across a vessel's boundary, held for as long as the step takes.
+     *
+     * Crossing changes which map a passenger is filed under. It does not take him out of
+     * anyone's sight: the watchers on the far side keep reaching him through the relay.
+     * While one of these stands, leaving the old map tells them nothing, so they keep the
+     * copy they already hold instead of destroying it and building it again -- which is
+     * what they saw as a blink.
+     *
+     * Whoever genuinely loses sight of him is still cleared, by the ordinary elimination
+     * in his own next sweep. Nothing here keeps a ledger.
+     */
+    class Crossing
+    {
+        public:
+            explicit Crossing(Player& who);
+            ~Crossing();
+
+            Crossing(Crossing const&) = delete;
+            Crossing& operator=(Crossing const&) = delete;
+    };
+
+    /// Whether this player is mid-step, so a removal is not a departure.
+    bool Stepping(Player const& who);
+}
+
 /// A map region a visibility pass must sweep in addition to the viewer's own, because a
 /// vessel and the shore it sails past are two maps that must see each other.
 struct RelaySource

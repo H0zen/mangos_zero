@@ -1114,7 +1114,16 @@ void Map::Remove(Player* player, bool remove)
     RemoveFromGrid(player, grid, cell);
 
     SendRemoveTransports(player);
-    UpdateObjectVisibility(player, cell, p);
+
+    // A step across a vessel's boundary is not a departure. Telling the watchers here makes
+    // them destroy a man they can still see and build him again a moment later on the far
+    // map -- a blink, and the run he was in the middle of replayed out of the create block.
+    // They keep what they hold; whoever really lost sight of him is cleared by the ordinary
+    // elimination in his own next sweep.
+    if (!vessels::Stepping(*player))
+    {
+        UpdateObjectVisibility(player, cell, p);
+    }
 
     if (remove)
     {
