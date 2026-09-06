@@ -239,7 +239,7 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
     loot(this),
     m_equipmentId(0),
     m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false),
-    m_AI_locked(false), m_temporaryFactionFlags(TEMPFACTION_NONE),
+    m_AI_locked(false),
     m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0),
     m_sheet(*this), m_links(*this), m_pace(*this)
 {
@@ -2937,79 +2937,6 @@ const char* Creature::GetNameForLocaleIdx(int32 loc_idx) const
     char const* name = GetName();
     sObjectMgr.GetCreatureLocaleStrings(GetEntry(), loc_idx, &name);
     return name;
-}
-
-/**
- * @brief Applies a temporary faction and associated flag toggles.
- *
- * @param factionId The temporary faction id.
- * @param tempFactionFlags The temporary faction behavior flags.
- */
-void Creature::SetFactionTemporary(uint32 factionId, uint32 tempFactionFlags)
-{
-    m_temporaryFactionFlags = tempFactionFlags;
-    setFaction(factionId);
-
-    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_NON_ATTACKABLE)
-    {
-        RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
-    }
-    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_OOC_NOT_ATTACK)
-    {
-        RemoveUnitFlag(UNIT_FLAG_OOC_NOT_ATTACKABLE);
-    }
-    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_PASSIVE)
-    {
-        RemoveUnitFlag(UNIT_FLAG_PASSIVE);
-    }
-    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_PACIFIED)
-    {
-        RemoveUnitFlag(UNIT_FLAG_PACIFIED);
-    }
-    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_NOT_SELECTABLE)
-    {
-        RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
-    }
-}
-
-/**
- * @brief Restores the original faction and temporary flags after a temporary change.
- */
-void Creature::ClearTemporaryFaction()
-{
-    // No restore if creature is charmed/possessed.
-    // For later we may consider extend to restore to charmer faction where charmer is creature.
-    // This can also be done by update any pet/charmed of creature at any faction change to charmer.
-    if (IsCharmed())
-    {
-        return;
-    }
-
-    // Reset to original faction
-    setFaction(GetCreatureInfo()->FactionAlliance);
-    // Reset UNIT_FLAG_NON_ATTACKABLE, UNIT_FLAG_OOC_NOT_ATTACKABLE, UNIT_FLAG_PASSIVE, UNIT_FLAG_PACIFIED or UNIT_FLAG_NOT_SELECTABLE flags
-    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_NON_ATTACKABLE && GetCreatureInfo()->UnitFlags & UNIT_FLAG_NON_ATTACKABLE)
-    {
-        SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
-    }
-    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_OOC_NOT_ATTACK && GetCreatureInfo()->UnitFlags & UNIT_FLAG_OOC_NOT_ATTACKABLE && !IsInCombat())
-    {
-        SetUnitFlag(UNIT_FLAG_OOC_NOT_ATTACKABLE);
-    }
-    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_PASSIVE && GetCreatureInfo()->UnitFlags & UNIT_FLAG_PASSIVE)
-    {
-        SetUnitFlag(UNIT_FLAG_PASSIVE);
-    }
-    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_PACIFIED && GetCreatureInfo()->UnitFlags & UNIT_FLAG_PACIFIED)
-    {
-        SetUnitFlag(UNIT_FLAG_PACIFIED);
-    }
-    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_NOT_SELECTABLE && GetCreatureInfo()->UnitFlags & UNIT_FLAG_NOT_SELECTABLE)
-    {
-        SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
-    }
-
-    m_temporaryFactionFlags = TEMPFACTION_NONE;
 }
 
 /**

@@ -523,19 +523,6 @@ struct CreatureCreatePos
         float m_dist;
 };
 
-enum TemporaryFactionFlags                                  // Used at real faction changes
-{
-    TEMPFACTION_NONE                    = 0x00,             // When no flag is used in temporary faction change, faction will be persistent. It will then require manual change back to default/another faction when changed once
-    TEMPFACTION_RESTORE_RESPAWN         = 0x01,             // Default faction will be restored at respawn
-    TEMPFACTION_RESTORE_COMBAT_STOP     = 0x02,             // ... at CombatStop() (happens at creature death, at evade or custom scripte among others)
-    TEMPFACTION_RESTORE_REACH_HOME      = 0x04,             // ... at reaching home in home movement (evade), if not already done at CombatStop()
-    TEMPFACTION_TOGGLE_NON_ATTACKABLE   = 0x08,             // Remove UNIT_FLAG_NON_ATTACKABLE(0x02) when faction is changed (reapply when temp-faction is removed)
-    TEMPFACTION_TOGGLE_OOC_NOT_ATTACK   = 0x10,             // Remove UNIT_FLAG_OOC_NOT_ATTACKABLE(0x100) when faction is changed (reapply when temp-faction is removed)
-    TEMPFACTION_TOGGLE_PASSIVE          = 0x20,             // Remove UNIT_FLAG_PASSIVE(0x200) when faction is changed (reapply when temp-faction is removed)
-    TEMPFACTION_TOGGLE_PACIFIED         = 0x40,             // Remove UNIT_FLAG_PACIFIED(0x20000) when faction is changed (reapply when temp-faction is removed)
-    TEMPFACTION_TOGGLE_NOT_SELECTABLE   = 0x80,             // Remove UNIT_FLAG_NOT_SELECTABLE(0x2000000) when faction is changed (reapply when temp-faction is removed)
-    TEMPFACTION_ALL,
-};
 
 class Creature : public Unit
 {
@@ -981,12 +968,6 @@ class Creature : public Unit
         void ResetSpawn();
 
 
-        void SetFactionTemporary(uint32 factionId, uint32 tempFactionFlags = TEMPFACTION_ALL);
-        void ClearTemporaryFaction();
-        uint32 GetTemporaryFactionFlags()
-        {
-            return m_temporaryFactionFlags;
-        }
 
         void SendAreaSpiritHealerQueryOpcode(Player* pl);
 
@@ -1021,7 +1002,6 @@ class Creature : public Unit
         bool m_AlreadyCallAssistance;
         bool m_AlreadySearchedAssistance;
         bool m_AI_locked;
-        uint32 m_temporaryFactionFlags;                     // used for real faction changes (not auras etc)
 
         SpellSchoolMask m_meleeDamageSchoolMask;
         uint32 m_originalEntry;

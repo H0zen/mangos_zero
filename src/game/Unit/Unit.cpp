@@ -202,6 +202,7 @@ void GlobalCooldownMgr::CancelGlobalCooldown(SpellEntry const* spellInfo)
 Unit::Unit()
     : movespline(new Movement::MoveSpline()),
     m_conjured(*this),
+    m_disguise(*this),
     m_retinue(*this),
     i_motionMaster(this),
     m_ThreatManager(this),
@@ -3059,12 +3060,9 @@ void Unit::CombatStop(bool includingCast)
     {
         ((Player*)this)->SendAttackSwingCancelAttack(); // melee and ranged forced attack cancel
     }
-    else if (IsCreature())
+    else if (Colours().Flags() & TEMPFACTION_RESTORE_COMBAT_STOP)
     {
-        if (((Creature*)this)->GetTemporaryFactionFlags() & TEMPFACTION_RESTORE_COMBAT_STOP)
-        {
-            ((Creature*)this)->ClearTemporaryFaction();
-        }
+        Colours().TakeOff();
     }
 
     ClearInCombat();

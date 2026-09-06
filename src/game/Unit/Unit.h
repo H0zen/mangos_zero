@@ -87,6 +87,7 @@
 #include "CharmInfo.h"
 #include "Stats/Modifiers.h"
 #include "Creature/CreatureRecord.h"
+#include "Creature/Disguise.h"
 #include "Creature/Pickings.h"
 #include "Creature/Station.h"
 #include "Creature/Vigil.h"
@@ -1685,6 +1686,14 @@ class Unit : public Occupant
         /// What can still be taken off it, and what has been already.
         Pickings& Taking() { return m_pickings; }
         Pickings const& Taking() const { return m_pickings; }
+
+        /// Another side's colours, worn for a while.
+        Disguise& Colours() { return m_disguise; }
+        Disguise const& Colours() const { return m_disguise; }
+
+        void SetFactionTemporary(uint32 factionId, uint32 flags = TEMPFACTION_ALL) { m_disguise.Wear(factionId, flags); }
+        void ClearTemporaryFaction() { m_disguise.TakeOff(); }
+        uint32 GetTemporaryFactionFlags() const { return m_disguise.Flags(); }
 
         /// Where this unit belongs: its spawn pose, in the frame it spawned in.
         Geometry::Placement const& Spawn() const { return m_station.Where(); }
@@ -3684,6 +3693,8 @@ class Unit : public Occupant
         Station m_station;
 
         Pickings m_pickings;
+
+        Disguise m_disguise;
 
         struct WeaponDamageInfo
         {
