@@ -237,7 +237,6 @@ bool CreatureCreatePos::PlaceOn(Creature* cr) const
 Creature::Creature(CreatureSubtype subtype) : Unit(),
     i_AI(nullptr),
     loot(this),
-
     m_sheet(*this), m_links(*this), m_pace(*this)
 {
     m_subtype = subtype;
