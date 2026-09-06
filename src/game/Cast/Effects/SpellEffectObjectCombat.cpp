@@ -306,7 +306,7 @@ void Spell::EffectDuel(SpellEffectIndex eff_idx)
     Player* target = (Player*)unitTarget;
 
     // caster or target already have requested duel
-    if (caster->duel || target->duel || !target->GetSocial() || target->GetSocial()->HasIgnore(caster->GetObjectGuid()))
+    if (caster->Duelling().Stands() || target->Duelling().Stands() || !target->GetSocial() || target->GetSocial()->HasIgnore(caster->GetObjectGuid()))
     {
         return;
     }
@@ -360,20 +360,9 @@ void Spell::EffectDuel(SpellEffectIndex eff_idx)
     caster->GetSession()->SendPacket(&data);
     target->GetSession()->SendPacket(&data);
 
-    // create duel-info
-    DuelInfo* duel   = new DuelInfo;
-    duel->initiator  = caster;
-    duel->opponent   = target;
-    duel->startTime  = 0;
-    duel->startTimer = 0;
-    caster->duel     = duel;
-
-    DuelInfo* duel2   = new DuelInfo;
-    duel2->initiator  = caster;
-    duel2->opponent   = caster;
-    duel2->startTime  = 0;
-    duel2->startTimer = 0;
-    target->duel      = duel2;
+    // each man keeps his own side of it; the challenged man's opponent is the challenger
+    caster->Duelling().Offered(caster, target);
+    target->Duelling().Offered(caster, caster);
 
     caster->SetDuelArbiterGuid(pGameObj->GetObjectGuid());
     target->SetDuelArbiterGuid(pGameObj->GetObjectGuid());

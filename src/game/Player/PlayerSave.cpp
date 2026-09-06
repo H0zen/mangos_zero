@@ -1064,27 +1064,6 @@ void Player::UpdatePvPFlag(time_t currTime)
 }
 
 /**
- * @brief Starts an active duel once the duel countdown completes.
- *
- * @param currTime The current server time.
- */
-void Player::UpdateDuelFlag(time_t currTime)
-{
-    if (!duel || duel->startTimer == 0 || currTime < duel->startTimer + 3)
-    {
-        return;
-    }
-
-    SetUInt32Value(PLAYER_DUEL_TEAM, 1);
-    duel->opponent->SetUInt32Value(PLAYER_DUEL_TEAM, 2);
-
-    duel->startTimer = 0;
-    duel->startTime  = currTime;
-    duel->opponent->duel->startTimer = 0;
-    duel->opponent->duel->startTime  = currTime;
-}
-
-/**
  * @brief Sends a say chat message from the player to nearby listeners.
  *
  * @param text The message text.

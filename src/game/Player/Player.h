@@ -80,6 +80,7 @@
 #include "Hearth.h"
 #include "Mailbox.h"
 #include "PlayedTime.h"
+#include "Duel.h"
 #include "SpellModifiers.h"
 #include "Weaponry.h"
 #include "Rest.h"
@@ -414,18 +415,6 @@ struct PvPInfo
     time_t endTimer;    // End timer
 };
 
-// Structure to hold duel info
-struct DuelInfo
-{
-    DuelInfo() : initiator(nullptr), opponent(nullptr), startTimer(0), startTime(0), outOfBound(0) {}
-
-    Player* initiator; // Initiator player
-    Player* opponent;  // Opponent player
-    time_t startTimer; // Start timer
-    time_t startTime;  // Start time
-    time_t outOfBound; // Out of bound timer
-};
-
 // Structure to hold area information
 struct Areas
 {
@@ -566,14 +555,6 @@ enum InstanceResetWarningType
     RAID_INSTANCE_WARNING_MIN       = 2, // WARNING! %s is scheduled to reset in %d minute(s)!
     RAID_INSTANCE_WARNING_MIN_SOON  = 3, // WARNING! %s is scheduled to reset in %d minute(s). Please exit the zone or you will be returned to your bind location!
     RAID_INSTANCE_WELCOME           = 4  // Welcome to %s. This raid instance is scheduled to reset in %s.
-};
-
-// Duel completion types
-enum DuelCompleteType
-{
-    DUEL_INTERRUPTED            = 0, // Duel interrupted
-    DUEL_WON                    = 1, // Duel won
-    DUEL_FLED                   = 2  // Duel fled
 };
 
 // Teleport options
@@ -2174,24 +2155,6 @@ class Player : public Unit
 
         // Check if the player is in a duel with another player
 
-        /** todo: -maybe move UpdateDuelFlag+DuelComplete to independent DuelHandler.. **/
-        DuelInfo* duel;
-        bool IsInDuelWith(Player const* player) const
-        {
-            return duel && duel->opponent == player && duel->startTime != 0;
-        }
-
-        // Update duel flag
-        void UpdateDuelFlag(time_t currTime);
-
-        // Check duel distance
-        void CheckDuelDistance(time_t currTime);
-
-        // Complete the duel
-        void DuelComplete(DuelCompleteType type);
-
-        // Send duel countdown
-        void SendDuelCountdown(uint32 counter);
 
         // Check if the player is visible for another player in the group
         bool IsGroupVisibleFor(Player* p) const;
@@ -3142,6 +3105,10 @@ class Player : public Unit
         SpellModifiers& SpellMods() { return m_spellMods; }
         SpellModifiers const& SpellMods() const { return m_spellMods; }
 
+        /// His side of the duel he is in.
+        Duel& Duelling() { return m_duel; }
+        Duel const& Duelling() const { return m_duel; }
+
         time_t LoginTime() const { return m_played.LoggedInAt(); }
 
         // Get an object by type mask
@@ -3614,6 +3581,8 @@ class Player : public Unit
         Weaponry m_arms;
 
         SpellModifiers m_spellMods;
+
+        Duel m_duel;
 
         // Detect invisibility timer
         uint32 m_DetectInvTimer;

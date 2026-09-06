@@ -417,7 +417,7 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
  *
  * @param session The owning world session.
  */
-Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_arms(*this), m_spellMods(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
+Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this), m_journal(*this), m_perils(*this), m_drink(*this), m_rest(*this), m_post(*this), m_arms(*this), m_spellMods(*this), m_duel(*this), m_mover(this), m_camera(this), m_reputationMgr(this), m_spellCooldownMgr(this), m_petMgr(this)
 {
 
     m_transport = 0;
@@ -486,7 +486,6 @@ Player::Player(WorldSession* session): Unit(), m_inventory(*this), m_honor(*this
 
     ClearHonorInfo();
 
-    duel = nullptr;
 
 
     m_atLoginFlags = AT_LOGIN_NONE;
@@ -634,7 +633,7 @@ void Player::CleanupsBeforeDelete()
         // Cancel any ongoing trade
         TradeCancel(false);
         // Complete any ongoing duel
-        DuelComplete(DUEL_FLED);
+        Duelling().Complete(DUEL_FLED);
     }
 
     // Notify zone scripts that the player is leaving the zone
@@ -1029,10 +1028,10 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     UpdateContestedPvP(update_diff);
 
     // Update duel flag
-    UpdateDuelFlag(now);
+    Duelling().CountdownRunsOut(now);
 
     // Check duel distance
-    CheckDuelDistance(now);
+    Duelling().WatchTheFlag(now);
 
     // Update items that have just a limited lifetime
     if (uint32 const since = m_played.Since(now))
@@ -1074,7 +1073,7 @@ void Player::Update(uint32 update_diff, uint32 p_time)
         if (pVictim && !IsNonMeleeSpellCasted(false))
         {
             Player* vOwner = pVictim->GetCharmerOrOwnerPlayerOrPlayerItself();
-            if (vOwner && vOwner->IsPvP() && !IsInDuelWith(vOwner))
+            if (vOwner && vOwner->IsPvP() && !Duelling().With(vOwner))
             {
                 UpdatePvP(true);
                 RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
@@ -1449,11 +1448,11 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     // The player was ported to another map and looses the duel immediately.
     // We have to perform this check before the teleport, otherwise the
     // ObjectAccessor won't find the flag.
-    if (duel && GetMapId() != mapid)
+    if (m_duel.Stands() && GetMapId() != mapid)
     {
         if (GetMap()->GetGameObject(GetDuelArbiterGuid()))
         {
-            DuelComplete(DUEL_FLED);
+            Duelling().Complete(DUEL_FLED);
         }
     }
 
@@ -1775,7 +1774,7 @@ void Player::RemoveFromWorld()
 
     // remove duel before calling Unit::RemoveFromWorld
     // otherwise there will be an existing duel flag pointer but no entry in m_gameObj
-    DuelComplete(DUEL_INTERRUPTED);
+    Duelling().Complete(DUEL_INTERRUPTED);
 
     ///- Do not add/remove the player from the object storage
     ///- It will crash when updating the ObjectAccessor

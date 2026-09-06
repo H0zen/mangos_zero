@@ -777,10 +777,10 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
 
     // duel ends when player has 1 or less hp
     bool duel_hasEnded = false;
-    if (pVictim->IsPlayer() && ((Player*)pVictim)->duel && damage >= (health - 1))
+    if (pVictim->IsPlayer() && ((Player*)pVictim)->Duelling().Stands() && damage >= (health - 1))
     {
         // prevent kill only if killed in duel and killed by opponent or opponent controlled creature
-        if (((Player*)pVictim)->duel->opponent == this || ((Player*)pVictim)->duel->opponent->GetObjectGuid() == GetOwnerGuid())
+        if (((Player*)pVictim)->Duelling().Against() == this || ((Player*)pVictim)->Duelling().Against()->GetObjectGuid() == GetOwnerGuid())
         {
             damage = health - 1;
         }
@@ -991,10 +991,10 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
             // last damage from non duel opponent or non opponent controlled creature
             if (duel_hasEnded)
             {
-                playerVictim->duel->opponent->CombatStopWithPets(true);
+                playerVictim->Duelling().Against()->CombatStopWithPets(true);
                 playerVictim->CombatStopWithPets(true);
 
-                playerVictim->DuelComplete(DUEL_INTERRUPTED);
+                playerVictim->Duelling().Complete(DUEL_INTERRUPTED);
             }
 
             if (player_tap)                                 // PvP kill
@@ -1157,15 +1157,15 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
             MANGOS_ASSERT(pVictim->IsPlayer());
             Player* he = (Player*)pVictim;
 
-            MANGOS_ASSERT(he->duel);
+            MANGOS_ASSERT(he->Duelling().Stands());
 
             he->SetHealth(1);
 
-            he->duel->opponent->CombatStopWithPets(true);
+            he->Duelling().Against()->CombatStopWithPets(true);
             he->CombatStopWithPets(true);
 
             he->CastSpell(he, 7267, true);                  // beg
-            he->DuelComplete(DUEL_WON);
+            he->Duelling().Complete(DUEL_WON);
         }
     }
 
@@ -3910,11 +3910,11 @@ void Unit::SetInCombatWith(Unit* enemy)
     }
 
     // check for duel
-    if (eOwner->IsPlayer() && ((Player*)eOwner)->duel)
+    if (eOwner->IsPlayer() && ((Player*)eOwner)->Duelling().Stands())
     {
         if (Player const* myOwner = GetCharmerOrOwnerPlayerOrPlayerItself())
         {
-            if (myOwner->IsInDuelWith((Player const*)eOwner))
+            if (myOwner->Duelling().With((Player const*)eOwner))
             {
                 SetInCombatState(true, enemy);
                 return;
@@ -6130,7 +6130,7 @@ void Unit::SetContestedPvP(Player* attackedPlayer)
 {
     Player* player = GetCharmerOrOwnerPlayerOrPlayerItself();
 
-    if (!player || (attackedPlayer && (attackedPlayer == player || player->IsInDuelWith(attackedPlayer))))
+    if (!player || (attackedPlayer && (attackedPlayer == player || player->Duelling().With(attackedPlayer))))
     {
         return;
     }

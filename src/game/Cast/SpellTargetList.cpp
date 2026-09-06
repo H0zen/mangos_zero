@@ -336,7 +336,7 @@ void Spell::FillTargetMap()
             for (UnitList::const_iterator itr = tmpUnitLists[effToIndex[i]].begin(); itr != tmpUnitLists[effToIndex[i]].end(); ++itr)
             {
                 Player* targetOwner = (*itr)->GetCharmerOrOwnerPlayerOrPlayerItself();
-                if (targetOwner && targetOwner != me && targetOwner->IsPvP() && !me->IsInDuelWith(targetOwner))
+                if (targetOwner && targetOwner != me && targetOwner->IsPvP() && !me->Duelling().With(targetOwner))
                 {
                     me->UpdatePvP(true);
                     me->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);

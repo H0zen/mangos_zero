@@ -61,15 +61,15 @@ void duels::DuelAccepted(Player& who, WorldPacket& recvPacket)
     ObjectGuid guid;
     recvPacket >> guid;
 
-    if (!who.duel)                                 // ignore accept from duel-sender
+    if (!who.Duelling().Stands())                                 // ignore accept from duel-sender
     {
         return;
     }
 
     Player* pl       = &who;
-    Player* plTarget = pl->duel->opponent;
+    Player* plTarget = pl->Duelling().Against();
 
-    if (pl == pl->duel->initiator || !plTarget || pl == plTarget || pl->duel->startTime != 0 || plTarget->duel->startTime != 0)
+    if (pl == pl->Duelling().Initiator() || !plTarget || pl == plTarget || pl->Duelling().StartedAt() != 0 || plTarget->Duelling().StartedAt() != 0)
     {
         return;
     }
@@ -79,11 +79,11 @@ void duels::DuelAccepted(Player& who, WorldPacket& recvPacket)
     DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "Player 2 is: %u (%s)", plTarget->GetGUIDLow(), plTarget->GetName());
 
     time_t now = time(nullptr);
-    pl->duel->startTimer = now;
-    plTarget->duel->startTimer = now;
+    pl->Duelling().Accepted(now);
+    plTarget->Duelling().Accepted(now);
 
-    pl->SendDuelCountdown(3000);
-    plTarget->SendDuelCountdown(3000);
+    pl->Duelling().TellCountdown(3000);
+    plTarget->Duelling().TellCountdown(3000);
 }
 
 /**
@@ -102,22 +102,22 @@ void duels::DuelCancelled(Player& who, WorldPacket& recvPacket)
     DEBUG_LOG("WORLD: Received opcode CMSG_DUEL_CANCELLED");
 
     // no duel requested
-    if (!who.duel)
+    if (!who.Duelling().Stands())
     {
         return;
     }
 
     // player surrendered in a duel using /forfeit
-    if (who.duel->startTime != 0)
+    if (who.Duelling().StartedAt() != 0)
     {
         who.CombatStopWithPets(true);
-        if (who.duel->opponent)
+        if (who.Duelling().Against())
         {
-            who.duel->opponent->CombatStopWithPets(true);
+            who.Duelling().Against()->CombatStopWithPets(true);
         }
 
         who.CastSpell(&who, 7267, true);    // beg
-        who.DuelComplete(DUEL_WON);
+        who.Duelling().Complete(DUEL_WON);
         return;
     }
 
@@ -126,5 +126,5 @@ void duels::DuelCancelled(Player& who, WorldPacket& recvPacket)
     ObjectGuid guid;
     recvPacket >> guid;
 
-    who.DuelComplete(DUEL_INTERRUPTED);
+    who.Duelling().Complete(DUEL_INTERRUPTED);
 }

@@ -145,7 +145,7 @@ namespace
     /// the other.
     Reaction AsPvpStateStands(Player const& who, Player const& whom)
     {
-        if (who.IsInDuelWith(&whom))
+        if (who.Duelling().With(&whom))
         {
             return Reaction::Hostile;
         }
