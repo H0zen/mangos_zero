@@ -86,11 +86,6 @@ namespace
     /// Two points in one grid. A vessel's audience is the grid she sits in, so this is the
     /// only question her pose is ever asked, and a wrong answer costs one grid either way
     /// rather than a wrong distance.
-    /// The one passenger stepping across a boundary right now. A vessel's map runs nested
-    /// inside the tick of the world she sails and on that same thread, and a crossing is a
-    /// removal and an addition back to back -- so there is never more than one.
-    thread_local Player const* g_stepping = nullptr;
-
     bool InSameGrid(Geometry::Placement const& a, Geometry::Placement const& b)
     {
         uint32 ax = 0, ay = 0, bx = 0, by = 0;
@@ -524,21 +519,6 @@ bool TransportMap::Add(Player* passenger, InitialWorldEntryHook* initialEntry)
     return true;
 }
 
-vessels::Crossing::Crossing(Player& who)
-{
-    g_stepping = &who;
-}
-
-vessels::Crossing::~Crossing()
-{
-    g_stepping = nullptr;
-}
-
-bool vessels::Stepping(Player const& who)
-{
-    return g_stepping == &who;
-}
-
 void TransportMap::Embark(Player* passenger)
 {
     if (!m_commissioned || !passenger->IsInWorld() || passenger->GetMap() == this)
@@ -552,12 +532,8 @@ void TransportMap::Embark(Player* passenger)
     DEBUG_FILTER_LOG(LOG_FILTER_DECK_MINIONS, "Embark: %s",
                      DescribeSpatially(passenger).c_str());
 
-    {
-        vessels::Crossing step(*passenger);
-
-        passenger->GetMap()->Remove(passenger, false);
-        Add(passenger, nullptr);
-    }
+    Rebind(passenger, passenger->Where().X(), passenger->Where().Y(),
+           passenger->Where().Z(), passenger->Where().Facing());
 
     // His minions come with him, NOW. UpdateMinions reconciles this once per tick and is
     // the safety net for the half-dozen other ways one arrives -- but a pet that waits a
@@ -636,21 +612,11 @@ void TransportMap::Disembark(Player* passenger, float x, float y, float z, float
     DEBUG_FILTER_LOG(LOG_FILTER_DECK_MINIONS, "Disembark: %s",
                      DescribeSpatially(passenger).c_str());
 
-    {
-        vessels::Crossing step(*passenger);
+    // The ship goes out of his hands before he is off her, so every question about where
+    // he stands answers ashore from here on.
+    passenger->SetTransport(nullptr);
 
-        Remove(passenger, false);
-        passenger->Place().MoveTo(x, y, z, o);
-
-        // BEFORE the add, not after. Map::Add sends SendInitTransports, whose loop skips
-        // player->GetTransport() on the assumption that our own vessel already reached us
-        // through SendInitSelf. Stepping ashore is the one case where that is false: leave
-        // the pointer set and the ship he just left is the single vessel never announced to
-        // him, so it vanishes the instant he is off it.
-        passenger->SetTransport(nullptr);
-
-        sailed->Add(passenger);
-    }
+    sailed->Rebind(passenger, x, y, z, o);
 
     // And they follow him ashore in the same tick, for the same reason.
     DrawMinionsTo(passenger, sailed);

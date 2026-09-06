@@ -170,6 +170,27 @@ class Map : public GridRefManager<NGridType>
 
         virtual bool Add(Player*, InitialWorldEntryHook* initialEntry = nullptr);
         virtual void Remove(Player*, bool);
+
+        /**
+         * @brief Moves a player into this map without taking him out of the world.
+         *
+         * Stepping across a vessel's boundary changes which container holds him and which
+         * grid he is filed in. It is not a departure and not an arrival: he keeps his
+         * totems, his duel, his charm, his camera and everything his client already holds.
+         *
+         * Remove and Add cannot do this. Between them they run RemoveFromWorld and
+         * AddToWorld, which exist to tear a player down and build him again -- and the
+         * watchers on the far side, who never lost sight of him, were told to destroy him
+         * and then to build him back.
+         *
+         * Only the cameras on THIS map are told. The ones he is leaving keep what they
+         * hold, and whoever really lost sight of him is cleared by the ordinary
+         * elimination in his own next sweep.
+         *
+         * @param player The player crossing.
+         * @param x The pose he stands in once he is here.
+         */
+        bool Rebind(Player* player, float x, float y, float z, float o);
         template<class T> void Add(T*);
         template<class T> void Remove(T*, bool);
 

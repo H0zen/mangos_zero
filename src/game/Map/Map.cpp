@@ -1059,6 +1059,60 @@ void Map::Update(const uint32& t_diff)
  * @param player The player to remove.
  * @param remove True to fully delete the player object after cleanup.
  */
+bool Map::Rebind(Player* player, float x, float y, float z, float o)
+{
+    Map* from = player->GetMap();
+    if (!from || from == this)
+    {
+        return false;
+    }
+
+    // OUT of the old map's containers, by the pose he still holds there.
+    CellPair was = MaNGOS::ComputeCellPair(player->Where().X(), player->Where().Y());
+    if (was.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || was.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
+    {
+        sLog.outError("Map::Rebind: %s stands nowhere on map %u", player->GetGuidStr().c_str(), from->i_id);
+        return false;
+    }
+
+    Cell leaving(was);
+    NGridType* oldGrid = from->getNGrid(leaving.GridX(), leaving.GridY());
+    if (!oldGrid)
+    {
+        sLog.outError("Map::Rebind: no grid[%u,%u] on map %u", leaving.GridX(), leaving.GridY(), from->i_id);
+        return false;
+    }
+
+    // The map he is leaving may be walking this very list -- a vessel's map ticks nested
+    // inside the tick of the world she sails.
+    if (from->m_mapRefIter == player->GetMapRef())
+    {
+        from->m_mapRefIter = from->m_mapRefIter->nocheck_prev();
+    }
+    player->GetMapRef().unlink();
+    from->RemoveFromGrid(player, oldGrid, leaving);
+
+    // AND IN, at the pose he stands in here. Aboard that is a deck offset; ashore it is
+    // the world point his own client just reported.
+    player->Place().MoveTo(x, y, z, o);
+    player->SetMap(this);
+    player->GetMapRef().link(this, player);
+
+    CellPair now = MaNGOS::ComputeCellPair(x, y);
+    Cell arriving(now);
+    EnsureGridLoadedAtEnter(arriving, player);
+    PromoteEnvelopeNeighboursToFull(arriving.GridX(), arriving.GridY());
+
+    NGridType* grid = getNGrid(arriving.GridX(), arriving.GridY());
+    player->GetViewPoint().Event_GridChanged(&(*grid)(arriving.CellX(), arriving.CellY()));
+
+    // The cameras HERE, so whoever could not see him a moment ago gets him at once. For
+    // the ones who already hold him this settles to nothing at all.
+    UpdateObjectVisibility(player, arriving, now);
+
+    return true;
+}
+
 void Map::Remove(Player* player, bool remove)
 {
 
@@ -1114,16 +1168,7 @@ void Map::Remove(Player* player, bool remove)
     RemoveFromGrid(player, grid, cell);
 
     SendRemoveTransports(player);
-
-    // A step across a vessel's boundary is not a departure. Telling the watchers here makes
-    // them destroy a man they can still see and build him again a moment later on the far
-    // map -- a blink, and the run he was in the middle of replayed out of the create block.
-    // They keep what they hold; whoever really lost sight of him is cleared by the ordinary
-    // elimination in his own next sweep.
-    if (!vessels::Stepping(*player))
-    {
-        UpdateObjectVisibility(player, cell, p);
-    }
+    UpdateObjectVisibility(player, cell, p);
 
     if (remove)
     {
