@@ -45,6 +45,7 @@
 #include <sstream>
 #include <map>
 #include "GameEventMgr.h"
+#include "SpawnRecord.h"
 #include "World.h"
 #include "ObjectMgr.h"
 #include "ObjectGuid.h"
@@ -822,7 +823,7 @@ void GameEventMgr::GameEventSpawn(int16 event_id)
 
             sObjectMgr.AddCreatureToGrid(*itr, data);
 
-            Creature::SpawnInMaps(*itr, data);
+            npcs::SpawnInMaps(*itr, data);
         }
     }
 
@@ -906,7 +907,7 @@ void GameEventMgr::GameEventUnspawn(int16 event_id)
             sObjectMgr.RemoveCreatureFromGrid(*itr, data);
 
             // Remove spawned cases
-            Creature::AddToRemoveListInMaps(*itr, data);
+            npcs::RemoveFromMaps(*itr, data);
         }
     }
 

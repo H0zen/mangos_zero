@@ -41,6 +41,7 @@
 
 #include "Summoning.h"
 #include "precompiled.h"
+#include "SpawnRecord.h"
 #include "escort_ai.h"
 
 /*######
@@ -670,7 +671,7 @@ struct npc_artorius_the_doombringer : public CreatureScript
             uint32 m_respawn_delay_Timer = urand(2, 3) * HOUR;
             m_creature->SetRespawnDelay(m_respawn_delay_Timer);
             m_creature->SetRespawnTime(m_respawn_delay_Timer);
-            m_creature->SaveRespawnTime();
+            npcs::SaveRespawnTime(*m_creature);
         }
 
         void DemonDespawn(Unit* playerFacing = nullptr, bool triggered = true)
@@ -678,7 +679,7 @@ struct npc_artorius_the_doombringer : public CreatureScript
             uint32 respawnTime = urand(12, 15);
             m_creature->SetRespawnDelay(respawnTime * MINUTE);
             m_creature->SetRespawnTime(respawnTime * MINUTE);
-            m_creature->SaveRespawnTime();
+            npcs::SaveRespawnTime(*m_creature);
 
             if (triggered)
             {

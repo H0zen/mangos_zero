@@ -373,12 +373,4 @@ class Pet : public Creature
         PetPace m_pace;
         PetModeFlags m_petModeFlags;
 
-        void SaveToDB(uint32) override                      // overwrited of Creature::SaveToDB     - don't must be called
-        {
-            MANGOS_ASSERT(false);
-        }
-        void DeleteFromDB() override                        // overwrite of Creature::DeleteFromDB - don't must be called
-        {
-            MANGOS_ASSERT(false);
-        }
 };

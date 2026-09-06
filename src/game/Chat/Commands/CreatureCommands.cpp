@@ -36,6 +36,7 @@
 
 #include <string>
 #include "Chat.h"
+#include "SpawnRecord.h"
 #include "Language.h"
 #include "World.h"
 #include "GridNotifiersImpl.h"
@@ -239,7 +240,7 @@ bool ChatHandler::HandleNpcAddCommand(char* args)
         return false;
     }
 
-    pCreature->SaveToDB(map->GetId());
+    npcs::SaveOn(*pCreature, map->GetId());
 
     uint32 db_guid = pCreature->GetGUIDLow();
 
@@ -415,9 +416,9 @@ bool ChatHandler::HandleNpcChangeLevelCommand(char* args)
         pCreature->SetHealth(100 + 30 * lvl);
         pCreature->SetLevel(lvl);
 
-        if (pCreature->HasStaticDBSpawnData())
+        if (npcs::Listed(*pCreature))
         {
-            pCreature->SaveToDB();
+            npcs::Save(*pCreature);
         }
     }
 
@@ -505,8 +506,8 @@ bool ChatHandler::HandleNpcDeleteCommand(char* args)
             unit->CombatStop();
             if (CreatureData const* data = sObjectMgr.GetCreatureData(unit->GetGUIDLow()))
             {
-                Creature::AddToRemoveListInMaps(unit->GetGUIDLow(), data);
-                Creature::DeleteFromDB(unit->GetGUIDLow(), data);
+                npcs::RemoveFromMaps(unit->GetGUIDLow(), data);
+                npcs::Forget(unit->GetGUIDLow(), data);
             }
             else
             {
@@ -629,7 +630,7 @@ bool ChatHandler::HandleNpcSetMoveTypeCommand(char* args)
     if (!ExtractUInt32(&args, lowguid))                     // case .setmovetype $move_type (with selected creature)
     {
         pCreature = getSelectedCreature();
-        if (!pCreature || !pCreature->HasStaticDBSpawnData())
+        if (!pCreature || !npcs::Listed(*pCreature))
         {
             return false;
         }
@@ -705,7 +706,7 @@ bool ChatHandler::HandleNpcSetMoveTypeCommand(char* args)
             pCreature->SetDeathState(JUST_DIED);
             pCreature->Respawn();
         }
-        pCreature->SaveToDB();
+        npcs::Save(*pCreature);
     }
 
     if (doNotDelete)
@@ -754,9 +755,9 @@ bool ChatHandler::HandleNpcSetModelCommand(char* args)
     pCreature->SetDisplayId(displayId);
     pCreature->SetNativeDisplayId(displayId);
 
-    if (pCreature->HasStaticDBSpawnData())
+    if (npcs::Listed(*pCreature))
     {
-        pCreature->SaveToDB();
+        npcs::Save(*pCreature);
     }
 
     return true;
@@ -1003,7 +1004,7 @@ bool ChatHandler::HandleNpcSetDeathStateCommand(char* args)
     }
 
     Creature* pCreature = getSelectedCreature();
-    if (!pCreature || !pCreature->HasStaticDBSpawnData())
+    if (!pCreature || !npcs::Listed(*pCreature))
     {
         SendSysMessage(LANG_SELECT_CREATURE);
         SetSentErrorMessage(true);
@@ -1019,7 +1020,7 @@ bool ChatHandler::HandleNpcSetDeathStateCommand(char* args)
         pCreature->SetDeadByDefault(false);
     }
 
-    pCreature->SaveToDB();
+    npcs::Save(*pCreature);
     pCreature->Respawn();
 
     return true;

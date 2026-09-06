@@ -44,6 +44,7 @@
 
 #include <cmath>
 #include "PerKind.h"
+#include "SpawnRecord.h"
 #include "Utilities/Errors.h"
 #include <algorithm>
 #include <vector>
@@ -2115,7 +2116,7 @@ void Map::AddToActive(Occupant* obj)
     {
         Creature* c = (Creature*)obj;
 
-        if (!c->IsPet() && c->HasStaticDBSpawnData())
+        if (!c->IsPet() && npcs::Listed(*c))
         {
             float x, y, z;
             x = c->Spawn().X();
@@ -2167,7 +2168,7 @@ void Map::RemoveFromActive(Occupant* obj)
     {
         Creature* c = (Creature*)obj;
 
-        if (!c->IsPet() && c->HasStaticDBSpawnData())
+        if (!c->IsPet() && npcs::Listed(*c))
         {
             float x, y, z;
             x = c->Spawn().X();

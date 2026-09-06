@@ -487,7 +487,6 @@ class Creature : public Unit
         void SelectLevel(uint32 forcedLevel = USE_DEFAULT_DATABASE_LEVEL);
         void LoadEquipment(uint32 equip_entry, bool force = false);
 
-        bool HasStaticDBSpawnData() const;                  // listed in `creature` table and have fixed in DB guid
 
         char const* GetSubName() const { return GetCreatureInfo()->SubName; }
 
@@ -604,11 +603,6 @@ class Creature : public Unit
         void SetDeathState(DeathState s) override;          // overwrite virtual Unit::SetDeathState
 
         bool LoadFromDB(uint32 guid, Map* map);
-        virtual void SaveToDB();
-        // overwrited in Pet
-        virtual void SaveToDB(uint32 mapid);
-        virtual void DeleteFromDB();                        // overwrited in Pet
-        static void DeleteFromDB(uint32 lowguid, CreatureData const* data);
 
         /// Represent the loots available on the creature.
         Loot loot;
@@ -701,14 +695,10 @@ class Creature : public Unit
         void ForcedDespawn(uint32 timeMSToDespawn = 0);
 
         void Respawn();
-        void SaveRespawnTime();
 
 
 
 
-        // Functions spawn/remove creature with DB guid in all loaded map copies (if point grid loaded in map)
-        static void AddToRemoveListInMaps(uint32 db_guid, CreatureData const* data);
-        static void SpawnInMaps(uint32 db_guid, CreatureData const* data);
 
         void SendZoneUnderAttackMessage(Player* attacker);
 

@@ -49,6 +49,7 @@
 #include <map>
 #include <set>
 #include "PoolManager.h"
+#include "SpawnRecord.h"
 #include "ObjectMgr.h"
 #include "ObjectGuid.h"
 #include "ProgressBar.h"
@@ -651,7 +652,7 @@ void PoolGroup<Creature>::Spawn1Object(MapPersistentState& mapState, PoolObject*
                         pCreature->SetRespawnTime(pCreature->GetRespawnDelay());
                         if (sWorld.getConfig(CONFIG_BOOL_SAVE_RESPAWN_TIME_IMMEDIATELY) || pCreature->IsWorldBoss())
                         {
-                            pCreature->SaveRespawnTime();
+                            npcs::SaveRespawnTime(*pCreature);
                         }
                     }
                     dataMap->Add(pCreature);

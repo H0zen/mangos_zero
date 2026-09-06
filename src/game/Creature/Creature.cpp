@@ -63,6 +63,7 @@
 #include "CellImpl.h"
 #include "Movement/Spline/MoveSplineInit.h"
 #include "CreatureLinkingMgr.h"
+#include "SpawnRecord.h"
 #include "DisableMgr.h"
 #include "MovementGenerator.h"
 
@@ -1377,23 +1378,6 @@ void Creature::PrepareBodyLootState()
  * Set player and group (if player group member) who tap creature
  */
 
-/**
- * @brief Saves the currently loaded creature to the database.
- */
-void Creature::SaveToDB()
-{
-    // this should only be used when the creature has already been loaded
-    // preferably after adding to map, because mapid may not be valid otherwise
-    CreatureData const* data = sObjectMgr.GetCreatureData(GetGUIDLow());
-    if (!data)
-    {
-        sLog.outError("Creature::SaveToDB failed, can not get creature data!");
-        return;
-    }
-
-    SaveToDB(GetMapId());
-}
-
 // return true if this creature is tapped by the player or by a member of his group.
 
 /**
@@ -1416,96 +1400,6 @@ bool Creature::IsTappedBy(Player const* player) const
     }
 
     return true;
-}
-
-/**
- * @brief Saves the creature spawn record to the database for a map.
- *
- * @param mapid The map id to persist.
- */
-void Creature::SaveToDB(uint32 mapid)
-{
-    // update in loaded data
-    CreatureData& data = sObjectMgr.NewOrExistCreatureData(GetGUIDLow());
-
-    uint32 displayId = GetNativeDisplayId();
-
-    // check if it's a custom model and if not, use 0 for displayId
-    CreatureInfo const* cinfo = GetCreatureInfo();
-    if (cinfo)
-    {
-        // The following if-else assumes that there are 4 model fields and needs updating if this is changed.
-
-        if (displayId != cinfo->ModelId[0] && displayId != cinfo->ModelId[1] &&
-            displayId != cinfo->ModelId[2] && displayId != cinfo->ModelId[3])
-        {
-            for (int i = 0; i < MAX_CREATURE_MODEL && displayId; ++i)
-            {
-                if (cinfo->ModelId[i])
-                {
-                    if (CreatureModelInfo const* minfo = sObjectMgr.GetCreatureModelInfo(cinfo->ModelId[i]))
-                    {
-                        if (displayId == minfo->modelid_other_gender)
-                        {
-                            displayId = 0;
-                        }
-                    }
-                }
-            }
-        }
-        else
-        {
-            displayId = 0;
-        }
-    }
-
-    // data->guid = guid don't must be update at save
-    data.id = GetEntry();
-    data.mapid = mapid;
-    data.modelid_override = displayId;
-    data.equipmentId = GetEquipmentId();
-    data.posX = Where().X();
-    data.posY = Where().Y();
-    data.posZ = Where().Z();
-    data.orientation = Where().Facing();
-    data.spawntimesecs = Watch().RespawnDelay();
-    // prevent add data integrity problems
-    data.spawndist = GetDefaultMovementType() == IDLE_MOTION_TYPE ? 0 : Stationed().Radius();
-    data.currentwaypoint = 0;
-    data.curhealth = GetHealth();
-    data.curmana = GetPower(POWER_MANA);
-    data.is_dead = Watch().DeadByDefault();
-    // prevent add data integrity problems
-    data.movementType = !Stationed().Radius() && GetDefaultMovementType() == RANDOM_MOTION_TYPE
-        ? IDLE_MOTION_TYPE : GetDefaultMovementType();
-
-    // updated in DB
-    WorldDatabase.BeginTransaction();
-
-    WorldDatabase.PExecuteLog("DELETE FROM `creature` WHERE `guid`=%u", GetGUIDLow());
-
-    std::ostringstream ss;
-    ss << "INSERT INTO `creature` VALUES ("
-       << GetGUIDLow() << ","
-       << data.id << ","
-       << data.mapid << ","
-       << data.modelid_override << ","
-       << data.equipmentId << ","
-       << data.posX << ","
-       << data.posY << ","
-       << data.posZ << ","
-       << data.orientation << ","
-       << data.spawntimesecs << ","                        // respawn time
-       << (float) data.spawndist << ","                    // spawn distance (float)
-       << data.currentwaypoint << ","                      // currentwaypoint
-       << data.curhealth << ","                            // curhealth
-       << data.curmana << ","                              // curmana
-       << (data.is_dead  ? 1 : 0) << ","                   // is_dead
-       << uint32(data.movementType) << ")";                // default movement generator type, cast to prevent save as symbol
-
-    WorldDatabase.PExecuteLog("%s", ss.str().c_str());
-
-    WorldDatabase.CommitTransaction();
 }
 
 
@@ -1741,57 +1635,6 @@ bool Creature::TakesQuest(uint32 quest_id) const
     return NamesQuest(sObjectMgr.GetCreatureQuestInvolvedRelationsMapBounds(GetEntry()), quest_id);
 }
 
-struct CreatureRespawnDeleteWorker
-{
-    explicit CreatureRespawnDeleteWorker(uint32 guid) : i_guid(guid) {}
-
-    void operator()(MapPersistentState* state)
-    {
-        state->SaveCreatureRespawnTime(i_guid, 0);
-    }
-
-    uint32 i_guid;
-};
-
-/**
- * @brief Deletes this creature's saved spawn data from the database.
- */
-void Creature::DeleteFromDB()
-{
-    CreatureData const* data = sObjectMgr.GetCreatureData(GetGUIDLow());
-    if (!data)
-    {
-        DEBUG_LOG("Trying to delete not saved creature!");
-        return;
-    }
-
-    DeleteFromDB(GetGUIDLow(), data);
-}
-
-/**
- * @brief Deletes a creature spawn record and related DB state.
- *
- * @param lowguid The creature database GUID.
- * @param data The static creature spawn data.
- */
-void Creature::DeleteFromDB(uint32 lowguid, CreatureData const* data)
-{
-    CreatureRespawnDeleteWorker worker(lowguid);
-    sMapPersistentStateMgr.DoForAllStatesWithMapId(data->mapid, worker);
-
-    sObjectMgr.DeleteCreatureData(lowguid);
-
-    WorldDatabase.BeginTransaction();
-    WorldDatabase.PExecuteLog("DELETE FROM `creature` WHERE `guid`=%u", lowguid);
-    WorldDatabase.PExecuteLog("DELETE FROM `creature_addon` WHERE `guid`=%u", lowguid);
-    WorldDatabase.PExecuteLog("DELETE FROM `creature_movement` WHERE `id`=%u", lowguid);
-    WorldDatabase.PExecuteLog("DELETE FROM `game_event_creature` WHERE `guid`=%u", lowguid);
-    WorldDatabase.PExecuteLog("DELETE FROM `game_event_creature_data` WHERE `guid`=%u", lowguid);
-    WorldDatabase.PExecuteLog("DELETE FROM `creature_battleground` WHERE `guid`=%u", lowguid);
-    WorldDatabase.PExecuteLog("DELETE FROM `creature_linking` WHERE `guid`=%u OR `master_guid`=%u", lowguid, lowguid);
-    WorldDatabase.CommitTransaction();
-}
-
 /**
  * @brief Computes the aggro attack distance against a target unit.
  *
@@ -1857,7 +1700,7 @@ void Creature::SetDeathState(DeathState s)
         // always save boss respawn time at death to prevent crash cheating
         if (sWorld.getConfig(CONFIG_BOOL_SAVE_RESPAWN_TIME_IMMEDIATELY) || IsWorldBoss())
         {
-            SaveRespawnTime();
+            npcs::SaveRespawnTime(*this);
         }
     }
 
@@ -1930,7 +1773,7 @@ void Creature::Respawn()
 
     if (IsDespawned())
     {
-        if (HasStaticDBSpawnData())
+        if (npcs::Listed(*this))
         {
             GetMap()->GetPersistentState()->SaveCreatureRespawnTime(GetGUIDLow(), 0);
         }
@@ -2386,26 +2229,6 @@ bool Creature::CanInitiateAttack()
     }
 
     return true;
-}
-
-/**
- * @brief Saves the creature respawn time to persistent state when needed.
- */
-void Creature::SaveRespawnTime()
-{
-    if (IsPet() || !HasStaticDBSpawnData())
-    {
-        return;
-    }
-
-    if (Watch().RespawnsAt() > time(nullptr))                         // dead (no corpse)
-    {
-        GetMap()->GetPersistentState()->SaveCreatureRespawnTime(GetGUIDLow(), Watch().RespawnsAt());
-    }
-    else if (Watch().CorpseGoesAt() > time(nullptr))               // dead (corpse)
-    {
-        GetMap()->GetPersistentState()->SaveCreatureRespawnTime(GetGUIDLow(), Watch().CorpseGoesAt() + Watch().RespawnDelay());
-    }
 }
 
 /**
@@ -2976,76 +2799,6 @@ void Creature::FillGuidsListFromThreatList(GuidVector& guids, uint32 maxamount /
     {
         guids.push_back((*itr)->getUnitGuid());
     }
-}
-
-struct AddCreatureToRemoveListInMapsWorker
-{
-    AddCreatureToRemoveListInMapsWorker(ObjectGuid guid) : i_guid(guid) {}
-
-    void operator()(Map* map)
-    {
-        if (Creature* pCreature = map->GetCreature(i_guid))
-        {
-            pCreature->AddObjectToRemoveList();
-        }
-    }
-
-    ObjectGuid i_guid;
-};
-
-/**
- * @brief Schedules matching spawned creatures for removal across loaded maps.
- *
- * @param db_guid The database GUID.
- * @param data The static creature spawn data.
- */
-void Creature::AddToRemoveListInMaps(uint32 db_guid, CreatureData const* data)
-{
-    AddCreatureToRemoveListInMapsWorker worker(data->GetObjectGuid(db_guid));
-    sMapMgr.DoForAllMapsWithMapId(data->mapid, worker);
-}
-
-struct SpawnCreatureInMapsWorker
-{
-    SpawnCreatureInMapsWorker(uint32 guid, CreatureData const* data) : i_guid(guid), i_data(data) {}
-
-    void operator()(Map* map)
-    {
-        // We use spawn coords to spawn
-        if (map->IsCellLoaded(i_data->posX, i_data->posY))
-        {
-            Creature* pCreature = new Creature;
-            if (!pCreature->LoadFromDB(i_guid, map))
-            {
-                delete pCreature;
-            }
-        }
-    }
-
-    uint32 i_guid;
-    CreatureData const* i_data;
-};
-
-/**
- * @brief Spawns this database creature across eligible loaded maps.
- *
- * @param db_guid The database GUID.
- * @param data The static creature spawn data.
- */
-void Creature::SpawnInMaps(uint32 db_guid, CreatureData const* data)
-{
-    SpawnCreatureInMapsWorker worker(db_guid, data);
-    sMapMgr.DoForAllMapsWithMapId(data->mapid, worker);
-}
-
-/**
- * @brief Checks whether this creature has static database spawn data.
- *
- * @return true if the creature has a saved DB spawn; otherwise, false.
- */
-bool Creature::HasStaticDBSpawnData() const
-{
-    return sObjectMgr.GetCreatureData(GetGUIDLow()) != nullptr;
 }
 
 /**

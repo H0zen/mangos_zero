@@ -41,6 +41,7 @@
 
 #include "Summoning.h"
 #include "precompiled.h"
+#include "SpawnRecord.h"
 #include "escort_ai.h"
 #include "follower_ai.h"
 
@@ -603,7 +604,7 @@ struct npc_simone_the_seductressAI : public ScriptedAI
             uint32 m_respawn_delay_Timer = urand(2, 3) * HOUR;
             pSimone->SetRespawnDelay(m_respawn_delay_Timer);
             pSimone->SetRespawnTime(m_respawn_delay_Timer);
-            pSimone->SaveRespawnTime();
+            npcs::SaveRespawnTime(*pSimone);
         }
     }
 
@@ -614,7 +615,7 @@ struct npc_simone_the_seductressAI : public ScriptedAI
             uint32 respawnTime = urand(12, 15);
             pSimone->SetRespawnDelay(respawnTime * MINUTE);
             pSimone->SetRespawnTime(respawnTime * MINUTE);
-            pSimone->SaveRespawnTime();
+            npcs::SaveRespawnTime(*pSimone);
         }
 
         if (triggered)

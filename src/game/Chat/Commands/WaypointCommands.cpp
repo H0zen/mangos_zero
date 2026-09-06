@@ -37,6 +37,7 @@
 #include <string>
 #include <list>
 #include "Chat.h"
+#include "SpawnRecord.h"
 #include "Language.h"
 #include "PointMovementGenerator.h"
 #include "WaypointMovementGenerator.h"
@@ -235,7 +236,7 @@ bool ChatHandler::HandleWpAddCommand(char* args)
             if (wpDestination == PATH_NO_PATH && !sWaypointMgr.GetDefaultPath(wpOwner->GetEntry(), wpOwner->GetGUIDLow(), &wpDestination))
             {
                 wpDestination = PATH_FROM_ENTRY;                // Default place to store paths
-                if (wpOwner->HasStaticDBSpawnData())
+                if (npcs::Listed(*wpOwner))
                 {
                     QueryResult* result = WorldDatabase.PQuery("SELECT COUNT(`id`) FROM `creature` WHERE `id` = %u", wpOwner->GetEntry());
                     if (result && result->Fetch()[0].GetUInt32() != 1)
@@ -482,7 +483,7 @@ bool ChatHandler::HandleWpModifyCommand(char* args)
                 wpOwner->SetDeathState(JUST_DIED);
                 wpOwner->Respawn();
             }
-            wpOwner->SaveToDB();
+            npcs::Save(*wpOwner);
         }
 
         PSendSysMessage(LANG_WAYPOINT_REMOVED);

@@ -101,13 +101,6 @@ void TemporarySummon::UnSummon()
 }
 
 /**
- * @brief Temporary summons are not persisted to the database.
- */
-void TemporarySummon::SaveToDB()
-{
-}
-
-/**
  * @brief Removes the summon from the world and clears charm control if needed.
  */
 void TemporarySummon::RemoveFromWorld()

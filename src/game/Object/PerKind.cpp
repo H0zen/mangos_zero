@@ -24,6 +24,7 @@
 
 #include "Occupant.h"
 #include "Creature.h"
+#include "SpawnRecord.h"
 #include "GameObject.h"
 #include "Item.h"
 #include "ItemPrototype.h"
@@ -84,7 +85,7 @@ void SaveRespawnTime(Occupant& what)
 {
     if (Creature* creature = ToCreature(&what))
     {
-        creature->SaveRespawnTime();
+        npcs::SaveRespawnTime(*creature);
     }
     else if (GameObject* go = ToGameObject(&what))
     {
