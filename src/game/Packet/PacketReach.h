@@ -55,4 +55,20 @@ struct PacketReach
     /// Deliver only to viewers on the subject's side. Meaningful only when the
     /// subject is a player, since nothing else has a side.
     bool ownTeamOnly = false;
+
+    /// A deck and the shore it sails past are two maps, so a packet that stays inside
+    /// one of them is never seen from the other. CROSSING IS THE DEFAULT: a sender that
+    /// says nothing about the boundary reaches both sides, and one that must not reach
+    /// a side has to say so here. Written this way round because the failure of the
+    /// other is silent -- a sender that forgets leaves half the world watching statues.
+    ///
+    /// Outbound: a deck's packet also goes to the watchers the vessel gathered ashore.
+    bool ashore = true;
+
+    /// Inbound: a packet from the water also goes to everyone standing on a vessel
+    /// crossing it. Unfiltered by distance -- the only object that could measure it is
+    /// the vessel, whose pose is a waypoint guess we refuse to trust for anything that
+    /// decides something. A range-limited packet therefore has no range to answer with
+    /// and turns this off rather than guessing.
+    bool aboard = true;
 };

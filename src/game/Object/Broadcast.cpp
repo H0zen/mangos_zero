@@ -73,76 +73,6 @@
 #include "MapManager.h"
 
 
-namespace
-{
-    /**
-     * @brief OUTBOUND -- from a deck to the watchers ashore.
-     *
-     * A deckhand's own map is the hull, and no cell ashore will ever hold him, so a packet
-     * that stays inside his map is never seen from the pier. The audience is whoever the
-     * vessel gathered at the top of this tick. Sent immediately: the deck runs INSIDE the
-     * tick of the map she sails, on that map's own thread, so there is nothing to wait for.
-     */
-    void RelayAshore(Occupant const& from, WorldPacket* data, Player const* skip)
-    {
-        if (!from.GetMap()->AsTransport())
-        {
-            return;
-        }
-
-        for (Player* observer : from.GetMap()->ExternalObservers())
-        {
-            if (observer && observer != skip && observer->GetSession())
-            {
-                observer->GetSession()->SendPacket(data);
-            }
-        }
-    }
-
-    /**
-     * @brief INBOUND -- from the water to everyone standing on a vessel crossing it.
-     *
-     * Not filtered by anything. The one object that could measure the distance is the
-     * vessel, whose pose is an estimate we already refuse to trust for anything that
-     * decides something -- and being told about a creature too far off costs a packet,
-     * while not being told about one in front of you costs the illusion that the world
-     * is running.
-     */
-    void RelayAboard(Occupant const& from, WorldPacket* data, Player const* skip)
-    {
-        if (from.GetMap()->AsTransport())
-        {
-            return;
-        }
-
-        MapManager::TransportsByMapType::const_iterator vessels =
-            sMapMgr.m_TransportsByMap.find(from.GetMapId());
-        if (vessels == sMapMgr.m_TransportsByMap.end())
-        {
-            return;
-        }
-
-        for (Transport* vessel : vessels->second)
-        {
-            TransportMap* hull = vessel->AsMap();
-            if (!hull || vessel->GetMap() != from.GetMap())
-            {
-                continue;
-            }
-
-            Map::PlayerList const& aboard = hull->GetPlayers();
-            for (Map::PlayerList::const_iterator itr = aboard.begin(); itr != aboard.end(); ++itr)
-            {
-                Player* passenger = itr->getSource();
-                if (passenger && passenger != skip && passenger->GetSession())
-                {
-                    passenger->GetSession()->SendPacket(data);
-                }
-            }
-        }
-    }
-}
-
 /**
  * @brief Delivers a packet to the sessions that can see an object.
  *
@@ -161,9 +91,6 @@ void Broadcast(Occupant const& from, WorldPacket* data, bool toSubject)
         reach.subject = &from;
         reach.skip = ToPlayer(&from);
         from.GetMap()->DeliverPacket(data, reach);
-
-        RelayAshore(from, data, ToPlayer(&from));
-        RelayAboard(from, data, ToPlayer(&from));
     }
 
     if (toSubject)
@@ -196,13 +123,16 @@ void BroadcastWithin(Occupant const& from, WorldPacket* data, float dist, bool t
         reach.skip = ToPlayer(&from);
         reach.dist = dist;
         reach.ownTeamOnly = ownTeamOnly;
+
+        // The radius applies among those who share the speaker's map. There is no range
+        // across the boundary to apply it with, so the packet does not go inbound: a
+        // shout from the pier does not reach the passengers, while one from the deck
+        // reaches the pier, where the vessel's grid is the audience.
+        reach.aboard = false;
+
         from.GetMap()->DeliverPacket(data, reach);
 
-        // The radius above applies among those who share the speaker's map. Whoever is on
-        // the other side of a vessel's boundary is not measured at all. Only outbound:
-        // whether a shout from the pier carries to the passengers is a question about
-        // range, and there is no range across the boundary to answer it with.
-        RelayAshore(from, data, ToPlayer(&from));
+
     }
 
     if (toSubject)
@@ -235,12 +165,5 @@ void BroadcastExcept(Occupant const& from, WorldPacket* data, Player const* skip
     reach.subject = &from;
     reach.skip = skip;
     from.GetMap()->DeliverPacket(data, reach);
-
-    // Both sides of the boundary, exactly as Broadcast does. This carries a player's own
-    // movement: he walks ashore, his packets start coming from the continent's map, and
-    // his shipmates are on the hull's. Whoever is told nothing keeps replaying the last
-    // thing he saw -- the walk off the gangplank -- for as long as the man stands still.
-    RelayAshore(from, data, skip);
-    RelayAboard(from, data, skip);
 }
 

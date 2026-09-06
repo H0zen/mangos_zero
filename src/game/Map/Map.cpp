@@ -777,6 +777,76 @@ template<class T>
     obj->SetAsNewObject(false);
 }
 
+namespace
+{
+    /**
+     * @brief OUTBOUND -- from a deck to the watchers ashore.
+     *
+     * A deckhand's own map is the hull, and no cell ashore will ever hold him, so a packet
+     * that stays inside his map is never seen from the pier. The audience is whoever the
+     * vessel gathered at the top of this tick. Sent immediately: the deck runs INSIDE the
+     * tick of the map she sails, on that map's own thread, so there is nothing to wait for.
+     */
+    void RelayAshore(Occupant const& from, WorldPacket* data, Player const* skip)
+    {
+        if (!from.GetMap()->AsTransport())
+        {
+            return;
+        }
+
+        for (Player* observer : from.GetMap()->ExternalObservers())
+        {
+            if (observer && observer != skip && observer->GetSession())
+            {
+                observer->GetSession()->SendPacket(data);
+            }
+        }
+    }
+
+    /**
+     * @brief INBOUND -- from the water to everyone standing on a vessel crossing it.
+     *
+     * Not filtered by anything. The one object that could measure the distance is the
+     * vessel, whose pose is an estimate we already refuse to trust for anything that
+     * decides something -- and being told about a creature too far off costs a packet,
+     * while not being told about one in front of you costs the illusion that the world
+     * is running.
+     */
+    void RelayAboard(Occupant const& from, WorldPacket* data, Player const* skip)
+    {
+        if (from.GetMap()->AsTransport())
+        {
+            return;
+        }
+
+        MapManager::TransportsByMapType::const_iterator vessels =
+            sMapMgr.m_TransportsByMap.find(from.GetMapId());
+        if (vessels == sMapMgr.m_TransportsByMap.end())
+        {
+            return;
+        }
+
+        for (Transport* vessel : vessels->second)
+        {
+            TransportMap* hull = vessel->AsMap();
+            if (!hull || vessel->GetMap() != from.GetMap())
+            {
+                continue;
+            }
+
+            Map::PlayerList const& aboard = hull->GetPlayers();
+            for (Map::PlayerList::const_iterator itr = aboard.begin(); itr != aboard.end(); ++itr)
+            {
+                Player* passenger = itr->getSource();
+                if (passenger && passenger != skip && passenger->GetSession())
+                {
+                    passenger->GetSession()->SendPacket(data);
+                }
+            }
+        }
+    }
+}
+
 /**
  * @brief Hands a packet to the sessions the reach admits.
  *
@@ -809,6 +879,19 @@ void Map::DeliverPacket(WorldPacket* msg, PacketReach const& reach)
     MaNGOS::PacketDeliverer post_man(msg, reach);
     TypeContainerVisitor<MaNGOS::PacketDeliverer, WorldTypeMapContainer> message(post_man);
     cell.Visit(p, message, *this, subject, reach.dist > 0.0f ? reach.dist : GetBroadcastRadius());
+
+    // AND THE FAR SIDE OF THE BOUNDARY, here rather than in each sender. Three of them
+    // wrote this by hand and the third wrote neither half, which a deckhand saw as the
+    // pier standing frozen while he walked.
+    if (reach.ashore)
+    {
+        RelayAshore(subject, msg, reach.skip);
+    }
+
+    if (reach.aboard)
+    {
+        RelayAboard(subject, msg, reach.skip);
+    }
 }
 
 /**
