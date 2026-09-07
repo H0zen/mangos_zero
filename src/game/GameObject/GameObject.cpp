@@ -317,79 +317,6 @@ void GameObject::Delete()
 }
 
 /**
- * @brief Saves the loaded game object back to the database.
- */
-void GameObject::SaveToDB()
-{
-    // this should only be used when the gameobject has already been loaded
-    // preferably after adding to map, because mapid may not be valid otherwise
-    GameObjectData const* data = sObjectMgr.GetGOData(GetGUIDLow());
-    if (!data)
-    {
-        sLog.outError("GameObject::SaveToDB failed, can not get gameobject data!");
-        return;
-    }
-
-    SaveToDB(GetMapId());
-}
-
-/**
- * @brief Saves the game object spawn data to the database for a map.
- *
- * @param mapid The map id to persist.
- */
-void GameObject::SaveToDB(uint32 mapid)
-{
-    const GameObjectInfo* goI = GetGOInfo();
-
-    if (!goI)
-    {
-        return;
-    }
-
-    // update in loaded data (changing data only in this place)
-    GameObjectData& data = sObjectMgr.NewGOData(GetGUIDLow());
-
-    // data->guid = guid don't must be update at save
-    data.id = GetEntry();
-    data.mapid = mapid;
-    data.posX = GetGoPositionX();
-    data.posY = GetGoPositionY();
-    data.posZ = GetGoPositionZ();
-    data.orientation = GetFloatValue(GAMEOBJECT_FACING);
-    data.rotation0 = GetFloatValue(GAMEOBJECT_ROTATION + 0);
-    data.rotation1 = GetFloatValue(GAMEOBJECT_ROTATION + 1);
-    data.rotation2 = GetFloatValue(GAMEOBJECT_ROTATION + 2);
-    data.rotation3 = GetFloatValue(GAMEOBJECT_ROTATION + 3);
-    data.spawntimesecs = m_spawn.AsSpawnTimeSecs();
-    data.animprogress = GetGoAnimProgress();
-    data.go_state = GetGoState();
-
-    // updated in DB
-    std::ostringstream ss;
-    ss << "INSERT INTO `gameobject` VALUES ( "
-       << GetGUIDLow() << ", "
-       << GetEntry() << ", "
-       << mapid << ", "
-       << GetGoPositionX() << ", "
-       << GetGoPositionY() << ", "
-       << GetGoPositionZ() << ", "
-       << GetFloatValue(GAMEOBJECT_FACING) << ", "
-       << GetFloatValue(GAMEOBJECT_ROTATION) << ", "
-       << GetFloatValue(GAMEOBJECT_ROTATION + 1) << ", "
-       << GetFloatValue(GAMEOBJECT_ROTATION + 2) << ", "
-       << GetFloatValue(GAMEOBJECT_ROTATION + 3) << ", "
-       << m_spawn.AsSpawnTimeSecs() << ", "
-       << uint32(GetGoAnimProgress()) << ", "
-       << uint32(GetGoState()) << ")";
-
-    WorldDatabase.BeginTransaction();
-    WorldDatabase.PExecuteLog("DELETE FROM `gameobject` WHERE `guid` = '%u'", GetGUIDLow());
-    WorldDatabase.PExecuteLog("%s", ss.str().c_str());
-    WorldDatabase.CommitTransaction();
-}
-
-/**
  * @brief Loads a game object from static database spawn data.
  *
  * @param guid The database GUID.
@@ -451,38 +378,6 @@ bool GameObject::LoadFromDB(uint32 guid, Map* map)
     AIM_Initialize();
 
     return true;
-}
-
-struct GameObjectRespawnDeleteWorker
-{
-    explicit GameObjectRespawnDeleteWorker(uint32 guid) : i_guid(guid) {}
-
-    void operator()(MapPersistentState* state)
-    {
-        state->SaveGORespawnTime(i_guid, 0);
-    }
-
-    uint32 i_guid;
-};
-
-/**
- * @brief Deletes the static database spawn record for this game object.
- */
-void GameObject::DeleteFromDB()
-{
-    if (!HasStaticDBSpawnData())
-    {
-        DEBUG_LOG("Trying to delete not saved gameobject!");
-        return;
-    }
-
-    GameObjectRespawnDeleteWorker worker(GetGUIDLow());
-    sMapPersistentStateMgr.DoForAllStatesWithMapId(GetMapId(), worker);
-
-    sObjectMgr.DeleteGOData(GetGUIDLow());
-    WorldDatabase.PExecuteLog("DELETE FROM `gameobject` WHERE `guid` = '%u'", GetGUIDLow());
-    WorldDatabase.PExecuteLog("DELETE FROM `game_event_gameobject` WHERE `guid` = '%u'", GetGUIDLow());
-    WorldDatabase.PExecuteLog("DELETE FROM `gameobject_battleground` WHERE `guid` = '%u'", GetGUIDLow());
 }
 
 /*********************************************************/
