@@ -3939,7 +3939,7 @@ bool DoDisplayText(Occupant* source, int32 entry, Unit const* target /*=nullptr*
     {
         if (data->Type == CHAT_TYPE_ZONE_YELL)
         {
-            source->GetMap()->PlayDirectSoundToMap(data->SoundId, source->GetTerrain()->GetZoneId(source->Where().X(), source->Where().Y(), source->Where().Z()));
+            PlaySoundToMap(*source->GetMap(), data->SoundId, source->GetTerrain()->GetZoneId(source->Where().X(), source->Where().Y(), source->Where().Z()));
         }
         else if (data->Type == CHAT_TYPE_WHISPER || data->Type == CHAT_TYPE_BOSS_WHISPER)
         {

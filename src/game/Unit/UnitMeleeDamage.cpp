@@ -478,7 +478,7 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
             data << GetObjectGuid();
             data << uint32(damage);
             data << uint32(shieldProto->School);
-            Broadcast(*pVictim, &data, true);
+            Deliver(Audience::Around(*pVictim).AndSubject(), &data);
 
             pVictim->DealDamage(this, damage, 0, SPELL_DIRECT_DAMAGE, GetSpellSchoolMask(shieldProto), shieldProto, true);
         }

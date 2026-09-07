@@ -65,7 +65,7 @@ Weather::Weather(uint32 zone, WeatherZoneChances const* weatherChances)
 }
 
 /// Launch a weather update
-bool Weather::Update(uint32 diff, Map const* _map)
+bool Weather::Update(uint32 diff, Map* _map)
 {
     m_timer.Update(diff);
 
@@ -251,7 +251,7 @@ void Weather::SendWeatherUpdateToPlayer(Player* player)
 }
 
 // Send the new weather to all players in the zone
-bool Weather::SendWeatherForPlayersInZone(Map const* _map)
+bool Weather::SendWeatherForPlayersInZone(Map* _map)
 {
     NormalizeGrade();
 
@@ -262,7 +262,7 @@ bool Weather::SendWeatherForPlayersInZone(Map const* _map)
     data << uint8(0);       // 1 = instant change, 0 = smooth change
 
     ///- Send the weather packet to all players in this zone
-    if (!_map->SendToPlayersInZone(&data, m_zone))
+    if (!Deliver(Audience::InZone(*_map, m_zone), &data))
     {
         return false;
     }
@@ -274,7 +274,7 @@ bool Weather::SendWeatherForPlayersInZone(Map const* _map)
 }
 
 // Set the weather
-void Weather::SetWeather(WeatherType type, float grade, Map const* _map, bool isPermanent)
+void Weather::SetWeather(WeatherType type, float grade, Map* _map, bool isPermanent)
 {
     m_isPermanentWeather = isPermanent;
 
@@ -404,7 +404,7 @@ void Weather::LogWeatherState(WeatherState state) const
 //                  Weather System
 // ---------------------------------------------------------
 
-WeatherSystem::WeatherSystem(Map const* _map) : m_map(_map)
+WeatherSystem::WeatherSystem(Map* _map) : m_map(_map)
 {}
 
 WeatherSystem::~WeatherSystem()

@@ -384,7 +384,7 @@ void movement::MovementOpcodes(WorldSession& session, WorldPacket& recv_data)
     WorldPacket data(opcode, uint16(recv_data.size() + 2));
     data << mover->GetPackGUID();             // write guid
     movementInfo.Write(data);                               // write data
-    BroadcastExcept(*mover, &data, session.GetPlayer());
+    Deliver(Audience::Around(*mover).Except(session.GetPlayer()), &data);
 }
 
 /**
@@ -525,7 +525,7 @@ void movement::MountSpecialAnim(Player& who, WorldPacket& /*recvdata*/)
     WorldPacket data(SMSG_MOUNTSPECIAL_ANIM, 8);
     data << who.GetObjectGuid();
 
-    Broadcast(who, &data, false);
+    Deliver(Audience::Around(who), &data);
 }
 
 /**
@@ -569,7 +569,7 @@ void movement::MoveKnockBackAck(WorldSession& session, WorldPacket& recv_data)
     data << movementInfo.GetJumpInfo().cosAngle;
     data << movementInfo.GetJumpInfo().xyspeed;
     data << movementInfo.GetJumpInfo().velocity;
-    BroadcastExcept(*mover, &data, session.GetPlayer());
+    Deliver(Audience::Around(*mover).Except(session.GetPlayer()), &data);
 }
 
 /**

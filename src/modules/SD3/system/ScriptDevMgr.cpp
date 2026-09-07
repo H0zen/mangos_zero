@@ -33,6 +33,7 @@
 #include "system/ScriptLoader.h"
 #include "system/system.h"
 #include "ScriptDevMgr.h"
+#include "Utterance.h"
 
 typedef std::vector<Script*> SDScriptVec;
 int num_sc_scripts;
@@ -135,16 +136,16 @@ void DoOrSimulateScriptTextForMap(int32 iTextEntry, uint32 uiCreatureEntry, Map*
 
     if (pData->SoundId)
     {
-        pMap->PlayDirectSoundToMap(pData->SoundId);
+        PlaySoundToMap(*pMap, pData->SoundId);
     }
 
     if (pCreatureSource)  // If provided pointer for sayer, use direct version
     {
-        pMap->MonsterYellToMap(pCreatureSource->GetObjectGuid(), iTextEntry, pData->LanguageId, pTarget);
+        YellToMap(*pMap, pCreatureSource->GetObjectGuid(), iTextEntry, pData->LanguageId, pTarget);
     }
     else  // Simulate yell
     {
-        pMap->MonsterYellToMap(pInfo, iTextEntry, pData->LanguageId, pTarget);
+        YellToMap(*pMap, pInfo, iTextEntry, pData->LanguageId, pTarget);
     }
 }
 

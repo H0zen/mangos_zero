@@ -30,7 +30,6 @@
 #include <list>
 #include "Reaction.h"
 #include "UpdateData.h"
-#include "PacketReach.h"
 
 #include "Corpse.h"
 #include "Occupant.h"
@@ -70,19 +69,6 @@ namespace MaNGOS
         explicit VisibleChangesNotifier(Occupant& object) : i_object(object) {}
         template<class T> void Visit(GridRefManager<T>&) {}
         void Visit(CameraMapType&);
-    };
-
-    /// Hands a packet to every viewer the reach admits.
-    struct PacketDeliverer
-    {
-        WorldPacket* i_message;
-        PacketReach  i_reach;
-
-        PacketDeliverer(WorldPacket* msg, PacketReach const& reach)
-            : i_message(msg), i_reach(reach) {}
-
-        void Visit(CameraMapType& m);
-        template<class SKIP> void Visit(GridRefManager<SKIP>&) {}
     };
 
     struct ObjectUpdater

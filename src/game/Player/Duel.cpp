@@ -116,7 +116,7 @@ void Duel::Complete(DuelCompleteType type)
         data << uint8(type == DUEL_WON ? 0 : 1);            // 0 = just won; 1 = fled
         data << other->GetName();
         data << m_owner.GetName();
-        Broadcast(m_owner, &data, true);
+        Deliver(Audience::Around(m_owner).AndSubject(), &data);
     }
 
     if (type == DUEL_FLED)

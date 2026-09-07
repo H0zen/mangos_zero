@@ -51,7 +51,7 @@
 
 #pragma once
 
-#include "PacketReach.h"
+#include "MapBroadcaster.h"
 #include "Utilities/Errors.h"
 #include <ctime>
 #include <vector>
@@ -144,7 +144,7 @@ struct InstanceTemplate
 
 #define MIN_UNLOAD_DELAY      1                             // immediate unload
 
-class Map : public GridRefManager<NGridType>
+class Map : public GridRefManager<NGridType>, public MapBroadcaster
 {
     friend class MapReference;
     friend class ObjectGridLoader;
@@ -218,9 +218,6 @@ class Map : public GridRefManager<NGridType>
         /// on it should have very few, and the number says whether the grid
         /// phase has a reason to be busy.
         size_t ActiveObjectCount() const { return m_activeNonPlayers.size(); }
-
-        /// Hand a packet to the sessions the reach admits around its subject.
-        void DeliverPacket(WorldPacket* msg, PacketReach const& reach);
 
         float GetVisibilityDistance() const { return m_VisibleDistance; }
         // function for setting up visibility distance for maps on per-type/per-Id basis
@@ -323,10 +320,6 @@ class Map : public GridRefManager<NGridType>
         uint32 GetPlayersCountExceptGMs() const;
         bool ActiveObjectsNearGrid(uint32 x, uint32 y) const;
 
-        /// Send a Packet to all players on a map
-        /// Send a Packet to all players in a zone. Return false if no player found
-        bool SendToPlayersInZone(WorldPacket const* data, uint32 zoneId) const;
-
         typedef MapRefManager PlayerList;
         PlayerList const& GetPlayers() const { return m_mapRefManager; }
 
@@ -382,9 +375,6 @@ class Map : public GridRefManager<NGridType>
         InstanceData* GetInstanceData() const { return i_data; }
         virtual uint32 GetScriptId() const { return sScriptMgr.GetBoundScriptId(SCRIPTED_MAP, GetId()); }
 
-        void MonsterYellToMap(ObjectGuid guid, int32 textId, Language language, Unit const* target) const;
-        void MonsterYellToMap(CreatureInfo const* cinfo, int32 textId, Language language, Unit const* target, uint32 senderLowGuid = 0) const;
-        void PlayDirectSoundToMap(uint32 soundId, uint32 zoneId = 0) const;
 
         // Dynamic VMaps
         /// The floor under (x, y, z), or nothing where the map has none. Core code asks
@@ -474,6 +464,14 @@ class Map : public GridRefManager<NGridType>
 
 
     protected:
+        /// The listeners standing on this map: the cells around the subject, or the roll.
+        uint32 Hearers(Audience const& who, Listener const& tell) override;
+
+        /// The decks crossing this map. A packet cut to a distance stays ashore: the only
+        /// object that could measure that distance is the vessel, whose pose is a waypoint
+        /// estimate nothing is allowed to decide anything by.
+        uint32 Across(Audience const& who, Listener const& tell) override;
+
         /// A vessel writes her own Add(Player*): her passengers arrive on a map their client
         /// has never heard of, so nothing an ordinary map sends on entry applies.
         void EnsureGridLoadedAtEnter(Cell const&, Player* player = nullptr);

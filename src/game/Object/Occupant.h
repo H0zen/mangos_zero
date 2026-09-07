@@ -242,15 +242,6 @@ class Occupant : public Object
 // world membership is game state, line of sight is a terrain question, and a map's
 // coordinate bounds belong to the map. Each asks the placement for the geometry and adds
 // only what the placement must not know.
-// Delivering a packet to the people who can see something. The map owns the
-// cells and the cameras, so it answers who; these add what the map must not
-// know -- the relay across a vessel's map boundary, and the subject's own
-// client when the subject has one.
-void Broadcast(Occupant const& from, WorldPacket* data, bool toSubject);
-void BroadcastWithin(Occupant const& from, WorldPacket* data, float dist,
-                     bool toSubject, bool ownTeamOnly = false);
-void BroadcastExcept(Occupant const& from, WorldPacket* data, Player const* skip);
-
 /// Can A reach B -- a common frame is required. Melee, spells, threat, aggro.
 bool CanInteract(Occupant const& a, Occupant const& b);
 

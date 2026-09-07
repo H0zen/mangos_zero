@@ -135,7 +135,7 @@ void Totem::Summon(Unit* owner)
 
     WorldPacket data(SMSG_GAMEOBJECT_SPAWN_ANIM_OBSOLETE, 8);
     data << GetObjectGuid();
-    Broadcast(*this, &data, true);
+    Deliver(Audience::Around(*this).AndSubject(), &data);
 
     if (owner->IsCreature() && ((Creature*)owner)->AI())
     {

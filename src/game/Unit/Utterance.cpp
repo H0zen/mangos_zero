@@ -43,7 +43,7 @@
 namespace
 {
     /// Where an utterance of this kind goes.
-    enum class Audience
+    enum class Earshot
     {
         Around,     ///< everyone within Form::range
         Listener,   ///< the target alone
@@ -53,8 +53,8 @@ namespace
     struct Form
     {
         ChatMsg  message;
-        Audience audience;
-        uint32   range;     ///< world config key; unused unless Audience::Around
+        Earshot  earshot;
+        uint32   range;     ///< world config key; unused unless Earshot::Around
     };
 
     Form FormOf(ChatType kind)
@@ -62,40 +62,28 @@ namespace
         switch (kind)
         {
             case CHAT_TYPE_YELL:
-                return { CHAT_MSG_MONSTER_YELL, Audience::Around, CONFIG_FLOAT_LISTEN_RANGE_YELL };
+                return { CHAT_MSG_MONSTER_YELL, Earshot::Around, CONFIG_FLOAT_LISTEN_RANGE_YELL };
             case CHAT_TYPE_TEXT_EMOTE:
-                return { CHAT_MSG_MONSTER_EMOTE, Audience::Around, CONFIG_FLOAT_LISTEN_RANGE_TEXTEMOTE };
+                return { CHAT_MSG_MONSTER_EMOTE, Earshot::Around, CONFIG_FLOAT_LISTEN_RANGE_TEXTEMOTE };
             case CHAT_TYPE_BOSS_EMOTE:
-                return { CHAT_MSG_RAID_BOSS_EMOTE, Audience::Around, CONFIG_FLOAT_LISTEN_RANGE_YELL };
+                return { CHAT_MSG_RAID_BOSS_EMOTE, Earshot::Around, CONFIG_FLOAT_LISTEN_RANGE_YELL };
             case CHAT_TYPE_WHISPER:
-                return { CHAT_MSG_MONSTER_WHISPER, Audience::Listener, 0 };
+                return { CHAT_MSG_MONSTER_WHISPER, Earshot::Listener, 0 };
             case CHAT_TYPE_BOSS_WHISPER:
-                return { CHAT_MSG_RAID_BOSS_WHISPER, Audience::Listener, 0 };
+                return { CHAT_MSG_RAID_BOSS_WHISPER, Earshot::Listener, 0 };
             case CHAT_TYPE_ZONE_YELL:
-                return { CHAT_MSG_MONSTER_YELL, Audience::Zone, 0 };
+                return { CHAT_MSG_MONSTER_YELL, Earshot::Zone, 0 };
             case CHAT_TYPE_SAY:
             default:
-                return { CHAT_MSG_MONSTER_SAY, Audience::Around, CONFIG_FLOAT_LISTEN_RANGE_SAY };
+                return { CHAT_MSG_MONSTER_SAY, Earshot::Around, CONFIG_FLOAT_LISTEN_RANGE_SAY };
         }
     }
 
-    /// Everyone in the speaker's zone, whatever map they are standing on.
-    template<class Say>
-    void ToZone(Occupant const& speaker, Say& say)
+    /// The zone a speaker stands in.
+    uint32 ZoneOf(Occupant const& speaker)
     {
-        uint32 const zone = speaker.GetTerrain()->GetZoneId(speaker.Where().X(), speaker.Where().Y(),
-                                                            speaker.Where().Z());
-
-        Map::PlayerList const& players = speaker.GetMap()->GetPlayers();
-        for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
-        {
-            Player* listener = itr->getSource();
-            if (listener->GetTerrain()->GetZoneId(listener->Where().X(), listener->Where().Y(),
-                                                  listener->Where().Z()) == zone)
-            {
-                say(listener);
-            }
-        }
+        return speaker.GetTerrain()->GetZoneId(speaker.Where().X(), speaker.Where().Y(),
+                                               speaker.Where().Z());
     }
 }
 
@@ -109,25 +97,23 @@ void Utter(Occupant const& speaker, ChatType kind, char const* text, Unit const*
                                  target ? target->GetObjectGuid() : ObjectGuid(),
                                  target ? target->GetName() : "");
 
-    switch (form.audience)
+    switch (form.earshot)
     {
-        case Audience::Around:
-            BroadcastWithin(speaker, &data, sWorld.getConfig(eConfigFloatValues(form.range)), true);
+        case Earshot::Around:
+            Deliver(Audience::Within(speaker, sWorld.getConfig(eConfigFloatValues(form.range))).AndSubject(),
+                    &data);
             break;
 
-        case Audience::Listener:
+        case Earshot::Listener:
             if (Player const* listener = ToPlayer(target))
             {
                 listener->GetSession()->SendPacket(&data);
             }
             break;
 
-        case Audience::Zone:
-        {
-            auto say = [&data](Player* listener) { listener->GetSession()->SendPacket(&data); };
-            ToZone(speaker, say);
+        case Earshot::Zone:
+            Deliver(Audience::InZone(*speaker.GetMap(), ZoneOf(speaker)), &data);
             break;
-        }
     }
 }
 
@@ -183,25 +169,22 @@ void Utter(Occupant const& speaker, MangosStringLocale const* line, Unit const* 
     MaNGOS::MonsterChatBuilder build(speaker, form.message, line, language, target);
     MaNGOS::LocalizedPacketDo<MaNGOS::MonsterChatBuilder> say(build);
 
-    switch (form.audience)
+    switch (form.earshot)
     {
-        case Audience::Around:
-        {
-            float const range = sWorld.getConfig(eConfigFloatValues(form.range));
-            MaNGOS::CameraDistWorker<MaNGOS::LocalizedPacketDo<MaNGOS::MonsterChatBuilder> > worker(&speaker, range, say);
-            Cell::VisitWorldObjects(&speaker, worker, range);
+        case Earshot::Around:
+            Deliver(Audience::Within(speaker, sWorld.getConfig(eConfigFloatValues(form.range))).AndSubject(),
+                    say);
             break;
-        }
 
-        case Audience::Listener:
+        case Earshot::Listener:
             if (Player* listener = const_cast<Player*>(ToPlayer(target)))
             {
                 say(listener);
             }
             break;
 
-        case Audience::Zone:
-            ToZone(speaker, say);
+        case Earshot::Zone:
+            Deliver(Audience::InZone(*speaker.GetMap(), ZoneOf(speaker)), say);
             break;
     }
 }
@@ -225,7 +208,7 @@ void PlaySound(Occupant const& source, SoundKind kind, uint32 soundId, Player co
     }
     else
     {
-        Broadcast(source, &data, true);
+        Deliver(Audience::Around(source).AndSubject(), &data);
     }
 }
 
@@ -233,5 +216,77 @@ void SendDespawnAnimation(Occupant const& what)
 {
     WorldPacket data(SMSG_GAMEOBJECT_DESPAWN_ANIM, 8);
     data << what.GetObjectGuid();
-    Broadcast(what, &data, true);
+    Deliver(Audience::Around(what).AndSubject(), &data);
+}
+
+namespace
+{
+    /// Builds one chat packet per locale for a creature that need not be spawned: a script
+    /// yells in the name of a template, and the client is content with a zero low guid.
+    class StaticMonsterChatBuilder
+    {
+        public:
+            StaticMonsterChatBuilder(CreatureInfo const* cInfo, ChatMsg msgtype, int32 textId,
+                                     Language language, Unit const* target, uint32 senderLowGuid = 0)
+                : i_cInfo(cInfo), i_msgtype(msgtype), i_textId(textId), i_language(language), i_target(target)
+            {
+                i_senderGuid = i_cInfo->GetObjectGuid(senderLowGuid);
+            }
+
+            void operator()(WorldPacket& data, int32 loc_idx)
+            {
+                char const* text = sObjectMgr.GetMangosString(i_textId, loc_idx);
+
+                char const* nameForLocale = i_cInfo->Name;
+                sObjectMgr.GetCreatureLocaleStrings(i_cInfo->Entry, loc_idx, &nameForLocale);
+
+                ChatHandler::BuildChatPacket(data, i_msgtype, text, i_language, CHAT_TAG_NONE,
+                                             i_senderGuid, nameForLocale,
+                                             i_target ? i_target->GetObjectGuid() : ObjectGuid(),
+                                             i_target ? i_target->GetNameForLocaleIdx(loc_idx) : "");
+            }
+
+        private:
+            ObjectGuid i_senderGuid;
+            CreatureInfo const* i_cInfo;
+            ChatMsg i_msgtype;
+            int32 i_textId;
+            Language i_language;
+            Unit const* i_target;
+    };
+}
+
+void YellToMap(Map& map, CreatureInfo const* speaker, int32 textId, Language language,
+               Unit const* target, uint32 senderLowGuid)
+{
+    StaticMonsterChatBuilder build(speaker, CHAT_MSG_MONSTER_YELL, textId, language, target, senderLowGuid);
+    MaNGOS::LocalizedPacketDo<StaticMonsterChatBuilder> say(build);
+
+    Deliver(Audience::Everyone(map), say);
+}
+
+void YellToMap(Map& map, ObjectGuid speaker, int32 textId, Language language, Unit const* target)
+{
+    if (!speaker.IsAnyTypeCreature())
+    {
+        sLog.outError("YellToMap: %s is not a creature.", speaker.GetString().c_str());
+        return;
+    }
+
+    CreatureInfo const* cInfo = ObjectMgr::GetCreatureTemplate(speaker.GetEntry());
+    if (!cInfo)
+    {
+        sLog.outError("YellToMap: no creature template for %s", speaker.GetString().c_str());
+        return;
+    }
+
+    YellToMap(map, cInfo, textId, language, target, speaker.GetCounter());
+}
+
+void PlaySoundToMap(Map& map, uint32 soundId, uint32 zoneId)
+{
+    WorldPacket data(SMSG_PLAY_SOUND, 4);
+    data << uint32(soundId);
+
+    Deliver(zoneId ? Audience::InZone(map, zoneId) : Audience::Everyone(map), &data);
 }

@@ -688,112 +688,150 @@ template<class T>
 
 namespace
 {
-    /**
-     * @brief OUTBOUND -- from a deck to the watchers ashore.
-     *
-     * A deckhand's own map is the hull, and no cell ashore will ever hold him, so a packet
-     * that stays inside his map is never seen from the pier. The audience is whoever the
-     * vessel gathered at the top of this tick. Sent immediately: the deck runs INSIDE the
-     * tick of the map she sails, on that map's own thread, so there is nothing to wait for.
-     */
-    void RelayAshore(Occupant const& from, WorldPacket* data, Player const* skip)
+    /// Everyone whose camera stands in the visited cells and whom the audience admits.
+    struct CameraSweep
     {
-        if (!from.GetMap()->AsTransport())
+        Audience const& who;
+        MapBroadcaster::Listener const& tell;
+        float range;
+        uint32 told = 0;
+
+        void Visit(CameraMapType& m)
         {
-            return;
+            for (CameraMapType::iterator itr = m.begin(); itr != m.end(); ++itr)
+            {
+                Camera* camera = itr->getSource();
+                Player* owner = camera->GetOwner();
+
+                if (!who.Admits(owner))
+                {
+                    continue;
+                }
+
+                // The distance is to what the viewer is looking THROUGH, which is not
+                // always where the viewer stands.
+                if (who.HasRange()
+                    && !camera->GetBody()->Where().WithinDist(who.Subject()->Where(), range))
+                {
+                    continue;
+                }
+
+                tell(owner);
+                ++told;
+            }
         }
 
-        for (Player* observer : from.GetMap()->ExternalObservers())
+        template<class SKIP> void Visit(GridRefManager<SKIP>&) {}
+    };
+}
+
+uint32 Map::Hearers(Audience const& who, MapBroadcaster::Listener const& tell)
+{
+    uint32 told = 0;
+
+    switch (who.How())
+    {
+        case Audience::Gathering::Near:
+        case Audience::Gathering::Ranged:
         {
-            if (observer && observer != skip && observer->GetSession())
+            Occupant const* subject = who.Subject();
+            if (!subject || !subject->IsInWorld())
             {
-                observer->GetSession()->SendPacket(data);
+                return 0;
             }
+
+            CellPair p = MaNGOS::ComputeCellPair(subject->Where().X(), subject->Where().Y());
+            if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
+            {
+                sLog.outError("Map::Hearers: %s has invalid coordinates X:%f Y:%f grid cell [%u:%u]",
+                              subject->GetGuidStr().c_str(), subject->Where().X(), subject->Where().Y(),
+                              p.x_coord, p.y_coord);
+                return 0;
+            }
+
+            Cell cell(p);
+            cell.SetNoCreate();
+
+            if (!loaded(GridPair(cell.data.Part.grid_x, cell.data.Part.grid_y)))
+            {
+                return 0;
+            }
+
+            const float range = who.HasRange() ? who.Range() : GetBroadcastRadius();
+
+            CameraSweep sweep{ who, tell, range };
+            TypeContainerVisitor<CameraSweep, WorldTypeMapContainer> visit(sweep);
+            cell.Visit(p, visit, *this, *subject, range);
+
+            told = sweep.told;
+            break;
+        }
+
+        case Audience::Gathering::Roll:
+        case Audience::Gathering::Zone:
+        {
+            const bool byZone = who.How() == Audience::Gathering::Zone;
+
+            for (auto itr = m_mapRefManager.begin(); itr != m_mapRefManager.end(); ++itr)
+            {
+                Player* listener = itr->getSource();
+                if (!who.Admits(listener))
+                {
+                    continue;
+                }
+
+                if (byZone && listener->GetTerrain()->GetZoneId(listener->Where().X(), listener->Where().Y(),
+                                                                listener->Where().Z()) != who.Zone())
+                {
+                    continue;
+                }
+
+                tell(listener);
+                ++told;
+            }
+            break;
         }
     }
 
-    /**
-     * @brief INBOUND -- from the water to everyone standing on a vessel crossing it.
-     *
-     * Not filtered by anything. The one object that could measure the distance is the
-     * vessel, whose pose is an estimate we already refuse to trust for anything that
-     * decides something -- and being told about a creature too far off costs a packet,
-     * while not being told about one in front of you costs the illusion that the world
-     * is running.
-     */
-    void RelayAboard(Occupant const& from, WorldPacket* data, Player const* skip)
+    return told;
+}
+
+uint32 Map::Across(Audience const& who, MapBroadcaster::Listener const& tell)
+{
+    // A packet with a range has no range to answer with across the boundary: the one
+    // object that could measure it is the vessel, whose pose is a waypoint estimate
+    // nothing is allowed to decide anything by. So a shout from the pier stays ashore,
+    // while everything unmeasured reaches the decks crossing this water.
+    if (who.HasRange())
     {
-        if (from.GetMap()->AsTransport())
+        return 0;
+    }
+
+    uint32 told = 0;
+
+    for (Transport* vessel : sFleet.On(GetId()))
+    {
+        TransportMap* hull = vessel->AsMap();
+        if (!hull || vessel->GetMap() != this)
         {
-            return;
+            continue;
         }
 
-        for (Transport* vessel : sFleet.On(from.GetMapId()))
+        PlayerList const& aboard = hull->GetPlayers();
+        for (PlayerList::const_iterator itr = aboard.begin(); itr != aboard.end(); ++itr)
         {
-            TransportMap* hull = vessel->AsMap();
-            if (!hull || vessel->GetMap() != from.GetMap())
+            Player* passenger = itr->getSource();
+            if (!who.Admits(passenger) || !passenger->GetSession())
             {
                 continue;
             }
 
-            Map::PlayerList const& aboard = hull->GetPlayers();
-            for (Map::PlayerList::const_iterator itr = aboard.begin(); itr != aboard.end(); ++itr)
-            {
-                Player* passenger = itr->getSource();
-                if (passenger && passenger != skip && passenger->GetSession())
-                {
-                    passenger->GetSession()->SendPacket(data);
-                }
-            }
+            tell(passenger);
+            ++told;
         }
     }
-}
 
-/**
- * @brief Hands a packet to the sessions the reach admits.
- *
- * @param msg The packet to send.
- * @param reach Whose surroundings, and which viewers are admitted.
- */
-void Map::DeliverPacket(WorldPacket* msg, PacketReach const& reach)
-{
-    MANGOS_ASSERT(reach.subject);
-
-    Occupant const& subject = *reach.subject;
-    CellPair p = MaNGOS::ComputeCellPair(subject.Where().X(), subject.Where().Y());
-
-    if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
-    {
-        sLog.outError("Map::DeliverPacket: %s has invalid coordinates X:%f Y:%f grid cell [%u:%u]",
-                      subject.GetGuidStr().c_str(), subject.Where().X(), subject.Where().Y(),
-                      p.x_coord, p.y_coord);
-        return;
-    }
-
-    Cell cell(p);
-    cell.SetNoCreate();
-
-    if (!loaded(GridPair(cell.data.Part.grid_x, cell.data.Part.grid_y)))
-    {
-        return;
-    }
-
-    MaNGOS::PacketDeliverer post_man(msg, reach);
-    TypeContainerVisitor<MaNGOS::PacketDeliverer, WorldTypeMapContainer> message(post_man);
-    cell.Visit(p, message, *this, subject, reach.dist > 0.0f ? reach.dist : GetBroadcastRadius());
-
-    // AND THE FAR SIDE OF THE BOUNDARY, here rather than in each sender. Three of them
-    // wrote this by hand and the third wrote neither half, which a deckhand saw as the
-    // pier standing frozen while he walked.
-    if (reach.ashore)
-    {
-        RelayAshore(subject, msg, reach.skip);
-    }
-
-    if (reach.aboard)
-    {
-        RelayAboard(subject, msg, reach.skip);
-    }
+    return told;
 }
 
 /**
@@ -1758,28 +1796,7 @@ uint32 Map::GetPlayersCountExceptGMs() const
 }
 
 /**
- * @brief Sends a packet to all players in a specific zone on the map.
- *
- * @param data The packet to send.
- * @param zoneId The zone identifier used to filter recipients.
- * @return true if at least one player received the packet; otherwise false.
- */
-bool Map::SendToPlayersInZone(WorldPacket const* data, uint32 zoneId) const
-{
-    bool foundPlayer = false;
-    for (MapRefManager::const_iterator itr = m_mapRefManager.begin(); itr != m_mapRefManager.end(); ++itr)
-    {
-        if (itr->getSource()->GetTerrain()->GetZoneId(itr->getSource()->Where().X(), itr->getSource()->Where().Y(), itr->getSource()->Where().Z()) == zoneId)
-        {
-            itr->getSource()->GetSession()->SendPacket(data);
-            foundPlayer = true;
-        }
-    }
-    return foundPlayer;
-}
-
-/**
- * @brief Checks whether players or active objects are close enough to keep a grid loaded.
+ * @brief Checks whether any active object is near a grid.
  *
  * @param x The grid X coordinate.
  * @param y The grid Y coordinate.
@@ -2693,110 +2710,6 @@ uint32 Map::GenerateLocalLowGuid(HighGuid guidhigh)
         default:
             MANGOS_ASSERT(false);
             return 0;
-    }
-}
-
-/**
- * Helper structure for building static chat information
- *
- */
-class StaticMonsterChatBuilder
-{
-    public:
-        StaticMonsterChatBuilder(CreatureInfo const* cInfo, ChatMsg msgtype, int32 textId, Language language, Unit const* target, uint32 senderLowGuid = 0)
-            : i_cInfo(cInfo), i_msgtype(msgtype), i_textId(textId), i_language(language), i_target(target)
-        {
-            // 0 lowguid not used in core, but accepted fine in this case by client
-            i_senderGuid = i_cInfo->GetObjectGuid(senderLowGuid);
-        }
-        void operator()(WorldPacket& data, int32 loc_idx)
-        {
-            char const* text = sObjectMgr.GetMangosString(i_textId, loc_idx);
-
-            char const* nameForLocale = i_cInfo->Name;
-            sObjectMgr.GetCreatureLocaleStrings(i_cInfo->Entry, loc_idx, &nameForLocale);
-
-            ChatHandler::BuildChatPacket(data, i_msgtype, text, i_language, CHAT_TAG_NONE, i_senderGuid, nameForLocale, i_target ? i_target->GetObjectGuid() : ObjectGuid(),
-                i_target ? i_target->GetNameForLocaleIdx(loc_idx) : "");
-        }
-
-    private:
-        ObjectGuid i_senderGuid;
-        CreatureInfo const* i_cInfo;
-        ChatMsg i_msgtype;
-        int32 i_textId;
-        Language i_language;
-        Unit const* i_target;
-};
-
-/**
- * Function simulates yell of creature
- *
- * @param guid must be creature guid of whom to Simulate the yell, non-creature guids not supported at this moment
- * @param textId Id of the simulated text
- * @param language language of the text
- * @param target, can be nullptr
- */
-void Map::MonsterYellToMap(ObjectGuid guid, int32 textId, Language language, Unit const* target) const
-{
-    if (guid.IsAnyTypeCreature())
-    {
-        CreatureInfo const* cInfo = ObjectMgr::GetCreatureTemplate(guid.GetEntry());
-        if (!cInfo)
-        {
-            sLog.outError("Map::MonsterYellToMap: Called for nonexistent creature entry in guid: %s", guid.GetString().c_str());
-            return;
-        }
-
-        MonsterYellToMap(cInfo, textId, language, target, guid.GetCounter());
-    }
-    else
-    {
-        sLog.outError("Map::MonsterYellToMap: Called for non creature guid: %s", guid.GetString().c_str());
-        return;
-    }
-}
-
-/**
- * Function simulates yell of creature
- *
- * @param cinfo must be entry of Creature of whom to Simulate the yell
- * @param textId Id of the simulated text
- * @param language language of the text
- * @param target, can be nullptr
- * @param senderLowGuid provide way proper show yell for near spawned creature with known lowguid,
- *        0 accepted by client else if this not important
- */
-void Map::MonsterYellToMap(CreatureInfo const* cinfo, int32 textId, Language language, Unit const* target, uint32 senderLowGuid /*= 0*/) const
-{
-    StaticMonsterChatBuilder say_build(cinfo, CHAT_MSG_MONSTER_YELL, textId, language, target, senderLowGuid);
-    MaNGOS::LocalizedPacketDo<StaticMonsterChatBuilder> say_do(say_build);
-
-    Map::PlayerList const& pList = GetPlayers();
-    for (PlayerList::const_iterator itr = pList.begin(); itr != pList.end(); ++itr)
-    {
-        say_do(itr->getSource());
-    }
-}
-
-/**
- * Function to play sound to all players in map
- *
- * @param soundId Played Sound
- * @param zoneId Id of the Zone to which the sound should be restricted
- */
-void Map::PlayDirectSoundToMap(uint32 soundId, uint32 zoneId /*=0*/) const
-{
-    WorldPacket data(SMSG_PLAY_SOUND, 4);
-    data << uint32(soundId);
-
-    Map::PlayerList const& pList = GetPlayers();
-    for (PlayerList::const_iterator itr = pList.begin(); itr != pList.end(); ++itr)
-    {
-        if (!zoneId || itr->getSource()->GetTerrain()->GetZoneId(itr->getSource()->Where().X(), itr->getSource()->Where().Y(), itr->getSource()->Where().Z()) == zoneId)
-        {
-            itr->getSource()->SendDirectMessage(&data);
-        }
     }
 }
 

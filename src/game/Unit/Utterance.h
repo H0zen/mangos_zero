@@ -29,6 +29,7 @@
 #include "SharedDefines.h"
 #include "Creature.h"
 
+class Map;
 class Player;
 class Unit;
 class Occupant;
@@ -62,6 +63,17 @@ enum class SoundKind
 
 /// One sound, to one client or to everyone who can see the source.
 void PlaySound(Occupant const& source, SoundKind kind, uint32 soundId, Player const* target = nullptr);
+
+/// One sound to a whole map, or to one zone of it. For a script that plays to a room
+/// nobody is standing in the middle of.
+void PlaySoundToMap(Map& map, uint32 soundId, uint32 zoneId = 0);
+
+/// A creature's yell heard by the whole map, whether or not the creature is on it: the
+/// line is read from the string table in each listener's own locale. The speaker is named
+/// by guid, or by template when nothing is spawned to speak.
+void YellToMap(Map& map, ObjectGuid speaker, int32 textId, Language language, Unit const* target);
+void YellToMap(Map& map, CreatureInfo const* speaker, int32 textId, Language language,
+               Unit const* target, uint32 senderLowGuid = 0);
 
 /// The puff of an object vanishing.
 void SendDespawnAnimation(Occupant const& what);

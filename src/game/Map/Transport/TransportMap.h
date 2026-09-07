@@ -208,6 +208,10 @@ class TransportMap : public Map
          * Called from Creature::Add/RemoveFromWorld -- the one place both the grid loader
          * and Map::Add pass through.
          */
+        /// The shore her vessel gathered at the top of this tick. A deck's audience ashore
+        /// is grid membership rather than a distance, so even a shout crosses.
+        uint32 Across(Audience const& who, Listener const& tell) override;
+
         void EnlistCrew(Creature* crew);
         void DelistCrew(Creature* crew);
         bool HasCrew() const { return !m_crew.empty(); }

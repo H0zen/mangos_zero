@@ -48,6 +48,7 @@
 #include "precompiled.h"
 #include "../scripts/world/world_map_scripts.h"
 #include "escort_ai.h"
+#include "Utterance.h"
 
 /*######
 ## npc_tyrion
@@ -68,7 +69,7 @@ struct npc_tyrion : public CreatureScript
     {
         if (pQuest->GetQuestId() == QUEST_THE_ATTACK)
         {
-            pCreature->GetMap()->MonsterYellToMap(pCreature->GetObjectGuid(), -1000824, LANG_UNIVERSAL, pPlayer);
+            YellToMap(*pCreature->GetMap(), pCreature->GetObjectGuid(), -1000824, LANG_UNIVERSAL, pPlayer);
             return true;
         }
 

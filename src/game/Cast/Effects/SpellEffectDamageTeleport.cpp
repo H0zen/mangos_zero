@@ -136,7 +136,7 @@ void Spell::EffectInstaKill(SpellEffectIndex /*eff_idx*/)
         WorldPacket data(SMSG_SPELLINSTAKILLLOG, (8 + 4));  // sent for selfkill only, other type is logged at SpellExecute
         data << m_caster->GetObjectGuid();
         data << uint32(m_spellInfo->ID);
-        Broadcast(*m_caster, &data, true);
+        Deliver(Audience::Around(*m_caster).AndSubject(), &data);
     }
 
     m_caster->DealDamage(unitTarget, unitTarget->GetHealth(), nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);

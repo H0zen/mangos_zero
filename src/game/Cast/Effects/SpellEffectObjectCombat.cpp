@@ -790,7 +790,7 @@ void Spell::EffectSummonObject(SpellEffectIndex eff_idx)
     pGameObj->AIM_Initialize();
     WorldPacket data(SMSG_GAMEOBJECT_SPAWN_ANIM_OBSOLETE, 8);
     data << ObjectGuid(pGameObj->GetObjectGuid());
-    Broadcast(*m_caster, &data, true);
+    Deliver(Audience::Around(*m_caster).AndSubject(), &data);
 
     m_caster->m_ObjectSlotGuid[slot] = pGameObj->GetObjectGuid();
 

@@ -820,7 +820,7 @@ bool ScriptAction::HandleScriptStep()
                 }
                 else if (m_script->playSound.flags & (4 | 8))
                 {
-                    m_map->PlayDirectSoundToMap(m_script->playSound.soundId, (m_script->playSound.flags & 8) ? pSource->GetTerrain()->GetZoneId(pSource->Where().X(), pSource->Where().Y(), pSource->Where().Z()) : 0);
+                    PlaySoundToMap(*m_map, m_script->playSound.soundId, (m_script->playSound.flags & 8) ? pSource->GetTerrain()->GetZoneId(pSource->Where().X(), pSource->Where().Y(), pSource->Where().Z()) : 0);
                 }
                 else
                 {

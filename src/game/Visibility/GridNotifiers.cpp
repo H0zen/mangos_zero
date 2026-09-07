@@ -163,45 +163,6 @@ void VisibleNotifier::Notify()
     }
 }
 
-/**
- * @brief Hands a packet to every viewer the reach admits.
- *
- * @param m The camera map to visit.
- */
-void PacketDeliverer::Visit(CameraMapType& m)
-{
-    Player const* subjectPlayer = ToPlayer(i_reach.subject);
-
-    for (CameraMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
-    {
-        Camera* camera = iter->getSource();
-        Player* owner = camera->GetOwner();
-
-        if (owner == i_reach.skip)
-        {
-            continue;
-        }
-
-        if (i_reach.ownTeamOnly && subjectPlayer && owner->GetTeam() != subjectPlayer->GetTeam())
-        {
-            continue;
-        }
-
-        // The distance is to what the viewer is looking through, which is not
-        // always where the viewer stands.
-        if (i_reach.dist > 0.0f
-            && !camera->GetBody()->Where().WithinDist(i_reach.subject->Where(), i_reach.dist))
-        {
-            continue;
-        }
-
-        if (WorldSession* session = owner->GetSession())
-        {
-            session->SendPacket(i_message);
-        }
-    }
-}
-
 template<class T>
 
 /**

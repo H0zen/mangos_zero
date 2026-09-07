@@ -151,7 +151,7 @@ namespace Movement
         }
 
         PacketBuilder::WriteMonsterMove(move_spline, data);
-        Broadcast(unit, &data, true);
+        Deliver(Audience::Around(unit).AndSubject(), &data);
 
         return move_spline.Duration();
     }
@@ -234,7 +234,7 @@ namespace Movement
         data << real_position.x << real_position.y << real_position.z;
         data << move_spline.GetId();
         data << uint8(MonsterMoveStop);
-        Broadcast(unit, &data, true);
+        Deliver(Audience::Around(unit).AndSubject(), &data);
     }
 
     /**

@@ -1024,7 +1024,7 @@ void Player::Say(const std::string& text, const uint32 language)
 {
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, CHAT_MSG_SAY, text.c_str(), Language(language), GetChatTag(), GetObjectGuid(), GetName());
-    BroadcastWithin(*this, &data, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_SAY), true);
+    Deliver(Audience::Within(*this, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_SAY)).AndSubject(), &data);
 }
 
 /**
@@ -1037,7 +1037,7 @@ void Player::Yell(const std::string& text, const uint32 language)
 {
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, CHAT_MSG_YELL, text.c_str(), Language(language), GetChatTag(), GetObjectGuid(), GetName());
-    BroadcastWithin(*this, &data, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_YELL), true);
+    Deliver(Audience::Within(*this, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_YELL)).AndSubject(), &data);
 }
 
 /**
@@ -1049,7 +1049,7 @@ void Player::TextEmote(const std::string& text)
 {
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, CHAT_MSG_EMOTE, text.c_str(), LANG_UNIVERSAL, GetChatTag(), GetObjectGuid(), GetName());
-    BroadcastWithin(*this, &data, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_TEXTEMOTE), true, !sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_CHAT));
+    Deliver(Audience::Within(*this, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_TEXTEMOTE)).AndSubject().OwnTeamOnly(!sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_CHAT)), &data);
 }
 
 /**

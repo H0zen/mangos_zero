@@ -211,7 +211,7 @@ void Pace::SetRate(UnitMoveType how, float rate, bool forced)
         WorldPacket data(SPEED_OPCODES[how][1], 12);
         data << m_owner.GetPackGUID();
         data << float(At(how));
-        Broadcast(m_owner, &data, false);
+        Deliver(Audience::Around(m_owner), &data);
     }
 
     m_owner.CallForAllControlledUnits(ReckonAgain(how, forced),

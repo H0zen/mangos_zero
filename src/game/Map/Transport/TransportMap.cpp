@@ -945,6 +945,28 @@ void TransportMap::GatherObservers()
     SetExternalObservers(std::vector<Player*>(found.begin(), found.end()));
 }
 
+uint32 TransportMap::Across(Audience const& who, MapBroadcaster::Listener const& tell)
+{
+    // A deckhand's own map is the hull, and no cell ashore will ever hold him, so a packet
+    // that stays inside his map is never seen from the pier. His audience there is whoever
+    // the vessel gathered at the top of this tick -- membership of her grid, not a distance,
+    // which is why even a shout crosses.
+    uint32 told = 0;
+
+    for (Player* observer : ExternalObservers())
+    {
+        if (!who.Admits(observer) || !observer->GetSession())
+        {
+            continue;
+        }
+
+        tell(observer);
+        ++told;
+    }
+
+    return told;
+}
+
 void TransportMap::Update(const uint32& t_diff)
 {
     // Phase one, on the thread of the map the vessel sails and with her pose already advanced

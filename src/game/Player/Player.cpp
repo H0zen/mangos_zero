@@ -108,7 +108,7 @@ namespace
                         m_player.GetObjectGuid().GetRawValue()) :
                     LoginEffectPackets::BuildGo(
                         m_player.GetObjectGuid().GetRawValue());
-                Broadcast(m_player, &packet, true);
+                Deliver(Audience::Around(m_player).AndSubject(), &packet);
 
                 if (*phase == LoginEffectPhase::Start)
                 {

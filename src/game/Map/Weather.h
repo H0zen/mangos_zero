@@ -68,9 +68,9 @@ class Weather
         /// Send Weather to one player
         void SendWeatherUpdateToPlayer(Player* player);
         /// Set the weather
-        void SetWeather(WeatherType type, float grade, Map const* _map, bool isPermanent);
+        void SetWeather(WeatherType type, float grade, Map* _map, bool isPermanent);
         /// Update the weather in this zone, when the timer is expired the weather will be rolled again
-        bool Update(uint32 diff, Map const* _map);
+        bool Update(uint32 diff, Map* _map);
         /// Check if a type is valid
         static bool IsValidWeatherType(uint32 type)
         {
@@ -89,7 +89,7 @@ class Weather
     private:
         uint32 GetSound();
         /// Send SMSG_WEATHER to all players in the zone
-        bool SendWeatherForPlayersInZone(Map const* _map);
+        bool SendWeatherForPlayersInZone(Map* _map);
         /// Calculate new weather
         bool ReGenerate();
         /// Calculate state based on type and grade
@@ -115,14 +115,14 @@ class Weather
 class WeatherSystem
 {
     public:
-        WeatherSystem(Map const* _map);
+        WeatherSystem(Map* _map);
         ~WeatherSystem();
 
         Weather* FindOrCreateWeather(uint32 zoneId);
         void UpdateWeathers(uint32 diff);
 
     private:
-        Map const* const m_map;
+        Map* const m_map;
 
         typedef std::unordered_map<uint32 /*zoneId*/, Weather*> WeatherMap;
         WeatherMap m_weathers;

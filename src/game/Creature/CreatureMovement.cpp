@@ -96,7 +96,7 @@ void Creature::SetWalk(bool enable, bool asDefault)
 
     WorldPacket data(enable ? SMSG_SPLINE_MOVE_SET_WALK_MODE : SMSG_SPLINE_MOVE_SET_RUN_MODE, 9);
     data << GetPackGUID();
-    Broadcast(*this, &data, true);
+    Deliver(Audience::Around(*this).AndSubject(), &data);
 }
 
 /**
@@ -134,7 +134,7 @@ void Creature::SetSwim(bool enable)
 
     WorldPacket data(enable ? SMSG_SPLINE_MOVE_START_SWIM : SMSG_SPLINE_MOVE_STOP_SWIM);
     data << GetPackGUID();
-    Broadcast(*this, &data, true);
+    Deliver(Audience::Around(*this).AndSubject(), &data);
 }
 
 /**
@@ -165,7 +165,7 @@ void Creature::SetFeatherFall(bool enable)
 
     WorldPacket data(enable ? SMSG_SPLINE_MOVE_FEATHER_FALL : SMSG_SPLINE_MOVE_NORMAL_FALL);
     data << GetPackGUID();
-    Broadcast(*this, &data, true);
+    Deliver(Audience::Around(*this).AndSubject(), &data);
 }
 
 /**
@@ -186,7 +186,7 @@ void Creature::SetHover(bool enable)
 
     WorldPacket data(enable ? SMSG_SPLINE_MOVE_SET_HOVER : SMSG_SPLINE_MOVE_UNSET_HOVER, 9);
     data << GetPackGUID();
-    Broadcast(*this, &data, false);
+    Deliver(Audience::Around(*this), &data);
 }
 
 /**
@@ -207,7 +207,7 @@ void Creature::SetRoot(bool enable)
 
     WorldPacket data(enable ? SMSG_SPLINE_MOVE_ROOT : SMSG_SPLINE_MOVE_UNROOT, 9);
     data << GetPackGUID();
-    Broadcast(*this, &data, true);
+    Deliver(Audience::Around(*this).AndSubject(), &data);
 }
 
 /**
@@ -228,5 +228,5 @@ void Creature::SetWaterWalk(bool enable)
 
     WorldPacket data(enable ? SMSG_SPLINE_MOVE_WATER_WALK : SMSG_SPLINE_MOVE_LAND_WALK, 9);
     data << GetPackGUID();
-    Broadcast(*this, &data, true);
+    Deliver(Audience::Around(*this).AndSubject(), &data);
 }

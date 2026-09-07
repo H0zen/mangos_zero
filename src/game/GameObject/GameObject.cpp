@@ -1271,7 +1271,7 @@ void GameObject::SendGameObjectCustomAnim(uint32 animId /*= 0*/)
     WorldPacket data(SMSG_GAMEOBJECT_CUSTOM_ANIM, 8 + 4);
     data << GetObjectGuid();
     data << uint32(animId);
-    Broadcast(*this, &data, true);
+    Deliver(Audience::Around(*this).AndSubject(), &data);
 }
 
 /**
@@ -1281,7 +1281,7 @@ void GameObject::SendGameObjectReset()
 {
     WorldPacket data(SMSG_GAMEOBJECT_RESET_STATE, 8);
     data << GetObjectGuid();
-    Broadcast(*this, &data, true);
+    Deliver(Audience::Around(*this).AndSubject(), &data);
 }
 
 /**

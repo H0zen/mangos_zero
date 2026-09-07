@@ -2309,13 +2309,13 @@ bool ChatHandler::HandleModifyMountCommand(char* args)
     data << chr->GetPackGUID();
     data << (uint32)0;
     data << float(speed);
-    Broadcast(*chr, &data, true);
+    Deliver(Audience::Around(*chr).AndSubject(), &data);
 
     data.Initialize(SMSG_FORCE_SWIM_SPEED_CHANGE, (8 + 4 + 4));
     data << chr->GetPackGUID();
     data << (uint32)0;
     data << float(speed);
-    Broadcast(*chr, &data, true);
+    Deliver(Audience::Around(*chr).AndSubject(), &data);
 
     return true;
 }

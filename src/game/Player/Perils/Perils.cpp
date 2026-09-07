@@ -181,7 +181,7 @@ uint32 Perils::Harm(EnvironmentalDamageType type, uint32 damage)
     data << uint32(damage);
     data << uint32(absorb);
     data << uint32(resist);
-    Broadcast(m_owner, &data, true);
+    Deliver(Audience::Around(m_owner).AndSubject(), &data);
 
     DamageEffectType damageType = SELF_DAMAGE;
     if (type == DAMAGE_FALL && m_owner.getClass() == CLASS_ROGUE)

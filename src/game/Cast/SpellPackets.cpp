@@ -186,7 +186,7 @@ void Spell::SendSpellStart()
         WriteAmmoToPacket(&data);
     }
 
-    Broadcast(*m_caster, &data, true);
+    Deliver(Audience::Around(*m_caster).AndSubject(), &data);
 }
 
 /**
@@ -232,7 +232,7 @@ void Spell::SendSpellGo()
         WriteAmmoToPacket(&data);
     }
 
-    Broadcast(*m_caster, &data, true);
+    Deliver(Audience::Around(*m_caster).AndSubject(), &data);
 }
 
 /**
@@ -454,7 +454,7 @@ void Spell::SendLogExecute()
     }
     data.put<uint32>(efcount_pos, effectCount);
 
-    Broadcast(*m_caster, &data, true);
+    Deliver(Audience::Around(*m_caster).AndSubject(), &data);
 }
 
 /**
@@ -480,11 +480,11 @@ void Spell::SendInterrupted(SpellCastResult result)
     data << m_spellInfo->ID;
     if (casterPlayer)
     {
-        BroadcastExcept(*casterPlayer, &data, casterPlayer);
+        Deliver(Audience::Around(*casterPlayer).Except(casterPlayer), &data);
     }
     else
     {
-        Broadcast(*m_caster, &data, true);
+        Deliver(Audience::Around(*m_caster).AndSubject(), &data);
     }
 }
 
