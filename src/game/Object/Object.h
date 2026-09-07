@@ -50,6 +50,8 @@
 
 class WorldPacket;
 struct Loot;
+enum LootType : int;
+enum PermissionTypes : int;
 class UpdateData;
 class WorldSession;
 class Creature;
@@ -519,6 +521,19 @@ class Object
          * owns it or stands beside it, a lockbox by whether its contents have been rolled.
          */
         virtual bool OpenableBy(Player const& who) const { return false; }
+
+        /**
+         * @brief Put into the pile whatever this taking calls for, and say what he may see.
+         *
+         * `how` is in and out: a body that has already been skinned turns any taking of it
+         * into a skinning, and the client has to be told the same.
+         *
+         * @return false when there is nothing here for him to open.
+         */
+        virtual bool FillSpoilsFor(Player& who, LootType& how, PermissionTypes& permission)
+        {
+            return false;
+        }
 
         /// The pile, if he may have it. The two questions above, asked together.
         Loot* SpoilsFor(Player const& who)

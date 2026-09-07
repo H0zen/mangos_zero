@@ -134,6 +134,7 @@ class Corpse : public Occupant
         /// Whoever is standing over it. What may be taken off a body is decided elsewhere;
         /// this is only about being there.
         bool OpenableBy(Player const& who) const override;
+        bool FillSpoilsFor(Player& who, LootType& how, PermissionTypes& permission) override;
         Player* lootRecipient;
         bool lootForBody;
 

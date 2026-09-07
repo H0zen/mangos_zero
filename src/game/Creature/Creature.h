@@ -612,6 +612,7 @@ class Creature : public Unit
         /// Dead, or alive and having his pockets picked by the rogue who is asking -- and
         /// near enough either way.
         bool OpenableBy(Player const& who) const override;
+        bool FillSpoilsFor(Player& who, LootType& how, PermissionTypes& permission) override;
 
         /**
          * Method preparing the creature for the loot state. Based on the previous loot state, the loot ID provided in the database and the creature's type,

@@ -400,6 +400,7 @@ class Item : public Object
         /// It is in his own bags by the time he is asking, so the only question left is
         /// whether the contents have been rolled yet.
         bool OpenableBy(Player const& who) const override { return HasGeneratedLoot(); }
+        bool FillSpoilsFor(Player& who, LootType& how, PermissionTypes& permission) override;
 
         void SetLootState(ItemLootUpdateState state);
         bool HasGeneratedLoot() const { return m_lootState != ITEM_LOOT_NONE && m_lootState != ITEM_LOOT_REMOVED; }
