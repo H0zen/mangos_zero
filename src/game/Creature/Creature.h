@@ -605,6 +605,16 @@ class Creature : public Unit
         bool LoadFromDB(uint32 guid, Map* map);
 
         /// Represent the loots available on the creature.
+        /**
+         * @brief The cell it is filed in.
+         *
+         * Only a creature keeps this. A player is found through the map's own roll of
+         * players and never looked for by cell, and nothing else in a grid moves between
+         * cells at all -- so for everything else the question does not arise.
+         */
+        Cell const& GetCurrentCell() const { return m_currentCell; }
+        void SetCurrentCell(Cell const& cell) { m_currentCell = cell; }
+
         Loot loot;
 
         Loot* Spoils() override { return &loot; }
@@ -781,6 +791,7 @@ class Creature : public Unit
         CreatureLinks m_links;
         Pace m_pace;
         Tenure m_tenure;
+        Cell m_currentCell;
         GridReference<Creature> m_gridRef;
 };
 

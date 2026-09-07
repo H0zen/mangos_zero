@@ -310,12 +310,10 @@ template<>
  */
 void Map::AddToGrid(Corpse* obj, NGridType* grid, Cell const& cell)
 {
-    // add to world object registry in grid
-    if (obj->GetType() != CORPSE_BONES)
+    if (obj->OutlivesItsGrid())
     {
         (*grid)(cell.CellX(), cell.CellY()).AddWorldObject(obj);
     }
-    // add to grid object store
     else
     {
         (*grid)(cell.CellX(), cell.CellY()).AddGridObject(obj);
@@ -340,18 +338,16 @@ template<>
  */
 void Map::AddToGrid(Creature* obj, NGridType* grid, Cell const& cell)
 {
-    // add to world object registry in grid
-    if (obj->IsPet())
+    if (obj->OutlivesItsGrid())
     {
         (*grid)(cell.CellX(), cell.CellY()).AddWorldObject<Creature>(obj);
-        obj->SetCurrentCell(cell);
     }
-    // add to grid object store
     else
     {
         (*grid)(cell.CellX(), cell.CellY()).AddGridObject<Creature>(obj);
-        obj->SetCurrentCell(cell);
     }
+
+    obj->SetCurrentCell(cell);
 }
 
 /**
@@ -417,12 +413,10 @@ template<>
  */
 void Map::RemoveFromGrid(Corpse* obj, NGridType* grid, Cell const& cell)
 {
-    // remove from world object registry in grid
-    if (obj->GetType() != CORPSE_BONES)
+    if (obj->OutlivesItsGrid())
     {
         (*grid)(cell.CellX(), cell.CellY()).RemoveWorldObject(obj);
     }
-    // remove from grid object store
     else
     {
         (*grid)(cell.CellX(), cell.CellY()).RemoveGridObject(obj);
@@ -447,12 +441,10 @@ template<>
  */
 void Map::RemoveFromGrid(Creature* obj, NGridType* grid, Cell const& cell)
 {
-    // remove from world object registry in grid
-    if (obj->IsPet())
+    if (obj->OutlivesItsGrid())
     {
         (*grid)(cell.CellX(), cell.CellY()).RemoveWorldObject<Creature>(obj);
     }
-    // remove from grid object store
     else
     {
         (*grid)(cell.CellX(), cell.CellY()).RemoveGridObject<Creature>(obj);

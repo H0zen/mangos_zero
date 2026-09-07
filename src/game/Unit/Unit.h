@@ -849,6 +849,9 @@ class Unit : public Occupant
             return IsCharmerOrOwnerPlayerOrPlayerItself();
         }
 
+        /// A pet follows its master off the edge of a grid that is being unloaded.
+        bool OutlivesItsGrid() const override { return IsPet(); }
+
         float ComputeBoundingRadius() const override      // overwrite Occupant version
         {
             return GetFloatValue(UNIT_FIELD_BOUNDINGRADIUS);
@@ -1839,8 +1842,6 @@ class Unit : public Occupant
         void AiLocked(bool locked) { m_aiLocked = locked; }
 
         // for use only in LoadHelper, Map::Add Map::CreatureCellRelocation
-        Cell const& GetCurrentCell() const { return m_currentCell; }
-        void SetCurrentCell(Cell const& cell) { m_currentCell = cell; }
 
         /**
          * How many of a vendor's wares are left, and when the next comes in.
@@ -3852,7 +3853,6 @@ class Unit : public Occupant
         Repertoire m_repertoire;
 
         VendorItemCounts m_vendorItemCounts;
-        Cell m_currentCell;
 
         uint32 m_equipmentId = 0;
         uint32 m_originalEntry = 0;

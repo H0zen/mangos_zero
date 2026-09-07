@@ -122,6 +122,9 @@ class Corpse : public Occupant
 
         bool IsControlledByPlayer() const override { return true; }
 
+        /// A body waits where it fell for its owner; bones belong to the ground.
+        bool OutlivesItsGrid() const override { return m_type != CORPSE_BONES; }
+
         GridPair const& GetGrid() const { return m_grid; }
         void SetGrid(GridPair const& grid) { m_grid = grid; }
 

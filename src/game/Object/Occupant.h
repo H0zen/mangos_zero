@@ -155,6 +155,17 @@ class Occupant : public Object
 
         virtual bool IsControlledByPlayer() const { return false; }
 
+        /**
+         * @brief Does the grid take it along when it goes?
+         *
+         * A cell files what stands in it in one of two stores, and the difference between
+         * them is what happens when the ground is unloaded. A creature, a chest, an area
+         * effect and a set of bones belong to that ground and are torn down with it. A
+         * player, the pet at his heel and a body still waiting for its owner are filed in
+         * the same cell and must survive it.
+         */
+        virtual bool OutlivesItsGrid() const { return false; }
+
         void AddObjectToRemoveList();
 
         void UpdateObjectVisibility();
