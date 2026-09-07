@@ -205,17 +205,7 @@ namespace Movement
         // same spline coordinate.
         if (unit.IsInWorld())
         {
-            if (unit.IsPlayer())
-            {
-                static_cast<Player*>(&unit)->SetPosition(real_position.x, real_position.y,
-                                                         real_position.z, real_position.orientation);
-            }
-            else
-            {
-                unit.GetMap()->CreatureRelocation(static_cast<Creature*>(&unit),
-                                                  real_position.x, real_position.y,
-                                                  real_position.z, real_position.orientation);
-            }
+            unit.MovedTo(real_position.x, real_position.y, real_position.z, real_position.orientation);
         }
 
         args.flags = MoveSplineFlag::Done;

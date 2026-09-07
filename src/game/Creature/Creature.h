@@ -612,6 +612,9 @@ class Creature : public Unit
          * players and never looked for by cell, and nothing else in a grid moves between
          * cells at all -- so for everything else the question does not arise.
          */
+        /// The map drives it and refiles the cell it lands in.
+        void MovedTo(float x, float y, float z, float o) override;
+
         Cell const& GetCurrentCell() const { return m_currentCell; }
         void SetCurrentCell(Cell const& cell) { m_currentCell = cell; }
 

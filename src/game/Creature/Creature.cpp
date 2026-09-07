@@ -2160,6 +2160,11 @@ bool Creature::CanAssistTo(const Unit* u, const Unit* enemy, bool checkfaction /
  *
  * @return true if attacks may be initiated; otherwise, false.
  */
+void Creature::MovedTo(float x, float y, float z, float o)
+{
+    GetMap()->CreatureRelocation(this, x, y, z, o);
+}
+
 bool Creature::OpenableBy(Player const& who) const
 {
     // Alive, it can only be pickpocketed, and only by the rogue who has already picked it;

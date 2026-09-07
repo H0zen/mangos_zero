@@ -762,6 +762,9 @@ class Player : public Unit
         /// Nothing about the ground he stands on may take a player with it.
         bool OutlivesItsGrid() const override { return true; }
 
+        /// His client moved him; the server writes down where.
+        void MovedTo(float x, float y, float z, float o) override { SetPosition(x, y, z, o); }
+
         bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0, bool allowNoDelay = false);
 
         // Teleport the player to a specific location using Destination

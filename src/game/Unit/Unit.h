@@ -852,6 +852,16 @@ class Unit : public Occupant
         /// A pet follows its master off the edge of a grid that is being unloaded.
         bool OutlivesItsGrid() const override { return IsPet(); }
 
+        /**
+         * @brief Put it where the world now says it stands.
+         *
+         * A player is followed rather than driven: his own client moved him and the server
+         * writes down where he ended up. A creature is driven, and the map refiles the cell
+         * it is in as it goes. One question, two answers, and only the unit knows which of
+         * the two it is.
+         */
+        virtual void MovedTo(float x, float y, float z, float o) = 0;
+
         float ComputeBoundingRadius() const override      // overwrite Occupant version
         {
             return GetFloatValue(UNIT_FIELD_BOUNDINGRADIUS);
