@@ -112,3 +112,29 @@ TEST_CASE("vigil: a fresh watch carries the world's defaults")
     CHECK_FALSE(watch.DeadByDefault());
     CHECK(watch.KilledAt() == 0);
 }
+
+// How long a body of each rank is left lying.
+
+TEST_CASE("decay: each rank is left for its own time")
+{
+    vigil::Decay how;
+    how.normal = 60;
+    how.rare = 300;
+    how.elite = 600;
+    how.rareElite = 900;
+    how.worldBoss = 3600;
+
+    CHECK(vigil::DecayFor(CREATURE_ELITE_NORMAL, how) == 60);
+    CHECK(vigil::DecayFor(CREATURE_ELITE_RARE, how) == 300);
+    CHECK(vigil::DecayFor(CREATURE_ELITE_ELITE, how) == 600);
+    CHECK(vigil::DecayFor(CREATURE_ELITE_RAREELITE, how) == 900);
+    CHECK(vigil::DecayFor(CREATURE_ELITE_WORLDBOSS, how) == 3600);
+}
+
+TEST_CASE("decay: a rank this build does not know rots like an ordinary thing")
+{
+    vigil::Decay how;
+    how.normal = 42;
+
+    CHECK(vigil::DecayFor(9999, how) == 42);
+}

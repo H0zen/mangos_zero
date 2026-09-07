@@ -18,6 +18,7 @@
 #pragma once
 
 #include "Platform/Define.h"
+#include "SharedDefines.h"
 
 #include <ctime>
 
@@ -46,6 +47,32 @@
  * A player has one of these and never uses it: his body is an object of its own
  * and his return is his own business.
  */
+namespace vigil
+{
+    /// How long a body of each rank is left lying, in seconds.
+    struct Decay
+    {
+        uint32 normal = 0;
+        uint32 rare = 0;
+        uint32 elite = 0;
+        uint32 rareElite = 0;
+        uint32 worldBoss = 0;
+    };
+
+    /// The one for this rank. A rank this build does not know rots like an ordinary thing.
+    inline uint32 DecayFor(uint32 rank, Decay const& how)
+    {
+        switch (rank)
+        {
+            case CREATURE_ELITE_RARE:      return how.rare;
+            case CREATURE_ELITE_ELITE:     return how.elite;
+            case CREATURE_ELITE_RAREELITE: return how.rareElite;
+            case CREATURE_ELITE_WORLDBOSS: return how.worldBoss;
+            default:                       return how.normal;
+        }
+    }
+}
+
 class Vigil
 {
     public:

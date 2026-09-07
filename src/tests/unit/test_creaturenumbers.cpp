@@ -253,3 +253,50 @@ TEST_CASE("rank rates: a rank nobody set multiplies nothing")
     CHECK(rates.damage == doctest::Approx(1.0f));
     CHECK(rates.spellDamage == doctest::Approx(1.0f));
 }
+
+// How far off a creature notices somebody.
+
+TEST_CASE("notice: twenty yards against an equal")
+{
+    CHECK(stats::NoticeRange(30, 30, 0.0f, 60, 1.0f) == doctest::Approx(20.0f));
+}
+
+TEST_CASE("notice: a yard for every level of difference, both ways")
+{
+    // A viewer five levels below is noticed five yards further off.
+    CHECK(stats::NoticeRange(30, 25, 0.0f, 60, 1.0f) == doctest::Approx(25.0f));
+
+    // Five levels above, five yards closer.
+    CHECK(stats::NoticeRange(30, 35, 0.0f, 60, 1.0f) == doctest::Approx(15.0f));
+}
+
+TEST_CASE("notice: the gap stops counting at twenty-five levels")
+{
+    // A level 30 and a level 5 are noticed at the same distance by a level 60.
+    CHECK(stats::NoticeRange(60, 30, 0.0f, 60, 1.0f)
+          == doctest::Approx(stats::NoticeRange(60, 5, 0.0f, 60, 1.0f)));
+}
+
+TEST_CASE("notice: never closer than five yards")
+{
+    // Twenty levels above would give nothing at all.
+    CHECK(stats::NoticeRange(10, 40, 0.0f, 60, 1.0f) == doctest::Approx(5.0f));
+}
+
+TEST_CASE("notice: detection only counts five levels under the cap")
+{
+    // A level 55 against a cap of 60: the auras are read.
+    CHECK(stats::NoticeRange(55, 55, 10.0f, 60, 1.0f) == doctest::Approx(30.0f));
+
+    // A level 56 is too close to the cap; the same auras add nothing.
+    CHECK(stats::NoticeRange(56, 56, 10.0f, 60, 1.0f) == doctest::Approx(20.0f));
+}
+
+TEST_CASE("notice: the rate multiplies the whole answer, and nothing means nobody")
+{
+    CHECK(stats::NoticeRange(30, 30, 0.0f, 60, 2.0f) == doctest::Approx(40.0f));
+    CHECK(stats::NoticeRange(30, 30, 0.0f, 60, 0.5f) == doctest::Approx(10.0f));
+
+    // A server that turns noticing off is not a server with a five yard floor.
+    CHECK(stats::NoticeRange(30, 30, 100.0f, 60, 0.0f) == doctest::Approx(0.0f));
+}

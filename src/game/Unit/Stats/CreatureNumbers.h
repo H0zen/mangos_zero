@@ -129,6 +129,48 @@ namespace stats
         return scaled < 1 ? 1 : scaled;
     }
 
+    /**
+     * @brief How far off a creature notices somebody.
+     *
+     * Twenty yards against an equal, a yard more for every level the viewer is below it, a
+     * yard less for every level above -- and no more than twenty-five levels' worth either
+     * way, so a level 30 and a level 5 are noticed at the same distance by a level 60.
+     * Never closer than five yards, which is where a fight happens anyway.
+     *
+     * Detection yards are what the two sides' auras add between them, and they only count
+     * while the creature is low enough for the client to bother: five levels under the cap.
+     * The rate is what this server multiplies the whole answer by, and a rate of nothing
+     * means a creature notices nobody.
+     */
+    inline float NoticeRange(uint32 creatureLevel, uint32 viewerLevel, float detectionYards,
+                             uint32 maxPlayerLevel, float rate)
+    {
+        if (rate == 0.0f)
+        {
+            return 0.0f;
+        }
+
+        int32 gap = int32(viewerLevel) - int32(creatureLevel);
+        if (gap < -25)
+        {
+            gap = -25;
+        }
+
+        float yards = 20.0f - float(gap);
+
+        if (creatureLevel + 5 <= maxPlayerLevel)
+        {
+            yards += detectionYards;
+        }
+
+        if (yards < 5.0f)
+        {
+            yards = 5.0f;
+        }
+
+        return yards * rate;
+    }
+
     /// What a creature stops with a shield it does not carry. It has no shield
     /// and no shield value in its row, so the game answers from its size.
     inline uint32 CreatureShieldBlock(uint32 level, float strength)

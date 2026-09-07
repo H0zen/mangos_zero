@@ -1094,24 +1094,14 @@ bool Creature::Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo cons
         iData->OnCreatureCreate(this);
     }
 
-    switch (GetCreatureInfo()->Rank)
-    {
-        case CREATURE_ELITE_RARE:
-            Watch().CorpseDelay(sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_RARE));
-            break;
-        case CREATURE_ELITE_ELITE:
-            Watch().CorpseDelay(sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_ELITE));
-            break;
-        case CREATURE_ELITE_RAREELITE:
-            Watch().CorpseDelay(sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_RAREELITE));
-            break;
-        case CREATURE_ELITE_WORLDBOSS:
-            Watch().CorpseDelay(sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_WORLDBOSS));
-            break;
-        default:
-            Watch().CorpseDelay(sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_NORMAL));
-            break;
-    }
+    vigil::Decay decay;
+    decay.normal = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_NORMAL);
+    decay.rare = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_RARE);
+    decay.elite = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_ELITE);
+    decay.rareElite = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_RAREELITE);
+    decay.worldBoss = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_WORLDBOSS);
+
+    Watch().CorpseDelay(vigil::DecayFor(GetCreatureInfo()->Rank, decay));
 
     m_links.Enrol(*cPos.GetMap());
 
@@ -1597,46 +1587,14 @@ bool Creature::TakesQuest(uint32 quest_id) const
  */
 float Creature::GetAttackDistance(Unit const* pl) const
 {
-    float aggroRate = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_AGGRO);
-    if (aggroRate == 0)
-    {
-        return 0.0f;
-    }
+    // What the two sides' auras add between them: one side sees further, the other is
+    // seen from further off.
+    const float detection = float(GetTotalAuraModifier(SPELL_AURA_MOD_DETECT_RANGE))
+                          + float(pl->GetTotalAuraModifier(SPELL_AURA_MOD_DETECTED_RANGE));
 
-    uint32 playerlevel   = pl->GetLevelForTarget(this);
-    uint32 creaturelevel = GetLevelForTarget(pl);
-
-    int32 leveldif       = int32(playerlevel) - int32(creaturelevel);
-
-    // "The maximum Aggro Radius has a cap of 25 levels under. Example: A level 30 char has the same Aggro Radius of a level 5 char on a level 60 mob."
-    if (leveldif < - 25)
-    {
-        leveldif = -25;
-    }
-
-    // "The aggro radius of a mob having the same level as the player is roughly 20 yards"
-    float RetDistance = 20;
-
-    // "Aggro Radius varies with level difference at a rate of roughly 1 yard/level"
-    // radius grow if playlevel < creaturelevel
-    RetDistance -= (float)leveldif;
-
-    if (creaturelevel + 5 <= sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
-    {
-        // detect range auras
-        RetDistance += GetTotalAuraModifier(SPELL_AURA_MOD_DETECT_RANGE);
-
-        // detected range auras
-        RetDistance += pl->GetTotalAuraModifier(SPELL_AURA_MOD_DETECTED_RANGE);
-    }
-
-    // "Minimum Aggro Radius for a mob seems to be combat range (5 yards)"
-    if (RetDistance < 5)
-    {
-        RetDistance = 5;
-    }
-
-    return (RetDistance * aggroRate);
+    return stats::NoticeRange(GetLevelForTarget(pl), pl->GetLevelForTarget(this), detection,
+                              sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL),
+                              sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_AGGRO));
 }
 
 /**
