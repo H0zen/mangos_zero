@@ -88,31 +88,6 @@ bool Item::IsNotEmptyBag() const
 }
 
 /**
- * @brief Updates remaining duration for a temporary item.
- *
- * @param owner The owning player.
- * @param diff Elapsed time in milliseconds.
- */
-void Item::UpdateDuration(Player* owner, uint32 diff)
-{
-    if (!GetUInt32Value(ITEM_FIELD_DURATION))
-    {
-        return;
-    }
-
-    // DEBUG_LOG("Item::UpdateDuration Item (Entry: %u Duration %u Diff %u)", GetEntry(), GetUInt32Value(ITEM_FIELD_DURATION), diff);
-
-    if (GetUInt32Value(ITEM_FIELD_DURATION) <= diff)
-    {
-        owner->DestroyItem(GetBagSlot(), GetSlot(), true);
-        return;
-    }
-
-    SetUInt32Value(ITEM_FIELD_DURATION, GetUInt32Value(ITEM_FIELD_DURATION) - diff);
-    SetState(ITEM_CHANGED, owner);                          // save new time in database
-}
-
-/**
  * @brief Persists the item instance and saved loot state to the database.
  */
 void Item::SaveToDB()

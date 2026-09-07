@@ -378,7 +378,16 @@ class Item : public Object
         void SetText(std::string const& text) { m_text = text; }
 
         void SendTimeUpdate(Player* owner);
-        void UpdateDuration(Player* owner, uint32 diff);
+        /**
+         * @brief Spend elapsed time off this item's clock.
+         *
+         * The clock is a field the client reads, so it lives in the mirror rather than in a
+         * Lifespan of its own. What becomes of an item whose time is up is the holder's to
+         * decide, which is why this only reports it.
+         *
+         * @return true once the clock is out.
+         */
+        bool SpendDuration(uint32 elapsed, Player* holder);
 
         // spell charges (signed but stored as unsigned)
         int32 GetSpellCharges(uint8 index/*0..5*/ = 0) const { return GetInt32Value(ITEM_FIELD_SPELL_CHARGES + index); }

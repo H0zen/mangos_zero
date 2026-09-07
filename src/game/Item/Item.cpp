@@ -498,6 +498,28 @@ void Item::SetItemRandomProperties(int32 randomPropId)
  * @param state The new update state.
  * @param forplayer Optional player context for queue management.
  */
+bool Item::SpendDuration(uint32 elapsed, Player* holder)
+{
+    const uint32 left = GetUInt32Value(ITEM_FIELD_DURATION);
+
+    // No clock: it stays until something other than time takes it.
+    if (!left)
+    {
+        return false;
+    }
+
+    if (left <= elapsed)
+    {
+        SetUInt32Value(ITEM_FIELD_DURATION, 0);
+        return true;
+    }
+
+    SetUInt32Value(ITEM_FIELD_DURATION, left - elapsed);
+    SetState(ITEM_CHANGED, holder);                         // save new time in database
+
+    return false;
+}
+
 void Item::SetState(ItemUpdateState state, Player* forplayer)
 {
     Player* owner = forplayer;

@@ -136,7 +136,8 @@ class Corpse : public Occupant
             return m_gridRef;
         }
 
-        bool IsExpired(time_t t) const;
+        /// Is the sweep entitled to take it? Bones lie for an hour, a body for three days.
+        bool IsExpired(time_t now) const;
     private:
         GridReference<Corpse> m_gridRef;
 

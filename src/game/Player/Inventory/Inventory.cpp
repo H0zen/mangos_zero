@@ -269,7 +269,10 @@ void Inventory::RunClocks(uint32 elapsed, bool realTimeOnly)
 
         if (!realTimeOnly || (item->GetProto()->ExtraFlags & ITEM_EXTRA_REAL_TIME_DURATION))
         {
-            item->UpdateDuration(&m_owner, elapsed);
+            if (item->SpendDuration(elapsed, &m_owner))
+            {
+                m_owner.DestroyItem(item->GetBagSlot(), item->GetSlot(), true);
+            }
         }
     }
 }

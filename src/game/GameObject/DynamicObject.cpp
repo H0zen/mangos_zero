@@ -172,7 +172,7 @@ bool DynamicObject::Create(uint32 guidlow, Unit* caster, uint32 spellId, SpellEf
         return false;
     }
 
-    m_aliveDuration = duration;
+    m_life.Grant(uint32(duration > 0 ? duration : 0));
     m_radius = radius;
     m_effIndex = effIndex;
     m_spellId = spellId;
@@ -208,16 +208,7 @@ void DynamicObject::Update(uint32 /*update_diff*/, uint32 p_time)
         return;
     }
 
-    bool deleteThis = false;
-
-    if (m_aliveDuration > int32(p_time))
-    {
-        m_aliveDuration -= p_time;
-    }
-    else
-    {
-        deleteThis = true;
-    }
+    const bool spent = m_life.Spend(p_time);
 
     // have radius and work as persistent effect
     if (m_radius)
@@ -227,7 +218,7 @@ void DynamicObject::Update(uint32 /*update_diff*/, uint32 p_time)
         Cell::VisitAllObjects(this, notifier, m_radius);
     }
 
-    if (deleteThis)
+    if (spent)
     {
         caster->Conjured().Forget(GetObjectGuid());
         Delete();
@@ -278,7 +269,7 @@ namespace
 
 void DynamicObject::Delay(int32 delaytime)
 {
-    m_aliveDuration -= delaytime;
+    m_life.Shorten(delaytime);
 
     for (auto iter = m_affected.begin(); iter != m_affected.end();)
     {

@@ -323,20 +323,17 @@ bool Corpse::IsVisibleForInState(Player const* u, Occupant const* viewPoint, boo
     return IsInWorld() && u->IsInWorld() && SeenWithin(*this, *viewPoint, GetMap()->GetVisibilityDistance() + (inVisibleList ? World::GetVisibleObjectGreyDistance() : 0.0f), false);
 }
 
-/**
- * @brief Checks whether the corpse has expired.
- *
- * @param t The reference time to compare against.
- * @return true if the corpse should expire; otherwise, false.
- */
-bool Corpse::IsExpired(time_t t) const
+namespace
 {
-    if (m_type == CORPSE_BONES)
-    {
-        return m_time < t - 60 * MINUTE;
-    }
-    else
-    {
-        return m_time < t - 3 * DAY;
-    }
+    /// How long a body is left where it fell. A corpse waits three days for its owner to
+    /// come back for it; bones, which nobody can claim, are swept within the hour.
+    constexpr time_t BONES_LIE_FOR = 60 * MINUTE;
+    constexpr time_t BODY_LIES_FOR = 3 * DAY;
+}
+
+bool Corpse::IsExpired(time_t now) const
+{
+    const time_t lies = m_type == CORPSE_BONES ? BONES_LIE_FOR : BODY_LIES_FOR;
+
+    return m_time + lies < now;
 }

@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "Lifespan.h"
 #include "Occupant.h"
 #include "DBCEnums.h"
 #include "Unit.h"
@@ -51,7 +52,7 @@ class DynamicObject : public Occupant
         void Delete();
         uint32 GetSpellId() const { return m_spellId; }
         SpellEffectIndex GetEffIndex() const { return m_effIndex; }
-        uint32 GetDuration() const { return m_aliveDuration; }
+        uint32 GetDuration() const { return m_life.Left(); }
         ObjectGuid const& GetCasterGuid() const { return GetGuidValue(DYNAMICOBJECT_CASTER); }
         Unit* GetCaster() const;
         float GetRadius() const { return m_radius; }
@@ -105,7 +106,10 @@ class DynamicObject : public Occupant
     protected:
         uint32 m_spellId;
         SpellEffectIndex m_effIndex;
-        int32 m_aliveDuration;
+
+        /// How long the effect has left. An effect is always granted a length, so this is
+        /// always bounded, and running out is what ends it.
+        Lifespan m_life;
         float m_radius;                                     // radius apply persistent effect, 0 = no persistent effect
         bool m_positive;
         GuidSet m_affected;
