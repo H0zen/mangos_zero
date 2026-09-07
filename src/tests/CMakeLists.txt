@@ -72,6 +72,8 @@ set(TEST_SOURCES
     combat/test_manashield.cpp
 
     spells/test_auraindex.cpp
+
+    client/test_inflate.cpp
 )
 
 add_executable(mangos_tests ${TEST_SOURCES})
@@ -79,6 +81,7 @@ add_executable(mangos_tests ${TEST_SOURCES})
 target_link_libraries(mangos_tests
     PRIVATE
         doctest
+        clientarchive
         game
 )
 

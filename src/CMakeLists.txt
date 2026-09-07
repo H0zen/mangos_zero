@@ -1,5 +1,6 @@
 add_subdirectory(shared/Geometry)
 add_subdirectory(shared/terrain)
+add_subdirectory(shared/ClientArchive)
 
 add_subdirectory(shared)
 

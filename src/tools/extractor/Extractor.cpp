@@ -34,7 +34,7 @@
 #include "nav/NavMeshBuilder.hpp"
 #include "client/ModelLoaders.hpp"
 #include "client/MpqTileSource.hpp"
-#include "client/StormLibArchive.hpp"
+#include "client/MpqChainArchive.hpp"
 #include "stores/LiquidTypeStore.hpp"
 #include "stores/GameObjectDisplayInfoStore.hpp"
 #include "stores/MapDbcStore.hpp"
@@ -234,7 +234,7 @@ namespace
         return true;
     }
 
-    int ExtractDbc(StormLibArchive& mpq, const std::string& dest,
+    int ExtractDbc(MpqChainArchive& mpq, const std::string& dest,
                    const std::string& locale)
     {
         std::error_code ec;
@@ -787,9 +787,8 @@ int main(int argc, char** argv)
         return ok ? 0 : 1;
     }
 
-    StormLibArchive mpq;
-    const int opened = mpq.OpenClientData(opt.src, ClientArchives112(),
-                                          ClientLocaleArchives112(), opt.locale);
+    MpqChainArchive mpq;
+    const int opened = mpq.OpenClientData(opt.src, opt.locale);
     if (!opened)
     {
         g_console.Error("no client archives opened under " + opt.src);
@@ -823,9 +822,8 @@ int main(int argc, char** argv)
                 continue;                       // already written, at the dbc/ root
             }
 
-            StormLibArchive other;
-            if (!other.OpenClientData(opt.src, ClientArchives112(),
-                                       ClientLocaleArchives112(), loc))
+            MpqChainArchive other;
+            if (!other.OpenClientData(opt.src, loc))
             {
                 g_console.Warn("  no archives for locale " + loc + " -- skipped");
                 continue;

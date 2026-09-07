@@ -67,15 +67,14 @@ target_link_libraries(extractor_data
 set_target_properties(extractor_data PROPERTIES FOLDER "tools")
 
 add_library(extractor_mpq STATIC
-        client/StormLibArchive.cpp
-        client/StormLibArchive.hpp
+        client/MpqChainArchive.cpp
+        client/MpqChainArchive.hpp
     )
 
 target_link_libraries(extractor_mpq
     PUBLIC
         extractor_data
-    PRIVATE
-        stormlib
+        clientarchive
 )
 
 set_target_properties(extractor_mpq PROPERTIES FOLDER "tools")
