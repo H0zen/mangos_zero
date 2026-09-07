@@ -58,6 +58,7 @@
 #include "Unit.h"
 #include "Tenure.h"
 #include "CreatureLinks.h"
+#include "Stats/CreatureNumbers.h"
 #include "Stats/CreatureSheet.h"
 #include "SharedDefines.h"
 #include "LootMgr.h"
@@ -579,9 +580,8 @@ class Creature : public Unit
         Tenure& Term() { return m_tenure; }
         Tenure const& Term() const { return m_tenure; }
 
-        static float _GetHealthMod(int32 Rank);             ///< Get custom factor to scale health (default 1, CONFIG_FLOAT_RATE_CREATURE_*_HP)
-        static float _GetDamageMod(int32 Rank);             ///< Get custom factor to scale damage (default 1, CONFIG_FLOAT_RATE_*_DAMAGE)
-        static float _GetSpellDamageMod(int32 Rank);        ///< Get custom factor to scale spell damage (default 1, CONFIG_FLOAT_RATE_*_SPELLDAMAGE)
+        /// What this server multiplies a rank's health, damage and spell damage by.
+        static stats::RankRates RatesFor(int32 rank);
 
         VendorItemData const* GetVendorItems() const;
         VendorItemData const* GetVendorTemplateItems() const;

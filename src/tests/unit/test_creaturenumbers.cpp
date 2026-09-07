@@ -180,3 +180,76 @@ TEST_CASE("creature shield block: both halves are counted down, not rounded")
     // level 5 gives two, not two and a half; strength 39 gives one, not two
     CHECK(stats::CreatureShieldBlock(5, 39.0f) == 3u);
 }
+
+// The level a creature comes out at, and what it is made of once it has one.
+//
+// The rank rates are handed in rather than read from a configuration, so what a
+// rare elite is worth can be asked with no world to ask it in.
+
+TEST_CASE("level: a forced level wins over the band")
+{
+    CHECK(stats::CreatureLevel(10, 20, 17, 12) == 17);
+    CHECK(stats::CreatureLevel(10, 10, 60, 10) == 60);
+}
+
+TEST_CASE("level: a band of one level needs no roll")
+{
+    CHECK(stats::CreatureLevel(35, 35, 0, 999) == 35);
+}
+
+TEST_CASE("level: a band takes the roll it was given")
+{
+    CHECK(stats::CreatureLevel(10, 20, 0, 14) == 14);
+}
+
+TEST_CASE("vitals: the table is scaled by the template's own multipliers")
+{
+    const stats::Vitals made = stats::VitalsFromTable(1000, 500, 1.5f, 2.0f);
+
+    CHECK(made.health == 1500);
+    CHECK(made.mana == 1000);
+}
+
+TEST_CASE("vitals: the band is read at the level the creature came out at")
+{
+    // A band from level 10 to 20, health 100 to 200: level 15 sits halfway.
+    const stats::Vitals middle = stats::VitalsFromBand(200, 100, 60, 20, 15, 10, 20);
+    CHECK(middle.health == 150);
+    CHECK(middle.mana == 40);
+
+    // The ends are the ends, whichever way round the row states them.
+    const stats::Vitals bottom = stats::VitalsFromBand(100, 200, 20, 60, 10, 10, 20);
+    CHECK(bottom.health == 100);
+    CHECK(bottom.mana == 20);
+
+    const stats::Vitals top = stats::VitalsFromBand(100, 200, 20, 60, 20, 10, 20);
+    CHECK(top.health == 200);
+    CHECK(top.mana == 60);
+}
+
+TEST_CASE("vitals: a band of one level sits at its start")
+{
+    const stats::Vitals made = stats::VitalsFromBand(300, 100, 90, 10, 40, 40, 40);
+
+    CHECK(made.health == 100);
+    CHECK(made.mana == 10);
+}
+
+TEST_CASE("health: a rate that would leave nothing still leaves one")
+{
+    CHECK(stats::ScaledHealth(1000, 1.0f) == 1000);
+    CHECK(stats::ScaledHealth(1000, 2.5f) == 2500);
+
+    // A server that turns creatures right down does not get things alive with no health.
+    CHECK(stats::ScaledHealth(1000, 0.0f) == 1);
+    CHECK(stats::ScaledHealth(1, 0.4f) == 1);
+}
+
+TEST_CASE("rank rates: a rank nobody set multiplies nothing")
+{
+    stats::RankRates rates;
+
+    CHECK(rates.health == doctest::Approx(1.0f));
+    CHECK(rates.damage == doctest::Approx(1.0f));
+    CHECK(rates.spellDamage == doctest::Approx(1.0f));
+}

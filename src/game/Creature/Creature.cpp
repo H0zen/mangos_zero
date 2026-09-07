@@ -1467,7 +1467,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
     uint32 curhealth = data->curhealth;
     if (curhealth)
     {
-        curhealth = uint32(curhealth * _GetHealthMod(GetCreatureInfo()->Rank));
+        curhealth = uint32(curhealth * RatesFor(GetCreatureInfo()->Rank).health);
         if (curhealth < 1)
         {
             curhealth = 1;

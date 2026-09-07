@@ -75,15 +75,14 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
 
     uint32 rank = IsPet() ? 0 : cinfo->Rank;                // TODO :: IsPet probably not needed here
 
-    // level
-    uint32 level = forcedLevel;
     uint32 const minlevel = cinfo->MinLevel;
     uint32 const maxlevel = cinfo->MaxLevel;
 
-    if (level == USE_DEFAULT_DATABASE_LEVEL)
-    {
-        level = minlevel == maxlevel ? minlevel : urand(minlevel, maxlevel);
-    }
+    stats::RankRates const rates = RatesFor(rank);
+
+    const uint32 level = stats::CreatureLevel(minlevel, maxlevel,
+                                              forcedLevel == USE_DEFAULT_DATABASE_LEVEL ? 0 : forcedLevel,
+                                              minlevel == maxlevel ? minlevel : urand(minlevel, maxlevel));
 
     SetLevel(level);
 
@@ -91,52 +90,31 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
     // Calculate level dependent stats
     //////////////////////////////////////////////////////////////////////////
 
-    uint32 health;
-    uint32 mana;
+    stats::Vitals made;
 
     // TODO: Remove cinfo->ArmorMultiplier test workaround to disable classlevelstats when DB is ready
     CreatureClassLvlStats const* cCLS = sObjectMgr.GetCreatureClassLvlStats(level, cinfo->UnitClass);
     if (cinfo->ArmorMultiplier > 0 && cCLS)
     {
-        // Use Creature Stats to calculate stat values
-
-        // health
-        health = cCLS->BaseHealth * cinfo->HealthMultiplier;
-
-        // mana
-        mana = cCLS->BaseMana * cinfo->PowerMultiplier;
+        made = stats::VitalsFromTable(cCLS->BaseHealth, cCLS->BaseMana,
+                                      cinfo->HealthMultiplier, cinfo->PowerMultiplier);
+    }
+    else if (forcedLevel == USE_DEFAULT_DATABASE_LEVEL || (forcedLevel >= minlevel && forcedLevel <= maxlevel))
+    {
+        made = stats::VitalsFromBand(cinfo->MaxLevelHealth, cinfo->MinLevelHealth,
+                                     cinfo->MaxLevelMana, cinfo->MinLevelMana,
+                                     level, minlevel, maxlevel);
     }
     else
     {
-        if (forcedLevel == USE_DEFAULT_DATABASE_LEVEL || (forcedLevel >= minlevel && forcedLevel <= maxlevel))
-        {
-            // Use old style to calculate stat values
-            float rellevel = maxlevel == minlevel ? 0 : (float(level - minlevel)) / (maxlevel - minlevel);
-
-            // health
-            uint32 minhealth = std::min(cinfo->MaxLevelHealth, cinfo->MinLevelHealth);
-            uint32 maxhealth = std::max(cinfo->MaxLevelHealth, cinfo->MinLevelHealth);
-            health = uint32(minhealth + uint32(rellevel * (maxhealth - minhealth)));
-
-            // mana
-            uint32 minmana = std::min(cinfo->MaxLevelMana, cinfo->MinLevelMana);
-            uint32 maxmana = std::max(cinfo->MaxLevelMana, cinfo->MinLevelMana);
-            mana = minmana + uint32(rellevel * (maxmana - minmana));
-        }
-        else
-        {
-            sLog.outError("Creature::SelectLevel> Error trying to set level(%u) for creature %s without enough data to do it!", level, GetGuidStr().c_str());
-            // probably wrong
-            health = (cinfo->MaxLevelHealth / cinfo->MaxLevel) * level;
-            mana = (cinfo->MaxLevelMana / cinfo->MaxLevel) * level;
-        }
+        sLog.outError("Creature::SelectLevel> Error trying to set level(%u) for creature %s without enough data to do it!", level, GetGuidStr().c_str());
+        // probably wrong
+        made.health = (cinfo->MaxLevelHealth / cinfo->MaxLevel) * level;
+        made.mana = (cinfo->MaxLevelMana / cinfo->MaxLevel) * level;
     }
 
-    health *= _GetHealthMod(rank); // Apply custom config setting
-    if (health < 1)
-    {
-        health = 1;
-    }
+    const uint32 health = stats::ScaledHealth(made.health, rates.health);
+    const uint32 mana = made.mana;
 
     //////////////////////////////////////////////////////////////////////////
     // Set values
@@ -183,7 +161,7 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
     }
 
     // damage
-    float damagemod = _GetDamageMod(rank);
+    float damagemod = rates.damage;
 
     SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, cinfo->MinMeleeDmg * damagemod);
     SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, cinfo->MaxMeleeDmg * damagemod);
@@ -198,76 +176,46 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
 }
 
 /**
- * @brief Gets the configured health multiplier for a creature rank.
+ * @brief What this server multiplies a rank's numbers by.
  *
- * @param Rank The creature elite rank.
- * @return The configured health rate multiplier.
+ * The three rates are read together because they are one statement about how hard a rank is
+ * meant to be, and because this is the only place in the level arithmetic that a
+ * configuration is read at all: everything below the call is a function of the values.
  */
-float Creature::_GetHealthMod(int32 Rank)
+stats::RankRates Creature::RatesFor(int32 rank)
 {
-    switch (Rank)                                           // define rates for each elite rank
-    {
-        case CREATURE_ELITE_NORMAL:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_NORMAL_HP);
-        case CREATURE_ELITE_ELITE:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_ELITE_HP);
-        case CREATURE_ELITE_RAREELITE:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_RAREELITE_HP);
-        case CREATURE_ELITE_WORLDBOSS:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_WORLDBOSS_HP);
-        case CREATURE_ELITE_RARE:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_RARE_HP);
-        default:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_ELITE_HP);
-    }
-}
+    stats::RankRates rates;
 
-/**
- * @brief Gets the configured damage multiplier for a creature rank.
- *
- * @param Rank The creature elite rank.
- * @return The configured damage rate multiplier.
- */
-float Creature::_GetDamageMod(int32 Rank)
-{
-    switch (Rank)                                           // define rates for each elite rank
+    switch (rank)
     {
         case CREATURE_ELITE_NORMAL:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_NORMAL_DAMAGE);
-        case CREATURE_ELITE_ELITE:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_ELITE_DAMAGE);
+            rates.health = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_NORMAL_HP);
+            rates.damage = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_NORMAL_DAMAGE);
+            rates.spellDamage = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_NORMAL_SPELLDAMAGE);
+            break;
         case CREATURE_ELITE_RAREELITE:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_RAREELITE_DAMAGE);
+            rates.health = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_RAREELITE_HP);
+            rates.damage = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_RAREELITE_DAMAGE);
+            rates.spellDamage = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_RAREELITE_SPELLDAMAGE);
+            break;
         case CREATURE_ELITE_WORLDBOSS:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_WORLDBOSS_DAMAGE);
+            rates.health = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_WORLDBOSS_HP);
+            rates.damage = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_WORLDBOSS_DAMAGE);
+            rates.spellDamage = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_WORLDBOSS_SPELLDAMAGE);
+            break;
         case CREATURE_ELITE_RARE:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_RARE_DAMAGE);
+            rates.health = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_RARE_HP);
+            rates.damage = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_RARE_DAMAGE);
+            rates.spellDamage = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_RARE_SPELLDAMAGE);
+            break;
+        // An elite, and anything whose row names a rank this build does not know.
+        case CREATURE_ELITE_ELITE:
         default:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_ELITE_DAMAGE);
+            rates.health = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_ELITE_HP);
+            rates.damage = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_ELITE_DAMAGE);
+            rates.spellDamage = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_ELITE_SPELLDAMAGE);
+            break;
     }
-}
 
-/**
- * @brief Gets the spell damage modifier for a creature elite rank.
- *
- * @param Rank The creature elite rank.
- * @return The configured spell damage multiplier.
- */
-float Creature::_GetSpellDamageMod(int32 Rank)
-{
-    switch (Rank)                                           // define rates for each elite rank
-    {
-        case CREATURE_ELITE_NORMAL:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_NORMAL_SPELLDAMAGE);
-        case CREATURE_ELITE_ELITE:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_ELITE_SPELLDAMAGE);
-        case CREATURE_ELITE_RAREELITE:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_RAREELITE_SPELLDAMAGE);
-        case CREATURE_ELITE_WORLDBOSS:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_WORLDBOSS_SPELLDAMAGE);
-        case CREATURE_ELITE_RARE:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_RARE_SPELLDAMAGE);
-        default:
-            return sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_ELITE_SPELLDAMAGE);
-    }
+    return rates;
 }

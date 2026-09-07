@@ -27,6 +27,8 @@
 
 #include "Modifiers.h"
 
+#include <algorithm>
+
 /**
  * The numbers a creature fights with, worked out and nothing else.
  *
@@ -40,6 +42,93 @@
  */
 namespace stats
 {
+    /**
+     * @brief What a creature's rank multiplies its numbers by.
+     *
+     * A rank is a statement about how hard the thing is meant to be, and a server says how
+     * much harder by three numbers. They are read from the configuration and handed in;
+     * nothing here knows where they came from.
+     */
+    struct RankRates
+    {
+        float health = 1.0f;
+        float damage = 1.0f;
+        float spellDamage = 1.0f;
+    };
+
+    /**
+     * @brief The level a creature spawns at.
+     *
+     * A template names a band. A spawn either forces a level or takes one from the band,
+     * and `roll` is that draw -- passed in, so the answer can be checked without a die.
+     */
+    inline uint32 CreatureLevel(uint32 minLevel, uint32 maxLevel, uint32 forced, uint32 roll)
+    {
+        if (forced != 0)
+        {
+            return forced;
+        }
+
+        if (minLevel == maxLevel)
+        {
+            return minLevel;
+        }
+
+        return roll;
+    }
+
+    /// What a creature is made of before its rank is applied.
+    struct Vitals
+    {
+        uint32 health = 1;
+        uint32 mana = 0;
+    };
+
+    /// From the class-and-level table, which is scaled by the template's own multipliers.
+    inline Vitals VitalsFromTable(uint32 baseHealth, uint32 baseMana,
+                                  float healthMultiplier, float powerMultiplier)
+    {
+        Vitals made;
+        made.health = uint32(baseHealth * healthMultiplier);
+        made.mana = uint32(baseMana * powerMultiplier);
+
+        return made;
+    }
+
+    /**
+     * @brief From the template's own band, read at the level the creature came out at.
+     *
+     * The band is given by its ends whichever way round the row states them, and the level
+     * decides how far along it this creature sits. A band of one level sits at its start.
+     */
+    inline Vitals VitalsFromBand(uint32 healthAtOneEnd, uint32 healthAtOther,
+                                 uint32 manaAtOneEnd, uint32 manaAtOther,
+                                 uint32 level, uint32 minLevel, uint32 maxLevel)
+    {
+        const float along = maxLevel == minLevel
+                          ? 0.0f
+                          : float(level - minLevel) / float(maxLevel - minLevel);
+
+        const uint32 leastHealth = std::min(healthAtOneEnd, healthAtOther);
+        const uint32 mostHealth = std::max(healthAtOneEnd, healthAtOther);
+        const uint32 leastMana = std::min(manaAtOneEnd, manaAtOther);
+        const uint32 mostMana = std::max(manaAtOneEnd, manaAtOther);
+
+        Vitals made;
+        made.health = leastHealth + uint32(along * (mostHealth - leastHealth));
+        made.mana = leastMana + uint32(along * (mostMana - leastMana));
+
+        return made;
+    }
+
+    /// Nothing alive has less than one point of health, whatever the rate says.
+    inline uint32 ScaledHealth(uint32 health, float rate)
+    {
+        const uint32 scaled = uint32(health * rate);
+
+        return scaled < 1 ? 1 : scaled;
+    }
+
     /// What a creature stops with a shield it does not carry. It has no shield
     /// and no shield value in its row, so the game answers from its size.
     inline uint32 CreatureShieldBlock(uint32 level, float strength)

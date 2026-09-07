@@ -241,7 +241,7 @@ uint32 Unit::SpellDamageBonusDone(Unit* pVictim, SpellEntry const* spellProto, u
     // Creature damage
     if (IsCreature() && !((Creature*)this)->IsPet())
     {
-        DoneTotalMod *= Creature::_GetSpellDamageMod(((Creature*)this)->GetCreatureInfo()->Rank);
+        DoneTotalMod *= Creature::RatesFor(((Creature*)this)->GetCreatureInfo()->Rank).spellDamage;
     }
 
     const auto mModDamagePercentDone = GetAurasByType(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE);
