@@ -1301,7 +1301,8 @@ void Pet::CastPetAuras(bool current)
         return;
     }
 
-    for (PetAuraSet::const_iterator itr = owner->m_petAuras.begin(); itr != owner->m_petAuras.end();)
+    PetAuraSet const& granted = owner->Carrying().ForItsPet();
+    for (PetAuraSet::const_iterator itr = granted.begin(); itr != granted.end();)
     {
         PetAura const* pa = *itr;
         ++itr;

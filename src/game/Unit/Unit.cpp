@@ -5904,7 +5904,7 @@ void Unit::SetContestedPvP(Player* attackedPlayer)
  */
 void Unit::AddPetAura(PetAura const* petSpell)
 {
-    m_petAuras.insert(petSpell);
+    m_auras.ForItsPet().insert(petSpell);
     if (Pet* pet = GetPet())
     {
         pet->CastPetAura(petSpell);
@@ -5918,7 +5918,7 @@ void Unit::AddPetAura(PetAura const* petSpell)
  */
 void Unit::RemovePetAura(PetAura const* petSpell)
 {
-    m_petAuras.erase(petSpell);
+    m_auras.ForItsPet().erase(petSpell);
     if (Pet* pet = GetPet())
     {
         pet->RemoveAuras(petSpell->GetAura(pet->GetEntry()));

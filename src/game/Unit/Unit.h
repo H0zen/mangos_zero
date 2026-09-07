@@ -811,7 +811,7 @@ class Unit : public Occupant
         typedef ::AuraList AuraList;
 
         typedef std::set < uint32 /*playerGuidLow*/ > ComboPointHolderSet;
-        typedef std::map < SpellEntry const*, ObjectGuid /*targetGuid*/ > TrackedAuraTargetMap;
+        typedef ::TrackedAuraTargetMap TrackedAuraTargetMap;
 
         virtual ~Unit();
 
@@ -3601,8 +3601,8 @@ class Unit : public Occupant
         virtual bool IsVisibleInGridForPlayer(Player* pl) const = 0;
         bool IsInvisibleForAlive() const;
 
-        TrackedAuraTargetMap&       GetTrackedAuraTargets(TrackedAuraType type)       { return m_trackedAuraTargets[type]; }
-        TrackedAuraTargetMap const& GetTrackedAuraTargets(TrackedAuraType type) const { return m_trackedAuraTargets[type]; }
+        TrackedAuraTargetMap&       GetTrackedAuraTargets(TrackedAuraType type)       { return m_auras.Tracked(type); }
+        TrackedAuraTargetMap const& GetTrackedAuraTargets(TrackedAuraType type) const { return m_auras.Tracked(type); }
         SpellImmuneList m_spellImmune[MAX_SPELL_IMMUNITY];
 
         // Threat related methods
@@ -3823,8 +3823,7 @@ class Unit : public Occupant
         void UpdateAuraForGroup(uint8 slot);
 
         // pet auras
-        typedef std::set<PetAura const*> PetAuraSet;
-        PetAuraSet m_petAuras;
+        typedef ::PetAuraSet PetAuraSet;
         void AddPetAura(PetAura const* petSpell);
         void RemovePetAura(PetAura const* petSpell);
 
@@ -3906,7 +3905,6 @@ class Unit : public Occupant
         AuraBook m_auras;
 
         // Store Auras for which the target must be tracked
-        TrackedAuraTargetMap m_trackedAuraTargets[MAX_TRACKED_AURA_TYPES];
 
         Conjurations m_conjured;
         bool m_isSorted;

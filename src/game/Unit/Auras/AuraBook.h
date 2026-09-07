@@ -27,18 +27,29 @@
 
 #include "SpellAuraDefines.h"
 
+#include "ObjectGuid.h"
+#include "SharedDefines.h"
+
 #include <list>
 #include <map>
+#include <set>
 #include <utility>
 
 class Aura;
+class PetAura;
 class SpellAuraHolder;
+struct SpellEntry;
 
 typedef std::multimap<uint32 /*spellId*/, SpellAuraHolder*> SpellAuraHolderMap;
 typedef std::pair<SpellAuraHolderMap::iterator, SpellAuraHolderMap::iterator> SpellAuraHolderBounds;
 typedef std::pair<SpellAuraHolderMap::const_iterator, SpellAuraHolderMap::const_iterator> SpellAuraHolderConstBounds;
 typedef std::list<SpellAuraHolder*> SpellAuraHolderList;
 typedef std::list<Aura*> AuraList;
+
+/// The one target a tracked spell is on, per spell. A caster may hold only one at a time.
+typedef std::map<SpellEntry const*, ObjectGuid /*targetGuid*/> TrackedAuraTargetMap;
+
+typedef std::set<PetAura const*> PetAuraSet;
 
 /**
  * @brief What a unit is carrying, kept by the spell that put it there.
@@ -136,6 +147,20 @@ class AuraBook
             }
         }
 
+        /**
+         * @brief Whom this unit's tracked spells of one kind are on.
+         *
+         * A few spells may be on only one target at a time from one caster -- a soul link,
+         * a hunter's mark -- so the caster keeps the target here and takes the old one off
+         * when it puts a new one on.
+         */
+        TrackedAuraTargetMap&       Tracked(TrackedAuraType type)       { return m_tracked[type]; }
+        TrackedAuraTargetMap const& Tracked(TrackedAuraType type) const { return m_tracked[type]; }
+
+        /// What this unit hands to the pet at its heel, whichever pet that turns out to be.
+        PetAuraSet&       ForItsPet()       { return m_petAuras; }
+        PetAuraSet const& ForItsPet() const { return m_petAuras; }
+
         /// Somebody is still holding it, so it cannot be destroyed until the tick is over.
         void Defer(Aura* aura) { m_deferredAuras.push_back(aura); }
         void Defer(SpellAuraHolder* holder) { m_deferredHolders.push_back(holder); }
@@ -154,4 +179,7 @@ class AuraBook
 
         AuraList m_deferredAuras;
         SpellAuraHolderList m_deferredHolders;
+
+        TrackedAuraTargetMap m_tracked[MAX_TRACKED_AURA_TYPES];
+        PetAuraSet m_petAuras;
 };
