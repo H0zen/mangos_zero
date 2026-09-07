@@ -300,3 +300,45 @@ TEST_CASE("notice: the rate multiplies the whole answer, and nothing means nobod
     // A server that turns noticing off is not a server with a five yard floor.
     CHECK(stats::NoticeRange(30, 30, 100.0f, 60, 0.0f) == doctest::Approx(0.0f));
 }
+
+// What a fall costs.
+
+TEST_CASE("fall: a short drop is free")
+{
+    // The share reaches nothing at 0.2426 / 0.018, which is 13.48 yards.
+    CHECK(stats::FallShare(10.0f, 0.0f) == doctest::Approx(0.0f));
+    CHECK(stats::FallShare(13.0f, 0.0f) == doctest::Approx(0.0f));
+    CHECK(stats::FallShare(13.4f, 0.0f) == doctest::Approx(0.0f));
+    CHECK(stats::FallShare(14.0f, 0.0f) > 0.0f);
+}
+
+TEST_CASE("fall: the share rises with the drop")
+{
+    const float shorter = stats::FallShare(20.0f, 0.0f);
+    const float longer = stats::FallShare(40.0f, 0.0f);
+
+    CHECK(longer > shorter);
+
+    // 0.018 * 40 - 0.2426
+    CHECK(longer == doctest::Approx(0.4774f));
+}
+
+TEST_CASE("fall: what is forgiven is taken off the drop first")
+{
+    // Twenty yards forgiven turns a forty yard fall into a twenty yard one.
+    CHECK(stats::FallShare(40.0f, 20.0f) == doctest::Approx(stats::FallShare(20.0f, 0.0f)));
+
+    // Enough forgiveness makes any fall free.
+    CHECK(stats::FallShare(40.0f, 40.0f) == doctest::Approx(0.0f));
+}
+
+TEST_CASE("fall: the damage is a share of everything he has, at the server's rate")
+{
+    // A forty yard fall takes about 48 percent of a thousand.
+    CHECK(stats::FallDamage(40.0f, 0.0f, 1000, 1.0f) == 477);
+    CHECK(stats::FallDamage(40.0f, 0.0f, 1000, 2.0f) == 954);
+    CHECK(stats::FallDamage(40.0f, 0.0f, 1000, 0.0f) == 0);
+
+    // And a free fall costs nothing however much health he has.
+    CHECK(stats::FallDamage(10.0f, 0.0f, 100000, 100.0f) == 0);
+}

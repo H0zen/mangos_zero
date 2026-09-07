@@ -5063,11 +5063,10 @@ void Player::HandleFall(MovementInfo const& movementInfo)
         // Safe fall, fall height reduction
         int32 safe_fall = GetTotalAuraModifier(SPELL_AURA_SAFE_FALL);
 
-        float damageperc = 0.018f * (z_diff - safe_fall) - 0.2426f;
-
-        if (damageperc > 0)
+        if (stats::FallShare(z_diff, float(safe_fall)) > 0.0f)
         {
-            uint32 damage = (uint32)(damageperc * GetMaxHealth() * sWorld.getConfig(CONFIG_FLOAT_RATE_DAMAGE_FALL));
+            uint32 damage = stats::FallDamage(z_diff, float(safe_fall), GetMaxHealth(),
+                                              sWorld.getConfig(CONFIG_FLOAT_RATE_DAMAGE_FALL));
 
             float height = position->z;
             ClampToAllowedZ(*this, position->x, position->y, height);

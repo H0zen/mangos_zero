@@ -171,6 +171,26 @@ namespace stats
         return yards * rate;
     }
 
+    /**
+     * @brief What a fall costs, as a share of everything the faller has.
+     *
+     * Nothing under about fifteen yards: the formula resolves to nought there, which is why
+     * a short drop is free. Feather fall and its kin take yards off the drop before it is
+     * measured, so a long enough fall with enough of them still costs nothing.
+     */
+    inline float FallShare(float yards, float yardsForgiven)
+    {
+        const float share = 0.018f * (yards - yardsForgiven) - 0.2426f;
+
+        return share > 0.0f ? share : 0.0f;
+    }
+
+    /// The damage itself, at the rate this server charges for falling.
+    inline uint32 FallDamage(float yards, float yardsForgiven, uint32 fullHealth, float rate)
+    {
+        return uint32(FallShare(yards, yardsForgiven) * float(fullHealth) * rate);
+    }
+
     /// What a creature stops with a shield it does not carry. It has no shield
     /// and no shield value in its row, so the game answers from its size.
     inline uint32 CreatureShieldBlock(uint32 level, float strength)
