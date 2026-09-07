@@ -50,6 +50,7 @@
 #include "ObjectGuid.h"
 #include "WorldSession.h"
 #include "LootAnswers.h"
+#include "SpoilsHolder.h"
 #include "LootMgr.h"
 #include "Occupant.h"
 #include "GameObject.h"
@@ -64,73 +65,25 @@ void spoils::AutostoreItem(Player& who, WorldPacket& recv_data)
     DEBUG_LOG("WORLD: CMSG_AUTOSTORE_LOOT_ITEM");
     Player*  player =   &who;
     ObjectGuid lguid = player->GetLootGuid();
-    Loot*    loot;
     uint8    lootSlot;
-    Item* pItem = nullptr;
 
     recv_data >> lootSlot;
 
-    switch (lguid.GetHigh())
+    Object* holder = spoils::Holder(who, lguid);
+    if (!holder)
     {
-        case HIGHGUID_GAMEOBJECT:
-        {
-            GameObject* go = player->GetMap()->GetGameObject(lguid);
-
-            // not check distance for GO in case owned GO (fishing bobber case, for example) or Fishing hole GO
-            if (!go || ((go->GetOwnerGuid() != who.GetObjectGuid() && go->GetGoType() != GAMEOBJECT_TYPE_FISHINGHOLE) && !InReach(*go, who, INTERACTION_DISTANCE)))
-            {
-                player->SendLootRelease(lguid);
-                return;
-            }
-
-            loot = &go->loot;
-            break;
-        }
-        case HIGHGUID_ITEM:
-        {
-            pItem = player->GetItemByGuid(lguid);
-
-            if (!pItem || !pItem->HasGeneratedLoot())
-            {
-                player->SendLootRelease(lguid);
-                return;
-            }
-
-            loot = &pItem->loot;
-            break;
-        }
-        case HIGHGUID_CORPSE:
-        {
-            Corpse* bones = player->GetMap()->GetCorpse(lguid);
-            if (!bones)
-            {
-                player->SendLootRelease(lguid);
-                return;
-            }
-            loot = &bones->loot;
-            break;
-        }
-        case HIGHGUID_UNIT:
-        {
-            Creature* pCreature = who.GetMap()->GetCreature(lguid);
-
-            bool ok_loot = pCreature && pCreature->IsAlive() == (player->getClass() == CLASS_ROGUE && pCreature->Taking().PocketsPicked());
-
-            if (!ok_loot || !InReach(*pCreature, who, INTERACTION_DISTANCE))
-            {
-                player->SendLootRelease(lguid);
-                return;
-            }
-
-            loot = &pCreature->loot;
-            break;
-        }
-        default:
-        {
-            sLog.outError("%s is unsupported for looting.", lguid.GetString().c_str());
-            return;
-        }
+        sLog.outError("%s is unsupported for looting.", lguid.GetString().c_str());
+        return;
     }
+
+    Loot* loot = holder->SpoilsFor(who);
+    if (!loot)
+    {
+        player->SendLootRelease(lguid);
+        return;
+    }
+
+    Item* pItem = lguid.IsItem() ? static_cast<Item*>(holder) : nullptr;
 
     QuestItem* qitem = nullptr;
     QuestItem* ffaitem = nullptr;
@@ -260,67 +213,24 @@ void spoils::Money(Player& who, WorldPacket& /*recv_data*/)
         return;
     }
 
-    Loot* pLoot = nullptr;
-    Item* pItem = nullptr;
+    Object* holder = spoils::Holder(who, guid);
+    Loot* pLoot = holder ? holder->SpoilsFor(who) : nullptr;
 
-    switch (guid.GetHigh())
+    if (!pLoot)
     {
-        case HIGHGUID_GAMEOBJECT:
-        {
-            GameObject* pGameObject = who.GetMap()->GetGameObject(guid);
+        return;
+    }
 
-            // not check distance for GO in case owned GO (fishing bobber case, for example)
-            if (pGameObject && (pGameObject->GetOwnerGuid() == who.GetObjectGuid() || InReach(*pGameObject, who, INTERACTION_DISTANCE)))
-            {
-                pLoot = &pGameObject->loot;
-            }
+    Item* pItem = guid.IsItem() ? static_cast<Item*>(holder) : nullptr;
 
-            break;
-        }
-        /* HACK: Due to the spaghetti code below, */
-        /* we have a special case here for the looting of player corpses in battlegrounds. */
-        case HIGHGUID_CORPSE:
-        {
-            Corpse* bones = who.GetMap()->GetCorpse(guid);
-
-            if (bones && InReach(*bones, who, INTERACTION_DISTANCE))
-            {
-                pLoot = &bones->loot;
-                pLoot->NotifyMoneyRemoved();
-                player->ModifyMoney(pLoot->gold);
-
-
-                pLoot->gold = 0;
-                return;
-            }
-            break;
-        }
-        case HIGHGUID_ITEM:
-        {
-            pItem = who.GetItemByGuid(guid);
-            if (!pItem || !pItem->HasGeneratedLoot())
-            {
-                return;
-            }
-
-            pLoot = &pItem->loot;
-            break;
-        }
-        case HIGHGUID_UNIT:
-        {
-            Creature* pCreature = who.GetMap()->GetCreature(guid);
-
-            bool ok_loot = pCreature && pCreature->IsAlive() == (player->getClass() == CLASS_ROGUE && pCreature->Taking().PocketsPicked());
-
-            if (ok_loot && InReach(*pCreature, who, INTERACTION_DISTANCE))
-            {
-                pLoot = &pCreature->loot ;
-            }
-
-            break;
-        }
-        default:
-            return;                                         // unlootable type
+    // A body in a battleground carries coin and nothing else. It is taken whole, and there
+    // is no group to divide it among.
+    if (guid.IsCorpse())
+    {
+        pLoot->NotifyMoneyRemoved();
+        player->ModifyMoney(pLoot->gold);
+        pLoot->gold = 0;
+        return;
     }
 
     if (pLoot)
@@ -700,29 +610,17 @@ void spoils::MasterGive(Player& who, WorldPacket& recv_data)
         return;
     }
 
-    Loot* pLoot = nullptr;
-
-    if (lootguid.IsCreature())
+    // The master looter hands an item across the room, so nothing here is measured -- but
+    // only a body or a chest is ever shared out this way.
+    if (!lootguid.IsCreature() && !lootguid.IsGameObject())
     {
-        Creature* pCreature = who.GetMap()->GetCreature(lootguid);
-        if (!pCreature)
-        {
-            return;
-        }
-
-        pLoot = &pCreature->loot;
+        return;
     }
-    else if (lootguid.IsGameObject())
-    {
-        GameObject* pGO = who.GetMap()->GetGameObject(lootguid);
-        if (!pGO)
-        {
-            return;
-        }
 
-        pLoot = &pGO->loot;
-    }
-    else
+    Object* holder = spoils::Holder(who, lootguid);
+    Loot* pLoot = holder ? holder->Spoils() : nullptr;
+
+    if (!pLoot)
     {
         return;
     }

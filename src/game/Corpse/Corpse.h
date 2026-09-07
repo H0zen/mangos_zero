@@ -128,6 +128,12 @@ class Corpse : public Occupant
         bool IsVisibleForInState(Player const* u, Occupant const* viewPoint, bool inVisibleList) const override;
 
         Loot loot;                                          // remove insignia ONLY at BG
+
+        Loot* Spoils() override { return &loot; }
+
+        /// Whoever is standing over it. What may be taken off a body is decided elsewhere;
+        /// this is only about being there.
+        bool OpenableBy(Player const& who) const override;
         Player* lootRecipient;
         bool lootForBody;
 

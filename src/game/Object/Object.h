@@ -49,6 +49,7 @@
 #define DEFAULT_TAUREN_FEMALE_SCALE 1.25f                   // Tauren female player scale by default
 
 class WorldPacket;
+struct Loot;
 class UpdateData;
 class WorldSession;
 class Creature;
@@ -500,6 +501,30 @@ class Object
         bool IsGameObject() const { return GetTypeId() == TYPEID_GAMEOBJECT; }
         bool IsCorpse() const { return GetTypeId() == TYPEID_CORPSE; }
         bool IsDynObject() const { return GetTypeId() == TYPEID_DYNAMICOBJECT; }
+
+        /**
+         * @brief The pile inside it, or nullptr when there is nothing in it to take.
+         *
+         * A body, a chest, a lockbox and a set of bones answer this; everything else has no
+         * inside. Asked in whatever state the thing is in, which is what a master looter
+         * handing an item across the room needs.
+         */
+        virtual Loot* Spoils() { return nullptr; }
+
+        /**
+         * @brief May this player take from it right now?
+         *
+         * Near enough, and in a state that allows it. Each kind answers for itself: a
+         * creature by whether it is dead or is being pickpocketed, a chest by whether he
+         * owns it or stands beside it, a lockbox by whether its contents have been rolled.
+         */
+        virtual bool OpenableBy(Player const& who) const { return false; }
+
+        /// The pile, if he may have it. The two questions above, asked together.
+        Loot* SpoilsFor(Player const& who)
+        {
+            return OpenableBy(who) ? Spoils() : nullptr;
+        }
 
         // for output helpfull error messages from ASSERTs
         bool PrintIndexError(uint32 index, bool set) const;

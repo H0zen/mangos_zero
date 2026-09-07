@@ -318,6 +318,11 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
  * @param inVisibleList true when the corpse is already in the visible list.
  * @return true if the corpse should be visible; otherwise, false.
  */
+bool Corpse::OpenableBy(Player const& who) const
+{
+    return InReach(*this, who, INTERACTION_DISTANCE);
+}
+
 bool Corpse::IsVisibleForInState(Player const* u, Occupant const* viewPoint, bool inVisibleList) const
 {
     return IsInWorld() && u->IsInWorld() && SeenWithin(*this, *viewPoint, GetMap()->GetVisibilityDistance() + (inVisibleList ? World::GetVisibleObjectGreyDistance() : 0.0f), false);

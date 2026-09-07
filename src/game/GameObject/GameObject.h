@@ -808,6 +808,12 @@ class GameObject : public Occupant
 
         // Loot System
         Loot loot;
+
+        Loot* Spoils() override { return &loot; }
+
+        /// His own -- a fishing bobber is looted from wherever it landed -- or a fishing
+        /// hole, which is likewise reached at a rod's length; anything else, at arm's reach.
+        bool OpenableBy(Player const& who) const override;
         /// Who may take what is on this body, and whether a roll is running.
         LootClaim& Claim() { return m_claim; }
         LootClaim const& Claim() const { return m_claim; }

@@ -567,6 +567,18 @@ void GameObject::SaveRespawnTime()
  * @param inVisibleList true when evaluating an already-visible object.
  * @return true if the object should be visible; otherwise, false.
  */
+bool GameObject::OpenableBy(Player const& who) const
+{
+    // His own bobber is looted from wherever it landed, and a fishing hole from the bank,
+    // so neither is measured. Everything else is opened at arm's length.
+    if (GetOwnerGuid() == who.GetObjectGuid() || GetGoType() == GAMEOBJECT_TYPE_FISHINGHOLE)
+    {
+        return true;
+    }
+
+    return InReach(*this, who, INTERACTION_DISTANCE);
+}
+
 bool GameObject::IsVisibleForInState(Player const* u, Occupant const* viewPoint, bool inVisibleList) const
 {
     // Not in world

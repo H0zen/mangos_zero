@@ -607,6 +607,12 @@ class Creature : public Unit
         /// Represent the loots available on the creature.
         Loot loot;
 
+        Loot* Spoils() override { return &loot; }
+
+        /// Dead, or alive and having his pockets picked by the rogue who is asking -- and
+        /// near enough either way.
+        bool OpenableBy(Player const& who) const override;
+
         /**
          * Method preparing the creature for the loot state. Based on the previous loot state, the loot ID provided in the database and the creature's type,
          * this method updates the state of the creature for loots.

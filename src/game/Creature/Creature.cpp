@@ -2160,6 +2160,16 @@ bool Creature::CanAssistTo(const Unit* u, const Unit* enemy, bool checkfaction /
  *
  * @return true if attacks may be initiated; otherwise, false.
  */
+bool Creature::OpenableBy(Player const& who) const
+{
+    // Alive, it can only be pickpocketed, and only by the rogue who has already picked it;
+    // dead, it can be emptied by whoever is entitled. The two states are exclusive, which
+    // is what this comparison says.
+    const bool state = IsAlive() == (who.getClass() == CLASS_ROGUE && Taking().PocketsPicked());
+
+    return state && InReach(*this, who, INTERACTION_DISTANCE);
+}
+
 bool Creature::CanInitiateAttack()
 {
     if (hasUnitState(UNIT_STAT_STUNNED | UNIT_STAT_DIED))
