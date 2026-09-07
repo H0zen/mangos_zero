@@ -42,7 +42,6 @@
 #include "PoolManager.h"
 #include "Log.h"
 #include "LootMgr.h"
-#include "MapManager.h"
 #include "CreatureAI.h"
 #include "CreatureAISelector.h"
 #include "InstanceData.h"

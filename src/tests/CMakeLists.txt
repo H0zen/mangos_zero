@@ -30,6 +30,7 @@ set(TEST_SOURCES
     unit/test_spawnclock.cpp
     unit/test_questbond.cpp
     unit/test_trapsight.cpp
+    unit/test_mapkey.cpp
     unit/test_creaturenumbers.cpp
     unit/test_petnumbers.cpp
     unit/test_playernumbers.cpp

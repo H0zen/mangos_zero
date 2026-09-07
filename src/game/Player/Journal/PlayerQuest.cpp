@@ -43,7 +43,7 @@
 #include "UpdateData.h"
 #include "Channel.h"
 #include "ChannelMgr.h"
-#include "MapManager.h"
+#include "MapRoster.h"
 #include "MapPersistentStateMgr.h"
 #include "InstanceData.h"
 #include "GridNotifiers.h"
@@ -95,7 +95,7 @@ void Player::PrepareQuestMenu(ObjectGuid guid)
     {
         // we should obtain map pointer from GetMap() in 99% of cases. Special case
         // only for quests which cast teleport spells on player
-        Map* _map = IsInWorld() ? GetMap() : sMapMgr.FindMap(GetMapId(), GetInstanceId());
+        Map* _map = IsInWorld() ? GetMap() : sMapRoster.Find(GetMapId(), GetInstanceId());
         MANGOS_ASSERT(_map);
 
         if (GameObject* pGameObject = _map->GetGameObject(guid))
@@ -305,7 +305,7 @@ Quest const* Player::GetNextQuest(ObjectGuid guid, Quest const* pQuest)
     {
         // we should obtain map pointer from GetMap() in 99% of cases. Special case
         // only for quests which cast teleport spells on player
-        Map* _map = IsInWorld() ? GetMap() : sMapMgr.FindMap(GetMapId(), GetInstanceId());
+        Map* _map = IsInWorld() ? GetMap() : sMapRoster.Find(GetMapId(), GetInstanceId());
         MANGOS_ASSERT(_map);
 
         if (GameObject* pGameObject = _map->GetGameObject(guid))

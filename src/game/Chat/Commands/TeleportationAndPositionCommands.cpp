@@ -40,7 +40,7 @@
 #include "Chat.h"
 #include "ObjectMgr.h"
 #include "World.h"
-#include "MapManager.h"
+#include "MapCoords.h"
 #include "CellImpl.h"
 #include "Transports.h"
 #include "TransportMap.h"
@@ -119,7 +119,7 @@ bool ChatHandler::HandleGoHelper(Player* player, uint32 mapid, float x, float y,
         }
 
         // check full provided coordinates
-        if (!MapManager::IsValidMapCoord(mapid, x, y, z, ort))
+        if (!MapCoords::Valid(mapid, x, y, z, ort))
         {
             PSendSysMessage(LANG_INVALID_TARGET_COORD, x, y, mapid);
             SetSentErrorMessage(true);
@@ -129,7 +129,7 @@ bool ChatHandler::HandleGoHelper(Player* player, uint32 mapid, float x, float y,
     else if (!aboard)
     {
         // we need check x,y before ask Z or can crash at invalide coordinates
-        if (!MapManager::IsValidMapCoord(mapid, x, y))
+        if (!MapCoords::Valid(mapid, x, y))
         {
             PSendSysMessage(LANG_INVALID_TARGET_COORD, x, y, mapid);
             SetSentErrorMessage(true);
@@ -1090,7 +1090,7 @@ bool ChatHandler::HandleGoXYCommand(char* args)
     // < INVALID_HEIGHT when there is no map data). Otherwise keep the previous
     // z=0 fallback and let HandleGoHelper reject the bad input with its message.
     float z = 0.0f;
-    if (MapManager::IsValidMapCoord(mapid, x, y))
+    if (MapCoords::Valid(mapid, x, y))
     {
         if (TerrainInfo const* terrain = sTerrainMgr.LoadTerrain(mapid))
         {

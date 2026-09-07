@@ -47,7 +47,9 @@
 #include "UpdateData.h"
 #include "Channel.h"
 #include "ChannelMgr.h"
-#include "MapManager.h"
+#include "MapCoords.h"
+#include "MapFoundry.h"
+#include "MapRoster.h"
 #include "MapPersistentStateMgr.h"
 #include "InstanceData.h"
 #include "GridNotifiers.h"
@@ -685,7 +687,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
                                   info->positionZ, info->orientation);
 
     // Set the player's map
-    SetMap(sMapMgr.CreateMap(info->mapId, this));
+    SetMap(sMapFoundry.OpenFor(*this, info->mapId));
 
     // Set player's power type based on class
     uint8 powertype = cEntry->DisplayPower;
@@ -1349,7 +1351,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     // vessel map, so this branch cannot recurse.
     if (Transport::IsVesselMapId(mapid))
     {
-        Map* deck = sMapMgr.FindMap(mapid);
+        Map* deck = sMapRoster.Find(mapid);
         TransportMap* hull = deck ? deck->AsTransport() : nullptr;
 
         if (!hull)
@@ -1364,7 +1366,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
         return hull->Board(this, x, y, z, orientation, options);
     }
 
-    if (!MapManager::IsValidMapCoord(mapid, x, y, z, orientation))
+    if (!MapCoords::Valid(mapid, x, y, z, orientation))
     {
         sLog.outError("TeleportTo: invalid map %d or absent instance template.", mapid);
         return false;
@@ -1510,7 +1512,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
         // If the map is not created, assume it is possible to enter it.
         // It will be created in the WorldPortAck.
         DungeonPersistentState* state = Binds().CopyForHimOrHisGroup(mapid);
-        Map* map = sMapMgr.FindMap(mapid, state ? state->GetInstanceId() : 0);
+        Map* map = sMapRoster.Find(mapid, state ? state->GetInstanceId() : 0);
         if (!map || map->CanEnter(this))
         {
             // lets reset near teleport flag if it wasn't reset during chained teleports

@@ -22,7 +22,7 @@
 #include "GroupBinds.h"
 #include "Log.h"
 #include "Map.h"
-#include "MapManager.h"
+#include "MapRoster.h"
 #include "MapPersistentStateMgr.h"
 #include "Opcodes.h"
 #include "Player.h"
@@ -114,7 +114,7 @@ void DungeonBinds::Reset(InstanceResetMethod method)
             continue;
         }
 
-        if (Map* map = sMapMgr.FindMap(state->GetMapId(), state->GetInstanceId()))
+        if (Map* map = sMapRoster.Find(state->GetMapId(), state->GetInstanceId()))
         {
             if (map->IsDungeon())
             {

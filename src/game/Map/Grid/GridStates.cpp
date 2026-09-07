@@ -61,6 +61,26 @@ GridState::~GridState()
     DEBUG_LOG("GridState destroyed");
 }
 
+GridState const& GridStateFor(grid_state_t state)
+{
+    static const InvalidState invalid;
+    static const ActiveState active;
+    static const IdleState idle;
+    static const RemovalState removal;
+
+    switch (state)
+    {
+        case GRID_STATE_ACTIVE:
+            return active;
+        case GRID_STATE_IDLE:
+            return idle;
+        case GRID_STATE_REMOVAL:
+            return removal;
+        default:
+            return invalid;
+    }
+}
+
 /**
  * @brief Update invalid state - no operation
  * @param m Map reference (unused)

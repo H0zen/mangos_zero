@@ -39,7 +39,7 @@
 #include <string>
 #include "Utterance.h"
 #include "Chat.h"
-#include "MapManager.h"
+#include "MapCoords.h"
 #include "GameEventMgr.h"
 #include "ObjectMgr.h"
 #include "Mint.h"
@@ -243,7 +243,7 @@ bool ChatHandler::HandleGameObjectMoveCommand(char* args)
             return false;
         }
 
-        if (!MapManager::IsValidMapCoord(obj->GetMapId(), x, y, z))
+        if (!MapCoords::Valid(obj->GetMapId(), x, y, z))
         {
             PSendSysMessage(LANG_INVALID_TARGET_COORD, x, y, obj->GetMapId());
             SetSentErrorMessage(true);

@@ -38,7 +38,7 @@
 #include "Creature.h"
 #include "Pet.h"
 #include "Player.h"
-#include "MapManager.h"
+#include "Fleet.h"
 #include "DBCStores.h"
 #include "Movement/Generators/MotionMaster.h"
 #include "WorldPacket.h"
@@ -474,23 +474,18 @@ bool TransportMap::Add(Player* passenger, InitialWorldEntryHook* initialEntry)
     // would be handed a continent's worth of ships that are not on the water he can see.
     if (Map* sailed = m_vessel->IsCrossing() ? nullptr : m_vessel->GetMap())
     {
-        MapManager::TransportsByMapType::const_iterator vessels =
-            sMapMgr.m_TransportsByMap.find(sailed->GetId());
-        if (vessels != sMapMgr.m_TransportsByMap.end())
+        for (Transport* other : sFleet.On(sailed->GetId()))
         {
-            for (Transport* other : vessels->second)
+            if (other != m_vessel && other->GetMap() == sailed)
             {
-                if (other != m_vessel && other->GetMap() == sailed)
+                if (batch)
                 {
-                    if (batch)
-                    {
-                        AppendVesselCreateBlocks(other, passenger, batch->Data());
-                        batch->MarkTransport();
-                    }
-                    else
-                    {
-                        AnnounceVessel(other, passenger);
-                    }
+                    AppendVesselCreateBlocks(other, passenger, batch->Data());
+                    batch->MarkTransport();
+                }
+                else
+                {
+                    AnnounceVessel(other, passenger);
                 }
             }
         }
@@ -552,7 +547,7 @@ bool TransportMap::Board(Player* passenger, float x, float y, float z, float o, 
 
     // BETWEEN TWO WORLD MAPS: refused, and refused HERE, before anything has been written.
     // The map she names is the one she is leaving, so the client would be sent to load
-    // terrain she is about to be off; and the crossing completes past MapManager's barrier
+    // terrain she is about to be off; and the crossing completes past the map ticker's barrier
     // by walking her passenger list, which this man is not yet on and would not be carried
     // by. Nothing has moved at the point of this return, so he is still at his source.
     if (m_vessel->IsCrossing())
@@ -899,14 +894,7 @@ void TransportMap::CollectRelaySources(Occupant const* viewer, float visibility,
         return;
     }
 
-    MapManager::TransportsByMapType::const_iterator vessels =
-        sMapMgr.m_TransportsByMap.find(viewer->GetMapId());
-    if (vessels == sMapMgr.m_TransportsByMap.end())
-    {
-        return;
-    }
-
-    for (Transport* vessel : vessels->second)
+    for (Transport* vessel : sFleet.On(viewer->GetMapId()))
     {
         TransportMap* hull = vessel->AsMap();
         if (!hull || vessel->GetMap() != viewer->GetMap())

@@ -62,7 +62,10 @@
 #include "OpcodeTable.h"
 #include "Log.h"
 #include "Player.h"
-#include "MapManager.h"
+#include "Fleet.h"
+#include "MapCoords.h"
+#include "MapFoundry.h"
+#include "MapRoster.h"
 #include "Transports.h"
 #include "TransportMap.h"
 #include <cmath>
@@ -102,7 +105,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     Geometry::Placement& loc = GetPlayer()->GetTeleportDest();
 
     // possible errors in the coordinate validity check (only cheating case possible)
-    if (!MapManager::IsValidMapCoord(loc.MapId(), loc.X(), loc.Y(), loc.Z(), loc.Facing()))
+    if (!MapCoords::Valid(loc.MapId(), loc.X(), loc.Y(), loc.Z(), loc.Facing()))
     {
         sLog.outError("WorldSession::HandleMoveWorldportAckOpcode: %s was teleported far to a not valid location "
             "(map:%u, x:%f, y:%f, z:%f) We port him to his homebind instead..",
@@ -124,7 +127,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     {
         if (GetPlayer()->Battle().Id())
         {
-            map = sMapMgr.FindMap(loc.MapId(), GetPlayer()->Battle().Id());
+            map = sMapRoster.Find(loc.MapId(), GetPlayer()->Battle().Id());
         }
 
         if (!map)
@@ -159,7 +162,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     // relocate the player to the teleport destination
     if (!map)
     {
-        map = sMapMgr.CreateMap(loc.MapId(), GetPlayer());
+        map = sMapFoundry.OpenFor(*GetPlayer(), loc.MapId());
     }
 
     GetPlayer()->SetMap(map);
@@ -737,21 +740,17 @@ void movement::Relocate(Player& who, MovementInfo& movementInfo)
         {
             if (!plMover->GetTransport())
             {
-                // elevators also cause the client to send MOVEFLAG_ONTRANSPORT - just unmount if the guid can be found in the transport list
-                for (MapManager::TransportSet::const_iterator iter = sMapMgr.m_Transports.begin(); iter != sMapMgr.m_Transports.end(); ++iter)
+                // elevators also cause the client to send MOVEFLAG_ONTRANSPORT - just unmount if the guid names a vessel
+                if (Transport* named = sFleet.ByGuid(movementInfo.GetTransportGuid()))
                 {
-                    if ((*iter)->GetObjectGuid() == movementInfo.GetTransportGuid())
-                    {
-                        plMover->SetTransport((*iter));
+                    plMover->SetTransport(named);
 
-                        // He walked aboard, so his client already has the vessel and is
-                        // rendering the map she sails; moving him onto her own map is safe
-                        // at once. Nothing tells the client -- it never learns that id.
-                        if (TransportMap* hull = (*iter)->AsMap())
-                        {
-                            hull->Embark(plMover);
-                        }
-                        break;
+                    // He walked aboard, so his client already has the vessel and is
+                    // rendering the map she sails; moving him onto her own map is safe
+                    // at once. Nothing tells the client -- it never learns that id.
+                    if (TransportMap* hull = named->AsMap())
+                    {
+                        hull->Embark(plMover);
                     }
                 }
             }

@@ -67,13 +67,13 @@ class Transport : public GameObject
          * @brief IS SHE BETWEEN TWO WORLD MAPS?
          *
          * Crossing is decided on the map she is LEAVING, on that map's thread, and completed
-         * past MapManager's barrier where no map is running at all. It has to be: arriving
+         * past the map ticker's barrier, where no map is running at all. It has to be: arriving
          * writes into the destination's containers, and the destination may be updating on
          * another thread at the very moment the route says go.
          */
         bool IsCrossing() const { return m_crossing; }
 
-        /// Finish it. MapManager only, and only past the barrier.
+        /// Finish it. The fleet only, and only past the barrier.
         void CompleteCrossing();
 
         /// Take the vessel out of the world it sails: off the active list, out of the map's
@@ -137,7 +137,7 @@ class Transport : public GameObject
         float m_crossingZ = 0.0f;
         bool m_crossing = false;
 
-        /// THE ONE REFERENCE. Owned by MapManager like any map; the vessel only holds it.
+        /// THE ONE REFERENCE. Owned by the map roster like any map; the vessel only holds it.
         TransportMap* m_map = nullptr;
 
     public:

@@ -42,7 +42,7 @@
 
 #include "SQLStorages.h"
 #include "Log.h"
-#include "MapManager.h"
+#include "MapCoords.h"
 #include "ObjectGuid.h"
 #include "ScriptMgr.h"
 #include "SpellMgr.h"
@@ -1354,7 +1354,7 @@ void ObjectMgr::LoadInstanceTemplate()
         // if ghost entrance coordinates provided, can't be not exist for instance without ground entrance
         if (temp->ghostEntranceMap >= 0)
         {
-            if (!MapManager::IsValidMapCoord(temp->ghostEntranceMap, temp->ghostEntranceX, temp->ghostEntranceY))
+            if (!MapCoords::Valid(temp->ghostEntranceMap, temp->ghostEntranceX, temp->ghostEntranceY))
             {
                 sLog.outErrorDb("ObjectMgr::LoadInstanceTemplate: ghost entrance coordinates invalid for instance template %d template, ignored, need be set only for non-continent parents!", temp->map);
                 sInstanceTemplate.EraseEntry(i);

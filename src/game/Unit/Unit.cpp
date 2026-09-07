@@ -64,7 +64,7 @@
 #include "GameTime.h"
 #include "Transports.h"
 #include "TransportMap.h"
-#include "MapManager.h"
+#include "Fleet.h"
 
 #include <math.h>
 
@@ -3277,18 +3277,13 @@ Pet* Unit::GetPet() const
         }
         else
         {
-            MapManager::TransportsByMapType::const_iterator vessels =
-                sMapMgr.m_TransportsByMap.find(on->GetId());
-            if (vessels != sMapMgr.m_TransportsByMap.end())
+            for (Transport* vessel : sFleet.On(on->GetId()))
             {
-                for (Transport* vessel : vessels->second)
+                if (TransportMap* deck = vessel->AsMap())
                 {
-                    if (TransportMap* deck = vessel->AsMap())
+                    if (Pet* pet = deck->GetPet(pet_guid))
                     {
-                        if (Pet* pet = deck->GetPet(pet_guid))
-                        {
-                            return pet;
-                        }
+                        return pet;
                     }
                 }
             }

@@ -46,7 +46,6 @@
 #include "BattleGroundAV.h"
 #include "BattleGroundAB.h"
 #include "BattleGroundWS.h"
-#include "MapManager.h"
 #include "Map.h"
 #include "ObjectMgr.h"
 #include "ProgressBar.h"

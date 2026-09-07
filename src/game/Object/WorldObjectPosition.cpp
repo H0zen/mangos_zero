@@ -54,7 +54,6 @@
 #include "ObjectGuid.h"
 #include "UpdateData.h"
 #include "Util.h"
-#include "MapManager.h"
 #include "Transports.h"
 #include "TargetedMovementGenerator.h"
 #include "WaypointMovementGenerator.h"

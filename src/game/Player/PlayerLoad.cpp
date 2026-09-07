@@ -45,7 +45,9 @@
 #include "UpdateData.h"
 #include "Channel.h"
 #include "ChannelMgr.h"
-#include "MapManager.h"
+#include "Fleet.h"
+#include "MapCoords.h"
+#include "MapFoundry.h"
 #include "MapPersistentStateMgr.h"
 #include "InstanceData.h"
 #include "GridNotifiers.h"
@@ -358,23 +360,18 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     if (transGUID != 0)
     {
-        for (MapManager::TransportSet::const_iterator iter = sMapMgr.m_Transports.begin(); iter != sMapMgr.m_Transports.end(); ++iter)
+        if (Transport* aboard = sFleet.ByLowGuid(transGUID))
         {
-            if ((*iter)->GetGUIDLow() == transGUID)
-            {
-                m_transport = *iter;
+            m_transport = aboard;
 
-                // He logs in on the map the ship SAILS, at her waypoint estimate, because
-                // that is the only thing the client can be told: it has no terrain for her
-                // own map and dies looking for the WDT. This world position is coarse and
-                // temporary -- it names the right grid, nothing more. He is moved aboard
-                // once he is in the world and holds the vessel, by BoardingMap()->Add.
-                SetLocationMapId(m_transport->GetMapId());
-                Place().MoveTo(m_transport->Where().X(), m_transport->Where().Y(),
-                               m_transport->Where().Z(), m_transport->Where().Facing());
-
-                break;
-            }
+            // He logs in on the map the ship SAILS, at her waypoint estimate, because
+            // that is the only thing the client can be told: it has no terrain for her
+            // own map and dies looking for the WDT. This world position is coarse and
+            // temporary -- it names the right grid, nothing more. He is moved aboard
+            // once he is in the world and holds the vessel, by BoardingMap()->Add.
+            SetLocationMapId(m_transport->GetMapId());
+            Place().MoveTo(m_transport->Where().X(), m_transport->Where().Y(),
+                           m_transport->Where().Z(), m_transport->Where().Facing());
         }
 
         if (!m_transport)
@@ -394,7 +391,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     DungeonPersistentState* state = Binds().CopyForHimOrHisGroup(GetMapId());
 
     // load the player's map here if it's not already loaded
-    SetMap(sMapMgr.CreateMap(GetMapId(), this));
+    SetMap(sMapFoundry.OpenFor(*this, GetMapId()));
 
     // if the player is in an instance and it has been reset in the meantime teleport him to the entrance
     if (GetInstanceId() && !state)
@@ -597,7 +594,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
         // we can be relocated from taxi and still have an outdated Map pointer!
         // so we need to get a new Map pointer!
-        SetMap(sMapMgr.CreateMap(GetMapId(), this));
+        SetMap(sMapFoundry.OpenFor(*this, GetMapId()));
         SaveRecallPosition();                           // save as recall also to prevent recall and fall from sky
 
         m_taxi.ClearTaxiDestinations();
@@ -1672,7 +1669,7 @@ bool Player::_LoadHomeBind(QueryResult* result)
         MapEntry const* bindMapEntry = sMapStore.LookupEntry(Home().MapId());
 
         // accept saved data only for valid position (and non instanceable), and accessable
-        if (MapManager::IsValidMapCoord(Home().MapId(), Home().X(), Home().Y(), Home().Z()) &&
+        if (MapCoords::Valid(Home().MapId(), Home().X(), Home().Y(), Home().Z()) &&
             !bindMapEntry->Instanceable())
         {
             ok = true;

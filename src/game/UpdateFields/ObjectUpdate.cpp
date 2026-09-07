@@ -59,7 +59,6 @@
 #include "UpdateData.h"
 #include "FieldTable.h"
 #include "Util.h"
-#include "MapManager.h"
 #include "Transports.h"
 #include "TransportMap.h"
 #include "TargetedMovementGenerator.h"

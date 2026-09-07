@@ -48,7 +48,6 @@
 #include "Opcodes.h"
 #include "Log.h"
 #include "LootMgr.h"
-#include "MapManager.h"
 #include "TransportMap.h"
 #include "CreatureAI.h"
 #include "CreatureAISelector.h"

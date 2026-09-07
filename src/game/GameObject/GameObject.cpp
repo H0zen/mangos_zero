@@ -44,7 +44,7 @@
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 #include "InstanceData.h"
-#include "MapManager.h"
+#include "MapRoster.h"
 #include "MapPersistentStateMgr.h"
 #include "BattleGround/BattleGround.h"
 #include "OutdoorPvP/OutdoorPvP.h"
@@ -1169,7 +1169,7 @@ struct AddGameObjectToRemoveListInMapsWorker
 void GameObject::AddToRemoveListInMaps(uint32 db_guid, GameObjectData const* data)
 {
     AddGameObjectToRemoveListInMapsWorker worker(ObjectGuid(HIGHGUID_GAMEOBJECT, data->id, db_guid));
-    sMapMgr.DoForAllMapsWithMapId(data->mapid, worker);
+    sMapRoster.EachOnMap(data->mapid, worker);
 }
 
 struct SpawnGameObjectInMapsWorker
@@ -1211,7 +1211,7 @@ struct SpawnGameObjectInMapsWorker
 void GameObject::SpawnInMaps(uint32 db_guid, GameObjectData const* data)
 {
     SpawnGameObjectInMapsWorker worker(db_guid, data);
-    sMapMgr.DoForAllMapsWithMapId(data->mapid, worker);
+    sMapRoster.EachOnMap(data->mapid, worker);
 }
 
 /**

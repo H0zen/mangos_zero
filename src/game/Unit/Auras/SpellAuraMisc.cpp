@@ -76,7 +76,6 @@
 #include "CellImpl.h"
 #include "Language.h"
 #include "TemporarySummon.h"
-#include "MapManager.h"
 
 void Aura::HandleShapeshiftBoosts(bool apply)
 {

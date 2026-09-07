@@ -34,7 +34,10 @@
 #include "DBCStores.h"
 #include "Database/DatabaseEnv.h"
 #include "Log.h"
-#include "MapManager.h"
+#include "Fleet.h"
+#include "GridMap.h"
+#include "MapRoster.h"
+#include "MapTicker.h"
 #include "Session/WorldNetwork.h"
 #include "Version.h"
 #include "Timer.h"
@@ -340,8 +343,18 @@ void Master::ShutdownWorld()
     sLog.outString("[shutdown] stopping the world listener");
     sWorldNetwork.Stop();
 
+    // The vessels first, while their maps are still standing: a crew member is registered
+    // in its map's object store and unregisters itself from there as it is destroyed. Then
+    // the workers, so nothing is mid-tick when the maps go.
+    sLog.outString("[shutdown] scuttling the fleet");
+    sFleet.Scuttle();
+
+    sLog.outString("[shutdown] stopping the map workers");
+    sMapTicker.Halt();
+
     sLog.outString("[shutdown] unloading maps");
-    sMapMgr.UnloadAll();
+    sMapRoster.RetireAll();
+    sTerrainMgr.UnloadAll();
 }
 
 int Master::Run()

@@ -23,7 +23,7 @@
 #include "Database/DatabaseEnv.h"
 #include "Log.h"
 #include "Map.h"
-#include "MapManager.h"
+#include "MapRoster.h"
 #include "MapPersistentStateMgr.h"
 #include "ObjectMgr.h"
 
@@ -252,11 +252,11 @@ void npcs::SaveRespawnTime(Creature& who)
 void npcs::SpawnInMaps(uint32 lowGuid, CreatureData const* data)
 {
     PutIntoMap worker(lowGuid, data);
-    sMapMgr.DoForAllMapsWithMapId(data->mapid, worker);
+    sMapRoster.EachOnMap(data->mapid, worker);
 }
 
 void npcs::RemoveFromMaps(uint32 lowGuid, CreatureData const* data)
 {
     TakeOutOfMap worker(data->GetObjectGuid(lowGuid));
-    sMapMgr.DoForAllMapsWithMapId(data->mapid, worker);
+    sMapRoster.EachOnMap(data->mapid, worker);
 }

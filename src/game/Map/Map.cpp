@@ -53,7 +53,8 @@
 #include "Map.h"
 #include "InitialWorldEntry.h"
 #include "GameObjectModel.h"
-#include "MapManager.h"
+#include "GridStates.h"
+#include "Fleet.h"
 #include "Player.h"
 #include "GridNotifiers.h"
 #include "Log.h"
@@ -727,14 +728,7 @@ namespace
             return;
         }
 
-        MapManager::TransportsByMapType::const_iterator vessels =
-            sMapMgr.m_TransportsByMap.find(from.GetMapId());
-        if (vessels == sMapMgr.m_TransportsByMap.end())
-        {
-            return;
-        }
-
-        for (Transport* vessel : vessels->second)
+        for (Transport* vessel : sFleet.On(from.GetMapId()))
         {
             TransportMap* hull = vessel->AsMap();
             if (!hull || vessel->GetMap() != from.GetMap())
@@ -996,7 +990,7 @@ void Map::Update(const uint32& t_diff)
             GridInfo* info = i->getSource()->getGridInfoRef();
             ++i;                                            // The update might delete the map and we need the next map before the iterator gets invalid
             MANGOS_ASSERT(grid->GetGridState() >= 0 && grid->GetGridState() < MAX_GRID_STATE);
-            sMapMgr.UpdateGridState(grid->GetGridState(), *this, *grid, *info, grid->getX(), grid->getY(), t_diff);
+            GridStateFor(grid->GetGridState()).Update(*this, *grid, *info, grid->getX(), grid->getY(), t_diff);
         }
     }
 
@@ -1028,17 +1022,12 @@ void Map::Update(const uint32& t_diff)
     // object never relocates its cell in this core, so a ship would advance once, drift
     // out of the cell it was filed in and never be visited again -- which is a ship that
     // sits at its first waypoint for ever.
-    MapManager::TransportsByMapType::const_iterator sailing =
-        sMapMgr.m_TransportsByMap.find(GetId());
-    if (sailing != sMapMgr.m_TransportsByMap.end())
+    for (Transport* vessel : sFleet.On(GetId()))
     {
-        for (Transport* vessel : sailing->second)
+        if (vessel->GetMap() == this)
         {
-            if (vessel->GetMap() == this)
-            {
-                Occupant::UpdateHelper helper(vessel);
-                helper.Update(t_diff);
-            }
+            Occupant::UpdateHelper helper(vessel);
+            helper.Update(t_diff);
         }
     }
 }
@@ -1616,15 +1605,8 @@ void Map::SendInitTransports(Player* player, InitialWorldUpdateBatch* batch)
     }
 
     // Keyed on i_id -- the map doing the sending -- not on the player's own map id, which
-    // during a teleport is not yet this one. find(), not operator[]: the subscript inserts
-    // an empty set into a container every map shares.
-    MapManager::TransportsByMapType::const_iterator vessels = sMapMgr.m_TransportsByMap.find(i_id);
-    if (vessels == sMapMgr.m_TransportsByMap.end())
-    {
-        return;
-    }
-
-    for (Transport* vessel : vessels->second)
+    // during a teleport is not yet this one.
+    for (Transport* vessel : sFleet.On(i_id))
     {
         // Our own vessel came from SendInitSelf, ahead of our own body, so we already
         // stand on something by the time our block lands. Skip it here.
@@ -1652,28 +1634,27 @@ void Map::SendInitTransports(Player* player, InitialWorldUpdateBatch* batch)
  */
 void Map::SendRemoveTransports(Player* player)
 {
-    MapManager::TransportsByMapType& tmap = sMapMgr.m_TransportsByMap;
-
-    if (tmap.find(player->GetMapId()) != tmap.end())
+    Fleet::Vessels const& calling = sFleet.On(player->GetMapId());
+    if (calling.empty())
     {
-        UpdateData transData;
-        MapManager::TransportSet& tset = tmap[player->GetMapId()];
-
-        // except used transport
-        for (MapManager::TransportSet::const_iterator i = tset.begin(); i != tset.end(); ++i)
-        {
-            if ((*i) != player->GetTransport() && (*i)->GetMapId() != i_id)
-            {
-                (*i)->BuildOutOfRangeUpdateBlock(&transData);
-                player->ForgetAtClient((*i)->GetObjectGuid());
-            }
-        }
-
-        WorldPacket packet;
-        transData.BuildPacket(&packet);
-        player->GetSession()->SendPacket(&packet);
+        return;
     }
 
+    UpdateData transData;
+
+    // except used transport
+    for (Transport* vessel : calling)
+    {
+        if (vessel != player->GetTransport() && vessel->GetMapId() != i_id)
+        {
+            vessel->BuildOutOfRangeUpdateBlock(&transData);
+            player->ForgetAtClient(vessel->GetObjectGuid());
+        }
+    }
+
+    WorldPacket packet;
+    transData.BuildPacket(&packet);
+    player->GetSession()->SendPacket(&packet);
 }
 
 /**

@@ -26,7 +26,6 @@
 #include <string>
 #include <mutex>
 #include "Utilities/Errors.h"
-#include "MapManager.h"
 
 /**
  * @file GridMap.cpp

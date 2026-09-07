@@ -58,7 +58,7 @@
 #include "SpellMgr.h"
 #include "Pet.h"
 #include "Map.h"
-#include "MapManager.h"
+#include "Fleet.h"
 #include "TransportMap.h"
 #include "Transports.h"
 #include "VesselRoute.h"
@@ -1749,16 +1749,11 @@ bool ChatHandler::HandleDebugMinionCommand(char* /*args*/)
     }
     else
     {
-        MapManager::TransportsByMapType::const_iterator vessels =
-            sMapMgr.m_TransportsByMap.find(on->GetId());
-        if (vessels != sMapMgr.m_TransportsByMap.end())
+        for (Transport* vessel : sFleet.On(on->GetId()))
         {
-            for (Transport* vessel : vessels->second)
+            if (TransportMap* hull = vessel->AsMap())
             {
-                if (TransportMap* hull = vessel->AsMap())
-                {
-                    DumpPetsOn(hull, "ondeck");
-                }
+                DumpPetsOn(hull, "ondeck");
             }
         }
     }
@@ -1800,14 +1795,9 @@ bool ChatHandler::HandleDebugVesselCommand(char* /*args*/)
     }
     else
     {
-        MapManager::TransportsByMapType::const_iterator sailing =
-            sMapMgr.m_TransportsByMap.find(on->GetId());
-        if (sailing != sMapMgr.m_TransportsByMap.end())
+        for (Transport* vessel : sFleet.On(on->GetId()))
         {
-            for (Transport* vessel : sailing->second)
-            {
-                vessels.push_back(vessel);
-            }
+            vessels.push_back(vessel);
         }
     }
 

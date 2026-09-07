@@ -49,7 +49,7 @@
 #include "BattleGroundAV.h"
 #include "BattleGroundAB.h"
 #include "BattleGroundWS.h"
-#include "MapManager.h"
+#include "InstanceLedger.h"
 #include "Map.h"
 #include "ObjectMgr.h"
 #include "ProgressBar.h"
@@ -576,7 +576,7 @@ BattleGround* BattleGroundMgr::CreateNewBattleGround(BattleGroundTypeId bgTypeId
     }
 
     // will also set m_bgMap, instanceid
-    sMapMgr.CreateBgMap(bg->GetMapId(), bg);
+    sInstanceLedger.OpenBattleGround(bg->GetMapId(), bg);
 
     bg->SetClientInstanceID(CreateClientVisibleInstanceId(bgTypeId, bracket_id));
 

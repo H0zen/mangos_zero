@@ -37,7 +37,6 @@
 #include "GossipDef.h"
 #include "LivingWorldAnchorPolicy.h"
 #include "Movement/Generators/MotionMaster.h"
-#include "MapManager.h"
 #include "ObjectGuid.h"
 #include "SpellMgr.h"
 #include "World.h"

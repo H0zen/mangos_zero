@@ -56,7 +56,6 @@
 #include "Util.h"
 
 #include <sstream>
-#include "MapManager.h"
 #include "Transports.h"
 #include "TargetedMovementGenerator.h"
 #include "WaypointMovementGenerator.h"

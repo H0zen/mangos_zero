@@ -33,7 +33,6 @@
 #include "Movement/Generators/MotionMaster.h"
 #include "SQLStorages.h"
 #include "Log.h"
-#include "MapManager.h"
 #include "ObjectGuid.h"
 #include "ScriptMgr.h"
 #include "SpellMgr.h"

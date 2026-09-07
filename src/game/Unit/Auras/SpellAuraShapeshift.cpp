@@ -76,7 +76,6 @@
 #include "CellImpl.h"
 #include "Language.h"
 #include "TemporarySummon.h"
-#include "MapManager.h"
 
 enum SpellCreatedItems {
     ITEM_SOUL_SHARD = 6265

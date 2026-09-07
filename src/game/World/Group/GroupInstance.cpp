@@ -60,7 +60,6 @@
 #include "PlayerRegistry.h"
 #include "BattleGround/BattleGround.h"
 #include "BattleGround/BattleGroundMgr.h"
-#include "MapManager.h"
 #include "MapPersistentStateMgr.h"
 #include "Util.h"
 #include "LootMgr.h"

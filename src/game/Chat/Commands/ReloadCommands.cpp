@@ -39,7 +39,7 @@
 #include "SpellMgr.h"
 #include "DisableMgr.h"
 #include "World.h"
-#include "MapManager.h"
+#include "MapRoster.h"
 #include "CreatureEventAIMgr.h"
 #include "BattleGroundMgr.h"
 #include "ItemEnchantmentMgr.h"
@@ -276,7 +276,7 @@ bool ChatHandler::HandleReloadConfigCommand(char* /*args*/)
 {
     sLog.outString("Re-Loading config settings...");
     sWorld.LoadConfigSettings(true);
-    sMapMgr.InitializeVisibilityDistanceInfo();
+    sMapRoster.Each([](Map* map) { map->InitVisibilityDistance(); });
     SendGlobalSysMessage("World config settings reloaded.", SEC_MODERATOR);
     return true;
 }

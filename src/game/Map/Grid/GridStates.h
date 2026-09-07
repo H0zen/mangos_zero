@@ -62,3 +62,11 @@ class RemovalState : public GridState
 
         void Update(Map&, NGridType&, GridInfo&, const uint32& x, const uint32& y, const uint32& t_diff) const override;
 };
+
+/**
+ * @brief The handler for a grid in this state.
+ *
+ * The four handlers hold nothing of their own -- they read the grid and the map they are
+ * given and write back to those -- so one of each serves every grid on the server.
+ */
+GridState const& GridStateFor(grid_state_t state);

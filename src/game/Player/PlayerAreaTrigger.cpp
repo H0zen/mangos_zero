@@ -41,7 +41,7 @@
 #include "UpdateData.h"
 #include "Channel.h"
 #include "ChannelMgr.h"
-#include "MapManager.h"
+#include "MapRoster.h"
 #include "MapPersistentStateMgr.h"
 #include "InstanceData.h"
 #include "GridNotifiers.h"
@@ -251,7 +251,7 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, uint32& m
 
     // If the map is not created, assume it is possible to enter it.
     DungeonPersistentState* state = Binds().CopyForHimOrHisGroup(at->target_mapId);
-    Map* map = sMapMgr.FindMap(at->target_mapId, state ? state->GetInstanceId() : 0);
+    Map* map = sMapRoster.Find(at->target_mapId, state ? state->GetInstanceId() : 0);
 
     // Map's state check
     if (map && map->IsDungeon())

@@ -31,7 +31,7 @@
 #include "DBCStores.h"
 #include "SQLStorages.h"
 #include "Log.h"
-#include "MapManager.h"
+#include "MapCoords.h"
 #include "ProgressBar.h"
 #include "World.h"
 #include "LivingWorldAnchorPolicy.h"
@@ -267,7 +267,7 @@ void ObjectMgr::LoadPlayerInfo()
             }
 
             // accept DB data only for valid position (and non instanceable)
-            if (!MapManager::IsValidMapCoord(mapId, positionX, positionY, positionZ, orientation))
+            if (!MapCoords::Valid(mapId, positionX, positionY, positionZ, orientation))
             {
                 sLog.outErrorDb("Wrong home position for class %u race %u pair in `playercreateinfo` table, ignoring.", current_class, current_race);
                 continue;

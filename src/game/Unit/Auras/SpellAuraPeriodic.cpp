@@ -76,7 +76,6 @@
 #include "CellImpl.h"
 #include "Language.h"
 #include "TemporarySummon.h"
-#include "MapManager.h"
 
 /**
  * @brief Applies special proc-trigger spell setup for specific aura spells.

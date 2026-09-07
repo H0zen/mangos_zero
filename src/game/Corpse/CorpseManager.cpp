@@ -31,7 +31,7 @@
 #include "GridNotifiers.h"
 #include "Log.h"
 #include "Map.h"
-#include "MapManager.h"
+#include "MapRoster.h"
 #include "ObjectMgr.h"
 #include "World.h"
 
@@ -183,7 +183,7 @@ Corpse* CorpseManager::ConvertCorpseForPlayer(ObjectGuid playerGuid, bool insign
 
     // Drop the resurrectable corpse from the grid, but never load the map just
     // to do so.
-    Map* map = sMapMgr.FindMap(corpse->GetMapId(), corpse->GetInstanceId());
+    Map* map = sMapRoster.Find(corpse->GetMapId(), corpse->GetInstanceId());
     if (map)
     {
         map->Remove(corpse, false);

@@ -43,7 +43,6 @@
 #include "BattleGround.h"
 #include "BattleGroundMgr.h"
 #include "Creature.h"
-#include "MapManager.h"
 #include "Language.h"
 #include "SpellAuras.h"
 #include "World.h"

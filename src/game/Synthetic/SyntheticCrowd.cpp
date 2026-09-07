@@ -28,7 +28,7 @@
 
 #include "Log.h"
 #include "Map.h"
-#include "MapManager.h"
+#include "MapFoundry.h"
 #include "ObjectMgr.h"
 #include "Mint.h"
 #include "Opcodes.h"
@@ -125,7 +125,7 @@ namespace synthetic
             const float px = x + r * std::cos(a);
             const float py = y + r * std::sin(a);
 
-            Map* map = sMapMgr.CreateMap(mapId, bot);
+            Map* map = sMapFoundry.OpenFor(*bot, mapId);
             if (!map)
             {
                 delete bot;

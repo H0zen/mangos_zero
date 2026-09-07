@@ -53,7 +53,7 @@
 #include "ProgressBar.h"
 #include "Language.h"
 #include "Log.h"
-#include "MapManager.h"
+#include "MapRoster.h"
 #include "BattleGround/BattleGroundMgr.h"
 #include "MassMailMgr.h"
 #include "Policies/Singleton.h"
@@ -1035,7 +1035,7 @@ void GameEventMgr::UpdateCreatureData(int16 event_id, bool activate)
 
         // Update if spawned
         GameEventUpdateCreatureDataInMapsWorker worker(data->GetObjectGuid(itr->first), data, &itr->second, activate);
-        sMapMgr.DoForAllMapsWithMapId(data->mapid, worker);
+        sMapRoster.EachOnMap(data->mapid, worker);
     }
 }
 

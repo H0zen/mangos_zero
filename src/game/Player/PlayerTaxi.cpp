@@ -37,7 +37,6 @@
 #include "WorldSession.h"
 #include "ObjectMgr.h"
 #include "DBCStores.h"
-#include "MapManager.h"
 #include "SpellMgr.h"
 #include "CinematicFlyover.h"
 #include "QuestDef.h"

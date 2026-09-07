@@ -56,7 +56,7 @@
 #include "Log.h"
 #include "CellImpl.h"
 #include "Map.h"
-#include "MapManager.h"
+#include "MapRoster.h"
 #include "Timer.h"
 #include "GridNotifiersImpl.h"
 #include "ObjectMgr.h"
@@ -1166,7 +1166,7 @@ void MapPersistentStateManager::_ResetOrWarnAll(uint32 mapid, bool warn, uint32 
 
         // reset maps, teleport player automaticaly to their homebinds and unload maps
         MapPersistantStateResetWorker worker;
-        sMapMgr.DoForAllMapsWithMapId(mapid, worker);
+        sMapRoster.EachOnMap(mapid, worker);
 
         // delete them from the DB, even if not loaded
         CharacterDatabase.BeginTransaction();
@@ -1184,7 +1184,7 @@ void MapPersistentStateManager::_ResetOrWarnAll(uint32 mapid, bool warn, uint32 
 
     // note: this isn't fast but it's meant to be executed very rarely
     MapPersistantStateWarnWorker worker(timeLeft);
-    sMapMgr.DoForAllMapsWithMapId(mapid, worker);
+    sMapRoster.EachOnMap(mapid, worker);
 }
 
 /**

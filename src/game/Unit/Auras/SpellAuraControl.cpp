@@ -78,7 +78,6 @@
 #include "CellImpl.h"
 #include "Language.h"
 #include "TemporarySummon.h"
-#include "MapManager.h"
 
 static AuraType const frozenAuraTypes[] = { SPELL_AURA_MOD_ROOT, SPELL_AURA_MOD_STUN, SPELL_AURA_NONE };
 

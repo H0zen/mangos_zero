@@ -21,7 +21,7 @@
 #include "Group.h"
 #include "Log.h"
 #include "Map.h"
-#include "MapManager.h"
+#include "MapRoster.h"
 #include "MapPersistentStateMgr.h"
 #include "Player.h"
 
@@ -151,7 +151,7 @@ void GroupBinds::Reset(InstanceResetMethod method, Player* tellHim)
         }
 
         bool isEmpty = true;
-        if (Map* map = sMapMgr.FindMap(state->GetMapId(), state->GetInstanceId()))
+        if (Map* map = sMapRoster.Find(state->GetMapId(), state->GetInstanceId()))
         {
             if (map->IsDungeon() && !(method == INSTANCE_RESET_GROUP_DISBAND && !state->CanReset()))
             {

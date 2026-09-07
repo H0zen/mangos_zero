@@ -33,7 +33,6 @@
 #include "LivingWorldAnchorPolicy.h"
 #include "Movement/Generators/MotionMaster.h"
 #include "Policies/Singleton.h"
-#include "MapManager.h"
 #include "ObjectGuid.h"
 #include "ScriptMgr.h"
 #include "SpellMgr.h"

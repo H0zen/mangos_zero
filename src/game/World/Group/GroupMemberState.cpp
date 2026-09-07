@@ -59,7 +59,6 @@
 #include "Util.h"
 #include "Formulas.h"
 #include "BattleGround/BattleGround.h"
-#include "MapManager.h"
 #include "MapPersistentStateMgr.h"
 #include "LootMgr.h"
 #include "LFGMgr.h"

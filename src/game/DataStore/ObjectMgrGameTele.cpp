@@ -30,7 +30,7 @@
 #include "Database/DatabaseEnv.h"
 #include "Policies/Singleton.h"
 #include "Log.h"
-#include "MapManager.h"
+#include "MapCoords.h"
 #include "ProgressBar.h"
 #include "Util.h"
 #include "LivingWorldAnchorPolicy.h"
@@ -96,7 +96,7 @@ void ObjectMgr::LoadGameTele()
         gt.mapId          = fields[5].GetUInt32();
         gt.name           = fields[6].GetCppString();
 
-        if (!MapManager::IsValidMapCoord(gt.mapId, gt.position_x, gt.position_y, gt.position_z, gt.orientation))
+        if (!MapCoords::Valid(gt.mapId, gt.position_x, gt.position_y, gt.position_z, gt.orientation))
         {
             sLog.outErrorDb("Wrong position for id %u (name: %s) in `game_tele` table, ignoring.", id, gt.name.c_str());
             continue;

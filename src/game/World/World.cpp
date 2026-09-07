@@ -72,7 +72,13 @@
 #include "MassMailMgr.h"
 #include "LootMgr.h"
 #include "ItemEnchantmentMgr.h"
-#include "MapManager.h"
+#include "Fleet.h"
+#include "InstanceLedger.h"
+#include "LivingWorld.h"
+#include "MapCoords.h"
+#include "MapRoster.h"
+#include "MapTicker.h"
+#include "Metrics/MapTickLines.h"
 #include "Metrics/ServerMetrics.h"
 #include "Synthetic/SyntheticCrowd.h"
 #include <cstdio>
@@ -371,12 +377,12 @@ void World::SetInitialWorldSettings()
     world::terrain::GoModelStore::Instance().SetDirectory(m_dataPath + "gomodels");
 
     ///- Check the existence of the map files for all races start areas.
-    if (!MapManager::ExistMapAndVMap(0, -6240.32f, 331.033f) ||                     // Dwarf/ Gnome
-        !MapManager::ExistMapAndVMap(0, -8949.95f, -132.493f) ||                // Human
-        !MapManager::ExistMapAndVMap(1, -618.518f, -4251.67f) ||                // Orc
-        !MapManager::ExistMapAndVMap(0, 1676.35f, 1677.45f) ||                  // Scourge
-        !MapManager::ExistMapAndVMap(1, 10311.3f, 832.463f) ||                  // NightElf
-        !MapManager::ExistMapAndVMap(1, -2917.58f, -257.98f))                   // Tauren
+    if (!MapCoords::TileExists(0, -6240.32f, 331.033f) ||                     // Dwarf/ Gnome
+        !MapCoords::TileExists(0, -8949.95f, -132.493f) ||                // Human
+        !MapCoords::TileExists(1, -618.518f, -4251.67f) ||                // Orc
+        !MapCoords::TileExists(0, 1676.35f, 1677.45f) ||                  // Scourge
+        !MapCoords::TileExists(1, 10311.3f, 832.463f) ||                  // NightElf
+        !MapCoords::TileExists(1, -2917.58f, -257.98f))                   // Tauren
     {
         sLog.outError("Correct *.map files not found in path '%smaps' or *.vmtree/*.vmtile files in '%svmaps'. Please place *.map and vmap files in appropriate directories or correct the DataDir value in the mangosd.conf file.", m_dataPath.c_str(), m_dataPath.c_str());
         Log::WaitBeforeContinueIfNeed();
@@ -541,7 +547,7 @@ void World::SetInitialWorldSettings()
     // BEFORE every spawn table below: a deck map exists only once it has been minted into
     // sMapStore, and a spawn on a map the store does not know is dropped as invalid.
     sLog.outString("Minting vessel deck maps...");
-    sMapMgr.RegisterVesselMaps();
+    sFleet.MintDeckMaps();
 
     sLog.outString("Loading Creature Data...");
     sObjectMgr.LoadCreatures();
@@ -840,9 +846,10 @@ void World::SetInitialWorldSettings()
     ///- Initialize static helper structures
     AIRegistry::Initialize();
 
-    ///- Initialize MapManager
+    ///- Start the map workers and pick up the instance numbering
     sLog.outString("Starting Map System");
-    sMapMgr.Initialize();
+    sMapTicker.Start(getConfig(CONFIG_UINT32_NUMTHREADS));
+    sInstanceLedger.PrimeMaxId();
     sLog.outString();
 
     ///- Initialize Battlegrounds
@@ -870,14 +877,14 @@ void World::SetInitialWorldSettings()
 
     sLog.outString("Loading grids for active creatures...");
     uint32 loadContinentsBegin = getMSTime();
-    MapManager::LivingWorldStartupStats lwStats = sMapMgr.LoadContinents();
+    LivingWorld::Awakening awakening = sLivingWorld.Awaken();
     uint32 loadContinentsMs = GetMSTimeDiffToNow(loadContinentsBegin);
-    sLog.outString("[LivingWorld] startup summary: maps-forced=%u, total-unique-grids=%u, total-newly-loaded=%u, LoadContinents=%u ms",
-                   lwStats.forcedMaps, lwStats.totalUniqueGrids, lwStats.totalNewlyLoaded, loadContinentsMs);
+    sLog.outString("[LivingWorld] startup summary: maps-forced=%u, total-unique-grids=%u, total-newly-loaded=%u, Awaken=%u ms",
+                   awakening.forcedMaps, awakening.grids, awakening.newlyLoaded, loadContinentsMs);
     sLog.outString();
 
     sLog.outString("Loading global transports...");
-    sMapMgr.LoadTransports();
+    sFleet.Launch();
     sLog.outString();
 
     // Delete all characters which have been deleted X days before
@@ -1110,7 +1117,7 @@ void World::RunOffMapSystems(uint32 diff)
 
         // The maps are reported alongside, because a rate means something
         // different when one map is spending forty milliseconds a tick.
-        line += sMapMgr.ReportTickTimes();
+        line += metrics::MapTickLines();
 
         const synthetic::CrowdReport crowd =
             synthetic::SyntheticCrowd::Instance().Report(window ? uint32(window) : 5000);
@@ -1148,7 +1155,7 @@ void World::RunMaps(uint32 diff)
 {
     /// <li> Handle all other objects
     ///- Update objects (maps, transport, creatures,...)
-    sMapMgr.Update(diff);
+    sMapTicker.Run(diff);
 
     // AFTER the maps, deliberately. This drives the outdoor PvP scripts, and those
     // reach into capture points that live on a map -- so it is not off-map work and
@@ -1187,7 +1194,7 @@ void World::SettleTick(uint32 diff)
 
     /// </ul>
     ///- Move all creatures with "delayed move" and remove and delete all objects with "delayed remove"
-    sMapMgr.RemoveAllObjectsInRemoveList();
+    sMapRoster.Each([](Map* map) { map->RemoveAllObjectsInRemoveList(); });
 
     // update the instance reset times
     sMapPersistentStateMgr.Update();

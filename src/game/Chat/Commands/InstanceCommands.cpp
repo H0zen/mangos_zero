@@ -37,7 +37,7 @@
 #include <string>
 #include "Chat.h"
 #include "ObjectMgr.h"
-#include "MapManager.h"
+#include "InstanceLedger.h"
 #include "InstanceData.h"
 
 /**
@@ -178,8 +178,8 @@ bool ChatHandler::HandleInstanceUnbindCommand(char* args)
  */
 bool ChatHandler::HandleInstanceStatsCommand(char* /*args*/)
 {
-    PSendSysMessage("instances loaded: %d", sMapMgr.GetNumInstances());
-    PSendSysMessage("players in instances: %d", sMapMgr.GetNumPlayersInInstances());
+    PSendSysMessage("instances loaded: %d", sInstanceLedger.OpenDungeons());
+    PSendSysMessage("players in instances: %d", sInstanceLedger.PlayersInside());
 
     uint32 numSaves, numBoundPlayers, numBoundGroups;
     sMapPersistentStateMgr.GetStatistics(numSaves, numBoundPlayers, numBoundGroups);

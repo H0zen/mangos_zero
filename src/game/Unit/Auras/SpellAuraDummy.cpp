@@ -76,7 +76,6 @@
 #include "CellImpl.h"
 #include "Language.h"
 #include "TemporarySummon.h"
-#include "MapManager.h"
 
 void Aura::HandleAuraDummy(bool apply, bool Real)
 {

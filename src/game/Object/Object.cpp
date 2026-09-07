@@ -53,7 +53,6 @@
 #include "ObjectGuid.h"
 #include "UpdateData.h"
 #include "Util.h"
-#include "MapManager.h"
 #include "CellImpl.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"

@@ -75,7 +75,6 @@
 #include "CellImpl.h"
 #include "Language.h"
 #include "TemporarySummon.h"
-#include "MapManager.h"
 
 /*********************************************************/
 /***               BASIC AURA FUNCTION                 ***/

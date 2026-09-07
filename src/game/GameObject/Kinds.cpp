@@ -47,7 +47,6 @@
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 #include "InstanceData.h"
-#include "MapManager.h"
 #include "MapPersistentStateMgr.h"
 #include "BattleGround/BattleGround.h"
 #include "BattleGround/BattleGroundAV.h"

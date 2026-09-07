@@ -64,7 +64,6 @@
 #include "DynamicObject.h"
 #include "Group.h"
 #include "UpdateData.h"
-#include "MapManager.h"
 #include "ObjectLookup.h"
 #include "CellImpl.h"
 #include "Policies/Singleton.h"

@@ -38,7 +38,8 @@
 #include "VesselRoute.h"
 #include "TransportMap.h"
 #include "Map.h"
-#include "MapManager.h"
+#include "Fleet.h"
+#include "MapFoundry.h"
 #include "ObjectMgr.h"
 #include "ObjectGuid.h"
 #include "Path.h"
@@ -49,218 +50,6 @@
 #include "DBCStores.h"
 #include "ProgressBar.h"
 #include "ScriptMgr.h"
-
-/**
- * @brief Mints every vessel's deck map id, and nothing else.
- *
- * A pass of its own because the vessels are built LATE: until their Map.dbc rows are in
- * sMapStore every spawn table drops its deck rows as pointing at a nonexistent map.
- */
-void MapManager::RegisterVesselMaps()
-{
-    QueryResult* result = WorldDatabase.Query("SELECT `entry`, `name` FROM `transports`");
-
-    if (!result)
-    {
-        sLog.outString(">> No vessel maps to mint. DB table `transports` is empty.");
-        return;
-    }
-
-    BarGoLink bar(result->GetRowCount());
-    uint32 minted = 0;
-
-    do
-    {
-        bar.step();
-
-        Field* fields = result->Fetch();
-        uint32 entry = fields[0].GetUInt32();
-        std::string name = fields[1].GetCppString();
-
-        GameObjectInfo const* goinfo = ObjectMgr::GetGameObjectInfo(entry);
-
-        // Silent: LoadTransports is where a bad row is refused and reported.
-        if (!goinfo || goinfo->type != GAMEOBJECT_TYPE_MO_TRANSPORT)
-        {
-            continue;
-        }
-
-        Transport::RegisterVesselMap(entry, name.c_str());
-        ++minted;
-    }
-    while (result->NextRow());
-
-    delete result;
-
-    sLog.outString();
-    sLog.outString(">> Minted %u vessel deck map(s)", minted);
-}
-
-/**
- * @brief Loads and initializes all configured global transports.
- */
-void MapManager::LoadTransports()
-{
-
-    QueryResult* result = WorldDatabase.Query("SELECT `entry`, `name`, `period` FROM `transports`");
-
-    uint32 count = 0;
-    uint32 mapped = 0;
-
-    if (!result)
-    {
-        BarGoLink bar(1);
-        bar.step();
-
-        sLog.outString();
-        sLog.outString(">> Loaded %u transports", count);
-        return;
-    }
-
-    BarGoLink bar(result->GetRowCount());
-
-    do
-    {
-        bar.step();
-
-        Transport* t = new Transport;
-
-        Field* fields = result->Fetch();
-
-        uint32 entry = fields[0].GetUInt32();
-        std::string name = fields[1].GetCppString();
-        uint32 storedPeriod = fields[2].GetUInt32();
-
-        const GameObjectInfo* goinfo = ObjectMgr::GetGameObjectInfo(entry);
-
-        if (!goinfo)
-        {
-            sLog.outErrorDb("Transport ID:%u, Name: %s, will not be loaded, gameobject_template missing", entry, name.c_str());
-            delete t;
-            continue;
-        }
-
-        if (goinfo->type != GAMEOBJECT_TYPE_MO_TRANSPORT)
-        {
-            sLog.outErrorDb("Transport ID:%u, Name: %s, will not be loaded, gameobject_template type wrong", entry, name.c_str());
-            delete t;
-            continue;
-        }
-
-        // THE LAP, computed the way the client computes it: the same DBC nodes, the same
-        // profile at the template's own speed, the same berth delays. The client works it
-        // out for itself and draws the hull by it, so a lap the two sides disagree on puts
-        // the hull where the server does not believe it is.
-        //
-        // On the eight classic routes this lands on the `period` column to the
-        // millisecond, which is what says the arithmetic is right. The column stays as a
-        // fallback for a vessel whose taxi path is missing, and a custom vessel needs no
-        // column at all.
-        float const speed = goinfo->moTransport.moveSpeed ? float(goinfo->moTransport.moveSpeed) : 30.0f;
-        float const accel = goinfo->moTransport.accelRate ? float(goinfo->moTransport.accelRate) : 1.0f;
-        VesselRoute const route = VesselRoute::Along(goinfo->moTransport.taxiPathId, speed, accel);
-
-        t->m_route = route;
-        t->m_period = route.Period() ? route.Period() : storedPeriod;
-
-        DETAIL_LOG("Transport %u (%s): lap %u ms over %u legs, %u ms of it waiting; `transports`.`period` says %u",
-                   entry, name.c_str(), route.Period(), uint32(route.Legs().size()), route.Waiting(), storedPeriod);
-
-        std::set<uint32> mapsUsed = route.Maps();
-
-        VesselPose const start = route.PoseAt(0);
-        if (!start.known)
-        {
-            sLog.outErrorDb("Transport (path id %u) path size = 0. Transport ignored, check DBC files or transport GO data0 field.", goinfo->moTransport.taxiPathId);
-            delete t;
-            continue;
-        }
-
-        float const x = start.at.x, y = start.at.y, z = start.at.z, o = 1.0f;
-        uint32 const mapid = start.mapId;
-
-        // current code does not support transports in dungeon!
-        const MapEntry* pMapInfo = sMapStore.LookupEntry(mapid);
-        if (!pMapInfo || pMapInfo->Instanceable())
-        {
-            delete t;
-            continue;
-        }
-
-        // Normally already minted by RegisterVesselMaps, and idempotent. Kept so a vessel
-        // still gets its map if this runs without that pass having gone first.
-        Transport::RegisterVesselMap(entry, name.c_str());
-
-        // creates the Gameobject
-        if (!t->Create(entry, mapid, x, y, z, o, GO_ANIMPROGRESS_DEFAULT))
-        {
-            delete t;
-            continue;
-        }
-
-        m_Transports.insert(t);
-
-        for (std::set<uint32>::const_iterator i = mapsUsed.begin(); i != mapsUsed.end(); ++i)
-        {
-            m_TransportsByMap[*i].insert(t);
-        }
-
-        // If we someday decide to use the grid to track transports, here:
-        t->SetMap(sMapMgr.CreateMap(mapid, t));
-
-        // INTO THE WORLD'S GRID, as an ordinary object in a cell of the map it sails. That
-        // is what ticks it in phase one, what lets the shore's own visibility sweep find
-        // it, and what makes IsInWorld() true -- without which SharesWorld, InReach and
-        // every searcher built on them refuse to see the vessel at all, which is what left
-        // the relay gathering nobody.
-        //
-        // Active as well, so the water it is crossing stays awake with no player near it.
-        // In the world -- IsInWorld() true, so SharesWorld and every searcher built on it
-        // can see the vessel -- and active, so the water it crosses stays awake. Not filed
-        // in a cell: nothing in this core relocates a game object's cell, and the tick it
-        // needs comes from the map's own update instead.
-        t->AddToWorld();
-        t->SetActiveObjectState(true);
-        t->GetMap()->AddToActive(t);
-
-        t->PinRouteGrids();
-
-        // The failure is reported by Create, which can tell a missing Map.dbc row from a
-        // map that would not open; here we only count what succeeded.
-        if (t->AsMap())
-        {
-            ++mapped;
-            DETAIL_LOG("Transport %u '%s' is map %u", entry, name.c_str(),
-                       t->VesselMapId());
-        }
-
-        // t->GetMap()->Add<GameObject>((GameObject *)t);
-        ++count;
-    }
-    while (result->NextRow());
-    delete result;
-
-    sLog.outString();
-    sLog.outString(">> Loaded %u transports, %u with a map of their own", count, mapped);
-
-    // check transport data DB integrity
-    result = WorldDatabase.Query("SELECT `gameobject`.`guid`,`gameobject`.`id`,`transports`.`name` FROM `gameobject`,`transports` WHERE `gameobject`.`id` = `transports`.`entry`");
-    if (result)                                             // wrong data found
-    {
-        do
-        {
-            Field* fields = result->Fetch();
-
-            uint32 guid  = fields[0].GetUInt32();
-            uint32 entry = fields[1].GetUInt32();
-            std::string name = fields[2].GetCppString();
-            sLog.outErrorDb("Transport %u '%s' have record (GUID: %u) in `gameobject`. Transports DON'T must have any records in `gameobject` or its behavior will be unpredictable/bugged.", entry, name.c_str(), guid);
-        }
-        while (result->NextRow());
-
-        delete result;
-    }
-}
 
 Transport::Transport() : GameObject()
 {
@@ -317,7 +106,7 @@ bool Transport::Create(uint32 guidlow, uint32 mapid, float x, float y, float z, 
     // nothing in the chain applies a transform.
     if (const uint32 mapId = VesselMapIdOf(goinfo->id))
     {
-        m_map = sMapMgr.CreateMap(mapId, this)->AsTransport();
+        m_map = sMapFoundry.OpenDeck(mapId, *this);
 
         // A map that could not be commissioned is kept all the same: it is still the relay,
         // and it is what refuses to take anyone aboard.
@@ -343,7 +132,7 @@ void Transport::PinRouteGrids()
     uint32 pinned = 0;
     for (VesselLeg const& leg : m_route.Legs())
     {
-        Map* sailed = sMapMgr.CreateMap(leg.mapId, this);
+        Map* sailed = sMapFoundry.OpenWorld(leg.mapId);
         if (!sailed)
         {
             continue;
@@ -366,22 +155,7 @@ Transport* Transport::GetTransport(Map const* map, ObjectGuid guid)
         return nullptr;
     }
 
-    MapManager::TransportsByMapType::const_iterator vessels =
-        sMapMgr.m_TransportsByMap.find(map->GetId());
-    if (vessels == sMapMgr.m_TransportsByMap.end())
-    {
-        return nullptr;
-    }
-
-    for (Transport* vessel : vessels->second)
-    {
-        if (vessel->GetObjectGuid() == guid)
-        {
-            return vessel;
-        }
-    }
-
-    return nullptr;
+    return sFleet.OnMapByGuid(map->GetId(), guid);
 }
 
 namespace
@@ -540,7 +314,7 @@ void Transport::CompleteCrossing()
     m_crossingTo = 0;
 
     Map* oldMap = GetMap();
-    Map* newMap = sMapMgr.CreateMap(newMapid, this);
+    Map* newMap = sMapFoundry.OpenWorld(newMapid);
     if (!oldMap || !newMap || oldMap == newMap)
     {
         return;
