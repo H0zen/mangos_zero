@@ -26,6 +26,7 @@
 
 
 #include "Player.h"
+#include "Standing.h"
 #include "Stats/Experience.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -98,58 +99,37 @@ int32 Player::CalculateReputationGain(ReputationSource source, int32 rep, int32 
 
     percent += rep > 0 ? repMod : -repMod;
 
-    float rate;
+    // What this server pays, read in one place.
+    standing::Rates paid;
+    paid.lowLevelKill = sWorld.getConfig(CONFIG_FLOAT_RATE_REPUTATION_LOWLEVEL_KILL);
+    paid.lowLevelQuest = sWorld.getConfig(CONFIG_FLOAT_RATE_REPUTATION_LOWLEVEL_QUEST);
+    paid.overall = sWorld.getConfig(CONFIG_FLOAT_RATE_REPUTATION_GAIN);
+
+    float lowLevel = 1.0f;
     switch (source)
     {
-        case REPUTATION_SOURCE_KILL:
-            rate = sWorld.getConfig(CONFIG_FLOAT_RATE_REPUTATION_LOWLEVEL_KILL);
-            break;
-        case REPUTATION_SOURCE_QUEST:
-            rate = sWorld.getConfig(CONFIG_FLOAT_RATE_REPUTATION_LOWLEVEL_QUEST);
-            break;
+        case REPUTATION_SOURCE_KILL:  lowLevel = paid.lowLevelKill; break;
+        case REPUTATION_SOURCE_QUEST: lowLevel = paid.lowLevelQuest; break;
         case REPUTATION_SOURCE_SPELL:
-        default:
-            rate = 1.0f;
-            break;
+        default: break;
     }
 
-    if (rate != 1.0f && creatureOrQuestLevel <= xp::GreyLevel(getLevel()))
-    {
-        percent *= rate;
-    }
-
-    if (percent <= 0.0f)
-    {
-        return 0;
-    }
-
-    // Multiply result with the faction specific rate
+    // What the faction's own row says about this kind of deed.
+    standing::FactionRate ofFaction;
     if (const RepRewardRate* repData = sObjectMgr.GetRepRewardRate(faction))
     {
-        float repRate = 0.0f;
+        ofFaction.stated = true;
         switch (source)
         {
-            case REPUTATION_SOURCE_KILL:
-                repRate = repData->creature_rate;
-                break;
-            case REPUTATION_SOURCE_QUEST:
-                repRate = repData->quest_rate;
-                break;
-            case REPUTATION_SOURCE_SPELL:
-                repRate = repData->spell_rate;
-                break;
+            case REPUTATION_SOURCE_KILL:  ofFaction.rate = repData->creature_rate; break;
+            case REPUTATION_SOURCE_QUEST: ofFaction.rate = repData->quest_rate; break;
+            case REPUTATION_SOURCE_SPELL: ofFaction.rate = repData->spell_rate; break;
         }
-
-        // for custom, a rate of 0.0 will totally disable reputation gain for this faction/type
-        if (repRate <= 0.0f)
-        {
-            return 0;
-        }
-
-        percent *= repRate;
     }
 
-    return int32(sWorld.getConfig(CONFIG_FLOAT_RATE_REPUTATION_GAIN) * rep * percent / 100.0f);
+    const bool beneathHim = creatureOrQuestLevel <= xp::GreyLevel(getLevel());
+
+    return standing::Gained(rep, percent, beneathHim, lowLevel, ofFaction, paid.overall);
 }
 
 // Calculates how many reputation points player gains in victim's enemy factions

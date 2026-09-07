@@ -31,7 +31,9 @@ set(TEST_SOURCES
     unit/test_questbond.cpp
     unit/test_trapsight.cpp
     unit/test_experience.cpp
+    unit/test_lootrates.cpp
     unit/test_reclaim.cpp
+    unit/test_standing.cpp
     unit/test_skillgain.cpp
     unit/test_lifespan.cpp
     unit/test_mapkey.cpp

@@ -102,14 +102,11 @@ void Rest::Kind(RestType type, uint32 areaTriggerId /*= 0*/)
 
 float Rest::Over(time_t seconds, bool offline /*= false*/, bool inRestPlace /*= false*/) const
 {
-    float rate = sWorld.getConfig(CONFIG_FLOAT_RATE_REST_INGAME);
+    rest::Rates paid;
+    paid.inGame = sWorld.getConfig(CONFIG_FLOAT_RATE_REST_INGAME);
+    paid.offlineInn = sWorld.getConfig(CONFIG_FLOAT_RATE_REST_OFFLINE_IN_TAVERN_OR_CITY);
+    paid.offlineWilderness = sWorld.getConfig(CONFIG_FLOAT_RATE_REST_OFFLINE_IN_WILDERNESS);
 
-    if (offline)
-    {
-        rate = inRestPlace
-             ? sWorld.getConfig(CONFIG_FLOAT_RATE_REST_OFFLINE_IN_TAVERN_OR_CITY)
-             : sWorld.getConfig(CONFIG_FLOAT_RATE_REST_OFFLINE_IN_WILDERNESS) / 4.0f;
-    }
-
-    return rest::Gained(m_owner.GetUInt32Value(PLAYER_NEXT_LEVEL_XP), seconds, rate);
+    return rest::Gained(m_owner.GetUInt32Value(PLAYER_NEXT_LEVEL_XP), seconds,
+                        rest::RateFor(offline, inRestPlace, paid));
 }

@@ -56,6 +56,30 @@ namespace rest
         return float(seconds) * (nextLevelXp / 1152000.0f) * rate;
     }
 
+    /// What a server pays for resting, awake and asleep.
+    struct Rates
+    {
+        float inGame = 1.0f;
+        float offlineInn = 1.0f;
+        float offlineWilderness = 1.0f;
+    };
+
+    /**
+     * @brief The rate in force for one stretch of rest.
+     *
+     * Logged out in an inn or a city pays its own rate; logged out anywhere else pays a
+     * quarter of that rate, which is the game's way of saying a field is not a bed.
+     */
+    inline float RateFor(bool offline, bool inRestPlace, Rates const& paid)
+    {
+        if (!offline)
+        {
+            return paid.inGame;
+        }
+
+        return inRestPlace ? paid.offlineInn : paid.offlineWilderness / 4.0f;
+    }
+
     /// The most that can be held: a level and a half of drawn rest, which is
     /// thirty bubbles, kept as three quarters of a level because the client
     /// doubles it.

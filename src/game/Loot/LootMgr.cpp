@@ -47,6 +47,21 @@ static eConfigFloatValues const qualityToRate[MAX_ITEM_QUALITY] =
     CONFIG_FLOAT_RATE_DROP_ITEM_ARTIFACT,                   // ITEM_QUALITY_ARTIFACT
 };
 
+/// What this server pays for drops, read in one place.
+static loot::DropRates RatesPaid()
+{
+    loot::DropRates rates;
+
+    for (uint32 quality = 0; quality < MAX_ITEM_QUALITY; ++quality)
+    {
+        rates.byQuality[quality] = sWorld.getConfig(qualityToRate[quality]);
+    }
+
+    rates.referenced = sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_ITEM_REFERENCED);
+
+    return rates;
+}
+
 LootStore LootTemplates_Creature("creature_loot_template",     "creature entry",                 true);
 LootStore LootTemplates_Disenchant("disenchant_loot_template",   "item disenchant id",             true);
 LootStore LootTemplates_Fishing("fishing_loot_template",      "area id",                        true);
@@ -367,21 +382,16 @@ void LootStore::ReportNotExistedId(uint32 id) const
 // RATE_DROP_ITEMS is no longer used for all types of entries
 bool LootStoreItem::Roll(bool rate) const
 {
-    if (chance >= 100.0f)
-    {
-        return true;
-    }
+    const bool isReference = mincountOrRef < 0;
 
-    if (mincountOrRef < 0)                                  // reference case
-    {
-        return roll_chance_f(chance * (rate ? sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_ITEM_REFERENCED) : 1.0f));
-    }
+    ItemPrototype const* pProto = isReference ? nullptr : ObjectMgr::GetItemPrototype(itemid);
 
-    ItemPrototype const* pProto = ObjectMgr::GetItemPrototype(itemid);
+    // An item with no row of its own is rolled at its stated chance: there is no quality to
+    // read a rate by.
+    const bool rated = rate && (isReference || pProto != nullptr);
+    const uint32 quality = pProto ? pProto->Quality : 0;
 
-    float qualityModifier = pProto && rate ? sWorld.getConfig(qualityToRate[pProto->Quality]) : 1.0f;
-
-    return roll_chance_f(chance * qualityModifier);
+    return roll_chance_f(loot::ChanceOf(chance, rated, isReference, quality, RatesPaid()));
 }
 
 // Checks correctness of values
@@ -919,21 +929,17 @@ void Loot::NotifyQuestItemRemoved(uint8 questIndex)
  */
 void Loot::generateMoneyLoot(uint32 minAmount, uint32 maxAmount)
 {
-    if (maxAmount > 0)
+    const float rate = sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_MONEY);
+
+    // A range wider than a short is rolled in coins of 256, then shifted back: the draw
+    // itself is what cannot span it, not the money.
+    if (maxAmount > minAmount && (maxAmount - minAmount) >= 32700)
     {
-        if (maxAmount <= minAmount)
-        {
-            gold = uint32(maxAmount * sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_MONEY));
-        }
-        else if ((maxAmount - minAmount) < 32700)
-        {
-            gold = uint32(urand(minAmount, maxAmount) * sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_MONEY));
-        }
-        else
-        {
-            gold = uint32(urand(minAmount >> 8, maxAmount >> 8) * sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_MONEY)) << 8;
-        }
+        gold = loot::Coin(minAmount >> 8, maxAmount >> 8, urand(minAmount >> 8, maxAmount >> 8), rate) << 8;
+        return;
     }
+
+    gold = loot::Coin(minAmount, maxAmount, urand(minAmount, maxAmount), rate);
 }
 
 /**

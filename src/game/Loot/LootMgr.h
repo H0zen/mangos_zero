@@ -30,6 +30,7 @@
 #include <map>
 #include <set>
 #include "ByteBuffer.h"
+#include "SharedDefines.h"
 #include "ObjectGuid.h"
 #include "Utilities/LinkedReference/RefManager.h"
 
@@ -75,6 +76,51 @@ enum LootSlotType
     LOOT_SLOT_REQS    = 3,                                  // can't be looted (error message about missing reqs)
     MAX_LOOT_SLOT_TYPE                                      // custom, use for mark skipped from show items
 };
+
+namespace loot
+{
+    /// What a server multiplies a drop's chance by, one for each quality and one for the
+    /// items a reference pulls in.
+    struct DropRates
+    {
+        float byQuality[MAX_ITEM_QUALITY] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
+        float referenced = 1.0f;
+    };
+
+    /// The chance this entry actually rolls at. A hundred percent stays a certainty
+    /// whatever the rates say, which is what makes a quest item a quest item.
+    inline float ChanceOf(float stated, bool rated, bool isReference, uint32 quality,
+                          DropRates const& rates)
+    {
+        if (stated >= 100.0f || !rated)
+        {
+            return stated;
+        }
+
+        if (isReference)
+        {
+            return stated * rates.referenced;
+        }
+
+        return stated * (quality < MAX_ITEM_QUALITY ? rates.byQuality[quality] : 1.0f);
+    }
+
+    /// The coin on a body, at the rate this server pays.
+    inline uint32 Coin(uint32 least, uint32 most, uint32 rolled, float rate)
+    {
+        if (most == 0)
+        {
+            return 0;
+        }
+
+        if (most <= least)
+        {
+            return uint32(most * rate);
+        }
+
+        return uint32(rolled * rate);
+    }
+}
 
 struct LootStoreItem
 {
