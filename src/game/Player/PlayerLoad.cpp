@@ -31,6 +31,7 @@
 #include "Database/SqlOperations.h"
 #include <cstdlib>
 #include "Player.h"
+#include "Reclaim.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
 #include "Log.h"
@@ -82,9 +83,7 @@
 #include "Corpse.h"
 
 // corpse reclaim times
-#define DEATH_EXPIRE_STEP (5*MINUTE)
 
-#define MAX_DEATH_COUNT 3
 
 /**
  * @brief Loads battleground return and participation data from the database.
@@ -485,9 +484,9 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     m_atLoginFlags = fields[33].GetUInt32();
 
     m_deathExpireTime = (time_t)fields[36].GetUInt64();
-    if (m_deathExpireTime > now + MAX_DEATH_COUNT * DEATH_EXPIRE_STEP)
+    if (m_deathExpireTime > now + reclaim::RUNGS * reclaim::FORGETS_AFTER)
     {
-        m_deathExpireTime = now + MAX_DEATH_COUNT * DEATH_EXPIRE_STEP - 1;
+        m_deathExpireTime = now + reclaim::RUNGS * reclaim::FORGETS_AFTER - 1;
     }
 
     std::string taxi_nodes = fields[37].GetCppString();

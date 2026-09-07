@@ -27,6 +27,7 @@
 
 #include "Utilities/Errors.h"
 #include "Player.h"
+#include "Reclaim.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
 #include "Log.h"
@@ -76,11 +77,8 @@
 #include "Corpse.h"
 
 // corpse reclaim times
-#define DEATH_EXPIRE_STEP (5*MINUTE)
 
-#define MAX_DEATH_COUNT 3
 
-static const uint32 corpseReclaimDelay[MAX_DEATH_COUNT] = {30, 60, 120};
 
 /** Preconditions:
  *  - a resurrectable corpse must not be loaded for the player (only bones)
@@ -408,18 +406,24 @@ void Player::RepopAtGraveyard()
  * @param pvp True for PvP death rules; false for PvE death rules.
  * @return The reclaim delay in seconds.
  */
+/// Which deaths this server makes climb the ladder.
+static reclaim::Climbs LadderClimbedOn()
+{
+    reclaim::Climbs which;
+    which.onPvP = sWorld.getConfig(CONFIG_BOOL_DEATH_CORPSE_RECLAIM_DELAY_PVP);
+    which.onPvE = sWorld.getConfig(CONFIG_BOOL_DEATH_CORPSE_RECLAIM_DELAY_PVE);
+
+    return which;
+}
+
 uint32 Player::GetCorpseReclaimDelay(bool pvp) const
 {
-    if ((pvp && !sWorld.getConfig(CONFIG_BOOL_DEATH_CORPSE_RECLAIM_DELAY_PVP)) ||
-        (!pvp && !sWorld.getConfig(CONFIG_BOOL_DEATH_CORPSE_RECLAIM_DELAY_PVE)))
+    if (!reclaim::Climbing(pvp, LadderClimbedOn()))
     {
-        return corpseReclaimDelay[0];
+        return reclaim::Wait(0);
     }
 
-    time_t now = time(nullptr);
-    // 0..2 full period
-    uint32 count = (now < m_deathExpireTime) ? uint32((m_deathExpireTime - now) / DEATH_EXPIRE_STEP) : 0;
-    return corpseReclaimDelay[count];
+    return reclaim::Wait(reclaim::Rung(time(nullptr), m_deathExpireTime));
 }
 
 /**
@@ -427,32 +431,14 @@ uint32 Player::GetCorpseReclaimDelay(bool pvp) const
  */
 void Player::UpdateCorpseReclaimDelay()
 {
-    bool pvp = m_ExtraFlags & PLAYER_EXTRA_PVP_DEATH;
+    const bool pvp = m_ExtraFlags & PLAYER_EXTRA_PVP_DEATH;
 
-    if ((pvp && !sWorld.getConfig(CONFIG_BOOL_DEATH_CORPSE_RECLAIM_DELAY_PVP)) ||
-        (!pvp && !sWorld.getConfig(CONFIG_BOOL_DEATH_CORPSE_RECLAIM_DELAY_PVE)))
+    if (!reclaim::Climbing(pvp, LadderClimbedOn()))
     {
         return;
     }
 
-    time_t now = time(nullptr);
-    if (now < m_deathExpireTime)
-    {
-        // full and partly periods 1..3
-        uint32 count = uint32((m_deathExpireTime - now) / DEATH_EXPIRE_STEP + 1);
-        if (count < MAX_DEATH_COUNT)
-        {
-            m_deathExpireTime = now + (count + 1) * DEATH_EXPIRE_STEP;
-        }
-        else
-        {
-            m_deathExpireTime = now + MAX_DEATH_COUNT * DEATH_EXPIRE_STEP;
-        }
-    }
-    else
-    {
-        m_deathExpireTime = now + DEATH_EXPIRE_STEP;
-    }
+    m_deathExpireTime = reclaim::Climbed(time(nullptr), m_deathExpireTime);
 }
 
 /**
@@ -478,22 +464,13 @@ void Player::SendCorpseReclaimDelay(bool load)
 
         bool pvp = corpse->GetType() == CORPSE_RESURRECTABLE_PVP;
 
-        uint32 count;
-        if ((pvp && sWorld.getConfig(CONFIG_BOOL_DEATH_CORPSE_RECLAIM_DELAY_PVP)) ||
-            (!pvp && sWorld.getConfig(CONFIG_BOOL_DEATH_CORPSE_RECLAIM_DELAY_PVE)))
-        {
-            count = uint32(m_deathExpireTime - corpse->GetGhostTime()) / DEATH_EXPIRE_STEP;
-            if (count >= MAX_DEATH_COUNT)
-            {
-                count = MAX_DEATH_COUNT - 1;
-            }
-        }
-        else
-        {
-            count = 0;
-        }
+        // The rung is read from when the body was left, not from now: what he is told must
+        // be the wait that was set on him when he died.
+        const uint32 rung = reclaim::Climbing(pvp, LadderClimbedOn())
+                          ? reclaim::Rung(corpse->GetGhostTime(), m_deathExpireTime)
+                          : 0;
 
-        time_t expected_time = corpse->GetGhostTime() + corpseReclaimDelay[count];
+        time_t expected_time = corpse->GetGhostTime() + reclaim::Wait(rung);
 
         time_t now = time(nullptr);
         if (now >= expected_time)

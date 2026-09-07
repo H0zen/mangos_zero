@@ -152,7 +152,6 @@ namespace
 
 #define MAKE_SKILL_VALUE(v, m) MAKE_PAIR32(v,m)
 
-#define MAX_DEATH_COUNT 3
 
 //== PlayerTaxi ================================================
 
