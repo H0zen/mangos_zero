@@ -69,6 +69,7 @@
 #include "Opcodes.h"
 #include "SpellAuraDefines.h"
 #include "AuraIndex.h"
+#include "AuraBook.h"
 #include "Combat/Blow.h"
 #include "Unit/Auras/Diminishing.h"
 #include "UpdateFields.h"
@@ -802,29 +803,12 @@ class Unit : public Occupant
     public:
         typedef std::set<Unit*> AttackerSet;
 
-        /**
-         * A multimap from spell ids to \ref SpellAuraHolder, multiple \ref SpellAuraHolder can have
-         * the same id (ie: the same key)
-         */
-        typedef std::multimap < uint32 /*spellId*/, SpellAuraHolder* > SpellAuraHolderMap;
-
-        /**
-         * A pair of two iterators to a \ref SpellAuraHolderMap which is used in conjunction
-         * with the std::multimap::equal_range which gives all \ref SpellAuraHolder that have the same
-         * spellid in this case, the first member is the iterator to the beginning, and the
-         * second member is the iterator to the end.
-         */
-        typedef std::pair<SpellAuraHolderMap::iterator, SpellAuraHolderMap::iterator> SpellAuraHolderBounds;
-        /// Same thing as \ref SpellAuraHolderBounds but with const_iterator instead of iterator
-        typedef std::pair<SpellAuraHolderMap::const_iterator, SpellAuraHolderMap::const_iterator> SpellAuraHolderConstBounds;
-        typedef std::list<SpellAuraHolder*> SpellAuraHolderList;
-
-        /**
-         * List of \ref Aura used in \ref Unit::GetAurasByType and more and also in the members
-         * \ref Unit::m_modAuras and \ref Unit::m_deletedAuras
-         * \see Aura
-         */
-        typedef std::list<Aura*> AuraList;
+        /// The book's own names, kept reachable as Unit::... for the code that says so.
+        typedef ::SpellAuraHolderMap SpellAuraHolderMap;
+        typedef ::SpellAuraHolderBounds SpellAuraHolderBounds;
+        typedef ::SpellAuraHolderConstBounds SpellAuraHolderConstBounds;
+        typedef ::SpellAuraHolderList SpellAuraHolderList;
+        typedef ::AuraList AuraList;
 
         typedef std::set < uint32 /*playerGuidLow*/ > ComboPointHolderSet;
         typedef std::map < SpellEntry const*, ObjectGuid /*targetGuid*/ > TrackedAuraTargetMap;
@@ -2506,7 +2490,7 @@ class Unit : public Occupant
          */
         SpellAuraHolderBounds GetSpellAuraHolderBounds(uint32 spell_id)
         {
-            return m_spellAuraHolders.equal_range(spell_id);
+            return m_auras.Of(spell_id);
         }
 
         /**
@@ -2514,7 +2498,7 @@ class Unit : public Occupant
          */
         SpellAuraHolderConstBounds GetSpellAuraHolderBounds(uint32 spell_id) const
         {
-            return m_spellAuraHolders.equal_range(spell_id);
+            return m_auras.Of(spell_id);
         }
 
         /**
@@ -2555,7 +2539,7 @@ class Unit : public Occupant
          */
         bool HasAura(uint32 spellId) const
         {
-            return m_spellAuraHolders.find(spellId) != m_spellAuraHolders.end();
+            return m_auras.Holds(spellId);
         }
 
         /**
@@ -3651,8 +3635,11 @@ class Unit : public Occupant
         SpellAuraHolder* GetSpellAuraHolder(uint32 spellid) const;
         SpellAuraHolder* GetSpellAuraHolder(uint32 spellid, ObjectGuid casterGUID) const;
 
-        SpellAuraHolderMap&       GetSpellAuraHolderMap()       { return m_spellAuraHolders; }
-        SpellAuraHolderMap const& GetSpellAuraHolderMap() const { return m_spellAuraHolders; }
+        AuraBook&       Carrying()       { return m_auras; }
+        AuraBook const& Carrying() const { return m_auras; }
+
+        SpellAuraHolderMap&       GetSpellAuraHolderMap()       { return m_auras.All(); }
+        SpellAuraHolderMap const& GetSpellAuraHolderMap() const { return m_auras.All(); }
 
         /**
          * The auras of one type currently on this unit.
@@ -3914,10 +3901,9 @@ class Unit : public Occupant
 
         DeathState m_deathState; ///< The current state of life/death for this \ref Unit
 
-        SpellAuraHolderMap m_spellAuraHolders;
-        SpellAuraHolderMap::iterator m_spellAuraHoldersUpdateIterator; // != end() in Unit::m_spellAuraHolders update and point to next element
-        AuraList m_deletedAuras;                            // auras removed while in ApplyModifier and waiting deleted
-        SpellAuraHolderList m_deletedHolders;
+        /// What it is carrying, and everything about keeping that book while it is
+         /// being written in. What a removal means is this class's, not the book's.
+        AuraBook m_auras;
 
         // Store Auras for which the target must be tracked
         TrackedAuraTargetMap m_trackedAuraTargets[MAX_TRACKED_AURA_TYPES];

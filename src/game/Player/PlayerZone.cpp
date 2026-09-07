@@ -418,19 +418,14 @@ void Player::UpdateZoneDependentAuras()
 void Player::UpdateAreaDependentAuras()
 {
     // remove auras from spells with area limitations
-    for (SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end();)
-    {
-        // use m_zoneUpdateId for speed: UpdateArea called from UpdateZone or instead UpdateZone in both cases m_zoneUpdateId up-to-date
-        if (sSpellMgr.GetSpellAllowedInLocationError(iter->second->GetSpellProto(), GetMapId(), m_zoneUpdateId, m_areaUpdateId, this) != SPELL_CAST_OK)
+    // use m_zoneUpdateId for speed: UpdateArea called from UpdateZone or instead UpdateZone in both cases m_zoneUpdateId up-to-date
+    m_auras.RemoveWhere(
+        [this](SpellAuraHolder* holder)
         {
-            RemoveHolder(iter->second);
-            iter = m_spellAuraHolders.begin();
-        }
-        else
-        {
-            ++iter;
-        }
-    }
+            return sSpellMgr.GetSpellAllowedInLocationError(holder->GetSpellProto(), GetMapId(),
+                                                            m_zoneUpdateId, m_areaUpdateId, this) != SPELL_CAST_OK;
+        },
+        [this](SpellAuraHolder* holder) { RemoveHolder(holder); });
 
     // some auras applied at subzone enter
     SpellAreaForAreaMapBounds saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(m_areaUpdateId);

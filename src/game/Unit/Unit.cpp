@@ -238,7 +238,6 @@ Unit::Unit()
     // m_Aura = nullptr;
     // m_AurasCheck = 2000;
     // m_removeAuraTimer = 4;
-    m_spellAuraHoldersUpdateIterator = m_spellAuraHolders.end();
     m_AuraFlags = 0;
 
     m_Visibility = VISIBILITY_ON;
@@ -299,8 +298,7 @@ Unit::~Unit()
 
     // those should be already removed at "RemoveFromWorld()" call
     MANGOS_ASSERT(m_conjured.Empty());
-    MANGOS_ASSERT(m_deletedAuras.size() == 0);
-    MANGOS_ASSERT(m_deletedHolders.size() == 0);
+    MANGOS_ASSERT(m_auras.NothingDeferred());
 }
 
 /**
@@ -1992,30 +1990,16 @@ void Unit::_UpdateSpells(uint32 time)
         }
     }
 
-    // update auras
-    // m_AurasUpdateIterator can be updated in inderect called code at aura remove to skip next planned to update but removed auras
-    for (m_spellAuraHoldersUpdateIterator = m_spellAuraHolders.begin(); m_spellAuraHoldersUpdateIterator != m_spellAuraHolders.end();)
-    {
-        SpellAuraHolder* i_holder = m_spellAuraHoldersUpdateIterator->second;
-        ++m_spellAuraHoldersUpdateIterator;                 // need shift to next for allow update if need into aura update
-        i_holder->UpdateHolder(time);
-    }
+    // A holder may remove itself, or another, while ticking; the book keeps the walk safe.
+    m_auras.EachHolder([time](SpellAuraHolder* holder) { holder->UpdateHolder(time); });
 
     // remove expired auras
-    for (SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end();)
-    {
-        SpellAuraHolder* holder = iter->second;
-
-        if (!(holder->IsPermanent() || holder->IsPassive()) && holder->GetAuraDuration() == 0)
+    m_auras.RemoveWhere(
+        [](SpellAuraHolder* holder)
         {
-            RemoveHolder(holder, AURA_REMOVE_BY_EXPIRE);
-            iter = m_spellAuraHolders.begin();
-        }
-        else
-        {
-            ++iter;
-        }
-    }
+            return !(holder->IsPermanent() || holder->IsPassive()) && holder->GetAuraDuration() == 0;
+        },
+        [this](SpellAuraHolder* holder) { RemoveHolder(holder, AURA_REMOVE_BY_EXPIRE); });
 
     m_conjured.RemoveDespawnedObjects();
 }
@@ -2470,18 +2454,9 @@ void Unit::DeMorph()
  */
 void Unit::RemoveAurasByCaster(ObjectGuid casterGuid)
 {
-    for (SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end();)
-    {
-        if (iter->second->GetCasterGuid() == casterGuid)
-        {
-            RemoveHolder(iter->second);
-            iter = m_spellAuraHolders.begin();
-        }
-        else
-        {
-            ++iter;
-        }
-    }
+    m_auras.RemoveWhere(
+        [casterGuid](SpellAuraHolder* holder) { return holder->GetCasterGuid() == casterGuid; },
+        [this](SpellAuraHolder* holder) { RemoveHolder(holder); });
 }
 
 
@@ -5755,7 +5730,7 @@ Unit* Unit::FindFriendlyUnitCC(float range) const
  */
 bool Unit::hasNegativeAuraWithInterruptFlag(uint32 flag)
 {
-    for (SpellAuraHolderMap::const_iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end(); ++iter)
+    for (SpellAuraHolderMap::const_iterator iter = m_auras.All().begin(); iter != m_auras.All().end(); ++iter)
     {
         if (!iter->second->IsPositive() && iter->second->GetSpellProto()->AuraInterruptFlags & flag)
         {
@@ -6140,18 +6115,7 @@ void Unit::StopAttackFaction(uint32 faction_id)
  */
 void Unit::CleanupDeletedAuras()
 {
-    for (SpellAuraHolderList::const_iterator iter = m_deletedHolders.begin(); iter != m_deletedHolders.end(); ++iter)
-    {
-        delete *iter;
-    }
-    m_deletedHolders.clear();
-
-    // really delete auras "deleted" while processing its ApplyModify code
-    for (AuraList::const_iterator itr = m_deletedAuras.begin(); itr != m_deletedAuras.end(); ++itr)
-    {
-        delete *itr;
-    }
-    m_deletedAuras.clear();
+    m_auras.SweepDeferred();
 }
 
 /**
@@ -6180,8 +6144,8 @@ bool Unit::CheckAndIncreaseCastCounter()
  */
 SpellAuraHolder* Unit::GetSpellAuraHolder(uint32 spellid) const
 {
-    SpellAuraHolderMap::const_iterator itr = m_spellAuraHolders.find(spellid);
-    return itr != m_spellAuraHolders.end() ? itr->second : nullptr;
+    SpellAuraHolderMap::const_iterator itr = m_auras.All().find(spellid);
+    return itr != m_auras.All().end() ? itr->second : nullptr;
 }
 
 /**

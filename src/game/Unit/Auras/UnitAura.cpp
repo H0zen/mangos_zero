@@ -525,7 +525,7 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder* holder)
 
     // add aura, register in lists and arrays
     holder->_AddSpellAuraHolder();
-    m_spellAuraHolders.insert(SpellAuraHolderMap::value_type(holder->GetId(), holder));
+    m_auras.Enter(holder);
 
     for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
@@ -576,7 +576,7 @@ void Unit::RemoveOtherRanks(uint32 spellId)
         return;
     }
     SpellAuraHolderMap::const_iterator i, next;
-    for (i = m_spellAuraHolders.begin(); i != m_spellAuraHolders.end(); i = next)
+    for (i = m_auras.All().begin(); i != m_auras.All().end(); i = next)
     {
         next = i;
         ++next;
@@ -587,13 +587,13 @@ void Unit::RemoveOtherRanks(uint32 spellId)
             {
                 RemoveAuras(i_spellId);
 
-                if (m_spellAuraHolders.empty())
+                if (m_auras.All().empty())
                 {
                     break;
                 }
                 else
                 {
-                    next =  m_spellAuraHolders.begin();
+                    next =  m_auras.All().begin();
                 }
             }
         }
@@ -656,7 +656,7 @@ bool Unit::RemoveConflictingAuras(SpellAuraHolder* holder)
     SpellSpecific spellId_spec = GetSpellSpecific(spellId);
 
     SpellAuraHolderMap::iterator i, next;
-    for (i = m_spellAuraHolders.begin(); i != m_spellAuraHolders.end(); i = next)
+    for (i = m_auras.All().begin(); i != m_auras.All().end(); i = next)
     {
         next = i;
         ++next;
@@ -751,13 +751,13 @@ bool Unit::RemoveConflictingAuras(SpellAuraHolder* holder)
             }
             RemoveAuras(i_spellId);
 
-            if (m_spellAuraHolders.empty())
+            if (m_auras.All().empty())
             {
                 break;
             }
             else
             {
-                next =  m_spellAuraHolders.begin();
+                next =  m_auras.All().begin();
             }
 
             continue;
@@ -782,13 +782,13 @@ bool Unit::RemoveConflictingAuras(SpellAuraHolder* holder)
             }
             RemoveAuras(i_spellId);
 
-            if (m_spellAuraHolders.empty())
+            if (m_auras.All().empty())
             {
                 break;
             }
             else
             {
-                next =  m_spellAuraHolders.begin();
+                next =  m_auras.All().begin();
             }
 
             continue;
@@ -805,13 +805,13 @@ bool Unit::RemoveConflictingAuras(SpellAuraHolder* holder)
             }
             RemoveAuras(i_spellId);
 
-            if (m_spellAuraHolders.empty())
+            if (m_auras.All().empty())
             {
                 break;
             }
             else
             {
-                next =  m_spellAuraHolders.begin();
+                next =  m_auras.All().begin();
             }
 
             continue;
@@ -835,13 +835,13 @@ bool Unit::RemoveConflictingAuras(SpellAuraHolder* holder)
                 }
                 RemoveAuras(i_spellId);
 
-                if (m_spellAuraHolders.empty())
+                if (m_auras.All().empty())
                 {
                     break;
                 }
                 else
                 {
-                    next =  m_spellAuraHolders.begin();
+                    next =  m_auras.All().begin();
                 }
             }
         }
@@ -1077,18 +1077,9 @@ void Unit::RemoveAurasFromItem(Item* castItem, uint32 spellId)
  */
 void Unit::RemoveAurasWithInterruptFlags(uint32 flags)
 {
-    for (SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end();)
-    {
-        if (iter->second->GetSpellProto()->AuraInterruptFlags & flags)
-        {
-            RemoveHolder(iter->second);
-            iter = m_spellAuraHolders.begin();
-        }
-        else
-        {
-            ++iter;
-        }
-    }
+    m_auras.RemoveWhere(
+        [flags](SpellAuraHolder* holder) { return (holder->GetSpellProto()->AuraInterruptFlags & flags) != 0; },
+        [this](SpellAuraHolder* holder) { RemoveHolder(holder); });
 }
 
 /**
@@ -1098,18 +1089,9 @@ void Unit::RemoveAurasWithInterruptFlags(uint32 flags)
  */
 void Unit::RemoveAurasWithAttribute(uint32 flags)
 {
-    for (SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end();)
-    {
-        if (iter->second->GetSpellProto()->HasAttribute((SpellAttributes)flags))
-        {
-            RemoveHolder(iter->second);
-            iter = m_spellAuraHolders.begin();
-        }
-        else
-        {
-            ++iter;
-        }
-    }
+    m_auras.RemoveWhere(
+        [flags](SpellAuraHolder* holder) { return holder->GetSpellProto()->HasAttribute((SpellAttributes)flags); },
+        [this](SpellAuraHolder* holder) { RemoveHolder(holder); });
 }
 
 /**
@@ -1118,24 +1100,12 @@ void Unit::RemoveAurasWithAttribute(uint32 flags)
 void Unit::RemoveTrackedAurasOfOthers()
 {
     // tracked aura targets from other casters are removed if the phase does no more fit
-    for (SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end();)
-    {
-        TrackedAuraType trackedType = iter->second->GetTrackedAuraType();
-        if (!trackedType)
+    m_auras.RemoveWhere(
+        [this](SpellAuraHolder* holder)
         {
-            ++iter;
-            continue;
-        }
-
-        if (iter->second->GetCasterGuid() != GetObjectGuid())
-        {
-            RemoveHolder(iter->second);
-            iter = m_spellAuraHolders.begin();
-            continue;
-        }
-
-        ++iter;
-    }
+            return holder->GetTrackedAuraType() && holder->GetCasterGuid() != GetObjectGuid();
+        },
+        [this](SpellAuraHolder* holder) { RemoveHolder(holder); });
 
     // tracked aura targets at other targets
     for (uint8 type = TRACK_AURA_TYPE_SINGLE_TARGET; type < MAX_TRACKED_AURA_TYPES; ++type)
@@ -1185,20 +1155,7 @@ void Unit::RemoveHolder(SpellAuraHolder* holder, AuraRemoveMode mode)
         }
     }
 
-    if (m_spellAuraHoldersUpdateIterator != m_spellAuraHolders.end() && m_spellAuraHoldersUpdateIterator->second == holder)
-    {
-        ++m_spellAuraHoldersUpdateIterator;
-    }
-
-    SpellAuraHolderBounds bounds = GetSpellAuraHolderBounds(holder->GetId());
-    for (SpellAuraHolderMap::iterator itr = bounds.first; itr != bounds.second; ++itr)
-    {
-        if (itr->second == holder)
-        {
-            m_spellAuraHolders.erase(itr);
-            break;
-        }
-    }
+    m_auras.Strike(holder);
 
     holder->SetRemoveMode(mode);
     holder->UnregisterAndCleanupTrackedAuras();
@@ -1228,7 +1185,7 @@ void Unit::RemoveHolder(SpellAuraHolder* holder, AuraRemoveMode mode)
     if (holder->IsInUse())
     {
         holder->SetDeleted();
-        m_deletedHolders.push_back(holder);
+        m_auras.Defer(holder);
     }
     else
     {
@@ -1317,7 +1274,7 @@ void Unit::RemoveAura(Aura* Aur, AuraRemoveMode mode)
     // store it in aura list with delayed deletion
     if (Aur->IsInUse())
     {
-        m_deletedAuras.push_back(Aur);
+        m_auras.Defer(Aur);
     }
     else
     {
@@ -1332,10 +1289,9 @@ void Unit::RemoveAura(Aura* Aur, AuraRemoveMode mode)
  */
 void Unit::RemoveAllAuras(AuraRemoveMode mode /*= AURA_REMOVE_BY_DEFAULT*/)
 {
-    while (!m_spellAuraHolders.empty())
+    while (!m_auras.Empty())
     {
-        SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin();
-        RemoveHolder(iter->second, mode);
+        RemoveHolder(m_auras.First(), mode);
     }
 }
 
@@ -1346,18 +1302,9 @@ void Unit::RemoveAllAurasOnDeath()
 {
     // used just after dieing to remove all visible auras
     // and disable the mods for the passive ones
-    for (SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end();)
-    {
-        if (!iter->second->IsPassive() && !iter->second->IsDeathPersistent())
-        {
-            RemoveHolder(iter->second, AURA_REMOVE_BY_DEATH);
-            iter = m_spellAuraHolders.begin();
-        }
-        else
-        {
-            ++iter;
-        }
-    }
+    m_auras.RemoveWhere(
+        [](SpellAuraHolder* holder) { return !holder->IsPassive() && !holder->IsDeathPersistent(); },
+        [this](SpellAuraHolder* holder) { RemoveHolder(holder, AURA_REMOVE_BY_DEATH); });
 }
 
 /**
@@ -1368,19 +1315,9 @@ void Unit::RemoveAllAurasOnEvade()
     // used when evading to remove all auras except some special auras
     // Fly should not be removed on evade - neither should linked auras
     // Some cosmetic script auras should not be removed on evade either
-    for (SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end();)
-    {
-        SpellEntry const* proto = iter->second->GetSpellProto();
-        if (IsSpellRemovedOnEvade(proto))
-        {
-            RemoveHolder(iter->second, AURA_REMOVE_BY_DEFAULT);
-            iter = m_spellAuraHolders.begin();
-        }
-        else
-        {
-            ++iter;
-        }
-    }
+    m_auras.RemoveWhere(
+        [](SpellAuraHolder* holder) { return IsSpellRemovedOnEvade(holder->GetSpellProto()); },
+        [this](SpellAuraHolder* holder) { RemoveHolder(holder, AURA_REMOVE_BY_DEFAULT); });
 
     // AND THE CLAIM WITH IT. A creature that evades goes home whole and belongs to
     // nobody: whoever fought it walked away, and the next person to bring it down
@@ -1437,7 +1374,7 @@ void Unit::DelaySpellAuraHolder(uint32 spellId, int32 delaytime, ObjectGuid cast
  */
 void Unit::_RemoveAllAuraMods()
 {
-    for (SpellAuraHolderMap::const_iterator i = m_spellAuraHolders.begin(); i != m_spellAuraHolders.end(); ++i)
+    for (SpellAuraHolderMap::const_iterator i = m_auras.All().begin(); i != m_auras.All().end(); ++i)
     {
         (*i).second->ApplyAuraModifiers(false);
     }
@@ -1448,7 +1385,7 @@ void Unit::_RemoveAllAuraMods()
  */
 void Unit::_ApplyAllAuraMods()
 {
-    for (SpellAuraHolderMap::const_iterator i = m_spellAuraHolders.begin(); i != m_spellAuraHolders.end(); ++i)
+    for (SpellAuraHolderMap::const_iterator i = m_auras.All().begin(); i != m_auras.All().end(); ++i)
     {
         (*i).second->ApplyAuraModifiers(true);
     }
