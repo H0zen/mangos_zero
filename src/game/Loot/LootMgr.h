@@ -44,7 +44,7 @@ class Occupant;
 #define MAX_NR_QUEST_ITEMS 32
 // unrelated to the number of quest items shown, just for reserve
 
-enum PermissionTypes
+enum PermissionTypes : int
 {
     ALL_PERMISSION    = 0,
     GROUP_PERMISSION  = 1,
@@ -53,7 +53,7 @@ enum PermissionTypes
     NONE_PERMISSION   = 4
 };
 
-enum LootType
+enum LootType : int
 {
     LOOT_CORPSE                 = 1,
     LOOT_PICKPOCKETING          = 2,
