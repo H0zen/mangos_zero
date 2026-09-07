@@ -49,6 +49,7 @@
 #include "ObjectMgr.h"
 #include "CreatureAI.h"
 #include "Formulas.h"
+#include "SkillGain.h"
 #include "Stats/Experience.h"
 #include "Group.h"
 #include "Guild.h"
@@ -475,29 +476,20 @@ bool Player::UpdateSkill(uint32 skill_id, uint32 step)
 }
 
 /**
- * @brief Calculates the configured chance to gain a skill point at the current value.
+ * @brief What this server pays for each colour of attempt.
  *
- * @param SkillValue The player's current skill value.
- * @param GrayLevel The value at which gains become gray.
- * @param GreenLevel The value at which gains become green.
- * @param YellowLevel The value at which gains become yellow.
- * @return The gain chance scaled by ten.
+ * Read in one place, because the four are one statement about how fast a profession is
+ * meant to rise, and because everything below this line works on the values.
  */
-inline int SkillGainChance(uint32 SkillValue, uint32 GrayLevel, uint32 GreenLevel, uint32 YellowLevel)
+static skill::Chances ChancesPaid()
 {
-    if (SkillValue >= GrayLevel)
-    {
-        return sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_GREY) * 10;
-    }
-    if (SkillValue >= GreenLevel)
-    {
-        return sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_GREEN) * 10;
-    }
-    if (SkillValue >= YellowLevel)
-    {
-        return sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_YELLOW) * 10;
-    }
-    return sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_ORANGE) * 10;
+    skill::Chances paid;
+    paid.orange = sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_ORANGE);
+    paid.yellow = sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_YELLOW);
+    paid.green = sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_GREEN);
+    paid.grey = sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_GREY);
+
+    return paid;
 }
 
 /**
@@ -521,10 +513,12 @@ bool Player::UpdateCraftSkill(uint32 spellid)
 
             uint32 craft_skill_gain = sWorld.getConfig(CONFIG_UINT32_SKILL_GAIN_CRAFTING);
 
-            return UpdateSkillPro(skill->SkillLine, SkillGainChance(SkillValue,
-                skill->TrivialSkillLineRankHigh,
-                (skill->TrivialSkillLineRankHigh + skill->TrivialSkillLineRankLow) / 2,
-                skill->TrivialSkillLineRankLow),
+            return UpdateSkillPro(skill->SkillLine,
+                skill::ChanceAt(SkillValue,
+                                skill->TrivialSkillLineRankHigh,
+                                (skill->TrivialSkillLineRankHigh + skill->TrivialSkillLineRankLow) / 2,
+                                skill->TrivialSkillLineRankLow,
+                                ChancesPaid()),
                 craft_skill_gain);
         }
     }
@@ -544,33 +538,32 @@ bool Player::UpdateGatherSkill(uint32 SkillId, uint32 SkillValue, uint32 RedLeve
 {
     DEBUG_LOG("UpdateGatherSkill(SkillId %d SkillLevel %d RedLevel %d)", SkillId, SkillValue, RedLevel);
 
-    uint32 gathering_skill_gain = sWorld.getConfig(CONFIG_UINT32_SKILL_GAIN_GATHERING);
+    const uint32 gathering_skill_gain = sWorld.getConfig(CONFIG_UINT32_SKILL_GAIN_GATHERING);
 
-    // For skinning and Mining chance decrease with level. 1-74 - no decrease, 75-149 - 2 times, 225-299 - 8 times
+    // The bands sit a hundred, fifty and twenty-five points above the level the node turns
+    // red at, which is what makes a node grey out as the gatherer outgrows it.
+    const int32 chance = skill::ChanceAt(SkillValue, RedLevel + 100, RedLevel + 50, RedLevel + 25,
+                                         ChancesPaid()) * int32(Multiplicator);
+
     switch (SkillId)
     {
         case SKILL_HERBALISM:
         case SKILL_LOCKPICKING:
-            return UpdateSkillPro(SkillId, SkillGainChance(SkillValue, RedLevel + 100, RedLevel + 50, RedLevel + 25) * Multiplicator, gathering_skill_gain);
+            return UpdateSkillPro(SkillId, chance, gathering_skill_gain);
+
+        // Skinning and mining thin out as the skill rises, each on its own step.
         case SKILL_SKINNING:
-            if (sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_SKINNING_STEPS) == 0)
-            {
-                return UpdateSkillPro(SkillId, SkillGainChance(SkillValue, RedLevel + 100, RedLevel + 50, RedLevel + 25) * Multiplicator, gathering_skill_gain);
-            }
-            else
-            {
-                return UpdateSkillPro(SkillId, (SkillGainChance(SkillValue, RedLevel + 100, RedLevel + 50, RedLevel + 25) * Multiplicator) >> (SkillValue / sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_SKINNING_STEPS)), gathering_skill_gain);
-            }
+            return UpdateSkillPro(SkillId,
+                                  skill::Thinned(chance, SkillValue,
+                                                 sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_SKINNING_STEPS)),
+                                  gathering_skill_gain);
         case SKILL_MINING:
-            if (sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_MINING_STEPS) == 0)
-            {
-                return UpdateSkillPro(SkillId, SkillGainChance(SkillValue, RedLevel + 100, RedLevel + 50, RedLevel + 25) * Multiplicator, gathering_skill_gain);
-            }
-            else
-            {
-                return UpdateSkillPro(SkillId, (SkillGainChance(SkillValue, RedLevel + 100, RedLevel + 50, RedLevel + 25) * Multiplicator) >> (SkillValue / sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_MINING_STEPS)), gathering_skill_gain);
-            }
+            return UpdateSkillPro(SkillId,
+                                  skill::Thinned(chance, SkillValue,
+                                                 sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_MINING_STEPS)),
+                                  gathering_skill_gain);
     }
+
     return false;
 }
 
@@ -583,13 +576,10 @@ bool Player::UpdateFishingSkill()
 {
     DEBUG_LOG("UpdateFishingSkill");
 
-    uint32 SkillValue = GetPureSkillValue(SKILL_FISHING);
+    const uint32 SkillValue = GetPureSkillValue(SKILL_FISHING);
+    const uint32 gathering_skill_gain = sWorld.getConfig(CONFIG_UINT32_SKILL_GAIN_GATHERING);
 
-    int32 chance = SkillValue < 75 ? 100 : 2500 / (SkillValue - 50);
-
-    uint32 gathering_skill_gain = sWorld.getConfig(CONFIG_UINT32_SKILL_GAIN_GATHERING);
-
-    return UpdateSkillPro(SKILL_FISHING, chance * 10, gathering_skill_gain);
+    return UpdateSkillPro(SKILL_FISHING, skill::FishingChance(SkillValue), gathering_skill_gain);
 }
 
 /**
