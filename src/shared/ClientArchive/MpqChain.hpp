@@ -8,6 +8,13 @@
 // that reason, so Spell.dbc comes back as patch-2 left it, not as dbc.MPQ ships
 // it.
 //
+// A patch can also take a file away, and it does that by carrying an entry of its
+// own -- zero bytes, flagged deleted -- over the name. Four of the DBCs are gone
+// from 1.12.1 this way, SpellEffectNames and SpellAuraNames among them. So the
+// walk stops at the first archive that mentions a name, whichever answer that
+// archive gives: reading past a deletion would hand back a file the client cannot
+// open.
+//
 // Nothing is ever extracted to answer a read: the bytes are decompressed
 // straight into the caller's buffer.
 
@@ -47,6 +54,10 @@ namespace client
         const std::string& LastError() const { return m_error; }
 
     private:
+        /// The archive a name resolves to, or nullptr when no archive holds it or the
+        /// highest-priority one that mentions it says it is deleted.
+        const MpqArchive* Holder(const std::string& name) const;
+
         std::vector<MpqArchive> m_archives;
         mutable std::string m_error;
     };

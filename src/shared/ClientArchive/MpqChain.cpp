@@ -148,14 +148,33 @@ namespace client
         return opened;
     }
 
-    bool MpqChain::Read(const std::string& name, std::vector<std::uint8_t>* out) const
+    const MpqArchive* MpqChain::Holder(const std::string& name) const
     {
+        // A patch that drops a file does not remove it from the archive it shipped in --
+        // it carries an entry of its own, zero bytes long, flagged deleted. The first
+        // archive that mentions the name settles the question: if that entry is the
+        // marker, the file is gone, and reading on down the chain would resurrect a copy
+        // the client itself refuses to open. Storm answers such a name with its own
+        // result code, which the open path treats exactly like "no such file".
         for (auto archive = m_archives.rbegin(); archive != m_archives.rend(); ++archive)
         {
-            if (archive->Contains(name))
+            MpqArchive::Entry entry;
+            if (!archive->Describe(name, &entry))
             {
-                return archive->Read(name, out, &m_error);
+                continue;
             }
+
+            return entry.Exists() && !entry.Deleted() ? &*archive : nullptr;
+        }
+
+        return nullptr;
+    }
+
+    bool MpqChain::Read(const std::string& name, std::vector<std::uint8_t>* out) const
+    {
+        if (const MpqArchive* archive = Holder(name))
+        {
+            return archive->Read(name, out, &m_error);
         }
 
         m_error = "not found in any archive: " + name;
@@ -164,15 +183,7 @@ namespace client
 
     bool MpqChain::Contains(const std::string& name) const
     {
-        for (const MpqArchive& archive : m_archives)
-        {
-            if (archive.Contains(name))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return Holder(name) != nullptr;
     }
 
     std::vector<std::string> MpqChain::ListedNames() const

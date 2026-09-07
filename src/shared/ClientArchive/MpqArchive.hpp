@@ -24,6 +24,23 @@ namespace client
 
         bool Contains(const std::string& name) const;
 
+        /// What one archive says about a name, deleted entries included. A chain has to
+        /// tell "this archive does not mention the file" from "this archive says the
+        /// file is gone", and Contains() answers false to both.
+        struct Entry
+        {
+            std::uint32_t packedSize = 0;
+            std::uint32_t unpackedSize = 0;
+            std::uint32_t flags = 0;
+            std::uint16_t locale = 0;
+
+            bool Exists() const;
+            bool Deleted() const;
+        };
+
+        /// False when no hash entry names the file at all.
+        bool Describe(const std::string& name, Entry* out) const;
+
         /// \a error, when given, receives the reason a read failed. Nothing is written
         /// to the archive itself, which is what makes concurrent reads safe.
         bool Read(const std::string& name, std::vector<std::uint8_t>* out,

@@ -74,6 +74,7 @@ set(TEST_SOURCES
     spells/test_auraindex.cpp
 
     client/test_inflate.cpp
+    client/test_mpqchain.cpp
 )
 
 add_executable(mangos_tests ${TEST_SOURCES})

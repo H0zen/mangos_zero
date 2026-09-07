@@ -306,6 +306,33 @@ namespace client
         return fallback;
     }
 
+    bool MpqArchive::Entry::Exists() const
+    {
+        return (flags & kFlagExists) != 0;
+    }
+
+    bool MpqArchive::Entry::Deleted() const
+    {
+        return (flags & kFlagDeleted) != 0;
+    }
+
+    bool MpqArchive::Describe(const std::string& name, Entry* out) const
+    {
+        const HashEntry* entry = Find(name);
+        if (!entry || entry->blockIndex >= m_blockTable.size())
+            return false;
+
+        const BlockEntry& block = m_blockTable[entry->blockIndex];
+        if (out)
+        {
+            out->packedSize = block.packedSize;
+            out->unpackedSize = block.unpackedSize;
+            out->flags = block.flags;
+            out->locale = entry->locale;
+        }
+        return true;
+    }
+
     bool MpqArchive::Contains(const std::string& name) const
     {
         const HashEntry* entry = Find(name);
