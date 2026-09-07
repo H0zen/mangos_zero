@@ -831,9 +831,9 @@ bool Unit::IsImmuneToSpell(SpellEntry const* spellInfo, bool /*castOnSelf*/)
     }
 
     // TODO add spellEffect immunity checks!, player with flag in bg is immune to immunity buffs from other friendly players!
-    // SpellImmuneList const& dispelList = m_spellImmune[IMMUNITY_EFFECT];
+    // SpellImmuneList const& dispelList = m_immune.Of(IMMUNITY_EFFECT);
 
-    SpellImmuneList const& dispelList = m_spellImmune[IMMUNITY_DISPEL];
+    SpellImmuneList const& dispelList = m_immune.Of(IMMUNITY_DISPEL);
     for (SpellImmuneList::const_iterator itr = dispelList.begin(); itr != dispelList.end(); ++itr)
     {
         if (itr->type == spellInfo->DispelType)
@@ -845,7 +845,7 @@ bool Unit::IsImmuneToSpell(SpellEntry const* spellInfo, bool /*castOnSelf*/)
     if (!spellInfo->HasAttribute(SPELL_ATTR_EX_UNAFFECTED_BY_SCHOOL_IMMUNE) &&          // unaffected by school immunity
         !spellInfo->HasAttribute(SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY))           // can remove immune (by dispell or immune it)
     {
-        SpellImmuneList const& schoolList = m_spellImmune[IMMUNITY_SCHOOL];
+        SpellImmuneList const& schoolList = m_immune.Of(IMMUNITY_SCHOOL);
         for (SpellImmuneList::const_iterator itr = schoolList.begin(); itr != schoolList.end(); ++itr)
         {
             if (!(IsPositiveSpell(itr->spellId) && IsPositiveSpell(spellInfo->ID)) &&
@@ -858,7 +858,7 @@ bool Unit::IsImmuneToSpell(SpellEntry const* spellInfo, bool /*castOnSelf*/)
 
     if (uint32 mechanic = spellInfo->Mechanic)
     {
-        SpellImmuneList const& mechanicList = m_spellImmune[IMMUNITY_MECHANIC];
+        SpellImmuneList const& mechanicList = m_immune.Of(IMMUNITY_MECHANIC);
         for (SpellImmuneList::const_iterator itr = mechanicList.begin(); itr != mechanicList.end(); ++itr)
         {
             if (itr->type == mechanic)
@@ -892,7 +892,7 @@ bool Unit::IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex i
 {
     // If m_immuneToEffect type contain this effect type, IMMUNE effect.
     uint32 effect = spellInfo->Effect[index];
-    SpellImmuneList const& effectList = m_spellImmune[IMMUNITY_EFFECT];
+    SpellImmuneList const& effectList = m_immune.Of(IMMUNITY_EFFECT);
     for (SpellImmuneList::const_iterator itr = effectList.begin(); itr != effectList.end(); ++itr)
     {
         if (itr->type == effect)
@@ -903,7 +903,7 @@ bool Unit::IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex i
 
     if (uint32 mechanic = spellInfo->EffectMechanic[index])
     {
-        SpellImmuneList const& mechanicList = m_spellImmune[IMMUNITY_MECHANIC];
+        SpellImmuneList const& mechanicList = m_immune.Of(IMMUNITY_MECHANIC);
         for (SpellImmuneList::const_iterator itr = mechanicList.begin(); itr != mechanicList.end(); ++itr)
         {
             if (itr->type == mechanic)
@@ -924,7 +924,7 @@ bool Unit::IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex i
 
     if (uint32 aura = spellInfo->EffectAura[index])
     {
-        SpellImmuneList const& list = m_spellImmune[IMMUNITY_STATE];
+        SpellImmuneList const& list = m_immune.Of(IMMUNITY_STATE);
         for (SpellImmuneList::const_iterator itr = list.begin(); itr != list.end(); ++itr)
         {
             if (itr->type == aura)

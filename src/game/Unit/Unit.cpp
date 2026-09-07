@@ -246,10 +246,7 @@ Unit::Unit()
     m_detectInvisibilityMask = 0;
     m_invisibilityMask = 0;
     m_transform = 0;
-    for (int i = 0; i < MAX_SPELL_IMMUNITY; ++i)
-    {
-        m_spellImmune[i].clear();
-    }
+    m_immune.Clear();
     // implement 50% base damage from offhand
     m_tallies.Value(UNIT_MOD_DAMAGE_OFFHAND, TOTAL_PCT, 0.5f);
 
@@ -3485,18 +3482,13 @@ void Unit::EnergizeBySpell(Unit* pVictim, uint32 SpellID, uint32 Damage, Powers 
  */
 bool Unit::IsImmuneToDamage(SpellSchoolMask shoolMask)
 {
-    // If m_immuneToSchool type contain this school type, IMMUNE damage.
-    SpellImmuneList const& schoolList = m_spellImmune[IMMUNITY_SCHOOL];
-    for (SpellImmuneList::const_iterator itr = schoolList.begin(); itr != schoolList.end(); ++itr)
+    // Immune to the school it comes in, or to that kind of damage outright.
+    if (m_immune.AnyOf(IMMUNITY_SCHOOL, shoolMask))
     {
-        if (itr->type & shoolMask)
-        {
-            return true;
-        }
+        return true;
     }
 
-    // If m_immuneToDamage type contain magic, IMMUNE damage.
-    SpellImmuneList const& damageList = m_spellImmune[IMMUNITY_DAMAGE];
+    SpellImmuneList const& damageList = m_immune.Of(IMMUNITY_DAMAGE);
     for (SpellImmuneList::const_iterator itr = damageList.begin(); itr != damageList.end(); ++itr)
     {
         if (itr->type & shoolMask)
@@ -3523,30 +3515,11 @@ void Unit::ApplySpellImmune(uint32 spellId, uint32 op, uint32 type, bool apply)
 {
     if (apply)
     {
-        for (SpellImmuneList::iterator itr = m_spellImmune[op].begin(), next; itr != m_spellImmune[op].end(); itr = next)
-        {
-            next = itr; ++next;
-            if (itr->type == type)
-            {
-                m_spellImmune[op].erase(itr);
-                next = m_spellImmune[op].begin();
-            }
-        }
-        SpellImmune Immune;
-        Immune.spellId = spellId;
-        Immune.type = type;
-        m_spellImmune[op].push_back(Immune);
+        m_immune.Grant(spellId, op, type);
     }
     else
     {
-        for (SpellImmuneList::iterator itr = m_spellImmune[op].begin(); itr != m_spellImmune[op].end(); ++itr)
-        {
-            if (itr->spellId == spellId)
-            {
-                m_spellImmune[op].erase(itr);
-                break;
-            }
-        }
+        m_immune.Revoke(spellId, op);
     }
 }
 

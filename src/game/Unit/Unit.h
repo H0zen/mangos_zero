@@ -70,6 +70,7 @@
 #include "SpellAuraDefines.h"
 #include "AuraIndex.h"
 #include "AuraBook.h"
+#include "Immunities.h"
 #include "Combat/Blow.h"
 #include "Unit/Auras/Diminishing.h"
 #include "UpdateFields.h"
@@ -348,14 +349,6 @@ class Item;
 class Pet;
 class PetAura;
 class Totem;
-
-struct SpellImmune
-{
-    uint32 type;
-    uint32 spellId;
-};
-
-typedef std::list<SpellImmune> SpellImmuneList;
 
 enum WeaponDamageRange
 {
@@ -3603,7 +3596,6 @@ class Unit : public Occupant
 
         TrackedAuraTargetMap&       GetTrackedAuraTargets(TrackedAuraType type)       { return m_auras.Tracked(type); }
         TrackedAuraTargetMap const& GetTrackedAuraTargets(TrackedAuraType type) const { return m_auras.Tracked(type); }
-        SpellImmuneList m_spellImmune[MAX_SPELL_IMMUNITY];
 
         // Threat related methods
         bool CanHaveThreatList(bool ignoreAliveState = false) const;
@@ -3903,6 +3895,10 @@ class Unit : public Occupant
         /// What it is carrying, and everything about keeping that book while it is
          /// being written in. What a removal means is this class's, not the book's.
         AuraBook m_auras;
+
+        /// What cannot touch it, and what is holding each of those open. Nothing outside
+        /// this class asks yet, so there is nothing to ask it through.
+        Immunities m_immune;
 
         // Store Auras for which the target must be tracked
 
