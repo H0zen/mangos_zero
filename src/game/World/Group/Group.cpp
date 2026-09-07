@@ -59,6 +59,7 @@
 #include "ObjectGuid.h"
 #include "Group.h"
 #include "Formulas.h"
+#include "Stats/Experience.h"
 #include "BattleGround/BattleGround.h"
 #include "MapPersistentStateMgr.h"
 #include "LootMgr.h"
@@ -1522,7 +1523,7 @@ static void GetDataForXPAtKill_helper(Player* player, Unit const* victim, uint32
         member_with_max_level = player;
     }
 
-    uint32 gray_level = MaNGOS::XP::GetGrayLevel(player->getLevel());
+    uint32 gray_level = xp::GreyLevel(player->getLevel());
     if (victim->getLevel() > gray_level && (!not_gray_member_with_max_level ||
         not_gray_member_with_max_level->getLevel() < player->getLevel()))
     {

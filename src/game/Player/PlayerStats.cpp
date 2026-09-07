@@ -49,6 +49,7 @@
 #include "ObjectMgr.h"
 #include "CreatureAI.h"
 #include "Formulas.h"
+#include "Stats/Experience.h"
 #include "Group.h"
 #include "Guild.h"
 #include "GuildMgr.h"
@@ -710,7 +711,7 @@ void Player::UpdateWeaponSkill(WeaponAttackType attType)
 void Player::UpdateCombatSkills(Unit* pVictim, WeaponAttackType attType, bool defence)
 {
     uint32 plevel = getLevel();                             // if defense than pVictim == attacker
-    uint32 greylevel = MaNGOS::XP::GetGrayLevel(plevel);
+    uint32 greylevel = xp::GreyLevel(plevel);
     uint32 moblevel = pVictim->GetLevelForTarget(this);
     if (moblevel < greylevel)
     {

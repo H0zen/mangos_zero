@@ -26,6 +26,7 @@
 
 
 #include "Player.h"
+#include "Stats/Experience.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
 #include "Log.h"
@@ -112,7 +113,7 @@ int32 Player::CalculateReputationGain(ReputationSource source, int32 rep, int32 
             break;
     }
 
-    if (rate != 1.0f && creatureOrQuestLevel <= MaNGOS::XP::GetGrayLevel(getLevel()))
+    if (rate != 1.0f && creatureOrQuestLevel <= xp::GreyLevel(getLevel()))
     {
         percent *= rate;
     }

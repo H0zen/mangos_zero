@@ -48,6 +48,7 @@
 #include "ObjectMgr.h"
 #include "CreatureAI.h"
 #include "Formulas.h"
+#include "Stats/Experience.h"
 #include "Group.h"
 #include "Guild.h"
 #include "GuildMgr.h"
@@ -76,7 +77,7 @@
 bool Player::isHonorOrXPTarget(Unit* pVictim) const
 {
     uint32 v_level = pVictim->getLevel();
-    uint32 k_grey  = MaNGOS::XP::GetGrayLevel(getLevel());
+    uint32 k_grey  = xp::GreyLevel(getLevel());
 
     // Victim level less gray level
     if (v_level <= k_grey)
@@ -105,7 +106,9 @@ void Player::RewardSinglePlayerAtKill(Unit* pVictim)
 {
     bool PvP = pVictim->IsCharmedOwnedByPlayerOrPlayer();
 
-    uint32 xp = PvP ? 0 : MaNGOS::XP::Gain(this, pVictim);
+    uint32 xp = PvP ? 0
+                    : xp::FromKill(getLevel(), xp::QuarryOf(*pVictim),
+                                   sWorld.getConfig(CONFIG_FLOAT_RATE_XP_KILL));
 
     // honor can be in PvP and !PvP (racial leader) cases
     RewardHonor(pVictim, 1);

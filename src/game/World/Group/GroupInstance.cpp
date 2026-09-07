@@ -57,6 +57,7 @@
 #include "ObjectMgr.h"
 #include "ObjectGuid.h"
 #include "Formulas.h"
+#include "Stats/Experience.h"
 #include "PlayerRegistry.h"
 #include "BattleGround/BattleGround.h"
 #include "BattleGround/BattleGroundMgr.h"
@@ -342,12 +343,15 @@ void Group::RewardGroupAtKill(Unit* pVictim, Player* player_tap)
     if (member_with_max_level)
     {
         /// not get Xp in PvP or no not gray players in group
-        uint32 xp = (PvP || !not_gray_member_with_max_level) ? 0 : MaNGOS::XP::Gain(not_gray_member_with_max_level, pVictim);
+        uint32 xp = (PvP || !not_gray_member_with_max_level)
+                  ? 0
+                  : xp::FromKill(not_gray_member_with_max_level->getLevel(), xp::QuarryOf(*pVictim),
+                                 sWorld.getConfig(CONFIG_FLOAT_RATE_XP_KILL));
 
         /// skip in check PvP case (for speed, not used)
         bool is_raid = PvP ? false : sMapStore.LookupEntry(pVictim->GetMapId())->IsRaid() && isRaidGroup();
         bool is_dungeon = PvP ? false : sMapStore.LookupEntry(pVictim->GetMapId())->IsDungeon();
-        float group_rate = MaNGOS::XP::xp_in_group_rate(count, is_raid);
+        float group_rate = xp::GroupShare(count, is_raid);
 
         for (GroupReference* itr = GetFirstMember(); itr != nullptr; itr = itr->next())
         {
