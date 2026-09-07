@@ -329,7 +329,7 @@ void MotionMaster::MoveIdle()
  */
 void MotionMaster::MoveRandomAroundPoint(float x, float y, float z, float radius, float /*verticalZ*/)
 {
-    if (m_owner->IsPlayer())
+    if (m_owner->MovesItself())
     {
         sLog.outError("%s attempt to move random.", m_owner->GetGuidStr().c_str());
     }
@@ -476,7 +476,7 @@ void MotionMaster::MovePointRouted(uint32 id, float x, float y, float z)
  */
 void MotionMaster::MoveSeekAssistance(float x, float y, float z)
 {
-    if (m_owner->IsPlayer())
+    if (m_owner->MovesItself())
     {
         sLog.outError("%s attempt to seek assistance", m_owner->GetGuidStr().c_str());
     }
@@ -494,7 +494,7 @@ void MotionMaster::MoveSeekAssistance(float x, float y, float z)
  */
 void MotionMaster::MoveSeekAssistanceDistract(uint32 time)
 {
-    if (m_owner->IsPlayer())
+    if (m_owner->MovesItself())
     {
         sLog.outError("%s attempt to call distract after assistance", m_owner->GetGuidStr().c_str());
     }
@@ -569,7 +569,7 @@ void MotionMaster::MoveWaypoint(int32 id /*=0*/, uint32 source /*=0==PATH_NO_PAT
  */
 void MotionMaster::MoveTaxiFlight(uint32 path, uint32 pathnode)
 {
-    if (m_owner->IsPlayer())
+    if (m_owner->MovesItself())
     {
         if (path < sTaxiPathNodesByPath.size())
         {

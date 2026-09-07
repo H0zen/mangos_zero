@@ -92,9 +92,9 @@ void ConfusedMovementGenerator::Finalize(Unit& owner)
 {
     owner.clearUnitState(UNIT_STAT_CONFUSED | UNIT_STAT_CONFUSED_MOVE);
 
-    // A player is left where it stands with its client told to stop; a creature's
-    // spline is simply abandoned to whatever generator takes over.
-    if (owner.IsPlayer())
+    // A unit that moves itself is left where it stands with its client told to stop; a
+    // creature's spline is simply abandoned to whatever generator takes over.
+    if (owner.MovesItself())
     {
         owner.StopMoving(true);
     }

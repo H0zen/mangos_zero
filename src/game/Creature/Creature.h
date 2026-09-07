@@ -615,6 +615,9 @@ class Creature : public Unit
         /// The map drives it and refiles the cell it lands in.
         void MovedTo(float x, float y, float z, float o) override;
 
+        /// It goes where the server sends it.
+        bool MovesItself() const override { return false; }
+
         Cell const& GetCurrentCell() const { return m_currentCell; }
         void SetCurrentCell(Cell const& cell) { m_currentCell = cell; }
 

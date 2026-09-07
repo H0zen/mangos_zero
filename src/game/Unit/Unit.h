@@ -862,6 +862,19 @@ class Unit : public Occupant
          */
         virtual void MovedTo(float x, float y, float z, float o) = 0;
 
+        /**
+         * @brief Does it move under its own steam?
+         *
+         * A player does: his client decides every step and the server is told afterwards,
+         * which is why an order to wander or to seek help means nothing to him, why only he
+         * can be put on a taxi, and why he has to be told to stop where a creature's spline
+         * is simply abandoned. A creature does not: it goes where the server sends it.
+         *
+         * This is about what the unit is, not about who is holding the reins at the moment:
+         * a charmed creature is still driven from the server's side of the wire.
+         */
+        virtual bool MovesItself() const = 0;
+
         float ComputeBoundingRadius() const override      // overwrite Occupant version
         {
             return GetFloatValue(UNIT_FIELD_BOUNDINGRADIUS);

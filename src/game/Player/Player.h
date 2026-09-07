@@ -765,6 +765,9 @@ class Player : public Unit
         /// His client moved him; the server writes down where.
         void MovedTo(float x, float y, float z, float o) override { SetPosition(x, y, z, o); }
 
+        /// His client decides every step.
+        bool MovesItself() const override { return true; }
+
         bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0, bool allowNoDelay = false);
 
         // Teleport the player to a specific location using Destination
