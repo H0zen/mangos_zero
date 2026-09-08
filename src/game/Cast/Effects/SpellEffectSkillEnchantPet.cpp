@@ -78,8 +78,10 @@
  *
  * @param eff_idx The effect index containing the learned spell id.
  */
-void Spell::EffectLearnSpell(SpellEffectIndex eff_idx)
+void Spell::EffectLearnSpell(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     if (!unitTarget)
     {
         return;
@@ -89,14 +91,14 @@ void Spell::EffectLearnSpell(SpellEffectIndex eff_idx)
     {
         if (m_caster->IsPlayer())
         {
-            EffectLearnPetSpell(eff_idx);
+            EffectLearnPetSpell(operation);
         }
 
         return;
     }
 
     Player* player = (Player*)unitTarget;
-    uint32 spellToLearn = m_spellInfo->EffectTriggerSpell[eff_idx];
+    uint32 spellToLearn = operation.triggerSpell;
 
     player->learnSpell(spellToLearn, false);
 
@@ -111,7 +113,7 @@ void Spell::EffectLearnSpell(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The dispel effect index.
  */
-void Spell::EffectDispel(SpellEffectIndex eff_idx)
+void Spell::EffectDispel(const cast::Operation& operation)
 {
     if (!unitTarget)
     {
@@ -129,7 +131,7 @@ void Spell::EffectDispel(SpellEffectIndex eff_idx)
     std::list <std::pair<SpellAuraHolder* , uint32> > dispel_list;
 
     // Create dispel mask by dispel type
-    uint32 dispel_type = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 dispel_type = operation.miscValue;
     uint32 dispelMask  = GetDispellMask(DispelType(dispel_type));
     Unit::SpellAuraHolderMap const& auras = unitTarget->GetSpellAuraHolderMap();
     for (Unit::SpellAuraHolderMap::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
@@ -285,7 +287,7 @@ void Spell::EffectDispel(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectDualWield(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectDualWield(const cast::Operation& /*operation*/)
 {
     if (unitTarget && unitTarget->IsPlayer())
     {
@@ -298,7 +300,7 @@ void Spell::EffectDualWield(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectPull(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectPull(const cast::Operation& /*operation*/)
 {
     // TODO: create a proper pull towards distract spell center for distract
     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "WORLD: Spell Effect DUMMY");
@@ -309,7 +311,7 @@ void Spell::EffectPull(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectDistract(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectDistract(const cast::Operation& /*operation*/)
 {
     // Check for possible target
     if (!unitTarget || unitTarget->IsInCombat())
@@ -339,7 +341,7 @@ void Spell::EffectDistract(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectPickPocket(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectPickPocket(const cast::Operation& /*operation*/)
 {
     if (!m_caster->IsPlayer())
     {
@@ -378,8 +380,10 @@ void Spell::EffectPickPocket(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The farsight effect index.
  */
-void Spell::EffectAddFarsight(SpellEffectIndex eff_idx)
+void Spell::EffectAddFarsight(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     if (!m_caster->IsPlayer())
     {
         return;
@@ -407,7 +411,7 @@ void Spell::EffectAddFarsight(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The teleport effect index.
  */
-void Spell::EffectTeleUnitsFaceCaster(SpellEffectIndex eff_idx)
+void Spell::EffectTeleUnitsFaceCaster(const cast::Operation& operation)
 {
     if (!unitTarget)
     {
@@ -426,7 +430,7 @@ void Spell::EffectTeleUnitsFaceCaster(SpellEffectIndex eff_idx)
     }
     else
     {
-        float dis = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[eff_idx]));
+        float dis = GetSpellRadius(sSpellRadiusStore.LookupEntry(operation.radiusIndex));
         ClosePointNear(*m_caster, fx, fy, fz, unitTarget->Where().Extent(), dis);
     }
 
@@ -438,7 +442,7 @@ void Spell::EffectTeleUnitsFaceCaster(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The effect index containing the skill identifier.
  */
-void Spell::EffectLearnSkill(SpellEffectIndex eff_idx)
+void Spell::EffectLearnSkill(const cast::Operation& operation)
 {
     if (!unitTarget->IsPlayer())
     {
@@ -450,7 +454,7 @@ void Spell::EffectLearnSkill(SpellEffectIndex eff_idx)
         return;
     }
 
-    uint32 skillid =  m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 skillid =  operation.miscValue;
     uint16 skillval = ((Player*)unitTarget)->GetPureSkillValue(skillid);
     ((Player*)unitTarget)->SetSkill(skillid, skillval ? skillval : 1, damage * 75, damage);
 
@@ -465,7 +469,7 @@ void Spell::EffectLearnSkill(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectTradeSkill(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectTradeSkill(const cast::Operation& /*operation*/)
 {
     if (!unitTarget->IsPlayer())
     {
@@ -481,7 +485,7 @@ void Spell::EffectTradeSkill(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The effect index providing the enchantment id.
  */
-void Spell::EffectEnchantItemPerm(SpellEffectIndex eff_idx)
+void Spell::EffectEnchantItemPerm(const cast::Operation& operation)
 {
     if (!m_caster->IsPlayer())
     {
@@ -497,7 +501,7 @@ void Spell::EffectEnchantItemPerm(SpellEffectIndex eff_idx)
     // not grow at item use at item case
     p_caster->UpdateCraftSkill(m_spellInfo->ID);
 
-    uint32 enchant_id = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 enchant_id = operation.miscValue;
     if (!enchant_id)
     {
         return;
@@ -538,8 +542,10 @@ void Spell::EffectEnchantItemPerm(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The effect index providing the enchantment id.
  */
-void Spell::EffectEnchantItemTmp(SpellEffectIndex eff_idx)
+void Spell::EffectEnchantItemTmp(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     if (!m_caster->IsPlayer())
     {
         return;
@@ -551,7 +557,7 @@ void Spell::EffectEnchantItemTmp(SpellEffectIndex eff_idx)
 
     Player* p_caster = (Player*)m_caster;
 
-    uint32 enchant_id = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 enchant_id = operation.miscValue;
     if (!enchant_id)
     {
         sLog.outError("Spell %u Effect %u (SPELL_EFFECT_ENCHANT_ITEM_TEMPORARY) have 0 as enchanting id", m_spellInfo->ID, eff_idx);
@@ -623,7 +629,7 @@ void Spell::EffectEnchantItemTmp(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectTameCreature(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectTameCreature(const cast::Operation& /*operation*/)
 {
     // Caster must be player, checked in Spell::CheckCast
     // Spell can be triggered, we need to check original caster prior to caster
@@ -691,9 +697,9 @@ void Spell::EffectTameCreature(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The summon effect index.
  */
-void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
+void Spell::EffectSummonPet(const cast::Operation& operation)
 {
-    uint32 petentry = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 petentry = operation.miscValue;
 
     Pet* OldSummon = m_caster->GetPet();
 
@@ -782,7 +788,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
 
     NewSummon->SetSpawn(pos);
 
-    uint32 petlevel = std::max(m_caster->getLevel() + m_spellInfo->EffectAmplitude[eff_idx], 1.0f);
+    uint32 petlevel = std::max(m_caster->getLevel() + operation.amplitude, 1.0f);
     NewSummon->setPetType(SUMMON_PET);
 
     uint32 faction = m_caster->getFaction();
@@ -867,7 +873,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The effect index containing the learned spell id.
  */
-void Spell::EffectLearnPetSpell(SpellEffectIndex eff_idx)
+void Spell::EffectLearnPetSpell(const cast::Operation& operation)
 {
     if (!m_caster->IsPlayer())
     {
@@ -886,7 +892,7 @@ void Spell::EffectLearnPetSpell(SpellEffectIndex eff_idx)
         return;
     }
 
-    SpellEntry const* learn_spellproto = sSpellStore.LookupEntry(m_spellInfo->EffectTriggerSpell[eff_idx]);
+    SpellEntry const* learn_spellproto = sSpellStore.LookupEntry(operation.triggerSpell);
     if (!learn_spellproto)
     {
         return;
@@ -909,7 +915,7 @@ void Spell::EffectLearnPetSpell(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectTaunt(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectTaunt(const cast::Operation& /*operation*/)
 {
     if (!unitTarget)
     {
@@ -939,8 +945,10 @@ void Spell::EffectTaunt(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The weapon damage effect index.
  */
-void Spell::EffectWeaponDmg(SpellEffectIndex eff_idx)
+void Spell::EffectWeaponDmg(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     if (!unitTarget)
     {
         return;

@@ -517,7 +517,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
             if (m_applyMultiplierMask & (1 << effectNumber))
             {
                 // Get multiplier
-                float multiplier = m_spellInfo->EffectChainAmplitude[effectNumber];
+                float multiplier = Recipe().At(static_cast<uint8>(effectNumber)).chainAmplitude;
                 // Apply multiplier mods
                 if (realCaster)
                 {
@@ -682,7 +682,7 @@ void Spell::HandleDelayedSpellLaunch(TargetInfo* target)
                 if (m_applyMultiplierMask & (1 << effectNumber))
                 {
                     // Get multiplier
-                    float multiplier = m_spellInfo->EffectChainAmplitude[effectNumber];
+                    float multiplier = Recipe().At(static_cast<uint8>(effectNumber)).chainAmplitude;
                     // Apply multiplier mods
                     if (real_caster)
                     {

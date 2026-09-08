@@ -72,7 +72,7 @@
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectThreat(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectThreat(const cast::Operation& /*operation*/)
 {
     if (!unitTarget || !unitTarget->IsAlive() || !m_caster->IsAlive())
     {
@@ -92,7 +92,7 @@ void Spell::EffectThreat(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectHealMaxHealth(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectHealMaxHealth(const cast::Operation& /*operation*/)
 {
     if (!unitTarget)
     {
@@ -113,7 +113,7 @@ void Spell::EffectHealMaxHealth(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectInterruptCast(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectInterruptCast(const cast::Operation& /*operation*/)
 {
     if (!unitTarget)
     {
@@ -146,9 +146,9 @@ void Spell::EffectInterruptCast(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The summon object effect index.
  */
-void Spell::EffectSummonObjectWild(SpellEffectIndex eff_idx)
+void Spell::EffectSummonObjectWild(const cast::Operation& operation)
 {
-    uint32 gameobject_id = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 gameobject_id = operation.miscValue;
 
     GameObject* pGameObj = new GameObject;
 
@@ -223,7 +223,7 @@ void Spell::EffectSummonObjectWild(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectSanctuary(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectSanctuary(const cast::Operation& /*operation*/)
 {
     if (!unitTarget)
     {
@@ -269,7 +269,7 @@ void Spell::EffectSanctuary(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectAddComboPoints(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectAddComboPoints(const cast::Operation& /*operation*/)
 {
     if (!unitTarget)
     {
@@ -294,7 +294,7 @@ void Spell::EffectAddComboPoints(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The effect index containing the duel flag game object id.
  */
-void Spell::EffectDuel(SpellEffectIndex eff_idx)
+void Spell::EffectDuel(const cast::Operation& operation)
 {
     if (!m_caster || !unitTarget || !m_caster->IsPlayer() || !unitTarget->IsPlayer())
     {
@@ -328,7 +328,7 @@ void Spell::EffectDuel(SpellEffectIndex eff_idx)
     // CREATE DUEL FLAG OBJECT
     GameObject* pGameObj = new GameObject;
 
-    uint32 gameobject_id = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 gameobject_id = operation.miscValue;
 
     Map* map = m_caster->GetMap();
     float x = (m_caster->Where().X() + unitTarget->Where().X()) * 0.5f;
@@ -373,7 +373,7 @@ void Spell::EffectDuel(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectStuck(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectStuck(const cast::Operation& /*operation*/)
 {
     if (!unitTarget || !unitTarget->IsPlayer())
     {
@@ -413,7 +413,7 @@ void Spell::EffectStuck(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectSummonPlayer(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectSummonPlayer(const cast::Operation& /*operation*/)
 {
     if (!unitTarget || !unitTarget->IsPlayer())
     {
@@ -459,14 +459,16 @@ static ScriptInfo generateActivateCommand()
  *
  * @param eff_idx The activation effect index.
  */
-void Spell::EffectActivateObject(SpellEffectIndex eff_idx)
+void Spell::EffectActivateObject(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     if (!gameObjTarget)
     {
         return;
     }
 
-    uint32 misc_value = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 misc_value = operation.miscValue;
 
     switch (misc_value)
     {
@@ -556,8 +558,10 @@ void Spell::EffectActivateObject(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The enchant effect index.
  */
-void Spell::EffectEnchantHeldItem(SpellEffectIndex eff_idx)
+void Spell::EffectEnchantHeldItem(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     // this is only item spell effect applied to main-hand weapon of target player (players in area)
     if (!unitTarget || !unitTarget->IsPlayer())
     {
@@ -578,9 +582,9 @@ void Spell::EffectEnchantHeldItem(SpellEffectIndex eff_idx)
         return;
     }
 
-    if (m_spellInfo->EffectMiscValue[eff_idx])
+    if (operation.miscValue)
     {
-        uint32 enchant_id = m_spellInfo->EffectMiscValue[eff_idx];
+        uint32 enchant_id = operation.miscValue;
         int32 duration = GetSpellDuration(m_spellInfo);     // Try duration index first...
         if (!duration)
         {
@@ -617,7 +621,7 @@ void Spell::EffectEnchantHeldItem(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectDisEnchant(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectDisEnchant(const cast::Operation& /*operation*/)
 {
     if (!m_caster->IsPlayer())
     {
@@ -642,7 +646,7 @@ void Spell::EffectDisEnchant(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectInebriate(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectInebriate(const cast::Operation& /*operation*/)
 {
     if (!unitTarget || !unitTarget->IsPlayer())
     {
@@ -668,7 +672,7 @@ void Spell::EffectInebriate(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The effect index containing the triggered spell id.
  */
-void Spell::EffectFeedPet(SpellEffectIndex eff_idx)
+void Spell::EffectFeedPet(const cast::Operation& operation)
 {
     if (!m_caster->IsPlayer())
     {
@@ -704,7 +708,7 @@ void Spell::EffectFeedPet(SpellEffectIndex eff_idx)
     _player->DestroyItemCount(foodItem, count, true);
     // TODO: fix crash when a spell has two effects, both pointed at the same item target
 
-    m_caster->CastCustomSpell(m_caster, m_spellInfo->EffectTriggerSpell[eff_idx], &benefit, nullptr, nullptr, true);
+    m_caster->CastCustomSpell(m_caster, operation.triggerSpell, &benefit, nullptr, nullptr, true);
 }
 
 /**
@@ -712,7 +716,7 @@ void Spell::EffectFeedPet(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectDismissPet(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectDismissPet(const cast::Operation& /*operation*/)
 {
     if (!m_caster->IsPlayer())
     {
@@ -735,12 +739,12 @@ void Spell::EffectDismissPet(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The summon object effect index.
  */
-void Spell::EffectSummonObject(SpellEffectIndex eff_idx)
+void Spell::EffectSummonObject(const cast::Operation& operation)
 {
-    uint32 go_id = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 go_id = operation.miscValue;
 
     uint8 slot = 0;
-    switch (m_spellInfo->Effect[eff_idx])
+    switch (operation.verb)
     {
         case SPELL_EFFECT_SUMMON_OBJECT_SLOT1: slot = 0; break;
         case SPELL_EFFECT_SUMMON_OBJECT_SLOT2: slot = 1; break;
@@ -811,7 +815,7 @@ void Spell::EffectSummonObject(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectResurrect(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectResurrect(const cast::Operation& /*operation*/)
 {
     if (!unitTarget || !unitTarget->IsPlayer())
     {
@@ -869,7 +873,7 @@ void Spell::EffectResurrect(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectAddExtraAttacks(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectAddExtraAttacks(const cast::Operation& /*operation*/)
 {
     if (!unitTarget || !unitTarget->IsAlive())
     {
@@ -894,7 +898,7 @@ void Spell::EffectAddExtraAttacks(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectParry(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectParry(const cast::Operation& /*operation*/)
 {
     if (unitTarget && unitTarget->IsPlayer())
     {
@@ -907,7 +911,7 @@ void Spell::EffectParry(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectBlock(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectBlock(const cast::Operation& /*operation*/)
 {
     if (unitTarget && unitTarget->IsPlayer())
     {
@@ -920,9 +924,9 @@ void Spell::EffectBlock(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The effect index providing the leap distance.
  */
-void Spell::EffectLeapForward(SpellEffectIndex eff_idx)
+void Spell::EffectLeapForward(const cast::Operation& operation)
 {
-    float dist = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[eff_idx]));
+    float dist = GetSpellRadius(sSpellRadiusStore.LookupEntry(operation.radiusIndex));
     const float IN_OR_UNDER_LIQUID_RANGE = 0.8f;                // range to make player under liquid or on liquid surface from liquid level
 
     Geometry::Vector3 prevPos, nextPos;
@@ -1093,8 +1097,10 @@ void Spell::EffectLeapForward(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The effect index containing faction and reputation values.
  */
-void Spell::EffectReputation(SpellEffectIndex eff_idx)
+void Spell::EffectReputation(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
@@ -1103,7 +1109,7 @@ void Spell::EffectReputation(SpellEffectIndex eff_idx)
     Player* _player = (Player*)unitTarget;
 
     int32  rep_change = m_currentBasePoints[eff_idx];
-    uint32 faction_id = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 faction_id = operation.miscValue;
 
     FactionEntry const* factionEntry = sFactionStore.LookupEntry(faction_id);
 
@@ -1122,14 +1128,14 @@ void Spell::EffectReputation(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The effect index containing the quest id.
  */
-void Spell::EffectQuestComplete(SpellEffectIndex eff_idx)
+void Spell::EffectQuestComplete(const cast::Operation& operation)
 {
     if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
 
-    uint32 quest_id = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 quest_id = operation.miscValue;
     ((Player*)unitTarget)->Journal().Explored(quest_id);
 }
 
@@ -1138,7 +1144,7 @@ void Spell::EffectQuestComplete(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The effect index containing resurrection resource data.
  */
-void Spell::EffectSelfResurrect(SpellEffectIndex eff_idx)
+void Spell::EffectSelfResurrect(const cast::Operation& operation)
 {
     if (!unitTarget || unitTarget->IsAlive())
     {
@@ -1160,7 +1166,7 @@ void Spell::EffectSelfResurrect(SpellEffectIndex eff_idx)
     if (damage < 0)
     {
         health = uint32(-damage);
-        mana = m_spellInfo->EffectMiscValue[eff_idx];
+        mana = operation.miscValue;
     }
     // percent case
     else
@@ -1188,7 +1194,7 @@ void Spell::EffectSelfResurrect(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectSkinning(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectSkinning(const cast::Operation& /*operation*/)
 {
     if (!unitTarget->IsCreature())
     {
@@ -1221,7 +1227,7 @@ void Spell::EffectSkinning(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectCharge(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectCharge(const cast::Operation& /*operation*/)
 {
     if (!unitTarget)
     {
@@ -1253,14 +1259,14 @@ void Spell::EffectCharge(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The effect index containing horizontal speed data.
  */
-void Spell::EffectKnockBack(SpellEffectIndex eff_idx)
+void Spell::EffectKnockBack(const cast::Operation& operation)
 {
     if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
 
-    ((Player*)unitTarget)->KnockBackFrom(m_caster, float(m_spellInfo->EffectMiscValue[eff_idx]) / 10, float(damage) / 10);
+    ((Player*)unitTarget)->KnockBackFrom(m_caster, float(operation.miscValue) / 10, float(damage) / 10);
 }
 
 /**
@@ -1268,14 +1274,14 @@ void Spell::EffectKnockBack(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The effect index containing the taxi path id.
  */
-void Spell::EffectSendTaxi(SpellEffectIndex eff_idx)
+void Spell::EffectSendTaxi(const cast::Operation& operation)
 {
     if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
 
-    ((Player*)unitTarget)->ActivateTaxiPathTo(m_spellInfo->EffectMiscValue[eff_idx], m_spellInfo->ID);
+    ((Player*)unitTarget)->ActivateTaxiPathTo(operation.miscValue, m_spellInfo->ID);
 }
 
 /**
@@ -1283,7 +1289,7 @@ void Spell::EffectSendTaxi(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The effect index containing vertical speed data.
  */
-void Spell::EffectPlayerPull(SpellEffectIndex eff_idx)
+void Spell::EffectPlayerPull(const cast::Operation& operation)
 {
     if (!unitTarget || !unitTarget->IsPlayer())
     {
@@ -1296,5 +1302,5 @@ void Spell::EffectPlayerPull(SpellEffectIndex eff_idx)
         dist = float(damage);
     }
 
-    ((Player*)unitTarget)->KnockBackFrom(m_caster, -dist, float(m_spellInfo->EffectMiscValue[eff_idx]) / 10);
+    ((Player*)unitTarget)->KnockBackFrom(m_caster, -dist, float(operation.miscValue) / 10);
 }

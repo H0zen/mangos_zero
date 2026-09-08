@@ -176,6 +176,7 @@ namespace cast
                 operation.itemType = row.EffectItemType[slot];
                 operation.miscValue = row.EffectMiscValue[slot];
                 operation.triggerSpell = row.EffectTriggerSpell[slot];
+                operation.chainAmplitude = row.EffectChainAmplitude[slot];
 
                 operations.Add(operation);
             }

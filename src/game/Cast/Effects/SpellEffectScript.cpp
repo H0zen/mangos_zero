@@ -71,8 +71,10 @@
  *
  * @param eff_idx The script effect index.
  */
-void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
+void Spell::EffectScriptEffect(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     // TODO: we must implement hunter pet summon at login there (spell 6962)
 
     switch (m_spellInfo->SpellClassSet)

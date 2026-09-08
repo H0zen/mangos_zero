@@ -76,8 +76,10 @@
  *
  * @param eff_idx The dummy effect index.
  */
-void Spell::EffectDummy(SpellEffectIndex eff_idx)
+void Spell::EffectDummy(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     if (!unitTarget && !gameObjTarget && !itemTarget)
     {
         return;
@@ -943,7 +945,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     return;
                 }
 
-                int32 basePoints0 = damage + int32(m_caster->GetPower(POWER_RAGE) * m_spellInfo->EffectChainAmplitude[eff_idx]);
+                int32 basePoints0 = damage + int32(m_caster->GetPower(POWER_RAGE) * operation.chainAmplitude);
                 m_caster->CastCustomSpell(unitTarget, 20647, &basePoints0, nullptr, nullptr, true, 0);
                 m_caster->SetPower(POWER_RAGE, 0);
                 return;

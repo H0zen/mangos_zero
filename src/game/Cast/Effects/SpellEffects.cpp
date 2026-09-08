@@ -198,7 +198,7 @@ pEffect SpellEffects[TOTAL_SPELL_EFFECTS] =
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectEmpty(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectEmpty(const cast::Operation& /*operation*/)
 {
     // NOT NEED ANY IMPLEMENTATION CODE, EFFECT POSISBLE USED AS MARKER OR CLIENT INFORM
 }
@@ -208,7 +208,7 @@ void Spell::EffectEmpty(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectNULL(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectNULL(const cast::Operation& /*operation*/)
 {
     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "WORLD: Spell Effect DUMMY");
 }
@@ -218,7 +218,7 @@ void Spell::EffectNULL(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectUnused(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectUnused(const cast::Operation& /*operation*/)
 {
     // NOT USED BY ANY SPELL OR USELESS OR IMPLEMENTED IN DIFFERENT WAY IN MANGOS
 }
@@ -252,7 +252,7 @@ void Spell::EffectUnused(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The summon effect index.
  */
-void Spell::EffectSummon(SpellEffectIndex eff_idx)
+void Spell::EffectSummon(const cast::Operation& operation)
 {
     if (m_caster->GetPetGuid())
     {
@@ -264,7 +264,7 @@ void Spell::EffectSummon(SpellEffectIndex eff_idx)
         return;
     }
 
-    uint32 pet_entry = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 pet_entry = operation.miscValue;
     if (!pet_entry)
     {
         return;
@@ -375,9 +375,9 @@ void Spell::EffectSummon(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The summon effect index.
  */
-void Spell::EffectSummonWild(SpellEffectIndex eff_idx)
+void Spell::EffectSummonWild(const cast::Operation& operation)
 {
-    uint32 creature_entry = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 creature_entry = operation.miscValue;
     if (!creature_entry)
     {
         return;
@@ -404,7 +404,7 @@ void Spell::EffectSummonWild(SpellEffectIndex eff_idx)
     float center_y = m_targets.m_destY;
     float center_z = m_targets.m_destZ;
 
-    float radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[eff_idx]));
+    float radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(operation.radiusIndex));
     int32 duration = GetSpellDuration(m_spellInfo);
     TempSpawnType summonType = (duration == 0) ? TEMPSPAWN_DEAD_DESPAWN : TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN;
 
@@ -472,9 +472,9 @@ void Spell::EffectSummonWild(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The summon effect index.
  */
-void Spell::EffectSummonGuardian(SpellEffectIndex eff_idx)
+void Spell::EffectSummonGuardian(const cast::Operation& operation)
 {
-    uint32 pet_entry = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 pet_entry = operation.miscValue;
     if (!pet_entry)
     {
         return;
@@ -523,7 +523,7 @@ void Spell::EffectSummonGuardian(SpellEffectIndex eff_idx)
     float center_y = m_targets.m_destY;
     float center_z = m_targets.m_destZ;
 
-    float radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[eff_idx]));
+    float radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(operation.radiusIndex));
 
     int32 amount = damage > 0 ? damage : 1;
 
@@ -608,7 +608,7 @@ void Spell::EffectSummonGuardian(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectAddHonor(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectAddHonor(const cast::Operation& /*operation*/)
 {
     if (!unitTarget->IsPlayer())
     {
@@ -646,10 +646,10 @@ void Spell::EffectAddHonor(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The totem summon effect index.
  */
-void Spell::EffectSummonTotem(SpellEffectIndex eff_idx)
+void Spell::EffectSummonTotem(const cast::Operation& operation)
 {
     int slot = 0;
-    switch (m_spellInfo->Effect[eff_idx])
+    switch (operation.verb)
     {
         case SPELL_EFFECT_SUMMON_TOTEM:       slot = TOTEM_SLOT_NONE;  break;
         case SPELL_EFFECT_SUMMON_TOTEM_SLOT1: slot = TOTEM_SLOT_FIRE;  break;
@@ -674,10 +674,10 @@ void Spell::EffectSummonTotem(SpellEffectIndex eff_idx)
 
     CreatureCreatePos pos(m_caster, m_caster->Where().Facing(), 2.0f, angle);
 
-    CreatureInfo const* cinfo = ObjectMgr::GetCreatureTemplate(m_spellInfo->EffectMiscValue[eff_idx]);
+    CreatureInfo const* cinfo = ObjectMgr::GetCreatureTemplate(operation.miscValue);
     if (!cinfo)
     {
-        sLog.outErrorDb("Creature entry %u does not exist but used in spell %u totem summon.", m_spellInfo->ID, m_spellInfo->EffectMiscValue[eff_idx]);
+        sLog.outErrorDb("Creature entry %u does not exist but used in spell %u totem summon.", m_spellInfo->ID, operation.miscValue);
         return;
     }
 
@@ -728,9 +728,9 @@ void Spell::EffectSummonTotem(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The summon effect index.
  */
-void Spell::EffectSummonPossessed(SpellEffectIndex eff_idx)
+void Spell::EffectSummonPossessed(const cast::Operation& operation)
 {
-    uint32 creatureEntry = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 creatureEntry = operation.miscValue;
     CreatureInfo const* cInfo = ObjectMgr::GetCreatureTemplate(creatureEntry);
     if (!cInfo)
     {
@@ -802,7 +802,7 @@ void Spell::EffectSummonPossessed(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The summon effect index.
  */
-void Spell::EffectSummonCritter(SpellEffectIndex eff_idx)
+void Spell::EffectSummonCritter(const cast::Operation& operation)
 {
     if (!m_caster->IsPlayer())
     {
@@ -810,7 +810,7 @@ void Spell::EffectSummonCritter(SpellEffectIndex eff_idx)
     }
     Player* player = (Player*)m_caster;
 
-    uint32 pet_entry = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 pet_entry = operation.miscValue;
     if (!pet_entry)
     {
         return;
@@ -908,13 +908,13 @@ void Spell::EffectSummonCritter(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The summon effect index.
  */
-void Spell::EffectSummonDemon(SpellEffectIndex eff_idx)
+void Spell::EffectSummonDemon(const cast::Operation& operation)
 {
     float px = m_targets.m_destX;
     float py = m_targets.m_destY;
     float pz = m_targets.m_destZ;
 
-    Creature* Charmed = SummonCreature(*m_caster, m_spellInfo->EffectMiscValue[eff_idx], px, py, pz, m_caster->Where().Facing(), TEMPSPAWN_TIMED_OR_DEAD_DESPAWN, 3600000);
+    Creature* Charmed = SummonCreature(*m_caster, operation.miscValue, px, py, pz, m_caster->Where().Facing(), TEMPSPAWN_TIMED_OR_DEAD_DESPAWN, 3600000);
     if (!Charmed)
     {
         return;
@@ -925,7 +925,7 @@ void Spell::EffectSummonDemon(SpellEffectIndex eff_idx)
 
     // TODO: Add damage/mana/hp according to level
 
-    if (m_spellInfo->EffectMiscValue[eff_idx] == 89)        // Inferno summon
+    if (operation.miscValue == 89)        // Inferno summon
     {
         // Enslave demon effect, without mana cost and cooldown
         m_caster->CastSpell(Charmed, 20882, true);          // FIXME: enslave does not scale with level, level 62+ minions can not be enslaved
@@ -943,7 +943,7 @@ void Spell::EffectSummonDemon(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The teleport effect index.
  */
-void Spell::EffectTeleportGraveyard(SpellEffectIndex eff_idx)
+void Spell::EffectTeleportGraveyard(const cast::Operation& /*operation*/)
 {
     if (!unitTarget || !unitTarget->IsPlayer() || !unitTarget->GetMap()->IsBattleGround())
     {

@@ -96,6 +96,7 @@ namespace cast
         uint32 itemType = 0;
         int32 miscValue = 0;
         uint32 triggerSpell = 0;
+        float chainAmplitude = 0.0f;
 
         /// Whether this operation is something its target would want. Settled
         /// once, because the answer walks trigger chains into other spells.

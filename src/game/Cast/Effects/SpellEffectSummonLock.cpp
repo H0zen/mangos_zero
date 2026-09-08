@@ -119,8 +119,10 @@ void Spell::SendLoot(ObjectGuid guid, LootType loottype, LockType lockType)
  *
  * @param eff_idx The open-lock effect index.
  */
-void Spell::EffectOpenLock(SpellEffectIndex eff_idx)
+void Spell::EffectOpenLock(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     if (!m_caster || !m_caster->IsPlayer())
     {
         DEBUG_LOG("WORLD: Open Lock - No Player Caster!");
@@ -197,7 +199,7 @@ void Spell::EffectOpenLock(SpellEffectIndex eff_idx)
         gameObjTarget->RemoveGoFlag(GO_FLAG_LOCKED);
     }
 
-    SendLoot(guid, LOOT_SKINNING, LockType(m_spellInfo->EffectMiscValue[eff_idx]));
+    SendLoot(guid, LOOT_SKINNING, LockType(operation.miscValue));
 
     // not allow use skill grow at item base open
     if (!m_CastItem && skillId != SKILL_NONE)
@@ -230,7 +232,7 @@ void Spell::EffectOpenLock(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The effect index defining the replacement item.
  */
-void Spell::EffectSummonChangeItem(SpellEffectIndex eff_idx)
+void Spell::EffectSummonChangeItem(const cast::Operation& operation)
 {
     if (!m_caster->IsPlayer())
     {
@@ -251,7 +253,7 @@ void Spell::EffectSummonChangeItem(SpellEffectIndex eff_idx)
         return;
     }
 
-    uint32 newitemid = m_spellInfo->EffectItemType[eff_idx];
+    uint32 newitemid = operation.itemType;
     if (!newitemid)
     {
         return;
@@ -270,7 +272,7 @@ void Spell::EffectSummonChangeItem(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectProficiency(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectProficiency(const cast::Operation& /*operation*/)
 {
     if (!unitTarget || !unitTarget->IsPlayer())
     {
@@ -296,8 +298,10 @@ void Spell::EffectProficiency(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The area aura effect index.
  */
-void Spell::EffectApplyAreaAura(SpellEffectIndex eff_idx)
+void Spell::EffectApplyAreaAura(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     if (!unitTarget)
     {
         return;

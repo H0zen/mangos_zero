@@ -73,14 +73,14 @@
  *
  * @param eff_idx The effect index containing the mechanic id.
  */
-void Spell::EffectDispelMechanic(SpellEffectIndex eff_idx)
+void Spell::EffectDispelMechanic(const cast::Operation& operation)
 {
     if (!unitTarget)
     {
         return;
     }
 
-    uint32 mechanic = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 mechanic = operation.miscValue;
 
     Unit::SpellAuraHolderMap& Auras = unitTarget->GetSpellAuraHolderMap();
     for (Unit::SpellAuraHolderMap::iterator iter = Auras.begin(), next; iter != Auras.end(); iter = next)
@@ -108,7 +108,7 @@ void Spell::EffectDispelMechanic(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectSummonDeadPet(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectSummonDeadPet(const cast::Operation& /*operation*/)
 {
     Player* _player = ToPlayer(m_caster);
 
@@ -169,7 +169,7 @@ void Spell::EffectSummonDeadPet(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectDestroyAllTotems(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectDestroyAllTotems(const cast::Operation& /*operation*/)
 {
     for (int slot = 0;  slot < MAX_TOTEM_SLOT; ++slot)
     {
@@ -185,14 +185,14 @@ void Spell::EffectDestroyAllTotems(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The effect index containing the inventory slot selector.
  */
-void Spell::EffectDurabilityDamage(SpellEffectIndex eff_idx)
+void Spell::EffectDurabilityDamage(const cast::Operation& operation)
 {
     if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
 
-    int32 slot = m_spellInfo->EffectMiscValue[eff_idx];
+    int32 slot = operation.miscValue;
 
     // FIXME: some spells effects have value -1/-2
     // Possibly its mean -1 all player equipped items and -2 all items
@@ -219,14 +219,14 @@ void Spell::EffectDurabilityDamage(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The effect index containing the inventory slot selector.
  */
-void Spell::EffectDurabilityDamagePCT(SpellEffectIndex eff_idx)
+void Spell::EffectDurabilityDamagePCT(const cast::Operation& operation)
 {
     if (!unitTarget || !unitTarget->IsPlayer())
     {
         return;
     }
 
-    int32 slot = m_spellInfo->EffectMiscValue[eff_idx];
+    int32 slot = operation.miscValue;
 
     // FIXME: some spells effects have value -1/-2
     // Possibly its mean -1 all player equipped items and -2 all items
@@ -258,7 +258,7 @@ void Spell::EffectDurabilityDamagePCT(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectModifyThreatPercent(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectModifyThreatPercent(const cast::Operation& /*operation*/)
 {
     if (!unitTarget)
     {
@@ -273,9 +273,9 @@ void Spell::EffectModifyThreatPercent(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The effect index containing the game object entry.
  */
-void Spell::EffectTransmitted(SpellEffectIndex eff_idx)
+void Spell::EffectTransmitted(const cast::Operation& operation)
 {
-    uint32 name_id = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 name_id = operation.miscValue;
 
     GameObjectInfo const* goinfo = ObjectMgr::GetGameObjectInfo(name_id);
 
@@ -292,9 +292,9 @@ void Spell::EffectTransmitted(SpellEffectIndex eff_idx)
         m_targets.getDestination(fx, fy, fz);
     }
     // FIXME: this can be better check for most objects but still hack
-    else if (m_spellInfo->EffectRadiusIndex[eff_idx] && m_spellInfo->Speed == 0)
+    else if (operation.radiusIndex && m_spellInfo->Speed == 0)
     {
-        float dis = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[eff_idx]));
+        float dis = GetSpellRadius(sSpellRadiusStore.LookupEntry(operation.radiusIndex));
         ClosePointNear(*m_caster, fx, fy, fz, DEFAULT_WORLD_OBJECT_SIZE, dis);
     }
     else
@@ -429,7 +429,7 @@ void Spell::EffectTransmitted(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectSkill(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectSkill(const cast::Operation& /*operation*/)
 {
     DEBUG_LOG("WORLD: SkillEFFECT");
 }
@@ -439,7 +439,7 @@ void Spell::EffectSkill(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectSpiritHeal(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectSpiritHeal(const cast::Operation& /*operation*/)
 {
     // TODO player can't see the heal-animation - he should respawn some ticks later
     if (!unitTarget || unitTarget->IsAlive())
@@ -464,7 +464,7 @@ void Spell::EffectSpiritHeal(SpellEffectIndex /*eff_idx*/)
 }
 
 // remove insignia spell effect
-void Spell::EffectSkinPlayerCorpse(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectSkinPlayerCorpse(const cast::Operation& /*operation*/)
 {
     DEBUG_LOG("Effect: SkinPlayerCorpse");
     if ((!m_caster->IsPlayer()) || (!unitTarget->IsPlayer()) || (unitTarget->IsAlive()))
@@ -480,7 +480,7 @@ void Spell::EffectSkinPlayerCorpse(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The bind effect index.
  */
-void Spell::EffectBind(SpellEffectIndex eff_idx)
+void Spell::EffectBind(const cast::Operation& /*operation*/)
 {
     if (!unitTarget || !unitTarget->IsPlayer())
     {

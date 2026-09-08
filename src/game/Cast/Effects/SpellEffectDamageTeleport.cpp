@@ -69,7 +69,7 @@
  *
  * @param eff_idx The effect index providing resurrection values.
  */
-void Spell::EffectResurrectNew(SpellEffectIndex eff_idx)
+void Spell::EffectResurrectNew(const cast::Operation& operation)
 {
     if (!unitTarget || unitTarget->IsAlive())
     {
@@ -94,7 +94,7 @@ void Spell::EffectResurrectNew(SpellEffectIndex eff_idx)
     }
 
     uint32 health = damage;
-    uint32 mana = m_spellInfo->EffectMiscValue[eff_idx];
+    uint32 mana = operation.miscValue;
     pTarget->setResurrectRequestData(m_caster->GetObjectGuid(), m_caster->GetMapId(), m_caster->Where().X(), m_caster->Where().Y(), m_caster->Where().Z(), health, mana);
     SendResurrectRequest(pTarget);
 }
@@ -104,7 +104,7 @@ void Spell::EffectResurrectNew(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectInstaKill(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectInstaKill(const cast::Operation& /*operation*/)
 {
     if (!unitTarget || !unitTarget->IsAlive())
     {
@@ -147,8 +147,10 @@ void Spell::EffectInstaKill(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The effect index used to calculate the base damage.
  */
-void Spell::EffectEnvironmentalDMG(SpellEffectIndex eff_idx)
+void Spell::EffectEnvironmentalDMG(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     uint32 absorb = 0;
     uint32 resist = 0;
 
@@ -171,8 +173,10 @@ void Spell::EffectEnvironmentalDMG(SpellEffectIndex eff_idx)
  *
  * @param effect_idx The damage effect index.
  */
-void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
+void Spell::EffectSchoolDMG(const cast::Operation& operation)
 {
+    const SpellEffectIndex effect_idx = SpellEffectIndex(operation.slot);
+
     if (unitTarget && unitTarget->IsAlive())
     {
         switch (m_spellInfo->SpellClassSet)
@@ -262,7 +266,7 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                 if ((m_spellInfo->SpellClassMask & UI64LIT(0x000800000)) && m_spellInfo->SpellVisualID == 6587)
                 {
                     // converts each extra point of energy into ($f1+$AP/630) additional damage
-                    float multiple = m_caster->GetTotalAttackPowerValue(BASE_ATTACK) / 630 + m_spellInfo->EffectChainAmplitude[effect_idx];
+                    float multiple = m_caster->GetTotalAttackPowerValue(BASE_ATTACK) / 630 + operation.chainAmplitude;
                     damage += int32(m_caster->GetPower(POWER_ENERGY) * multiple);
                     m_caster->SetPower(POWER_ENERGY, 0);
                 }
@@ -298,7 +302,7 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
  *
  * @param eff_idx The effect index providing the triggered spell id.
  */
-void Spell::EffectTriggerSpell(SpellEffectIndex eff_idx)
+void Spell::EffectTriggerSpell(const cast::Operation& operation)
 {
     // only unit case known
     if (!unitTarget)
@@ -310,7 +314,7 @@ void Spell::EffectTriggerSpell(SpellEffectIndex eff_idx)
         return;
     }
 
-    uint32 triggered_spell_id = m_spellInfo->EffectTriggerSpell[eff_idx];
+    uint32 triggered_spell_id = operation.triggerSpell;
 
     // special cases
     switch (triggered_spell_id)
@@ -477,9 +481,11 @@ void Spell::EffectTriggerSpell(SpellEffectIndex eff_idx)
  *
  * @param effect_idx The effect index providing the triggered spell id.
  */
-void Spell::EffectTriggerMissileSpell(SpellEffectIndex effect_idx)
+void Spell::EffectTriggerMissileSpell(const cast::Operation& operation)
 {
-    uint32 triggered_spell_id = m_spellInfo->EffectTriggerSpell[effect_idx];
+    const SpellEffectIndex effect_idx = SpellEffectIndex(operation.slot);
+
+    uint32 triggered_spell_id = operation.triggerSpell;
 
     // normal case
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(triggered_spell_id);
@@ -507,18 +513,20 @@ void Spell::EffectTriggerMissileSpell(SpellEffectIndex effect_idx)
     m_caster->CastSpell(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ, spellInfo, true, m_CastItem, nullptr, m_originalCasterGUID, m_spellInfo);
 }
 
-void Spell::EffectTeleportUnits(SpellEffectIndex eff_idx)   // TODO - Use target settings for this effect!
+void Spell::EffectTeleportUnits(const cast::Operation& operation)   // TODO - Use target settings for this effect!
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     if (!unitTarget || unitTarget->IsTaxiFlying())
     {
         return;
     }
 
     // Target dependend on TargetB, if there is none provided, decide dependend on A
-    uint32 targetType = m_spellInfo->ImplicitTargetB[eff_idx];
+    uint32 targetType = operation.targetB;
     if (!targetType)
     {
-        targetType = m_spellInfo->ImplicitTargetA[eff_idx];
+        targetType = operation.targetA;
     }
 
     switch (targetType)
@@ -571,7 +579,7 @@ void Spell::EffectTeleportUnits(SpellEffectIndex eff_idx)   // TODO - Use target
             // If not exist data for dest location - return
             if (!(m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION))
             {
-                sLog.outError("Spell::EffectTeleportUnits - unknown EffectImplicitTargetB[%u] = %u for spell ID %u", eff_idx, m_spellInfo->ImplicitTargetB[eff_idx], m_spellInfo->ID);
+                sLog.outError("Spell::EffectTeleportUnits - unknown EffectImplicitTargetB[%u] = %u for spell ID %u", eff_idx, operation.targetB, m_spellInfo->ID);
                 return;
             }
             // Init dest coordinates

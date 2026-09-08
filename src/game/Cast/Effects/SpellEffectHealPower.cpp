@@ -68,8 +68,10 @@
  *
  * @param eff_idx The aura effect index.
  */
-void Spell::EffectApplyAura(SpellEffectIndex eff_idx)
+void Spell::EffectApplyAura(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     if (!unitTarget)
     {
         return;
@@ -104,7 +106,7 @@ void Spell::EffectApplyAura(SpellEffectIndex eff_idx)
         }
     }
 
-    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell: Aura is: %u", m_spellInfo->EffectAura[eff_idx]);
+    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell: Aura is: %u", operation.aura);
 
     Aura* aur = CreateAura(m_spellInfo, eff_idx, &m_currentBasePoints[eff_idx], m_spellAuraHolder, unitTarget, caster, m_CastItem);
     m_spellAuraHolder->AddAura(aur, eff_idx);
@@ -115,14 +117,14 @@ void Spell::EffectApplyAura(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The effect index defining the drained power type.
  */
-void Spell::EffectPowerDrain(SpellEffectIndex eff_idx)
+void Spell::EffectPowerDrain(const cast::Operation& operation)
 {
-    if (m_spellInfo->EffectMiscValue[eff_idx] < 0 || m_spellInfo->EffectMiscValue[eff_idx] >= MAX_POWERS)
+    if (operation.miscValue < 0 || operation.miscValue >= MAX_POWERS)
     {
         return;
     }
 
-    Powers drain_power = Powers(m_spellInfo->EffectMiscValue[eff_idx]);
+    Powers drain_power = Powers(operation.miscValue);
 
     if (!unitTarget)
     {
@@ -162,7 +164,7 @@ void Spell::EffectPowerDrain(SpellEffectIndex eff_idx)
     // Don`t restore from self drain
     if (drain_power == POWER_MANA && m_caster != unitTarget)
     {
-        float manaMultiplier = m_spellInfo->EffectAmplitude[eff_idx];
+        float manaMultiplier = operation.amplitude;
         if (manaMultiplier == 0)
         {
             manaMultiplier = 1;
@@ -184,15 +186,15 @@ void Spell::EffectPowerDrain(SpellEffectIndex eff_idx)
  *
  * @param effectIndex The effect index providing the event identifier.
  */
-void Spell::EffectSendEvent(SpellEffectIndex effectIndex)
+void Spell::EffectSendEvent(const cast::Operation& operation)
 {
     /**
      *  we do not handle a flag dropping or clicking on flag in battleground by sendevent system
      *  TODO: Actually, why not...
      */
-    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell ScriptStart %u for spellid %u in EffectSendEvent ", m_spellInfo->EffectMiscValue[effectIndex], m_spellInfo->ID);
+    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell ScriptStart %u for spellid %u in EffectSendEvent ", operation.miscValue, m_spellInfo->ID);
 
-    StartEvents_Event(m_caster->GetMap(), m_spellInfo->EffectMiscValue[effectIndex], m_caster, focusObject, true, m_caster);
+    StartEvents_Event(m_caster->GetMap(), operation.miscValue, m_caster, focusObject, true, m_caster);
 }
 
 /**
@@ -200,14 +202,14 @@ void Spell::EffectSendEvent(SpellEffectIndex effectIndex)
  *
  * @param eff_idx The effect index defining the burned power type.
  */
-void Spell::EffectPowerBurn(SpellEffectIndex eff_idx)
+void Spell::EffectPowerBurn(const cast::Operation& operation)
 {
-    if (m_spellInfo->EffectMiscValue[eff_idx] < 0 || m_spellInfo->EffectMiscValue[eff_idx] >= MAX_POWERS)
+    if (operation.miscValue < 0 || operation.miscValue >= MAX_POWERS)
     {
         return;
     }
 
-    Powers powertype = Powers(m_spellInfo->EffectMiscValue[eff_idx]);
+    Powers powertype = Powers(operation.miscValue);
 
     if (!unitTarget)
     {
@@ -231,7 +233,7 @@ void Spell::EffectPowerBurn(SpellEffectIndex eff_idx)
     int32 new_damage = (curPower < damage) ? curPower : damage;
 
     unitTarget->ModifyPower(powertype, -new_damage);
-    float multiplier = m_spellInfo->EffectAmplitude[eff_idx];
+    float multiplier = operation.amplitude;
 
     if (Player* modOwner = m_caster->GetSpellModOwner())
     {
@@ -247,7 +249,7 @@ void Spell::EffectPowerBurn(SpellEffectIndex eff_idx)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectHeal(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectHeal(const cast::Operation& /*operation*/)
 {
     if (unitTarget && unitTarget->IsAlive() && damage >= 0)
     {
@@ -319,7 +321,7 @@ void Spell::EffectHeal(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx Unused effect index.
  */
-void Spell::EffectHealMechanical(SpellEffectIndex /*eff_idx*/)
+void Spell::EffectHealMechanical(const cast::Operation& /*operation*/)
 {
     // Mechanic creature type should be correctly checked by targetCreatureType field
     if (unitTarget && unitTarget->IsAlive() && damage >= 0)
@@ -343,7 +345,7 @@ void Spell::EffectHealMechanical(SpellEffectIndex /*eff_idx*/)
  *
  * @param eff_idx The effect index providing the leech multiplier.
  */
-void Spell::EffectHealthLeech(SpellEffectIndex eff_idx)
+void Spell::EffectHealthLeech(const cast::Operation& operation)
 {
     if (!unitTarget)
     {
@@ -368,7 +370,7 @@ void Spell::EffectHealthLeech(SpellEffectIndex eff_idx)
         damage = curHealth;
     }
 
-    float multiplier = m_spellInfo->EffectAmplitude[eff_idx];
+    float multiplier = operation.amplitude;
 
     if (Player* modOwner = m_caster->GetSpellModOwner())
     {
@@ -506,8 +508,10 @@ void Spell::DoCreateItem(SpellEffectIndex eff_idx, uint32 itemtype)
  *
  * @param eff_idx The effect index creating the item.
  */
-void Spell::EffectCreateItem(SpellEffectIndex eff_idx)
+void Spell::EffectCreateItem(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     switch (m_spellInfo->ID)
     {
         case SPELL_FILLING_EMPTY_JAR__CURSED_OOZE: // Spell 15698 (for Cursed Ooze)
@@ -542,7 +546,7 @@ void Spell::EffectCreateItem(SpellEffectIndex eff_idx)
             break;
         }
     }
-    DoCreateItem(eff_idx, m_spellInfo->EffectItemType[eff_idx]);
+    DoCreateItem(eff_idx, operation.itemType);
 }
 
 /**
@@ -550,8 +554,10 @@ void Spell::EffectCreateItem(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The persistent area aura effect index.
  */
-void Spell::EffectPersistentAA(SpellEffectIndex eff_idx)
+void Spell::EffectPersistentAA(const cast::Operation& operation)
 {
+    const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
+
     Unit* pCaster = GetAffectiveCaster();
     // FIXME: in case wild GO will used wrong affective caster (target in fact) as dynobject owner
     if (!pCaster)
@@ -559,7 +565,7 @@ void Spell::EffectPersistentAA(SpellEffectIndex eff_idx)
         pCaster = m_caster;
     }
 
-    float radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[eff_idx]));
+    float radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(operation.radiusIndex));
 
     if (Player* modOwner = pCaster->GetSpellModOwner())
     {
@@ -583,7 +589,7 @@ void Spell::EffectPersistentAA(SpellEffectIndex eff_idx)
  *
  * @param eff_idx The effect index defining the power type.
  */
-void Spell::EffectEnergize(SpellEffectIndex eff_idx)
+void Spell::EffectEnergize(const cast::Operation& operation)
 {
     if (!unitTarget)
     {
@@ -594,12 +600,12 @@ void Spell::EffectEnergize(SpellEffectIndex eff_idx)
         return;
     }
 
-    if (m_spellInfo->EffectMiscValue[eff_idx] < 0 || m_spellInfo->EffectMiscValue[eff_idx] >= MAX_POWERS)
+    if (operation.miscValue < 0 || operation.miscValue >= MAX_POWERS)
     {
         return;
     }
 
-    Powers power = Powers(m_spellInfo->EffectMiscValue[eff_idx]);
+    Powers power = Powers(operation.miscValue);
 
     // Some level depends spells
     int level_multiplier = 0;
