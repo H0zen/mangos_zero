@@ -58,6 +58,7 @@
 #include "ScriptMgr.h"
 #include "Geometry/Vector3.h"
 #include "Corpse.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 pEffect SpellEffects[TOTAL_SPELL_EFFECTS] =
 {
@@ -405,7 +406,7 @@ void Spell::EffectSummonWild(const cast::Operation& operation)
     float center_z = m_targets.m_destZ;
 
     float radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(operation.radiusIndex));
-    int32 duration = GetSpellDuration(m_spellInfo);
+    int32 duration = Recipe().DurationMs();
     TempSpawnType summonType = (duration == 0) ? TEMPSPAWN_DEAD_DESPAWN : TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN;
 
     int32 amount = damage > 0 ? damage : 1;
@@ -868,7 +869,7 @@ void Spell::EffectSummonCritter(const cast::Operation& operation)
     // some mini-pets have quests
 
     // set timer for unsummon
-    int32 duration = GetSpellDuration(m_spellInfo);
+    int32 duration = Recipe().DurationMs();
     if (duration > 0)
     {
         critter->SetDuration(duration);

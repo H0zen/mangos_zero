@@ -379,7 +379,7 @@ void PetAI::UpdateAI(const uint32 diff)
                 if (!IsNonCombatSpell(spellInfo))
                 {
                     // allow only spell without spell cost or with spell cost but not duration limit
-                    int32 duration = GetSpellDuration(spellInfo);
+                    int32 duration = cast::RecipeOf(*spellInfo).DurationMs();
                     if ((spellInfo->ManaCost || spellInfo->ManaCostPct || spellInfo->ManaPerSecond) && duration > 0)
                     {
                         continue;

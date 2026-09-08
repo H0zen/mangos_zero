@@ -390,7 +390,7 @@ void Spell::EffectAddFarsight(const cast::Operation& operation)
         return;
     }
 
-    int32 duration = GetSpellDuration(m_spellInfo);
+    int32 duration = Recipe().DurationMs();
     DynamicObject* dynObj = new DynamicObject;
 
     // set radius to 0: spell not expected to work as persistent aura

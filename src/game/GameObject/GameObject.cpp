@@ -57,6 +57,7 @@
 #include <memory>
 #include "PlayerRegistry.h"
 #include "ObjectLookup.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 
 
@@ -752,7 +753,7 @@ void GameObject::TriggerLinkedGameObject(Unit* target)
 
     if (trapSpell)                                          // checked at load already
     {
-        range = GetSpellMaxRange(sSpellRangeStore.LookupEntry(trapSpell->RangeIndex));
+        range = cast::RecipeOf(*trapSpell).Takes().rangeMax;
     }
 
     // search nearest linked GO

@@ -2541,7 +2541,7 @@ void SpellAuraHolder::CleanupTriggeredSpells()
             continue;
         }
 
-        if (GetSpellDuration(tProto) != -1)
+        if (cast::RecipeOf(*tProto).DurationMs() != -1)
         {
             continue;
         }
@@ -3003,7 +3003,7 @@ void SpellAuraHolder::Update(uint32 diff)
         if (caster->GetChannelObjectGuid() == m_target->GetObjectGuid())
         {
             // Get spell range
-            float max_range = GetSpellMaxRange(sSpellRangeStore.LookupEntry(m_spellProto->RangeIndex));
+            float max_range = Recipe().Takes().rangeMax;
 
             if (Player* modOwner = caster->GetSpellModOwner())
             {

@@ -67,6 +67,7 @@
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 #include "Geometry/Vector3.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Removes auras from the target that match the specified mechanic.
@@ -299,8 +300,8 @@ void Spell::EffectTransmitted(const cast::Operation& operation)
     }
     else
     {
-        float min_dis = GetSpellMinRange(sSpellRangeStore.LookupEntry(m_spellInfo->RangeIndex));
-        float max_dis = GetSpellMaxRange(sSpellRangeStore.LookupEntry(m_spellInfo->RangeIndex));
+        float min_dis = Recipe().Takes().rangeMin;
+        float max_dis = Recipe().Takes().rangeMax;
         float dis = rand_norm_f() * (max_dis - min_dis) + min_dis;
 
         // special code for fishing bobber (TARGET_SELF_FISHING), should not try to avoid objects
@@ -356,7 +357,7 @@ void Spell::EffectTransmitted(const cast::Operation& operation)
         return;
     }
 
-    int32 duration = GetSpellDuration(m_spellInfo);
+    int32 duration = Recipe().DurationMs();
 
     switch (goinfo->type)
     {

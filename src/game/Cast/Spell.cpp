@@ -1273,7 +1273,7 @@ void Spell::GetSpellRangeAndRadius(SpellEffectIndex effIndex, float& radius, uin
     }
     else
     {
-        radius = GetSpellMaxRange(sSpellRangeStore.LookupEntry(m_spellInfo->RangeIndex));
+        radius = Recipe().Takes().rangeMax;
     }
 
     if (Unit* realCaster = GetAffectiveCaster())

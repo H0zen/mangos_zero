@@ -66,6 +66,7 @@
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 #include "Geometry/Vector3.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Adds flat threat from the caster to the unit target.
@@ -134,7 +135,7 @@ void Spell::EffectInterruptCast(const cast::Operation& /*operation*/)
             // check if we can interrupt spell
             if ((curSpellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_INTERRUPT) && curSpellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE)
             {
-                unitTarget->ProhibitSpellSchool(GetSpellSchoolMask(curSpellInfo), GetSpellDuration(m_spellInfo));
+                unitTarget->ProhibitSpellSchool(GetSpellSchoolMask(curSpellInfo), Recipe().DurationMs());
                 unitTarget->InterruptSpell(CurrentSpellTypes(i), false);
             }
         }
@@ -177,7 +178,7 @@ void Spell::EffectSummonObjectWild(const cast::Operation& operation)
         return;
     }
 
-    int32 duration = GetSpellDuration(m_spellInfo);
+    int32 duration = Recipe().DurationMs();
 
     pGameObj->SetRespawnTime(duration > 0 ? duration / IN_MILLISECONDS : 0);
     pGameObj->SetSpellId(m_spellInfo->ID);
@@ -343,7 +344,7 @@ void Spell::EffectDuel(const cast::Operation& operation)
 
     pGameObj->SetUInt32Value(GAMEOBJECT_FACTION, m_caster->getFaction());
     pGameObj->SetUInt32Value(GAMEOBJECT_LEVEL, m_caster->getLevel() + 1);
-    int32 duration = GetSpellDuration(m_spellInfo);
+    int32 duration = Recipe().DurationMs();
     pGameObj->SetRespawnTime(duration > 0 ? duration / IN_MILLISECONDS : 0);
     pGameObj->SetSpellId(m_spellInfo->ID);
 
@@ -585,7 +586,7 @@ void Spell::EffectEnchantHeldItem(const cast::Operation& operation)
     if (operation.miscValue)
     {
         uint32 enchant_id = operation.miscValue;
-        int32 duration = GetSpellDuration(m_spellInfo);     // Try duration index first...
+        int32 duration = Recipe().DurationMs();     // Try duration index first...
         if (!duration)
         {
             duration = m_currentBasePoints[eff_idx];         // Base points after...
@@ -785,7 +786,7 @@ void Spell::EffectSummonObject(const cast::Operation& operation)
     }
 
     pGameObj->SetUInt32Value(GAMEOBJECT_LEVEL, m_caster->getLevel());
-    int32 duration = GetSpellDuration(m_spellInfo);
+    int32 duration = Recipe().DurationMs();
     pGameObj->SetRespawnTime(duration > 0 ? duration / IN_MILLISECONDS : 0);
     pGameObj->SetSpellId(m_spellInfo->ID);
     m_caster->Conjured().AddObject(pGameObj);

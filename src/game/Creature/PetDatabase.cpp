@@ -42,6 +42,7 @@
 #include "Transports.h"
 #include "Movement/Spline/MoveSpline.h"
 #include "Movement/Spline/MoveSplineInit.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Loads a pet from the database for an owner.
@@ -117,7 +118,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
     uint32 summon_spell_id = fields[21].GetUInt32();
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(summon_spell_id);
 
-    bool is_temporary_summoned = spellInfo && GetSpellDuration(spellInfo) > 0;
+    bool is_temporary_summoned = spellInfo && cast::RecipeOf(*spellInfo).DurationMs() > 0;
 
     // check temporary summoned pets like mage water elemental
     if (current && is_temporary_summoned)
