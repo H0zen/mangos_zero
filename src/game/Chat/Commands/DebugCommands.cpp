@@ -63,6 +63,7 @@
 #include "Transports.h"
 #include "VesselRoute.h"
 #include "CellImpl.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Handler for HandleDebugSendSpellFailCommand command.
@@ -1568,8 +1569,8 @@ bool ChatHandler::HandleDebugSpellCoefsCommand(char* args)
 
     SpellBonusEntry const* bonus = sSpellMgr.GetSpellBonusData(spellid);
 
-    float direct_calc = CalculateDefaultCoefficient(spellEntry, SPELL_DIRECT_DAMAGE);
-    float dot_calc = CalculateDefaultCoefficient(spellEntry, DOT);
+    float direct_calc = cast::RecipeOf(*spellEntry).Coefficient(false);
+    float dot_calc = cast::RecipeOf(*spellEntry).Coefficient(true);
 
     bool isDirectHeal = false;
     for (int i = 0; i < 3; ++i)

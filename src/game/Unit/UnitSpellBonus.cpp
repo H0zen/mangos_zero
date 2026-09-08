@@ -57,6 +57,7 @@
 #include "Movement/Spline/MoveSpline.h"
 #include "CreatureLinkingMgr.h"
 #include "GameTime.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * \fn int32 Unit::SpellBonusWithCoeffs(Unit* pCaster, SpellEntry const* spellProto, int32 total, int32 benefit, int32 ap_benefit,  DamageEffectType damagetype, bool donePart, Spell const* spell)
@@ -190,7 +191,7 @@ int32 Unit::SpellBonusWithCoeffs(Unit* pCaster, SpellEntry const* spellProto, in
     // Default calculation
     else
     {
-        coeff = CalculateDefaultCoefficient(spellProto, damagetype);
+        coeff = cast::RecipeOf(*spellProto).Coefficient(damagetype == DOT);
     }
 
     float LvlPenalty = CalculateLevelPenalty(levelPenaltySpell);

@@ -73,6 +73,7 @@ set(TEST_SOURCES
 
     spells/test_auraindex.cpp
     spells/test_recipe.cpp
+    spells/test_coefficient.cpp
 
     client/test_inflate.cpp
     client/test_mpqchain.cpp

@@ -38,6 +38,7 @@
 #include "Spell.h"
 #include "Unit.h"
 #include "World.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Loads spell target destination coordinates from the database.
@@ -297,7 +298,7 @@ void SpellMgr::LoadSpellBonuses()
         float direct_diff = 1000.0f;                        // for have big diff if no DB field value
         if (sbe.direct_damage)
         {
-            direct_calc = CalculateDefaultCoefficient(spell, SPELL_DIRECT_DAMAGE);
+            direct_calc = cast::RecipeOf(*spell).Coefficient(false);
             direct_diff = std::abs(sbe.direct_damage - direct_calc);
         }
 
@@ -306,7 +307,7 @@ void SpellMgr::LoadSpellBonuses()
         float direct_done_diff = 1000.0f;
         if (sbe.direct_damage_done)
         {
-            direct_done_calc = CalculateDefaultCoefficient(spell, SPELL_DIRECT_DAMAGE);
+            direct_done_calc = cast::RecipeOf(*spell).Coefficient(false);
             direct_done_diff = std::abs(sbe.direct_damage_done - direct_done_calc);
         }
 
@@ -315,7 +316,7 @@ void SpellMgr::LoadSpellBonuses()
         float direct_taken_diff = 1000.0f;
         if (sbe.direct_damage_taken)
         {
-            direct_taken_calc = CalculateDefaultCoefficient(spell, SPELL_DIRECT_DAMAGE);
+            direct_taken_calc = cast::RecipeOf(*spell).Coefficient(false);
             direct_taken_diff = std::abs(sbe.direct_damage_taken - direct_taken_calc);
         }
 
@@ -324,7 +325,7 @@ void SpellMgr::LoadSpellBonuses()
         float dot_diff = 1000.0f;                           // for have big diff if no DB field value
         if (sbe.dot_damage)
         {
-            dot_calc = CalculateDefaultCoefficient(spell, DOT);
+            dot_calc = cast::RecipeOf(*spell).Coefficient(true);
             dot_diff = std::abs(sbe.dot_damage - dot_calc);
         }
 

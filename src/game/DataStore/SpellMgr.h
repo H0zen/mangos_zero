@@ -104,12 +104,10 @@ uint32 GetSpellCastTime(SpellEntry const* spellInfo, Spell const* spell = nullpt
 /**
  * Returns the cast time used when calculating spell coefficient bonuses.
  */
-uint32 GetSpellCastTimeForBonus(SpellEntry const* spellProto, DamageEffectType damagetype);
 
 /**
  * Calculates the default spell power coefficient for the specified spell effect type.
  */
-float CalculateDefaultCoefficient(SpellEntry const* spellProto, DamageEffectType const damagetype);
 inline float GetSpellMinRange(SpellRangeEntry const* range)
 {
     return (range ? range->RangeMin : 0);
@@ -138,12 +136,10 @@ int32 CalculateSpellDuration(SpellEntry const* spellInfo, Unit const* caster = n
 /**
  * Returns the maximum number of aura ticks produced by the specified spell.
  */
-uint16 GetSpellAuraMaxTicks(SpellEntry const* spellInfo);
 
 /**
  * Returns the maximum number of aura ticks produced by the specified spell id.
  */
-uint16 GetSpellAuraMaxTicks(uint32 spellId);
 
 /**
  * Returns the weapon attack type used by the specified spell.

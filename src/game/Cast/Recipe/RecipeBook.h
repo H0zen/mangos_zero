@@ -12,8 +12,6 @@
 
 #include "Cast/Recipe/Recipe.h"
 
-#include <memory>
-#include <vector>
 
 struct SpellEntry;
 

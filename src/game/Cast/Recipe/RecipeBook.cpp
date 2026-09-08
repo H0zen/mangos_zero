@@ -13,7 +13,7 @@ namespace cast
 
             if (const SpellCastTimesEntry* cast = sSpellCastTimesStore.LookupEntry(row.CastingTimeIndex))
             {
-                timings.castTimeMs = cast->Base > 0 ? static_cast<uint32>(cast->Base) : 0;
+                timings.castTimeBaseMs = cast->Base;
             }
 
             if (const SpellDurationEntry* duration = sSpellDurationStore.LookupEntry(row.DurationIndex))

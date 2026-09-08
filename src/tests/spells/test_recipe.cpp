@@ -68,7 +68,7 @@ namespace
     cast::Timings CastTime(uint32 ms)
     {
         cast::Timings timings;
-        timings.castTimeMs = ms;
+        timings.castTimeBaseMs = ms;
         return timings;
     }
 }
@@ -259,14 +259,14 @@ TEST_CASE("the numbers other tables hold are carried, not looked up again")
 {
     Row row;
     cast::Timings timings;
-    timings.castTimeMs = 1500;
+    timings.castTimeBaseMs = 1500;
     timings.durationMs = 12000;
     timings.maxDurationMs = 12000;
     timings.rangeMax = 30.0f;
 
     const cast::Recipe recipe = cast::Recipe::Compile(*row, timings);
 
-    CHECK(recipe.Takes().castTimeMs == 1500);
+    CHECK(recipe.Takes().castTimeBaseMs == 1500);
     CHECK(recipe.Takes().durationMs == 12000);
     CHECK(recipe.Takes().rangeMax == doctest::Approx(30.0f));
 }

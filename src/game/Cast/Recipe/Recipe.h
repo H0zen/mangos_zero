@@ -91,6 +91,7 @@ namespace cast
         uint32 chainTargets = 0;
 
         uint32 periodMs = 0;        ///< a tick every this many, zero when it does not tick
+        bool reachesArea = false;   ///< either implicit target names an area
         float amplitude = 0.0f;
         uint32 itemType = 0;
         int32 miscValue = 0;
@@ -182,6 +183,7 @@ namespace cast
         bool cannotBeRedirected = false;        ///< c7.b03
         bool doesNotBreakStealth = false;       ///< c7.b05
         bool cannotBeReflected = false;         ///< c7.b07
+        bool channels = false;                  ///< c7.b02 or c7.b06 -- one concept, two bits, 20 rows carry both
         bool needsTargetOutOfCombat = false;    ///< c7.b08
         bool needsFacing = false;               ///< c7.b09
         bool makesNoThreat = false;             ///< c7.b10
@@ -221,7 +223,10 @@ namespace cast
     /// that compiling a recipe stays a pure function of what it is handed.
     struct Timings
     {
-        uint32 castTimeMs = 0;
+        /// Straight out of SpellCastTimes.dbc, sign and all: one row holds
+        /// -1000000, and a rule that clamps before it adds to it gets a
+        /// different answer than one that clamps after.
+        int32 castTimeBaseMs = 0;
         int32 durationMs = 0;
         int32 durationPerLevelMs = 0;
         int32 maxDurationMs = 0;
@@ -249,6 +254,26 @@ namespace cast
             const Operations& Does() const { return m_operations; }
             const Flags& Says() const { return m_flags; }
             const Timings& Takes() const { return m_timings; }
+
+            /// The cast time a caster-less question gets: the row's own, plus the
+            /// half second a ranged spell spends being drawn, floored at zero.
+            uint32 BareCastTimeMs() const { return m_bareCastTimeMs; }
+
+            /// The duration as everything downstream wants it: -1 stays -1 and
+            /// means no end, everything else is a magnitude.
+            int32 DurationMs() const { return m_durationMs; }
+
+            /// How many times a periodic aura of this spell can tick.
+            uint16 MaxTicks() const { return m_maxTicks; }
+
+            /// The share of spell power this spell takes.
+            ///
+            /// Every input is a property of the row -- the cast time, the
+            /// duration, how many slots deal direct damage, whether any reaches
+            /// an area, whether any leeches -- so it is two numbers, settled when
+            /// the row is compiled: one for a blow that lands at once, one for a
+            /// blow spread over time.
+            float Coefficient(bool overTime) const { return m_coefficient[overTime ? 1 : 0]; }
 
             uint32 DispelKind() const { return m_dispel; }
             uint32 Mechanic() const { return m_mechanic; }
@@ -310,6 +335,11 @@ namespace cast
             Operations m_operations;
             Flags m_flags;
             Timings m_timings;
+
+            uint32 m_bareCastTimeMs = 0;
+            int32 m_durationMs = 0;
+            uint16 m_maxTicks = 0;
+            float m_coefficient[2] = {};
 
             uint32 m_dispel = 0;
             uint32 m_mechanic = 0;
