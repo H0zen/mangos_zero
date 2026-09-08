@@ -296,7 +296,8 @@ Aura::Aura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* currentBas
 
     m_currentBasePoints = currentBasePoints ? *currentBasePoints : spellproto->CalculateSimpleValue(eff);
 
-    m_positive = cast::RecipeOf(*spellproto).IsPositiveAt(m_effIndex);
+    m_operation = &cast::RecipeOf(*spellproto).At(static_cast<uint8>(m_effIndex));
+    m_positive = m_operation->positive;
     m_applyTime = time(nullptr);
 
     int32 damage;
@@ -338,7 +339,7 @@ AreaAura::AreaAura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* cu
     // caster==nullptr in constructor args if target==caster in fact
     Unit* caster_ptr = caster ? caster : target;
 
-    m_radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(spellproto->EffectRadiusIndex[m_effIndex]));
+    m_radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(Operation().radiusIndex));
     if (Player* modOwner = caster_ptr->GetSpellModOwner())
     {
         modOwner->SpellMods().Apply(spellproto->ID, SPELLMOD_RADIUS, m_radius);
@@ -932,7 +933,7 @@ void Aura::TriggerSpell()
     }
 
     // generic casting code with custom spells and target/caster customs
-    uint32 trigger_spell_id = GetSpellProto()->EffectTriggerSpell[m_effIndex];
+    uint32 trigger_spell_id = Operation().triggerSpell;
 
     SpellEntry const* triggeredSpellInfo = sSpellStore.LookupEntry(trigger_spell_id);
     SpellEntry const* auraSpellInfo = GetSpellProto();
@@ -1167,7 +1168,7 @@ void Aura::TriggerSpell()
     {
         // for channeled spell cast applied from aura owner to channel target (persistent aura affects already applied to true target)
         // come periodic casts applied to targets, so need seelct proper caster (ex. 15790)
-        if ((cast::RecipeOf(*GetSpellProto()).Starts() == cast::Start::Channelled) && GetSpellProto()->Effect[GetEffIndex()] != SPELL_EFFECT_PERSISTENT_AREA_AURA)
+        if ((cast::RecipeOf(*GetSpellProto()).Starts() == cast::Start::Channelled) && Operation().verb != SPELL_EFFECT_PERSISTENT_AREA_AURA)
         {
             // interesting 2 cases: periodic aura at caster of channeled spell
             if (target->GetObjectGuid() == casterGUID)
@@ -1554,7 +1555,7 @@ void Aura::PeriodicTick()
                 return;
             }
 
-            if (spellProto->Effect[GetEffIndex()] == SPELL_EFFECT_PERSISTENT_AREA_AURA &&
+            if (Operation().verb == SPELL_EFFECT_PERSISTENT_AREA_AURA &&
                 pCaster->SpellHitResult(target, spellProto, false) != SPELL_MISS_NONE)
             {
                 return;
@@ -1667,7 +1668,7 @@ void Aura::PeriodicTick()
                 return;
             }
 
-            if (spellProto->Effect[GetEffIndex()] == SPELL_EFFECT_PERSISTENT_AREA_AURA &&
+            if (Operation().verb == SPELL_EFFECT_PERSISTENT_AREA_AURA &&
                 pCaster->SpellHitResult(target, spellProto, false) != SPELL_MISS_NONE)
             {
                 return;
@@ -1709,7 +1710,7 @@ void Aura::PeriodicTick()
 
             pCaster->SendSpellNonMeleeDamageLog(target, GetId(), pdamage, GetSpellSchoolMask(spellProto), absorb, resist, false, 0);
 
-            float multiplier = spellProto->EffectAmplitude[GetEffIndex()] > 0 ? spellProto->EffectAmplitude[GetEffIndex()] : 1;
+            float multiplier = Operation().amplitude > 0 ? Operation().amplitude : 1;
 
             // Set trigger flag
             uint32 procAttacker = PROC_FLAG_ON_DO_PERIODIC; // | PROC_FLAG_SUCCESSFUL_HARMFUL_SPELL_HIT;
@@ -1864,7 +1865,7 @@ void Aura::PeriodicTick()
                 return;
             }
 
-            if (GetSpellProto()->Effect[GetEffIndex()] == SPELL_EFFECT_PERSISTENT_AREA_AURA &&
+            if (Operation().verb == SPELL_EFFECT_PERSISTENT_AREA_AURA &&
                 pCaster->SpellHitResult(target, spellProto, false) != SPELL_MISS_NONE)
             {
                 return;
@@ -1890,7 +1891,7 @@ void Aura::PeriodicTick()
 
             if (pCaster->GetMaxPower(power) > 0)
             {
-                gain_multiplier = spellProto->EffectAmplitude[GetEffIndex()];
+                gain_multiplier = Operation().amplitude;
 
                 if (Player* modOwner = pCaster->GetSpellModOwner())
                 {
@@ -2022,7 +2023,7 @@ void Aura::PeriodicTick()
 
             uint32 gain = uint32(-target->ModifyPower(powerType, -pdamage));
 
-            gain = uint32(gain * spellProto->EffectAmplitude[GetEffIndex()]);
+            gain = uint32(gain * Operation().amplitude);
 
             // maybe has to be sent different to client, but not by SMSG_PERIODICAURALOG
             SpellNonMeleeDamage damageInfo(pCaster, target, spellProto->ID, SpellSchools(spellProto->School));
@@ -2225,8 +2226,9 @@ SpellAuraHolder::SpellAuraHolder(SpellEntry const* spellproto, Unit* target, Occ
         m_casterGuid = caster->GetObjectGuid();
     }
 
+    m_recipe         = &cast::RecipeOf(*spellproto);
     m_applyTime      = time(nullptr);
-    m_isPassive      = (cast::RecipeOf(*spellproto).Starts() == cast::Start::Passive);
+    m_isPassive      = (m_recipe->Starts() == cast::Start::Passive);
     m_isDeathPersist = IsDeathPersistentSpell(spellproto);
     m_trackedAuraType = IsSingleTargetSpell(spellproto) ? TRACK_AURA_TYPE_SINGLE_TARGET : TRACK_AURA_TYPE_NOT_TRACKED;
     m_procCharges    = spellproto->ProcCharges;

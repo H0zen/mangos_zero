@@ -27,6 +27,7 @@
 
 #include "SpellAuraDefines.h"
 #include "ObjectMgr.h"
+#include "Cast/Recipe/Recipe.h"
 
 /**
  * Used to modify what an \ref Aura does to a player/npc.
@@ -118,6 +119,9 @@ class SpellAuraHolder
 
         uint32 GetId() const { return m_spellProto->ID; }
         SpellEntry const* GetSpellProto() const { return m_spellProto; }
+
+        /// The spell, compiled: everything the row already answered.
+        const cast::Recipe& Recipe() const { return *m_recipe; }
 
         ObjectGuid const& GetCasterGuid() const { return m_casterGuid; }
         void SetCasterGuid(ObjectGuid guid) { m_casterGuid = guid; }
@@ -229,6 +233,7 @@ class SpellAuraHolder
         bool HeartbeatResist(uint32 diff);
 
         SpellEntry const* m_spellProto;
+        const cast::Recipe* m_recipe;
 
         Unit* m_target;
         ObjectGuid m_casterGuid;
@@ -415,7 +420,10 @@ class Aura
         void SetModifier(AuraType t, int32 a, uint32 pt, int32 miscValue);
         Modifier*       GetModifier()       { return &m_modifier; }
         Modifier const* GetModifier() const { return &m_modifier; }
-        int32 GetMiscValue() const { return m_spellAuraHolder->GetSpellProto()->EffectMiscValue[m_effIndex]; }
+        int32 GetMiscValue() const { return Operation().miscValue; }
+
+        /// The one thing of the spell this aura came from.
+        const cast::Operation& Operation() const { return *m_operation; }
 
         SpellEntry const* GetSpellProto() const { return GetHolder()->GetSpellProto(); }
         uint32 GetId() const { return GetHolder()->GetSpellProto()->ID; }
@@ -521,6 +529,8 @@ class Aura
         AuraRemoveMode m_removeMode: 8;                     // Store info for know remove aura reason
 
         SpellEffectIndex m_effIndex : 8;                    // Aura effect index in spell
+
+        const cast::Operation* m_operation;
 
         bool m_positive: 1;
         bool m_isPeriodic: 1;

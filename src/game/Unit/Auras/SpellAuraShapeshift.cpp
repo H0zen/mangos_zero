@@ -659,7 +659,7 @@ void Aura::HandleAuraModSkill(bool apply, bool /*Real*/)
         return;
     }
 
-    uint32 prot = GetSpellProto()->EffectMiscValue[m_effIndex];
+    uint32 prot = Operation().miscValue;
     int32 points = GetModifier()->m_amount;
 
     ((Player*)GetTarget())->ModifySkillBonus(prot, (apply ? points : -points), m_modifier.m_auraname == SPELL_AURA_MOD_SKILL_TALENT);
@@ -690,7 +690,7 @@ void Aura::HandleChannelDeathItem(bool apply, bool Real)
         }
 
         SpellEntry const* spellInfo = GetSpellProto();
-        if (spellInfo->EffectItemType[m_effIndex] == 0)
+        if (Operation().itemType == 0)
         {
             return;
         }
@@ -701,7 +701,7 @@ void Aura::HandleChannelDeathItem(bool apply, bool Real)
             return;
         }
 
-        uint32 createdItemId = spellInfo->EffectItemType[m_effIndex];
+        uint32 createdItemId = Operation().itemType;
 
         // Soul Shard (target req.)
         if (createdItemId == ITEM_SOUL_SHARD)
