@@ -75,6 +75,7 @@ set(TEST_SOURCES
     spells/test_recipe.cpp
     spells/test_coefficient.cpp
     spells/test_roster.cpp
+    spells/test_maxtargets.cpp
 
     client/test_inflate.cpp
     client/test_mpqchain.cpp

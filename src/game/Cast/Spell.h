@@ -581,6 +581,7 @@ class Spell
         //*****************************************
         void FillTargetMap();
         void SetTargetMap(const cast::Operation& operation, uint32 targetMode, UnitList& targetUnitMap);
+        void PickWhatTheSlotImplies(const cast::Operation& operation, UnitList& targetUnitMap);
 
         void FillAreaTargets(UnitList& targetUnitMap, float radius, cast::Around where, cast::Side side, Occupant* originalCaster = nullptr);
         void FillRaidOrPartyTargets(UnitList& targetUnitMap, Unit* member, float radius, bool raid, bool withPets, bool withcaster);

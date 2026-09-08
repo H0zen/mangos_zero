@@ -52,6 +52,7 @@
 #include "Reaction.h"
 #include "Utilities/MathDefines.h"
 #include "Spell.h"
+#include "Cast/Targets/Trim.h"
 #include "Database/DatabaseEnv.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
@@ -81,34 +82,6 @@
 #include "DisableMgr.h"
 #include "Corpse.h"
 #include "Cast/Recipe/RecipeBook.h"
-
-template<typename T>
-/**
- * @brief Finds a nearby corpse-like world object matching the search predicate.
- *
- * @tparam T The corpse search predicate type.
- * @return The first matching world object, or null if none are found.
- */
-Occupant* Spell::FindCorpseUsing()
-{
-    // non-standard target selection
-    SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->RangeIndex);
-    float max_range = GetSpellMaxRange(srange);
-
-    Occupant* result = nullptr;
-
-    T u_check(m_caster, max_range);
-    MaNGOS::OccupantSearcher<T> searcher(result, u_check);
-
-    Cell::VisitGridObjects(m_caster, searcher, max_range);
-
-    if (!result)
-    {
-        Cell::VisitWorldObjects(m_caster, searcher, max_range);
-    }
-
-    return result;
-}
 
 // Helper for Chain Healing
 // Spell target first
@@ -1095,205 +1068,8 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             break;
         }
         case TARGET_EFFECT_SELECT:
-        {
-            // add here custom effects that need default target.
-            // FOR EVERY TARGET TYPE THERE IS A DIFFERENT FILL!!
-            switch (operation.verb)
-            {
-                case SPELL_EFFECT_DUMMY:
-                {
-                    switch (m_spellInfo->ID)
-                    {
-                        case 20577:                         // Cannibalize
-                        {
-                            Occupant* result = FindCorpseUsing<MaNGOS::CannibalizeObjectCheck> ();
-
-                            if (result)
-                            {
-                                switch (result->GetTypeId())
-                                {
-                                    case TYPEID_UNIT:
-                                    case TYPEID_PLAYER:
-                                        targetUnitMap.push_back((Unit*)result);
-                                        break;
-                                    case TYPEID_CORPSE:
-                                        m_targets.setCorpseTarget((Corpse*)result);
-                                        if (Player* owner = sPlayerRegistry.Find(((Corpse*)result)->GetOwnerGuid()))
-                                        {
-                                            targetUnitMap.push_back(owner);
-                                        }
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                // clear cooldown at fail
-                                if (m_caster->IsPlayer())
-                                {
-                                    ((Player*)m_caster)->RemoveSpellCooldown(m_spellInfo->ID, true);
-                                }
-                                SendCastResult(SPELL_FAILED_NO_EDIBLE_CORPSES);
-                                finish(false);
-                            }
-                            break;
-                        }
-                        default:
-                            if (m_targets.getUnitTarget())
-                            {
-                                targetUnitMap.push_back(m_targets.getUnitTarget());
-                            }
-                            break;
-                    }
-                    // Add AoE target-mask to self, if no target-dest provided already
-                    if ((m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) == 0)
-                    {
-                        m_targets.setDestination(m_caster->Where().X(), m_caster->Where().Y(), m_caster->Where().Z());
-                    }
-                    break;
-                }
-                case SPELL_EFFECT_BIND:
-                case SPELL_EFFECT_RESURRECT:
-                case SPELL_EFFECT_PARRY:
-                case SPELL_EFFECT_BLOCK:
-                case SPELL_EFFECT_CREATE_ITEM:
-                case SPELL_EFFECT_WEAPON:
-                case SPELL_EFFECT_TRIGGER_SPELL:
-                case SPELL_EFFECT_TRIGGER_MISSILE:
-                case SPELL_EFFECT_LEARN_SPELL:
-                case SPELL_EFFECT_SKILL_STEP:
-                case SPELL_EFFECT_PROFICIENCY:
-                case SPELL_EFFECT_SUMMON_POSSESSED:
-                case SPELL_EFFECT_SUMMON_OBJECT_WILD:
-                case SPELL_EFFECT_SELF_RESURRECT:
-                case SPELL_EFFECT_REPUTATION:
-                case SPELL_EFFECT_ADD_HONOR:
-                case SPELL_EFFECT_SEND_TAXI:
-                    if (m_targets.getUnitTarget())
-                    {
-                        targetUnitMap.push_back(m_targets.getUnitTarget());
-                    }
-                    // Triggered spells have additional spell targets - cast them even if no explicit unit target is given (required for spell 50516 for example)
-                    else if (operation.verb == SPELL_EFFECT_TRIGGER_SPELL)
-                    {
-                        targetUnitMap.push_back(m_caster);
-                    }
-                    break;
-                case SPELL_EFFECT_SUMMON_PLAYER:
-                    if (m_caster->IsPlayer() && ((Player*)m_caster)->GetSelectionGuid())
-                    {
-                        if (Player* target = sObjectMgr.GetPlayer(((Player*)m_caster)->GetSelectionGuid()))
-                        {
-                            targetUnitMap.push_back(target);
-                        }
-                    }
-                    break;
-                case SPELL_EFFECT_RESURRECT_NEW:
-                    if (m_targets.getUnitTarget())
-                    {
-                        targetUnitMap.push_back(m_targets.getUnitTarget());
-                    }
-                    if (m_targets.getCorpseTargetGuid())
-                    {
-                        if (Corpse* corpse = m_caster->GetMap()->GetCorpse(m_targets.getCorpseTargetGuid()))
-                        {
-                            if (Player* owner = sPlayerRegistry.Find(corpse->GetOwnerGuid()))
-                            {
-                                targetUnitMap.push_back(owner);
-                            }
-                        }
-                    }
-                    break;
-                case SPELL_EFFECT_TELEPORT_UNITS:
-                case SPELL_EFFECT_SUMMON:
-                    /** [-ZERO]  if (m_spellInfo->EffectMiscValueB[effIndex] == SUMMON_TYPE_POSESSED ||
-                     *              m_spellInfo->EffectMiscValueB[effIndex] == SUMMON_TYPE_POSESSED2)
-                     *              {
-                     *                  if (m_targets.getUnitTarget())
-                     *                  {
-                     *                      targetUnitMap.push_back(m_targets.getUnitTarget());
-                     *                  }
-                     *              }
-                     *              else
-                     */
-                    {
-                        targetUnitMap.push_back(m_caster);
-                    }
-                    break;
-                case SPELL_EFFECT_SUMMON_CHANGE_ITEM:
-                case SPELL_EFFECT_SUMMON_WILD:
-                case SPELL_EFFECT_SUMMON_GUARDIAN:
-                case SPELL_EFFECT_TRANS_DOOR:
-                case SPELL_EFFECT_ADD_FARSIGHT:
-                case SPELL_EFFECT_STUCK:
-                case SPELL_EFFECT_DESTROY_ALL_TOTEMS:
-                case SPELL_EFFECT_SUMMON_DEMON:
-                case SPELL_EFFECT_SKILL:
-                    targetUnitMap.push_back(m_caster);
-                    break;
-                case SPELL_EFFECT_PERSISTENT_AREA_AURA:
-                    if (Unit* currentTarget = m_targets.getUnitTarget())
-                    {
-                        m_targets.setDestination(currentTarget->Where().X(), currentTarget->Where().Y(), currentTarget->Where().Z());
-                    }
-                    break;
-                case SPELL_EFFECT_LEARN_PET_SPELL:
-                    if (Pet* pet = m_caster->GetPet())
-                    {
-                        targetUnitMap.push_back(pet);
-                    }
-                    break;
-                case SPELL_EFFECT_ENCHANT_ITEM:
-                case SPELL_EFFECT_ENCHANT_ITEM_TEMPORARY:
-                case SPELL_EFFECT_DISENCHANT:
-                case SPELL_EFFECT_FEED_PET:
-                    if (m_targets.getItemTarget())
-                    {
-                        EnrolItem(m_targets.getItemTarget(), effIndex);
-                    }
-                    break;
-                case SPELL_EFFECT_APPLY_AURA:
-                    switch (operation.aura)
-                    {
-                        case SPELL_AURA_ADD_FLAT_MODIFIER:  // some spell mods auras have 0 target modes instead expected TARGET_SELF(1) (and present for other ranks for same spell for example)
-                        case SPELL_AURA_ADD_PCT_MODIFIER:
-                            targetUnitMap.push_back(m_caster);
-                            break;
-                        default:                            // apply to target in other case
-                            if (m_targets.getUnitTarget())
-                            {
-                                targetUnitMap.push_back(m_targets.getUnitTarget());
-                            }
-                            break;
-                    }
-                    break;
-                case SPELL_EFFECT_APPLY_AREA_AURA_PARTY:
-                    // AreaAura
-                    if ((m_spellInfo->Attributes == (SPELL_ATTR_NOT_SHAPESHIFT | SPELL_ATTR_DONT_AFFECT_SHEATH_STATE | SPELL_ATTR_CASTABLE_WHILE_MOUNTED | SPELL_ATTR_CASTABLE_WHILE_SITTING)) || (m_spellInfo->Attributes == SPELL_ATTR_NOT_SHAPESHIFT))
-                    {
-                        SetTargetMap(operation, TARGET_AREAEFFECT_PARTY, targetUnitMap);
-                    }
-                    break;
-                case SPELL_EFFECT_SKIN_PLAYER_CORPSE:
-                    if (m_targets.getUnitTarget())
-                    {
-                        targetUnitMap.push_back(m_targets.getUnitTarget());
-                    }
-                    else if (m_targets.getCorpseTargetGuid())
-                    {
-                        if (Corpse* corpse = m_caster->GetMap()->GetCorpse(m_targets.getCorpseTargetGuid()))
-                        {
-                            if (Player* owner = sPlayerRegistry.Find(corpse->GetOwnerGuid()))
-                            {
-                                targetUnitMap.push_back(owner);
-                            }
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
+            PickWhatTheSlotImplies(operation, targetUnitMap);
             break;
-        }
         default:
             // sLog.outError( "SPELL: Unknown implicit target (%u) for spell ID %u", targetMode, m_spellInfo->Id );
             break;
@@ -1304,93 +1080,11 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
         targetUnitMap.remove(m_caster);
     }
 
-    if (unMaxTargets && targetUnitMap.size() > unMaxTargets)
-    {
-        // make sure one unit is always removed per iteration
-        uint32 removed_utarget = 0;
-        for (UnitList::iterator itr = targetUnitMap.begin(), next; itr != targetUnitMap.end(); itr = next)
-        {
-            next = itr;
-            ++next;
-            if (!*itr)
-            {
-                continue;
-            }
-            if ((*itr) == m_targets.getUnitTarget())
-            {
-                targetUnitMap.erase(itr);
-                removed_utarget = 1;
-                //        break;
-            }
-        }
-        // remove random units from the map
-        while (targetUnitMap.size() > unMaxTargets - removed_utarget)
-        {
-            uint32 poz = urand(0, targetUnitMap.size() - 1);
-            for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end(); ++itr, --poz)
-            {
-                if (!*itr)
-                {
-                    continue;
-                }
+    cast::KeepAtMost(targetUnitMap, unMaxTargets, m_targets.getUnitTarget(), true);
 
-                if (!poz)
-                {
-                    targetUnitMap.erase(itr);
-                    break;
-                }
-            }
-        }
-        // the player's target will always be added to the map
-        if (removed_utarget && m_targets.getUnitTarget())
-        {
-            targetUnitMap.push_back(m_targets.getUnitTarget());
-        }
-    }
-    if (!tempTargetGOList.empty())                          // GO CASE
+    cast::KeepAtMost(tempTargetGOList, unMaxTargets, m_targets.getGOTarget(), false);
+    for (auto found : tempTargetGOList)
     {
-        if (unMaxTargets && tempTargetGOList.size() > unMaxTargets)
-        {
-            // make sure one go is always removed per iteration
-            uint32 removed_utarget = 0;
-            for (std::list<GameObject*>::iterator itr = tempTargetGOList.begin(), next; itr != tempTargetGOList.end(); itr = next)
-            {
-                next = itr;
-                ++next;
-                if (!*itr)
-                {
-                    continue;
-                }
-                if ((*itr) == m_targets.getGOTarget())
-                {
-                    tempTargetGOList.erase(itr);
-                    removed_utarget = 1;
-                    //        break;
-                }
-            }
-            // remove random units from the map
-            while (tempTargetGOList.size() > unMaxTargets - removed_utarget)
-            {
-                uint32 poz = urand(0, tempTargetGOList.size() - 1);
-                for (std::list<GameObject*>::iterator itr = tempTargetGOList.begin(); itr != tempTargetGOList.end(); ++itr, --poz)
-                {
-                    if (!*itr)
-                    {
-                        continue;
-                    }
-
-                    if (!poz)
-                    {
-                        tempTargetGOList.erase(itr);
-                        break;
-                    }
-                }
-            }
-        }
-        // Add resulting GOs as GOTargets
-        for (std::list<GameObject*>::iterator iter = tempTargetGOList.begin(); iter != tempTargetGOList.end(); ++iter)
-        {
-            EnrolObject(*iter, effIndex);
-        }
+        EnrolObject(found, effIndex);
     }
 }
