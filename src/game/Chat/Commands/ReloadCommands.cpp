@@ -44,6 +44,7 @@
 #include "BattleGroundMgr.h"
 #include "ItemEnchantmentMgr.h"
 #include "CommandMgr.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Handler for HandleReloadSpellLinkedCommand command.
@@ -823,6 +824,7 @@ bool ChatHandler::HandleReloadSpellBonusesCommand(char* /*args*/)
 {
     sLog.outString("Re-Loading Spell Bonus Data...");
     sSpellMgr.LoadSpellBonuses();
+    cast::SettleRecipeGroups();
     SendGlobalSysMessage("DB table `spell_bonus_data` (spell damage/healing coefficients) reloaded.", SEC_MODERATOR);
     return true;
 }
@@ -879,6 +881,7 @@ bool ChatHandler::HandleReloadSpellProcEventCommand(char* /*args*/)
 {
     sLog.outString("Re-Loading Spell Proc Event conditions...");
     sSpellMgr.LoadSpellProcEvents();
+    cast::SettleRecipeGroups();
     SendGlobalSysMessage("DB table `spell_proc_event` (spell proc trigger requirements) reloaded.", SEC_MODERATOR);
     return true;
 }
@@ -935,6 +938,7 @@ bool ChatHandler::HandleReloadSpellThreatsCommand(char* /*args*/)
 {
     sLog.outString("Re-Loading Aggro Spells Definitions...");
     sSpellMgr.LoadSpellThreats();
+    cast::SettleRecipeGroups();
     SendGlobalSysMessage("DB table `spell_threat` (spell aggro definitions) reloaded.", SEC_MODERATOR);
     return true;
 }

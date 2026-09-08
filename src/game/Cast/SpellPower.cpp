@@ -279,7 +279,7 @@ void Spell::HandleThreatSpells()
         return;
     }
 
-    SpellThreatEntry const* threatEntry = sSpellMgr.GetSpellThreatEntry(m_spellInfo->ID);
+    SpellThreatEntry const* threatEntry = Recipe().Threat();
 
     if (!threatEntry || (!threatEntry->threat && threatEntry->ap_bonus == 0.0f))
     {

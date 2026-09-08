@@ -470,7 +470,6 @@ void World::SetInitialWorldSettings()
     sLog.outString("Loading Spell Elixir types...");
     sSpellMgr.LoadSpellElixirs();
 
-    cast::SettleRecipeGroups();
 
     sLog.outString("Loading Spell Facing Flags...");
     sSpellMgr.LoadFacingCasterFlags();
@@ -495,6 +494,8 @@ void World::SetInitialWorldSettings()
 
     sLog.outString("Loading Aggro Spells Definitions...");
     sSpellMgr.LoadSpellThreats();
+
+    cast::SettleRecipeGroups();
 
     sLog.outString("Loading NPC Texts...");
     sObjectMgr.LoadGossipText();

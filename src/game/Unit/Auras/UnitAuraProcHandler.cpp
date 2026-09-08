@@ -253,7 +253,7 @@ bool Unit::IsTriggeredAtSpellProcEvent(Unit* pVictim, SpellAuraHolder* holder, S
     SpellEntry const* spellProto = holder->GetSpellProto();
 
     // Get proc Event Entry
-    spellProcEvent = sSpellMgr.GetSpellProcEvent(spellProto->ID);
+    spellProcEvent = cast::RecipeOf(*spellProto).ProcRule();
 
     // Get EventProcFlag
     uint32 EventProcFlag;

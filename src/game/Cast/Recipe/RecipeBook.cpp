@@ -77,6 +77,11 @@ namespace cast
 
             recipe.m_diminishing[0] = GetDiminishingReturnsGroupForSpell(row, false);
             recipe.m_diminishing[1] = GetDiminishingReturnsGroupForSpell(row, true);
+
+            recipe.m_procRule = sSpellMgr.GetSpellProcEvent(recipe.m_id);
+            recipe.m_bonus = sSpellMgr.GetSpellBonusData(recipe.m_id);
+            recipe.m_threat = sSpellMgr.GetSpellThreatEntry(recipe.m_id);
+            recipe.m_threatMultiplier = recipe.m_threat != nullptr ? recipe.m_threat->multiplier : 1.0f;
         }
     }
 

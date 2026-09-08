@@ -99,7 +99,7 @@ int32 Unit::SpellBonusWithCoeffs(Unit* pCaster, SpellEntry const* spellProto, in
         coeff = 1.0f;
     }
     // Check for table values
-    else if (SpellBonusEntry const* bonus = sSpellMgr.GetSpellBonusData(spellProto->ID))
+    else if (SpellBonusEntry const* bonus = cast::RecipeOf(*spellProto).Bonus())
     {
         switch (damagetype)
         {

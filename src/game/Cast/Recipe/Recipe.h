@@ -34,6 +34,9 @@
 #include <cstddef>
 
 struct SpellEntry;
+struct SpellProcEventEntry;
+struct SpellBonusEntry;
+struct SpellThreatEntry;
 
 namespace cast
 {
@@ -344,6 +347,17 @@ namespace cast
             /// only when every one of its operations is.
             bool IsPositive() const { return m_positive; }
 
+            /// What the world's own tables say about this spell, found once
+            /// rather than looked up by id on every proc, every bonus and every
+            /// point of threat. Null where the tables say nothing.
+            const SpellProcEventEntry* ProcRule() const { return m_procRule; }
+            const SpellBonusEntry* Bonus() const { return m_bonus; }
+            const SpellThreatEntry* Threat() const { return m_threat; }
+
+            /// How much threat this spell makes for the damage it deals. One when
+            /// no table says otherwise.
+            float ThreatMultiplier() const { return m_threatMultiplier; }
+
             /// The group whose diminishing returns this spell shares. A control
             /// spell that arrives through a trigger lands in a different group
             /// than the same spell cast directly, so there are two.
@@ -379,6 +393,11 @@ namespace cast
             uint32 m_id = 0;
             bool m_positive = false;
             DiminishingGroup m_diminishing[2] = {DIMINISHING_NONE, DIMINISHING_NONE};
+
+            const SpellProcEventEntry* m_procRule = nullptr;
+            const SpellBonusEntry* m_bonus = nullptr;
+            const SpellThreatEntry* m_threat = nullptr;
+            float m_threatMultiplier = 1.0f;
             Start m_start = Start::Instant;
             Defence m_defence = Defence::None;
             combat::School m_school = combat::School::Physical;

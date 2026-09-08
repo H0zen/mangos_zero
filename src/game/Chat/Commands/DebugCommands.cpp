@@ -1567,7 +1567,8 @@ bool ChatHandler::HandleDebugSpellCoefsCommand(char* args)
         return false;
     }
 
-    SpellBonusEntry const* bonus = sSpellMgr.GetSpellBonusData(spellid);
+    const cast::Recipe* recipe = cast::Recipes().Find(spellid);
+    SpellBonusEntry const* bonus = recipe != nullptr ? recipe->Bonus() : nullptr;
 
     float direct_calc = cast::RecipeOf(*spellEntry).Coefficient(false);
     float dot_calc = cast::RecipeOf(*spellEntry).Coefficient(true);

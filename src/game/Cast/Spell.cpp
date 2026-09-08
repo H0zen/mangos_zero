@@ -74,6 +74,7 @@
 #include "SQLStorages.h"
 #include "DisableMgr.h"
 #include "Corpse.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 extern pEffect SpellEffects[TOTAL_SPELL_EFFECTS];
 
@@ -511,7 +512,7 @@ SpellEntry const* Spell::GetSpellBonusLevelPenaltySpell(SpellEntry const* spellP
     }
 
     if (m_currentBasePoints[EFFECT_INDEX_1] == int32(m_triggeredBySpellInfo->ID) &&
-        sSpellMgr.GetSpellBonusData(spellProto->ID))
+        cast::RecipeOf(*spellProto).Bonus())
     {
         return m_triggeredBySpellInfo;
     }

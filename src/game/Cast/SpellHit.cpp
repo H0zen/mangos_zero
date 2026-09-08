@@ -236,7 +236,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
 
         if (real_caster)
         {
-            unitTarget->GetHostileRefManager().threatAssist(real_caster, float(gain) * 0.5f * sSpellMgr.GetSpellThreatMultiplier(m_spellInfo), m_spellInfo);
+            unitTarget->GetHostileRefManager().threatAssist(real_caster, float(gain) * 0.5f * Recipe().ThreatMultiplier(), m_spellInfo);
         }
     }
     // Do damage and triggers

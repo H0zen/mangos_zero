@@ -1747,7 +1747,7 @@ void Aura::PeriodicTick()
             uint32 heal = pCaster->SpellHealingBonusTaken(pCaster, spellProto, int32(new_damage * multiplier), DOT, GetStackAmount());
 
             int32 gain = pCaster->DealHeal(pCaster, heal, spellProto);
-            pCaster->GetHostileRefManager().threatAssist(pCaster, gain * 0.5f * sSpellMgr.GetSpellThreatMultiplier(spellProto), spellProto);
+            pCaster->GetHostileRefManager().threatAssist(pCaster, gain * 0.5f * cast::RecipeOf(*spellProto).ThreatMultiplier(), spellProto);
             break;
         }
         case SPELL_AURA_PERIODIC_HEAL:
@@ -1806,7 +1806,7 @@ void Aura::PeriodicTick()
             uint32 procEx = PROC_EX_NORMAL_HIT | PROC_EX_PERIODIC_POSITIVE;
             pCaster->ProcDamageAndSpell(target, procAttacker, procVictim, procEx, gain, BASE_ATTACK, spellProto);
 
-            target->GetHostileRefManager().threatAssist(pCaster, float(gain) * 0.5f * sSpellMgr.GetSpellThreatMultiplier(spellProto), spellProto);
+            target->GetHostileRefManager().threatAssist(pCaster, float(gain) * 0.5f * cast::RecipeOf(*spellProto).ThreatMultiplier(), spellProto);
 
             // heal for caster damage
             if (target != pCaster && spellProto->SpellVisualID == 163)
@@ -1956,7 +1956,7 @@ void Aura::PeriodicTick()
 
             if (Unit* pCaster = GetCaster())
             {
-                target->GetHostileRefManager().threatAssist(pCaster, float(gain) * 0.5f * sSpellMgr.GetSpellThreatMultiplier(spellProto), spellProto);
+                target->GetHostileRefManager().threatAssist(pCaster, float(gain) * 0.5f * cast::RecipeOf(*spellProto).ThreatMultiplier(), spellProto);
             }
             break;
         }
@@ -1988,7 +1988,7 @@ void Aura::PeriodicTick()
 
             if (Unit* pCaster = GetCaster())
             {
-                target->GetHostileRefManager().threatAssist(pCaster, float(gain) * 0.5f * sSpellMgr.GetSpellThreatMultiplier(spellProto), spellProto);
+                target->GetHostileRefManager().threatAssist(pCaster, float(gain) * 0.5f * cast::RecipeOf(*spellProto).ThreatMultiplier(), spellProto);
             }
             break;
         }
@@ -2060,7 +2060,7 @@ void Aura::PeriodicTick()
             int32 gain = target->ModifyHealth(m_modifier.m_amount);
             if (Unit* caster = GetCaster())
             {
-                target->GetHostileRefManager().threatAssist(caster, float(gain) * 0.5f  * sSpellMgr.GetSpellThreatMultiplier(spellProto), spellProto);
+                target->GetHostileRefManager().threatAssist(caster, float(gain) * 0.5f  * cast::RecipeOf(*spellProto).ThreatMultiplier(), spellProto);
             }
             break;
         }
