@@ -2522,14 +2522,14 @@ void SpellAuraHolder::_RemoveSpellAuraHolder()
  */
 void SpellAuraHolder::CleanupTriggeredSpells()
 {
-    for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
+    for (const auto& operation : Recipe().Does())
     {
-        if (!m_spellProto->EffectAura[i])
+        if (!operation.aura)
         {
             continue;
         }
 
-        uint32 tSpellId = m_spellProto->EffectTriggerSpell[i];
+        uint32 tSpellId = operation.triggerSpell;
         if (!tSpellId)
         {
             continue;
@@ -2548,8 +2548,8 @@ void SpellAuraHolder::CleanupTriggeredSpells()
 
         // needed for spell 43680, maybe others
         // TODO: is there a spell flag, which can solve this in a more sophisticated way?
-        if (m_spellProto->EffectAura[i] == SPELL_AURA_PERIODIC_TRIGGER_SPELL &&
-            GetSpellDuration(m_spellProto) == int32(m_spellProto->EffectAuraPeriod[i]))
+        if (operation.aura == SPELL_AURA_PERIODIC_TRIGGER_SPELL &&
+            Recipe().DurationMs() == int32(operation.periodMs))
         {
             continue;
         }
@@ -2723,7 +2723,7 @@ bool SpellAuraHolder::IsNeedVisibleSlot(Unit const* caster) const
         }
 
         // special area auras cases
-        switch (m_spellProto->Effect[i])
+        switch (Recipe().At(static_cast<uint8>(i)).verb)
         {
             case SPELL_EFFECT_APPLY_AREA_AURA_PET:
             case SPELL_EFFECT_APPLY_AREA_AURA_PARTY:
@@ -3062,7 +3062,7 @@ bool SpellAuraHolder::HasMechanic(uint32 mechanic) const
 
     for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
-        if (m_auras[i] && m_spellProto->EffectMechanic[i] == mechanic)
+        if (m_auras[i] && Recipe().At(static_cast<uint8>(i)).mechanic == mechanic)
         {
             return true;
         }
@@ -3085,7 +3085,8 @@ bool SpellAuraHolder::HasMechanicMask(uint32 mechanicMask) const
 
     for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
-        if (m_auras[i] && m_spellProto->EffectMechanic[i] && ((1 << (m_spellProto->EffectMechanic[i] - 1)) & mechanicMask))
+        if (m_auras[i] && Recipe().At(static_cast<uint8>(i)).mechanic &&
+            ((1 << (Recipe().At(static_cast<uint8>(i)).mechanic - 1)) & mechanicMask))
         {
             return true;
         }
