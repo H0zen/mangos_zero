@@ -631,7 +631,7 @@ SpellCastResult Spell::CheckCast(bool strict)
     }
 
     // Database based targets from spell_target_script
-    if (m_UniqueTargetInfo.empty())                         // skip second CheckCast apply (for delayed spells for example)
+    if (m_roster.Units().empty())                         // skip second CheckCast apply (for delayed spells for example)
     {
         for (const auto& operation : Recipe().Does())
         {
@@ -788,7 +788,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
                         if (operation.targetA == TARGET_SCRIPT_COORDINATES && operation.verb != SPELL_EFFECT_PERSISTENT_AREA_AURA)
                         {
-                            AddUnitTarget(creatureScriptTarget, SpellEffectIndex(j));
+                            EnrolUnit(creatureScriptTarget, SpellEffectIndex(j));
                         }
                     }
                     // store explicit target for TARGET_SCRIPT
@@ -797,7 +797,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                         if (operation.targetA == TARGET_SCRIPT ||
                             operation.targetB == TARGET_SCRIPT)
                         {
-                            AddUnitTarget(creatureScriptTarget, SpellEffectIndex(j));
+                            EnrolUnit(creatureScriptTarget, SpellEffectIndex(j));
                         }
                     }
                 }
@@ -811,7 +811,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
                         if (operation.targetA == TARGET_SCRIPT_COORDINATES && operation.verb != SPELL_EFFECT_PERSISTENT_AREA_AURA)
                         {
-                            AddGOTarget(goScriptTarget, SpellEffectIndex(j));
+                            EnrolObject(goScriptTarget, SpellEffectIndex(j));
                         }
                     }
                     // store explicit target for TARGET_FOCUS_OR_SCRIPTED_GAMEOBJECT
@@ -820,7 +820,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                         if (operation.targetA == TARGET_FOCUS_OR_SCRIPTED_GAMEOBJECT ||
                             operation.targetB == TARGET_FOCUS_OR_SCRIPTED_GAMEOBJECT)
                         {
-                            AddGOTarget(goScriptTarget, SpellEffectIndex(j));
+                            EnrolObject(goScriptTarget, SpellEffectIndex(j));
                         }
                     }
                 }
@@ -1997,9 +1997,9 @@ bool Spell::CanAutoCast(Unit* target)
     {
         FillTargetMap();
         // check if among target units, our WANTED target is as well (->only self cast spells return false)
-        for (TargetList::const_iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+        for (const auto& enrolled : m_roster.Units())
         {
-            if (ihit->targetGUID == targetguid)
+            if (enrolled.guid == targetguid)
             {
                 return true;
             }

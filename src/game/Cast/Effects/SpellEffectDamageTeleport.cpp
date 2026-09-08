@@ -190,9 +190,9 @@ void Spell::EffectSchoolDMG(const cast::Operation& operation)
                     case 26789:                             // Shard of the Fallen Star
                     {
                         uint32 count = 0;
-                        for (TargetList::const_iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+                        for (const auto& enrolled : m_roster.Units())
                         {
-                            if (ihit->effectMask & (1 << effect_idx))
+                            if (enrolled.slots & (1 << effect_idx))
                             {
                                 ++count;
                             }

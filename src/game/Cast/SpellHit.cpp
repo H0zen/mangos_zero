@@ -82,18 +82,18 @@
  *
  * @param target The target info entry.
  */
-void Spell::DoAllEffectOnTarget(TargetInfo* target)
+void Spell::DoAllEffectOnTarget(cast::UnitTarget* target)
 {
-    if (target->processed)                                  // Check target
+    if (target->served)                                  // Check target
     {
         return;
     }
-    target->processed = true;                               // Target checked in apply effects procedure
+    target->served = true;                               // Target checked in apply effects procedure
 
     // Get mask of effects for target
-    uint32 mask = target->effectMask;
+    uint32 mask = target->slots;
 
-    Unit* unit = m_caster->GetObjectGuid() == target->targetGUID ? m_caster : ObjectLookup::GetUnit(*m_caster, target->targetGUID);
+    Unit* unit = m_caster->GetObjectGuid() == target->guid ? m_caster : ObjectLookup::GetUnit(*m_caster, target->guid);
     if (!unit)
     {
         return;
@@ -104,7 +104,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
     // FIXME: in case wild GO heal/damage spells will be used target bonuses
     Unit* caster = real_caster ? real_caster : m_caster;
 
-    SpellMissInfo missInfo = target->missCondition;
+    SpellMissInfo missInfo = target->verdict;
     // Need init unitTarget by default unit (can changed in code on reflect)
     // Or on missInfo!=SPELL_MISS_NONE unitTarget undefined (but need in trigger subsystem)
     unitTarget = unit;
@@ -121,7 +121,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
     // for example caster bonus or animation,
     // except miss case where will assigned PROC_EX_* flags later
     if (((procAttacker | procVictim) & NEGATIVE_TRIGGER_MASK) &&
-        !(target->effectMask & m_negativeEffectMask) && missInfo == SPELL_MISS_NONE)
+        !(target->slots & m_negativeEffectMask) && missInfo == SPELL_MISS_NONE)
     {
         procAttacker = PROC_FLAG_NONE;
         procVictim   = PROC_FLAG_NONE;
@@ -149,7 +149,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
     }
     else if (missInfo == SPELL_MISS_REFLECT)                // In case spell reflect from target, do all effect on caster (if hit)
     {
-        if (target->reflectResult == SPELL_MISS_NONE)       // If reflected spell hit caster -> do all effect on him
+        if (target->reflectedVerdict == SPELL_MISS_NONE)       // If reflected spell hit caster -> do all effect on him
         {
             DoSpellHitOnUnit(m_caster, mask, true);
             unitTarget = m_caster;
@@ -248,7 +248,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
         if (speed > 0.0f)
         {
             damageInfo.damage = m_damage;
-            damageInfo.HitInfo = target->HitInfo;
+            damageInfo.HitInfo = target->hitInfo;
         }
         // Add bonuses and fill damageInfo struct
         else
@@ -578,21 +578,21 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
  *
  * @param target The game object target info entry.
  */
-void Spell::DoAllEffectOnTarget(GOTargetInfo* target)
+void Spell::DoAllEffectOnTarget(cast::ObjectTarget* target)
 {
-    if (target->processed)                                  // Check target
+    if (target->served)                                  // Check target
     {
         return;
     }
-    target->processed = true;                               // Target checked in apply effects procedure
+    target->served = true;                               // Target checked in apply effects procedure
 
-    uint32 effectMask = target->effectMask;
+    uint32 effectMask = target->slots;
     if (!effectMask)
     {
         return;
     }
 
-    GameObject* go = m_caster->GetMap()->GetGameObject(target->targetGUID);
+    GameObject* go = m_caster->GetMap()->GetGameObject(target->guid);
     if (!go)
     {
         return;
@@ -622,9 +622,9 @@ void Spell::DoAllEffectOnTarget(GOTargetInfo* target)
  *
  * @param target The item target info entry.
  */
-void Spell::DoAllEffectOnTarget(ItemTargetInfo* target)
+void Spell::DoAllEffectOnTarget(cast::ItemTarget* target)
 {
-    uint32 effectMask = target->effectMask;
+    uint32 effectMask = target->slots;
     if (!target->item || !effectMask)
     {
         return;
@@ -644,12 +644,12 @@ void Spell::DoAllEffectOnTarget(ItemTargetInfo* target)
  *
  * @param target The target info entry.
  */
-void Spell::HandleDelayedSpellLaunch(TargetInfo* target)
+void Spell::HandleDelayedSpellLaunch(cast::UnitTarget* target)
 {
     // Get mask of effects for target
-    uint32 mask = target->effectMask;
+    uint32 mask = target->slots;
 
-    Unit* unit = m_caster->GetObjectGuid() == target->targetGUID ? m_caster : ObjectLookup::GetUnit(*m_caster, target->targetGUID);
+    Unit* unit = m_caster->GetObjectGuid() == target->guid ? m_caster : ObjectLookup::GetUnit(*m_caster, target->guid);
     if (!unit)
     {
         return;
@@ -660,7 +660,7 @@ void Spell::HandleDelayedSpellLaunch(TargetInfo* target)
     // FIXME: in case wild GO heal/damage spells will be used target bonuses
     Unit* caster = real_caster ? real_caster : m_caster;
 
-    SpellMissInfo missInfo = target->missCondition;
+    SpellMissInfo missInfo = target->verdict;
     // Need init unitTarget by default unit (can changed in code on reflect)
     // Or on missInfo!=SPELL_MISS_NONE unitTarget undefined (but need in trigger subsystem)
     unitTarget = unit;
@@ -673,7 +673,7 @@ void Spell::HandleDelayedSpellLaunch(TargetInfo* target)
     SpellNonMeleeDamage damageInfo(caster, unitTarget, m_spellInfo->ID, GetFirstSchoolInMask(m_spellSchoolMask));
 
     // keep damage amount for reflected spells
-    if (missInfo == SPELL_MISS_NONE || (missInfo == SPELL_MISS_REFLECT && target->reflectResult == SPELL_MISS_NONE))
+    if (missInfo == SPELL_MISS_NONE || (missInfo == SPELL_MISS_REFLECT && target->reflectedVerdict == SPELL_MISS_NONE))
     {
         for (int32 effectNumber = 0; effectNumber < MAX_EFFECT_INDEX; ++effectNumber)
         {
@@ -704,7 +704,7 @@ void Spell::HandleDelayedSpellLaunch(TargetInfo* target)
     }
 
     target->damage = damageInfo.damage;
-    target->HitInfo = damageInfo.HitInfo;
+    target->hitInfo = damageInfo.HitInfo;
 }
 
 /**

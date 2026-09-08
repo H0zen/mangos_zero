@@ -108,11 +108,11 @@ void Spell::cancel()
         }
         case SPELL_STATE_CASTING:
         {
-            for (TargetList::const_iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+            for (const auto& enrolled : m_roster.Units())
             {
-                if (ihit->missCondition == SPELL_MISS_NONE)
+                if (enrolled.verdict == SPELL_MISS_NONE)
                 {
-                    Unit* unit = m_caster->GetObjectGuid() == (*ihit).targetGUID ? m_caster : ObjectLookup::GetUnit(*m_caster, ihit->targetGUID);
+                    Unit* unit = m_caster->GetObjectGuid() == enrolled.guid ? m_caster : ObjectLookup::GetUnit(*m_caster, enrolled.guid);
                     if (unit && unit->IsAlive())
                     {
                         unit->RemoveAurasCastBy(m_spellInfo->ID, m_caster->GetObjectGuid());
@@ -335,9 +335,9 @@ void Spell::cast(bool skipCheck)
         TakeCastItem();
 
         // fill initial spell damage from caster for delayed casted spells
-        for (TargetList::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+        for (auto& enrolled : m_roster.Units())
         {
-            HandleDelayedSpellLaunch(&(*ihit));
+            HandleDelayedSpellLaunch(&enrolled);
         }
 
         // Okay, maps created, now prepare flags
@@ -370,14 +370,14 @@ void Spell::handle_immediate()
         SendChannelStart(m_duration);
     }
 
-    for (TargetList::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+    for (auto& enrolled : m_roster.Units())
     {
-        DoAllEffectOnTarget(&(*ihit));
+        DoAllEffectOnTarget(&enrolled);
     }
 
-    for (GOTargetList::iterator ihit = m_UniqueGOTargetInfo.begin(); ihit != m_UniqueGOTargetInfo.end(); ++ihit)
+    for (auto& enrolled : m_roster.Objects())
     {
-        DoAllEffectOnTarget(&(*ihit));
+        DoAllEffectOnTarget(&enrolled);
     }
 
     // spell is finished, perform some last features of the spell here
@@ -409,33 +409,33 @@ uint64 Spell::handle_delayed(uint64 t_offset)
     }
 
     // now recheck units targeting correctness (need before any effects apply to prevent adding immunity at first effect not allow apply second spell effect and similar cases)
-    for (TargetList::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+    for (auto& enrolled : m_roster.Units())
     {
-        if (!ihit->processed)
+        if (!enrolled.served)
         {
-            if (ihit->timeDelay <= t_offset)
+            if (enrolled.arrivesInMs <= t_offset)
             {
-                DoAllEffectOnTarget(&(*ihit));
+                DoAllEffectOnTarget(&enrolled);
             }
-            else if (next_time == 0 || ihit->timeDelay < next_time)
+            else if (next_time == 0 || enrolled.arrivesInMs < next_time)
             {
-                next_time = ihit->timeDelay;
+                next_time = enrolled.arrivesInMs;
             }
         }
     }
 
     // now recheck gameobject targeting correctness
-    for (GOTargetList::iterator ighit = m_UniqueGOTargetInfo.begin(); ighit != m_UniqueGOTargetInfo.end(); ++ighit)
+    for (auto& enrolled : m_roster.Objects())
     {
-        if (!ighit->processed)
+        if (!enrolled.served)
         {
-            if (ighit->timeDelay <= t_offset)
+            if (enrolled.arrivesInMs <= t_offset)
             {
-                DoAllEffectOnTarget(&(*ighit));
+                DoAllEffectOnTarget(&enrolled);
             }
-            else if (next_time == 0 || ighit->timeDelay < next_time)
+            else if (next_time == 0 || enrolled.arrivesInMs < next_time)
             {
-                next_time = ighit->timeDelay;
+                next_time = enrolled.arrivesInMs;
             }
         }
     }
@@ -471,7 +471,7 @@ void Spell::_handle_immediate_phase()
         const SpellEffectIndex j = SpellEffectIndex(operation.slot);
 
         // apply Send Event effect to ground in case empty target lists
-        if (operation.verb == SPELL_EFFECT_SEND_EVENT && !HaveTargetsForEffect(j))
+        if (operation.verb == SPELL_EFFECT_SEND_EVENT && !m_roster.ServesSlot(operation.slot))
         {
             HandleEffects(nullptr, nullptr, nullptr, j);
             continue;
@@ -489,9 +489,9 @@ void Spell::_handle_immediate_phase()
     m_diminishGroup = DIMINISHING_NONE;
 
     // process items
-    for (ItemTargetList::iterator ihit = m_UniqueItemInfo.begin(); ihit != m_UniqueItemInfo.end(); ++ihit)
+    for (auto& enrolled : m_roster.Items())
     {
-        DoAllEffectOnTarget(&(*ihit));
+        DoAllEffectOnTarget(&enrolled);
     }
 
     // process ground
@@ -709,15 +709,14 @@ void Spell::update(uint32 difftime)
                 {
                     if (Player* p = m_caster->GetCharmerOrOwnerPlayerOrPlayerItself())
                     {
-                        for (TargetList::const_iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+                        for (const auto& enrolled : m_roster.Units())
                         {
-                            TargetInfo const& target = *ihit;
-                            if (!target.targetGUID.IsCreature())
+                            if (!enrolled.guid.IsCreature())
                             {
                                 continue;
                             }
 
-                            Unit* unit = m_caster->GetObjectGuid() == target.targetGUID ? m_caster : ObjectLookup::GetUnit(*m_caster, target.targetGUID);
+                            Unit* unit = m_caster->GetObjectGuid() == enrolled.guid ? m_caster : ObjectLookup::GetUnit(*m_caster, enrolled.guid);
                             if (unit == nullptr)
                             {
                                 continue;
@@ -726,11 +725,9 @@ void Spell::update(uint32 difftime)
                             p->RewardPlayerAndGroupAtCast(unit, m_spellInfo->ID);
                         }
 
-                        for (GOTargetList::const_iterator ihit = m_UniqueGOTargetInfo.begin(); ihit != m_UniqueGOTargetInfo.end(); ++ihit)
+                        for (const auto& enrolled : m_roster.Objects())
                         {
-                            GOTargetInfo const& target = *ihit;
-
-                            GameObject* go = m_caster->GetMap()->GetGameObject(target.targetGUID);
+                            GameObject* go = m_caster->GetMap()->GetGameObject(enrolled.guid);
                             if (!go)
                             {
                                 continue;
@@ -798,12 +795,12 @@ void Spell::finish(bool ok)
         {
             continue;
         }
-        for (TargetList::const_iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+        for (const auto& enrolled : m_roster.Units())
         {
-            if (ihit->missCondition == SPELL_MISS_NONE)
+            if (enrolled.verdict == SPELL_MISS_NONE)
             {
                 // check m_caster->GetGUID() let load auras at login and speedup most often case
-                Unit* unit = m_caster->GetObjectGuid() == ihit->targetGUID ? m_caster : ObjectLookup::GetUnit(*m_caster, ihit->targetGUID);
+                Unit* unit = m_caster->GetObjectGuid() == enrolled.guid ? m_caster : ObjectLookup::GetUnit(*m_caster, enrolled.guid);
                 if (unit && unit->IsAlive())
                 {
                     SpellEntry const* auraSpellInfo = aura->GetSpellProto();
@@ -845,9 +842,9 @@ void Spell::finish(bool ok)
         bool needDrop = true;
         if (!Recipe().IsPositive())
         {
-            for (TargetList::const_iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+            for (const auto& enrolled : m_roster.Units())
             {
-                if (ihit->missCondition != SPELL_MISS_NONE && ihit->targetGUID != m_caster->GetObjectGuid())
+                if (enrolled.verdict != SPELL_MISS_NONE && enrolled.guid != m_caster->GetObjectGuid())
                 {
                     needDrop = false;
                     break;

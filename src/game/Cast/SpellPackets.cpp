@@ -320,26 +320,26 @@ void Spell::WriteSpellGoTargets(WorldPacket* data)
     // This function also fill data for channeled spells:
     // m_needAliveTargetMask req for stop channeling if one target die
     // Always hits on GO and expected all targets for Units
-    *data << (uint8)(m_UniqueTargetInfo.size() + m_UniqueGOTargetInfo.size());
+    *data << (uint8)(m_roster.Units().size() + m_roster.Objects().size());
 
-    for (TargetList::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+    for (auto& enrolled : m_roster.Units())
     {
-        *data << ihit->targetGUID;                          // in 1.12.1 expected all targets
+        *data << enrolled.guid;                          // in 1.12.1 expected all targets
 
-        if (ihit->effectMask == 0)                          // No effect apply - all immuned add state
+        if (enrolled.slots == 0)                          // No effect apply - all immuned add state
         {
             // possibly SPELL_MISS_IMMUNE2 for this??
-            ihit->missCondition = SPELL_MISS_IMMUNE2;
+            enrolled.verdict = SPELL_MISS_IMMUNE2;
         }
-        else if (ihit->missCondition == SPELL_MISS_NONE)    // Add only hits
+        else if (enrolled.verdict == SPELL_MISS_NONE)    // Add only hits
         {
-            m_needAliveTargetMask |= ihit->effectMask;
+            m_needAliveTargetMask |= enrolled.slots;
         }
     }
 
-    for (GOTargetList::const_iterator ighit = m_UniqueGOTargetInfo.begin(); ighit != m_UniqueGOTargetInfo.end(); ++ighit)
+    for (const auto& enrolled : m_roster.Objects())
     {
-        *data << ighit->targetGUID;                          // Always hits
+        *data << enrolled.guid;                          // Always hits
     }
 
     *data << uint8(0);                                      // unknown, not miss
@@ -574,25 +574,25 @@ void Spell::SendChannelStart(uint32 duration)
         target = m_caster->Conjured().AreaOf(m_spellInfo->ID, EFFECT_INDEX_0);
     }
     // select first not resisted target from target list for _0_ effect
-    else if (!m_UniqueTargetInfo.empty())
+    else if (!m_roster.Units().empty())
     {
-        for (TargetList::const_iterator itr = m_UniqueTargetInfo.begin(); itr != m_UniqueTargetInfo.end(); ++itr)
+        for (const auto& enrolled : m_roster.Units())
         {
-            if ((itr->effectMask & (1 << EFFECT_INDEX_0)) && itr->reflectResult == SPELL_MISS_NONE &&
-                itr->targetGUID != m_caster->GetObjectGuid())
+            if ((enrolled.slots & (1 << EFFECT_INDEX_0)) && enrolled.reflectedVerdict == SPELL_MISS_NONE &&
+                enrolled.guid != m_caster->GetObjectGuid())
             {
-                target = ObjectLookup::GetUnit(*m_caster, itr->targetGUID);
+                target = ObjectLookup::GetUnit(*m_caster, enrolled.guid);
                 break;
             }
         }
     }
-    else if (!m_UniqueGOTargetInfo.empty())
+    else if (!m_roster.Objects().empty())
     {
-        for (GOTargetList::const_iterator itr = m_UniqueGOTargetInfo.begin(); itr != m_UniqueGOTargetInfo.end(); ++itr)
+        for (const auto& enrolled : m_roster.Objects())
         {
-            if (itr->effectMask & (1 << EFFECT_INDEX_0))
+            if (enrolled.slots & (1 << EFFECT_INDEX_0))
             {
-                target = m_caster->GetMap()->GetGameObject(itr->targetGUID);
+                target = m_caster->GetMap()->GetGameObject(enrolled.guid);
                 break;
             }
         }

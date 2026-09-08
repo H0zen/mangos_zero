@@ -65,6 +65,7 @@
 #include "Player.h"
 #include "Cast/Recipe/Recipe.h"
 #include "Cast/Recipe/RecipeBook.h"
+#include "Cast/Roster/Roster.h"
 
 class WorldSession;
 class WorldPacket;
@@ -417,7 +418,6 @@ class Spell
         int32 CalculateDamage(SpellEffectIndex i, Unit* target) { return m_caster->CalculateSpellDamage(target, Recipe(), Recipe().At(static_cast<uint8>(i)), &m_currentBasePoints[i]); }
         static uint32 CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spell const* spell = nullptr, Item* castItem = nullptr);
 
-        bool HaveTargetsForEffect(SpellEffectIndex effect) const;
         void Delayed();
         void DelayedChannel();
         uint32 getState() const { return m_spellState; }
@@ -492,7 +492,7 @@ class Spell
         void SetExecutedCurrently(bool yes) { m_executedCurrently = yes; }
         uint64 GetDelayStart() const { return m_delayStart; }
         void SetDelayStart(uint64 m_time) { m_delayStart = m_time; }
-        uint64 GetDelayMoment() const { return m_delayMoment; }
+        uint64 GetDelayMoment() const { return m_roster.SoonestArrivalMs(); }
 
         bool IsNeedSendToClient() const;                    // use for hide spell cast for client in case when cast not have client side affect (animation or log entries)
         bool IsTriggeredSpellWithRedundentCastTime() const; // use for ignore some spell data for triggered spells like cast time, some triggered spells have redundent copy data from main spell for client use purpose
@@ -522,7 +522,6 @@ class Spell
         void CastPreCastSpells(Unit* target);
         void CastTriggerSpells();
 
-        void CleanupTargetList();
         void ClearCastItem();
 
         typedef std::list<Unit*> UnitList;
@@ -567,7 +566,6 @@ class Spell
 
         // Delayed spells system
         uint64 m_delayStart;                                // time of spell delay start, filled by event handler, zero = just started
-        uint64 m_delayMoment;                               // moment of next delay call, used internally
         bool m_immediateHandled;                            // were immediate actions handled? (used by delayed spells only)
 
         // These vars are used in both delayed spell system and modified immediate spell system
@@ -620,56 +618,23 @@ class Spell
         void GetSpellRangeAndRadius(SpellEffectIndex effIndex, float& radius, uint32& EffectChainTarget, uint32& unMaxTargets) const;
 
         //*****************************************
-        // Spell target subsystem
+        // Everyone this cast reaches
         //*****************************************
-        // Targets store structures and data
-        struct TargetInfo
-        {
-            ObjectGuid targetGUID;
-            uint64 timeDelay;
-            uint32 HitInfo;
-            uint32 damage;
-            SpellMissInfo missCondition: 8;
-            SpellMissInfo reflectResult: 8;
-            uint8  effectMask: 8;
-            bool   processed: 1;
-        };
-        uint8 m_needAliveTargetMask;                        // Mask req. alive targets
+        cast::Roster m_roster;
+        uint8 m_needAliveTargetMask;                        // slots whose target must still be alive for a channel to hold
 
-        struct GOTargetInfo
-        {
-            ObjectGuid targetGUID;
-            uint64 timeDelay;
-            uint8  effectMask: 8;
-            bool   processed: 1;
-        };
-
-        struct ItemTargetInfo
-        {
-            Item*  item;
-            uint8 effectMask;
-        };
-
-        typedef std::list<TargetInfo>     TargetList;
-        typedef std::list<GOTargetInfo>   GOTargetList;
-        typedef std::list<ItemTargetInfo> ItemTargetList;
-
-        TargetList     m_UniqueTargetInfo;
-        GOTargetList   m_UniqueGOTargetInfo;
-        ItemTargetList m_UniqueItemInfo;
-
-        void AddUnitTarget(Unit* target, SpellEffectIndex effIndex);
-        void AddUnitTarget(ObjectGuid unitGuid, SpellEffectIndex effIndex);
-        void AddGOTarget(GameObject* target, SpellEffectIndex effIndex);
-        void AddGOTarget(ObjectGuid goGuid, SpellEffectIndex effIndex);
-        void AddItemTarget(Item* target, SpellEffectIndex effIndex);
-        void DoAllEffectOnTarget(TargetInfo* target);
-        void HandleDelayedSpellLaunch(TargetInfo* target);
+        void EnrolUnit(Unit* target, SpellEffectIndex effIndex);
+        void EnrolUnit(ObjectGuid unitGuid, SpellEffectIndex effIndex);
+        void EnrolObject(GameObject* target, SpellEffectIndex effIndex);
+        void EnrolObject(ObjectGuid goGuid, SpellEffectIndex effIndex);
+        void EnrolItem(Item* target, SpellEffectIndex effIndex);
+        void DoAllEffectOnTarget(cast::UnitTarget* target);
+        void HandleDelayedSpellLaunch(cast::UnitTarget* target);
         void InitializeDamageMultipliers();
         void ResetEffectDamageAndHeal();
         void DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected = false);
-        void DoAllEffectOnTarget(GOTargetInfo* target);
-        void DoAllEffectOnTarget(ItemTargetInfo* target);
+        void DoAllEffectOnTarget(cast::ObjectTarget* target);
+        void DoAllEffectOnTarget(cast::ItemTarget* target);
         bool IsAliveUnitPresentInTargetList();
         SpellCastResult CanOpenLock(SpellEffectIndex effIndex, uint32 lockid, SkillType& skillid, int32& reqSkillValue, int32& skillValue);
         bool IsLockInRange(GameObject* go);

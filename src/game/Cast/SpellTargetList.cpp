@@ -106,7 +106,7 @@ void Spell::FillTargetMap()
         // for area auras always add caster as target (needed for totems for example)
         if (IsAreaAuraEffect(operation.verb))
         {
-            AddUnitTarget(m_caster, SpellEffectIndex(i));
+            EnrolUnit(m_caster, SpellEffectIndex(i));
         }
 
         // no double fill for same targets
@@ -359,7 +359,7 @@ void Spell::FillTargetMap()
 
         for (UnitList::const_iterator iunit = tmpUnitLists[effToIndex[i]].begin(); iunit != tmpUnitLists[effToIndex[i]].end(); ++iunit)
         {
-            AddUnitTarget((*iunit), SpellEffectIndex(i));
+            EnrolUnit((*iunit), SpellEffectIndex(i));
         }
     }
 }
@@ -491,23 +491,12 @@ void Spell::prepareDataForTriggerSystem()
 }
 
 /**
- * @brief Clears all accumulated target lists and delay tracking.
- */
-void Spell::CleanupTargetList()
-{
-    m_UniqueTargetInfo.clear();
-    m_UniqueGOTargetInfo.clear();
-    m_UniqueItemInfo.clear();
-    m_delayMoment = 0;
-}
-
-/**
- * @brief Adds a unit target entry for a spell effect.
+ * @brief Writes a unit on the roster for one recipe slot.
  *
  * @param pVictim The unit target.
  * @param effIndex The effect index being applied.
  */
-void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
+void Spell::EnrolUnit(Unit* pVictim, SpellEffectIndex effIndex)
 {
     if (Recipe().Does().AtSlot(static_cast<uint8>(effIndex)) == nullptr)
     {
@@ -519,29 +508,22 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
 
     ObjectGuid targetGUID = pVictim->GetObjectGuid();
 
-    // Lookup target in already in list
-    for (TargetList::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+    // a unit already on the roster only gains the slot
+    if (cast::UnitTarget* enrolled = m_roster.FindUnit(targetGUID))
     {
-        if (targetGUID == ihit->targetGUID)                 // Found in list
+        if (!immuned)
         {
-            if (!immuned)
-            {
-                ihit->effectMask |= 1 << effIndex;          // Add only effect mask if not immuned
-            }
-            return;
+            enrolled->slots |= 1 << effIndex;
         }
+        return;
     }
 
-    // This is new target calculate data for him
+    cast::UnitTarget target;
+    target.guid = targetGUID;
+    target.slots = immuned ? 0 : (1 << effIndex);
 
-    // Get spell hit result on target
-    TargetInfo target;
-    target.targetGUID = targetGUID;                         // Store target GUID
-    target.effectMask = immuned ? 0 : (1 << effIndex);      // Store index of effect if not immuned
-    target.processed  = false;                              // Effects not applied on target
-
-    // Calculate hit result
-    target.missCondition = m_caster->SpellHitResult(pVictim, m_spellInfo, m_canReflect);
+    // the verdict is reckoned now, not when the spell arrives
+    target.verdict = m_caster->SpellHitResult(pVictim, m_spellInfo, m_canReflect);
 
     // spell fly from visual cast object
     Occupant* affectiveObject = GetAffectiveCasterObject();
@@ -572,40 +554,29 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
         {
             dist = 5.0f;
         }
-        target.timeDelay = (uint64) floor(dist / speed * 1000.0f);
-
-        // Calculate minimum incoming time
-        if (m_delayMoment == 0 || m_delayMoment > target.timeDelay)
-        {
-            m_delayMoment = target.timeDelay;
-        }
-    }
-    else
-    {
-        target.timeDelay = UI64LIT(0);
+        target.arrivesInMs = static_cast<uint64>(floor(dist / speed * 1000.0f));
     }
 
     // If target reflect spell back to caster
-    if (target.missCondition == SPELL_MISS_REFLECT)
+    if (target.verdict == SPELL_MISS_REFLECT)
     {
         // Calculate reflected spell result on caster
-        target.reflectResult =  m_caster->SpellHitResult(m_caster, m_spellInfo, m_canReflect);
+        target.reflectedVerdict =  m_caster->SpellHitResult(m_caster, m_spellInfo, m_canReflect);
 
-        if (target.reflectResult == SPELL_MISS_REFLECT)     // Impossible reflect again, so simply deflect spell
+        if (target.reflectedVerdict == SPELL_MISS_REFLECT)     // Impossible reflect again, so simply deflect spell
         {
-            target.reflectResult = SPELL_MISS_PARRY;
+            target.reflectedVerdict = SPELL_MISS_PARRY;
         }
 
         // Increase time interval for reflected spells by 1.5
-        target.timeDelay += target.timeDelay >> 1;
+        target.arrivesInMs += target.arrivesInMs >> 1;
     }
     else
     {
-        target.reflectResult = SPELL_MISS_NONE;
+        target.reflectedVerdict = SPELL_MISS_NONE;
     }
 
-    // Add target to list
-    m_UniqueTargetInfo.push_back(target);
+    m_roster.Enrol(target);
 }
 
 /**
@@ -614,11 +585,11 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
  * @param unitGuid The unit guid to resolve.
  * @param effIndex The effect index being applied.
  */
-void Spell::AddUnitTarget(ObjectGuid unitGuid, SpellEffectIndex effIndex)
+void Spell::EnrolUnit(ObjectGuid unitGuid, SpellEffectIndex effIndex)
 {
     if (Unit* unit = m_caster->GetObjectGuid() == unitGuid ? m_caster : ObjectLookup::GetUnit(*m_caster, unitGuid))
     {
-        AddUnitTarget(unit, effIndex);
+        EnrolUnit(unit, effIndex);
     }
 }
 
@@ -628,7 +599,7 @@ void Spell::AddUnitTarget(ObjectGuid unitGuid, SpellEffectIndex effIndex)
  * @param pVictim The game object target.
  * @param effIndex The effect index being applied.
  */
-void Spell::AddGOTarget(GameObject* pVictim, SpellEffectIndex effIndex)
+void Spell::EnrolObject(GameObject* pVictim, SpellEffectIndex effIndex)
 {
     if (Recipe().Does().AtSlot(static_cast<uint8>(effIndex)) == nullptr)
     {
@@ -637,22 +608,16 @@ void Spell::AddGOTarget(GameObject* pVictim, SpellEffectIndex effIndex)
 
     ObjectGuid targetGUID = pVictim->GetObjectGuid();
 
-    // Lookup target in already in list
-    for (GOTargetList::iterator ihit = m_UniqueGOTargetInfo.begin(); ihit != m_UniqueGOTargetInfo.end(); ++ihit)
+    // a gameobject already on the roster only gains the slot
+    if (cast::ObjectTarget* enrolled = m_roster.FindObject(targetGUID))
     {
-        if (targetGUID == ihit->targetGUID)                 // Found in list
-        {
-            ihit->effectMask |= (1 << effIndex);            // Add only effect mask
-            return;
-        }
+        enrolled->slots |= 1 << effIndex;
+        return;
     }
 
-    // This is new target calculate data for him
-
-    GOTargetInfo target;
-    target.targetGUID = targetGUID;
-    target.effectMask = (1 << effIndex);
-    target.processed  = false;                              // Effects not apply on target
+    cast::ObjectTarget target;
+    target.guid = targetGUID;
+    target.slots = (1 << effIndex);
 
     // spell fly from visual cast object
     Occupant* affectiveObject = GetAffectiveCasterObject();
@@ -667,19 +632,10 @@ void Spell::AddGOTarget(GameObject* pVictim, SpellEffectIndex effIndex)
         {
             dist = 5.0f;
         }
-        target.timeDelay = (uint64) floor(dist / speed * 1000.0f);
-        if (m_delayMoment == 0 || m_delayMoment > target.timeDelay)
-        {
-            m_delayMoment = target.timeDelay;
-        }
-    }
-    else
-    {
-        target.timeDelay = UI64LIT(0);
+        target.arrivesInMs = static_cast<uint64>(floor(dist / speed * 1000.0f));
     }
 
-    // Add target to list
-    m_UniqueGOTargetInfo.push_back(target);
+    m_roster.Enrol(target);
 }
 
 /**
@@ -688,11 +644,11 @@ void Spell::AddGOTarget(GameObject* pVictim, SpellEffectIndex effIndex)
  * @param goGuid The game object guid to resolve.
  * @param effIndex The effect index being applied.
  */
-void Spell::AddGOTarget(ObjectGuid goGuid, SpellEffectIndex effIndex)
+void Spell::EnrolObject(ObjectGuid goGuid, SpellEffectIndex effIndex)
 {
     if (GameObject* go = m_caster->GetMap()->GetGameObject(goGuid))
     {
-        AddGOTarget(go, effIndex);
+        EnrolObject(go, effIndex);
     }
 }
 
@@ -702,27 +658,22 @@ void Spell::AddGOTarget(ObjectGuid goGuid, SpellEffectIndex effIndex)
  * @param pitem The item target.
  * @param effIndex The effect index being applied.
  */
-void Spell::AddItemTarget(Item* pitem, SpellEffectIndex effIndex)
+void Spell::EnrolItem(Item* pitem, SpellEffectIndex effIndex)
 {
     if (Recipe().Does().AtSlot(static_cast<uint8>(effIndex)) == nullptr)
     {
         return;
     }
 
-    // Lookup target in already in list
-    for (ItemTargetList::iterator ihit = m_UniqueItemInfo.begin(); ihit != m_UniqueItemInfo.end(); ++ihit)
+    // an item already on the roster only gains the slot
+    if (cast::ItemTarget* enrolled = m_roster.FindItem(pitem))
     {
-        if (pitem == ihit->item)                            // Found in list
-        {
-            ihit->effectMask |= (1 << effIndex);            // Add only effect mask
-            return;
-        }
+        enrolled->slots |= 1 << effIndex;
+        return;
     }
 
-    // This is new target add data
-
-    ItemTargetInfo target;
-    target.item       = pitem;
-    target.effectMask = (1 << effIndex);
-    m_UniqueItemInfo.push_back(target);
+    cast::ItemTarget target;
+    target.item = pitem;
+    target.slots = (1 << effIndex);
+    m_roster.Enrol(target);
 }

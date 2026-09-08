@@ -490,8 +490,6 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
             }
         }
     }
-
-    CleanupTargetList();
 }
 
 Spell::~Spell()
@@ -550,16 +548,16 @@ bool Spell::IsAliveUnitPresentInTargetList()
 
     uint8 needAliveTargetMask = m_needAliveTargetMask;
 
-    for (TargetList::const_iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+    for (const auto& enrolled : m_roster.Units())
     {
-        if (ihit->missCondition == SPELL_MISS_NONE && (needAliveTargetMask & ihit->effectMask))
+        if (enrolled.verdict == SPELL_MISS_NONE && (needAliveTargetMask & enrolled.slots))
         {
-            Unit* unit = m_caster->GetObjectGuid() == ihit->targetGUID ? m_caster : ObjectLookup::GetUnit(*m_caster, ihit->targetGUID);
+            Unit* unit = m_caster->GetObjectGuid() == enrolled.guid ? m_caster : ObjectLookup::GetUnit(*m_caster, enrolled.guid);
 
             // either unit is alive and normal spell, or unit dead and deathonly-spell
             if (unit && (unit->IsAlive() != IsDeathOnlySpell(m_spellInfo)))
             {
-                needAliveTargetMask &= ~ihit->effectMask;   // remove from need alive mask effect that have alive target
+                needAliveTargetMask &= ~enrolled.slots;   // remove from need alive mask effect that have alive target
             }
         }
     }
@@ -725,11 +723,11 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, Aura* triggeredB
  */
 ObjectGuid Spell::GetPrefilledOrUnitTargetGuid(SpellEffectIndex effIndex) const
 {
-    for (TargetList::const_iterator itr = m_UniqueTargetInfo.begin(); itr != m_UniqueTargetInfo.end(); ++itr)
+    for (const auto& enrolled : m_roster.Units())
     {
-        if (itr->effectMask & (1 << effIndex))
+        if (enrolled.slots & (1 << effIndex))
         {
-            return itr->targetGUID;
+            return enrolled.guid;
         }
     }
 
@@ -832,11 +830,11 @@ void Spell::DelayedChannel()
 
     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell %u partially interrupted for %i ms, new duration: %u ms", m_spellInfo->ID, delaytime, m_timer);
 
-    for (TargetList::const_iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+    for (const auto& enrolled : m_roster.Units())
     {
-        if ((*ihit).missCondition == SPELL_MISS_NONE)
+        if (enrolled.verdict == SPELL_MISS_NONE)
         {
-            if (Unit* unit = m_caster->GetObjectGuid() == ihit->targetGUID ? m_caster : ObjectLookup::GetUnit(*m_caster, ihit->targetGUID))
+            if (Unit* unit = m_caster->GetObjectGuid() == enrolled.guid ? m_caster : ObjectLookup::GetUnit(*m_caster, enrolled.guid))
             {
                 unit->DelaySpellAuraHolder(m_spellInfo->ID, delaytime, unit->GetObjectGuid());
             }
@@ -910,41 +908,6 @@ bool Spell::IsNeedSendToClient() const
 bool Spell::IsTriggeredSpellWithRedundentCastTime() const
 {
     return m_triggeredByAuraSpell || (m_IsTriggeredSpell && (m_spellInfo->ManaCost || m_spellInfo->ManaCostPct));
-}
-
-/**
- * @brief Checks whether any queued target entry contains a given effect.
- *
- * @param effect The effect index to look for.
- * @return True if at least one target has the effect queued; otherwise, false.
- */
-bool Spell::HaveTargetsForEffect(SpellEffectIndex effect) const
-{
-    for (TargetList::const_iterator itr = m_UniqueTargetInfo.begin(); itr != m_UniqueTargetInfo.end(); ++itr)
-    {
-        if (itr->effectMask & (1 << effect))
-        {
-            return true;
-        }
-    }
-
-    for (GOTargetList::const_iterator itr = m_UniqueGOTargetInfo.begin(); itr != m_UniqueGOTargetInfo.end(); ++itr)
-    {
-        if (itr->effectMask & (1 << effect))
-        {
-            return true;
-        }
-    }
-
-    for (ItemTargetList::const_iterator itr = m_UniqueItemInfo.begin(); itr != m_UniqueItemInfo.end(); ++itr)
-    {
-        if (itr->effectMask & (1 << effect))
-        {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 SpellEvent::SpellEvent(Spell* spell) : BasicEvent()

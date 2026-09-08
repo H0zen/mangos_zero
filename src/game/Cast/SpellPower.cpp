@@ -179,9 +179,9 @@ void Spell::TakePower()
             {
                 if (powerType == POWER_ENERGY || powerType == POWER_RAGE)
                 {
-                    for (std::list<TargetInfo>::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+                    for (const auto& enrolled : m_roster.Units())
                     {
-                        if (ihit->missCondition != SPELL_MISS_NONE)
+                        if (enrolled.verdict != SPELL_MISS_NONE)
                         {
                             hit = false;
                         }
@@ -274,7 +274,7 @@ void Spell::TakeReagents()
  */
 void Spell::HandleThreatSpells()
 {
-    if (m_UniqueTargetInfo.empty())
+    if (m_roster.Units().empty())
     {
         return;
     }
@@ -314,17 +314,17 @@ void Spell::HandleThreatSpells()
     // before 2.0.1 threat from positive effects not dependent from targets amount
     if (!positive)
     {
-        threat /= m_UniqueTargetInfo.size();
+        threat /= m_roster.Units().size();
     }
 
-    for (TargetList::const_iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+    for (const auto& enrolled : m_roster.Units())
     {
-        if (ihit->missCondition != SPELL_MISS_NONE)
+        if (enrolled.verdict != SPELL_MISS_NONE)
         {
             continue;
         }
 
-        Unit* target = m_caster->GetObjectGuid() == ihit->targetGUID ? m_caster : ObjectLookup::GetUnit(*m_caster, ihit->targetGUID);
+        Unit* target = m_caster->GetObjectGuid() == enrolled.guid ? m_caster : ObjectLookup::GetUnit(*m_caster, enrolled.guid);
         if (!target)
         {
             continue;
@@ -347,5 +347,5 @@ void Spell::HandleThreatSpells()
         }
     }
 
-    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell %u added an additional %f threat for %s %zu target(s)", m_spellInfo->ID, threat, positive ? "assisting" : "harming", m_UniqueTargetInfo.size());
+    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell %u added an additional %f threat for %s %zu target(s)", m_spellInfo->ID, threat, positive ? "assisting" : "harming", m_roster.Units().size());
 }

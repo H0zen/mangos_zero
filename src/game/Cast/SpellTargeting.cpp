@@ -707,7 +707,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
         case TARGET_GAMEOBJECT:
             if (m_targets.getGOTarget())
             {
-                AddGOTarget(m_targets.getGOTarget(), effIndex);
+                EnrolObject(m_targets.getGOTarget(), effIndex);
             }
             break;
         case TARGET_IN_FRONT_OF_CASTER:
@@ -804,11 +804,11 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
         case TARGET_GAMEOBJECT_ITEM:
             if (m_targets.getGOTargetGuid())
             {
-                AddGOTarget(m_targets.getGOTarget(), effIndex);
+                EnrolObject(m_targets.getGOTarget(), effIndex);
             }
             else if (m_targets.getItemTarget())
             {
-                AddItemTarget(m_targets.getItemTarget(), effIndex);
+                EnrolItem(m_targets.getItemTarget(), effIndex);
             }
             break;
         case TARGET_MASTER:
@@ -922,7 +922,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             }
             if (m_targets.getItemTarget())
             {
-                AddItemTarget(m_targets.getItemTarget(), effIndex);
+                EnrolItem(m_targets.getItemTarget(), effIndex);
             }
             break;
         }
@@ -1248,7 +1248,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
                 case SPELL_EFFECT_FEED_PET:
                     if (m_targets.getItemTarget())
                     {
-                        AddItemTarget(m_targets.getItemTarget(), effIndex);
+                        EnrolItem(m_targets.getItemTarget(), effIndex);
                     }
                     break;
                 case SPELL_EFFECT_APPLY_AURA:
@@ -1390,7 +1390,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
         // Add resulting GOs as GOTargets
         for (std::list<GameObject*>::iterator iter = tempTargetGOList.begin(); iter != tempTargetGOList.end(); ++iter)
         {
-            AddGOTarget(*iter, effIndex);
+            EnrolObject(*iter, effIndex);
         }
     }
 }
