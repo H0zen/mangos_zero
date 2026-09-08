@@ -69,6 +69,7 @@
 #include "CellImpl.h"
 #include "Geometry/Vector3.h"
 #include <random>
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Executes spell-specific dummy effect behavior.
@@ -995,7 +996,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     m_caster->CastCustomSpell(m_caster, 31818, &mana, nullptr, nullptr, true);
 
                     // Mana Feed
-                    int32 manaFeedVal = m_caster->CalculateSpellDamage(m_caster, m_spellInfo, EFFECT_INDEX_1);
+                    int32 manaFeedVal = m_caster->CalculateSpellDamage(m_caster, Recipe(), Recipe().At(EFFECT_INDEX_1));
                     manaFeedVal = manaFeedVal * mana / 100;
                     if (manaFeedVal > 0)
                     {

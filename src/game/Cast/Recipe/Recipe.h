@@ -133,6 +133,16 @@ namespace cast
             const Operation* begin() const { return m_items; }
             const Operation* end() const { return m_items + m_count; }
 
+            /// The operation in a slot, whether or not one is there. A slot the
+            /// data left empty answers with zeros, which is what reading the row
+            /// at that index has always given.
+            const Operation& At(uint8 slot) const
+            {
+                static const Operation nothing;
+                const Operation* operation = AtSlot(slot);
+                return operation != nullptr ? *operation : nothing;
+            }
+
             /// The operation filling a given client-facing slot, or nullptr.
             const Operation* AtSlot(uint8 slot) const
             {
@@ -331,6 +341,9 @@ namespace cast
             /// Whether a target would want this cast on them. A spell is wanted
             /// only when every one of its operations is.
             bool IsPositive() const { return m_positive; }
+
+            /// What the spell does in one slot, zeros when the slot is empty.
+            const Operation& At(uint8 slot) const { return m_operations.At(slot); }
 
             /// The same question about one slot. An empty slot is not wanted,
             /// because there is nothing in it to want.

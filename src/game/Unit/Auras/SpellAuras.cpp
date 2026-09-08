@@ -306,7 +306,7 @@ Aura::Aura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* currentBas
     }
     else
     {
-        damage = caster->CalculateSpellDamage(target, spellproto, m_effIndex, &m_currentBasePoints);
+        damage = caster->CalculateSpellDamage(target, cast::RecipeOf(*spellproto), cast::RecipeOf(*spellproto).At(static_cast<uint8>(m_effIndex)), &m_currentBasePoints);
     }
 
     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Aura: construct Spellid : %u, Aura : %u Target : %d Damage : %d", spellproto->ID, spellproto->EffectAura[eff], spellproto->ImplicitTargetA[eff], damage);
@@ -2614,7 +2614,7 @@ void SpellAuraHolder::SetStackAmount(uint32 stackAmount)
             if (Aura* aur = m_auras[i])
             {
                 int32 bp = aur->GetBasePoints();
-                int32 amount = m_stackAmount * caster->CalculateSpellDamage(target, m_spellProto, SpellEffectIndex(i), &bp);
+                int32 amount = m_stackAmount * caster->CalculateSpellDamage(target, cast::RecipeOf(*m_spellProto), cast::RecipeOf(*m_spellProto).At(static_cast<uint8>(i)), &bp);
                 // Reapply if amount change
                 if (amount != aur->GetModifier()->m_amount)
                 {

@@ -74,6 +74,7 @@
 #include "TemporarySummon.h"
 #include "SQLStorages.h"
 #include "DisableMgr.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Cancels the spell and sends the appropriate interruption notifications.
@@ -812,7 +813,7 @@ void Spell::finish(bool ok)
                     SpellEffectIndex auraSpellIdx = aura->GetEffIndex();
                     // Calculate chance at that moment (can be depend for example from combo points)
                     int32 auraBasePoints = aura->GetBasePoints();
-                    int32 chance = m_caster->CalculateSpellDamage(unit, auraSpellInfo, auraSpellIdx, &auraBasePoints);
+                    int32 chance = m_caster->CalculateSpellDamage(unit, cast::RecipeOf(*auraSpellInfo), cast::RecipeOf(*auraSpellInfo).At(static_cast<uint8>(auraSpellIdx)), &auraBasePoints);
                     if (roll_chance_i(chance))
                     {
                         m_caster->CastSpell(unit, auraSpellInfo->EffectTriggerSpell[auraSpellIdx], true, nullptr, aura);

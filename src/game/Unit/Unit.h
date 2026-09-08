@@ -337,6 +337,13 @@ enum HitInfo
 struct FactionTemplateEntry;
 struct Modifier;
 struct SpellEntry;
+
+namespace cast
+{
+    class Recipe;
+    struct Operation;
+}
+
 struct SpellEntryExt;
 
 class Aura;
@@ -3755,7 +3762,7 @@ class Unit : public Occupant
         void _RemoveAllAuraMods();
         void _ApplyAllAuraMods();
 
-        int32 CalculateSpellDamage(Unit const* target, SpellEntry const* spellProto, SpellEffectIndex effect_index, int32 const* basePoints = nullptr);
+        int32 CalculateSpellDamage(Unit const* target, const cast::Recipe& recipe, const cast::Operation& operation, int32 const* basePoints = nullptr);
 
         float CalculateLevelPenalty(SpellEntry const* spellProto) const;
 

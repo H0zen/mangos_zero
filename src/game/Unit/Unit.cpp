@@ -4015,33 +4015,33 @@ void Unit::SetDeathState(DeathState s)
 
 //======================================================================
 
-int32 Unit::CalculateSpellDamage(Unit const* target, SpellEntry const* spellProto, SpellEffectIndex effect_index, int32 const* effBasePoints)
+int32 Unit::CalculateSpellDamage(Unit const* target, const cast::Recipe& recipe, const cast::Operation& operation, int32 const* effBasePoints)
 {
     Player* unitPlayer = (IsPlayer()) ? (Player*)this : nullptr;
 
     uint8 comboPoints = unitPlayer ? unitPlayer->GetComboPoints() : 0;
 
     int32 level = int32(getLevel());
-    if (level > (int32)spellProto->MaxLevel && spellProto->MaxLevel > 0)
+    if (level > (int32)recipe.MaxLevel() && recipe.MaxLevel() > 0)
     {
-        level = (int32)spellProto->MaxLevel;
+        level = (int32)recipe.MaxLevel();
     }
-    else if (level < (int32)spellProto->BaseLevel)
+    else if (level < (int32)recipe.BaseLevel())
     {
-        level = (int32)spellProto->BaseLevel;
+        level = (int32)recipe.BaseLevel();
     }
-    level -= (int32)spellProto->SpellLevel;
+    level -= (int32)recipe.CasterLevel();
 
-    int32 baseDice = int32(spellProto->EffectBaseDice[effect_index]);
-    float basePointsPerLevel = spellProto->EffectRealPointsPerLevel[effect_index];
-    float randomPointsPerLevel = spellProto->EffectDicePerLevel[effect_index];
+    int32 baseDice = int32(operation.baseDice);
+    float basePointsPerLevel = operation.pointsPerLevel;
+    float randomPointsPerLevel = operation.dicePerLevel;
     int32 basePoints = effBasePoints
         ? *effBasePoints - baseDice
-        : spellProto->EffectBasePoints[effect_index];
+        : operation.basePoints;
 
     basePoints += int32(level * basePointsPerLevel);
-    int32 randomPoints = int32(spellProto->EffectDieSides[effect_index] + level * randomPointsPerLevel);
-    float comboDamage = spellProto->EffectPointsPerCombo[effect_index];
+    int32 randomPoints = int32(operation.dieSides + level * randomPointsPerLevel);
+    float comboDamage = operation.pointsPerCombo;
 
     switch (randomPoints)
     {
@@ -4069,16 +4069,16 @@ int32 Unit::CalculateSpellDamage(Unit const* target, SpellEntry const* spellProt
 
     if (Player* modOwner = GetSpellModOwner())
     {
-        modOwner->SpellMods().Apply(spellProto->ID, SPELLMOD_ALL_EFFECTS, value);
+        modOwner->SpellMods().Apply(recipe.Id(), SPELLMOD_ALL_EFFECTS, value);
 
     }
 
-    if (spellProto->HasAttribute(SPELL_ATTR_LEVEL_DAMAGE_CALCULATION) && spellProto->SpellLevel &&
-        spellProto->Effect[effect_index] != SPELL_EFFECT_WEAPON_PERCENT_DAMAGE &&
-        spellProto->Effect[effect_index] != SPELL_EFFECT_KNOCK_BACK &&
-        (spellProto->Effect[effect_index] != SPELL_EFFECT_APPLY_AURA || spellProto->EffectAura[effect_index] != SPELL_AURA_MOD_DECREASE_SPEED))
+    if (recipe.Says().damageScalesWithLevel && recipe.CasterLevel() &&
+        operation.verb != SPELL_EFFECT_WEAPON_PERCENT_DAMAGE &&
+        operation.verb != SPELL_EFFECT_KNOCK_BACK &&
+        (operation.verb != SPELL_EFFECT_APPLY_AURA || operation.aura != SPELL_AURA_MOD_DECREASE_SPEED))
     {
-        value = int32(value * 0.25f * exp(getLevel() * (70 - spellProto->SpellLevel) / 1000.0f));
+        value = int32(value * 0.25f * exp(getLevel() * (70 - recipe.CasterLevel()) / 1000.0f));
     }
 
     return value;
