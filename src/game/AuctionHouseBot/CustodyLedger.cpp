@@ -30,6 +30,12 @@
 #include <vector>
 #include "Database/DatabaseEnv.h"
 
+namespace
+{
+    // World-thread only. Unknown startup state must never bypass custody.
+    bool s_mayHaveReservedRows = true;
+}
+
 /// Column order used by SELECT queries (matches the struct field order for
 /// LoadNonTerminal / Get):
 ///   0:id  1:idem_key  2:kind  3:role  4:state  5:owner_guid
@@ -60,6 +66,11 @@ static void FillRow(Field* f, CustodyRow& row)
 
 void CustodyLedger::Insert(CustodyRow const& r)
 {
+    if (r.state == CST_RESERVED)
+    {
+        // Sticky even on rollback: a false positive only costs a route lookup.
+        s_mayHaveReservedRows = true;
+    }
     std::string key = r.idemKey;
     CharacterDatabase.escape_string(key);
     CharacterDatabase.PExecute(
@@ -75,6 +86,10 @@ void CustodyLedger::Insert(CustodyRow const& r)
 
 void CustodyLedger::SetState(std::string const& idemKey, uint8 newState, uint64 resolvedTime)
 {
+    if (newState == CST_RESERVED)
+    {
+        s_mayHaveReservedRows = true;
+    }
     std::string key = idemKey;
     CharacterDatabase.escape_string(key);
     CharacterDatabase.PExecute(
@@ -92,21 +107,112 @@ void CustodyLedger::SetAmount(std::string const& idemKey, uint32 newAmount)
         newAmount, key.c_str());
 }
 
-bool CustodyLedger::HasRows(uint32 auctionId)
+void CustodyLedger::InitializeRouting()
 {
-    // Only match active (CST_RESERVED) rows so terminal leftovers from a
-    // deleted-and-reused auction_id do not falsely open the custody path.
-    // A live custody auction always has at least one RESERVED row; a fully
-    // resolved or cancelled auction's rows are all terminal -> returns false.
-    QueryResult* res = CharacterDatabase.PQuery(
-        "SELECT 1 FROM `custody_ledger` WHERE `auction_id`=%u AND `state`=%u LIMIT 1",
-        auctionId, uint32(CST_RESERVED));
-    if (!res)
+    QueryResult* result = CharacterDatabase.Query(
+        "SELECT EXISTS(SELECT 1 FROM `custody_ledger` WHERE `state`=0 LIMIT 1)");
+    s_mayHaveReservedRows = !result || result->Fetch()[0].GetUInt32() != 0u;
+    delete result;
+}
+
+CustodyRouteState CustodyLedger::GetRouteState(uint32 auctionId)
+{
+    CustodyRouteState route = {};
+    if (!s_mayHaveReservedRows)
     {
-        return false;
+        route.known = true;
+        return route;
     }
-    delete res;
-    return true;
+    QueryResult* result = CharacterDatabase.PQuery(
+        "SELECT "
+        "COALESCE(MAX(`idem_key` LIKE 'botlist:%%'),0),"
+        "COALESCE(MAX(`idem_key` IN ('item:%u','dep:%u') "
+        "OR `role` IN (%u,%u)),0),"
+        "COALESCE(MAX(`role`=%u),0) "
+        "FROM `custody_ledger` WHERE `auction_id`=%u AND `state`=%u",
+        auctionId, auctionId, uint32(ROLE_ITEM), uint32(ROLE_DEPOSIT),
+        uint32(ROLE_BID), auctionId, uint32(CST_RESERVED));
+    if (!result)
+    {
+        return route;
+    }
+
+    Field* fields = result->Fetch();
+    route.known = true;
+    bool const hasMarker = fields[0].GetUInt32() != 0;
+    bool const hasSellerCandidate = fields[1].GetUInt32() != 0;
+    route.usesPlayerSellerCustody = hasSellerCandidate && !hasMarker;
+    route.hasLiveBidCustody = fields[2].GetUInt32() != 0;
+    delete result;
+    return route;
+}
+
+void CustodyLedger::LoadReconcileSnapshot(std::vector<CustodySnapshotGroup>& out)
+{
+    out.clear();
+    QueryResult* result = CharacterDatabase.Query(
+        "SELECT c.`id`,c.`idem_key`,c.`kind`,c.`role`,c.`state`,"
+        "c.`owner_guid`,c.`beneficiary_guid`,c.`amount`,c.`item_guid`,"
+        "c.`auction_id`,c.`created_time`,c.`resolved_time`,"
+        "a.`id`,a.`itemguid`,a.`itemowner`,a.`buyguid`,a.`lastbid`,a.`deposit` "
+        "FROM `custody_ledger` c "
+        "LEFT JOIN `auction` a ON a.`id`=c.`auction_id` "
+        "WHERE c.`state`=0 ORDER BY c.`auction_id`,c.`id`");
+    if (!result)
+    {
+        return;
+    }
+
+    CustodySnapshotGroup group = {};
+    do
+    {
+        Field* fields = result->Fetch();
+        CustodyRow row;
+        FillRow(fields, row);
+
+        if (!group.rows.empty() && group.auctionId != row.auctionId)
+        {
+            out.push_back(group);
+            group = CustodySnapshotGroup();
+        }
+
+        if (group.rows.empty())
+        {
+            group.auctionId = row.auctionId;
+            group.auction.exists = fields[12].GetUInt32() != 0;
+            if (group.auction.exists)
+            {
+                group.auction.auctionId = fields[12].GetUInt32();
+                group.auction.itemGuid = fields[13].GetUInt32();
+                group.auction.ownerGuid = fields[14].GetUInt32();
+                group.auction.bidderGuid = fields[15].GetUInt32();
+                group.auction.bid = fields[16].GetUInt32();
+                group.auction.deposit = fields[17].GetUInt32();
+            }
+        }
+        group.rows.push_back(row);
+    }
+    while (result->NextRow());
+
+    if (!group.rows.empty())
+    {
+        out.push_back(group);
+    }
+    delete result;
+}
+
+bool CustodyLedger::AuctionExists(uint32 auctionId)
+{
+    QueryResult* result = CharacterDatabase.PQuery(
+        "SELECT COUNT(*) FROM `auction` WHERE `id`=%u", auctionId);
+    if (!result)
+    {
+        // Repair must positively establish absence before moving custody.
+        return true;
+    }
+    bool const exists = result->Fetch()[0].GetUInt64() != 0u;
+    delete result;
+    return exists;
 }
 
 void CustodyLedger::LoadNonTerminal(std::vector<CustodyRow>& out)
@@ -148,15 +254,20 @@ bool CustodyLedger::Get(std::string const& idemKey, CustodyRow& out)
     return true;
 }
 
-bool CustodyLedger::GetSingleLiveBidRow(uint32 auctionId, CustodyRow& out)
+bool CustodyLedger::GetSingleLiveBidRow(uint32 auctionId, CustodyRow& out,
+                                       std::string const& excludeKey)
 {
-    // Fetch every live bid row (kind=GOLD, role=BID, state=RESERVED) so we can
-    // assert there is EXACTLY ONE before trusting it (spec I1: fail closed on
+    // Fetch live bid rows (kind=GOLD, role=BID, state=RESERVED), excluding the
+    // optional in-flight reservation. Require EXACTLY ONE (fail closed on
     // absent or ambiguous rows). No LIMIT -- we must see a second row if present.
+    std::string escapedKey = excludeKey;
+    CharacterDatabase.escape_string(escapedKey);
     QueryResult* result = CharacterDatabase.PQuery(
         "SELECT " CUSTODY_SELECT_COLS " FROM `custody_ledger` "
-        "WHERE `auction_id`=%u AND `kind`=%u AND `role`=%u AND `state`=%u",
-        auctionId, uint32(CUSTODY_GOLD), uint32(ROLE_BID), uint32(CST_RESERVED));
+        "WHERE `auction_id`=%u AND `kind`=%u AND `role`=%u AND `state`=%u "
+        "AND (%u=0 OR `idem_key`<>'%s')",
+        auctionId, uint32(CUSTODY_GOLD), uint32(ROLE_BID), uint32(CST_RESERVED),
+        uint32(!excludeKey.empty()), escapedKey.c_str());
     if (!result)
     {
         return false;

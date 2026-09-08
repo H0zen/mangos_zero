@@ -41,6 +41,7 @@
 #include "Platform/Define.h"
 #include "CustodyDeferred.h"
 #include "CustodyLedger.h"
+#include "CustodyReconciler.h"
 
 #include <functional>
 #include <string>
@@ -227,33 +228,37 @@ namespace CustodyService
     /// (empty = off, "pre-commit", "pre-deferred").  Never set on a live realm.
     std::string CrashPhase();
 
+    /// Pure crash-injection match predicate, exposed for the self-test harness.
+    bool ShouldCrashAtPhase(std::string const& configuredPhase,
+                            std::string const& phase);
+
     /// TEST ONLY. If AH.Service.CustodyCrashAt == @p phase, flush + _exit(3) to
     /// simulate process death at that custody-seam transition. No-op when the
     /// config is empty (the live default), so it is inert on a real realm.
     void MaybeCrash(std::string const& phase);
 
-    /// TEST ONLY. Checked-commit wrapper for a finalize transaction. If
+    /// TEST ONLY. Checked-commit wrapper for an AH custody transaction. If
     /// AH.Service.CustodyFailCommitAt == @p phase, rolls the caller's OPEN
     /// CharacterDatabase transaction back and returns false ONCE (one-shot per
-    /// process) to simulate a failed finalize checked-commit, exercising the
-    /// redrive-without-rollback path (spec 4.1 step 4). Otherwise -- and always
-    /// once the one-shot has fired -- it just delegates to
+    /// process) to exercise the caller's retry/retention path. Otherwise -- and
+    /// always once the one-shot has fired -- it just delegates to
     /// CommitTransactionChecked(). Inert when the config is empty (live default).
     bool CommitCheckedOrForcedFail(std::string const& phase);
 
-    /**
-     * @brief Audit custody-ledger drift.
-     *
-     * Scans non-terminal custody rows and loaded auction maps. Drift means a
-     * non-terminal row with no live auction, or a live custody auction missing
-     * one of its required non-terminal rows (`item:<id>`, `dep:<id>`, and a
-     * live bid row when `bidder != 0`). This is audit-only: @p dryRun is kept
-     * for the repair command's interface but this function never mutates state.
-     *
-     * @param dryRun  Audit-only flag; no mutations happen in either mode.
-     * @param orphans Destination vector; drift rows are appended.
-     */
-    void ReconcileScan(bool dryRun, std::vector<CustodyRow>& orphans);
+    /// Classify one authoritative reserved-custody/shared-auction snapshot.
+    /// This audit-only operation never mutates custody or auction state.
+    void ReconcileScan(uint64 now, CustodyScanContext context,
+                       CustodyReconcileReport& report);
+
+    void LogReconcileReport(char const* phase,
+                            CustodyReconcileReport const& report);
+
+    /// True when a reconciliation finding represents confirmed operator-actionable
+    /// drift and should therefore be emitted at error severity.
+    bool ReconcileFindingIsError(CustodyFinding const& finding);
+
+    CustodyMaintenancePlan GetMaintenancePlan(bool custodyEnabled,
+                                              bool writeAuthorityEnabled);
 }
 
 #endif // MANGOS_CUSTODY_SERVICE_H

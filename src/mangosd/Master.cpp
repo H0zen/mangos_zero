@@ -36,6 +36,7 @@
 #include "DBCStores.h"
 #include "Database/DatabaseEnv.h"
 #include "Log.h"
+#include "MangosdTest.h"
 #include "MapManager.h"
 #include "Server/WorldNetwork.h"
 #include "SystemConfig.h"
@@ -56,6 +57,8 @@ extern int m_ServiceStatus;
 #endif
 
 #include <chrono>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <thread>
 #include <vector>
@@ -379,11 +382,27 @@ void Master::ShutdownWorld()
     sMapMgr.UnloadAll();
 }
 
-int Master::Run()
+int Master::Run(std::string const& testMode, bool allowDestructiveTests)
 {
+    if (!testMode.empty() && !allowDestructiveTests)
+    {
+        sLog.outError("Self-tests can DELETE character data. Use a disposable "
+                      "database configuration and --allow-destructive-tests "
+                      "to opt in. No databases have been opened.");
+        return 1;
+    }
     if (!StartDatabases())
     {
         return 1;
+    }
+
+    if (!testMode.empty())
+    {
+        int const rc = RunMangosdTest(testMode);
+        sLog.outString("mangosd test '%s' exit %d", testMode.c_str(), rc);
+        sLog.Flush();
+        fflush(stdout);
+        std::_Exit(rc);
     }
 
     ClearOnlineAccounts();

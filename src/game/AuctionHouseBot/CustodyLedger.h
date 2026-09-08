@@ -95,6 +95,31 @@ struct CustodyRow
     uint64      resolvedTime;     ///< Unix timestamp at resolution (0 = unresolved).
 };
 
+struct CustodyAuctionFacts
+{
+    bool exists;
+    uint32 auctionId;
+    uint32 itemGuid;
+    uint32 ownerGuid;
+    uint32 bidderGuid;
+    uint32 bid;
+    uint32 deposit;
+};
+
+struct CustodySnapshotGroup
+{
+    uint32 auctionId;
+    CustodyAuctionFacts auction;
+    std::vector<CustodyRow> rows;
+};
+
+struct CustodyRouteState
+{
+    bool known; ///< False on lookup failure; callers must not use legacy settlement.
+    bool usesPlayerSellerCustody;
+    bool hasLiveBidCustody;
+};
+
 /**
  * @brief Persistent CRUD namespace for the custody_ledger table.
  *
@@ -103,6 +128,15 @@ struct CustodyRow
  */
 namespace CustodyLedger
 {
+    /// Initialize once at startup. Reservations latch routing on until restart.
+    void InitializeRouting();
+    CustodyRouteState GetRouteState(uint32 auctionId);
+
+    void LoadReconcileSnapshot(std::vector<CustodySnapshotGroup>& out);
+
+    /// Conservative liveness guard: query failure also returns true.
+    bool AuctionExists(uint32 auctionId);
+
     /**
      * @brief Append an INSERT for @p row to the caller's open transaction.
      *
@@ -129,22 +163,6 @@ namespace CustodyLedger
      * @param newAmount New gold amount in copper.
      */
     void SetAmount(std::string const& idemKey, uint32 newAmount);
-
-    /**
-     * @brief Return true if at least one active (CST_RESERVED) row exists for
-     *        @p auctionId.
-     *
-     * Only RESERVED rows are matched; terminal rows (CST_TERMINAL_OK,
-     * CST_TERMINAL_BACK) from a previously resolved or cancelled auction are
-     * ignored.  This prevents a deleted-then-reused auction_id from falsely
-     * opening the custody path via stale terminal rows.
-     *
-     * Issues a synchronous SELECT; safe to call outside a transaction.
-     *
-     * @param auctionId Auction entry id to probe.
-     * @return true if at least one RESERVED row with that auction_id exists.
-     */
-    bool HasRows(uint32 auctionId);
 
     /**
      * @brief Load all non-terminal rows (state == CST_RESERVED) into @p out.
@@ -179,9 +197,11 @@ namespace CustodyLedger
      *
      * @param auctionId Auction entry id to probe.
      * @param out       Populated with the single live bid row on success.
-     * @return true iff exactly one live bid row exists for @p auctionId.
+     * @param excludeKey Optional in-flight delta reservation to omit.
+     * @return true iff exactly one non-excluded live bid row exists for @p auctionId.
      */
-    bool GetSingleLiveBidRow(uint32 auctionId, CustodyRow& out);
+    bool GetSingleLiveBidRow(uint32 auctionId, CustodyRow& out,
+                             std::string const& excludeKey = "");
 
     /**
      * @brief Allocate the next per-event bid sequence for an auction.

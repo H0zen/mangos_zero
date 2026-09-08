@@ -23,12 +23,15 @@
 #include <unordered_map>
 #include <string>
 #include <map>
+#include <sstream>
+#include <vector>
 #include "AuctionIntentExecutor.h"
 
 #include "AuctionIntents.h"
 #include "AuctionHouseMgr.h"
 #include "AuctionHouseBot.h"
 #include "CustodyLedger.h"
+#include "CustodyService.h"
 #include "ObjectMgr.h"
 #include "ItemPrototype.h"
 #include "Item.h"
@@ -722,8 +725,17 @@ void AuctionIntentExecutor::TestMaterializeSell(SellIntent const& s,
     MaterializeSell(s, resultOut, now);
 }
 
-void AuctionIntentExecutor::SweepOrphanMaterializations(uint32 nowSec)
+OrphanMaterializationSweepReport
+AuctionIntentExecutor::SweepOrphanMaterializations(uint32 nowSec,
+                                                    uint32 maxRows)
 {
+    OrphanMaterializationSweepReport report = {};
+    report.committed = true;
+    if (maxRows == 0u)
+    {
+        return report;
+    }
+
     // Grace window: only rows older than T are candidates, so a materialize
     // whose book-commit is still in flight on the worker is never reaped.
     static const uint32 ORPHAN_GRACE_SEC = 300u;
@@ -733,54 +745,132 @@ void AuctionIntentExecutor::SweepOrphanMaterializations(uint32 nowSec)
 
     // Candidates: durable botlist rows, past the grace window, whose auction id
     // is absent from the shared `auction` table (worker never wrote / already
-    // removed the book row).
+    // removed the book row). Other reserved custody means value finalization
+    // may still need the marker and item, even after the book row was removed.
+    // The sentinel keeps an empty result distinct from a failed query (NULL).
+    uint64 const queryLimit = uint64(maxRows) + 1u;
     QueryResult* q = CharacterDatabase.PQuery(
-        "SELECT `idem_key`, `item_guid`, `auction_id`, `owner_guid` "
-        "FROM `custody_ledger` "
-        "WHERE `idem_key` LIKE 'botlist:%%' AND `created_time` < " UI64FMTD " "
-        "AND `auction_id` NOT IN (SELECT `id` FROM `auction`)",
-        cutoff);
+        "(SELECT c.`id`, c.`item_guid`, c.`owner_guid` "
+        "FROM `custody_ledger` c "
+        "WHERE c.`idem_key` LIKE 'botlist:%%' AND c.`created_time` < " UI64FMTD " "
+        "AND c.`auction_id` NOT IN (SELECT `id` FROM `auction`) "
+        "AND NOT EXISTS (SELECT 1 FROM `custody_ledger` r "
+        "WHERE r.`auction_id`=c.`auction_id` AND r.`state`=0 AND r.`id`<>c.`id`) "
+        "ORDER BY c.`id` LIMIT " UI64FMTD ") UNION ALL SELECT 0,0,0",
+        cutoff, queryLimit);
     if (q == NULL)
     {
-        return;
+        report.committed = false;
+        sLog.outError("[AHExecutor] orphan materialization candidate query "
+                      "failed; sweep will retry");
+        return report;
     }
 
+    struct Candidate
+    {
+        uint32 ledgerId;
+        uint32 itemGuid;
+        uint32 ownerGuid;
+    };
+    std::vector<Candidate> candidates;
+    candidates.reserve(maxRows);
     do
     {
         Field* f = q->Fetch();
-        std::string idemKey    = f[0].GetCppString();
-        uint32 const itemGuid  = f[1].GetUInt32();
-        uint32 const ownerGuid = f[3].GetUInt32();
-        CharacterDatabase.escape_string(idemKey);
+        if (f[0].GetUInt32() == 0u)
+        {
+            continue;
+        }
+        if (candidates.size() == maxRows)
+        {
+            report.morePending = true;
+            break;
+        }
 
-        // Delete the minted item ONLY while it is still the bot's AND is not
-        // attached to any mail. This is the safety that distinguishes a
-        // genuinely stranded mint (crashed before book-commit: still bot-owned,
-        // never mailed) from a listing that DID reach the book and later
-        // sold/returned -- whose item is now the buyer's (owner changed) or is
-        // sitting in the bot's return mail (mail_items ref). The stale botlist
-        // row itself is always removed, bounding custody_ledger growth for
-        // resolved listings too.
-        CharacterDatabase.BeginTransaction();
-        CharacterDatabase.PExecute(
-            "DELETE FROM `item_instance` WHERE `guid` = %u "
-            "AND `owner_guid` = %u "
-            "AND `guid` NOT IN (SELECT `item_guid` FROM `mail_items`)",
-            itemGuid, ownerGuid);
-        CharacterDatabase.PExecute(
-            "DELETE FROM `custody_ledger` WHERE `idem_key` = '%s'",
-            idemKey.c_str());
-        CharacterDatabase.CommitTransactionChecked();
-
-        // Drop the in-memory escrow (harmless no-op after a restart, where the
-        // orphaned item was never re-loaded into mAitems).
-        sAuctionMgr.RemoveAItem(itemGuid);
-        sLog.outString("[AHExecutor] swept orphan materialization %s (item %u)",
-                       f[0].GetCppString().c_str(), itemGuid);
+        Candidate candidate;
+        candidate.ledgerId = f[0].GetUInt32();
+        candidate.itemGuid = f[1].GetUInt32();
+        candidate.ownerGuid = f[2].GetUInt32();
+        candidates.push_back(candidate);
     }
     while (q->NextRow());
-
     delete q;
+
+    report.selected = uint32(candidates.size());
+    if (candidates.empty())
+    {
+        return report;
+    }
+
+    // Keep both SQL statement count and row count bounded. One item DELETE
+    // preserves the old owner/mail guards for every selected marker; one ledger
+    // DELETE retires the markers. The mail subquery is evaluated once per batch,
+    // rather than once per row.
+    std::ostringstream deleteItems;
+    std::ostringstream deleteMarkers;
+    deleteItems << "DELETE FROM `item_instance` WHERE (";
+    deleteMarkers << "DELETE FROM `custody_ledger` WHERE `id` IN (";
+    for (size_t i = 0; i < candidates.size(); ++i)
+    {
+        if (i != 0u)
+        {
+            deleteItems << " OR ";
+            deleteMarkers << ',';
+        }
+        deleteItems << "(`guid` = " << candidates[i].itemGuid
+                    << " AND `owner_guid` = " << candidates[i].ownerGuid << ')';
+        deleteMarkers << candidates[i].ledgerId;
+    }
+    deleteItems << ") AND `guid` NOT IN "
+                   "(SELECT `item_guid` FROM `mail_items`)";
+    deleteMarkers << ')';
+
+    if (!CharacterDatabase.BeginTransaction())
+    {
+        report.committed = false;
+        sLog.outError("[AHExecutor] orphan materialization sweep could not"
+                      " begin transaction (selected=%u)", report.selected);
+        return report;
+    }
+
+    bool const queued = CharacterDatabase.Execute(deleteItems.str().c_str()) &&
+                        CharacterDatabase.Execute(deleteMarkers.str().c_str());
+    if (!queued)
+    {
+        CharacterDatabase.RollbackTransaction();
+        report.committed = false;
+        sLog.outError("[AHExecutor] orphan materialization sweep could not queue"
+                      " batch (selected=%u)", report.selected);
+        return report;
+    }
+
+    if (!CustodyService::CommitCheckedOrForcedFail("orphan-sweep"))
+    {
+        report.committed = false;
+        sLog.outError("[AHExecutor] orphan materialization sweep transaction"
+                      " rolled back (selected=%u)", report.selected);
+        return report;
+    }
+
+    // Drop in-memory escrow only after both durable deletes commit. This is a
+    // harmless no-op after restart, where the orphan was never reloaded.
+    // A buyer may have relisted the same item since this marker was created;
+    // preserve that escrow just as the durable owner guard preserves its row.
+    for (std::vector<Candidate>::const_iterator it = candidates.begin();
+         it != candidates.end(); ++it)
+    {
+        Item* const orphan = sAuctionMgr.GetAItem(it->itemGuid);
+        if (orphan && orphan->GetOwnerGuid().GetCounter() == it->ownerGuid)
+        {
+            sAuctionMgr.RemoveAItem(it->itemGuid);
+            delete orphan;
+        }
+    }
+    report.swept = report.selected;
+    sLog.outString("[AHExecutor] orphan materialization sweep:"
+                   " swept=%u more-pending=%u",
+                   report.swept, report.morePending ? 1u : 0u);
+    return report;
 }
 
 void AuctionIntentExecutor::ApplyBid(const IpcMessage& in,
@@ -940,7 +1030,14 @@ void AuctionIntentExecutor::ApplyBid(const IpcMessage& in,
     // UpdateBid returns true for a normal bid. It can only return false if
     // newbid reaches buyout, which we excluded above, so for a pure bid this
     // is the OK path regardless of return value.
-    auction->UpdateBid(b.bidAmount, NULL);
+    bool applied = false;
+    auction->UpdateBid(b.bidAmount, NULL, &applied);
+    if (!applied)
+    {
+        ++m_rejected;
+        MakeResult(resultOut, b.uuid, INTENT_REJECTED, REASON_TRANSACTION);
+        return;
+    }
 
     ++m_applied;
     Remember(b.uuid, now);
@@ -1053,7 +1150,14 @@ void AuctionIntentExecutor::ApplyBuyout(const IpcMessage& in,
     // pays nothing; UpdateBid returns false here (buyout reached) and deletes
     // the auction internally -- false is the SUCCESS path for buyout, so we
     // must NOT touch `auction` afterwards.
-    auction->UpdateBid(auction->buyout, NULL);
+    bool applied = false;
+    auction->UpdateBid(auction->buyout, NULL, &applied);
+    if (!applied)
+    {
+        ++m_rejected;
+        MakeResult(resultOut, b.uuid, INTENT_REJECTED, REASON_TRANSACTION);
+        return;
+    }
 
     ++m_applied;
     Remember(b.uuid, now);
