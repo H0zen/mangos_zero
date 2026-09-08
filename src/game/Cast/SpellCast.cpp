@@ -876,7 +876,7 @@ void Spell::finish(bool ok)
  */
 void Spell::TakeAmmo()
 {
-    if (m_attackType == RANGED_ATTACK && m_caster->IsPlayer())
+    if (Recipe().Swings() == RANGED_ATTACK && m_caster->IsPlayer())
     {
         Item* pItem = ((Player*)m_caster)->GetWeaponForAttack(RANGED_ATTACK, true, false);
 

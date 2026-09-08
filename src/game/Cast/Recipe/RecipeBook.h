@@ -61,6 +61,7 @@ namespace cast
             /// It runs after the whole book exists because the question follows
             /// trigger chains into other spells.
             void SettlePositivity();
+            void SettleAnnouncements();
 
             std::vector<Recipe> m_recipes;
             std::vector<const Recipe*> m_byId;

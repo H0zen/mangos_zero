@@ -397,6 +397,43 @@ namespace cast
 
             return share * spread;
         }
+
+        /// Which weapon a spell reaches for. A wand marked auto-repeat swings the
+        /// ranged slot although its defence class says neither melee nor ranged,
+        /// which is why the wand test sits in the default branch.
+        WeaponAttackType SwingsFrom(const SpellEntry& row, const Flags& flags)
+        {
+            switch (row.DefenseType)
+            {
+                case SPELL_DAMAGE_CLASS_MELEE:
+                    return flags.needsOffHand ? OFF_ATTACK : BASE_ATTACK;
+                case SPELL_DAMAGE_CLASS_RANGED:
+                    return RANGED_ATTACK;
+                default:
+                    return flags.autoRepeats ? RANGED_ATTACK : BASE_ATTACK;
+            }
+        }
+
+        /// The four families whose own triggers are let through to the proc
+        /// system: Arcane Missiles and Blizzard, Hellfire and Rain of Fire and
+        /// Seed of Corruption, the four hunter traps, Holy Shock. The masks are
+        /// a list made by hand; nothing in the row marks them.
+        bool ProcsThoughTriggeredFrom(const SpellEntry& row)
+        {
+            switch (row.SpellClassSet)
+            {
+                case SPELLFAMILY_MAGE:
+                    return row.IsFitToFamilyMask(UI64LIT(0x0000000000200080));
+                case SPELLFAMILY_WARLOCK:
+                    return row.IsFitToFamilyMask(UI64LIT(0x0000800000000060));
+                case SPELLFAMILY_HUNTER:
+                    return row.IsFitToFamilyMask(UI64LIT(0x0000200000000014));
+                case SPELLFAMILY_PALADIN:
+                    return row.IsFitToFamilyMask(UI64LIT(0x0001000000200000));
+                default:
+                    return false;
+            }
+        }
     }
 
     Recipe Recipe::Compile(const SpellEntry& row, const Timings& timings)
@@ -414,6 +451,8 @@ namespace cast
         recipe.m_durationMs = DurationFrom(timings);
         recipe.m_bareCastTimeMs = BareCastTimeFrom(row, recipe.m_flags, timings);
         recipe.m_maxTicks = MaxTicksFrom(recipe.m_operations, recipe.m_durationMs);
+        recipe.m_swings = SwingsFrom(row, recipe.m_flags);
+        recipe.m_procsThoughTriggered = ProcsThoughTriggeredFrom(row);
 
         // The raw pair, not Start: a row marked both passive and channelled still
         // weighed its power as a channel, and two rows are marked exactly that way.

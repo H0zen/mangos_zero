@@ -270,6 +270,16 @@ namespace cast
         float rangeMax = 0.0f;
     };
 
+    /// What a cast of one spell tells the proc system about itself: one set of
+    /// flags for the caster who threw it, one for whoever it lands on. Which
+    /// pair a spell uses follows from its defence class and from whether anyone
+    /// wants it, so it never changes between casts.
+    struct Announcement
+    {
+        uint32 byCaster = 0;
+        uint32 byTarget = 0;
+    };
+
     /**
      * @brief One spell, compiled.
      *
@@ -355,6 +365,27 @@ namespace cast
             /// True when nothing this spell does reaches anyone's defences.
             bool TouchesNoDefence() const { return m_defence == Defence::None; }
 
+            /// Which weapon a cast of this swings: the ranged one for a bow
+            /// spell and for a wand's auto-repeat, the off hand for the few
+            /// melee spells that demand it, the main hand otherwise.
+            WeaponAttackType Swings() const { return m_swings; }
+
+            /// What a cast of this announces to the proc system.
+            const Announcement& Announces() const { return m_announces; }
+
+            /// A bit per slot nobody would want. A spell can be unwanted on the
+            /// whole and still carry a slot that helps, and a target who caught
+            /// only the helpful slot must not be told it was hit by something
+            /// hostile.
+            uint8 UnwantedSlots() const { return m_unwantedSlots; }
+
+            /// True for the four spell families whose periodic triggers are let
+            /// through to the proc system even though the cast is itself
+            /// triggered -- Arcane Missiles and Blizzard, Hellfire and Rain of
+            /// Fire and Seed of Corruption, the hunter traps, Holy Shock. A list
+            /// made by hand, not something the row says.
+            bool ProcsThoughTriggered() const { return m_procsThoughTriggered; }
+
             /// Whether a target would want this cast on them. A spell is wanted
             /// only when every one of its operations is.
             bool IsPositive() const { return m_positive; }
@@ -412,6 +443,10 @@ namespace cast
             float m_threatMultiplier = 1.0f;
             Start m_start = Start::Instant;
             Defence m_defence = Defence::None;
+            WeaponAttackType m_swings = BASE_ATTACK;
+            Announcement m_announces;
+            uint8 m_unwantedSlots = 0;
+            bool m_procsThoughTriggered = false;
             combat::School m_school = combat::School::Physical;
 
             Operations m_operations;

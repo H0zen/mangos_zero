@@ -1593,7 +1593,7 @@ void Aura::PeriodicTick()
             // MeleeDamagebonus for weapon based spells
             else
             {
-                WeaponAttackType attackType = GetWeaponAttackType(spellProto);
+                WeaponAttackType attackType = cast::RecipeOf(*spellProto).Swings();
                 pdamage = target->MeleeDamageBonusTaken(pCaster, pdamage, attackType, spellProto, DOT, GetStackAmount());
             }
 

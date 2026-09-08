@@ -113,15 +113,15 @@ void Spell::DoAllEffectOnTarget(cast::UnitTarget* target)
     ResetEffectDamageAndHeal();
 
     // Fill base trigger info
-    uint32 procAttacker = m_procAttacker;
-    uint32 procVictim   = m_procVictim;
+    uint32 procAttacker = Recipe().Announces().byCaster;
+    uint32 procVictim   = Recipe().Announces().byTarget;
     uint32 procEx       = PROC_EX_NONE;
 
     // drop proc flags in case target not affected negative effects in negative spell
     // for example caster bonus or animation,
     // except miss case where will assigned PROC_EX_* flags later
     if (((procAttacker | procVictim) & NEGATIVE_TRIGGER_MASK) &&
-        !(target->slots & m_negativeEffectMask) && missInfo == SPELL_MISS_NONE)
+        !(target->slots & Recipe().UnwantedSlots()) && missInfo == SPELL_MISS_NONE)
     {
         procAttacker = PROC_FLAG_NONE;
         procVictim   = PROC_FLAG_NONE;
@@ -214,7 +214,7 @@ void Spell::DoAllEffectOnTarget(cast::UnitTarget* target)
         }
 
         // Do triggers for unit (reflect triggers passed on hit phase for correct drop charge)
-        if (m_canTrigger && missInfo != SPELL_MISS_REFLECT)
+        if (m_setsOffProcs && missInfo != SPELL_MISS_REFLECT)
         {
             // Some spell expected send main spell info to triggered system
             SpellEntry const* spellInfo = m_spellInfo;
@@ -229,7 +229,7 @@ void Spell::DoAllEffectOnTarget(cast::UnitTarget* target)
                 }
             }
 
-            caster->ProcDamageAndSpell(unitTarget, real_caster ? procAttacker : uint32(PROC_FLAG_NONE), procVictim, procEx, addhealth, m_attackType, spellInfo);
+            caster->ProcDamageAndSpell(unitTarget, real_caster ? procAttacker : uint32(PROC_FLAG_NONE), procVictim, procEx, addhealth, Recipe().Swings(), spellInfo);
         }
 
         int32 gain = caster->DealHeal(unitTarget, addhealth, m_spellInfo, crit);
@@ -253,7 +253,7 @@ void Spell::DoAllEffectOnTarget(cast::UnitTarget* target)
         // Add bonuses and fill damageInfo struct
         else
         {
-            caster->CalculateSpellDamage(&damageInfo, m_damage, m_spellInfo, m_attackType);
+            caster->CalculateSpellDamage(&damageInfo, m_damage, m_spellInfo, Recipe().Swings());
         }
 
         unitTarget->CalculateAbsorbResistBlock(caster, &damageInfo, m_spellInfo);
@@ -267,16 +267,16 @@ void Spell::DoAllEffectOnTarget(cast::UnitTarget* target)
         procVictim |= PROC_FLAG_TAKEN_ANY_DAMAGE;
 
         // Do triggers for unit (reflect triggers passed on hit phase for correct drop charge)
-        if (m_canTrigger && missInfo != SPELL_MISS_REFLECT)
+        if (m_setsOffProcs && missInfo != SPELL_MISS_REFLECT)
         {
-            caster->ProcDamageAndSpell(unitTarget, real_caster ? procAttacker : uint32(PROC_FLAG_NONE), procVictim, procEx, damageInfo.damage, m_attackType, m_spellInfo);
+            caster->ProcDamageAndSpell(unitTarget, real_caster ? procAttacker : uint32(PROC_FLAG_NONE), procVictim, procEx, damageInfo.damage, Recipe().Swings(), m_spellInfo);
         }
 
         // trigger weapon enchants for weapon based spells; exclude spells that stop attack, because may break CC
         if (m_caster->IsPlayer() && m_spellInfo->EquippedItemClass == ITEM_CLASS_WEAPON &&
             !Recipe().Says().stopsAttack)
         {
-            ((Player*)m_caster)->CastItemCombatSpell(unitTarget, m_attackType);
+            ((Player*)m_caster)->CastItemCombatSpell(unitTarget, Recipe().Swings());
         }
 
         caster->DealSpellDamage(&damageInfo, true);
@@ -310,9 +310,9 @@ void Spell::DoAllEffectOnTarget(cast::UnitTarget* target)
         SpellNonMeleeDamage damageInfo(caster, unitTarget, m_spellInfo->ID, GetFirstSchoolInMask(m_spellSchoolMask));
         procEx = createProcExtendMask(&damageInfo, missInfo);
         // Do triggers for unit (reflect triggers passed on hit phase for correct drop charge)
-        if (m_canTrigger && missInfo != SPELL_MISS_REFLECT)
+        if (m_setsOffProcs && missInfo != SPELL_MISS_REFLECT)
         {
-            caster->ProcDamageAndSpell(unit, real_caster ? procAttacker : uint32(PROC_FLAG_NONE), procVictim, procEx, 0, m_attackType, m_spellInfo);
+            caster->ProcDamageAndSpell(unit, real_caster ? procAttacker : uint32(PROC_FLAG_NONE), procVictim, procEx, 0, Recipe().Swings(), m_spellInfo);
         }
     }
 
@@ -699,7 +699,7 @@ void Spell::HandleDelayedSpellLaunch(cast::UnitTarget* target)
 
         if (m_damage > 0)
         {
-            caster->CalculateSpellDamage(&damageInfo, m_damage, m_spellInfo, m_attackType);
+            caster->CalculateSpellDamage(&damageInfo, m_damage, m_spellInfo, Recipe().Swings());
         }
     }
 

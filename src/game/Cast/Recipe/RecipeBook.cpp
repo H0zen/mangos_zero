@@ -62,6 +62,7 @@ namespace cast
         }
 
         SettlePositivity();
+        SettleAnnouncements();
         return m_recipes.size();
     }
 
@@ -104,6 +105,68 @@ namespace cast
             }
 
             recipe.m_positive = wanted;
+        }
+    }
+
+    void RecipeBook::SettleAnnouncements()
+    {
+        for (auto& recipe : m_recipes)
+        {
+            switch (recipe.Beats())
+            {
+                case Defence::Melee:
+                    recipe.m_announces.byCaster = PROC_FLAG_SUCCESSFUL_MELEE_SPELL_HIT;
+                    if (recipe.Swings() == OFF_ATTACK)
+                    {
+                        recipe.m_announces.byCaster |= PROC_FLAG_SUCCESSFUL_OFFHAND_HIT;
+                    }
+                    recipe.m_announces.byTarget = PROC_FLAG_TAKEN_MELEE_SPELL_HIT;
+                    break;
+                case Defence::Ranged:
+                    if (recipe.Says().autoRepeats)
+                    {
+                        recipe.m_announces.byCaster = PROC_FLAG_SUCCESSFUL_RANGED_HIT;
+                        recipe.m_announces.byTarget = PROC_FLAG_TAKEN_RANGED_HIT;
+                    }
+                    else
+                    {
+                        recipe.m_announces.byCaster = PROC_FLAG_SUCCESSFUL_RANGED_SPELL_HIT;
+                        recipe.m_announces.byTarget = PROC_FLAG_TAKEN_RANGED_SPELL_HIT;
+                    }
+                    break;
+                default:
+                    if (recipe.IsPositive())
+                    {
+                        recipe.m_announces.byCaster = PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL;
+                        recipe.m_announces.byTarget = PROC_FLAG_TAKEN_POSITIVE_SPELL;
+                    }
+                    else if (recipe.Says().autoRepeats)      // a wand swinging on its own
+                    {
+                        recipe.m_announces.byCaster = PROC_FLAG_SUCCESSFUL_RANGED_HIT;
+                        recipe.m_announces.byTarget = PROC_FLAG_TAKEN_RANGED_HIT;
+                    }
+                    else
+                    {
+                        recipe.m_announces.byCaster = PROC_FLAG_SUCCESSFUL_NEGATIVE_SPELL_HIT;
+                        recipe.m_announces.byTarget = PROC_FLAG_TAKEN_NEGATIVE_SPELL_HIT;
+                    }
+                    break;
+            }
+
+            // the four hunter traps, so that Entrapment hears them go off
+            if (recipe.ClassSet() == SPELLFAMILY_HUNTER && (recipe.ClassMask() & UI64LIT(0x000020000000001C)))
+            {
+                recipe.m_announces.byCaster |= PROC_FLAG_ON_TRAP_ACTIVATION;
+            }
+
+            recipe.m_unwantedSlots = 0;
+            for (const auto& operation : recipe.Does())
+            {
+                if (!operation.positive)
+                {
+                    recipe.m_unwantedSlots |= uint8(1 << operation.slot);
+                }
+            }
         }
     }
 

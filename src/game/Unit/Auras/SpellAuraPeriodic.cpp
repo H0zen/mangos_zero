@@ -310,7 +310,7 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
             // MeleeDamagebonusDone for weapon based spells
             else
             {
-                WeaponAttackType attackType = GetWeaponAttackType(GetSpellProto());
+                WeaponAttackType attackType = Recipe().Swings();
                 m_modifier.m_amount = caster->MeleeDamageBonusDone(target, m_modifier.m_amount, attackType, GetSpellProto(), DOT, GetStackAmount());
             }
         }

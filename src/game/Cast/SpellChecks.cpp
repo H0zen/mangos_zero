@@ -2663,11 +2663,11 @@ SpellCastResult Spell::CheckItems()
                 {
                     return SPELL_FAILED_TARGET_NOT_PLAYER;
                 }
-                if (m_attackType != RANGED_ATTACK)
+                if (Recipe().Swings() != RANGED_ATTACK)
                 {
                     break;
                 }
-                Item* pItem = ((Player*)m_caster)->GetWeaponForAttack(m_attackType, true, false);
+                Item* pItem = ((Player*)m_caster)->GetWeaponForAttack(Recipe().Swings(), true, false);
                 if (!pItem)
                 {
                     return SPELL_FAILED_EQUIPPED_ITEM;

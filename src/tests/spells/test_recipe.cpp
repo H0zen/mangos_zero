@@ -25,6 +25,7 @@ namespace
     constexpr uint32 ATTR_EXB_AUTO_REPEAT = 1u << 5;
 
     constexpr uint32 ATTR_EXC_CANNOT_MISS = 1u << 18;
+    constexpr uint32 ATTR_EXC_REQ_OFFHAND = 1u << 24;
 
     /// A row of Spell.dbc, made the way the loader makes one.
     ///
@@ -59,6 +60,13 @@ namespace
 
             alignas(SpellEntry) unsigned char m_bytes[sizeof(SpellEntry)];
     };
+
+    ClassFamilyMask ClassFlag(uint64 bits)
+    {
+        ClassFamilyMask mask;
+        mask.Flags = bits;
+        return mask;
+    }
 
     cast::Timings NoTime()
     {
@@ -269,4 +277,53 @@ TEST_CASE("the numbers other tables hold are carried, not looked up again")
     CHECK(recipe.Takes().castTimeBaseMs == 1500);
     CHECK(recipe.Takes().durationMs == 12000);
     CHECK(recipe.Takes().rangeMax == doctest::Approx(30.0f));
+}
+
+TEST_CASE("a melee spell swings the main hand unless it demands the off hand")
+{
+    Row row;
+    row->DefenseType = SPELL_DAMAGE_CLASS_MELEE;
+    CHECK(cast::Recipe::Compile(*row, NoTime()).Swings() == BASE_ATTACK);
+
+    row->AttributesExC = ATTR_EXC_REQ_OFFHAND;
+    CHECK(cast::Recipe::Compile(*row, NoTime()).Swings() == OFF_ATTACK);
+}
+
+TEST_CASE("a ranged spell swings the ranged slot whatever else it says")
+{
+    Row row;
+    row->DefenseType = SPELL_DAMAGE_CLASS_RANGED;
+    row->AttributesExC = ATTR_EXC_REQ_OFFHAND;
+
+    CHECK(cast::Recipe::Compile(*row, NoTime()).Swings() == RANGED_ATTACK);
+}
+
+TEST_CASE("a wand swings the ranged slot although its defence class names neither")
+{
+    Row row;
+    row->DefenseType = SPELL_DAMAGE_CLASS_NONE;
+    CHECK(cast::Recipe::Compile(*row, NoTime()).Swings() == BASE_ATTACK);
+
+    row->AttributesExB = ATTR_EXB_AUTO_REPEAT;
+    CHECK(cast::Recipe::Compile(*row, NoTime()).Swings() == RANGED_ATTACK);
+}
+
+TEST_CASE("only the named spells of a family are let through from a trigger")
+{
+    Row row;
+    CHECK_FALSE(cast::Recipe::Compile(*row, NoTime()).ProcsThoughTriggered());
+
+    // Arcane Missiles, one of the two mage spells on the list
+    row->SpellClassSet = SPELLFAMILY_MAGE;
+    row->SpellClassMask = ClassFlag(UI64LIT(0x0000000000000080));
+    CHECK(cast::Recipe::Compile(*row, NoTime()).ProcsThoughTriggered());
+
+    // another mage spell, sharing the family but none of the named bits
+    row->SpellClassMask = ClassFlag(UI64LIT(0x0000000000000001));
+    CHECK_FALSE(cast::Recipe::Compile(*row, NoTime()).ProcsThoughTriggered());
+
+    // the same bits under a family that is not on the list
+    row->SpellClassSet = SPELLFAMILY_PRIEST;
+    row->SpellClassMask = ClassFlag(UI64LIT(0x0000000000000080));
+    CHECK_FALSE(cast::Recipe::Compile(*row, NoTime()).ProcsThoughTriggered());
 }

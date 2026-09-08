@@ -1056,7 +1056,7 @@ void Spell::EffectWeaponDmg(const cast::Operation& operation)
     if (bonus)
     {
         UnitMods unitMod;
-        switch (m_attackType)
+        switch (Recipe().Swings())
         {
             default:
             case BASE_ATTACK:   unitMod = UNIT_MOD_DAMAGE_MAINHAND; break;
@@ -1069,7 +1069,7 @@ void Spell::EffectWeaponDmg(const cast::Operation& operation)
     }
 
     // + weapon damage with applied weapon% dmg to base weapon damage in call
-    bonus += int32(m_caster->CalculateDamage(m_attackType, normalized) * weaponDamagePercentMod);
+    bonus += int32(m_caster->CalculateDamage(Recipe().Swings(), normalized) * weaponDamagePercentMod);
 
     // total damage
     bonus = int32(bonus * totalDamagePercentMod);

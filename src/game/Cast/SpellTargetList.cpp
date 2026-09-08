@@ -365,129 +365,20 @@ void Spell::FillTargetMap()
 }
 
 /**
- * @brief Prepares proc-trigger metadata for the current spell cast.
+ * @brief Whether this cast may set off procs at all.
+ *
+ * An item's spell never does. A spell the player threw himself always does, and
+ * so does one fired by SPELL_EFFECT_TRIGGER_SPELL. A spell fired by an aura only
+ * does when its family is one of the few the server lets through.
  */
-void Spell::prepareDataForTriggerSystem()
+bool Spell::SetsOffProcs() const
 {
-    //==========================================================================================
-    // Now fill data for trigger system, need know:
-    // an spell trigger another or not ( m_canTrigger )
-    // Create base triggers flags for Attacker and Victim ( m_procAttacker and  m_procVictim)
-    //==========================================================================================
-    // Fill flag can spell trigger or not
-    // TODO: possible exist spell attribute for this
-    m_canTrigger = false;
-
-    if (m_CastItem)
+    if (!m_CastItem && (!m_IsTriggeredSpell || !m_triggeredByAuraSpell))
     {
-        m_canTrigger = false;                                // Do not trigger from item cast spell
-    }
-    else if (!m_IsTriggeredSpell)
-    {
-        m_canTrigger = true;                                 // Normal cast - can trigger
-    }
-    else if (!m_triggeredByAuraSpell)
-    {
-        m_canTrigger = true;                                 // Triggered from SPELL_EFFECT_TRIGGER_SPELL - can trigger
+        return true;
     }
 
-    if (!m_canTrigger)                                      // Exceptions (some periodic triggers)
-    {
-        switch (m_spellInfo->SpellClassSet)
-        {
-            case SPELLFAMILY_MAGE:
-                // Arcane Missiles / Blizzard triggers need do it
-                if (m_spellInfo->IsFitToFamilyMask(UI64LIT(0x0000000000200080)))
-                {
-                    m_canTrigger = true;
-                }
-                break;
-            case SPELLFAMILY_WARLOCK:
-                // For Hellfire Effect / Rain of Fire / Seed of Corruption triggers need do it
-                if (m_spellInfo->IsFitToFamilyMask(UI64LIT(0x0000800000000060)))
-                {
-                    m_canTrigger = true;
-                }
-                break;
-            case SPELLFAMILY_HUNTER:
-                // Hunter Explosive Trap Effect/Immolation Trap Effect/Frost Trap Aura/Snake Trap Effect
-                if (m_spellInfo->IsFitToFamilyMask(UI64LIT(0x0000200000000014)))
-                {
-                    m_canTrigger = true;
-                }
-                break;
-            case SPELLFAMILY_PALADIN:
-                // For Holy Shock triggers need do it
-                if (m_spellInfo->IsFitToFamilyMask(UI64LIT(0x0001000000200000)))
-                {
-                    m_canTrigger = true;
-                }
-                break;
-            default:
-                break;
-        }
-    }
-
-    // Get data for type of attack and fill base info for trigger
-    switch (m_spellInfo->DefenseType)
-    {
-        case SPELL_DAMAGE_CLASS_MELEE:
-            m_procAttacker = PROC_FLAG_SUCCESSFUL_MELEE_SPELL_HIT;
-            if (m_attackType == OFF_ATTACK)
-            {
-                m_procAttacker |= PROC_FLAG_SUCCESSFUL_OFFHAND_HIT;
-            }
-            m_procVictim   = PROC_FLAG_TAKEN_MELEE_SPELL_HIT;
-            break;
-        case SPELL_DAMAGE_CLASS_RANGED:
-            // Auto attack
-            if (Recipe().Says().autoRepeats)
-            {
-                m_procAttacker = PROC_FLAG_SUCCESSFUL_RANGED_HIT;
-                m_procVictim   = PROC_FLAG_TAKEN_RANGED_HIT;
-            }
-            else // Ranged spell attack
-            {
-                m_procAttacker = PROC_FLAG_SUCCESSFUL_RANGED_SPELL_HIT;
-                m_procVictim   = PROC_FLAG_TAKEN_RANGED_SPELL_HIT;
-            }
-            break;
-        default:
-            if (Recipe().IsPositive())           // Check for positive spell
-            {
-                m_procAttacker = PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL;
-                m_procVictim   = PROC_FLAG_TAKEN_POSITIVE_SPELL;
-            }
-            else if (Recipe().Says().autoRepeats)   // Wands auto attack
-            {
-                m_procAttacker = PROC_FLAG_SUCCESSFUL_RANGED_HIT;
-                m_procVictim   = PROC_FLAG_TAKEN_RANGED_HIT;
-            }
-            else                                           // Negative spell
-            {
-                m_procAttacker = PROC_FLAG_SUCCESSFUL_NEGATIVE_SPELL_HIT;
-                m_procVictim   = PROC_FLAG_TAKEN_NEGATIVE_SPELL_HIT;
-            }
-            break;
-    }
-
-    // some negative spells have positive effects to another or same targets
-    // avoid triggering negative hit for only positive targets
-    m_negativeEffectMask = 0x0;
-    for (const auto& operation : Recipe().Does())
-    {
-        if (!operation.positive)
-        {
-            m_negativeEffectMask |= (1 << operation.slot);
-        }
-    }
-
-    // Hunter traps spells (for Entrapment trigger)
-    // Gives your Immolation Trap, Frost Trap, Explosive Trap, and Snake Trap ....
-    if (m_spellInfo->SpellClassSet == SPELLFAMILY_HUNTER && m_spellInfo->SpellClassMask & UI64LIT(0x000020000000001C))
-    {
-        m_procAttacker |= PROC_FLAG_ON_TRAP_ACTIVATION;
-    }
+    return Recipe().ProcsThoughTriggered();
 }
 
 /**

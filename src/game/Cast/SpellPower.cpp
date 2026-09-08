@@ -289,7 +289,7 @@ void Spell::HandleThreatSpells()
     float threat = threatEntry->threat;
     if (threatEntry->ap_bonus != 0.0f)
     {
-        threat += threatEntry->ap_bonus * m_caster->GetTotalAttackPowerValue(GetWeaponAttackType(m_spellInfo));
+        threat += threatEntry->ap_bonus * m_caster->GetTotalAttackPowerValue(Recipe().Swings());
     }
 
     bool positive = true;
@@ -299,11 +299,11 @@ void Spell::HandleThreatSpells()
         effectMask |= (1 << operation.slot);
     }
 
-    if (m_negativeEffectMask & effectMask)
+    if (Recipe().UnwantedSlots() & effectMask)
     {
         // can only handle spells with clearly defined positive/negative effect, check at spell_threat loading probably not perfect
         // so abort when only some effects are negative.
-        if ((m_negativeEffectMask & effectMask) != effectMask)
+        if ((Recipe().UnwantedSlots() & effectMask) != effectMask)
         {
             DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell %u, rank %u, is not clearly positive or negative, ignoring bonus threat", m_spellInfo->ID, sSpellMgr.GetSpellRank(m_spellInfo->ID));
             return;

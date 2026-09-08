@@ -412,13 +412,11 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
     m_delayAtDamageCount = 0;
 
     m_applyMultiplierMask = 0;
-
-    // Get data for type of attack
-    m_attackType = GetWeaponAttackType(m_spellInfo);
+    m_setsOffProcs = false;
 
     m_spellSchoolMask = GetSpellSchoolMask(info);           // Can be override for some spell (wand shoot for example)
 
-    if (m_attackType == RANGED_ATTACK)
+    if (Recipe().Swings() == RANGED_ATTACK)
     {
         // wand case
         if (!(m_caster->getClassMask() & CLASSMASK_WAND_USERS) && m_caster->IsPlayer())
@@ -639,8 +637,7 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, Aura* triggeredB
 
     m_spellState = SPELL_STATE_PREPARING;
 
-    // Prepare data for triggers
-    prepareDataForTriggerSystem();
+    m_setsOffProcs = SetsOffProcs();
 
     // calculate cast time (calculated after first CheckCast check to prevent charge counting for first CheckCast fail)
     m_casttime = GetSpellCastTime(m_spellInfo, this);

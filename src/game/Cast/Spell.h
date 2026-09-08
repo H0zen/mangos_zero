@@ -551,7 +551,6 @@ class Spell
 
         // Spell data
         SpellSchoolMask m_spellSchoolMask;                  // Spell school (can be overwrite for some spells (wand shoot for example)
-        WeaponAttackType m_attackType;                      // For weapon based attack
         uint32 m_powerCost;                                 // Calculated spell cost     initialized only in Spell::prepare
         int32 m_casttime;                                   // Calculated spell cast time initialized only in Spell::prepare
         int32 m_duration;
@@ -598,11 +597,8 @@ class Spell
         //******************************************
         // Spell trigger system
         //******************************************
-        bool   m_canTrigger;                                // Can start trigger (m_IsTriggeredSpell can`t use for this)
-        uint8  m_negativeEffectMask;                        // Use for avoid sent negative spell procs for additional positive effects only targets
-        uint32 m_procAttacker;                              // Attacker trigger flags
-        uint32 m_procVictim;                                // Victim   trigger flags
-        void   prepareDataForTriggerSystem();
+        bool m_setsOffProcs;                                // whether this cast is allowed to set off procs at all
+        bool SetsOffProcs() const;
 
         //*****************************************
         // Spell target filling

@@ -144,8 +144,6 @@ int32 CalculateSpellDuration(SpellEntry const* spellInfo, Unit const* caster = n
 /**
  * Returns the weapon attack type used by the specified spell.
  */
-WeaponAttackType GetWeaponAttackType(SpellEntry const* spellInfo);
-
 // workaround for not touching Eluna code
 inline bool IsSpellHaveEffect(SpellEntry const* spellInfo, SpellEffects effect)
 {

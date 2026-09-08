@@ -238,43 +238,6 @@ uint32 GetSpellCastTime(SpellEntry const* spellInfo, Spell const* spell)
 }
 
 /**
- * @brief Determines which weapon attack type a spell uses.
- *
- * @param spellInfo The spell entry.
- * @return The associated weapon attack type.
- */
-WeaponAttackType GetWeaponAttackType(SpellEntry const* spellInfo)
-{
-    if (!spellInfo)
-    {
-        return BASE_ATTACK;
-    }
-
-    switch (spellInfo->DefenseType)
-    {
-        case SPELL_DAMAGE_CLASS_MELEE:
-        {
-            if (spellInfo->HasAttribute(SPELL_ATTR_EX3_REQ_OFFHAND))
-            {
-                return OFF_ATTACK;
-            }
-            return BASE_ATTACK;
-        }
-        case SPELL_DAMAGE_CLASS_RANGED:
-            return RANGED_ATTACK;
-        default:
-        {
-            // Wands
-            if (spellInfo->HasAttribute(SPELL_ATTR_EX2_AUTOREPEAT_FLAG))
-            {
-                return RANGED_ATTACK;
-            }
-            return BASE_ATTACK;
-        }
-    }
-}
-
-/**
  * @brief Checks whether a spell id is passive.
  *
  * @param spellId The spell id.
