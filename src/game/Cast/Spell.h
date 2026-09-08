@@ -370,6 +370,13 @@ class Spell
         void TakeCastItem();
 
         SpellCastResult CheckCast(bool strict);
+        SpellCastResult CheckTheCasterMay(bool strict);
+        SpellCastResult CheckWhereTheCasterStands();
+        SpellCastResult CheckTheTradeSlot();
+        SpellCastResult CheckTheTargetChosen(bool strict);
+        SpellCastResult EnrolScriptedTargets();
+        SpellCastResult CheckEachSlotCanRun();
+        SpellCastResult CheckEachAuraCanHold();
         SpellCastResult CheckPetCast(Unit* target);
 
         // handlers
