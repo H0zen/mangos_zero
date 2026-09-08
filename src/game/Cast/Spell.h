@@ -269,6 +269,7 @@ class Spell
         void EffectEnvironmentalDMG(const cast::Operation& operation);
         void EffectInstaKill(const cast::Operation& operation);
         void EffectDummy(const cast::Operation& operation);
+        bool ThrowWhatTheTableNames(const cast::Operation& operation);
         void EffectTeleportUnits(const cast::Operation& operation);
         void EffectApplyAura(const cast::Operation& operation);
         void EffectSendEvent(const cast::Operation& operation);

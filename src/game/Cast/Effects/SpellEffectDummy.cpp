@@ -85,6 +85,12 @@ void Spell::EffectDummy(const cast::Operation& operation)
         return;
     }
 
+    // a spell whose whole doing is to throw another is a row in spell_dummy
+    if (ThrowWhatTheTableNames(operation))
+    {
+        return;
+    }
+
     // selection by spell family
     switch (m_spellInfo->SpellClassSet)
     {
@@ -92,78 +98,6 @@ void Spell::EffectDummy(const cast::Operation& operation)
         {
             switch (m_spellInfo->ID)
             {
-                case 3360:                                  // Curse of the Eye
-                {
-                    if (!unitTarget)
-                    {
-                        return;
-                    }
-
-                    uint32 spell_id = (unitTarget->getGender() == GENDER_MALE) ? 10651 : 10653;
-
-                    m_caster->CastSpell(unitTarget, spell_id, true);
-                    return;
-                }
-                case 7671:                                  // Transformation (human<->worgen)
-                {
-                    if (!unitTarget)
-                    {
-                        return;
-                    }
-
-                    // Transform Visual
-                    unitTarget->CastSpell(unitTarget, 24085, true);
-                    return;
-                }
-                case 8063:                                  // Deviate Fish
-                {
-                    if (!m_caster->IsPlayer())
-                    {
-                        return;
-                    }
-
-                    uint32 spell_id = 0;
-                    switch (urand(1, 5))
-                    {
-                        case 1: spell_id = 8064; break;     // Sleepy
-                        case 2: spell_id = 8065; break;     // Invigorate
-                        case 3: spell_id = 8066; break;     // Shrink
-                        case 4: spell_id = 8067; break;     // Party Time!
-                        case 5: spell_id = 8068; break;     // Healthy Spirit
-                    }
-                    m_caster->CastSpell(m_caster, spell_id, true, nullptr);
-                    return;
-                }
-                case 8213:                                  // Savory Deviate Delight
-                {
-                    if (!m_caster->IsPlayer())
-                    {
-                        return;
-                    }
-
-                    uint32 spell_id = 0;
-                    switch (urand(1, 2))
-                    {
-                        // Flip Out - ninja
-                        case 1: spell_id = (m_caster->getGender() == GENDER_MALE ? 8219 : 8220); break;
-                        // Yaaarrrr - pirate
-                        case 2: spell_id = (m_caster->getGender() == GENDER_MALE ? 8221 : 8222); break;
-                    }
-
-                    m_caster->CastSpell(m_caster, spell_id, true, nullptr);
-                    return;
-                }
-                case 8344:                                  // Gnomish Universal Remote (ItemID: 7506)
-                {
-                    if (m_CastItem && unitTarget)
-                    {
-                        // 8345 - Control the machine | 8346 = Malfunction the machine (root) | 8347 = Taunt/enrage the machine
-                        const uint32 spell_list[3] = { 8345, 8346, 8347 };
-                        m_caster->CastSpell(unitTarget, spell_list[urand(0, 2)], true, m_CastItem);
-                    }
-
-                    return;
-                }
                 case 9204:                                  // Hate to Zero
                 case 20538:
                 case 26569:
@@ -290,15 +224,6 @@ void Spell::EffectDummy(const cast::Operation& operation)
 
                     return;
                 }
-                case 13278:                                // Gnomish Death Ray charging
-                {
-                    if (unitTarget)
-                    {
-                        m_caster->CastSpell(m_caster, 13493, true, nullptr);
-                    }
-
-                    return;
-                }
                 case 13280:                                // Gnomish Death Ray ending charge
                 {
                     if (unitTarget)
@@ -325,16 +250,6 @@ void Spell::EffectDummy(const cast::Operation& operation)
                     }
 
                     m_originalCaster->CastSpell(channelTarget, 13481, true, nullptr, nullptr, m_originalCasterGUID, m_spellInfo);
-                    return;
-                }
-                case 13489:
-                {
-                    if (!unitTarget)
-                    {
-                        return;
-                    }
-
-                    unitTarget->CastSpell(unitTarget, 14744, true);
                     return;
                 }
                 case 13567:                                 // Dummy Trigger
@@ -438,24 +353,6 @@ void Spell::EffectDummy(const cast::Operation& operation)
                     creatureTarget->ForcedDespawn();
                     return;
                 }
-                case 16589:                                 // Noggenfogger Elixir
-                {
-                    if (!m_caster->IsPlayer())
-                    {
-                        return;
-                    }
-
-                    uint32 spell_id = 0;
-                    switch (urand(1, 3))
-                    {
-                        case 1: spell_id = 16595; break;
-                        case 2: spell_id = 16593; break;
-                        default: spell_id = 16591; break;
-                    }
-
-                    m_caster->CastSpell(m_caster, spell_id, true, nullptr);
-                    return;
-                }
                 case 17009:                                 // Voodoo
                 {
                     if (!unitTarget || !unitTarget->IsPlayer())
@@ -509,24 +406,6 @@ void Spell::EffectDummy(const cast::Operation& operation)
                     m_caster->CastSpell(m_caster, spell_id, true, nullptr);
                     return;
                 }
-                case 17770:                                 // Wolfshead Helm Energy
-                {
-                    m_caster->CastSpell(m_caster, 29940, true, nullptr);
-                    return;
-                }
-                case 17950:                                 // Shadow Portal
-                {
-                    if (!unitTarget)
-                    {
-                        return;
-                    }
-
-                    // Shadow Portal
-                    const uint32 spell_list[6] = {17863, 17939, 17943, 17944, 17946, 17948};
-
-                    m_caster->CastSpell(unitTarget, spell_list[urand(0, 5)], true);
-                    return;
-                }
                 case 18269:                                 // Kodo Kombobulator
                 {
                     if (!unitTarget)
@@ -563,27 +442,6 @@ void Spell::EffectDummy(const cast::Operation& operation)
                     unitTarget->RemoveAuras(28820);
                     return;
                 }
-                case 19395:                                 // Gordunni Trap
-                {
-                    if (!unitTarget || !unitTarget->IsPlayer())
-                    {
-                        return;
-                    }
-
-                    unitTarget->CastSpell(unitTarget, urand(0, 1) ? 19394 : 11756, true);
-                    return;
-                }
-                case 19411:                                 // Lava Bomb
-                case 20474:                                 // Lava Bomb
-                {
-                    if (!unitTarget)
-                    {
-                        return;
-                    }
-
-                    unitTarget->CastSpell(unitTarget, 20494, true);
-                    return;
-                }
                 case 20572:                                 // Blood Fury
                 {
                     if (!m_caster->IsPlayer())
@@ -595,26 +453,6 @@ void Spell::EffectDummy(const cast::Operation& operation)
 
                     damage = uint32(damage * (m_caster->GetTotalAttackPowerValue(BASE_ATTACK)) / 100);
                     m_caster->CastCustomSpell(m_caster, 23234, &damage, nullptr, nullptr, true, nullptr);
-                    return;
-                }
-                case 19869:                                 // Dragon Orb
-                {
-                    if (!unitTarget || !unitTarget->IsPlayer() || unitTarget->HasAura(23958))
-                    {
-                        return;
-                    }
-
-                    unitTarget->CastSpell(unitTarget, 19832, true);
-                    return;
-                }
-                case 20037:                                 // Explode Orb Effect
-                {
-                    if (!unitTarget)
-                    {
-                        return;
-                    }
-
-                    unitTarget->CastSpell(unitTarget, 20038, true);
                     return;
                 }
                 case 20577:                                 // Cannibalize
@@ -662,60 +500,6 @@ void Spell::EffectDummy(const cast::Operation& operation)
 
                     creatureTarget->CastSpell(creatureTarget, 23022, true);
                     creatureTarget->ForcedDespawn();
-                    return;
-                }
-                case 23074:                                 // Arcanite Dragonling
-                {
-                    if (!m_CastItem)
-                    {
-                        return;
-                    }
-
-                    m_caster->CastSpell(m_caster, 19804, true, m_CastItem);
-                    return;
-                }
-                case 23075:                                 // Mithril Mechanical Dragonling
-                {
-                    if (!m_CastItem)
-                    {
-                        return;
-                    }
-
-                    m_caster->CastSpell(m_caster, 12749, true, m_CastItem);
-                    return;
-                }
-                case 23076:                                 // Mechanical Dragonling
-                {
-                    if (!m_CastItem)
-                    {
-                        return;
-                    }
-
-                    m_caster->CastSpell(m_caster, 4073, true, m_CastItem);
-                    return;
-                }
-                case 23133:                                 // Gnomish Battle Chicken
-                {
-                    if (!m_CastItem)
-                    {
-                        return;
-                    }
-
-                    m_caster->CastSpell(m_caster, 13166, true, m_CastItem);
-                    return;
-                }
-                case 23138:                                 // Gate of Shazzrah
-                {
-                    if (!unitTarget)
-                    {
-                        return;
-                    }
-
-                    // Effect probably include a threat change, but it is unclear if fully
-                    // reset or just forced upon target for teleport (SMSG_HIGHEST_THREAT_UPDATE)
-
-                    // Gate of Shazzrah
-                    m_caster->CastSpell(unitTarget, 23139, true);
                     return;
                 }
                 case 23448:                                 // Transporter Arrival - Ultrasafe Transporter: Gadgetzan - backfires
@@ -769,21 +553,6 @@ void Spell::EffectDummy(const cast::Operation& operation)
                     ((Creature*)m_caster)->AI()->AttackStart(unitTarget);
                     return;
                 }
-                case 24930:                                 // Hallow's End Treat
-                {
-                    uint32 spell_id = 0;
-
-                    switch (urand(1, 4))
-                    {
-                        case 1: spell_id = 24924; break;    // Larger and Orange
-                        case 2: spell_id = 24925; break;    // Skeleton
-                        case 3: spell_id = 24926; break;    // Pirate
-                        case 4: spell_id = 24927; break;    // Ghost
-                    }
-
-                    m_caster->CastSpell(m_caster, spell_id, true);
-                    return;
-                }
                 case 25860:                                 // Reindeer Transformation
                 {
                     if (!m_caster->HasAuraType(SPELL_AURA_MOUNTED))
@@ -811,26 +580,6 @@ void Spell::EffectDummy(const cast::Operation& operation)
                 case 26074:                                 // Holiday Cheer
                     // implemented at client side
                     return;
-                case 26626:                                 // Mana Burn Area
-                {
-                    if (!unitTarget->IsCreature() || unitTarget->GetPowerType() != POWER_MANA)
-                    {
-                        return;
-                    }
-
-                    m_caster->CastSpell(unitTarget, 25779, true);
-                    return;
-                }
-                case 28006:                                 // Arcane Cloaking
-                {
-                    if (unitTarget && unitTarget->IsPlayer())
-                        // Naxxramas Entry Flag Effect DND
-                    {
-                        m_caster->CastSpell(unitTarget, 29294, true);
-                    }
-
-                    return;
-                }
                 case 28098:                                 // Stalagg Tesla Effect
                 case 28110:                                 // Feugen Tesla Effect
                 {

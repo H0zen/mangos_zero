@@ -70,6 +70,7 @@
 #include "Chat.h"
 #include "DBCStores.h"
 #include "Cast/Recipe/RecipeBook.h"
+#include "Cast/Triggers/TriggerBook.h"
 #include "MassMailMgr.h"
 #include "LootMgr.h"
 #include "ItemEnchantmentMgr.h"
@@ -494,6 +495,9 @@ void World::SetInitialWorldSettings()
 
     sLog.outString("Loading Aggro Spells Definitions...");
     sSpellMgr.LoadSpellThreats();
+
+    sLog.outString("Loading what a spell with no description of its own throws...");
+    cast::Triggers().Load();
 
     cast::SettleRecipeGroups();
 

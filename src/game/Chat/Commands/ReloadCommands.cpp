@@ -45,6 +45,7 @@
 #include "ItemEnchantmentMgr.h"
 #include "CommandMgr.h"
 #include "Cast/Recipe/RecipeBook.h"
+#include "Cast/Triggers/TriggerBook.h"
 
 /**
  * @brief Handler for HandleReloadSpellLinkedCommand command.
@@ -75,6 +76,7 @@ bool ChatHandler::HandleReloadAllSpellCommand(char* /*args*/)
     HandleReloadSpellLearnSpellCommand((char*)"a");
     HandleReloadSpellProcEventCommand((char*)"a");
     HandleReloadSpellBonusesCommand((char*)"a");
+    HandleReloadSpellDummyCommand((char*)"a");
     HandleReloadSpellProcItemEnchantCommand((char*)"a");
     HandleReloadSpellScriptTargetCommand((char*)"a");
     HandleReloadSpellTargetPositionCommand((char*)"a");
@@ -826,6 +828,20 @@ bool ChatHandler::HandleReloadSpellBonusesCommand(char* /*args*/)
     sSpellMgr.LoadSpellBonuses();
     cast::SettleRecipeGroups();
     SendGlobalSysMessage("DB table `spell_bonus_data` (spell damage/healing coefficients) reloaded.", SEC_MODERATOR);
+    return true;
+}
+
+/**
+ * @brief Reads `spell_dummy` again.
+ *
+ * @param args Command arguments.
+ * @returns True if the command executed successfully, false otherwise.
+ */
+bool ChatHandler::HandleReloadSpellDummyCommand(char* /*args*/)
+{
+    sLog.outString("Re-Loading what a spell with no description of its own throws...");
+    cast::Triggers().Load();
+    SendGlobalSysMessage("DB table `spell_dummy` (what a spell with no description of its own throws) reloaded.", SEC_MODERATOR);
     return true;
 }
 
