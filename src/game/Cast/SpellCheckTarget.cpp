@@ -190,7 +190,7 @@ bool Spell::CheckTarget(Unit* target, SpellEffectIndex eff)
             return false;
         }
 
-        if (((Player*)target)->isGameMaster() && !IsPositiveSpell(m_spellInfo->ID))
+        if (((Player*)target)->isGameMaster() && !Recipe().IsPositive())
         {
             return false;
         }

@@ -60,6 +60,7 @@
 #include "GameTime.h"
 #include <math.h>
 #include <stdarg.h>
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Performs one melee attack update against a victim.
@@ -818,7 +819,7 @@ SpellMissInfo Unit::SpellHitResult(Unit* pVictim, SpellEntry const* spell, bool 
 
     // All positive spells can`t miss
     // TODO: client not show miss log for this spells - so need find info for this in dbc and use it!
-    if (IsPositiveSpell(spell->ID))
+    if (cast::RecipeOf(*spell).IsPositive())
     {
         return SPELL_MISS_NONE;
     }

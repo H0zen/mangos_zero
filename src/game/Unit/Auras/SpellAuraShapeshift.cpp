@@ -76,6 +76,7 @@
 #include "CellImpl.h"
 #include "Language.h"
 #include "TemporarySummon.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 enum SpellCreatedItems {
     ITEM_SOUL_SHARD = 6265
@@ -575,7 +576,7 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
         }
 
         // update active transform spell only not set or not overwriting negative by positive case
-        if (!target->GetTransform() || !IsPositiveSpell(GetId()) || IsPositiveSpell(target->GetTransform()))
+        if (!target->GetTransform() || !cast::Recipes().IsPositive(GetId()) || cast::Recipes().IsPositive(target->GetTransform()))
         {
             target->SetTransform(GetId());
         }
@@ -601,7 +602,7 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
             for (auto* transform : otherTransforms)
             {
                 // negative auras are preferred
-                if (!IsPositiveSpell(transform->GetSpellProto()->ID))
+                if (!cast::Recipes().IsPositive(transform->GetSpellProto()->ID))
                 {
                     handledAura = transform;
                     break;

@@ -4464,7 +4464,7 @@ void CharmInfo::InitCharmCreateSpells()
                 }
             }
 
-            if (onlyselfcast || !IsPositiveSpell(spellId))  // only self cast and spells versus enemies are autocastable
+            if (onlyselfcast || !cast::Recipes().IsPositive(spellId))  // only self cast and spells versus enemies are autocastable
             {
                 newstate = ACT_DISABLED;
             }

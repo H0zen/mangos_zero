@@ -453,7 +453,7 @@ void Spell::prepareDataForTriggerSystem()
             }
             break;
         default:
-            if (IsPositiveSpell(m_spellInfo->ID))           // Check for positive spell
+            if (Recipe().IsPositive())           // Check for positive spell
             {
                 m_procAttacker = PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL;
                 m_procVictim   = PROC_FLAG_TAKEN_POSITIVE_SPELL;
@@ -474,11 +474,11 @@ void Spell::prepareDataForTriggerSystem()
     // some negative spells have positive effects to another or same targets
     // avoid triggering negative hit for only positive targets
     m_negativeEffectMask = 0x0;
-    for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
+    for (const auto& operation : Recipe().Does())
     {
-        if (m_spellInfo->Effect[i] != SPELL_EFFECT_NONE && !IsPositiveEffect(m_spellInfo, SpellEffectIndex(i)))
+        if (!operation.positive)
         {
-            m_negativeEffectMask |= (1 << i);
+            m_negativeEffectMask |= (1 << operation.slot);
         }
     }
 

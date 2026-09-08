@@ -297,12 +297,12 @@ inline bool IsNonCombatSpell(SpellEntry const* spellInfo)
 /**
  * Checks whether the specified spell id is considered positive.
  */
-bool IsPositiveSpell(uint32 spellId);
+
 
 /**
  * Checks whether the specified spell entry is considered positive.
  */
-bool IsPositiveSpell(SpellEntry const* spellproto);
+
 
 /**
  * Checks whether the specified spell effect is considered positive.

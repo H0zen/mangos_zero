@@ -35,6 +35,7 @@
 #include "CreatureAI.h"
 #include "InstanceData.h"
 #include "ObjectLookup.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Initializes a totem creature instance.
@@ -301,7 +302,7 @@ bool Totem::IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex 
             break;
     }
 
-    if (!IsPositiveSpell(spellInfo))
+    if (!cast::RecipeOf(*spellInfo).IsPositive())
     {
         // immune to all negative auras
         if (IsAuraApplyEffect(spellInfo, index))

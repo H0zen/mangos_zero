@@ -461,7 +461,7 @@ bool Unit::IsSpellCrit(Unit* pVictim, SpellEntry const* spellProto, SpellSchoolM
             // taken
             if (pVictim)
             {
-                if (!IsPositiveSpell(spellProto->ID))
+                if (!cast::RecipeOf(*spellProto).IsPositive())
                 {
                     // Modify critical chance by victim SPELL_AURA_MOD_ATTACKER_SPELL_CRIT_CHANCE
                     crit_chance += pVictim->GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_ATTACKER_SPELL_CRIT_CHANCE, schoolMask);
@@ -849,7 +849,7 @@ bool Unit::IsImmuneToSpell(SpellEntry const* spellInfo, bool /*castOnSelf*/)
         SpellImmuneList const& schoolList = m_immune.Of(IMMUNITY_SCHOOL);
         for (SpellImmuneList::const_iterator itr = schoolList.begin(); itr != schoolList.end(); ++itr)
         {
-            if (!(IsPositiveSpell(itr->spellId) && IsPositiveSpell(spellInfo->ID)) &&
+            if (!(cast::Recipes().IsPositive(itr->spellId) && cast::RecipeOf(*spellInfo).IsPositive()) &&
                 (itr->type & GetSpellSchoolMask(spellInfo)))
             {
                 return true;

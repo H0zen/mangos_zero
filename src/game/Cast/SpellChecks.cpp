@@ -528,12 +528,11 @@ SpellCastResult Spell::CheckCast(bool strict)
                     explicit_target_mode = true;
                 }
             }
-            // TODO: this check can be applied and for player to prevent cheating when IsPositiveSpell will return always correct result.
             // check target for pet/charmed casts (not self targeted), self targeted cast used for area effects and etc
             if (!explicit_target_mode && m_caster->IsCreature() && m_caster->GetCharmerOrOwnerGuid())
             {
                 // check correctness positive/negative cast target (pet cast real check and cheating check)
-                if (IsPositiveSpell(m_spellInfo->ID))
+                if (Recipe().IsPositive())
                 {
                     if (!target_hostile_checked)
                     {
@@ -560,7 +559,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             }
         }
 
-        if (IsPositiveSpell(m_spellInfo->ID))
+        if (Recipe().IsPositive())
         {
             if (target->IsImmuneToSpell(m_spellInfo, target == m_caster))
             {
@@ -1752,7 +1751,7 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
                 return SPELL_FAILED_BAD_TARGETS;             // guessed error
             }
 
-            if (IsPositiveSpell(m_spellInfo->ID))
+            if (Recipe().IsPositive())
             {
                 if (IsHostile(*m_caster, *_target))
                 {

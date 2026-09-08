@@ -454,7 +454,7 @@ void spells::CancelAura(Player& who, WorldPacket& recvPacket)
         return;
     }
 
-    if (!IsPositiveSpell(spellId))
+    if (!cast::Recipes().IsPositive(spellId))
     {
         // ignore for remote control state
         if (!who.IsSelfMover())

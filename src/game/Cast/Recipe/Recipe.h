@@ -97,6 +97,10 @@ namespace cast
         int32 miscValue = 0;
         uint32 triggerSpell = 0;
 
+        /// Whether this operation is something its target would want. Settled
+        /// once, because the answer walks trigger chains into other spells.
+        bool positive = false;
+
         bool AppliesAura() const { return aura != 0; }
         bool Ticks() const { return periodMs != 0; }
     };
@@ -143,6 +147,11 @@ namespace cast
             }
 
         private:
+
+            /// The book settles what a compiled row cannot answer on its own.
+            friend class RecipeBook;
+
+            Operation& Mutable(size_t i) { return m_items[i]; }
 
             Operation m_items[CAPACITY];
             uint8 m_count = 0;
@@ -319,6 +328,18 @@ namespace cast
             /// True when nothing this spell does reaches anyone's defences.
             bool TouchesNoDefence() const { return m_defence == Defence::None; }
 
+            /// Whether a target would want this cast on them. A spell is wanted
+            /// only when every one of its operations is.
+            bool IsPositive() const { return m_positive; }
+
+            /// The same question about one slot. An empty slot is not wanted,
+            /// because there is nothing in it to want.
+            bool IsPositiveAt(uint8 slot) const
+            {
+                const Operation* operation = m_operations.AtSlot(slot);
+                return operation != nullptr && operation->positive;
+            }
+
             /// True when any of its operations ticks.
             bool Ticks() const;
 
@@ -327,7 +348,13 @@ namespace cast
 
         private:
 
+            /// Whether a cast is wanted cannot be settled while the row is being
+            /// compiled: the answer follows trigger chains into other spells, so
+            /// it waits until every recipe exists. The book fills it then.
+            friend class RecipeBook;
+
             uint32 m_id = 0;
+            bool m_positive = false;
             Start m_start = Start::Instant;
             Defence m_defence = Defence::None;
             combat::School m_school = combat::School::Physical;

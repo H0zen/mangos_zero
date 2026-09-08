@@ -241,7 +241,7 @@ void Pet::_LoadAuras(uint32 timediff)
                 continue;
             }
 
-            if (remaintime != -1 && !IsPositiveSpell(spellproto))
+            if (remaintime != -1 && !cast::RecipeOf(*spellproto).IsPositive())
             {
                 if (remaintime / IN_MILLISECONDS <= int32(timediff))
                 {

@@ -42,6 +42,7 @@
 #include "CellImpl.h"
 
 #include <cfloat>
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Determines whether PetAI can control the given creature.
@@ -367,7 +368,7 @@ void PetAI::UpdateAI(const uint32 diff)
             if (!inCombat)
             {
                 // ignore attacking spells, and allow only self/around spells
-                if (!IsPositiveSpell(spellInfo->ID))
+                if (!cast::RecipeOf(*spellInfo).IsPositive())
                 {
                     continue;
                 }
@@ -436,7 +437,7 @@ void PetAI::UpdateAI(const uint32 diff)
                 }
 
                 //if offensive spell wasn't usable, check WHY
-                if (!spellUsed && inCombat && m_creature->getVictim() && !IsPositiveSpell(spellInfo->ID))
+                if (!spellUsed && inCombat && m_creature->getVictim() && !cast::RecipeOf(*spellInfo).IsPositive())
                 {
                     SpellCastResult failReason = spell->CheckPetCast(m_creature->getVictim());
                     if (failReason == SPELL_FAILED_OUT_OF_RANGE)

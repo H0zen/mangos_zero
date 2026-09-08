@@ -963,43 +963,6 @@ bool IsPositiveEffect(SpellEntry const* spellproto, SpellEffectIndex effIndex)
 }
 
 /**
- * @brief Determines whether a spell id is positive.
- *
- * @param spellId The spell id.
- * @return true if all active effects are positive; otherwise false.
- */
-bool IsPositiveSpell(uint32 spellId)
-{
-    SpellEntry const* spellproto = sSpellStore.LookupEntry(spellId);
-    if (!spellproto)
-    {
-        return false;
-    }
-
-    return IsPositiveSpell(spellproto);
-}
-
-/**
- * @brief Determines whether a spell entry is positive.
- *
- * @param spellproto The spell entry.
- * @return true if all active effects are positive; otherwise false.
- */
-bool IsPositiveSpell(SpellEntry const* spellproto)
-{
-    // spells with at least one negative effect are considered negative
-    // some self-applied spells have negative effects but in self casting case negative check ignored.
-    for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
-    {
-        if (spellproto->Effect[i] && !IsPositiveEffect(spellproto, SpellEffectIndex(i)))
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-/**
  * @brief Checks whether a spell is treated as single-target.
  *
  * @param spellInfo The spell entry.

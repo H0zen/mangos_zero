@@ -37,6 +37,7 @@
 #include "Creature.h"
 #include "ScriptMgr.h"
 #include "Util.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 pAuraProcHandler AuraProcHandler[TOTAL_AURAS] =
 {
@@ -949,7 +950,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura
             {
                 if (target == nullptr)
                 {
-                    target = !(procFlag & PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL) && IsPositiveSpell(*itr) ? this : pVictim;
+                    target = !(procFlag & PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL) && cast::Recipes().IsPositive(*itr) ? this : pVictim;
                 }
                 CastSpell(this, *itr, true, castItem, triggeredByAura);
                 if (cooldown && IsPlayer())
@@ -1385,7 +1386,7 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
             {
                 if (target == nullptr)
                 {
-                    target = !(procFlags & PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL) && IsPositiveSpell(*itr) ? this : pVictim;
+                    target = !(procFlags & PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL) && cast::Recipes().IsPositive(*itr) ? this : pVictim;
                 }
                 CastSpell(target, *itr, true, castItem, triggeredByAura);
                 if (cooldown && IsPlayer())
@@ -1404,7 +1405,7 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
     // try detect target manually if not set
     if (target == nullptr)
     {
-        target = !(procFlags & PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL) && IsPositiveSpell(trigger_spell_id) ? this : pVictim;
+        target = !(procFlags & PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL) && cast::Recipes().IsPositive(trigger_spell_id) ? this : pVictim;
     }
 
     // default case

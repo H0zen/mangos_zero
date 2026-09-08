@@ -69,6 +69,7 @@
 #include "DisableMgr.h"
 #include "CinematicFlyover.h"
 #include <cmath>
+#include "Cast/Recipe/RecipeBook.h"
 
 void Player::_ApplyItemMods(Item* item, uint8 slot, bool apply)
 {
@@ -639,7 +640,7 @@ void Player::CastItemCombatSpell(Unit* Target, WeaponAttackType attType)
 
             if (roll_chance_f(chance))
             {
-                if (IsPositiveSpell(spellInfo->ID))
+                if (cast::RecipeOf(*spellInfo).IsPositive())
                 {
                     CastSpell(this, spellInfo->ID, true, item);
                 }

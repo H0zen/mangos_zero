@@ -59,6 +59,7 @@
 #include "GameObjectAI.h"
 #include "Geometry/Quat.h"
 #include "AnimatedTraps.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 // The one trap in the game that fires at a single creature and ignores everyone
 // else. It is in Dire Maul, and what it is aimed at is Slip'kik's guard.
@@ -932,7 +933,7 @@ GameObjectBehaviour::Tick TrapBehaviour::Standing()
 
     if (IsAreaOfEffectSpell(se))
     {
-        MaNGOS::AllSpecificUnitsInGameObjectRangeDo unit_do(&It(), radius, IsPositiveSpell(se));
+        MaNGOS::AllSpecificUnitsInGameObjectRangeDo unit_do(&It(), radius, cast::RecipeOf(*se).IsPositive());
         MaNGOS::UnitWorker<MaNGOS::AllSpecificUnitsInGameObjectRangeDo> worker(unit_do);
         Cell::VisitAllObjects(&It(), worker, radius);
 
@@ -940,7 +941,7 @@ GameObjectBehaviour::Tick TrapBehaviour::Standing()
     }
 
     Unit* targetUnit = nullptr;
-    MaNGOS::AnySpecificUnitInGameObjectRangeCheck u_check(&It(), radius, IsPositiveSpell(se));
+    MaNGOS::AnySpecificUnitInGameObjectRangeCheck u_check(&It(), radius, cast::RecipeOf(*se).IsPositive());
     MaNGOS::UnitSearcher<MaNGOS::AnySpecificUnitInGameObjectRangeCheck> checker(targetUnit, u_check);
     Cell::VisitAllObjects(&It(), checker, radius);
 

@@ -78,6 +78,7 @@
 #include "CellImpl.h"
 #include "Language.h"
 #include "TemporarySummon.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 static AuraType const frozenAuraTypes[] = { SPELL_AURA_MOD_ROOT, SPELL_AURA_MOD_STUN, SPELL_AURA_NONE };
 
@@ -1283,7 +1284,7 @@ void Aura::HandleAuraModSchoolImmunity(bool apply, bool Real)
     // TODO: optimalize this cycle - use RemoveAurasWithInterruptFlags call or something else
     if (Real && apply &&
         GetSpellProto()->HasAttribute(SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY) &&
-        IsPositiveSpell(GetId()))                    // Only positive immunity removes auras
+        cast::Recipes().IsPositive(GetId()))                    // Only positive immunity removes auras
     {
         uint32 school_mask = m_modifier.m_miscvalue;
         Unit::SpellAuraHolderMap& Auras = target->GetSpellAuraHolderMap();

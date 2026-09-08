@@ -30,6 +30,14 @@ namespace cast
                 return spellId < m_byId.size() ? m_byId[spellId] : nullptr;
             }
 
+            /// Whether a target would want the spell with this id. An id nothing
+            /// answers to is not wanted, having nothing to offer.
+            bool IsPositive(uint32 spellId) const
+            {
+                const Recipe* recipe = Find(spellId);
+                return recipe != nullptr && recipe->IsPositive();
+            }
+
             /// Whether a spell id starts the given way. An id nothing answers to
             /// starts no way at all, which is what a missing row has always meant.
             bool StartsAs(uint32 spellId, Start start) const
@@ -44,6 +52,11 @@ namespace cast
             const std::vector<Recipe>& All() const { return m_recipes; }
 
         private:
+
+            /// Answers, for every recipe at once, whether a target would want it.
+            /// It runs after the whole book exists because the question follows
+            /// trigger chains into other spells.
+            void SettlePositivity();
 
             std::vector<Recipe> m_recipes;
             std::vector<const Recipe*> m_byId;

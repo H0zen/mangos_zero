@@ -1242,7 +1242,7 @@ void Spell::EffectCharge(SpellEffectIndex /*eff_idx*/)
     m_caster->MonsterMoveWithSpeed(x, y, z, 24.f, true, true);
 
     // not all charge effects used in negative spells
-    if (unitTarget != m_caster && !IsPositiveSpell(m_spellInfo->ID))
+    if (unitTarget != m_caster && !Recipe().IsPositive())
     {
         m_caster->Attack(unitTarget, true);
     }

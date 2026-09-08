@@ -409,7 +409,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     break;
                 default:
                     // Select friendly targets for positive effect
-                    if (IsPositiveEffect(m_spellInfo, effIndex))
+                    if (Recipe().IsPositiveAt(effIndex))
                     {
                         targetB = SPELL_TARGETS_FRIENDLY;
                     }

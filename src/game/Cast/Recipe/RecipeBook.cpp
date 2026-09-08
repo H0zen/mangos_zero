@@ -2,6 +2,7 @@
 
 #include "DataStore/DBCStores.h"
 #include "DataStore/DBCStructure.h"
+#include "DataStore/SpellMgr.h"
 
 namespace cast
 {
@@ -60,7 +61,30 @@ namespace cast
             m_byId[recipe.Id()] = &recipe;
         }
 
+        SettlePositivity();
         return m_recipes.size();
+    }
+
+    void RecipeBook::SettlePositivity()
+    {
+        for (auto& recipe : m_recipes)
+        {
+            const SpellEntry* row = sSpellStore.LookupEntry(recipe.m_id);
+            if (row == nullptr)
+            {
+                continue;
+            }
+
+            bool wanted = true;
+            for (size_t i = 0; i < recipe.m_operations.size(); ++i)
+            {
+                Operation& operation = recipe.m_operations.Mutable(i);
+                operation.positive = IsPositiveEffect(row, SpellEffectIndex(operation.slot));
+                wanted = wanted && operation.positive;
+            }
+
+            recipe.m_positive = wanted;
+        }
     }
 
     RecipeBook& Recipes()

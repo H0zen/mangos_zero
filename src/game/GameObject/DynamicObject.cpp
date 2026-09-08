@@ -34,6 +34,7 @@
 #include "GridNotifiersImpl.h"
 #include "SpellMgr.h"
 #include "DBCStores.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Creates an empty dynamic object instance.
@@ -176,7 +177,7 @@ bool DynamicObject::Create(uint32 guidlow, Unit* caster, uint32 spellId, SpellEf
     m_radius = radius;
     m_effIndex = effIndex;
     m_spellId = spellId;
-    m_positive = IsPositiveEffect(spellProto, m_effIndex);
+    m_positive = cast::RecipeOf(*spellProto).IsPositiveAt(m_effIndex);
 
     return true;
 }

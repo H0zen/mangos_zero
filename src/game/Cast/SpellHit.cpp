@@ -180,7 +180,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
             if (real_caster && real_caster != unit)
             {
                 // can cause back attack (if detected)
-                if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX3_NO_INITIAL_AGGRO) && !IsPositiveSpell(m_spellInfo->ID) &&
+                if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX3_NO_INITIAL_AGGRO) && !Recipe().IsPositive() &&
                     m_caster->IsVisibleForOrDetect(unit, unit, false))
                 {
                     if (!unit->IsInCombat() && !unit->IsPlayer() && ((Creature*)unit)->AI())
@@ -406,7 +406,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
             }
 
             // can cause back attack (if detected), stealth removed at Spell::cast if spell break it
-            if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX3_NO_INITIAL_AGGRO) && !IsPositiveSpell(m_spellInfo->ID) &&
+            if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX3_NO_INITIAL_AGGRO) && !Recipe().IsPositive() &&
                 m_caster->IsVisibleForOrDetect(unit, unit, false))
             {
                 // use speedup check to avoid re-remove after above lines
@@ -459,7 +459,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
         else
         {
             // for delayed spells ignore negative spells (after duel end) for friendly targets
-            if (speed > 0.0f && !IsPositiveSpell(m_spellInfo->ID))
+            if (speed > 0.0f && !Recipe().IsPositive())
             {
                 realCaster->SendSpellMiss(unit, m_spellInfo->ID, SPELL_MISS_EVADE);
                 ResetEffectDamageAndHeal();

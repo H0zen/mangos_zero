@@ -81,6 +81,7 @@
 #include "LFGMgr.h"
 #include "DisableMgr.h"
 #include "Corpse.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 // corpse reclaim times
 
@@ -957,7 +958,7 @@ void Player::_LoadAuras(QueryResult* result, uint32 timediff)
                 continue;
             }
 
-            if (remaintime != -1 && !IsPositiveSpell(spellproto))
+            if (remaintime != -1 && !cast::RecipeOf(*spellproto).IsPositive())
             {
                 if (remaintime / IN_MILLISECONDS <= int32(timediff))
                 {

@@ -845,7 +845,7 @@ void Spell::finish(bool ok)
     {
         // Not drop combopoints if negative spell and if any miss on enemy exist
         bool needDrop = true;
-        if (!IsPositiveSpell(m_spellInfo->ID))
+        if (!Recipe().IsPositive())
         {
             for (TargetList::const_iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
             {
