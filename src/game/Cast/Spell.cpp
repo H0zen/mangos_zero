@@ -467,7 +467,7 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
     // determine reflection
     m_canReflect = false;
 
-    if (m_spellInfo->DefenseType == SPELL_DAMAGE_CLASS_MAGIC && !m_spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS))
+    if (m_spellInfo->DefenseType == SPELL_DAMAGE_CLASS_MAGIC && !Recipe().Says().ignoresLineOfSight)
     {
         for (const auto& operation : Recipe().Does())
         {
@@ -477,7 +477,7 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
             }
             else
             {
-                m_canReflect = m_spellInfo->HasAttribute(SPELL_ATTR_EX_CANT_BE_REFLECTED);
+                m_canReflect = Recipe().Says().cannotBeReflected;
             }
 
             if (m_canReflect)

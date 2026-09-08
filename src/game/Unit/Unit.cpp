@@ -1183,7 +1183,7 @@ void Unit::JustKilledCreature(Creature* victim, Player* responsiblePlayer)
 
     // Interrupt channeling spell when a Possessed Summoned is killed
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(victim->GetUInt32Value(UNIT_CREATED_BY_SPELL));
-    if (spellInfo && spellInfo->HasAttribute(SPELL_ATTR_EX_FARSIGHT) && spellInfo->HasAttribute(SPELL_ATTR_EX_CHANNELED_1))
+    if (spellInfo && cast::RecipeOf(*spellInfo).Says().farsight && cast::RecipeOf(*spellInfo).Says().channels)
     {
         Unit* creator = GetMap()->GetUnit(victim->GetCreatorGuid());
         if (creator && creator->GetCharmGuid() == victim->GetObjectGuid())
@@ -3535,7 +3535,7 @@ void Unit::ApplySpellDispelImmunity(const SpellEntry* spellProto, DispelType typ
 {
     ApplySpellImmune(spellProto->ID, IMMUNITY_DISPEL, type, apply);
 
-    if (apply && spellProto->HasAttribute(SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY))
+    if (apply && cast::RecipeOf(*spellProto).Says().dispelsOnImmunity)
     {
         RemoveAurasWithDispelType(type);
     }
@@ -5920,7 +5920,7 @@ void Unit::RemoveAurasAtMechanicImmunity(uint32 mechMask, uint32 exceptSpellId, 
         {
             ++iter;
         }
-        else if (spell->HasAttribute(SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY))
+        else if (cast::RecipeOf(*spell).Says().ignoresInvulnerability)
         {
             ++iter;
         }

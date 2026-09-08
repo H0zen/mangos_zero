@@ -82,6 +82,7 @@
 #include "DisableMgr.h"
 
 #include <cmath>
+#include "Cast/Recipe/RecipeBook.h"
 
 namespace
 {
@@ -3488,7 +3489,7 @@ void Player::ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs)
         MANGOS_ASSERT(spellInfo);
 
         // Not send cooldown for this spells
-        if (spellInfo->HasAttribute(SPELL_ATTR_DISABLED_WHILE_ACTIVE))
+        if (cast::RecipeOf(*spellInfo).Says().spentWhileActive)
         {
             continue;
         }

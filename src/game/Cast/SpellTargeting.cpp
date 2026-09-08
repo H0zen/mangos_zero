@@ -80,6 +80,7 @@
 #include "SQLStorages.h"
 #include "DisableMgr.h"
 #include "Corpse.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 template<typename T>
 /**
@@ -525,7 +526,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
                 // remove not targetable units if spell has no script targets
                 for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end();)
                 {
-                    if (!(*itr)->IsTargetableForAttack(m_spellInfo->HasAttribute(SPELL_ATTR_EX3_CAST_ON_DEAD)))
+                    if (!(*itr)->IsTargetableForAttack(Recipe().Says().castOnDead))
                     {
                         targetUnitMap.erase(itr++);
                     }
@@ -1298,7 +1299,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             break;
     }
 
-    if (targetMode != TARGET_SELF && m_spellInfo->HasAttribute(SPELL_ATTR_EX_CANT_TARGET_SELF))
+    if (targetMode != TARGET_SELF && Recipe().Says().cannotTargetSelf)
     {
         targetUnitMap.remove(m_caster);
     }

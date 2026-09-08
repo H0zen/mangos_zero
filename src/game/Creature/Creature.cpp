@@ -70,6 +70,7 @@
 #include "Policies/Singleton.h"
 #include "PlayerRegistry.h"
 #include "Corpse.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Finds a trainer spell entry by spell id.
@@ -2875,7 +2876,7 @@ SpellCastResult Creature::TryToCast(Unit* pTarget, const SpellEntry* pSpellInfo,
         }
 
         // If the spell requires to be behind the target.
-        if (pSpellInfo->AttributesExB == SPELL_ATTR_EX2_FACING_TARGETS_BACK && pSpellInfo->HasAttribute(SPELL_ATTR_EX_FACING_TARGET) && pTarget->Where().HasInArc(this->Where(), M_PI_F))
+        if (pSpellInfo->AttributesExB == SPELL_ATTR_EX2_FACING_TARGETS_BACK && cast::RecipeOf(*pSpellInfo).Says().needsFacing && pTarget->Where().HasInArc(this->Where(), M_PI_F))
         {
             return SPELL_FAILED_UNIT_NOT_BEHIND;
         }

@@ -52,6 +52,7 @@
 #include "Player.h"
 #include "ObjectLookup.h"
 #include "UnitEvents.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 //==============================================================
 //================= ThreatCalcHelper ===========================
@@ -80,7 +81,7 @@ float ThreatCalcHelper::CalcThreat(Unit* pHatedUnit, Unit* /*pHatingUnit*/, floa
 
     if (pThreatSpell)
     {
-        if (pThreatSpell->HasAttribute(SPELL_ATTR_EX_NO_THREAT))
+        if (cast::RecipeOf(*pThreatSpell).Says().makesNoThreat)
         {
             return 0.0f;
         }

@@ -600,7 +600,7 @@ void AreaAura::Update(uint32 diff)
                 }
 
                 // Skip some targets (TODO: Might require better checks, also unclear how the actual caster must/can be handled)
-                if (actualSpellInfo->HasAttribute(SPELL_ATTR_EX3_TARGET_ONLY_PLAYER) && !(*tIter)->IsPlayer())
+                if (cast::RecipeOf(*actualSpellInfo).Says().playersOnly && !(*tIter)->IsPlayer())
                 {
                     continue;
                 }
@@ -1623,7 +1623,7 @@ void Aura::PeriodicTick()
                 // 5..8 ticks have normal tick damage
             }
 
-            target->CalculateDamageAbsorbAndResist(pCaster, GetSpellSchoolMask(spellProto), DOT, pdamage, &absorb, &resist, !spellProto->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS));
+            target->CalculateDamageAbsorbAndResist(pCaster, GetSpellSchoolMask(spellProto), DOT, pdamage, &absorb, &resist, !cast::RecipeOf(*spellProto).Says().ignoresLineOfSight);
 
             DETAIL_FILTER_LOG(LOG_FILTER_PERIODIC_AFFECTS, "PeriodicTick: %s attacked %s for %u dmg inflicted by %u",
                 GetCasterGuid().GetString().c_str(), target->GetGuidStr().c_str(), pdamage, GetId());
@@ -1696,7 +1696,7 @@ void Aura::PeriodicTick()
 
             pdamage = target->SpellDamageBonusTaken(pCaster, spellProto, pdamage, DOT, GetStackAmount());
 
-            target->CalculateDamageAbsorbAndResist(pCaster, GetSpellSchoolMask(spellProto), DOT, pdamage, &absorb, &resist, !spellProto->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS));
+            target->CalculateDamageAbsorbAndResist(pCaster, GetSpellSchoolMask(spellProto), DOT, pdamage, &absorb, &resist, !cast::RecipeOf(*spellProto).Says().ignoresLineOfSight);
 
             if (target->GetHealth() < pdamage)
             {
@@ -2235,8 +2235,8 @@ SpellAuraHolder::SpellAuraHolder(SpellEntry const* spellproto, Unit* target, Occ
 
     m_isRemovedOnShapeLost = (GetCasterGuid() == m_target->GetObjectGuid() &&
         m_spellProto->ShapeshiftMask &&
-        !m_spellProto->HasAttribute(SPELL_ATTR_EX2_NOT_NEED_SHAPESHIFT) &&
-        !m_spellProto->HasAttribute(SPELL_ATTR_NOT_SHAPESHIFT));
+        !Recipe().Says().worksWithoutShapeshift &&
+        !Recipe().Says().notWhileShapeshifted);
 
     Unit* unitCaster = caster && caster->isType(TYPEMASK_UNIT) ? (Unit*)caster : nullptr;
 
@@ -2363,7 +2363,7 @@ void SpellAuraHolder::_AddSpellAuraHolder()
     // set infinity cooldown state for spells
     if (caster && caster->IsPlayer())
     {
-        if (m_spellProto->HasAttribute(SPELL_ATTR_DISABLED_WHILE_ACTIVE))
+        if (Recipe().Says().spentWhileActive)
         {
             Item* castItem = m_castItemGuid ? ((Player*)caster)->GetItemByGuid(m_castItemGuid) : nullptr;
             ((Player*)caster)->AddSpellAndCategoryCooldowns(m_spellProto, castItem ? castItem->GetEntry() : 0, nullptr, true);
@@ -2508,7 +2508,7 @@ void SpellAuraHolder::_RemoveSpellAuraHolder()
         // reset cooldown state for spells
         if (caster && caster->IsPlayer())
         {
-            if (GetSpellProto()->HasAttribute(SPELL_ATTR_DISABLED_WHILE_ACTIVE))
+            if (Recipe().Says().spentWhileActive)
                 // note: item based cooldowns and cooldown spell mods with charges ignored (unknown existing cases)
             {
                 ((Player*)caster)->SendCooldownEvent(GetSpellProto());

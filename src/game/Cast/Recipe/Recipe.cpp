@@ -80,6 +80,8 @@ namespace cast
             flags.passive = Has(a, 6);
             flags.hiddenFromClient = Has(a, 7);
             flags.notWhileShapeshifted = Has(a, 16);
+            flags.indoorsOnly = Has(a, 14);
+            flags.outdoorsOnly = Has(a, 15);
             flags.onlyWhileStealthed = Has(a, 17);
             flags.damageScalesWithLevel = Has(a, 19);
             flags.stopsAttack = Has(a, 20);
@@ -103,7 +105,9 @@ namespace cast
             flags.needsFacing = Has(b, 9);
             flags.makesNoThreat = Has(b, 10);
             flags.channels = Has(b, 2) || Has(b, 6);
+            flags.farsight = Has(b, 13);
             flags.channelTracksTarget = Has(b, 14);
+            flags.dispelsOnImmunity = Has(b, 15);
             flags.ignoresSchoolImmunity = Has(b, 16);
             flags.cannotTargetSelf = Has(b, 19);
             flags.needsComboPointsOnTarget = Has(b, 20);
@@ -117,13 +121,16 @@ namespace cast
             flags.ignoresLineOfSight = Has(c, 2);
             flags.autoRepeats = Has(c, 5);
             flags.keepsWeaponTimer = Has(c, 17);
+            flags.worksWithoutShapeshift = Has(c, 19);
             flags.shieldReducesDamage = Has(c, 21);
             flags.cannotCrit = Has(c, 29);
             flags.triggeredCanProc = Has(c, 30);
             flags.isFoodOrDrink = Has(c, 31);
 
             const uint32 d = flags.words[3];
+            flags.ignoresResurrectionTimer = Has(d, 4);
             flags.blockable = Has(d, 3);
+            flags.castOnDead = Has(d, 12);
             flags.stacksPerCaster = Has(d, 7);
             flags.playersOnly = Has(d, 8);
             flags.needsMainHand = Has(d, 10);
@@ -135,6 +142,7 @@ namespace cast
             flags.needsWand = Has(d, 22);
             flags.needsOffHand = Has(d, 24);
             flags.takesNoDoneBonus = Has(d, 29);
+            flags.survivesIncapacity = Has(d, 28);
 
             return flags;
         }

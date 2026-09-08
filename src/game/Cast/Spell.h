@@ -830,7 +830,7 @@ namespace MaNGOS
 
                 if (!gmSpell)
                 {
-                    if ((i_TargetType != SPELL_TARGETS_ALL && !itr->getSource()->IsTargetableForAttack(i_spell.m_spellInfo->HasAttribute(SPELL_ATTR_EX3_CAST_ON_DEAD))) ||
+                    if ((i_TargetType != SPELL_TARGETS_ALL && !itr->getSource()->IsTargetableForAttack(i_spell.Recipe().Says().castOnDead)) ||
                         // mostly phase check
                         !itr->getSource()->Where().ShareFrame(i_originalCaster->Where()))
                     {

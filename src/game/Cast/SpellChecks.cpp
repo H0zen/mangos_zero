@@ -77,6 +77,7 @@
 #include "TemporarySummon.h"
 #include "SQLStorages.h"
 #include "DisableMgr.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Validates whether the spell can currently be cast.
@@ -87,7 +88,7 @@
 SpellCastResult Spell::CheckCast(bool strict)
 {
     // check cooldowns to prevent cheating (ignore passive spells, that client side visual only)
-    if (m_caster->IsPlayer() && !m_spellInfo->HasAttribute(SPELL_ATTR_PASSIVE) &&
+    if (m_caster->IsPlayer() && !Recipe().Says().passive &&
         ((Player*)m_caster)->HasSpellCooldown(m_spellInfo->ID))
     {
         if (m_triggeredByAuraSpell)
@@ -145,13 +146,13 @@ SpellCastResult Spell::CheckCast(bool strict)
     if (m_caster->IsPlayer() && !((Player*)m_caster)->isGameMaster() &&
         sWorld.getConfig(CONFIG_BOOL_VMAP_INDOOR_CHECK))
     {
-        if (m_spellInfo->HasAttribute(SPELL_ATTR_OUTDOORS_ONLY) &&
+        if (Recipe().Says().outdoorsOnly &&
             !m_caster->GetMap()->GetTerrain()->IsOutdoors(m_caster->Where().X(), m_caster->Where().Y(), m_caster->Where().Z()))
         {
             return SPELL_FAILED_ONLY_OUTDOORS;
         }
 
-        if (m_spellInfo->HasAttribute(SPELL_ATTR_INDOORS_ONLY) &&
+        if (Recipe().Says().indoorsOnly &&
             m_caster->GetMap()->GetTerrain()->IsOutdoors(m_caster->Where().X(), m_caster->Where().Y(), m_caster->Where().Z()))
         {
             return SPELL_FAILED_ONLY_INDOORS;
@@ -168,7 +169,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             return shapeError;
         }
 
-        if (m_spellInfo->HasAttribute(SPELL_ATTR_ONLY_STEALTHED) && !(m_caster->HasStealthAura()))
+        if (Recipe().Says().onlyWhileStealthed && !(m_caster->HasStealthAura()))
         {
             return SPELL_FAILED_ONLY_STEALTHED;
         }
@@ -356,7 +357,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
         // totem immunity for channeled spells(needs to be before spell cast)
         // spell attribs for player channeled spells
-        if (m_spellInfo->HasAttribute(SPELL_ATTR_EX_CHANNEL_TRACK_TARGET) &&
+        if (Recipe().Says().channelTracksTarget &&
             target->IsCreature() &&
             ((Creature*)target)->IsTotem())
         {
@@ -399,7 +400,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 }
             }
 
-            if (strict && m_spellInfo->HasAttribute(SPELL_ATTR_EX3_TARGET_ONLY_PLAYER) && !target->IsPlayer() && !IsAreaOfEffectSpell(m_spellInfo))
+            if (strict && Recipe().Says().playersOnly && !target->IsPlayer() && !IsAreaOfEffectSpell(m_spellInfo))
             {
                 return SPELL_FAILED_BAD_TARGETS;
             }
@@ -568,7 +569,7 @@ SpellCastResult Spell::CheckCast(bool strict)
         }
 
         // Must be behind the target.
-        if (m_spellInfo->AttributesExB == SPELL_ATTR_EX2_FACING_TARGETS_BACK && (m_spellInfo->HasAttribute(SPELL_ATTR_EX_FACING_TARGET) && target->Where().HasInArc(m_caster->Where(), M_PI_F)))
+        if (m_spellInfo->AttributesExB == SPELL_ATTR_EX2_FACING_TARGETS_BACK && (Recipe().Says().needsFacing && target->Where().HasInArc(m_caster->Where(), M_PI_F)))
         {
             SendInterrupted(SPELL_FAILED_NOT_BEHIND);
             return SPELL_FAILED_NOT_BEHIND;
@@ -582,7 +583,7 @@ SpellCastResult Spell::CheckCast(bool strict)
         }
 
         // check if target is in combat
-        if (non_caster_target && m_spellInfo->HasAttribute(SPELL_ATTR_EX_NOT_IN_COMBAT_TARGET) && target->IsInCombat())
+        if (non_caster_target && Recipe().Says().needsTargetOutOfCombat && target->IsInCombat())
         {
             return SPELL_FAILED_TARGET_AFFECTING_COMBAT;
         }
@@ -1810,7 +1811,7 @@ SpellCastResult Spell::CheckCasterAuras() const
 
     // Check if the spell grants school or mechanic immunity.
     // We use bitmasks so the loop is done only once and not on every aura check below.
-    if (m_spellInfo->HasAttribute(SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY))
+    if (Recipe().Says().dispelsOnImmunity)
     {
         for (const auto& operation : Recipe().Does())
         {
@@ -1876,7 +1877,7 @@ SpellCastResult Spell::CheckCasterAuras() const
                 SpellAuraHolder* holder = itr->second;
                 SpellEntry const* pEntry = holder->GetSpellProto();
 
-                if ((GetSpellSchoolMask(pEntry) & school_immune) && !pEntry->HasAttribute(SPELL_ATTR_EX_UNAFFECTED_BY_SCHOOL_IMMUNE))
+                if ((GetSpellSchoolMask(pEntry) & school_immune) && !cast::RecipeOf(*pEntry).Says().ignoresSchoolImmunity)
                 {
                     continue;
                 }
@@ -2123,7 +2124,7 @@ uint32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spel
     }
 
     // Spell drain all exist power on cast (Only paladin lay of Hands)
-    if (spellInfo->HasAttribute(SPELL_ATTR_EX_DRAIN_ALL_POWER))
+    if (cast::RecipeOf(*spellInfo).Says().drainsAllPower)
     {
         // If power type - health drain all
         if (spellInfo->PowerType == POWER_HEALTH)
@@ -2177,7 +2178,7 @@ uint32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spel
         }
     }
 
-    if (spellInfo->HasAttribute(SPELL_ATTR_LEVEL_DAMAGE_CALCULATION))
+    if (cast::RecipeOf(*spellInfo).Says().damageScalesWithLevel)
     {
         powerCost = int32(powerCost / (1.117f * spellInfo->SpellLevel / caster->getLevel() - 0.1327f));
     }

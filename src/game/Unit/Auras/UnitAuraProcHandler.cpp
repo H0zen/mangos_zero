@@ -1676,7 +1676,7 @@ SpellAuraProcResult Unit::HandleRemoveByDamageChanceProc(Unit* pVictim, uint32 d
  */
 SpellAuraProcResult Unit::HandleInvisibilityAuraProc(Unit* pVictim, uint32 damage, Aura* triggeredByAura, SpellEntry const *procSpell, uint32 procFlag, uint32 procEx, uint32 cooldown)
 {
-    if (triggeredByAura->GetSpellProto()->HasAttribute(SPELL_ATTR_PASSIVE) || triggeredByAura->GetSpellProto()->HasAttribute(SPELL_ATTR_EX_CANT_BE_REFLECTED))
+    if (cast::RecipeOf(*triggeredByAura->GetSpellProto()).Says().passive || cast::RecipeOf(*triggeredByAura->GetSpellProto()).Says().cannotBeReflected)
     {
         return SPELL_AURA_PROC_FAILED;
     }

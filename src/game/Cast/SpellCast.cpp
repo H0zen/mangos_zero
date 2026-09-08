@@ -555,7 +555,7 @@ void Spell::SendSpellCooldown()
     Player* _player = (Player*)m_caster;
 
     // (1) have infinity cooldown but set at aura apply, (2) passive cooldown at triggering
-    if (m_spellInfo->HasAttribute(SPELL_ATTR_DISABLED_WHILE_ACTIVE) || m_spellInfo->HasAttribute(SPELL_ATTR_PASSIVE))
+    if (Recipe().Says().spentWhileActive || Recipe().Says().passive)
     {
         return;
     }
@@ -658,7 +658,7 @@ void Spell::update(uint32 difftime)
                     if (m_caster->hasUnitState(UNIT_STAT_CAN_NOT_REACT))
                     {
                         // certain channel spells are not interrupted
-                        if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX_CHANNELED_1) && !m_spellInfo->HasAttribute(SPELL_ATTR_EX3_UNK28))
+                        if (!Recipe().Says().channels && !Recipe().Says().survivesIncapacity)
                         {
                             cancel();
                         }
@@ -867,7 +867,7 @@ void Spell::finish(bool ok)
     }
 
     // Stop Attack for some spells
-    if (m_spellInfo->HasAttribute(SPELL_ATTR_STOP_ATTACK_TARGET))
+    if (Recipe().Says().stopsAttack)
     {
         m_caster->AttackStop();
     }

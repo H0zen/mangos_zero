@@ -66,6 +66,7 @@
 #include "PoolManager.h"
 #include "GameEventMgr.h"
 #include "CommandMgr.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Validates chat text and embedded shift-links against configured strictness rules.
@@ -480,7 +481,7 @@ bool ChatHandler::isValidChatMessage(const char* message)
                     if (linkedSpell)
                     {
                         // spells with that flag have a prefix of "$PROFESSION: "
-                        if (linkedSpell->HasAttribute(SPELL_ATTR_TRADESPELL))
+                        if (cast::RecipeOf(*linkedSpell).Says().tradeskill)
                         {
                             // lookup skillid
                             SkillLineAbilityMapBounds bounds = sSpellMgr.GetSkillLineAbilityMapBounds(linkedSpell->ID);

@@ -489,7 +489,7 @@ bool Unit::IsSpellBlocked(Unit* pCaster, SpellEntry const* spellEntry, WeaponAtt
     if (spellEntry)
     {
         // Some spells can not be blocked
-        if (spellEntry->HasAttribute(SPELL_ATTR_IMPOSSIBLE_DODGE_PARRY_BLOCK))
+        if (cast::RecipeOf(*spellEntry).Says().cannotBeAvoided)
         {
             return false;
         }
@@ -592,7 +592,7 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit* pVictim, SpellEntry const* spell)
 
     uint32 missChance = uint32(MeleeSpellMissChance(pVictim, attType, fullSkillDiff, spell) * 100.0f);
     // Roll miss
-    uint32 tmp = spell->HasAttribute(SPELL_ATTR_EX3_CANT_MISS) ? 0 : missChance;
+    uint32 tmp = cast::RecipeOf(*spell).Says().cannotMiss ? 0 : missChance;
     if (roll < tmp)
     {
         return SPELL_MISS_MISS;
@@ -624,7 +624,7 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit* pVictim, SpellEntry const* spell)
     bool canParry = true;
 
     // Same spells can not be parry/dodge
-    if (spell->HasAttribute(SPELL_ATTR_IMPOSSIBLE_DODGE_PARRY_BLOCK))
+    if (cast::RecipeOf(*spell).Says().cannotBeAvoided)
     {
         return SPELL_MISS_NONE;
     }
@@ -773,7 +773,7 @@ SpellMissInfo Unit::MagicSpellHitResult(Unit* pVictim, SpellEntry const* spell)
         HitChance = 9900;
     }
 
-    int32 tmp = spell->HasAttribute(SPELL_ATTR_EX3_CANT_MISS) ? 0 : (10000 - HitChance);
+    int32 tmp = cast::RecipeOf(*spell).Says().cannotMiss ? 0 : (10000 - HitChance);
 
     // Why isn't this urand aswell just as in MeleeSpellHitResult?
     int32 rand = irand(0, 10000);
@@ -812,7 +812,7 @@ SpellMissInfo Unit::SpellHitResult(Unit* pVictim, SpellEntry const* spell, bool 
     }
 
     // Check for immune
-    if (!wand && pVictim->IsImmuneToSpell(spell, this == pVictim) && !spell->HasAttribute(SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY))
+    if (!wand && pVictim->IsImmuneToSpell(spell, this == pVictim) && !cast::RecipeOf(*spell).Says().ignoresInvulnerability)
     {
         return SPELL_MISS_IMMUNE;
     }
@@ -825,7 +825,7 @@ SpellMissInfo Unit::SpellHitResult(Unit* pVictim, SpellEntry const* spell, bool 
     }
 
     // Check for immune (use charges)
-    if (pVictim->IsImmuneToDamage(schoolMask) && !spell->HasAttribute(SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY))
+    if (pVictim->IsImmuneToDamage(schoolMask) && !cast::RecipeOf(*spell).Says().ignoresInvulnerability)
     {
         return SPELL_MISS_IMMUNE;
     }

@@ -499,7 +499,7 @@ void Spell::SendChannelUpdate(uint32 time)
     if (time == 0)
     {
         // Reset farsight for some possessing auras of possessed summoned (as they might work with different aura types)
-        if (m_spellInfo->HasAttribute(SPELL_ATTR_EX_FARSIGHT) && m_caster->IsPlayer() && m_caster->GetCharmGuid() &&
+        if (Recipe().Says().farsight && m_caster->IsPlayer() && m_caster->GetCharmGuid() &&
             !IsSpellHaveAura(m_spellInfo, SPELL_AURA_MOD_POSSESS) && !IsSpellHaveAura(m_spellInfo, SPELL_AURA_MOD_POSSESS_PET))
         {
             Player* player = (Player*)m_caster;
@@ -635,6 +635,6 @@ void Spell::SendResurrectRequest(Player* target)
     data << sentName;
     data << uint8(m_caster->isSpiritHealer());
     // override delay sent with SMSG_CORPSE_RECLAIM_DELAY, set instant resurrection for spells with this attribute
-    data << uint8(!m_spellInfo->HasAttribute(SPELL_ATTR_EX3_IGNORE_RESURRECTION_TIMER));
+    data << uint8(!Recipe().Says().ignoresResurrectionTimer);
     target->GetSession()->SendPacket(&data);
 }

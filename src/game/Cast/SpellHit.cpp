@@ -181,7 +181,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
             if (real_caster && real_caster != unit)
             {
                 // can cause back attack (if detected)
-                if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX3_NO_INITIAL_AGGRO) && !Recipe().IsPositive() &&
+                if (!Recipe().Says().makesNoInitialThreat && !Recipe().IsPositive() &&
                     m_caster->IsVisibleForOrDetect(unit, unit, false))
                 {
                     if (!unit->IsInCombat() && !unit->IsPlayer() && ((Creature*)unit)->AI())
@@ -274,7 +274,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
 
         // trigger weapon enchants for weapon based spells; exclude spells that stop attack, because may break CC
         if (m_caster->IsPlayer() && m_spellInfo->EquippedItemClass == ITEM_CLASS_WEAPON &&
-            !m_spellInfo->HasAttribute(SPELL_ATTR_STOP_ATTACK_TARGET))
+            !Recipe().Says().stopsAttack)
         {
             ((Player*)m_caster)->CastItemCombatSpell(unitTarget, m_attackType);
         }
@@ -407,11 +407,11 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
             }
 
             // can cause back attack (if detected), stealth removed at Spell::cast if spell break it
-            if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX3_NO_INITIAL_AGGRO) && !Recipe().IsPositive() &&
+            if (!Recipe().Says().makesNoInitialThreat && !Recipe().IsPositive() &&
                 m_caster->IsVisibleForOrDetect(unit, unit, false))
             {
                 // use speedup check to avoid re-remove after above lines
-                if (m_spellInfo->HasAttribute(SPELL_ATTR_EX_NOT_BREAK_STEALTH))
+                if (Recipe().Says().doesNotBreakStealth)
                 {
                     unit->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
                 }
@@ -473,7 +473,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
                 realCaster->SetContestedPvP();
             }
 
-            if (unit->IsInCombat() && !m_spellInfo->HasAttribute(SPELL_ATTR_EX3_NO_INITIAL_AGGRO))
+            if (unit->IsInCombat() && !Recipe().Says().makesNoInitialThreat)
             {
                 realCaster->SetInCombatState(unit->GetCombatTimer() > 0);
                 unit->GetHostileRefManager().threatAssist(realCaster, 0.0f, m_spellInfo);

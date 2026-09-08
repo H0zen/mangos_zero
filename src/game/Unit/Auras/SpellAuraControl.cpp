@@ -1191,7 +1191,7 @@ void Aura::HandleModMechanicImmunity(bool apply, bool /*Real*/)
     uint32 misc  = m_modifier.m_miscvalue;
     Unit* target = GetTarget();
 
-    if (apply && GetSpellProto()->HasAttribute(SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY))
+    if (apply && Recipe().Says().dispelsOnImmunity)
     {
         uint32 mechanic = 1 << (misc - 1);
 
@@ -1211,7 +1211,7 @@ void Aura::HandleModMechanicImmunityMask(bool apply, bool /*Real*/)
 {
     uint32 mechanic  = m_modifier.m_miscvalue;
 
-    if (apply && GetSpellProto()->HasAttribute(SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY))
+    if (apply && Recipe().Says().dispelsOnImmunity)
     {
         GetTarget()->RemoveAurasAtMechanicImmunity(mechanic, GetId());
     }
@@ -1250,7 +1250,7 @@ void Aura::HandleAuraModEffectImmunity(bool apply, bool /*Real*/)
  */
 void Aura::HandleAuraModStateImmunity(bool apply, bool Real)
 {
-    if (apply && Real && GetSpellProto()->HasAttribute(SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY))
+    if (apply && Real && Recipe().Says().dispelsOnImmunity)
     {
         for (const auto* aura : GetTarget()->GetAurasByType(static_cast<AuraType>(m_modifier.m_miscvalue)))
         {
@@ -1276,14 +1276,14 @@ void Aura::HandleAuraModSchoolImmunity(bool apply, bool Real)
     target->ApplySpellImmune(GetId(), IMMUNITY_SCHOOL, m_modifier.m_miscvalue, apply);
 
     // remove all flag auras (they are positive, but they must be removed when you are immune)
-    if (GetSpellProto()->HasAttribute(SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY) && GetSpellProto()->HasAttribute(SPELL_ATTR_EX2_DAMAGE_REDUCED_SHIELD))
+    if (Recipe().Says().dispelsOnImmunity && Recipe().Says().shieldReducesDamage)
     {
         target->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION);
     }
 
     // TODO: optimalize this cycle - use RemoveAurasWithInterruptFlags call or something else
     if (Real && apply &&
-        GetSpellProto()->HasAttribute(SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY) &&
+        Recipe().Says().dispelsOnImmunity &&
         cast::Recipes().IsPositive(GetId()))                    // Only positive immunity removes auras
     {
         uint32 school_mask = m_modifier.m_miscvalue;
@@ -1294,7 +1294,7 @@ void Aura::HandleAuraModSchoolImmunity(bool apply, bool Real)
             ++next;
             SpellEntry const* spell = iter->second->GetSpellProto();
             if ((GetSpellSchoolMask(spell) & school_mask) &&   // Check for school mask
-                !spell->HasAttribute(SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY) &&   // Spells unaffected by invulnerability
+                !cast::RecipeOf(*spell).Says().ignoresInvulnerability &&   // Spells unaffected by invulnerability
                 !iter->second->IsPositive() &&         // Don't remove positive spells
                 spell->ID != GetId())                  // Don't remove self
             {

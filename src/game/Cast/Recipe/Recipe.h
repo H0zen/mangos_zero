@@ -189,6 +189,8 @@ namespace cast
         bool passive = false;                   ///< c6.b06
         bool hiddenFromClient = false;          ///< c6.b07
         bool notWhileShapeshifted = false;      ///< c6.b16
+        bool indoorsOnly = false;               ///< c6.b14 -- no row of 1.12 carries it
+        bool outdoorsOnly = false;              ///< c6.b15
         bool onlyWhileStealthed = false;        ///< c6.b17
         bool damageScalesWithLevel = false;     ///< c6.b19
         bool stopsAttack = false;               ///< c6.b20
@@ -211,7 +213,9 @@ namespace cast
         bool needsTargetOutOfCombat = false;    ///< c7.b08
         bool needsFacing = false;               ///< c7.b09
         bool makesNoThreat = false;             ///< c7.b10
+        bool farsight = false;                  ///< c7.b13
         bool channelTracksTarget = false;       ///< c7.b14 -- implies the channel bit, 106 of 106
+        bool dispelsOnImmunity = false;         ///< c7.b15
         bool ignoresSchoolImmunity = false;     ///< c7.b16
         bool cannotTargetSelf = false;          ///< c7.b19
         bool needsComboPointsOnTarget = false;  ///< c7.b20
@@ -224,12 +228,15 @@ namespace cast
         bool ignoresLineOfSight = false;        ///< c8.b02
         bool autoRepeats = false;               ///< c8.b05
         bool keepsWeaponTimer = false;          ///< c8.b17 -- 60 of its 61 rows are ranged
+        bool worksWithoutShapeshift = false;    ///< c8.b19
         bool shieldReducesDamage = false;       ///< c8.b21
         bool cannotCrit = false;                ///< c8.b29
         bool triggeredCanProc = false;          ///< c8.b30
         bool isFoodOrDrink = false;             ///< c8.b31
 
+        bool ignoresResurrectionTimer = false;  ///< c9.b04
         bool blockable = false;                 ///< c9.b03
+        bool castOnDead = false;                ///< c9.b12
         bool stacksPerCaster = false;           ///< c9.b07
         bool playersOnly = false;               ///< c9.b08
         bool needsMainHand = false;             ///< c9.b10 -- all 128 of its rows resolve as melee
@@ -241,6 +248,11 @@ namespace cast
         bool needsWand = false;                 ///< c9.b22
         bool needsOffHand = false;              ///< c9.b24
         bool takesNoDoneBonus = false;          ///< c9.b29
+
+        /// c9.b28. Nobody has established what the bit means; this is named for
+        /// what the server does with it -- a channel carrying it is not cancelled
+        /// when its caster stops being able to react.
+        bool survivesIncapacity = false;
     };
 
     /// The numbers a row reaches for in other tables. The book resolves them so

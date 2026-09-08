@@ -432,7 +432,7 @@ bool Unit::IsSpellCrit(Unit* pVictim, SpellEntry const* spellProto, SpellSchoolM
     }
 
     // not critting spell
-    if (spellProto->HasAttribute(SPELL_ATTR_EX2_CANT_CRIT))
+    if (cast::RecipeOf(*spellProto).Says().cannotCrit)
     {
         return false;
     }
@@ -843,8 +843,8 @@ bool Unit::IsImmuneToSpell(SpellEntry const* spellInfo, bool /*castOnSelf*/)
         }
     }
 
-    if (!spellInfo->HasAttribute(SPELL_ATTR_EX_UNAFFECTED_BY_SCHOOL_IMMUNE) &&          // unaffected by school immunity
-        !spellInfo->HasAttribute(SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY))           // can remove immune (by dispell or immune it)
+    if (!cast::RecipeOf(*spellInfo).Says().ignoresSchoolImmunity &&          // unaffected by school immunity
+        !cast::RecipeOf(*spellInfo).Says().dispelsOnImmunity)           // can remove immune (by dispell or immune it)
     {
         SpellImmuneList const& schoolList = m_immune.Of(IMMUNITY_SCHOOL);
         for (SpellImmuneList::const_iterator itr = schoolList.begin(); itr != schoolList.end(); ++itr)

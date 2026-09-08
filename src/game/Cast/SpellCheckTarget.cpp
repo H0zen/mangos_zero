@@ -74,6 +74,7 @@
 #include "SQLStorages.h"
 #include "DisableMgr.h"
 #include "Corpse.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Checks whether a target matches the spell's creature type restrictions.
@@ -257,7 +258,7 @@ bool Spell::CheckTarget(Unit* target, const cast::Operation& operation)
         }
     }
 
-    if (!target->IsPlayer() && m_spellInfo->HasAttribute(SPELL_ATTR_EX3_TARGET_ONLY_PLAYER) &&
+    if (!target->IsPlayer() && Recipe().Says().playersOnly &&
         operation.targetA != TARGET_SCRIPT && operation.targetA != TARGET_SELF)
     {
         return false;

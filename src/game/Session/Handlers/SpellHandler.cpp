@@ -444,7 +444,7 @@ void spells::CancelAura(Player& who, WorldPacket& recvPacket)
         return;
     }
 
-    if (spellInfo->HasAttribute(SPELL_ATTR_CANT_CANCEL))
+    if (cast::RecipeOf(*spellInfo).Says().cannotBeCancelled)
     {
         return;
     }

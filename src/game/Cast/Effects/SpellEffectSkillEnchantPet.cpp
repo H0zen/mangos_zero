@@ -72,6 +72,7 @@
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 #include "Geometry/Vector3.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Teaches a spell to the target player or pet.
@@ -590,7 +591,7 @@ void Spell::EffectEnchantItemTmp(const cast::Operation& operation)
         duration = 3600;                                     // 1 hour
     }
     // some fishing pole bonuses
-    else if (m_spellInfo->HasAttribute(SPELL_ATTR_HIDDEN_CLIENTSIDE))
+    else if (Recipe().Says().hiddenFromClient)
     {
         duration = 600;                                      // 10 mins
     }

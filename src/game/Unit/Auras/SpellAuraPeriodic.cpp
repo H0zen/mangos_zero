@@ -76,6 +76,7 @@
 #include "CellImpl.h"
 #include "Language.h"
 #include "TemporarySummon.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Applies special proc-trigger spell setup for specific aura spells.
@@ -668,7 +669,7 @@ void Aura::HandleModTotalPercentStat(bool apply, bool /*Real*/)
     }
 
     // recalculate current HP/MP after applying aura modifications (only for spells with 0x10 flag)
-    if (m_modifier.m_miscvalue == STAT_STAMINA && maxHPValue > 0 && GetSpellProto()->HasAttribute(SPELL_ATTR_ABILITY))
+    if (m_modifier.m_miscvalue == STAT_STAMINA && maxHPValue > 0 && Recipe().Says().ability)
     {
         // newHP = (curHP / maxHP) * newMaxHP = (newMaxHP * curHP) / maxHP -> which is better because no int -> double -> int conversion is needed
         uint32 newHPValue = (target->GetMaxHealth() * curHPValue) / maxHPValue;

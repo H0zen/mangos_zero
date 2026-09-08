@@ -426,6 +426,7 @@ class Aura
         const cast::Operation& Operation() const { return *m_operation; }
 
         SpellEntry const* GetSpellProto() const { return GetHolder()->GetSpellProto(); }
+        const cast::Recipe& Recipe() const { return GetHolder()->Recipe(); }
         uint32 GetId() const { return GetHolder()->GetSpellProto()->ID; }
         ObjectGuid const& GetCastItemGuid() const { return GetHolder()->GetCastItemGuid(); }
         ObjectGuid const& GetCasterGuid() const { return GetHolder()->GetCasterGuid(); }

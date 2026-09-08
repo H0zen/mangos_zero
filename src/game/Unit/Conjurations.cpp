@@ -24,6 +24,7 @@
 #include "SpellMgr.h"
 #include "Unit.h"
 #include "Utilities/Errors.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 void Conjurations::AddArea(DynamicObject* area)
 {
@@ -124,7 +125,7 @@ void Conjurations::AddObject(GameObject* object)
     // until the object goes. Item cooldowns and charge mods are not considered;
     // no such spell is known.
     SpellEntry const* madeBy = sSpellStore.LookupEntry(object->GetSpellId());
-    if (madeBy && madeBy->HasAttribute(SPELL_ATTR_DISABLED_WHILE_ACTIVE))
+    if (madeBy && cast::RecipeOf(*madeBy).Says().spentWhileActive)
     {
         static_cast<Player&>(m_owner).AddSpellAndCategoryCooldowns(madeBy, 0, nullptr, true);
     }
@@ -143,7 +144,7 @@ void Conjurations::RemoveObject(GameObject* object, bool destroy)
         if (m_owner.IsPlayer())
         {
             SpellEntry const* madeBy = sSpellStore.LookupEntry(spellId);
-            if (madeBy && madeBy->HasAttribute(SPELL_ATTR_DISABLED_WHILE_ACTIVE))
+            if (madeBy && cast::RecipeOf(*madeBy).Says().spentWhileActive)
             {
                 static_cast<Player&>(m_owner).SendCooldownEvent(madeBy);
             }

@@ -477,14 +477,14 @@ bool Player::IsNeedCastPassiveLikeSpellAtLearn(SpellEntry const* spellInfo) cons
         return true; // all stance req. cases, not have auarastate cases
     }
 
-    if (!spellInfo->HasAttribute(SPELL_ATTR_PASSIVE))
+    if (!cast::RecipeOf(*spellInfo).Says().passive)
     {
         return false;
     }
 
     // note: form passives activated with shapeshift spells be implemented by HandleShapeshiftBoosts instead of spell_learn_spell
     // talent dependent passives activated at form apply have proper stance data
-    bool need_cast = !spellInfo->ShapeshiftMask || (!form && spellInfo->HasAttribute(SPELL_ATTR_EX2_NOT_NEED_SHAPESHIFT));
+    bool need_cast = !spellInfo->ShapeshiftMask || (!form && cast::RecipeOf(*spellInfo).Says().worksWithoutShapeshift);
 
     // Check CasterAuraStates
     return need_cast && (!spellInfo->CasterAuraState || HasAuraState(AuraState(spellInfo->CasterAuraState)));
