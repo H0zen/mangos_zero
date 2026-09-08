@@ -180,10 +180,12 @@ struct TargetDistanceOrderNear
  * @param targetMode The implicit target mode.
  * @param targetUnitMap The unit list being populated.
  */
-void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList& targetUnitMap)
+void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, UnitList& targetUnitMap)
 {
+    const SpellEffectIndex effIndex = SpellEffectIndex(operation.slot);
+
     float radius;
-    uint32 EffectChainTarget = m_spellInfo->EffectChainTargets[effIndex];
+    uint32 EffectChainTarget = operation.chainTargets;
     uint32 unMaxTargets = m_spellInfo->MaxTargets;  // Get spell max affected targets
 
     GetSpellRangeAndRadius(effIndex, radius, EffectChainTarget, unMaxTargets);
@@ -402,14 +404,14 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         case TARGET_AREAEFFECT_INSTANT:
         {
             SpellTargets targetB = SPELL_TARGETS_AOE_DAMAGE;
-            switch (m_spellInfo->Effect[effIndex])
+            switch (operation.verb)
             {
                 case SPELL_EFFECT_QUEST_COMPLETE:
                     targetB = SPELL_TARGETS_ALL;
                     break;
                 default:
                     // Select friendly targets for positive effect
-                    if (Recipe().IsPositiveAt(effIndex))
+                    if (operation.positive)
                     {
                         targetB = SPELL_TARGETS_FRIENDLY;
                     }
@@ -465,11 +467,11 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         }
         case TARGET_AREAEFFECT_CUSTOM:
         {
-            if (m_spellInfo->Effect[effIndex] == SPELL_EFFECT_PERSISTENT_AREA_AURA)
+            if (operation.verb == SPELL_EFFECT_PERSISTENT_AREA_AURA)
             {
                 break;
             }
-            else if (m_spellInfo->Effect[effIndex] == SPELL_EFFECT_SUMMON)
+            else if (operation.verb == SPELL_EFFECT_SUMMON)
             {
                 targetUnitMap.push_back(m_caster);
                 break;
@@ -586,7 +588,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         case TARGET_ALL_ENEMY_IN_AREA_INSTANT:
         {
             // targets the ground, not the units in the area
-            switch (m_spellInfo->Effect[effIndex])
+            switch (operation.verb)
             {
                 case SPELL_EFFECT_PERSISTENT_AREA_AURA:
                     break;
@@ -725,7 +727,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         {
             SpellTargets targetB = SPELL_TARGETS_AOE_DAMAGE;
 
-            if (m_spellInfo->Effect[effIndex] == SPELL_EFFECT_SCRIPT_EFFECT)
+            if (operation.verb == SPELL_EFFECT_SCRIPT_EFFECT)
             {
                 targetB = SPELL_TARGETS_ALL;
             }
@@ -816,13 +818,13 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             break;
         case TARGET_ALL_ENEMY_IN_AREA_CHANNELED:
             // targets the ground, not the units in the area
-            if (m_spellInfo->Effect[effIndex] != SPELL_EFFECT_PERSISTENT_AREA_AURA)
+            if (operation.verb != SPELL_EFFECT_PERSISTENT_AREA_AURA)
             {
                 FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
             }
             break;
         case TARGET_MINION:
-            if (m_spellInfo->Effect[effIndex] != SPELL_EFFECT_DUEL)
+            if (operation.verb != SPELL_EFFECT_DUEL)
             {
                 targetUnitMap.push_back(m_caster);
             }
@@ -1044,7 +1046,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 // TODO - maybe use an (internal) value for the map for neat far teleport handling
 
                 // far-teleport spells are handled in SpellEffect, elsewise report an error about an unexpected map (spells are always locally)
-                if (st->target_mapId != m_caster->GetMapId() && m_spellInfo->Effect[effIndex] != SPELL_EFFECT_TELEPORT_UNITS)
+                if (st->target_mapId != m_caster->GetMapId() && operation.verb != SPELL_EFFECT_TELEPORT_UNITS)
                 {
                     sLog.outError("SPELL: wrong map (%u instead %u) target coordinates for spell ID %u", st->target_mapId, m_caster->GetMapId(), m_spellInfo->ID);
                 }
@@ -1067,7 +1069,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 // "at the base of", in difference to 0 which appear to be "directly in front of".
                 // TODO: some summoned will make caster be half inside summoned object. Need to fix
                 // that in the below code (nearpoint vs closepoint, etc).
-                if (m_spellInfo->EffectRadiusIndex[effIndex] == 0)
+                if (operation.radiusIndex == 0)
                 {
                     radius = 0.0f;
                 }
@@ -1095,7 +1097,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         {
             // add here custom effects that need default target.
             // FOR EVERY TARGET TYPE THERE IS A DIFFERENT FILL!!
-            switch (m_spellInfo->Effect[effIndex])
+            switch (operation.verb)
             {
                 case SPELL_EFFECT_DUMMY:
                 {
@@ -1170,7 +1172,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                         targetUnitMap.push_back(m_targets.getUnitTarget());
                     }
                     // Triggered spells have additional spell targets - cast them even if no explicit unit target is given (required for spell 50516 for example)
-                    else if (m_spellInfo->Effect[effIndex] == SPELL_EFFECT_TRIGGER_SPELL)
+                    else if (operation.verb == SPELL_EFFECT_TRIGGER_SPELL)
                     {
                         targetUnitMap.push_back(m_caster);
                     }
@@ -1249,7 +1251,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     }
                     break;
                 case SPELL_EFFECT_APPLY_AURA:
-                    switch (m_spellInfo->EffectAura[effIndex])
+                    switch (operation.aura)
                     {
                         case SPELL_AURA_ADD_FLAT_MODIFIER:  // some spell mods auras have 0 target modes instead expected TARGET_SELF(1) (and present for other ranks for same spell for example)
                         case SPELL_AURA_ADD_PCT_MODIFIER:
@@ -1267,7 +1269,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     // AreaAura
                     if ((m_spellInfo->Attributes == (SPELL_ATTR_NOT_SHAPESHIFT | SPELL_ATTR_DONT_AFFECT_SHEATH_STATE | SPELL_ATTR_CASTABLE_WHILE_MOUNTED | SPELL_ATTR_CASTABLE_WHILE_SITTING)) || (m_spellInfo->Attributes == SPELL_ATTR_NOT_SHAPESHIFT))
                     {
-                        SetTargetMap(effIndex, TARGET_AREAEFFECT_PARTY, targetUnitMap);
+                        SetTargetMap(operation, TARGET_AREAEFFECT_PARTY, targetUnitMap);
                     }
                     break;
                 case SPELL_EFFECT_SKIN_PLAYER_CORPSE:

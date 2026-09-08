@@ -144,10 +144,12 @@ CurrentSpellTypes Spell::GetCurrentContainer()
  * @param eff The effect index being validated.
  * @return True if the target is valid for the effect; otherwise, false.
  */
-bool Spell::CheckTarget(Unit* target, SpellEffectIndex eff)
+bool Spell::CheckTarget(Unit* target, const cast::Operation& operation)
 {
+    const SpellEffectIndex eff = SpellEffectIndex(operation.slot);
+
     // Check targets for creature type mask and remove not appropriate (skip explicit self target case, maybe need other explicit targets)
-    if (m_spellInfo->ImplicitTargetA[eff] != TARGET_SELF)
+    if (operation.targetA != TARGET_SELF)
     {
         if (!CheckTargetCreatureType(target))
         {
@@ -169,14 +171,14 @@ bool Spell::CheckTarget(Unit* target, SpellEffectIndex eff)
         // in case TARGET_SCRIPT target selected by server always and can't be cheated
         if ((!m_IsTriggeredSpell || target != m_targets.getUnitTarget()) &&
             target->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE) &&
-            m_spellInfo->ImplicitTargetA[eff] != TARGET_SCRIPT &&
-            m_spellInfo->ImplicitTargetB[eff] != TARGET_SCRIPT &&
-            m_spellInfo->ImplicitTargetA[eff] != TARGET_AREAEFFECT_INSTANT &&
-            m_spellInfo->ImplicitTargetB[eff] != TARGET_AREAEFFECT_INSTANT &&
-            m_spellInfo->ImplicitTargetA[eff] != TARGET_AREAEFFECT_CUSTOM &&
-            m_spellInfo->ImplicitTargetB[eff] != TARGET_AREAEFFECT_CUSTOM &&
-            m_spellInfo->ImplicitTargetA[eff] != TARGET_NARROW_FRONTAL_CONE &&
-            m_spellInfo->ImplicitTargetB[eff] != TARGET_NARROW_FRONTAL_CONE)
+            operation.targetA != TARGET_SCRIPT &&
+            operation.targetB != TARGET_SCRIPT &&
+            operation.targetA != TARGET_AREAEFFECT_INSTANT &&
+            operation.targetB != TARGET_AREAEFFECT_INSTANT &&
+            operation.targetA != TARGET_AREAEFFECT_CUSTOM &&
+            operation.targetB != TARGET_AREAEFFECT_CUSTOM &&
+            operation.targetA != TARGET_NARROW_FRONTAL_CONE &&
+            operation.targetB != TARGET_NARROW_FRONTAL_CONE)
         {
             return false;
         }
@@ -199,7 +201,7 @@ bool Spell::CheckTarget(Unit* target, SpellEffectIndex eff)
     // Check targets for LOS visibility (except spells without range limitations )
     if (!DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->ID, nullptr, SPELL_DISABLE_LOS))
     {
-        switch (m_spellInfo->Effect[eff])
+        switch (operation.verb)
         {
             case SPELL_EFFECT_SUMMON_PLAYER:                    // from anywhere
                 break;
@@ -256,7 +258,7 @@ bool Spell::CheckTarget(Unit* target, SpellEffectIndex eff)
     }
 
     if (!target->IsPlayer() && m_spellInfo->HasAttribute(SPELL_ATTR_EX3_TARGET_ONLY_PLAYER) &&
-        m_spellInfo->ImplicitTargetA[eff] != TARGET_SCRIPT && m_spellInfo->ImplicitTargetA[eff] != TARGET_SELF)
+        operation.targetA != TARGET_SCRIPT && operation.targetA != TARGET_SELF)
     {
         return false;
     }

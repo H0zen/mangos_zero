@@ -430,7 +430,7 @@ class Spell
 
         template<typename T> Occupant* FindCorpseUsing();
 
-        bool CheckTarget(Unit* target, SpellEffectIndex eff);
+        bool CheckTarget(Unit* target, const cast::Operation& operation);
         bool CanAutoCast(Unit* target);
 
         static void  SendCastResult(Player* caster, SpellEntry const* spellInfo, SpellCastResult result);
@@ -610,7 +610,7 @@ class Spell
         // Spell target filling
         //*****************************************
         void FillTargetMap();
-        void SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList& targetUnitMap);
+        void SetTargetMap(const cast::Operation& operation, uint32 targetMode, UnitList& targetUnitMap);
 
         void FillAreaTargets(UnitList& targetUnitMap, float radius, SpellNotifyPushType pushType, SpellTargets spellTargets, Occupant* originalCaster = nullptr);
         void FillRaidOrPartyTargets(UnitList& targetUnitMap, Unit* member, float radius, bool raid, bool withPets, bool withcaster);

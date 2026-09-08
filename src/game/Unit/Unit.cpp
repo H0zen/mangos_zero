@@ -3391,7 +3391,7 @@ Unit* Unit::SelectMagnetTarget(Unit* victim, Spell* spell, SpellEffectIndex eff)
         {
             if (Unit* magnet = aura->GetCaster())
             {
-                if (magnet->IsAlive() && HasLineOfSight(*magnet, *this) && spell->CheckTarget(magnet, eff))
+                if (magnet->IsAlive() && HasLineOfSight(*magnet, *this) && spell->CheckTarget(magnet, spell->Recipe().At(static_cast<uint8>(eff))))
                 {
                     if (SpellAuraHolder* holder = aura->GetHolder())
                     {
