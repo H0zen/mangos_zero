@@ -69,6 +69,7 @@
 #include "DisableMgr.h"
 #include "CinematicFlyover.h"
 #include <cmath>
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Sends the player's initial action bar state to the client.
@@ -165,7 +166,7 @@ bool Player::IsActionButtonDataValid(uint8 button, uint32 action, uint8 type, Pl
                     sLog.outError("Spell action %u not added into button %u for player %s: player don't known this spell", action, button, player->GetName());
                     return false;
                 }
-                else if (IsPassiveSpell(spellProto))
+                else if ((cast::RecipeOf(*spellProto).Starts() == cast::Start::Passive))
                 {
                     sLog.outError("Spell action %u not added into button %u for player %s: spell is passive", action, button, player->GetName());
                     return false;

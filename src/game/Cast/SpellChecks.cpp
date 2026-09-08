@@ -608,7 +608,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
     // not let players cast spells at mount (and let do it to creatures)
     if (m_caster->IsMounted() && m_caster->IsPlayer() && !m_IsTriggeredSpell &&
-        !IsPassiveSpell(m_spellInfo) && !m_spellInfo->HasAttribute(SPELL_ATTR_CASTABLE_WHILE_MOUNTED))
+        !(Recipe().Starts() == cast::Start::Passive) && !Recipe().Says().castableWhileMounted)
     {
         if (m_caster->IsTaxiFlying())
         {
@@ -621,7 +621,7 @@ SpellCastResult Spell::CheckCast(bool strict)
     }
 
     // always (except passive spells) check items (focus object can be required for any type casts)
-    if (!IsPassiveSpell(m_spellInfo))
+    if (!(Recipe().Starts() == cast::Start::Passive))
     {
         SpellCastResult castResult = CheckItems();
         if (castResult != SPELL_CAST_OK)

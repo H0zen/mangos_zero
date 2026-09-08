@@ -67,6 +67,7 @@
 #include "Fleet.h"
 
 #include <math.h>
+#include "Cast/Recipe/RecipeBook.h"
 
 float baseMoveSpeed[MAX_MOVE_TYPE] =
 {
@@ -3092,7 +3093,7 @@ void Unit::ModifyAuraState(AuraState flag, bool apply)
                         continue;
                     }
                     SpellEntry const* spellInfo = sSpellStore.LookupEntry(itr->first);
-                    if (!spellInfo || !IsPassiveSpell(spellInfo))
+                    if (!spellInfo || !(cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive))
                     {
                         continue;
                     }
@@ -4408,7 +4409,7 @@ void CharmInfo::InitPossessCreateSpells()
     {
         uint32 const spellId = m_driven.Knowing().Slot(x);
 
-        if (IsPassiveSpell(spellId))
+        if (cast::Recipes().StartsAs(spellId, cast::Start::Passive))
         {
             m_driven.CastSpell(&m_driven, spellId, true);
         }
@@ -4442,7 +4443,7 @@ void CharmInfo::InitCharmCreateSpells()
             continue;
         }
 
-        if (IsPassiveSpell(spellId))
+        if (cast::Recipes().StartsAs(spellId, cast::Start::Passive))
         {
             m_driven.CastSpell(&m_driven, spellId, true);
             m_charmspells[x].SetActionAndType(spellId, ACT_PASSIVE);
@@ -4546,7 +4547,7 @@ bool CharmInfo::RemoveSpellFromActionBar(uint32 spell_id)
  */
 void CharmInfo::ToggleCreatureAutocast(uint32 spellid, bool apply)
 {
-    if (IsPassiveSpell(spellid))
+    if (cast::Recipes().StartsAs(spellid, cast::Start::Passive))
     {
         return;
     }

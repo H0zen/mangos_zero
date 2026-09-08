@@ -68,4 +68,11 @@ namespace cast
         static RecipeBook book;
         return book;
     }
+
+    const Recipe& RecipeOf(const SpellEntry& row)
+    {
+        const Recipe* recipe = Recipes().Find(row.ID);
+        MANGOS_ASSERT(recipe != nullptr);
+        return *recipe;
+    }
 }

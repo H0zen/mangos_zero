@@ -86,7 +86,7 @@ void Spell::cancel()
     }
 
     // channeled spells don't display interrupted message even if they are interrupted, possible other cases with no "Interrupted" message
-    bool sendInterrupt = IsChanneledSpell(m_spellInfo) ? false : true;
+    bool sendInterrupt = Recipe().Starts() == cast::Start::Channelled ? false : true;
 
     m_autoRepeat = false;
     switch (m_spellState)
@@ -363,7 +363,7 @@ void Spell::handle_immediate()
     _handle_immediate_phase();
 
     // start channeling if applicable (after _handle_immediate_phase for get persistent effect dynamic object for channel target
-    if (IsChanneledSpell(m_spellInfo) && m_duration)
+    if (Recipe().Starts() == cast::Start::Channelled && m_duration)
     {
         m_spellState = SPELL_STATE_CASTING;
         SendChannelStart(m_duration);

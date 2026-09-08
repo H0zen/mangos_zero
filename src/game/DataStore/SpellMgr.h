@@ -41,6 +41,7 @@
 
 
 #include <map>
+#include "Cast/Recipe/RecipeBook.h"
 
 class Player;
 class Spell;
@@ -272,19 +273,9 @@ bool IsSingleFromSpellSpecificSpellRanksPerTarget(SpellSpecific spellSpec1, Spel
  */
 bool IsSingleFromSpellSpecificPerTarget(SpellSpecific spellSpec1, SpellSpecific spellSpec2);
 
-/**
- * Checks whether the specified spell id is passive.
- */
-bool IsPassiveSpell(uint32 spellId);
-
-/**
- * Checks whether the specified spell entry is passive.
- */
-bool IsPassiveSpell(SpellEntry const* spellProto);
-
 inline bool IsPassiveSpellStackableWithRanks(SpellEntry const* spellProto)
 {
-    if (!IsPassiveSpell(spellProto))
+    if (!(cast::RecipeOf(*spellProto).Starts() == cast::Start::Passive))
     {
         return false;
     }
@@ -663,11 +654,6 @@ inline bool isSpellBreakStealth(SpellEntry const* spellInfo)
     return !spellInfo->HasAttribute(SPELL_ATTR_EX_NOT_BREAK_STEALTH);
 }
 
-inline bool IsAutoRepeatRangedSpell(SpellEntry const* spellInfo)
-{
-    return spellInfo->HasAttribute(SPELL_ATTR_RANGED) && spellInfo->HasAttribute(SPELL_ATTR_EX2_AUTOREPEAT_FLAG);
-}
-
 inline bool IsSpellRequiresRangedAP(SpellEntry const* spellInfo)
 {
     return (spellInfo->SpellClassSet == SPELLFAMILY_HUNTER && spellInfo->DefenseType != SPELL_DAMAGE_CLASS_MELEE);
@@ -677,11 +663,6 @@ inline bool IsSpellRequiresRangedAP(SpellEntry const* spellInfo)
  * Returns the cast error produced when attempting to cast a spell in the specified form.
  */
 SpellCastResult GetErrorAtShapeshiftedCast(SpellEntry const* spellInfo, uint32 form);
-
-inline bool IsChanneledSpell(SpellEntry const* spellInfo)
-{
-    return spellInfo->HasAttribute(SPELL_ATTR_EX_CHANNELED_1) || spellInfo->HasAttribute(SPELL_ATTR_EX_CHANNELED_2);
-}
 
 inline bool IsNeedCastSpellAtFormApply(SpellEntry const* spellInfo, ShapeshiftForm form)
 {

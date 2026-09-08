@@ -127,7 +127,7 @@ CurrentSpellTypes Spell::GetCurrentContainer()
     {
         return (CURRENT_AUTOREPEAT_SPELL);
     }
-    else if (IsChanneledSpell(m_spellInfo))
+    else if (Recipe().Starts() == cast::Start::Channelled)
     {
         return (CURRENT_CHANNELED_SPELL);
     }

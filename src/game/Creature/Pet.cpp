@@ -39,6 +39,7 @@
 #include "Transports.h"
 #include "Movement/Spline/MoveSpline.h"
 #include "Movement/Spline/MoveSplineInit.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 // numbers represent minutes * 100 while happy (you get 100 loyalty points per min while happy)
 uint32 const LevelUpLoyalty[6] =
@@ -430,7 +431,7 @@ bool Pet::CanTakeMoreActiveSpells(uint32 spellid)
     uint8  activecount = 1;
     uint32 chainstartstore[ACTIVE_SPELLS_MAX];
 
-    if (IsPassiveSpell(spellid))
+    if (cast::Recipes().StartsAs(spellid, cast::Start::Passive))
     {
         return true;
     }
@@ -444,7 +445,7 @@ bool Pet::CanTakeMoreActiveSpells(uint32 spellid)
             continue;
         }
 
-        if (IsPassiveSpell(itr->first))
+        if (cast::Recipes().StartsAs(itr->first, cast::Start::Passive))
         {
             continue;
         }

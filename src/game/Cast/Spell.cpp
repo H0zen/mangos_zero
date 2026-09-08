@@ -400,6 +400,8 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
     MANGOS_ASSERT(info == sSpellStore.LookupEntry(info->ID));   // `info` must be pointer to sSpellStore element
 
     m_spellInfo = info;
+    m_recipe = cast::Recipes().Find(info->ID);
+    MANGOS_ASSERT(m_recipe != nullptr);                     // the book is filled before the world runs
     m_triggeredBySpellInfo = triggeredBy;
     m_caster = caster;
     m_selfContainer = nullptr;
@@ -452,7 +454,7 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
     m_triggeredByAuraSpell  = nullptr;
 
     // Auto Shot & Shoot (wand)
-    m_autoRepeat = IsAutoRepeatRangedSpell(m_spellInfo);
+    m_autoRepeat = Recipe().Starts() == cast::Start::AutoRepeat;
 
     m_powerCost = 0;                                        // setup to correct value in Spell::prepare, don't must be used before.
     m_casttime = 0;                                         // setup to correct value in Spell::prepare, don't must be used before.
@@ -899,7 +901,7 @@ void Spell::UpdatePointers()
 bool Spell::IsNeedSendToClient() const
 {
     return m_spellInfo->SpellVisualID != 0 ||
-        IsChanneledSpell(m_spellInfo) ||
+        Recipe().Starts() == cast::Start::Channelled ||
         m_spellInfo->Speed > 0.0f ||
         (!m_triggeredByAuraSpell && !m_IsTriggeredSpell);
 }
@@ -1014,7 +1016,7 @@ bool SpellEvent::Execute(uint64 e_time, uint32 p_time)
             {
                 // no, we aren't, do the typical update
                 // check, if we have channeled spell on our hands
-                if (IsChanneledSpell(m_Spell->m_spellInfo))
+                if (m_Spell->Recipe().Starts() == cast::Start::Channelled)
                 {
                     // evented channeled spell is processed separately, casted once after delay, and not destroyed till finish
                     // check, if we have casting anything else except this channeled spell and autorepeat

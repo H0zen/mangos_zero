@@ -66,6 +66,7 @@
 #include "GameEventMgr.h"
 #include "CommandMgr.h"
 #include "ObjectLookup.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 
 // Supported shift-links (client generated and server side)
@@ -1889,7 +1890,7 @@ void ChatHandler::ShowSpellListHelper(Player* target, SpellEntry const* spellInf
     uint32 talentCost = GetTalentSpellCost(id);
 
     bool talent = (talentCost > 0);
-    bool passive = IsPassiveSpell(spellInfo);
+    bool passive = (cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive);
     bool active = target && target->HasAura(id);
 
     // unit32 used to prevent interpreting uint8 as char at output

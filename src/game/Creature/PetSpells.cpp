@@ -39,6 +39,7 @@
 #include "Transports.h"
 #include "Movement/Spline/MoveSpline.h"
 #include "Movement/Spline/MoveSplineInit.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Loads saved pet spell cooldowns from the database.
@@ -344,7 +345,7 @@ void Pet::_SaveAuras()
 
         // skip all holders from spells that are passive or channeled
         // do not save single target holders (unless they were cast by the player)
-        if (save && !holder->IsPassive() && !IsChanneledSpell(holder->GetSpellProto()) && (holder->GetCasterGuid() == GetObjectGuid() || holder->GetTrackedAuraType() != TRACK_AURA_TYPE_NOT_TRACKED))
+        if (save && !holder->IsPassive() && !(cast::RecipeOf(*holder->GetSpellProto()).Starts() == cast::Start::Channelled) && (holder->GetCasterGuid() == GetObjectGuid() || holder->GetTrackedAuraType() != TRACK_AURA_TYPE_NOT_TRACKED))
         {
             int32  damage[MAX_EFFECT_INDEX];
             uint32 periodicTime[MAX_EFFECT_INDEX];
@@ -463,7 +464,7 @@ bool Pet::addSpell(uint32 spell_id, ActiveStates active /*= ACT_DECIDE*/, PetSpe
 
     if (active == ACT_DECIDE)                               // active was not used before, so we save it's autocast/passive state here
     {
-        if (IsPassiveSpell(spellInfo))
+        if ((cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive))
         {
             newspell.active = ACT_PASSIVE;
         }
@@ -514,7 +515,7 @@ bool Pet::addSpell(uint32 spell_id, ActiveStates active /*= ACT_DECIDE*/, PetSpe
 
     m_spells[spell_id] = newspell;
 
-    if (IsPassiveSpell(spellInfo))
+    if ((cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive))
     {
         CastSpell(this, spell_id, true);
     }
@@ -691,7 +692,7 @@ void Pet::InitPetCreateSpells()
                 petspellid = learn_spellproto->EffectTriggerSpell[0];
                 if (p_owner && !p_owner->HasSpell(learn_spellproto->ID))
                 {
-                    if (IsPassiveSpell(petspellid))         // learn passive skills when tamed, not sure if thats right
+                    if (cast::Recipes().StartsAs(petspellid, cast::Start::Passive))         // learn passive skills when tamed, not sure if thats right
                     {
                         p_owner->learnSpell(learn_spellproto->ID, false);
                     }
@@ -764,7 +765,7 @@ uint32 Pet::resetTalentsCost() const
  */
 void Pet::ToggleAutocast(uint32 spellid, bool apply)
 {
-    if (IsPassiveSpell(spellid))
+    if (cast::Recipes().StartsAs(spellid, cast::Start::Passive))
     {
         return;
     }

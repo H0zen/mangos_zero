@@ -57,6 +57,7 @@
 #include "CreatureAI.h"
 #include "Util.h"
 #include "Pet.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Handles pet action bar commands, reactions, and spell casts.
@@ -265,7 +266,7 @@ void pets::PetAction(Player& who, WorldPacket& recv_data)
             }
 
             // do not cast not learned spells
-            if (!pet->HasSpell(spellid) || IsPassiveSpell(spellInfo))
+            if (!pet->HasSpell(spellid) || (cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive))
             {
                 return;
             }
@@ -771,7 +772,7 @@ void pets::PetSpellAutocast(Player& who, WorldPacket& recvPacket)
     }
 
     // do not add not learned spells/ passive spells
-    if (!pet->HasSpell(spellid) || IsPassiveSpell(spellid))
+    if (!pet->HasSpell(spellid) || cast::Recipes().StartsAs(spellid, cast::Start::Passive))
     {
         return;
     }
@@ -833,7 +834,7 @@ void pets::PetCastSpell(Player& who, WorldPacket& recvPacket)
     }
 
     // do not cast not learned spells
-    if (!pet->HasSpell(spellid) || IsPassiveSpell(spellInfo))
+    if (!pet->HasSpell(spellid) || (cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive))
     {
         return;
     }

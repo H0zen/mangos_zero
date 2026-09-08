@@ -36,6 +36,7 @@
 #include "Spell.h"
 #include "Unit.h"
 #include "World.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Checks whether a skill line is a primary profession.
@@ -245,7 +246,7 @@ uint32 GetSpellCastTime(SpellEntry const* spellInfo, Spell const* spell)
  */
 uint32 GetSpellCastTimeForBonus(SpellEntry const* spellProto, DamageEffectType damagetype)
 {
-    uint32 CastingTime = !IsChanneledSpell(spellProto) ? GetSpellCastTime(spellProto) : GetSpellDuration(spellProto);
+    uint32 CastingTime = !(cast::RecipeOf(*spellProto).Starts() == cast::Start::Channelled) ? GetSpellCastTime(spellProto) : GetSpellDuration(spellProto);
 
     if (CastingTime > 7000)
     {
@@ -256,7 +257,7 @@ uint32 GetSpellCastTimeForBonus(SpellEntry const* spellProto, DamageEffectType d
         CastingTime = 1500;
     }
 
-    if (damagetype == DOT && !IsChanneledSpell(spellProto))
+    if (damagetype == DOT && !(cast::RecipeOf(*spellProto).Starts() == cast::Start::Channelled))
     {
         CastingTime = 3500;
     }
@@ -444,7 +445,7 @@ float CalculateDefaultCoefficient(SpellEntry const* spellProto, DamageEffectType
     float DotFactor = 1.0f;
     if (damagetype == DOT)
     {
-        if (!IsChanneledSpell(spellProto))
+        if (!(cast::RecipeOf(*spellProto).Starts() == cast::Start::Channelled))
         {
             DotFactor = GetSpellDuration(spellProto) / 15000.0f;
         }
@@ -504,27 +505,12 @@ WeaponAttackType GetWeaponAttackType(SpellEntry const* spellInfo)
  * @param spellId The spell id.
  * @return true if the spell is passive; otherwise false.
  */
-bool IsPassiveSpell(uint32 spellId)
-{
-    SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellId);
-    if (!spellInfo)
-    {
-        return false;
-    }
-    return IsPassiveSpell(spellInfo);
-}
-
 /**
  * @brief Checks whether a spell entry is passive.
  *
  * @param spellInfo The spell entry.
  * @return true if the spell is passive; otherwise false.
  */
-bool IsPassiveSpell(SpellEntry const* spellInfo)
-{
-    return spellInfo->HasAttribute(SPELL_ATTR_PASSIVE);
-}
-
 /**
  * @brief Checks whether two spells cannot stack because of matching aura data.
  *
@@ -1580,7 +1566,7 @@ bool SpellMgr::IsRankSpellDueToSpell(SpellEntry const* spellInfo_1, uint32 spell
  */
 bool SpellMgr::canStackSpellRanksInSpellBook(SpellEntry const* spellInfo) const
 {
-    if (IsPassiveSpell(spellInfo))                          // ranked passive spell
+    if (cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive)                          // ranked passive spell
     {
         return false;
     }
@@ -2708,7 +2694,7 @@ SpellEntry const* SpellMgr::SelectAuraRankForLevel(SpellEntry const* spellInfo, 
     }
 
     // ignore selection for passive spells
-    if (IsPassiveSpell(spellInfo))
+    if (cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive)
     {
         return spellInfo;
     }

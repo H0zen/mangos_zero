@@ -52,6 +52,7 @@
 #include "ScriptMgr.h"
 #include "Totem.h"
 #include "SpellAuras.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Handles use-item requests and casts the item's use spell.
@@ -365,7 +366,7 @@ void spells::CastSpell(Player& who, WorldPacket& recvPacket)
     if (mover->IsPlayer())
     {
         // not have spell in spellbook or spell passive and not casted by client
-        if (!((Player*)mover)->HasActiveSpell(spellId) || IsPassiveSpell(spellInfo))
+        if (!((Player*)mover)->HasActiveSpell(spellId) || (cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive))
         {
             sLog.outError("World: Player %u casts spell %u which he shouldn't have", mover->GetGUIDLow(), spellId);
             // cheater? kick? ban?
@@ -376,7 +377,7 @@ void spells::CastSpell(Player& who, WorldPacket& recvPacket)
     else
     {
         // not have spell in spellbook or spell passive and not casted by client
-        if (!((Creature*)mover)->HasSpell(spellId) || IsPassiveSpell(spellInfo))
+        if (!((Creature*)mover)->HasSpell(spellId) || (cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive))
         {
             // cheater? kick? ban?
             recvPacket.rpos(recvPacket.wpos());             // prevent spam at ignore packet
@@ -448,7 +449,7 @@ void spells::CancelAura(Player& who, WorldPacket& recvPacket)
         return;
     }
 
-    if (IsPassiveSpell(spellInfo))
+    if ((cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive))
     {
         return;
     }
@@ -483,7 +484,7 @@ void spells::CancelAura(Player& who, WorldPacket& recvPacket)
     }
 
     // channeled spell case (it currently casted then)
-    if (IsChanneledSpell(spellInfo))
+    if ((cast::RecipeOf(*spellInfo).Starts() == cast::Start::Channelled))
     {
         if (Spell* curSpell = who.GetCurrentSpell(CURRENT_CHANNELED_SPELL))
         {

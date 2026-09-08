@@ -75,6 +75,7 @@
 #include "SQLStorages.h"
 #include "LFGMgr.h"
 #include "DisableMgr.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 #define PLAYER_SKILL_INDEX(x)       (PLAYER_SKILL_INFO_1_1 + ((x)*3))
 
@@ -426,7 +427,7 @@ void Player::_SaveAuras()
         // save singleTarget auras if self cast.
         bool selfCastHolder = holder->GetCasterGuid() == GetObjectGuid();
         TrackedAuraType trackedType = holder->GetTrackedAuraType();
-        if (!holder->IsPassive() && !IsChanneledSpell(holder->GetSpellProto()) &&
+        if (!holder->IsPassive() && !(cast::RecipeOf(*holder->GetSpellProto()).Starts() == cast::Start::Channelled) &&
             (trackedType == TRACK_AURA_TYPE_NOT_TRACKED || (trackedType == TRACK_AURA_TYPE_SINGLE_TARGET && selfCastHolder)))
         {
             int32  damage[MAX_EFFECT_INDEX];

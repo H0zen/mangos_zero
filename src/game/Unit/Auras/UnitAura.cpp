@@ -62,6 +62,7 @@
 #include "GameTime.h"
 #include <math.h>
 #include <stdarg.h>
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Sums all aura modifiers of a given type.
@@ -452,7 +453,7 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder* holder)
     }
 
     // normal spell or passive auras not stackable with other ranks
-    if (!IsPassiveSpell(aurSpellInfo) || !IsPassiveSpellStackableWithRanks(aurSpellInfo))
+    if (!(cast::RecipeOf(*aurSpellInfo).Starts() == cast::Start::Passive) || !IsPassiveSpellStackableWithRanks(aurSpellInfo))
     {
         if (!RemoveConflictingAuras(holder))
         {
@@ -622,7 +623,7 @@ bool Unit::RemoveConflictingAuras(SpellAuraHolder* holder)
     uint32 spellId = holder->GetId();
 
     // passive spell special case (only non stackable with ranks)
-    if (IsPassiveSpell(spellProto))
+    if ((cast::RecipeOf(*spellProto).Starts() == cast::Start::Passive))
     {
         if (IsPassiveSpellStackableWithRanks(spellProto))
         {
@@ -675,7 +676,7 @@ bool Unit::RemoveConflictingAuras(SpellAuraHolder* holder)
         uint32 i_spellId = i_spellProto->ID;
 
         // early checks that spellId is passive non stackable spell
-        if (IsPassiveSpell(i_spellProto))
+        if ((cast::RecipeOf(*i_spellProto).Starts() == cast::Start::Passive))
         {
             // passive non-stackable spells not stackable only for same caster
             if (holder->GetCasterGuid() != i->second->GetCasterGuid())
@@ -1147,7 +1148,7 @@ void Unit::RemoveHolder(SpellAuraHolder* holder, AuraRemoveMode mode)
     SpellEntry const* AurSpellInfo = holder->GetSpellProto();
     Totem* statue = nullptr;
     Unit* caster = holder->GetCaster();
-    if (IsChanneledSpell(AurSpellInfo) && caster)
+    if ((cast::RecipeOf(*AurSpellInfo).Starts() == cast::Start::Channelled) && caster)
     {
         if (caster->IsCreature() && ((Creature*)caster)->IsTotem() && ((Totem*)caster)->GetTotemType() == TOTEM_STATUE)
         {
@@ -1192,7 +1193,7 @@ void Unit::RemoveHolder(SpellAuraHolder* holder, AuraRemoveMode mode)
         delete holder;
     }
 
-    if (mode != AURA_REMOVE_BY_EXPIRE && IsChanneledSpell(AurSpellInfo) && !IsAreaOfEffectSpell(AurSpellInfo) &&
+    if (mode != AURA_REMOVE_BY_EXPIRE && (cast::RecipeOf(*AurSpellInfo).Starts() == cast::Start::Channelled) && !IsAreaOfEffectSpell(AurSpellInfo) &&
         caster && caster->GetObjectGuid() != GetObjectGuid())
     {
         caster->InterruptSpell(CURRENT_CHANNELED_SPELL);

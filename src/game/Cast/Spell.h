@@ -63,6 +63,8 @@
 #include "LootMgr.h"
 #include "Unit.h"
 #include "Player.h"
+#include "Cast/Recipe/Recipe.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 class WorldSession;
 class WorldPacket;
@@ -449,6 +451,11 @@ class Spell
         SpellEntry const* GetSpellBonusLevelPenaltySpell(SpellEntry const* spellProto) const;
 
         SpellEntry const* m_spellInfo;
+
+        /// Everything the row already answered, worked out once at load.
+        const cast::Recipe& Recipe() const { return *m_recipe; }
+
+        const cast::Recipe* m_recipe;
         SpellEntry const* m_triggeredBySpellInfo;
         int32 m_currentBasePoints[MAX_EFFECT_INDEX];        // cache SpellEntry::CalculateSimpleValue and use for set custom base points
         Item* m_CastItem;
@@ -470,11 +477,11 @@ class Spell
         }
         bool IsNextMeleeSwingSpell() const
         {
-            return m_spellInfo->HasAttribute(SPELL_ATTR_ON_NEXT_SWING_1) || m_spellInfo->HasAttribute(SPELL_ATTR_ON_NEXT_SWING_2);
+            return Recipe().Starts() == cast::Start::NextSwing;
         }
         bool IsRangedSpell() const
         {
-            return  m_spellInfo->HasAttribute(SPELL_ATTR_RANGED);
+            return Recipe().Says().ranged;
         }
         bool IsChannelActive() const { return m_caster->GetUInt32Value(UNIT_CHANNEL_SPELL) != 0; }
         bool IsMeleeAttackResetSpell() const { return !m_IsTriggeredSpell && (m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_AUTOATTACK);  }

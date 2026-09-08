@@ -70,6 +70,7 @@
 #include "LFGMgr.h"
 #include "DisableMgr.h"
 #include <cmath>
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Adds or updates a spell entry in the player's spellbook.
@@ -874,7 +875,7 @@ bool Player::resetTalents(bool no_cost)
         {
             if (talentInfo->RankID[j])
             {
-                removeSpell(talentInfo->RankID[j], !IsPassiveSpell(talentInfo->RankID[j]), false);
+                removeSpell(talentInfo->RankID[j], !cast::Recipes().StartsAs(talentInfo->RankID[j], cast::Start::Passive), false);
             }
         }
     }

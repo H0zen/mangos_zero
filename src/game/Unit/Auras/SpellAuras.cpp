@@ -78,6 +78,7 @@
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "CreatureAI.h"
 #include "ScriptMgr.h"
+#include "Cast/Recipe/RecipeBook.h"
 #include "Util.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
@@ -1166,7 +1167,7 @@ void Aura::TriggerSpell()
     {
         // for channeled spell cast applied from aura owner to channel target (persistent aura affects already applied to true target)
         // come periodic casts applied to targets, so need seelct proper caster (ex. 15790)
-        if (IsChanneledSpell(GetSpellProto()) && GetSpellProto()->Effect[GetEffIndex()] != SPELL_EFFECT_PERSISTENT_AREA_AURA)
+        if ((cast::RecipeOf(*GetSpellProto()).Starts() == cast::Start::Channelled) && GetSpellProto()->Effect[GetEffIndex()] != SPELL_EFFECT_PERSISTENT_AREA_AURA)
         {
             // interesting 2 cases: periodic aura at caster of channeled spell
             if (target->GetObjectGuid() == casterGUID)
@@ -2225,7 +2226,7 @@ SpellAuraHolder::SpellAuraHolder(SpellEntry const* spellproto, Unit* target, Occ
     }
 
     m_applyTime      = time(nullptr);
-    m_isPassive      = IsPassiveSpell(spellproto);
+    m_isPassive      = (cast::RecipeOf(*spellproto).Starts() == cast::Start::Passive);
     m_isDeathPersist = IsDeathPersistentSpell(spellproto);
     m_trackedAuraType = IsSingleTargetSpell(spellproto) ? TRACK_AURA_TYPE_SINGLE_TARGET : TRACK_AURA_TYPE_NOT_TRACKED;
     m_procCharges    = spellproto->ProcCharges;
@@ -2265,7 +2266,7 @@ SpellAuraHolder::SpellAuraHolder(SpellEntry const* spellproto, Unit* target, Occ
     }
 
     m_isHeartbeatSubject = (m_spellProto->Attributes & SPELL_ATTR_HEARTBEAT_RESIST_CHECK) && caster != target &&
-        caster->IsPlayer() && target->IsPlayer() && !IsChanneledSpell(m_spellProto);
+        caster->IsPlayer() && target->IsPlayer() && !(cast::RecipeOf(*m_spellProto).Starts() == cast::Start::Channelled);
 
     for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
@@ -2987,7 +2988,7 @@ void SpellAuraHolder::Update(uint32 diff)
     }
 
     // Channeled aura required check distance from caster
-    if (IsChanneledSpell(m_spellProto) && GetCasterGuid() != m_target->GetObjectGuid())
+    if ((cast::RecipeOf(*m_spellProto).Starts() == cast::Start::Channelled) && GetCasterGuid() != m_target->GetObjectGuid())
     {
         Unit* caster = GetCaster();
         if (!caster)
