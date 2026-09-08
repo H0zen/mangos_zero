@@ -582,6 +582,17 @@ class Spell
         void FillTargetMap();
         void SetTargetMap(const cast::Operation& operation, uint32 targetMode, UnitList& targetUnitMap);
         void PickWhatTheSlotImplies(const cast::Operation& operation, UnitList& targetUnitMap);
+        void PickARandomChainInTheArea(uint32 targetMode, UnitList& targetUnitMap, float radius, uint32 chainTargets, uint32& mayHit);
+        void PickTheChainFromTheVictim(const cast::Operation& operation, UnitList& targetUnitMap, float radius, uint32 chainTargets, uint32& mayHit);
+        void PickTheAreaTheVerbWants(const cast::Operation& operation, UnitList& targetUnitMap, float radius);
+        void PickTheNamedCreaturesInTheArea(const cast::Operation& operation, UnitList& targetUnitMap, float radius);
+        void PickTheObjectsAroundTheSpot(SpellEffectIndex effIndex, uint32 targetMode, std::list<GameObject*>& found, float radius);
+        void PickTheOneGroupmate(UnitList& targetUnitMap);
+        void PickTheConeThisSpellOpens(const cast::Operation& operation, UnitList& targetUnitMap, float radius);
+        void PickThePartyAround(UnitList& targetUnitMap, float radius);
+        void PickTheChainOfWounded(UnitList& targetUnitMap, float radius, uint32 chainTargets, uint32& mayHit);
+        void PickThePartyOfTheTargetsClass(UnitList& targetUnitMap, float radius);
+        void PickTheSpotBesideTheCaster(const cast::Operation& operation, uint32 targetMode, UnitList& targetUnitMap, float radius);
 
         void FillAreaTargets(UnitList& targetUnitMap, float radius, cast::Around where, cast::Side side, Occupant* originalCaster = nullptr);
         void FillRaidOrPartyTargets(UnitList& targetUnitMap, Unit* member, float radius, bool raid, bool withPets, bool withcaster);
