@@ -66,6 +66,7 @@
 #include "Cast/Recipe/Recipe.h"
 #include "Cast/Recipe/RecipeBook.h"
 #include "Cast/Roster/Roster.h"
+#include "Cast/Targets/Catchment.h"
 
 class WorldSession;
 class WorldPacket;
@@ -94,30 +95,10 @@ enum SpellCastFlags
     CAST_FLAG_UNKNOWN9          = 0x00000100,    ///< @brief Unknown flag 9
 };
 
-/// @brief Spell knockback/push direction enumeration.
-///
-/// Defines the direction and method for pushing targets away from the spell impact.
-enum SpellNotifyPushType
-{
-    PUSH_IN_FRONT,        ///< Push target straight in front
-    PUSH_IN_FRONT_90,     ///< Push target at 90 degree angle
-    PUSH_IN_FRONT_15,     ///< Push target at 15 degree angle
-    PUSH_IN_BACK,         ///< Push target backwards
-    PUSH_SELF_CENTER,     ///< Push target from self center
-    PUSH_DEST_CENTER,     ///< Push target from spell destination
-    PUSH_TARGET_CENTER    ///< Push target from target center
-};
-
 /// @brief Check if spell is a taming spell for quest purposes.
 /// @param spellId Spell ID to check
 /// @return True if spell is a quest taming spell, false otherwise
 bool IsQuestTameSpell(uint32 spellId);
-
-namespace MaNGOS
-{
-    struct SpellNotifierPlayer;
-    struct SpellNotifierCreatureAndPlayer;
-}
 
 class SpellCastTargets;
 
@@ -271,22 +252,10 @@ enum SpellState
     SPELL_STATE_FINISHED    = 7,   // cast finished to success or fail
 };
 
-enum SpellTargets
-{
-    SPELL_TARGETS_HOSTILE,
-    SPELL_TARGETS_NOT_FRIENDLY,
-    SPELL_TARGETS_NOT_HOSTILE,
-    SPELL_TARGETS_FRIENDLY,
-    SPELL_TARGETS_AOE_DAMAGE,
-    SPELL_TARGETS_ALL
-};
-
 typedef std::multimap<uint64, uint64> SpellTargetTimeMap;
 
 class Spell
 {
-    friend struct MaNGOS::SpellNotifierPlayer;
-    friend struct MaNGOS::SpellNotifierCreatureAndPlayer;
     friend void Unit::SetCurrentCastedSpell(Spell* pSpell);
 
     public:
@@ -606,7 +575,7 @@ class Spell
         void FillTargetMap();
         void SetTargetMap(const cast::Operation& operation, uint32 targetMode, UnitList& targetUnitMap);
 
-        void FillAreaTargets(UnitList& targetUnitMap, float radius, SpellNotifyPushType pushType, SpellTargets spellTargets, Occupant* originalCaster = nullptr);
+        void FillAreaTargets(UnitList& targetUnitMap, float radius, cast::Around where, cast::Side side, Occupant* originalCaster = nullptr);
         void FillRaidOrPartyTargets(UnitList& targetUnitMap, Unit* member, float radius, bool raid, bool withPets, bool withcaster);
 
         // Returns GUID either of the 1st target from the implicit target list, or of explicit one (selected victim)
@@ -665,258 +634,6 @@ enum ReplenishType
     REPLENISH_RAGE      = 22
 };
 
-namespace MaNGOS
-{
-    struct SpellNotifierPlayer              // Currently unused. When put to use this one requires handling for source-location (smilar to below)
-    {
-        Spell::UnitList& i_data;
-        Spell& i_spell;
-        const uint32& i_index;
-        float i_radius;
-        Occupant* i_originalCaster;
-
-        SpellNotifierPlayer(Spell& spell, Spell::UnitList& data, const uint32& i, float radius)
-            : i_data(data), i_spell(spell), i_index(i), i_radius(radius)
-        {
-            i_originalCaster = i_spell.GetAffectiveCasterObject();
-        }
-
-        void Visit(PlayerMapType& m)
-        {
-            if (!i_originalCaster)
-            {
-                return;
-            }
-
-            for (PlayerMapType::iterator itr = m.begin(); itr != m.end(); ++itr)
-            {
-                Player* pPlayer = itr->getSource();
-                if (!pPlayer->IsAlive() || pPlayer->IsTaxiFlying())
-                {
-                    continue;
-                }
-
-                if (IsFriendly(*i_originalCaster, *pPlayer))
-                {
-                    continue;
-                }
-
-                if (pPlayer->Where().WithinDist(Geometry::Vector3(i_spell.m_targets.m_destX, i_spell.m_targets.m_destY, i_spell.m_targets.m_destZ), i_radius))
-                {
-                    i_data.push_back(pPlayer);
-                }
-            }
-        }
-        template<class SKIP> void Visit(GridRefManager<SKIP>&) {}
-    };
-
-    struct SpellNotifierCreatureAndPlayer
-    {
-        Spell::UnitList* i_data;
-        Spell& i_spell;
-        SpellNotifyPushType i_push_type;
-        float i_radius;
-        SpellTargets i_TargetType;
-        Occupant* i_originalCaster;
-        Occupant* i_castingObject;
-        bool i_playerControlled;
-        float i_centerX;
-        float i_centerY;
-        float i_centerZ;
-
-        float GetCenterX() const { return i_centerX; }
-        float GetCenterY() const { return i_centerY; }
-
-        SpellNotifierCreatureAndPlayer(Spell& spell, Spell::UnitList& data, float radius, SpellNotifyPushType type,
-            SpellTargets TargetType = SPELL_TARGETS_NOT_FRIENDLY, Occupant* originalCaster = nullptr)
-                : i_data(&data), i_spell(spell), i_push_type(type), i_radius(radius), i_TargetType(TargetType),
-            i_originalCaster(originalCaster), i_castingObject(i_spell.GetCastingObject())
-        {
-            if (!i_originalCaster)
-            {
-                i_originalCaster = i_spell.GetAffectiveCasterObject();
-            }
-            i_playerControlled = i_originalCaster  ? i_originalCaster->IsControlledByPlayer() : false;
-
-            switch (i_push_type)
-            {
-                case PUSH_IN_FRONT:
-                case PUSH_IN_FRONT_90:
-                case PUSH_IN_FRONT_15:
-                case PUSH_IN_BACK:
-                case PUSH_SELF_CENTER:
-                    if (i_castingObject)
-                    {
-                        i_centerX = i_castingObject->Where().X();
-                        i_centerY = i_castingObject->Where().Y();
-                    }
-                    break;
-                case PUSH_DEST_CENTER:
-                    if (i_spell.m_targets.m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
-                    {
-                        i_spell.m_targets.getSource(i_centerX, i_centerY, i_centerZ);
-                    }
-                    else
-                    {
-                        i_spell.m_targets.getDestination(i_centerX, i_centerY, i_centerZ);
-                    }
-                    break;
-                case PUSH_TARGET_CENTER:
-                    if (Unit* target = i_spell.m_targets.getUnitTarget())
-                    {
-                        i_centerX = target->Where().X();
-                        i_centerY = target->Where().Y();
-                    }
-                    break;
-                default:
-                    sLog.outError("SpellNotifierCreatureAndPlayer: unsupported PUSH_* case %u.", i_push_type);
-            }
-        }
-
-        template<class T> inline void Visit(GridRefManager<T>&  m)
-        {
-            MANGOS_ASSERT(i_data);
-
-            if (!i_originalCaster || !i_castingObject)
-            {
-                return;
-            }
-
-            for (typename GridRefManager<T>::iterator itr = m.begin(); itr != m.end(); ++itr)
-            {
-                // GM OFF Spell must pass the checks.
-                bool gmSpell = (i_spell.m_spellInfo->ID == 1509);
-                // there are still more spells which can be casted on dead, but
-                // they are no AOE and don't have such a nice SPELL_ATTR flag
-
-                if (!gmSpell)
-                {
-                    if ((i_TargetType != SPELL_TARGETS_ALL && !itr->getSource()->IsTargetableForAttack(i_spell.Recipe().Says().castOnDead)) ||
-                        // mostly phase check
-                        !itr->getSource()->Where().ShareFrame(i_originalCaster->Where()))
-                    {
-                        continue;
-                    }
-
-                    switch (i_TargetType)
-                    {
-                        case SPELL_TARGETS_HOSTILE:
-                            if (!IsHostile(*i_originalCaster, *itr->getSource()))
-                            {
-                                continue;
-                            }
-                            break;
-                        case SPELL_TARGETS_NOT_FRIENDLY:
-                            if (IsFriendly(*i_originalCaster, *itr->getSource()))
-                            {
-                                continue;
-                            }
-                            break;
-                        case SPELL_TARGETS_NOT_HOSTILE:
-                            if (IsHostile(*i_originalCaster, *itr->getSource()))
-                            {
-                                continue;
-                            }
-                            break;
-                        case SPELL_TARGETS_FRIENDLY:
-                            if (!IsFriendly(*i_originalCaster, *itr->getSource()))
-                            {
-                                continue;
-                            }
-                            break;
-                        case SPELL_TARGETS_AOE_DAMAGE:
-                        {
-                            if (itr->getSource()->IsCreature() && ((Creature*)itr->getSource())->IsTotem())
-                            {
-                                continue;
-                            }
-
-                            if (i_playerControlled)
-                            {
-                                if (IsFriendly(*i_originalCaster, *itr->getSource()))
-                                {
-                                    continue;
-                                }
-                            }
-                            else
-                            {
-                                if (!IsHostile(*i_originalCaster, *itr->getSource()))
-                                {
-                                    continue;
-                                }
-                            }
-                        }
-                        break;
-                        case SPELL_TARGETS_ALL:
-                            break;
-                        default: continue;
-                    }
-                }
-
-                // we don't need to check InMap here, it's already done some lines above
-                switch (i_push_type)
-                {
-                    case PUSH_IN_FRONT:
-                        if (InFrontPhased(*i_castingObject, *((Unit*)(itr->getSource())), i_radius, 2 * M_PI_F / 3))
-                        {
-                            i_data->push_back(itr->getSource());
-                        }
-                        break;
-                    case PUSH_IN_FRONT_90:
-                        if (InFrontPhased(*i_castingObject, *((Unit*)(itr->getSource())), i_radius, M_PI_F / 2))
-                        {
-                            i_data->push_back(itr->getSource());
-                        }
-                        break;
-                    case PUSH_IN_FRONT_15:
-                        if (InFrontPhased(*i_castingObject, *((Unit*)(itr->getSource())), i_radius, M_PI_F / 12))
-                        {
-                            i_data->push_back(itr->getSource());
-                        }
-                        break;
-                    case PUSH_IN_BACK:
-                        if (InBackPhased(*i_castingObject, *((Unit*)(itr->getSource())), i_radius, 2 * M_PI_F / 3))
-                        {
-                            i_data->push_back(itr->getSource());
-                        }
-                        break;
-                    case PUSH_SELF_CENTER:
-                        if (i_castingObject->Where().WithinDist(((Unit*)(itr->getSource()))->Where(), i_radius))
-                        {
-                            i_data->push_back(itr->getSource());
-                        }
-                        break;
-                    case PUSH_DEST_CENTER:
-                        if (itr->getSource()->Where().WithinDist(Geometry::Vector3(i_centerX, i_centerY, i_centerZ), i_radius))
-                        {
-                            i_data->push_back(itr->getSource());
-                        }
-                        break;
-                    case PUSH_TARGET_CENTER:
-                        if (i_spell.m_targets.getUnitTarget() && i_spell.m_targets.getUnitTarget()->Where().WithinDist(((Unit*)(itr->getSource()))->Where(), i_radius))
-                        {
-                            i_data->push_back(itr->getSource());
-                        }
-                        break;
-                }
-            }
-        }
-
-#ifdef WIN32
-        template<> inline void Visit(CorpseMapType&) {}
-        template<> inline void Visit(GameObjectMapType&) {}
-        template<> inline void Visit(DynamicObjectMapType&) {}
-        template<> inline void Visit(CameraMapType&) {}
-#endif
-    };
-
-#ifndef WIN32
-    template<> inline void SpellNotifierCreatureAndPlayer::Visit(CorpseMapType&) {}
-    template<> inline void SpellNotifierCreatureAndPlayer::Visit(GameObjectMapType&) {}
-    template<> inline void SpellNotifierCreatureAndPlayer::Visit(DynamicObjectMapType&) {}
-    template<> inline void SpellNotifierCreatureAndPlayer::Visit(CameraMapType&) {}
-#endif
-}
 
 typedef void(Spell::*pEffect)(const cast::Operation& operation);
 

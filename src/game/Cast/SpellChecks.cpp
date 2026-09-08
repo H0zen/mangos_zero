@@ -920,7 +920,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     UnitList targetsCombat;
                     float radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(operation.radiusIndex));
 
-                    FillAreaTargets(targetsCombat, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+                    FillAreaTargets(targetsCombat, radius, cast::Around::Spot, cast::Side::HostileForArea);
 
                     if (targetsCombat.empty())
                     {

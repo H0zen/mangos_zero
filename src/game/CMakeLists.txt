@@ -28,6 +28,7 @@ game_group(SRC_CAST             Cast)
 game_group(SRC_CAST_EFFECTS     Cast/Effects)
 game_group(SRC_CAST_RECIPE      Cast/Recipe)
 game_group(SRC_CAST_ROSTER      Cast/Roster)
+game_group(SRC_CAST_TARGETS     Cast/Targets)
 game_group(SRC_LOOT             Loot)
 
 game_group(SRC_MAP              Map)
@@ -87,6 +88,7 @@ add_library(game STATIC
     ${SRC_CAST_EFFECTS}
     ${SRC_CAST_RECIPE}
     ${SRC_CAST_ROSTER}
+    ${SRC_CAST_TARGETS}
     ${SRC_LOOT}
     ${SRC_MAP}
     ${SRC_MAP_GRID}
@@ -143,6 +145,7 @@ target_include_directories(game
         Cast/Effects
         Cast/Recipe
         Cast/Roster
+        Cast/Targets
         Loot
         Map
         Map/Grid

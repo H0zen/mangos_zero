@@ -76,20 +76,54 @@
 #include "DisableMgr.h"
 
 /**
- * Fill target list by units around (x,y) points at radius distance
-
- * @param targetUnitMap        Reference to target list that filled by function
- * @param x                    X coordinates of center point for target search
- * @param y                    Y coordinates of center point for target search
- * @param radius               Radius around (x,y) for target search
- * @param pushType             Additional rules for target area selection (in front, angle, etc)
- * @param spellTargets         Additional rules for target selection base at hostile/friendly state to original spell caster
- * @param originalCaster       If provided set alternative original caster, if =nullptr then used Spell::GetAffectiveObject() return
+ * @brief Fills a target list with everyone the spell's area catches.
+ *
+ * @param targetUnitMap        The list the caught units are added to
+ * @param radius               How far the area reaches from its centre
+ * @param where                What the area is drawn around
+ * @param side                 Which side of the caster may be caught
+ * @param originalCaster       Whose side is asked; the affective caster when none is given
  */
-void Spell::FillAreaTargets(UnitList& targetUnitMap, float radius, SpellNotifyPushType pushType, SpellTargets spellTargets, Occupant* originalCaster /*=nullptr*/)
+void Spell::FillAreaTargets(UnitList& targetUnitMap, float radius, cast::Around where, cast::Side side, Occupant* originalCaster /*=nullptr*/)
 {
-    MaNGOS::SpellNotifierCreatureAndPlayer notifier(*this, targetUnitMap, radius, pushType, spellTargets, originalCaster);
-    Cell::VisitAllObjects(notifier.GetCenterX(), notifier.GetCenterY(), m_caster->GetMap(), notifier, radius);
+    Occupant* origin = originalCaster != nullptr ? originalCaster : GetAffectiveCasterObject();
+    Occupant* castingObject = GetCastingObject();
+
+    if (origin == nullptr || castingObject == nullptr)
+    {
+        return;
+    }
+
+    cast::Reach reach;
+    reach.where = where;
+    reach.radius = radius;
+    reach.from = castingObject;
+
+    float centreX = castingObject->Where().X();
+    float centreY = castingObject->Where().Y();
+
+    if (where == cast::Around::Spot)
+    {
+        float x, y, z;
+        if (m_targets.m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
+        {
+            m_targets.getSource(x, y, z);
+        }
+        else
+        {
+            m_targets.getDestination(x, y, z);
+        }
+
+        reach.at = Geometry::Vector3(x, y, z);
+        centreX = x;
+        centreY = y;
+    }
+
+    // the GM spell that reaches everyone, whatever they are and whose side they are on
+    const bool catchesEveryone = m_spellInfo->ID == 1509;
+
+    cast::Catchment catchment(targetUnitMap, reach, side, origin, catchesEveryone, Recipe().Says().castOnDead);
+    Cell::VisitAllObjects(centreX, centreY, m_caster->GetMap(), catchment, radius);
 }
 
 /**

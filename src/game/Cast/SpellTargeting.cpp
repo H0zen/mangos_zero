@@ -400,21 +400,21 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             break;
         }
         case TARGET_ALL_ENEMY_IN_AREA:
-            FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            FillAreaTargets(targetUnitMap, radius, cast::Around::Spot, cast::Side::HostileForArea);
             break;
         case TARGET_AREAEFFECT_INSTANT:
         {
-            SpellTargets targetB = SPELL_TARGETS_AOE_DAMAGE;
+            cast::Side targetB = cast::Side::HostileForArea;
             switch (operation.verb)
             {
                 case SPELL_EFFECT_QUEST_COMPLETE:
-                    targetB = SPELL_TARGETS_ALL;
+                    targetB = cast::Side::Anyone;
                     break;
                 default:
                     // Select friendly targets for positive effect
                     if (operation.positive)
                     {
-                        targetB = SPELL_TARGETS_FRIENDLY;
+                        targetB = cast::Side::Friendly;
                     }
                     break;
             }
@@ -424,7 +424,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
 
             // fill real target list if no spell script target defined
             FillAreaTargets(bounds.first != bounds.second ? tempTargetUnitMap : targetUnitMap,
-                radius, PUSH_DEST_CENTER, bounds.first != bounds.second ? SPELL_TARGETS_ALL : targetB);
+                radius, cast::Around::Spot, bounds.first != bounds.second ? cast::Side::Anyone : targetB);
 
             if (!tempTargetUnitMap.empty())
             {
@@ -481,7 +481,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             UnitList tempTargetUnitMap;
             SQLMultiStorage::SQLMSIteratorBounds<SpellTargetEntry> bounds = sSpellScriptTargetStorage.getBounds<SpellTargetEntry>(m_spellInfo->ID);
             // fill real target list if no spell script target defined
-            FillAreaTargets(bounds.first != bounds.second ? tempTargetUnitMap : targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_ALL);
+            FillAreaTargets(bounds.first != bounds.second ? tempTargetUnitMap : targetUnitMap, radius, cast::Around::Spot, cast::Side::Anyone);
 
             if (!tempTargetUnitMap.empty())
             {
@@ -597,7 +597,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
                     targetUnitMap.push_back(m_caster);
                     break;
                 default:
-                    FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+                    FillAreaTargets(targetUnitMap, radius, cast::Around::Spot, cast::Side::HostileForArea);
                     break;
             }
             break;
@@ -639,14 +639,14 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             break;
         }
         case TARGET_ALL_HOSTILE_UNITS_AROUND_CASTER:
-            FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_HOSTILE);
+            FillAreaTargets(targetUnitMap, radius, cast::Around::Caster, cast::Side::Hostile);
             break;
         case TARGET_ALL_FRIENDLY_UNITS_AROUND_CASTER:
             // selected friendly units (for casting objects) around casting object
-            FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_FRIENDLY, GetCastingObject());
+            FillAreaTargets(targetUnitMap, radius, cast::Around::Caster, cast::Side::Friendly, GetCastingObject());
             break;
         case TARGET_ALL_FRIENDLY_UNITS_IN_AREA:
-            FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_FRIENDLY);
+            FillAreaTargets(targetUnitMap, radius, cast::Around::Spot, cast::Side::Friendly);
             break;
         // TARGET_SINGLE_PARTY means that the spells can only be casted on a party member and not on the caster (some seals, fire shield from imp, etc..)
         case TARGET_SINGLE_PARTY:
@@ -712,25 +712,25 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             break;
         case TARGET_IN_FRONT_OF_CASTER:
         {
-            SpellNotifyPushType pushType = PUSH_IN_FRONT;
+            cast::Around pushType = cast::Around::CasterInFront;
             switch (m_spellInfo->SpellVisualID)            // Some spell require a different target fill
             {
-                case 3879: pushType = PUSH_IN_BACK;     break;
-                case 7441: pushType = PUSH_IN_FRONT_15; break;
+                case 3879: pushType = cast::Around::CasterBehind;     break;
+                case 7441: pushType = cast::Around::CasterInFront15; break;
             }
-            FillAreaTargets(targetUnitMap, radius, pushType, SPELL_TARGETS_AOE_DAMAGE);
+            FillAreaTargets(targetUnitMap, radius, pushType, cast::Side::HostileForArea);
             break;
         }
         case TARGET_LARGE_FRONTAL_CONE:
-            FillAreaTargets(targetUnitMap, radius, PUSH_IN_FRONT_90, SPELL_TARGETS_AOE_DAMAGE);
+            FillAreaTargets(targetUnitMap, radius, cast::Around::CasterInFront90, cast::Side::HostileForArea);
             break;
         case TARGET_NARROW_FRONTAL_CONE:
         {
-            SpellTargets targetB = SPELL_TARGETS_AOE_DAMAGE;
+            cast::Side targetB = cast::Side::HostileForArea;
 
             if (operation.verb == SPELL_EFFECT_SCRIPT_EFFECT)
             {
-                targetB = SPELL_TARGETS_ALL;
+                targetB = cast::Side::Anyone;
             }
 
             UnitList tempTargetUnitMap;
@@ -738,7 +738,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
 
             // fill real target list if no spell script target defined
             FillAreaTargets(bounds.first != bounds.second ? tempTargetUnitMap : targetUnitMap,
-                radius, PUSH_IN_FRONT_15, bounds.first != bounds.second ? SPELL_TARGETS_ALL : targetB);
+                radius, cast::Around::CasterInFront15, bounds.first != bounds.second ? cast::Side::Anyone : targetB);
 
             if (!tempTargetUnitMap.empty())
             {
@@ -821,7 +821,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             // targets the ground, not the units in the area
             if (operation.verb != SPELL_EFFECT_PERSISTENT_AREA_AURA)
             {
-                FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+                FillAreaTargets(targetUnitMap, radius, cast::Around::Spot, cast::Side::HostileForArea);
             }
             break;
         case TARGET_MINION:
@@ -948,7 +948,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
 
                 UnitList tempTargetUnitMap;
 
-                FillAreaTargets(tempTargetUnitMap, max_range, PUSH_SELF_CENTER, SPELL_TARGETS_FRIENDLY);
+                FillAreaTargets(tempTargetUnitMap, max_range, cast::Around::Caster, cast::Side::Friendly);
 
                 if (m_caster != pUnitTarget && std::find(tempTargetUnitMap.begin(), tempTargetUnitMap.end(), m_caster) == tempTargetUnitMap.end())
                 {
