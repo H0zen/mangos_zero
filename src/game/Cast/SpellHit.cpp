@@ -711,14 +711,11 @@ void Spell::HandleDelayedSpellLaunch(TargetInfo* target)
  */
 void Spell::InitializeDamageMultipliers()
 {
-    for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
+    for (const auto& operation : Recipe().Does())
     {
-        if (m_spellInfo->Effect[i] == 0)
-        {
-            continue;
-        }
+        const int32 i = operation.slot;
 
-        uint32 EffectChainTarget = m_spellInfo->EffectChainTargets[i];
+        uint32 EffectChainTarget = operation.chainTargets;
         if (Unit* realCaster = GetAffectiveCaster())
         {
             if (Player* modOwner = realCaster->GetSpellModOwner())
@@ -727,7 +724,7 @@ void Spell::InitializeDamageMultipliers()
             }
         }
         m_damageMultipliers[i] = 1.0f;
-        if ((m_spellInfo->ImplicitTargetA[i] == TARGET_CHAIN_DAMAGE || m_spellInfo->ImplicitTargetA[i] == TARGET_CHAIN_HEAL) &&
+        if ((operation.targetA == TARGET_CHAIN_DAMAGE || operation.targetA == TARGET_CHAIN_HEAL) &&
             (EffectChainTarget > 1))
         {
             m_applyMultiplierMask |= (1 << i);

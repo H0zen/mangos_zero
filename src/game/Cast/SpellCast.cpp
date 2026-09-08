@@ -466,22 +466,19 @@ void Spell::_handle_immediate_phase()
     HandleThreatSpells();
 
     m_needSpellLog = IsNeedSendToClient();
-    for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
+    for (const auto& operation : Recipe().Does())
     {
-        if (m_spellInfo->Effect[j] == 0)
-        {
-            continue;
-        }
+        const SpellEffectIndex j = SpellEffectIndex(operation.slot);
 
         // apply Send Event effect to ground in case empty target lists
-        if (m_spellInfo->Effect[j] == SPELL_EFFECT_SEND_EVENT && !HaveTargetsForEffect(SpellEffectIndex(j)))
+        if (operation.verb == SPELL_EFFECT_SEND_EVENT && !HaveTargetsForEffect(j))
         {
-            HandleEffects(nullptr, nullptr, nullptr, SpellEffectIndex(j));
+            HandleEffects(nullptr, nullptr, nullptr, j);
             continue;
         }
 
         // Don't do spell log, if is school damage spell
-        if (m_spellInfo->Effect[j] == SPELL_EFFECT_SCHOOL_DAMAGE || m_spellInfo->Effect[j] == 0)
+        if (operation.verb == SPELL_EFFECT_SCHOOL_DAMAGE)
         {
             m_needSpellLog = false;
         }
@@ -498,14 +495,14 @@ void Spell::_handle_immediate_phase()
     }
 
     // process ground
-    for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
+    for (const auto& operation : Recipe().Does())
     {
         // persistent area auras target only the ground
-        if (m_spellInfo->Effect[j] == SPELL_EFFECT_PERSISTENT_AREA_AURA ||
+        if (operation.verb == SPELL_EFFECT_PERSISTENT_AREA_AURA ||
             //summon a gameobject at the spell's destination xyz
-            (m_spellInfo->Effect[j] == SPELL_EFFECT_TRANS_DOOR && m_spellInfo->ImplicitTargetA[j] == TARGET_AREAEFFECT_GO_AROUND_DEST))
+            (operation.verb == SPELL_EFFECT_TRANS_DOOR && operation.targetA == TARGET_AREAEFFECT_GO_AROUND_DEST))
         {
-            HandleEffects(nullptr, nullptr, nullptr, SpellEffectIndex(j));
+            HandleEffects(nullptr, nullptr, nullptr, SpellEffectIndex(operation.slot));
         }
     }
 }
@@ -609,7 +606,7 @@ void Spell::update(uint32 difftime)
     // check if the player or unit caster has moved before the spell finished (exclude casting on vehicles)
     if (((m_caster->IsPlayer() || m_caster->IsCreature()) && m_timer != 0) &&
         (m_castPositionX != m_caster->Where().X() || m_castPositionY != m_caster->Where().Y() || m_castPositionZ != m_caster->Where().Z()) &&
-        (m_spellInfo->Effect[EFFECT_INDEX_0] != SPELL_EFFECT_STUCK || !m_caster->m_movementInfo.HasMovementFlag(MOVEFLAG_FALLINGFAR)))
+        (Recipe().At(EFFECT_INDEX_0).verb != SPELL_EFFECT_STUCK || !m_caster->m_movementInfo.HasMovementFlag(MOVEFLAG_FALLINGFAR)))
     {
         // always cancel for channeled spells
         if (m_spellState == SPELL_STATE_CASTING)

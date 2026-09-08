@@ -963,7 +963,7 @@ void Spell::EffectWeaponDmg(const cast::Operation& operation)
     // and handle all effects at once
     for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
     {
-        switch (m_spellInfo->Effect[j])
+        switch (Recipe().At(static_cast<uint8>(j)).verb)
         {
             case SPELL_EFFECT_WEAPON_DAMAGE:
             case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:
@@ -1003,7 +1003,7 @@ void Spell::EffectWeaponDmg(const cast::Operation& operation)
     int32 fixed_bonus = 0;
     for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
     {
-        switch (m_spellInfo->Effect[j])
+        switch (Recipe().At(static_cast<uint8>(j)).verb)
         {
             case SPELL_EFFECT_WEAPON_DAMAGE:
             case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:

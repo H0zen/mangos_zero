@@ -369,12 +369,12 @@ void Spell::SendLogExecute()
     size_t starteff_pos = data.wpos();
     for (uint32 i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
-        data << uint32(m_spellInfo->Effect[i]);     // spell effect
+        data << uint32(Recipe().At(static_cast<uint8>(i)).verb);     // spell effect
         data << uint32(1);                          // count2 placeholder (target count)
 
         bool hasSpecial = true;
         {   // this block may be iterated (target count) times
-            switch (m_spellInfo->Effect[i])
+            switch (Recipe().At(static_cast<uint8>(i)).verb)
             {
                 case SPELL_EFFECT_POWER_DRAIN:
                     data << m_targets.getUnitTargetGuid();
@@ -396,7 +396,7 @@ void Spell::SendLogExecute()
                     data << uint32(0);                      // if both -1, a separate handling
                     break;
                 case SPELL_EFFECT_CREATE_ITEM:              // here target is not the item but SELF
-                    data << uint32(m_spellInfo->EffectItemType[i]);
+                    data << uint32(Recipe().At(static_cast<uint8>(i)).itemType);
                     break;
                 case SPELL_EFFECT_FEED_PET:                 // here we may get both SELF and item targets
                     data << m_targets.getItemTargetEntry();
@@ -450,7 +450,7 @@ void Spell::SendLogExecute()
     if (!effectCount)                                   // no effect with special handling
     {
         effectCount = 1;
-        data << uint32(m_spellInfo->Effect[EFFECT_INDEX_0]);
+        data << uint32(Recipe().At(EFFECT_INDEX_0).verb);
         data << uint32(1);
     }
     data.put<uint32>(efcount_pos, effectCount);
@@ -569,7 +569,7 @@ void Spell::SendChannelStart(uint32 duration)
     Occupant* target = nullptr;
 
     // select dynobject created by first effect if any
-    if (m_spellInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_PERSISTENT_AREA_AURA)
+    if (Recipe().At(EFFECT_INDEX_0).verb == SPELL_EFFECT_PERSISTENT_AREA_AURA)
     {
         target = m_caster->Conjured().AreaOf(m_spellInfo->ID, EFFECT_INDEX_0);
     }

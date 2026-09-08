@@ -468,14 +468,9 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
 
     if (m_spellInfo->DefenseType == SPELL_DAMAGE_CLASS_MAGIC && !m_spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS))
     {
-        for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
+        for (const auto& operation : Recipe().Does())
         {
-            if (m_spellInfo->Effect[j] == 0)
-            {
-                continue;
-            }
-
-            if (!IsPositiveTarget(m_spellInfo->ImplicitTargetA[j], m_spellInfo->ImplicitTargetB[j]))
+            if (!IsPositiveTarget(operation.targetA, operation.targetB))
             {
                 m_canReflect = true;
             }
@@ -1159,7 +1154,7 @@ SpellCastResult Spell::CanOpenLock(SpellEffectIndex effIndex, uint32 lockId, Ski
                 reqKey = true;
 
                 // wrong locktype, skip
-                if (uint32(m_spellInfo->EffectMiscValue[effIndex]) != lockInfo->Index[j])
+                if (uint32(Recipe().At(static_cast<uint8>(effIndex)).miscValue) != lockInfo->Index[j])
                 {
                     continue;
                 }
@@ -1271,9 +1266,9 @@ void Spell::ClearCastItem()
  */
 void Spell::GetSpellRangeAndRadius(SpellEffectIndex effIndex, float& radius, uint32& EffectChainTarget, uint32& unMaxTargets) const
 {
-    if (m_spellInfo->EffectRadiusIndex[effIndex])
+    if (Recipe().At(static_cast<uint8>(effIndex)).radiusIndex)
     {
-        radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[effIndex]));
+        radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(Recipe().At(static_cast<uint8>(effIndex)).radiusIndex));
     }
     else
     {
@@ -1331,7 +1326,7 @@ void Spell::GetSpellRangeAndRadius(SpellEffectIndex effIndex, float& radius, uin
                 {
                     if (effIndex == EFFECT_INDEX_0)         // Copy range from EFF_1 to 0
                     {
-                        radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[EFFECT_INDEX_1]));
+                        radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(Recipe().At(EFFECT_INDEX_1).radiusIndex));
                     }
                     break;
                 }

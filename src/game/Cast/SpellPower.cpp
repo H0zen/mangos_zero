@@ -172,8 +172,8 @@ void Spell::TakePower()
     for (uint8 j = 0; j < 3; ++j)
     {
         // Spell targets a single enemy
-        if (m_spellInfo->ImplicitTargetA[j] == TARGET_CHAIN_DAMAGE ||
-            m_spellInfo->ImplicitTargetA[j] == TARGET_CURRENT_ENEMY_COORDINATES)
+        if (Recipe().At(static_cast<uint8>(j)).targetA == TARGET_CHAIN_DAMAGE ||
+            Recipe().At(static_cast<uint8>(j)).targetA == TARGET_CURRENT_ENEMY_COORDINATES)
         {
             if (m_caster->IsPlayer())
             {
@@ -294,12 +294,9 @@ void Spell::HandleThreatSpells()
 
     bool positive = true;
     uint8 effectMask = 0;
-    for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
+    for (const auto& operation : Recipe().Does())
     {
-        if (m_spellInfo->Effect[i])
-        {
-            effectMask |= (1 << i);
-        }
+        effectMask |= (1 << operation.slot);
     }
 
     if (m_negativeEffectMask & effectMask)
