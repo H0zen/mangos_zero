@@ -72,6 +72,7 @@ set(TEST_SOURCES
     combat/test_manashield.cpp
 
     spells/test_auraindex.cpp
+    spells/test_recipe.cpp
 
     client/test_inflate.cpp
     client/test_mpqchain.cpp
