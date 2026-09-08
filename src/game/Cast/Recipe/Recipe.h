@@ -28,6 +28,7 @@
 // that turns out wrong costs a rename and nothing else.
 
 #include "Combat/School.h"
+#include "DataStore/SharedDefines.h"
 #include "Platform/Define.h"
 
 #include <cstddef>
@@ -343,6 +344,14 @@ namespace cast
             /// only when every one of its operations is.
             bool IsPositive() const { return m_positive; }
 
+            /// The group whose diminishing returns this spell shares. A control
+            /// spell that arrives through a trigger lands in a different group
+            /// than the same spell cast directly, so there are two.
+            DiminishingGroup Diminishes(bool triggered) const
+            {
+                return m_diminishing[triggered ? 1 : 0];
+            }
+
             /// What the spell does in one slot, zeros when the slot is empty.
             const Operation& At(uint8 slot) const { return m_operations.At(slot); }
 
@@ -369,6 +378,7 @@ namespace cast
 
             uint32 m_id = 0;
             bool m_positive = false;
+            DiminishingGroup m_diminishing[2] = {DIMINISHING_NONE, DIMINISHING_NONE};
             Start m_start = Start::Instant;
             Defence m_defence = Defence::None;
             combat::School m_school = combat::School::Physical;

@@ -51,6 +51,10 @@ namespace cast
             /// For a caller that wants to walk everything once, such as a report.
             const std::vector<Recipe>& All() const { return m_recipes; }
 
+            /// Settles what depends on more than one row: the group whose
+            /// diminishing returns a spell shares.
+            void SettleGroups();
+
         private:
 
             /// Answers, for every recipe at once, whether a target would want it.
@@ -64,6 +68,10 @@ namespace cast
 
     /// The one book. Filled while the world loads.
     RecipeBook& Recipes();
+
+    /// Settles the parts of a recipe that cannot be worked out while a single
+    /// row is being compiled.
+    void SettleRecipeGroups();
 
     /// The recipe for a row that came out of the store. A row the book has never
     /// seen is a programming error, not a data one, so this asserts rather than

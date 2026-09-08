@@ -470,6 +470,8 @@ void World::SetInitialWorldSettings()
     sLog.outString("Loading Spell Elixir types...");
     sSpellMgr.LoadSpellElixirs();
 
+    cast::SettleRecipeGroups();
+
     sLog.outString("Loading Spell Facing Flags...");
     sSpellMgr.LoadFacingCasterFlags();
 

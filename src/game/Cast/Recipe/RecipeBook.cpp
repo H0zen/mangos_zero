@@ -65,6 +65,21 @@ namespace cast
         return m_recipes.size();
     }
 
+    void RecipeBook::SettleGroups()
+    {
+        for (auto& recipe : m_recipes)
+        {
+            const SpellEntry* row = sSpellStore.LookupEntry(recipe.m_id);
+            if (row == nullptr)
+            {
+                continue;
+            }
+
+            recipe.m_diminishing[0] = GetDiminishingReturnsGroupForSpell(row, false);
+            recipe.m_diminishing[1] = GetDiminishingReturnsGroupForSpell(row, true);
+        }
+    }
+
     void RecipeBook::SettlePositivity()
     {
         for (auto& recipe : m_recipes)
@@ -91,6 +106,11 @@ namespace cast
     {
         static RecipeBook book;
         return book;
+    }
+
+    void SettleRecipeGroups()
+    {
+        Recipes().SettleGroups();
     }
 
     const Recipe& RecipeOf(const SpellEntry& row)

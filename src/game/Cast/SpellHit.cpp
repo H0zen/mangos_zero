@@ -75,6 +75,7 @@
 #include "TemporarySummon.h"
 #include "SQLStorages.h"
 #include "DisableMgr.h"
+#include "Cast/Recipe/RecipeBook.h"
 
 /**
  * @brief Applies all pending spell effects to a unit target entry.
@@ -481,7 +482,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool isReflected)
     }
 
     // Get Data Needed for Diminishing Returns, some effects may have multiple auras, so this must be done on spell hit, not aura add
-    m_diminishGroup = GetDiminishingReturnsGroupForSpell(m_spellInfo, m_triggeredByAuraSpell);
+    m_diminishGroup = Recipe().Diminishes(m_triggeredByAuraSpell != nullptr);
     m_diminishLevel = unit->Diminishing().FadeOf(m_diminishGroup, GameTime::GetGameTimeMS());
 
     // Whether this group diminishes against this victim at all is decided here,
