@@ -23,29 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Spell.cpp
- * @brief Spell casting and effect implementation
- *
- * This file implements the Spell class which handles spell casting:
- * - Spell validation and casting requirements
- * - Spell effect execution (damage, healing, summon, etc.)
- * - Spell targeting and area effects
- * - Spell cooldowns and resource costs
- * - Spell interruption and pushback
- * - Spell aura application
- * - Spell hit/miss calculations
- *
- * Spells are the primary combat mechanic in WoW, encompassing
- * abilities, talents, and item effects.
- *
- * @see Spell for the spell class
- * @see SpellAura for spell auras
- * @see SpellMgr for spell management
- */
-
-
-
 #include <cmath>
 #include "Reaction.h"
 #include "Spell.h"
@@ -78,22 +55,15 @@
 #include "DisableMgr.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Builds the spell target lists for each active effect.
- */
 void Spell::FillTargetMap()
 {
-    // TODO: ADD the correct target FILLS!!!!!!
 
-    UnitList tmpUnitLists[MAX_EFFECT_INDEX];                // Stores the temporary Target Lists for each effect
-    uint8 effToIndex[MAX_EFFECT_INDEX] = {0, 1, 2};         // Helper array, to link to another tmpUnitList, if the targets for both effects match
+    UnitList tmpUnitLists[MAX_EFFECT_INDEX];
+    uint8 effToIndex[MAX_EFFECT_INDEX] = {0, 1, 2};
     for (const auto& operation : Recipe().Does())
     {
         const uint8 i = operation.slot;
 
-        // targets for TARGET_SCRIPT_COORDINATES (A) and TARGET_SCRIPT
-        // for TARGET_FOCUS_OR_SCRIPTED_GAMEOBJECT (A) all is checked in Spell::CheckCast and in Spell::CheckItem
-        // filled in Spell::CheckCast call
         if (operation.targetA == TARGET_SCRIPT_COORDINATES ||
             operation.targetA == TARGET_FOCUS_OR_SCRIPTED_GAMEOBJECT ||
             (operation.targetA == TARGET_SCRIPT && operation.targetB != TARGET_SELF) ||
@@ -102,14 +72,11 @@ void Spell::FillTargetMap()
             continue;
         }
 
-        // TODO: find a way so this is not needed?
-        // for area auras always add caster as target (needed for totems for example)
         if (IsAreaAuraEffect(operation.verb))
         {
             EnrolUnit(m_caster, SpellEffectIndex(i));
         }
 
-        // no double fill for same targets
         for (const auto& earlier : Recipe().Does())
         {
             if (earlier.slot >= i)
@@ -117,79 +84,76 @@ void Spell::FillTargetMap()
                 break;
             }
 
-            // Check if same target, but handle i.e. AreaAuras different
             if (operation.targetA == earlier.targetA && operation.targetB == earlier.targetB &&
                 !IsAreaAuraEffect(operation.verb) && !IsAreaAuraEffect(earlier.verb))
-                // Add further conditions here if required
+
             {
-                effToIndex[i] = earlier.slot;               // effect i has same targeting list as effect j
+                effToIndex[i] = earlier.slot;
                 break;
             }
         }
 
-        if (effToIndex[i] == i)                             // New target combination
+        if (effToIndex[i] == i)
         {
-            // TargetA/TargetB dependent from each other, we not switch to full support this dependences
-            // but need it support in some know cases
+
             switch (operation.targetA)
             {
                 case TARGET_NONE:
                     switch (operation.targetB)
                     {
                         case TARGET_NONE:
-                            if (m_caster->GetObjectGuid().IsPet())
+                            if ((GuidHigh(m_caster->GetObjectGuid()) == HIGHGUID_PET))
                             {
-                                SetTargetMap(operation, TARGET_SELF, tmpUnitLists[i /*==effToIndex[i]*/]);
+                                SetTargetMap(operation, TARGET_SELF, tmpUnitLists[i ]);
                             }
                             else
                             {
-                                SetTargetMap(operation, TARGET_EFFECT_SELECT, tmpUnitLists[i /*==effToIndex[i]*/]);
+                                SetTargetMap(operation, TARGET_EFFECT_SELECT, tmpUnitLists[i ]);
                             }
                             break;
                         default:
-                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i /*==effToIndex[i]*/]);
+                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i ]);
                             break;
                     }
                     break;
                 case TARGET_SELF:
                     switch (operation.targetB)
                     {
-                        case TARGET_NONE:                   // Fill Target based on A only
-                            // Arcane Missiles have strange targeting for auras
-                            // Gnomish Death Ray triggered 13280
+                        case TARGET_NONE:
+
                             if ((m_spellInfo->SpellClassSet == SPELLFAMILY_MAGE && m_spellInfo->SpellClassMask & UI64LIT(0x00000800)) ||
                                 (m_spellInfo->ID == 13280))
                             {
-                                if (m_caster->IsPlayer())
+                                if (IsPlayer(m_caster))
                                 {
                                     if (Unit* target = ObjectLookup::GetUnit(*m_caster, ((Player*)m_caster)->GetSelectionGuid()))
                                     {
                                         if (!IsFriendly(*m_caster, *target))
                                         {
-                                            tmpUnitLists[i /*==effToIndex[i]*/].push_back(target);
+                                            tmpUnitLists[i ].push_back(target);
                                         }
                                     }
                                 }
                             }
                             else
                             {
-                                SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
+                                SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
                             }
                             break;
                         case TARGET_EFFECT_SELECT:
-                        case TARGET_SCRIPT:                 // B-target only used with CheckCast here
-                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
+                        case TARGET_SCRIPT:
+                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
                             break;
-                        case TARGET_AREAEFFECT_INSTANT:     // use B case that not dependent from from A in fact
+                        case TARGET_AREAEFFECT_INSTANT:
                             if ((m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) == 0)
                             {
                                 m_targets.setDestination(m_caster->Where().X(), m_caster->Where().Y(), m_caster->Where().Z());
                             }
-                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i /*==effToIndex[i]*/]);
+                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i ]);
                             break;
                         default:
-                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
-                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i /*==effToIndex[i]*/]);
+                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
+                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i ]);
                             break;
                     }
                     break;
@@ -198,9 +162,9 @@ void Spell::FillTargetMap()
                     {
                         case TARGET_NONE:
                         case TARGET_EFFECT_SELECT:
-                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
+                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
                             break;
-                        // dest point setup required
+
                         case TARGET_AREAEFFECT_INSTANT:
                         case TARGET_AREAEFFECT_CUSTOM:
                         case TARGET_ALL_ENEMY_IN_AREA:
@@ -208,7 +172,7 @@ void Spell::FillTargetMap()
                         case TARGET_ALL_ENEMY_IN_AREA_CHANNELED:
                         case TARGET_ALL_FRIENDLY_UNITS_IN_AREA:
                         case TARGET_AREAEFFECT_GO_AROUND_DEST:
-                            // triggered spells get dest point from default target set, ignore it
+
                             if (!(m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) || m_IsTriggeredSpell)
                             {
                                 if (Occupant* castObject = GetCastingObject())
@@ -216,21 +180,21 @@ void Spell::FillTargetMap()
                                     m_targets.setDestination(castObject->Where().X(), castObject->Where().Y(), castObject->Where().Z());
                                 }
                             }
-                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i /*==effToIndex[i]*/]);
+                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i ]);
                             break;
-                        // target pre-selection required
+
                         case TARGET_INNKEEPER_COORDINATES:
                         case TARGET_TABLE_X_Y_Z_COORDINATES:
                         case TARGET_CASTER_COORDINATES:
                         case TARGET_SCRIPT_COORDINATES:
                         case TARGET_CURRENT_ENEMY_COORDINATES:
                         case TARGET_DUELVSPLAYER_COORDINATES:
-                            // need some target for processing
-                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
-                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i /*==effToIndex[i]*/]);
+
+                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
+                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i ]);
                             break;
                         default:
-                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i /*==effToIndex[i]*/]);
+                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i ]);
                             break;
                     }
                     break;
@@ -238,29 +202,27 @@ void Spell::FillTargetMap()
                     switch (operation.targetB)
                     {
                         case TARGET_ALL_ENEMY_IN_AREA:
-                            // Note: this hack with search required until GO casting not implemented
-                            // environment damage spells already have around enemies targeting but this not help in case nonexistent GO casting support
-                            // currently each enemy selected explicitly and self cast damage
+
                             if (operation.verb == SPELL_EFFECT_ENVIRONMENTAL_DAMAGE)
                             {
                                 if (m_targets.getUnitTarget())
                                 {
-                                    tmpUnitLists[i /*==effToIndex[i]*/].push_back(m_targets.getUnitTarget());
+                                    tmpUnitLists[i ].push_back(m_targets.getUnitTarget());
                                 }
                             }
                             else
                             {
-                                SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
-                                SetTargetMap(operation, operation.targetB, tmpUnitLists[i /*==effToIndex[i]*/]);
+                                SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
+                                SetTargetMap(operation, operation.targetB, tmpUnitLists[i ]);
                             }
                             break;
                         case TARGET_NONE:
-                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
-                            tmpUnitLists[i /*==effToIndex[i]*/].push_back(m_caster);
+                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
+                            tmpUnitLists[i ].push_back(m_caster);
                             break;
                         default:
-                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
-                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i /*==effToIndex[i]*/]);
+                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
+                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i ]);
                             break;
                     }
                     break;
@@ -268,17 +230,16 @@ void Spell::FillTargetMap()
                     switch (operation.targetB)
                     {
                         case TARGET_NONE:
-                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
+                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
 
-                            // need some target for processing
-                            SetTargetMap(operation, TARGET_EFFECT_SELECT, tmpUnitLists[i /*==effToIndex[i]*/]);
+                            SetTargetMap(operation, TARGET_EFFECT_SELECT, tmpUnitLists[i ]);
                             break;
-                        case TARGET_AREAEFFECT_INSTANT:     // All 17/7 pairs used for dest teleportation, A processed in effect code
-                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i /*==effToIndex[i]*/]);
+                        case TARGET_AREAEFFECT_INSTANT:
+                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i ]);
                             break;
                         default:
-                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
-                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i /*==effToIndex[i]*/]);
+                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
+                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i ]);
                             break;
                     }
                     break;
@@ -287,15 +248,15 @@ void Spell::FillTargetMap()
                     {
                         case TARGET_NONE:
                         case TARGET_EFFECT_SELECT:
-                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
+                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
                             if (Unit* currentTarget = m_targets.getUnitTarget())
                             {
-                                tmpUnitLists[i /*==effToIndex[i]*/].push_back(currentTarget);
+                                tmpUnitLists[i ].push_back(currentTarget);
                             }
                             break;
                         default:
-                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
-                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i /*==effToIndex[i]*/]);
+                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
+                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i ]);
                             break;
                     }
                     break;
@@ -303,8 +264,8 @@ void Spell::FillTargetMap()
                     switch (operation.targetB)
                     {
                         case TARGET_SELF:
-                            // Fill target based on B only, A is only used with CheckCast here.
-                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i /*==effToIndex[i]*/]);
+
+                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i ]);
                             break;
                         default:
                             break;
@@ -315,21 +276,21 @@ void Spell::FillTargetMap()
                     {
                         case TARGET_NONE:
                         case TARGET_EFFECT_SELECT:
-                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
+                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
                             break;
-                        case TARGET_SCRIPT_COORDINATES:     // B case filled in CheckCast but we need fill unit list base at A case
-                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
+                        case TARGET_SCRIPT_COORDINATES:
+                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
                             break;
                         default:
-                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i /*==effToIndex[i]*/]);
-                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i /*==effToIndex[i]*/]);
+                            SetTargetMap(operation, operation.targetA, tmpUnitLists[i ]);
+                            SetTargetMap(operation, operation.targetB, tmpUnitLists[i ]);
                             break;
                     }
                     break;
             }
         }
 
-        if (m_caster->IsPlayer())
+        if (IsPlayer(m_caster))
         {
             Player* me = (Player*)m_caster;
             for (UnitList::const_iterator itr = tmpUnitLists[effToIndex[i]].begin(); itr != tmpUnitLists[effToIndex[i]].end(); ++itr)
@@ -364,13 +325,6 @@ void Spell::FillTargetMap()
     }
 }
 
-/**
- * @brief Whether this cast may set off procs at all.
- *
- * An item's spell never does. A spell the player threw himself always does, and
- * so does one fired by SPELL_EFFECT_TRIGGER_SPELL. A spell fired by an aura only
- * does when its family is one of the few the server lets through.
- */
 bool Spell::SetsOffProcs() const
 {
     if (!m_CastItem && (!m_IsTriggeredSpell || !m_triggeredByAuraSpell))
@@ -381,12 +335,6 @@ bool Spell::SetsOffProcs() const
     return Recipe().ProcsThoughTriggered();
 }
 
-/**
- * @brief Writes a unit on the roster for one recipe slot.
- *
- * @param pVictim The unit target.
- * @param effIndex The effect index being applied.
- */
 void Spell::EnrolUnit(Unit* pVictim, SpellEffectIndex effIndex)
 {
     if (Recipe().Does().AtSlot(static_cast<uint8>(effIndex)) == nullptr)
@@ -394,12 +342,10 @@ void Spell::EnrolUnit(Unit* pVictim, SpellEffectIndex effIndex)
         return;
     }
 
-    // Check for effect immune skip if immuned
     bool immuned = pVictim->IsImmuneToSpellEffect(m_spellInfo, effIndex, pVictim == m_caster);
 
     ObjectGuid targetGUID = pVictim->GetObjectGuid();
 
-    // a unit already on the roster only gains the slot
     if (cast::UnitTarget* enrolled = m_roster.FindUnit(targetGUID))
     {
         if (!immuned)
@@ -413,30 +359,27 @@ void Spell::EnrolUnit(Unit* pVictim, SpellEffectIndex effIndex)
     target.guid = targetGUID;
     target.slots = immuned ? 0 : (1 << effIndex);
 
-    // the verdict is reckoned now, not when the spell arrives
     target.verdict = m_caster->SpellHitResult(pVictim, m_spellInfo, m_canReflect);
 
-    // spell fly from visual cast object
     Occupant* affectiveObject = GetAffectiveCasterObject();
 
-    // Spell have speed (possible inherited from triggering spell) - need calculate incoming time
     float speed = m_spellInfo->Speed == 0.0f && m_triggeredBySpellInfo ? m_triggeredBySpellInfo->Speed : m_spellInfo->Speed;
     if (speed > 0.0f && affectiveObject && (pVictim != affectiveObject || (m_targets.m_targetMask & (TARGET_FLAG_SOURCE_LOCATION | TARGET_FLAG_DEST_LOCATION))))
     {
-        // calculate spell incoming interval
-        float dist;                                         // distance to impact
-        if (pVictim == affectiveObject)                     // Calculate dist to destination target also for self-cast spells
+
+        float dist;
+        if (pVictim == affectiveObject)
         {
             if (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
             {
                 dist = affectiveObject->Where().DistanceTo(Geometry::Vector3(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ));
             }
-            else                                            // Must have Source Target
+            else
             {
                 dist = affectiveObject->Where().DistanceTo(Geometry::Vector3(m_targets.m_srcX, m_targets.m_srcY, m_targets.m_srcZ));
             }
         }
-        else                                                // normal unit target, take distance
+        else
         {
             dist = affectiveObject->Where().DistanceTo(Geometry::Vector3(pVictim->Where().X(), pVictim->Where().Y(), pVictim->Where().Z()));
         }
@@ -448,18 +391,16 @@ void Spell::EnrolUnit(Unit* pVictim, SpellEffectIndex effIndex)
         target.arrivesInMs = static_cast<uint64>(floor(dist / speed * 1000.0f));
     }
 
-    // If target reflect spell back to caster
     if (target.verdict == SPELL_MISS_REFLECT)
     {
-        // Calculate reflected spell result on caster
+
         target.reflectedVerdict =  m_caster->SpellHitResult(m_caster, m_spellInfo, m_canReflect);
 
-        if (target.reflectedVerdict == SPELL_MISS_REFLECT)     // Impossible reflect again, so simply deflect spell
+        if (target.reflectedVerdict == SPELL_MISS_REFLECT)
         {
             target.reflectedVerdict = SPELL_MISS_PARRY;
         }
 
-        // Increase time interval for reflected spells by 1.5
         target.arrivesInMs += target.arrivesInMs >> 1;
     }
     else
@@ -470,12 +411,6 @@ void Spell::EnrolUnit(Unit* pVictim, SpellEffectIndex effIndex)
     m_roster.Enrol(target);
 }
 
-/**
- * @brief Resolves and adds a unit target by guid for a spell effect.
- *
- * @param unitGuid The unit guid to resolve.
- * @param effIndex The effect index being applied.
- */
 void Spell::EnrolUnit(ObjectGuid unitGuid, SpellEffectIndex effIndex)
 {
     if (Unit* unit = m_caster->GetObjectGuid() == unitGuid ? m_caster : ObjectLookup::GetUnit(*m_caster, unitGuid))
@@ -484,12 +419,6 @@ void Spell::EnrolUnit(ObjectGuid unitGuid, SpellEffectIndex effIndex)
     }
 }
 
-/**
- * @brief Adds a game object target entry for a spell effect.
- *
- * @param pVictim The game object target.
- * @param effIndex The effect index being applied.
- */
 void Spell::EnrolObject(GameObject* pVictim, SpellEffectIndex effIndex)
 {
     if (Recipe().Does().AtSlot(static_cast<uint8>(effIndex)) == nullptr)
@@ -499,7 +428,6 @@ void Spell::EnrolObject(GameObject* pVictim, SpellEffectIndex effIndex)
 
     ObjectGuid targetGUID = pVictim->GetObjectGuid();
 
-    // a gameobject already on the roster only gains the slot
     if (cast::ObjectTarget* enrolled = m_roster.FindObject(targetGUID))
     {
         enrolled->slots |= 1 << effIndex;
@@ -510,14 +438,12 @@ void Spell::EnrolObject(GameObject* pVictim, SpellEffectIndex effIndex)
     target.guid = targetGUID;
     target.slots = (1 << effIndex);
 
-    // spell fly from visual cast object
     Occupant* affectiveObject = GetAffectiveCasterObject();
 
-    // Spell can have speed - need calculate incoming time
     float speed = m_spellInfo->Speed == 0.0f && m_triggeredBySpellInfo ? m_triggeredBySpellInfo->Speed : m_spellInfo->Speed;
     if (speed > 0.0f && affectiveObject && pVictim != affectiveObject)
     {
-        // calculate spell incoming interval
+
         float dist = affectiveObject->Where().DistanceTo(Geometry::Vector3(pVictim->Where().X(), pVictim->Where().Y(), pVictim->Where().Z()));
         if (dist < 5.0f)
         {
@@ -529,12 +455,6 @@ void Spell::EnrolObject(GameObject* pVictim, SpellEffectIndex effIndex)
     m_roster.Enrol(target);
 }
 
-/**
- * @brief Resolves and adds a game object target by guid for a spell effect.
- *
- * @param goGuid The game object guid to resolve.
- * @param effIndex The effect index being applied.
- */
 void Spell::EnrolObject(ObjectGuid goGuid, SpellEffectIndex effIndex)
 {
     if (GameObject* go = m_caster->GetMap()->GetGameObject(goGuid))
@@ -543,12 +463,6 @@ void Spell::EnrolObject(ObjectGuid goGuid, SpellEffectIndex effIndex)
     }
 }
 
-/**
- * @brief Adds an item target entry for a spell effect.
- *
- * @param pitem The item target.
- * @param effIndex The effect index being applied.
- */
 void Spell::EnrolItem(Item* pitem, SpellEffectIndex effIndex)
 {
     if (Recipe().Does().AtSlot(static_cast<uint8>(effIndex)) == nullptr)
@@ -556,7 +470,6 @@ void Spell::EnrolItem(Item* pitem, SpellEffectIndex effIndex)
         return;
     }
 
-    // an item already on the roster only gains the slot
     if (cast::ItemTarget* enrolled = m_roster.FindItem(pitem))
     {
         enrolled->slots |= 1 << effIndex;

@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Utilities/Errors.h"
 #include <string>
 #include "Player.h"
@@ -73,14 +71,6 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Sends the appropriate transfer-aborted feedback for an area lock failure.
- *
- * @param mapEntry The destination map entry.
- * @param at The triggering area trigger, if any.
- * @param lockStatus The evaluated area lock status.
- * @param miscRequirement Extra requirement data used by some messages.
- */
 void Player::SendTransferAbortedByLockStatus(MapEntry const* mapEntry, AreaTrigger const* at, AreaLockStatus lockStatus, uint32 miscRequirement)
 {
     MANGOS_ASSERT(mapEntry);
@@ -121,12 +111,12 @@ void Player::SendTransferAbortedByLockStatus(MapEntry const* mapEntry, AreaTrigg
             }
             break;
         case AREA_LOCKSTATUS_QUEST_NOT_COMPLETED:
-            if (mapEntry->IsContinent())               // do not report anything for quest areatrigge
+            if (mapEntry->IsContinent())
             {
                 DEBUG_LOG("SendTransferAbortedByLockStatus: LockAreaStatus %u, do not teleport, no message sent (mapId %u)", lockStatus, mapEntry->MapID);
                 break;
             }
-            // ToDo: SendAreaTriggerMessage or Transfer Abort for these cases!
+
             break;
         case AREA_LOCKSTATUS_MISSING_ITEM:
             if (sObjectMgr.GetMapEntranceTrigger(mapEntry->MapID))
@@ -137,12 +127,12 @@ void Player::SendTransferAbortedByLockStatus(MapEntry const* mapEntry, AreaTrigg
         case AREA_LOCKSTATUS_NOT_ALLOWED:
         case AREA_LOCKSTATUS_RAID_LOCKED:
         case AREA_LOCKSTATUS_UNKNOWN_ERROR:
-            // ToDo: SendAreaTriggerMessage or Transfer Abort for these cases!
+
             break;
         case AREA_LOCKSTATUS_PVP_RANK:
         {
-            // This portion of code should never be hit anymore since an AreaTrigger should handle that.
-            const std::string msg = "You cannot enter this zone"; // fallback message
+
+            const std::string msg = "You cannot enter this zone";
             GetSession()->SendAreaTriggerMessage("%s", msg.c_str());
             break;
         }
@@ -157,13 +147,6 @@ void Player::SendTransferAbortedByLockStatus(MapEntry const* mapEntry, AreaTrigg
     }
 }
 
-/**
- * @brief Evaluates whether the player can use an area trigger into another map.
- *
- * @param at The area trigger being used.
- * @param miscRequirement Output requirement data for failure messaging.
- * @return The evaluated area lock status.
- */
 AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, uint32& miscRequirement)
 {
     miscRequirement = 0;
@@ -179,13 +162,11 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, uint32& m
         return AREA_LOCKSTATUS_UNKNOWN_ERROR;
     }
 
-    // Gamemaster can always enter
     if (isGameMaster())
     {
         return AREA_LOCKSTATUS_OK;
     }
 
-    // Raid Requirements
     if (mapEntry->IsRaid() && !sWorld.getConfig(CONFIG_BOOL_INSTANCE_IGNORE_RAID))
     {
         if (!GetGroup() || !GetGroup()->isRaidGroup())
@@ -194,7 +175,7 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, uint32& m
         }
     }
 
-    if (at->condition) //condition validity is checked at startup
+    if (at->condition)
     {
         ConditionEntry fault;
         if (!sObjectMgr.IsPlayerMeetToCondition(at->condition, this, GetMap(),nullptr, CONDITION_AREA_TRIGGER, &fault))
@@ -249,26 +230,22 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, uint32& m
         }
     }
 
-    // If the map is not created, assume it is possible to enter it.
     DungeonPersistentState* state = Binds().CopyForHimOrHisGroup(at->target_mapId);
     Map* map = sMapRoster.Find(at->target_mapId, state ? state->GetInstanceId() : 0);
 
-    // Map's state check
     if (map && map->IsDungeon())
     {
-        // can not enter if the instance is full (player cap), GMs don't count
+
         if (((DungeonMap*)map)->GetPlayersCountExceptGMs() >= ((DungeonMap*)map)->GetMaxPlayers())
         {
             return AREA_LOCKSTATUS_INSTANCE_IS_FULL;
         }
 
-        // In Combat check
         if (map && map->GetInstanceData() && map->GetInstanceData()->IsEncounterInProgress())
         {
             return AREA_LOCKSTATUS_ZONE_IN_COMBAT;
         }
 
-        // Bind Checks
         DungeonHold* pBind = Binds().To(at->target_mapId);
         if (pBind && pBind->permanent && pBind->state != state)
         {

@@ -47,29 +47,19 @@
 #include <cmath>
 #include <sstream>
 
-/**
- * @brief Checks if the movement generator is static (idle movement).
- * @param mv Pointer to the movement generator.
- * @return True if the movement generator is static, false otherwise.
- */
 inline static bool isStatic(MovementGenerator* mv)
 {
     return (mv == &si_idleMovement);
 }
 
-/**
- * @brief Initializes the MotionMaster.
- */
 void MotionMaster::Initialize()
 {
-    // Stop current move
+
     m_owner->StopMoving();
 
-    // Clear ALL movement generators (including default)
     Clear(false, true);
 
-    // Set new default movement generator
-    if (m_owner->IsCreature() && !m_owner->hasUnitState(UNIT_STAT_CONTROLLED))
+    if (IsCreature(m_owner) && !m_owner->hasUnitState(UNIT_STAT_CONTROLLED))
     {
         MovementGenerator* movement = FactorySelector::selectMovementGenerator((Creature*)m_owner);
         push(movement == nullptr ? &si_idleMovement : movement);
@@ -85,12 +75,9 @@ void MotionMaster::Initialize()
     }
 }
 
-/**
- * @brief Destructor for MotionMaster.
- */
 MotionMaster::~MotionMaster()
 {
-    // Just deallocate movement generator, but do not Finalize since it may access to already deallocated owner's memory
+
     while (!empty())
     {
         MovementGenerator* m = top();
@@ -102,10 +89,6 @@ MotionMaster::~MotionMaster()
     }
 }
 
-/**
- * @brief Updates the motion of the unit.
- * @param diff Time difference.
- */
 void MotionMaster::UpdateMotion(uint32 diff)
 {
     if (m_owner->hasUnitState(UNIT_STAT_CAN_NOT_MOVE))
@@ -153,11 +136,6 @@ void MotionMaster::UpdateMotion(uint32 diff)
     }
 }
 
-/**
- * @brief Directly cleans the movement generators.
- * @param reset Whether to reset the movement generators.
- * @param all Whether to clear all movement generators.
- */
 void MotionMaster::DirectClean(bool reset, bool all)
 {
     while (all ? !empty() : size() > 1)
@@ -179,11 +157,6 @@ void MotionMaster::DirectClean(bool reset, bool all)
     }
 }
 
-/**
- * @brief Delays the cleaning of the movement generators.
- * @param reset Whether to reset the movement generators.
- * @param all Whether to clear all movement generators.
- */
 void MotionMaster::DelayedClean(bool reset, bool all)
 {
     if (reset)
@@ -218,10 +191,6 @@ void MotionMaster::DelayedClean(bool reset, bool all)
     }
 }
 
-/**
- * @brief Directly expires the current movement generator.
- * @param reset Whether to reset the movement generator.
- */
 void MotionMaster::DirectExpire(bool reset)
 {
     if (empty() || size() == 1)
@@ -232,7 +201,6 @@ void MotionMaster::DirectExpire(bool reset)
     MovementGenerator* curr = top();
     pop();
 
-    // Also drop stored under top() targeted motions
     while (!empty() && (top()->GetMovementGeneratorType() == CHASE_MOTION_TYPE || top()->GetMovementGeneratorType() == FOLLOW_MOTION_TYPE))
     {
         MovementGenerator* temp = top();
@@ -241,9 +209,8 @@ void MotionMaster::DirectExpire(bool reset)
         delete temp;
     }
 
-    // Store current top MMGen, as Finalize might push a new MMGen
     MovementGenerator* nowTop = empty() ? nullptr : top();
-    // It can add another motions instead
+
     curr->Finalize(*m_owner);
 
     if (!isStatic(curr))
@@ -256,17 +223,12 @@ void MotionMaster::DirectExpire(bool reset)
         Initialize();
     }
 
-    // Prevent reseting possible new pushed MMGen
     if (reset && top() == nowTop)
     {
         top()->Reset(*m_owner);
     }
 }
 
-/**
- * @brief Delays the expiration of the current movement generator.
- * @param reset Whether to reset the movement generator.
- */
 void MotionMaster::DelayedExpire(bool reset)
 {
     if (reset)
@@ -291,7 +253,6 @@ void MotionMaster::DelayedExpire(bool reset)
         m_expList = new ExpireList();
     }
 
-    // Also drop stored under top() targeted motions
     while (!empty() && (top()->GetMovementGeneratorType() == CHASE_MOTION_TYPE || top()->GetMovementGeneratorType() == FOLLOW_MOTION_TYPE))
     {
         MovementGenerator* temp = top();
@@ -308,9 +269,6 @@ void MotionMaster::DelayedExpire(bool reset)
     }
 }
 
-/**
- * @brief Moves the unit to idle state.
- */
 void MotionMaster::MoveIdle()
 {
     if (empty() || !isStatic(top()))
@@ -319,15 +277,7 @@ void MotionMaster::MoveIdle()
     }
 }
 
-/**
- * @brief Moves the unit randomly around a point.
- * @param x X-coordinate of the center point.
- * @param y Y-coordinate of the center point.
- * @param z Z-coordinate of the center point.
- * @param radius Radius of the random movement.
- * @param verticalZ Vertical offset for the movement.
- */
-void MotionMaster::MoveRandomAroundPoint(float x, float y, float z, float radius, float /*verticalZ*/)
+void MotionMaster::MoveRandomAroundPoint(float x, float y, float z, float radius, float )
 {
     if (m_owner->MovesItself())
     {
@@ -340,9 +290,6 @@ void MotionMaster::MoveRandomAroundPoint(float x, float y, float z, float radius
     }
 }
 
-/**
- * @brief Moves the unit to its home position.
- */
 void MotionMaster::MoveTargetedHome()
 {
     if (m_owner->hasUnitState(UNIT_STAT_LOST_CONTROL))
@@ -352,9 +299,9 @@ void MotionMaster::MoveTargetedHome()
 
     Clear(false);
 
-    if (m_owner->IsCreature() && !((Creature*)m_owner)->GetCharmerOrOwnerGuid())
+    if (IsCreature(m_owner) && !((Creature*)m_owner)->GetCharmerOrOwnerGuid())
     {
-        // Manual exception for linked mobs
+
         if (static_cast<Creature*>(m_owner)->Links().RefollowMaster())
         {
             DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "%s refollowed linked master", m_owner->GetGuidStr().c_str());
@@ -365,7 +312,7 @@ void MotionMaster::MoveTargetedHome()
             Mutate(new HomeMovementGenerator());
         }
     }
-    else if (m_owner->IsCreature() && ((Creature*)m_owner)->GetCharmerOrOwnerGuid())
+    else if (IsCreature(m_owner) && ((Creature*)m_owner)->GetCharmerOrOwnerGuid())
     {
         if (Unit* target = ((Creature*)m_owner)->GetCharmerOrOwner())
         {
@@ -383,9 +330,6 @@ void MotionMaster::MoveTargetedHome()
     }
 }
 
-/**
- * @brief Makes the unit move in a confused manner.
- */
 void MotionMaster::MoveConfused()
 {
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "%s move confused", m_owner->GetGuidStr().c_str());
@@ -393,15 +337,9 @@ void MotionMaster::MoveConfused()
     Mutate(new ConfusedMovementGenerator());
 }
 
-/**
- * @brief Makes the unit chase a target.
- * @param target Pointer to the target unit.
- * @param dist Distance to maintain from the target.
- * @param angle Angle to maintain from the target.
- */
 void MotionMaster::MoveChase(Unit* target, float dist, float angle)
 {
-    // Ignore movement request if target not exist
+
     if (!target)
     {
         return;
@@ -412,12 +350,6 @@ void MotionMaster::MoveChase(Unit* target, float dist, float angle)
     Mutate(new ChaseMovementGenerator(*target, dist, angle));
 }
 
-/**
- * @brief Makes the unit follow a target.
- * @param target Pointer to the target unit.
- * @param dist Distance to maintain from the target.
- * @param angle Angle to maintain from the target.
- */
 void MotionMaster::MoveFollow(Unit* target, float dist, float angle)
 {
     if (m_owner->hasUnitState(UNIT_STAT_LOST_CONTROL))
@@ -427,7 +359,6 @@ void MotionMaster::MoveFollow(Unit* target, float dist, float angle)
 
     Clear();
 
-    // Ignore movement request if target not exist
     if (!target)
     {
         return;
@@ -438,14 +369,6 @@ void MotionMaster::MoveFollow(Unit* target, float dist, float angle)
     Mutate(new FollowMovementGenerator(*target, dist, angle));
 }
 
-/**
- * @brief Moves the unit to a specific point.
- * @param id ID of the movement.
- * @param x X-coordinate of the destination.
- * @param y Y-coordinate of the destination.
- * @param z Z-coordinate of the destination.
- * @param generatePath Whether to generate a path to the destination.
- */
 void MotionMaster::MovePoint(uint32 id, float x, float y, float z, bool generatePath)
 {
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "%s targeted point (Id: %u X: %f Y: %f Z: %f)", m_owner->GetGuidStr().c_str(), id, x, y, z);
@@ -453,14 +376,6 @@ void MotionMaster::MovePoint(uint32 id, float x, float y, float z, bool generate
     Mutate(new PointMovementGenerator(id, x, y, z, generatePath));
 }
 
-/**
- * @brief Move to a point, but only along a route the pathfinder genuinely laid.
- *
- * Unlike MovePoint, this never falls back to a straight line through geometry. If the goal
- * cannot be routed -- most often because its mmap tile is not resident -- no leg is laid and
- * the mover stays where it is. Use it where cutting through the world would be worse than
- * not moving, and where the caller has a fallback for standing still.
- */
 void MotionMaster::MovePointRouted(uint32 id, float x, float y, float z)
 {
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "%s targeted point, routed only (Id: %u X: %f Y: %f Z: %f)", m_owner->GetGuidStr().c_str(), id, x, y, z);
@@ -468,12 +383,6 @@ void MotionMaster::MovePointRouted(uint32 id, float x, float y, float z)
     Mutate(new RoutedPointMovementGenerator(id, x, y, z));
 }
 
-/**
- * @brief Makes the unit seek assistance at a specific point.
- * @param x X-coordinate of the assistance point.
- * @param y Y-coordinate of the assistance point.
- * @param z Z-coordinate of the assistance point.
- */
 void MotionMaster::MoveSeekAssistance(float x, float y, float z)
 {
     if (m_owner->MovesItself())
@@ -488,10 +397,6 @@ void MotionMaster::MoveSeekAssistance(float x, float y, float z)
     }
 }
 
-/**
- * @brief Makes the unit seek assistance and then distract.
- * @param timer Time for the distraction.
- */
 void MotionMaster::MoveSeekAssistanceDistract(uint32 time)
 {
     if (m_owner->MovesItself())
@@ -506,11 +411,6 @@ void MotionMaster::MoveSeekAssistanceDistract(uint32 time)
     }
 }
 
-/**
- * @brief Makes the unit flee from an enemy.
- * @param enemy Pointer to the enemy unit.
- * @param time Time limit for the fleeing movement.
- */
 void MotionMaster::MoveFleeing(Unit* enemy, uint32 time)
 {
     if (!enemy)
@@ -520,9 +420,7 @@ void MotionMaster::MoveFleeing(Unit* enemy, uint32 time)
 
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "%s flee from %s", m_owner->GetGuidStr().c_str(), enemy->GetGuidStr().c_str());
 
-    // Only a creature ever flees on a timer and then turns to fight again; a feared
-    // player runs until the aura that frightened it is gone.
-    if (time && m_owner->IsCreature())
+    if (time &&IsCreature(m_owner))
     {
         Mutate(new TimedFleeingMovementGenerator(enemy->GetObjectGuid(), time));
     }
@@ -532,16 +430,9 @@ void MotionMaster::MoveFleeing(Unit* enemy, uint32 time)
     }
 }
 
-/**
- * @brief Moves the unit along a waypoint path.
- * @param id ID of the waypoint path.
- * @param source Source of the waypoint path.
- * @param initialDelay Initial delay before starting the movement.
- * @param overwriteEntry Entry to overwrite.
- */
-void MotionMaster::MoveWaypoint(int32 id /*=0*/, uint32 source /*=0==PATH_NO_PATH*/, uint32 initialDelay /*=0*/, uint32 overwriteEntry /*=0*/)
+void MotionMaster::MoveWaypoint(int32 id , uint32 source , uint32 initialDelay , uint32 overwriteEntry )
 {
-    if (m_owner->IsCreature())
+    if (IsCreature(m_owner))
     {
         if (GetCurrentMovementGeneratorType() == WAYPOINT_MOTION_TYPE)
         {
@@ -562,11 +453,6 @@ void MotionMaster::MoveWaypoint(int32 id /*=0*/, uint32 source /*=0==PATH_NO_PAT
     }
 }
 
-/**
- * @brief Moves the unit along a taxi flight path.
- * @param path ID of the flight path.
- * @param pathnode Node of the flight path.
- */
 void MotionMaster::MoveTaxiFlight(uint32 path, uint32 pathnode)
 {
     if (m_owner->MovesItself())
@@ -590,10 +476,6 @@ void MotionMaster::MoveTaxiFlight(uint32 path, uint32 pathnode)
     }
 }
 
-/**
- * @brief Makes the unit distracted for a specified time.
- * @param timer Time limit for the distraction.
- */
 void MotionMaster::MoveDistract(uint32 timer)
 {
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "%s distracted (timer: %u)", m_owner->GetGuidStr().c_str(), timer);
@@ -601,17 +483,9 @@ void MotionMaster::MoveDistract(uint32 timer)
     Mutate(mgen);
 }
 
-/**
- * @brief Makes the unit fly or land.
- * @param id ID of the movement.
- * @param x X-coordinate of the destination.
- * @param y Y-coordinate of the destination.
- * @param z Z-coordinate of the destination.
- * @param liftOff Whether the unit should lift off or land.
- */
 void MotionMaster::MoveFlyOrLand(uint32 id, float x, float y, float z, bool liftOff)
 {
-    if (!m_owner->IsCreature())
+    if (!IsCreature(m_owner))
     {
         return;
     }
@@ -620,19 +494,15 @@ void MotionMaster::MoveFlyOrLand(uint32 id, float x, float y, float z, bool lift
     Mutate(new FlyOrLandMovementGenerator(id, x, y, z, liftOff));
 }
 
-/**
- * @brief Changes the current movement generator to a new one.
- * @param m Pointer to the new movement generator.
- */
 void MotionMaster::Mutate(MovementGenerator* m)
 {
     if (!empty())
     {
         switch (top()->GetMovementGeneratorType())
         {
-                // HomeMovement is not that important, delete it if meanwhile a new comes
+
             case HOME_MOTION_TYPE:
-                // DistractMovement interrupted by any other movement
+
             case DISTRACT_MOTION_TYPE:
                 MovementExpired(false);
             default:
@@ -649,9 +519,6 @@ void MotionMaster::Mutate(MovementGenerator* m)
     push(m);
 }
 
-/**
- * @brief Propagates the speed change to the movement generators.
- */
 void MotionMaster::PropagateSpeedChange()
 {
     Impl::container_type::iterator it = Impl::c.begin();
@@ -661,11 +528,6 @@ void MotionMaster::PropagateSpeedChange()
     }
 }
 
-/**
- * @brief Sets the next waypoint for the unit.
- * @param pointId ID of the next waypoint.
- * @return True if the next waypoint was successfully set, false otherwise.
- */
 bool MotionMaster::SetNextWaypoint(uint32 pointId)
 {
     for (Impl::container_type::reverse_iterator rItr = Impl::c.rbegin(); rItr != Impl::c.rend(); ++rItr)
@@ -678,10 +540,6 @@ bool MotionMaster::SetNextWaypoint(uint32 pointId)
     return false;
 }
 
-/**
- * @brief Gets the last reached waypoint.
- * @return The ID of the last reached waypoint.
- */
 uint32 MotionMaster::getLastReachedWaypoint() const
 {
     for (Impl::container_type::const_reverse_iterator rItr = Impl::c.rbegin(); rItr != Impl::c.rend(); ++rItr)
@@ -694,10 +552,6 @@ uint32 MotionMaster::getLastReachedWaypoint() const
     return 0;
 }
 
-/**
- * @brief Gets the type of the current movement generator.
- * @return The type of the current movement generator.
- */
 MovementGeneratorType MotionMaster::GetCurrentMovementGeneratorType() const
 {
     if (empty())
@@ -708,10 +562,6 @@ MovementGeneratorType MotionMaster::GetCurrentMovementGeneratorType() const
     return top()->GetMovementGeneratorType();
 }
 
-/// Whether the leg in flight is one the router actually routed.
-///
-/// A routed leg reports POINT_MOTION_TYPE like any other point move, so the type alone
-/// cannot answer this. See MovementGenerator::IsRoutedLeg.
 bool MotionMaster::IsCurrentLegRouted() const
 {
     if (empty())
@@ -722,10 +572,6 @@ bool MotionMaster::IsCurrentLegRouted() const
     return top()->IsRoutedLeg();
 }
 
-/**
- * @brief Gets the waypoint path information.
- * @param oss Output stream to store the waypoint path information.
- */
 void MotionMaster::GetWaypointPathInformation(std::ostringstream& oss) const
 {
     for (Impl::container_type::const_reverse_iterator rItr = Impl::c.rbegin(); rItr != Impl::c.rend(); ++rItr)
@@ -738,13 +584,6 @@ void MotionMaster::GetWaypointPathInformation(std::ostringstream& oss) const
     }
 }
 
-/**
- * @brief Gets the destination coordinates.
- * @param x Reference to the X-coordinate.
- * @param y Reference to the Y-coordinate.
- * @param z Reference to the Z-coordinate.
- * @return True if the destination coordinates were successfully obtained, false otherwise.
- */
 bool MotionMaster::GetDestination(float& x, float& y, float& z)
 {
     if (m_owner->movespline->Finalized())
@@ -759,12 +598,9 @@ bool MotionMaster::GetDestination(float& x, float& y, float& z)
     return true;
 }
 
-/**
- * @brief Makes the unit fall to the ground.
- */
 void MotionMaster::MoveFall()
 {
-    // Use larger distance for vmap height search than in most other cases
+
     float tz = m_owner->GetMap()->GetHeight(m_owner->Where().X(), m_owner->Where().Y(), m_owner->Where().Z());
     if (tz <= INVALID_HEIGHT)
     {
@@ -773,7 +609,6 @@ void MotionMaster::MoveFall()
         return;
     }
 
-    // Abort too if the ground is very near
     if (fabs(m_owner->Where().Z() - tz) < 0.1f)
     {
         return;

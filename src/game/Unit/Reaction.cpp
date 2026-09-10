@@ -109,7 +109,7 @@ Reaction AsFactionsDeclare(FactionTemplateEntry const& who, FactionTemplateEntry
 
 namespace
 {
-    /// Whoever is actually behind a unit: a pet answers for its master.
+
     Unit const& MasterOrSelf(Unit const& unit)
     {
         Unit const* owner = unit.GetCharmerOrOwner();
@@ -121,9 +121,6 @@ namespace
         return a.getVictim() == &b || b.getVictim() == &a;
     }
 
-    /// The standing a player has earned settles the question when either side
-    /// is a player; which way round decides whether the war declaration or the
-    /// reputation rank is read.
     Reaction FromStanding(Player const* playerWho, Player const* playerWhom,
                           FactionTemplateEntry const* whoFaction,
                           FactionTemplateEntry const* whomFaction)
@@ -141,8 +138,6 @@ namespace
         return Reaction::NoOpinion;
     }
 
-    /// Two players, once ownership has been followed and neither is fighting
-    /// the other.
     Reaction AsPvpStateStands(Player const& who, Player const& whom)
     {
         if (who.Duelling().With(&whom))
@@ -170,9 +165,6 @@ namespace
             return Reaction::Friendly;
         }
 
-        // Across the two sides. An unflagged whom is nobody's enemy, and a
-        // flagged one is an enemy only to someone flagged as well. What is left
-        // in between is the yellow name: attackable by choice, not by state.
         if (!whom.IsPvP())
         {
             return Reaction::Friendly;
@@ -189,13 +181,12 @@ Reaction ReactionOf(Unit const& who, Unit const& whom)
         return Reaction::Friendly;
     }
 
-    Player const* watcher = ToPlayer(&whom);
+    Player const* watcher = static_cast<Player const*>(&whom);
     if (watcher && watcher->isGameMaster())
     {
         return Reaction::Friendly;
     }
 
-    // Whoever is already swinging at whoever, through either one's master.
     Unit const& whoCounts = MasterOrSelf(who);
     Unit const& whomCounts = MasterOrSelf(whom);
     if (FightingEachOther(who, whom) || FightingEachOther(whoCounts, whom)
@@ -204,14 +195,13 @@ Reaction ReactionOf(Unit const& who, Unit const& whom)
         return Reaction::Hostile;
     }
 
-    // A master and its own pet, or two pets of one master.
     if (&whoCounts == &whomCounts)
     {
         return Reaction::Friendly;
     }
 
-    Player const* playerWho = ToPlayer(&whoCounts);
-    Player const* playerWhom = ToPlayer(&whomCounts);
+    Player const* playerWho = static_cast<Player const*>(&whoCounts);
+    Player const* playerWhom = static_cast<Player const*>(&whomCounts);
     if (playerWho && playerWhom)
     {
         return AsPvpStateStands(*playerWho, *playerWhom);
@@ -240,7 +230,7 @@ Reaction ReactionOf(Unit const& who, Unit const& whom)
 
 Reaction ReactionOf(GameObject const& who, Unit const& whom)
 {
-    Player const* watcher = ToPlayer(&whom);
+    Player const* watcher = static_cast<Player const*>(&whom);
     if (watcher && watcher->isGameMaster())
     {
         return Reaction::Friendly;
@@ -256,8 +246,6 @@ Reaction ReactionOf(GameObject const& who, Unit const& whom)
         return ReactionOf(who, *master);
     }
 
-    // A wild object has no side of its own, so it opposes whoever a player
-    // drives and ignores everything else.
     if (!who.GetGOInfo()->faction)
     {
         return whom.IsControlledByPlayer() ? Reaction::Hostile : Reaction::Neither;
@@ -296,22 +284,22 @@ Reaction ReactionOf(DynamicObject const& who, Unit const& whom)
 
 Reaction ReactionOf(Object const& who, Unit const& whom)
 {
-    if (Unit const* unit = ToUnit(&who))
+    if (Unit const* unit = static_cast<Unit const*>(&who))
     {
         return ReactionOf(*unit, whom);
     }
 
-    if (GameObject const* go = ToGameObject(&who))
+    if (GameObject const* go = static_cast<GameObject const*>(&who))
     {
         return ReactionOf(*go, whom);
     }
 
-    if (Corpse const* corpse = ToCorpse(&who))
+    if (Corpse const* corpse = static_cast<Corpse const*>(&who))
     {
         return ReactionOf(*corpse, whom);
     }
 
-    if (DynamicObject const* dynObject = ToDynObject(&who))
+    if (DynamicObject const* dynObject = static_cast<DynamicObject const*>(&who))
     {
         return ReactionOf(*dynObject, whom);
     }
@@ -321,8 +309,7 @@ Reaction ReactionOf(Object const& who, Unit const& whom)
 
 namespace
 {
-    /// A faction the player can hold a standing with answers through that
-    /// standing, so the template is not asked.
+
     bool StandingDecides(FactionTemplateEntry const* faction)
     {
         FactionEntry const* known = sFactionStore.LookupEntry(faction->Faction);

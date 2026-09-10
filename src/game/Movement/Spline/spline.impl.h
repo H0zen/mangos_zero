@@ -28,11 +28,6 @@
 namespace Movement
 {
 
-    /**
-     * @brief Evaluates the spline at a given percentage of its length.
-     * @param t The percentage of the spline's length (0.0 to 1.0).
-     * @param c The resulting position on the spline.
-     */
     template<typename length_type> void Spline<length_type>::evaluate_percent(float t, Vector3& c) const
     {
         index_type Index;
@@ -41,11 +36,6 @@ namespace Movement
         evaluate_percent(Index, u, c);
     }
 
-    /**
-     * @brief Evaluates the derivative of the spline at a given percentage of its length.
-     * @param t The percentage of the spline's length (0.0 to 1.0).
-     * @param hermite The resulting derivative on the spline.
-     */
     template<typename length_type> void Spline<length_type>::evaluate_derivative(float t, Vector3& hermite) const
     {
         index_type Index;
@@ -54,11 +44,6 @@ namespace Movement
         evaluate_derivative(Index, u, hermite);
     }
 
-    /**
-     * @brief Computes the index of the segment that contains the given length.
-     * @param length_ The length along the spline.
-     * @return SplineBase::index_type The index of the segment.
-     */
     template<typename length_type> SplineBase::index_type Spline<length_type>::computeIndexInBounds(length_type length_) const
     {
         index_type i = index_lo;
@@ -71,12 +56,6 @@ namespace Movement
         return i;
     }
 
-    /**
-     * @brief Computes the index and the local parameter for a given percentage of the spline's length.
-     * @param t The percentage of the spline's length (0.0 to 1.0).
-     * @param index The resulting index of the segment.
-     * @param u The resulting local parameter within the segment.
-     */
     template<typename length_type> void Spline<length_type>::computeIndex(float t, index_type& index, float& u) const
     {
         MANGOS_ASSERT(t >= 0.f && t <= 1.f);
@@ -86,20 +65,12 @@ namespace Movement
         u = (length_ - length(index)) / (float)length(index, index + 1);
     }
 
-    /**
-     * @brief Computes the index of the segment that contains the given percentage of the spline's length.
-     * @param t The percentage of the spline's length (0.0 to 1.0).
-     * @return SplineBase::index_type The index of the segment.
-     */
     template<typename length_type> SplineBase::index_type Spline<length_type>::computeIndexInBounds(float t) const
     {
         MANGOS_ASSERT(t >= 0.f && t <= 1.f);
         return computeIndexInBounds(t * length());
     }
 
-    /**
-     * @brief Initializes the lengths of the segments of the spline.
-     */
     template<typename length_type> void Spline<length_type>::initLengths()
     {
         index_type i = index_lo;
@@ -112,13 +83,9 @@ namespace Movement
         }
     }
 
-    /**
-     * @brief Clears the spline data.
-     */
     template<typename length_type> void Spline<length_type>::clear()
     {
         SplineBase::clear();
         lengths.clear();
     }
 }
-

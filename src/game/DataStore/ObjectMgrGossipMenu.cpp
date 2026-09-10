@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <map>
 #include <set>
 #include "ObjectMgr.h"
@@ -58,16 +56,11 @@
 #include "DisableMgr.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Loads gossip menu headers and validates linked texts, scripts, and conditions.
- *
- * @param gossipScriptSet The set of known gossip scripts to mark as used.
- */
 void ObjectMgr::LoadGossipMenu(std::set<uint32>& gossipScriptSet)
 {
     m_mGossipMenusMap.clear();
     QueryResult* result = WorldDatabase.Query(
-        //           0        1          2            3
+
             "SELECT `entry`, `text_id`, `script_id`, `condition_id` FROM `gossip_menu`");
 
     if (!result)
@@ -103,7 +96,6 @@ void ObjectMgr::LoadGossipMenu(std::set<uint32>& gossipScriptSet)
             continue;
         }
 
-        // Check script-id
         if (gMenu.script_id)
         {
             ScriptChainMap const* scm = sScriptMgr.GetScriptChainMap(DBS_ON_GOSSIP);
@@ -118,7 +110,6 @@ void ObjectMgr::LoadGossipMenu(std::set<uint32>& gossipScriptSet)
                 continue;
             }
 
-            // Remove used script id
             gossipScriptSet.erase(gMenu.script_id);
         }
 
@@ -140,7 +131,6 @@ void ObjectMgr::LoadGossipMenu(std::set<uint32>& gossipScriptSet)
 
     delete result;
 
-    // post loading tests
     for (uint32 i = 1; i < sCreatureStorage.GetMaxEntry(); ++i)
     {
         if (CreatureInfo const* cInfo = sCreatureStorage.LookupEntry<CreatureInfo>(i))
@@ -173,11 +163,6 @@ void ObjectMgr::LoadGossipMenu(std::set<uint32>& gossipScriptSet)
     sLog.outString();
 }
 
-/**
- * @brief Loads gossip menu options and validates linked menus, scripts, POIs, and conditions.
- *
- * @param gossipScriptSet The set of known gossip scripts to mark as used.
- */
 void ObjectMgr::LoadGossipMenuItems(std::set<uint32>& gossipScriptSet)
 {
     m_mGossipMenuItemsMap.clear();
@@ -197,9 +182,8 @@ void ObjectMgr::LoadGossipMenuItems(std::set<uint32>& gossipScriptSet)
         return;
     }
 
-    // prepare data for unused menu ids
-    std::set<uint32> menu_ids;                              // for later integrity check
-    if (!sLog.HasLogFilter(LOG_FILTER_DB_STRICTED_CHECK))   // check unused menu ids only in strict mode
+    std::set<uint32> menu_ids;
+    if (!sLog.HasLogFilter(LOG_FILTER_DB_STRICTED_CHECK))
     {
         for (GossipMenusMap::const_iterator itr = m_mGossipMenusMap.begin(); itr != m_mGossipMenusMap.end(); ++itr)
         {
@@ -218,12 +202,10 @@ void ObjectMgr::LoadGossipMenuItems(std::set<uint32>& gossipScriptSet)
         }
     }
 
-    // loading
     BarGoLink bar(result->GetRowCount());
 
     uint32 count = 0;
 
-    // prepare menuid -> CreatureInfo map for fast access
     typedef  std::multimap<uint32, const CreatureInfo*> Menu2CInfoMap;
     Menu2CInfoMap menu2CInfoMap;
     for (uint32 i = 1;  i < sCreatureStorage.GetMaxEntry(); ++i)
@@ -234,7 +216,6 @@ void ObjectMgr::LoadGossipMenuItems(std::set<uint32>& gossipScriptSet)
             {
                 menu2CInfoMap.insert(Menu2CInfoMap::value_type(cInfo->GossipMenuId, cInfo));
 
-                // unused check data preparing part
                 if (!sLog.HasLogFilter(LOG_FILTER_DB_STRICTED_CHECK))
                 {
                     menu_ids.erase(cInfo->GossipMenuId);
@@ -265,7 +246,7 @@ void ObjectMgr::LoadGossipMenuItems(std::set<uint32>& gossipScriptSet)
 
         gMenuItem.conditionId           = fields[12].GetUInt16();
 
-        if (gMenuItem.menu_id)                              // == 0 id is special and not have menu_id data
+        if (gMenuItem.menu_id)
         {
             if (m_mGossipMenusMap.find(gMenuItem.menu_id) == m_mGossipMenusMap.end())
             {
@@ -314,7 +295,6 @@ void ObjectMgr::LoadGossipMenuItems(std::set<uint32>& gossipScriptSet)
 
                 found_menu_uses = true;
 
-                // some from creatures with gossip menu can use gossip option base at npc_flags
                 if (gMenuItem.npc_option_npcflag & cInfo->NpcFlags)
                 {
                     found_flags_uses = true;
@@ -347,7 +327,6 @@ void ObjectMgr::LoadGossipMenuItems(std::set<uint32>& gossipScriptSet)
                 continue;
             }
 
-            // Remove used script id
             gossipScriptSet.erase(gMenuItem.action_script_id);
         }
 
@@ -381,9 +360,6 @@ void ObjectMgr::LoadGossipMenuItems(std::set<uint32>& gossipScriptSet)
     sLog.outString();
 }
 
-/**
- * @brief Reloads gossip menus, gossip options, and their core-side caches.
- */
 void ObjectMgr::LoadGossipMenus()
 {
     ScriptChainMap const* scm = sScriptMgr.GetScriptChainMap(DBS_ON_GOSSIP);
@@ -392,14 +368,12 @@ void ObjectMgr::LoadGossipMenus()
         return;
     }
 
-    // Check which script-ids in db_scripts type DBS_ON_GOSSIP are not used
     std::set<uint32> gossipScriptSet;
     for (ScriptChainMap::const_iterator itr = scm->begin(); itr != scm->end(); ++itr)
     {
         gossipScriptSet.insert(itr->first);
     }
 
-    // Load gossip_menu and gossip_menu_option data
     sLog.outString("(Re)Loading Gossip menus...");
     LoadGossipMenu(gossipScriptSet);
     sLog.outString("(Re)Loading Gossip menu options...");

@@ -23,17 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file BanAndKickCommands.cpp
- * @brief Implementation of player ban and kick management chat commands.
- *
- * This file contains chat command handlers for managing player access including:
- * - Account banning and unbanning
- * - IP address banning
- * - Player kick from game
- * - Ban management utilities
- */
-
 #include <string>
 #include "Chat.h"
 #include "Language.h"
@@ -42,21 +31,10 @@
 #include "Util.h"
 #include "ObjectMgr.h"
 
-/**
- * @brief Helper function to display ban list information.
- *
- * Displays bans in either chat format (short output) or console format (detailed).
- * For chat output, shows usernames of banned accounts. For console output, shows
- * detailed ban information including dates, duration, and ban reasons.
- *
- * @param result Query result containing ban information.
- * @returns True if ban list was displayed successfully, false otherwise.
- */
 bool ChatHandler::HandleBanListHelper(QueryResult* result)
 {
     PSendSysMessage(LANG_BANLIST_MATCHINGACCOUNT);
 
-    // Chat short output
     if (m_session)
     {
         do
@@ -74,7 +52,7 @@ bool ChatHandler::HandleBanListHelper(QueryResult* result)
         }
         while (result->NextRow());
     }
-    // Console wide output
+
     else
     {
         SendSysMessage(LANG_BANLIST_ACCOUNTS);
@@ -88,18 +66,16 @@ bool ChatHandler::HandleBanListHelper(QueryResult* result)
 
             std::string account_name;
 
-            // "account" case, name can be get in same query
             if (result->GetFieldCount() > 1)
             {
                 account_name = fields[1].GetCppString();
             }
-            // "character" case, name need extract from another DB
+
             else
             {
                 sAccountMgr.GetName(account_id, account_name);
             }
 
-            // No SQL injection. id is uint32.
             QueryResult* banInfo = LoginDatabase.PQuery("SELECT `bandate`,`unbandate`,`bannedby`,`banreason` FROM `account_banned` WHERE `id` = %u ORDER BY `unbandate`", account_id);
             if (banInfo)
             {
@@ -138,16 +114,6 @@ bool ChatHandler::HandleBanListHelper(QueryResult* result)
     return true;
 }
 
-/**
- * @brief Helper function to handle ban operations.
- *
- * Processes banning of accounts or IP addresses. Supports duration specification
- * and ban reason entry. Can ban accounts by name or IP addresses.
- *
- * @param mode The ban mode (account, IP, or character).
- * @param args Command arguments: target_name [duration] [reason].
- * @returns True if ban was applied successfully, false otherwise.
- */
 bool ChatHandler::HandleBanHelper(BanMode mode, char* args)
 {
     if (!*args)
@@ -163,7 +129,7 @@ bool ChatHandler::HandleBanHelper(BanMode mode, char* args)
 
     std::string nameOrIP = cnameOrIP;
 
-    char* duration = ExtractArg(&args);                     // time string
+    char* duration = ExtractArg(&args);
     if (!duration)
     {
         return false;
@@ -237,49 +203,21 @@ bool ChatHandler::HandleBanHelper(BanMode mode, char* args)
     return true;
 }
 
-/**
- * @brief Bans an IP address.
- *
- * @param args Command arguments: ip_address [duration] [reason].
- * @returns True if the IP was banned successfully, false otherwise.
- */
 bool ChatHandler::HandleBanIPCommand(char* args)
 {
     return HandleBanHelper(BAN_IP, args);
 }
 
-/**
- * @brief Bans a character.
- *
- * @param args Command arguments: character_name [duration] [reason].
- * @returns True if the character was banned successfully, false otherwise.
- */
 bool ChatHandler::HandleBanCharacterCommand(char* args)
 {
     return HandleBanHelper(BAN_CHARACTER, args);
 }
 
-/**
- * @brief Bans an account.
- *
- * @param args Command arguments: account_name [duration] [reason].
- * @returns True if the account was banned successfully, false otherwise.
- */
 bool ChatHandler::HandleBanAccountCommand(char* args)
 {
     return HandleBanHelper(BAN_ACCOUNT, args);
 }
 
-/**
- * @brief Helper function to display ban information for an account.
- *
- * Shows ban history for a specific account including ban dates, duration,
- * active status, reason, and who issued the ban.
- *
- * @param accountid The account ID to look up.
- * @param accountname The name of the account (for display).
- * @returns True if ban information was successfully retrieved and displayed, false otherwise.
- */
 bool ChatHandler::HandleBanInfoHelper(uint32 accountid, char const* accountname)
 {
     QueryResult* result = LoginDatabase.PQuery("SELECT FROM_UNIXTIME(`bandate`), `unbandate`-`bandate`, `active`, `unbandate`,`banreason`,`bannedby` FROM `account_banned` WHERE `id` = '%u' ORDER BY `bandate` ASC", accountid);
@@ -311,12 +249,6 @@ bool ChatHandler::HandleBanInfoHelper(uint32 accountid, char const* accountname)
     return true;
 }
 
-/**
- * @brief Displays ban information for a specific IP address.
- *
- * @param args Command arguments: ip_address.
- * @returns True if ban information was displayed, false otherwise.
- */
 bool ChatHandler::HandleBanInfoIPCommand(char* args)
 {
     if (!*args)
@@ -354,16 +286,10 @@ bool ChatHandler::HandleBanInfoIPCommand(char* args)
     return true;
 }
 
-/**
- * @brief Displays ban information for a specific character.
- *
- * @param args Command arguments: character_name.
- * @returns True if ban information was displayed, false otherwise.
- */
 bool ChatHandler::HandleBanInfoCharacterCommand(char* args)
 {
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     if (!ExtractPlayerTarget(&args, &target, &target_guid))
     {
         return false;
@@ -381,12 +307,6 @@ bool ChatHandler::HandleBanInfoCharacterCommand(char* args)
     return HandleBanInfoHelper(accountid, accountname.c_str());
 }
 
-/**
- * @brief Displays ban information for a specific account.
- *
- * @param args Command arguments: account_name.
- * @returns True if ban information was displayed, false otherwise.
- */
 bool ChatHandler::HandleBanInfoAccountCommand(char* args)
 {
     if (!*args)
@@ -404,15 +324,6 @@ bool ChatHandler::HandleBanInfoAccountCommand(char* args)
     return HandleBanInfoHelper(accountid, account_name.c_str());
 }
 
-/**
- * @brief Displays the list of banned IP addresses.
- *
- * Shows currently active IP bans, optionally filtered by IP pattern.
- * Displays in short format for chat or detailed format for console.
- *
- * @param args Command arguments: [ip_filter_pattern].
- * @returns True if ban list was displayed, false otherwise.
- */
 bool ChatHandler::HandleBanListIPCommand(char* args)
 {
     LoginDatabase.Execute("DELETE FROM `ip_banned` WHERE `unbandate`<=UNIX_TIMESTAMP() AND `unbandate`<>`bandate`");
@@ -443,7 +354,7 @@ bool ChatHandler::HandleBanListIPCommand(char* args)
     }
 
     PSendSysMessage(LANG_BANLIST_MATCHINGIP);
-    // Chat short output
+
     if (m_session)
     {
         do
@@ -453,7 +364,7 @@ bool ChatHandler::HandleBanListIPCommand(char* args)
         }
         while (result->NextRow());
     }
-    // Console wide output
+
     else
     {
         SendSysMessage(LANG_BANLIST_IPS);
@@ -489,14 +400,6 @@ bool ChatHandler::HandleBanListIPCommand(char* args)
     return true;
 }
 
-/**
- * @brief Displays the list of banned characters.
- *
- * Shows currently banned characters, optionally filtered by name pattern.
- *
- * @param args Command arguments: [name_filter_pattern].
- * @returns True if character ban list was displayed, false otherwise.
- */
 bool ChatHandler::HandleBanListCharacterCommand(char* args)
 {
     LoginDatabase.Execute("DELETE FROM `ip_banned` WHERE `unbandate`<=UNIX_TIMESTAMP() AND `unbandate`<>`bandate`");
@@ -519,14 +422,6 @@ bool ChatHandler::HandleBanListCharacterCommand(char* args)
     return HandleBanListHelper(result);
 }
 
-/**
- * @brief Displays the list of banned accounts.
- *
- * Shows currently active account bans, optionally filtered by account name pattern.
- *
- * @param args Command arguments: [account_name_filter_pattern].
- * @returns True if account ban list was displayed, false otherwise.
- */
 bool ChatHandler::HandleBanListAccountCommand(char* args)
 {
     LoginDatabase.Execute("DELETE FROM `ip_banned` WHERE `unbandate`<=UNIX_TIMESTAMP() AND `unbandate`<>`bandate`");
@@ -558,15 +453,6 @@ bool ChatHandler::HandleBanListAccountCommand(char* args)
     return HandleBanListHelper(result);
 }
 
-/**
- * @brief Helper function to handle unban operations.
- *
- * Removes bans from accounts or IP addresses.
- *
- * @param mode The unban mode (account, IP, or character).
- * @param args Command arguments: target_name.
- * @returns True if unban was applied successfully, false otherwise.
- */
 bool ChatHandler::HandleUnBanHelper(BanMode mode, char* args)
 {
     if (!*args)
@@ -620,47 +506,21 @@ bool ChatHandler::HandleUnBanHelper(BanMode mode, char* args)
     return true;
 }
 
-/**
- * @brief Unbans an account.
- *
- * @param args Command arguments: account_name.
- * @returns True if the account was unbanned successfully, false otherwise.
- */
 bool ChatHandler::HandleUnBanAccountCommand(char* args)
 {
     return HandleUnBanHelper(BAN_ACCOUNT, args);
 }
 
-/**
- * @brief Unbans a character.
- *
- * @param args Command arguments: character_name.
- * @returns True if the character was unbanned successfully, false otherwise.
- */
 bool ChatHandler::HandleUnBanCharacterCommand(char* args)
 {
     return HandleUnBanHelper(BAN_CHARACTER, args);
 }
 
-/**
- * @brief Unbans an IP address.
- *
- * @param args Command arguments: ip_address.
- * @returns True if the IP was unbanned successfully, false otherwise.
- */
 bool ChatHandler::HandleUnBanIPCommand(char* args)
 {
     return HandleUnBanHelper(BAN_IP, args);
 }
 
-/**
- * @brief Kicks a player from the game.
- *
- * Removes a player from the server immediately. The command issuer cannot kick themselves.
- *
- * @param args Command arguments: character_name.
- * @returns True if the player was kicked successfully, false otherwise.
- */
 bool ChatHandler::HandleKickPlayerCommand(char* args)
 {
     Player* target;
@@ -676,13 +536,11 @@ bool ChatHandler::HandleKickPlayerCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(target))
     {
         return false;
     }
 
-    // send before target pointer invalidate
     PSendSysMessage(LANG_COMMAND_KICKMESSAGE, GetNameLink(target).c_str());
     target->GetSession()->KickPlayer();
     return true;

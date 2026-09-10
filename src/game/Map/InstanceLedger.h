@@ -32,36 +32,20 @@ class BattleGround;
 class Map;
 class Player;
 
-/**
- * @brief Which copy of a map a player belongs in, and the numbers those copies are known by.
- *
- * A dungeon or a battleground exists many times over, and the question "which one is his?"
- * is answered from his holds and his battleground stay -- never from the map, which has no
- * way of knowing. This ledger asks him, then has MapFoundry cast the copy if it is not open
- * yet and files it with MapRoster.
- *
- * The copy numbers are minted here and continue the run of numbers already in the database,
- * so a copy that was saved before the restart keeps the number its saved state names.
- */
 class InstanceLedger : public MaNGOS::Singleton<InstanceLedger>
 {
         friend class MaNGOS::Singleton<InstanceLedger>;
 
     public:
 
-        /// Continue the run of copy numbers from the highest one the database has kept.
         void PrimeMaxId();
 
-        /// The next unused copy number.
         uint32 MintId() { return ++m_maxId; }
 
-        /// The copy of an instanceable map this player belongs in, opened if it is not.
         Map* OpenFor(Player& player, uint32 mapId);
 
-        /// A fresh copy for a battleground about to start. The match owns it, not a bind.
         Map* OpenBattleGround(uint32 mapId, BattleGround* bg);
 
-        /// How many dungeon copies are open, and how many people are inside them.
         uint32 OpenDungeons() const;
         uint32 PlayersInside() const;
 

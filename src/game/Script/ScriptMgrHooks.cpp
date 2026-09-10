@@ -23,29 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file ScriptMgr.cpp
- * @brief Script system manager implementation
- *
- * This file implements ScriptMgr which manages all game scripts:
- * - Creature AI scripts
- * - GameObject scripts
- * - Item scripts
- * - Area trigger scripts
- * - Spell scripts
- * - Quest scripts
- * - Instance scripts
- *
- * Scripts are loaded from script libraries and provide hooks for
- * customizing game behavior. The script manager routes events to
- * the appropriate script handlers.
- *
- * @see ScriptMgr for the manager class
- * @see ScriptedInstance for instance script base
- */
-
-
-
 #include "ScriptMgr.h"
 #include "Creature.h"
 #include "GameObject.h"
@@ -67,15 +44,9 @@
 #include "Mail.h"
 #ifdef ENABLE_SD3
 #include "system/ScriptDevMgr.h"
-#endif /* ENABLE_SD3 */
+#endif
 #include "LFGMgr.h"
 
-/**
- * @brief Creates or retrieves scripted AI for a creature.
- *
- * @param pCreature The creature requiring AI.
- * @return CreatureAI* The scripted AI instance, or nullptr when none is available.
- */
 CreatureAI* ScriptMgr::GetCreatureAI(Creature* pCreature)
 {
 
@@ -86,15 +57,9 @@ CreatureAI* ScriptMgr::GetCreatureAI(Creature* pCreature)
 #endif
 }
 
-/**
- * @brief Creates or retrieves scripted AI for a game object.
- *
- * @param pGo The game object requiring AI.
- * @return GameObjectAI* The scripted AI instance, or nullptr when none is available.
- */
 GameObjectAI* ScriptMgr::GetGameObjectAI(GameObject* pGo)
 {
-    // TODO - expose in ELuna
+
 #ifdef ENABLE_SD3
     return SD3::GetGameObjectAI(pGo);
 #else
@@ -102,12 +67,6 @@ GameObjectAI* ScriptMgr::GetGameObjectAI(GameObject* pGo)
 #endif
 }
 
-/**
- * @brief Creates scripted instance data for a map.
- *
- * @param pMap The map requiring instance data.
- * @return InstanceData* The scripted instance data, or nullptr when unavailable.
- */
 InstanceData* ScriptMgr::CreateInstanceData(Map* pMap)
 {
 #ifdef ENABLE_SD3
@@ -117,13 +76,6 @@ InstanceData* ScriptMgr::CreateInstanceData(Map* pMap)
 #endif
 }
 
-/**
- * @brief Dispatches creature gossip hello hooks to scripting engines.
- *
- * @param pPlayer The player starting gossip.
- * @param pCreature The creature handling gossip.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnGossipHello(Player* pPlayer, Creature* pCreature)
 {
 
@@ -134,13 +86,6 @@ bool ScriptMgr::OnGossipHello(Player* pPlayer, Creature* pCreature)
 #endif
 }
 
-/**
- * @brief Dispatches game object gossip hello hooks to scripting engines.
- *
- * @param pPlayer The player starting gossip.
- * @param pGameObject The game object handling gossip.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnGossipHello(Player* pPlayer, GameObject* pGameObject)
 {
 
@@ -151,13 +96,6 @@ bool ScriptMgr::OnGossipHello(Player* pPlayer, GameObject* pGameObject)
 #endif
 }
 
-/**
- * @brief Dispatches item gossip hello hooks to scripting engines.
- *
- * @param pPlayer The player starting gossip.
- * @param pItem The item handling gossip.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnGossipHello(Player* pPlayer, Item* pItem)
 {
 
@@ -168,16 +106,6 @@ bool ScriptMgr::OnGossipHello(Player* pPlayer, Item* pItem)
 #endif
 }
 
-/**
- * @brief Dispatches creature gossip selection hooks to scripting engines.
- *
- * @param pPlayer The player selecting the option.
- * @param pCreature The gossip creature.
- * @param sender The menu sender identifier.
- * @param action The selected action identifier.
- * @param code Optional code text entered by the player.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnGossipSelect(Player* pPlayer, Creature* pCreature, uint32 sender, uint32 action, const char* code)
 {
 
@@ -195,16 +123,6 @@ bool ScriptMgr::OnGossipSelect(Player* pPlayer, Creature* pCreature, uint32 send
 #endif
 }
 
-/**
- * @brief Dispatches game object gossip selection hooks to scripting engines.
- *
- * @param pPlayer The player selecting the option.
- * @param pGameObject The gossip game object.
- * @param sender The menu sender identifier.
- * @param action The selected action identifier.
- * @param code Optional code text entered by the player.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnGossipSelect(Player* pPlayer, GameObject* pGameObject, uint32 sender, uint32 action, const char* code)
 {
 
@@ -222,16 +140,6 @@ bool ScriptMgr::OnGossipSelect(Player* pPlayer, GameObject* pGameObject, uint32 
 #endif
 }
 
-/**
- * @brief Dispatches item gossip selection hooks to scripting engines.
- *
- * @param pPlayer The player selecting the option.
- * @param pItem The gossip item.
- * @param sender The menu sender identifier.
- * @param action The selected action identifier.
- * @param code Optional code text entered by the player.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnGossipSelect(Player* pPlayer, Item* pItem, uint32 sender, uint32 action, const char* code)
 {
 
@@ -249,14 +157,6 @@ bool ScriptMgr::OnGossipSelect(Player* pPlayer, Item* pItem, uint32 sender, uint
 #endif
 }
 
-/**
- * @brief Dispatches creature quest accept hooks to scripting engines.
- *
- * @param pPlayer The player accepting the quest.
- * @param pCreature The quest giver creature.
- * @param pQuest The accepted quest.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnQuestAccept(Player* pPlayer, Creature* pCreature, Quest const* pQuest)
 {
 
@@ -267,14 +167,6 @@ bool ScriptMgr::OnQuestAccept(Player* pPlayer, Creature* pCreature, Quest const*
 #endif
 }
 
-/**
- * @brief Dispatches game object quest accept hooks to scripting engines.
- *
- * @param pPlayer The player accepting the quest.
- * @param pGameObject The quest giver game object.
- * @param pQuest The accepted quest.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnQuestAccept(Player* pPlayer, GameObject* pGameObject, Quest const* pQuest)
 {
 
@@ -285,14 +177,6 @@ bool ScriptMgr::OnQuestAccept(Player* pPlayer, GameObject* pGameObject, Quest co
 #endif
 }
 
-/**
- * @brief Dispatches item quest accept hooks to scripting engines.
- *
- * @param pPlayer The player accepting the quest.
- * @param pItem The quest-starting item.
- * @param pQuest The accepted quest.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnQuestAccept(Player* pPlayer, Item* pItem, Quest const* pQuest)
 {
 
@@ -303,15 +187,6 @@ bool ScriptMgr::OnQuestAccept(Player* pPlayer, Item* pItem, Quest const* pQuest)
 #endif
 }
 
-/**
- * @brief Dispatches creature quest reward hooks to scripting engines.
- *
- * @param pPlayer The player receiving the reward.
- * @param pCreature The quest giver creature.
- * @param pQuest The rewarded quest.
- * @param reward The selected reward index or identifier.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnQuestRewarded(Player* pPlayer, Creature* pCreature, Quest const* pQuest, uint32 reward)
 {
 
@@ -322,15 +197,6 @@ bool ScriptMgr::OnQuestRewarded(Player* pPlayer, Creature* pCreature, Quest cons
 #endif
 }
 
-/**
- * @brief Dispatches game object quest reward hooks to scripting engines.
- *
- * @param pPlayer The player receiving the reward.
- * @param pGameObject The quest giver game object.
- * @param pQuest The rewarded quest.
- * @param reward The selected reward index or identifier.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnQuestRewarded(Player* pPlayer, GameObject* pGameObject, Quest const* pQuest, uint32 reward)
 {
 
@@ -341,13 +207,6 @@ bool ScriptMgr::OnQuestRewarded(Player* pPlayer, GameObject* pGameObject, Quest 
 #endif
 }
 
-/**
- * @brief Queries scripted dialog status for a creature gossip source.
- *
- * @param pPlayer The player querying the dialog state.
- * @param pCreature The creature being queried.
- * @return uint32 The dialog status value.
- */
 uint32 ScriptMgr::GetDialogStatus(Player* pPlayer, Creature* pCreature)
 {
 
@@ -358,13 +217,6 @@ uint32 ScriptMgr::GetDialogStatus(Player* pPlayer, Creature* pCreature)
 #endif
 }
 
-/**
- * @brief Queries scripted dialog status for a game object gossip source.
- *
- * @param pPlayer The player querying the dialog state.
- * @param pGameObject The game object being queried.
- * @return uint32 The dialog status value.
- */
 uint32 ScriptMgr::GetDialogStatus(Player* pPlayer, GameObject* pGameObject)
 {
 
@@ -375,13 +227,6 @@ uint32 ScriptMgr::GetDialogStatus(Player* pPlayer, GameObject* pGameObject)
 #endif
 }
 
-/**
- * @brief Dispatches player game object use hooks to scripting engines.
- *
- * @param pPlayer The player using the object.
- * @param pGameObject The used game object.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnGameObjectUse(Player* pPlayer, GameObject* pGameObject)
 {
 
@@ -392,16 +237,8 @@ bool ScriptMgr::OnGameObjectUse(Player* pPlayer, GameObject* pGameObject)
 #endif
 }
 
-/**
- * @brief Dispatches non-player game object use hooks to scripting engines.
- *
- * @param pUnit The unit using the object.
- * @param pGameObject The used game object.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnGameObjectUse(Unit* pUnit, GameObject* pGameObject)
 {
-    // TODO Add Eluna support
 
 #ifdef ENABLE_SD3
     return SD3::GOUse(pUnit, pGameObject);
@@ -410,14 +247,6 @@ bool ScriptMgr::OnGameObjectUse(Unit* pUnit, GameObject* pGameObject)
 #endif
 }
 
-/**
- * @brief Dispatches item use hooks to scripting engines.
- *
- * @param pPlayer The player using the item.
- * @param pItem The used item.
- * @param targets The item spell cast targets.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnItemUse(Player* pPlayer, Item* pItem, SpellCastTargets const& targets)
 {
 
@@ -428,13 +257,6 @@ bool ScriptMgr::OnItemUse(Player* pPlayer, Item* pItem, SpellCastTargets const& 
 #endif
 }
 
-/**
- * @brief Dispatches area trigger hooks to scripting engines.
- *
- * @param pPlayer The player entering the trigger.
- * @param atEntry The area trigger entry.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnAreaTrigger(Player* pPlayer, AreaTriggerEntry const* atEntry)
 {
 
@@ -445,14 +267,6 @@ bool ScriptMgr::OnAreaTrigger(Player* pPlayer, AreaTriggerEntry const* atEntry)
 #endif
 }
 
-/**
- * @brief Dispatches npc spell click hooks to scripting engines.
- *
- * @param pPlayer The player clicking the NPC spell interaction.
- * @param pClickedCreature The clicked creature.
- * @param spellId The triggering spell id.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnNpcSpellClick(Player* pPlayer, Creature* pClickedCreature, uint32 spellId)
 {
 #ifdef ENABLE_SD3
@@ -462,15 +276,6 @@ bool ScriptMgr::OnNpcSpellClick(Player* pPlayer, Creature* pClickedCreature, uin
 #endif
 }
 
-/**
- * @brief Dispatches generic scripted process events to scripting engines.
- *
- * @param eventId The event identifier.
- * @param pSource The event source object.
- * @param pTarget The event target object.
- * @param isStart True when processing the start of the event chain.
- * @return true if a script handled the event; otherwise false.
- */
 bool ScriptMgr::OnProcessEvent(uint32 eventId, Object* pSource, Object* pTarget, bool isStart)
 {
 #ifdef ENABLE_SD3
@@ -480,16 +285,6 @@ bool ScriptMgr::OnProcessEvent(uint32 eventId, Object* pSource, Object* pTarget,
 #endif
 }
 
-/**
- * @brief Dispatches dummy spell effect hooks for unit targets.
- *
- * @param pCaster The spell caster.
- * @param spellId The triggering spell id.
- * @param effIndex The spell effect index.
- * @param pTarget The unit target.
- * @param originalCasterGuid The original caster guid.
- * @return true if a script handled the effect; otherwise false.
- */
 bool ScriptMgr::OnEffectDummy(Unit* pCaster, uint32 spellId, SpellEffectIndex effIndex, Unit* pTarget, ObjectGuid originalCasterGuid)
 {
 
@@ -500,16 +295,6 @@ bool ScriptMgr::OnEffectDummy(Unit* pCaster, uint32 spellId, SpellEffectIndex ef
 #endif
 }
 
-/**
- * @brief Dispatches dummy spell effect hooks for game object targets.
- *
- * @param pCaster The spell caster.
- * @param spellId The triggering spell id.
- * @param effIndex The spell effect index.
- * @param pTarget The game object target.
- * @param originalCasterGuid The original caster guid.
- * @return true if a script handled the effect; otherwise false.
- */
 bool ScriptMgr::OnEffectDummy(Unit* pCaster, uint32 spellId, SpellEffectIndex effIndex, GameObject* pTarget, ObjectGuid originalCasterGuid)
 {
 
@@ -520,16 +305,6 @@ bool ScriptMgr::OnEffectDummy(Unit* pCaster, uint32 spellId, SpellEffectIndex ef
 #endif
 }
 
-/**
- * @brief Dispatches dummy spell effect hooks for item targets.
- *
- * @param pCaster The spell caster.
- * @param spellId The triggering spell id.
- * @param effIndex The spell effect index.
- * @param pTarget The item target.
- * @param originalCasterGuid The original caster guid.
- * @return true if a script handled the effect; otherwise false.
- */
 bool ScriptMgr::OnEffectDummy(Unit* pCaster, uint32 spellId, SpellEffectIndex effIndex, Item* pTarget, ObjectGuid originalCasterGuid)
 {
 
@@ -540,16 +315,6 @@ bool ScriptMgr::OnEffectDummy(Unit* pCaster, uint32 spellId, SpellEffectIndex ef
 #endif
 }
 
-/**
- * @brief Dispatches script-effect spell hooks for unit targets.
- *
- * @param pCaster The spell caster.
- * @param spellId The triggering spell id.
- * @param effIndex The spell effect index.
- * @param pTarget The unit target.
- * @param originalCasterGuid The original caster guid.
- * @return true if a script handled the effect; otherwise false.
- */
 bool ScriptMgr::OnEffectScriptEffect(Unit* pCaster, uint32 spellId, SpellEffectIndex effIndex, Unit* pTarget, ObjectGuid originalCasterGuid)
 {
 #ifdef ENABLE_SD3
@@ -559,13 +324,6 @@ bool ScriptMgr::OnEffectScriptEffect(Unit* pCaster, uint32 spellId, SpellEffectI
 #endif
 }
 
-/**
- * @brief Dispatches dummy aura application and removal hooks.
- *
- * @param pAura The aura being processed.
- * @param apply True when applying the aura; false when removing it.
- * @return true if a script handled the aura event; otherwise false.
- */
 bool ScriptMgr::OnAuraDummy(Aura const* pAura, bool apply)
 {
 #ifdef ENABLE_SD3

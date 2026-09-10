@@ -47,7 +47,7 @@ class Unit;
 class Occupant;
 class Aura;
 class Object;
-class ObjectGuid;
+#include "ObjectGuid.h"
 
 // *********************************************************
 // **************** Functions used by core *****************

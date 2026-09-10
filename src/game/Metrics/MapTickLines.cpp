@@ -32,8 +32,7 @@
 
 namespace
 {
-    /// A map is worth a line once its worst regular tick is past this. Below it there is
-    /// nothing to say and plenty of maps to say it about.
+
     const uint32 INTERESTING_MS = 5;
 }
 

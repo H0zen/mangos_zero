@@ -253,7 +253,7 @@ struct boss_chromaggus : public CreatureScript
                             // So instead we instant kill our target
 
                             // WORKAROUND
-                            if (pUnit->IsPlayer())
+                            if (IsPlayer(pUnit))
                             {
                                 m_creature->CastSpell(pUnit, 5, false);
                             }

@@ -71,7 +71,7 @@ uint32 MineralVeins::SpawnedAs(uint32 entry, uint32 zone, bool zoneRoll, bool po
 {
     if (uint32 const ofTheGround = InZone(zone))
     {
-        // The ground settles it either way: no other roll is made there.
+
         return zoneRoll ? ofTheGround : entry;
     }
 
@@ -85,7 +85,7 @@ uint32 MineralVeins::SpawnedAs(uint32 entry, uint32 zone, bool zoneRoll, bool po
 
     if (richer)
     {
-        // Of whatever it has come up as, which is the point of rolling in this order.
+
         if (uint32 const rare = RicherThan(entry))
         {
             entry = rare;

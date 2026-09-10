@@ -30,7 +30,6 @@
 
 #include <list>
 
-/// One immunity, and the spell that is holding it open.
 struct SpellImmune
 {
     uint32 type;
@@ -39,36 +38,20 @@ struct SpellImmune
 
 typedef std::list<SpellImmune> SpellImmuneList;
 
-/**
- * @brief What cannot touch a unit, and what is keeping it that way.
- *
- * Six separate questions, kept apart because they are asked apart: a school of magic, a
- * kind of damage, a dispel, a mechanic, a spell effect, an applied state. Each entry
- * remembers the spell that granted it, because an immunity lasts exactly as long as its
- * source and goes when that source does.
- *
- * One source per kind: granting an immunity of a kind already held replaces what was there,
- * so a second Divine Shield does not have to be counted, only remembered.
- */
 class Immunities
 {
     public:
 
-        /// Hold this kind open, for as long as `spellId` lasts.
         void Grant(uint32 spellId, uint32 op, uint32 type);
 
-        /// Let go of everything this spell was holding open in that bucket.
         void Revoke(uint32 spellId, uint32 op);
 
-        /// Nothing is immune to anything.
         void Clear();
 
         SpellImmuneList const& Of(uint32 op) const { return m_lists[op]; }
 
-        /// Is anything held open here whose type meets this mask?
         bool AnyOf(uint32 op, uint32 mask) const;
 
-        /// Is exactly this type held open here?
         bool Exactly(uint32 op, uint32 type) const;
 
     private:

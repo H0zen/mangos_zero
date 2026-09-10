@@ -23,28 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SpellAuras.cpp
- * @brief Spell aura implementation
- *
- * This file implements the SpellAura class which handles spell auras:
- * - Aura application and removal
- * - Aura effect processing (stat modifiers, DoTs, HoTs, etc.)
- * - Aura stacking rules
- * - Aura dispelling mechanics
- * - Aura periodic effects
- * - Aura duration management
- * - Aura visual effects
- *
- * Auras are persistent effects applied by spells that modify
- * unit stats, deal damage over time, or provide other benefits.
- *
- * @see SpellAura for the aura class
- * @see Spell for spell casting
- */
-
-
-
 #include "SpellAuras.h"
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"
@@ -79,7 +57,7 @@
 
 void Aura::HandleAuraDummy(bool apply, bool Real)
 {
-    // spells required only Real aura add/remove
+
     if (!Real)
     {
         return;
@@ -92,7 +70,6 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
         return;
     }
 
-    // AT APPLY
     if (apply)
     {
         switch (GetSpellProto()->SpellClassSet)
@@ -101,17 +78,17 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             {
                 switch (GetId())
                 {
-                    case 7057:                              // Haunting Spirits
-                        // expected to tick with 30 sec period (tick part see in Aura::PeriodicTick)
+                    case 7057:
+
                         m_isPeriodic = true;
                         m_modifier.periodictime = 30 * IN_MILLISECONDS;
                         m_periodicTimer = m_modifier.periodictime;
                         return;
-                    case 10255:                             // Stoned
+                    case 10255:
                     {
                         if (Unit* caster = GetCaster())
                         {
-                            if (!caster->IsCreature())
+                            if (!IsCreature(caster))
                             {
                                 return;
                             }
@@ -121,14 +98,14 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         }
                         return;
                     }
-                    case 13139:                             // net-o-matic
-                        // root to self part of (root_target->charge->root_self sequence
+                    case 13139:
+
                         if (Unit* caster = GetCaster())
                         {
                             caster->CastSpell(caster, 13138, true, nullptr, this);
                         }
                         return;
-                    case 23183:                             // Mark of Frost
+                    case 23183:
                     {
                         if (Unit* target = GetTarget())
                         {
@@ -139,7 +116,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         }
                         return;
                     }
-                    case 25042:                             // Mark of Nature
+                    case 25042:
                     {
                         if (Unit* target = GetTarget())
                         {
@@ -150,10 +127,10 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         }
                         return;
                     }
-                    case 28832:                             // Mark of Korth'azz
-                    case 28833:                             // Mark of Blaumeux
-                    case 28834:                             // Mark of Rivendare
-                    case 28835:                             // Mark of Zeliek
+                    case 28832:
+                    case 28833:
+                    case 28834:
+                    case 28835:
                     {
                         int32 damage;
                         switch (GetStackAmount())
@@ -180,7 +157,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             }
         }
     }
-    // AT REMOVE
+
     else
     {
         if (IsQuestTameSpell(GetId()) && (GetAuraDuration() == 0))
@@ -218,10 +195,10 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
         switch (GetId())
         {
-            case 126:                                       // Eye of Killrog
+            case 126:
             {
                 Unit* caster = GetCaster();
-                if (!caster || !caster->IsPlayer())
+                if (!caster || !IsPlayer(caster))
                 {
                     return;
                 }
@@ -235,21 +212,20 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 }
                 return;
             }
-            case 10255:                                     // Stoned
+            case 10255:
             {
                 if (Unit* caster = GetCaster())
                 {
-                    if (!caster->IsCreature())
+                    if (!IsCreature(caster))
                     {
                         return;
                     }
 
-                    // see dummy effect of spell 10254 for removal of flags etc
                     caster->CastSpell(caster, 10254, true);
                 }
                 return;
             }
-            case 11826:                                     // Electromagnetic Gigaflux Reactivator
+            case 11826:
                 if (m_removeMode != AURA_REMOVE_BY_EXPIRE)
                 {
                     return;
@@ -257,23 +233,22 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
                 if (Unit* caster = GetCaster())
                 {
-                    if (caster->IsPlayer())
+                    if (IsPlayer(caster))
                     {
                         caster->CastSpell(target, 11828, true, ((Player*) caster)->GetItemByGuid(this->GetCastItemGuid()), this);
                     }
                 }
                 return;
-            case 12479:                                     // Hex of Jammal'an
+            case 12479:
                 target->CastSpell(target, 12480, true, nullptr, this);
                 return;
-            case 12774:                                     // (DND) Belnistrasz Idol Shutdown Visual
+            case 12774:
             {
                 if (m_removeMode == AURA_REMOVE_BY_DEATH)
                 {
                     return;
                 }
 
-                // Idom Rool Camera Shake <- wtf, don't drink while making spellnames?
                 if (Unit* caster = GetCaster())
                 {
                     caster->CastSpell(caster, 12816, true);
@@ -281,11 +256,11 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
                 return;
             }
-            case 28169:                                     // Mutating Injection
+            case 28169:
             {
-                // Mutagen Explosion
+
                 target->CastSpell(target, 28206, true, nullptr, this);
-                // Poison Cloud
+
                 target->CastSpell(target, 28240, true, nullptr, this);
                 return;
             }
@@ -293,7 +268,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
         if (m_removeMode == AURA_REMOVE_BY_DEATH)
         {
-            // Stop caster Arcane Missle chanelling on death
+
             if (GetSpellProto()->SpellClassSet == SPELLFAMILY_MAGE && (GetSpellProto()->SpellClassMask & UI64LIT(0x0000000000000800)))
             {
                 if (Unit* caster = GetCaster())
@@ -306,14 +281,13 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
         }
     }
 
-    // AT APPLY & REMOVE
     switch (GetSpellProto()->SpellClassSet)
     {
         case SPELLFAMILY_GENERIC:
         {
             switch (GetId())
             {
-                case 6606:                                  // Self Visual - Sleep Until Cancelled (DND)
+                case 6606:
                 {
                     if (apply)
                     {
@@ -328,7 +302,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
                     return;
                 }
-                case 24658:                                 // Unstable Power
+                case 24658:
                 {
                     if (apply)
                     {
@@ -346,7 +320,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     }
                     return;
                 }
-                case 24661:                                 // Restless Strength
+                case 24661:
                 {
                     if (apply)
                     {
@@ -364,13 +338,10 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     }
                     return;
                 }
-                case 29266:                                 // Permanent Feign Death
+                case 29266:
                 {
-                    // Unclear what the difference really is between them.
-                    // Some has effect1 that makes the difference, however not all.
-                    // Some appear to be used depending on creature location, in water, at solid ground, in air/suspended, etc
-                    // For now, just handle all the same way
-                    if (target->IsCreature())
+
+                    if (IsCreature(target))
                     {
                         target->SetFeignDeath(apply);
                     }
@@ -392,8 +363,8 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
         }
         case SPELLFAMILY_DRUID:
         {
-            // Predatory Strikes
-            if (target->IsPlayer() && GetSpellProto()->SpellIconID == 1563)
+
+            if (IsPlayer(target) && GetSpellProto()->SpellIconID == 1563)
             {
                 ((Player*)target)->Sheet().AttackPower(false);
                 return;
@@ -412,9 +383,9 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
         {
             switch (GetId())
             {
-                case 6495:                                  // Sentry Totem
+                case 6495:
                 {
-                    if (!target->IsPlayer())
+                    if (!IsPlayer(target))
                     {
                         return;
                     }
@@ -437,7 +408,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
         }
         case SPELLFAMILY_PALADIN:
         {
-            // Seal of the Crusader deals less damage with each attack. -28% damage,multiple tests.
+
             if (GetSpellProto()->SpellIconID == 237 && GetSpellProto()->SpellClassMask & UI64LIT(0x00000200))
             {
                 stats::Apply(*target, UNIT_MOD_DAMAGE_MAINHAND, TOTAL_PCT, -28.0f, apply);
@@ -447,7 +418,6 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
         }
     }
 
-    // pet auras
     if (PetAura const* petSpell = sSpellMgr.GetPetAura(GetId()))
     {
         if (apply)
@@ -461,7 +431,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
         return;
     }
 
-    if (target->IsPlayer())
+    if (IsPlayer(target))
     {
         SpellAreaForAreaMapBounds saBounds = sSpellMgr.GetSpellAreaForAuraMapBounds(GetId());
         if (saBounds.first != saBounds.second)
@@ -476,8 +446,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
         }
     }
 
-    // script has to "handle with care", only use where data are not ok to use in the above code.
-    if (target->IsCreature())
+    if (IsCreature(target))
     {
         sScriptMgr.OnAuraDummy(this, apply);
     }

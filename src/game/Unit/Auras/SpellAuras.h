@@ -29,48 +29,15 @@
 #include "ObjectMgr.h"
 #include "Cast/Recipe/Recipe.h"
 
-/**
- * Used to modify what an \ref Aura does to a player/npc.
- * Accessible through \ref Aura::m_modifier.
- * \see CreateAura
- * \see Aura
- * \see AreaAura
- * \see AuraType
- */
 struct Modifier
 {
 
-    /**
-     * Decides what the aura does, ie, it may have the
-     * value \ref AuraType::SPELL_AURA_MOD_BASE_RESISTANCE_PCT which
-     * would change the base armor of a player.
-     */
     AuraType m_auraname;
 
-    /**
-     * By how much the aura should change the affected
-     * value. Ie, -27 would make the value decided by \ref Modifier::m_miscvalue
-     * be reduced by 27% if the earlier mentioned AuraType
-     * would have been used. And 27 would increase the value by 27%
-     */
     int32 m_amount;
 
-    /**
-     * A miscvalue that is dependent on what the aura will do, this
-     * is usually decided by the AuraType, ie:
-     * with \ref AuraType::SPELL_AURA_MOD_BASE_RESISTANCE_PCT this value
-     * could be \ref SpellSchoolMask::SPELL_SCHOOL_MASK_NORMAL which would
-     * tell the aura that it should change armor.
-     * If \ref Modifier::m_auraname would have been \ref AuraType::SPELL_AURA_MOUNTED
-     * then m_miscvalue would have decided which model the mount should have
-     */
     int32 m_miscvalue;
 
-    /**
-     * Decides how often the aura should be applied, if it is
-     * set to 0 it's only applied once and then removed when
-     * the \ref Aura is removed
-     */
     uint32 periodictime;
 };
 
@@ -81,18 +48,8 @@ struct ProcTriggerSpell;
 
 class Aura;
 
-// internal helper
 struct ReapplyAffectedPassiveAurasHelper;
 
-/**
- * This class holds the \ref Aura s for a \ref Spell, there's a maximum of 3 effects per \ref Spell
- * which is the maximum that this \ref Aura holder will hold aswell. It also contains information
- * on who cast the spell, which \ref Spell it was, who the target was, if a \ref Item was the one
- * casting the spell instead of a \ref Unit etc.
- *
- * It also takes care of the stacks left of the spell, has a \ref DiminishingGroup to get diminishing
- * returns to work correctly, applies the \ref Modifier of the different \ref Aura s and such.
- */
 class SpellAuraHolder
 {
     public:
@@ -112,15 +69,13 @@ class SpellAuraHolder
 
         uint32 GetStackAmount() const { return m_stackAmount; }
         void SetStackAmount(uint32 stackAmount);
-        bool ModStackAmount(int32 num); // return true if last charge dropped
+        bool ModStackAmount(int32 num);
 
-        //TODO: Check that index isn't out of bounds
         Aura* GetAuraByEffectIndex(SpellEffectIndex index) const { return m_auras[index]; }
 
         uint32 GetId() const { return m_spellProto->ID; }
         SpellEntry const* GetSpellProto() const { return m_spellProto; }
 
-        /// The spell, compiled: everything the row already answered.
         const cast::Recipe& Recipe() const { return *m_recipe; }
 
         ObjectGuid const& GetCasterGuid() const { return m_casterGuid; }
@@ -136,7 +91,7 @@ class SpellAuraHolder
         bool IsDeathPersistent() const { return m_isDeathPersist; }
         bool IsPersistent() const;
         bool IsPositive() const;
-        bool IsAreaAura() const;                            // if one from auras of holder applied as area aura
+        bool IsAreaAura() const;
         bool IsWeaponBuffCoexistableWith(SpellAuraHolder const* ref) const;
         bool IsNeedVisibleSlot(Unit const* caster) const;
         bool IsRemovedOnShapeLost() const { return m_isRemovedOnShapeLost; }
@@ -192,7 +147,7 @@ class SpellAuraHolder
 
             UpdateAuraApplication();
         }
-        bool DropAuraCharge()                               // return true if last charge dropped
+        bool DropAuraCharge()
         {
             if (m_procCharges == 0)
             {
@@ -229,28 +184,28 @@ class SpellAuraHolder
 
         ~SpellAuraHolder();
     private:
-        void UpdateAuraApplication();                       // called at charges or stack changes
+        void UpdateAuraApplication();
         bool HeartbeatResist(uint32 diff);
 
         SpellEntry const* m_spellProto;
         const cast::Recipe* m_recipe;
 
         Unit* m_target;
-        ObjectGuid m_casterGuid;
-        ObjectGuid m_castItemGuid;                          // it is NOT safe to keep a pointer to the item because it may get deleted
+        ObjectGuid m_casterGuid = 0;
+        ObjectGuid m_castItemGuid = 0;
         time_t m_applyTime;
 
-        uint8 m_auraSlot;                                   // Aura slot on unit (for show in client)
-        uint8 m_auraLevel;                                  // Aura level (store caster level for correct show level dep amount)
-        uint32 m_procCharges;                               // Aura charges (0 for infinite)
-        uint32 m_stackAmount;                               // Aura stack amount
-        int32 m_maxDuration;                                // Max aura duration
-        int32 m_duration;                                   // Current time
-        int32 m_timeCla;                                    // Timer for power per sec calculation
+        uint8 m_auraSlot;
+        uint8 m_auraLevel;
+        uint32 m_procCharges;
+        uint32 m_stackAmount;
+        int32 m_maxDuration;
+        int32 m_duration;
+        int32 m_timeCla;
 
-        AuraRemoveMode m_removeMode: 8;                     // Store info for know remove aura reason
-        DiminishingGroup m_AuraDRGroup: 8;                  // Diminishing
-        TrackedAuraType m_trackedAuraType: 8;               // store if the caster tracks the aura - can change at spell steal for example
+        AuraRemoveMode m_removeMode: 8;
+        DiminishingGroup m_AuraDRGroup: 8;
+        TrackedAuraType m_trackedAuraType: 8;
 
         bool m_permanent: 1;
         bool m_isPassive: 1;
@@ -259,22 +214,10 @@ class SpellAuraHolder
         bool m_isHeartbeatSubject: 1;
         bool m_deleted: 1;
 
-        uint32 m_in_use;                                    // > 0 while in SpellAuraHolder::ApplyModifiers call/SpellAuraHolder::Update/etc
+        uint32 m_in_use;
 };
 
 typedef void(Aura::*pAuraHandler)(bool Apply, bool Real);
-// Real == true at aura add/remove
-// Real == false at aura mod unapply/reapply; when adding/removing dependent aura/item/stat mods
-//
-// Code in aura handler can be guarded by if (Real) check if it should execution only at real add/remove of aura
-//
-// MAIN RULE: Code MUST NOT be guarded by if (Real) check if it modifies any stats
-//      (percent auras, stats mods, etc)
-// Second rule: Code must be guarded by if (Real) check if it modifies object state (start/stop attack, send packets to client, etc)
-//
-// Other case choice: each code line moved under if (Real) check is mangos speedup,
-//      each setting object update field code line moved under if (Real) check is significant mangos speedup, and less server->client data sends
-//      each packet sending code moved under if (Real) check is _large_ mangos speedup, and lot less server->client data sends
 
 class Aura
 {
@@ -282,18 +225,18 @@ class Aura
     friend Aura* CreateAura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* currentBasePoints, SpellAuraHolder* holder, Unit* target, Unit* caster, Item* castItem);
 
     public:
-        // aura handlers
+
         void HandleNULL(bool, bool)
         {
-            // NOT IMPLEMENTED
+
         }
         void HandleUnused(bool, bool)
         {
-            // NOT USED BY ANY SPELL OR USELESS
+
         }
         void HandleNoImmediateEffect(bool, bool)
         {
-            // aura not have immediate effect at add/remove and handled by ID in other code place
+
         }
         void HandleModDetectRange(bool Apply, bool Real);
         void HandleBindSight(bool Apply, bool Real);
@@ -422,7 +365,6 @@ class Aura
         Modifier const* GetModifier() const { return &m_modifier; }
         int32 GetMiscValue() const { return Operation().miscValue; }
 
-        /// The one thing of the spell this aura came from.
         const cast::Operation& Operation() const { return *m_operation; }
 
         SpellEntry const* GetSpellProto() const { return GetHolder()->GetSpellProto(); }
@@ -490,12 +432,10 @@ class Aura
 
         virtual Unit* GetTriggerTarget() const { return m_spellAuraHolder->GetTarget(); }
 
-        // add/remove SPELL_AURA_MOD_SHAPESHIFT (36) linked auras
         void HandleShapeshiftBoosts(bool apply);
 
         void TriggerSpell();
 
-        // more limited that used in future versions (spell_affect table based only), so need be careful with backporting uses
         bool isAffectedOnSpell(SpellEntry const* spell) const;
         bool CanProcFrom(SpellEntry const* spell, uint32 EventProcEx, uint32 procEx, bool active, bool useClassMask) const;
 
@@ -509,10 +449,8 @@ class Aura
     protected:
         Aura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* currentBasePoints, SpellAuraHolder* holder, Unit* target, Unit* caster = nullptr, Item* castItem = nullptr);
 
-        // must be called only from Aura::UpdateAura
         virtual void Update(uint32 diff);
 
-        // must be called only from Aura*::Update
         void PeriodicTick();
         void PeriodicDummyTick();
 
@@ -523,13 +461,13 @@ class Aura
 
         time_t m_applyTime;
 
-        int32 m_currentBasePoints;                          // cache SpellEntry::CalculateSimpleValue and use for set custom base points
-        int32 m_periodicTimer;                              // Timer for periodic auras
-        uint32 m_periodicTick;                              // Tick count pass (including current if use in tick code) from aura apply, used for some tick count dependent aura effects
+        int32 m_currentBasePoints;
+        int32 m_periodicTimer;
+        uint32 m_periodicTick;
 
-        AuraRemoveMode m_removeMode: 8;                     // Store info for know remove aura reason
+        AuraRemoveMode m_removeMode: 8;
 
-        SpellEffectIndex m_effIndex : 8;                    // Aura effect index in spell
+        SpellEffectIndex m_effIndex : 8;
 
         const cast::Operation* m_operation;
 
@@ -538,7 +476,7 @@ class Aura
         bool m_isAreaAura: 1;
         bool m_isPersistent: 1;
 
-        uint32 m_in_use;                                    // > 0 while in Aura::ApplyModifier call/Aura::Update/etc
+        uint32 m_in_use;
 
         SpellAuraHolder* const m_spellAuraHolder;
     private:
@@ -577,15 +515,9 @@ class SingleEnemyTargetAura : public Aura
 
     protected:
         SingleEnemyTargetAura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* currentBasePoints, SpellAuraHolder* holder, Unit* target, Unit* caster  = nullptr, Item* castItem = nullptr);
-        ObjectGuid m_castersTargetGuid;
+        ObjectGuid m_castersTargetGuid = 0;
 };
 
-/**
- * Creates an aura instance for the specified spell effect and target context.
- */
 Aura* CreateAura(SpellEntry const* spellproto, SpellEffectIndex eff, int32* currentBasePoints, SpellAuraHolder* holder, Unit* target, Unit* caster = nullptr, Item* castItem = nullptr);
 
-/**
- * Creates the aura holder that owns aura effects for a spell application.
- */
 SpellAuraHolder* CreateSpellAuraHolder(SpellEntry const* spellproto, Unit* target, Occupant* caster, Item* castItem = nullptr);

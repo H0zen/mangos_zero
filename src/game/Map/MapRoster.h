@@ -33,16 +33,6 @@
 
 class Map;
 
-/**
- * @brief The sheet of maps that are open right now, and nothing else.
- *
- * It answers "is this map open?", holds the pointer while it is, and destroys the map when
- * it is struck off. It casts nothing -- MapFoundry builds maps -- ticks nothing --
- * MapTicker does that -- and knows about instances only as the number a copy is filed under.
- *
- * Find, Enrol and Retire are guarded: a map thread can ask for a map by id while the world
- * thread is opening another one. Walking the sheet belongs to the world thread alone.
- */
 class MapRoster : public MaNGOS::Singleton<MapRoster>
 {
         friend class MaNGOS::Singleton<MapRoster>;
@@ -51,23 +41,18 @@ class MapRoster : public MaNGOS::Singleton<MapRoster>
 
         typedef std::map<MapKey, Map*> Sheet;
 
-        /// The open map filed under this id, or nullptr.
         Map* Find(uint32 mapId, uint32 instanceId = 0) const;
 
-        /// File a freshly cast map. The roster owns it from here on.
         void Enrol(MapKey const& key, Map* map);
 
-        /// Unload the map, destroy it, strike it off. Every pointer to it is dead after this.
         void Retire(MapKey const& key);
 
-        /// The whole sheet, unloaded and destroyed. The shutdown path.
         void RetireAll();
 
         Sheet const& All() const { return m_sheet; }
 
         uint32 Count() const { return uint32(m_sheet.size()); }
 
-        /// Visit every open copy of one map id: one continent, or forty copies of a dungeon.
         template<typename Visit>
         void EachOnMap(uint32 mapId, Visit&& visit) const
         {
@@ -80,7 +65,6 @@ class MapRoster : public MaNGOS::Singleton<MapRoster>
             }
         }
 
-        /// Visit every open map, whatever it is.
         template<typename Visit>
         void Each(Visit&& visit) const
         {

@@ -27,15 +27,6 @@
 
 #include "IntentMovementGenerator.h"
 
-/**
- * @brief Disoriented staggering: lurch toward a random point near where the unit lost
- *        its wits, roughly once a second, with no goal at all.
- *
- * The lurch is deliberate. The stagger timer keeps running WHILE a leg is being walked,
- * so a fresh point is picked before the last one is reached and the leg is cut short.
- * That interrupted, never-quite-arriving motion is what reads on screen as confusion —
- * it is not a rest-then-hop rhythm, which is what wander is.
- */
 class ConfusedMovementGenerator final : public IntentMovementGenerator
 {
     public:
@@ -51,9 +42,9 @@ class ConfusedMovementGenerator final : public IntentMovementGenerator
                                   uint32 diff) override;
 
     private:
-        Motion::Vector3 m_anchor;    ///< Where the unit stood when it was confused.
+        Motion::Vector3 m_anchor;
 
-        TimeTracker m_staggerTime{0}; ///< Time left before the next lurch.
-        Motion::Vector3 m_lurch;      ///< Where the current lurch is heading.
-        bool m_haveLurch = false;     ///< False before the first point has been picked.
+        TimeTracker m_staggerTime{0};
+        Motion::Vector3 m_lurch;
+        bool m_haveLurch = false;
 };

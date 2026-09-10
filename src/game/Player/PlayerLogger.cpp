@@ -31,12 +31,7 @@
 #include "World.h"
 #include "Log.h"
 
-/**
- * @brief Creates a player logger for a specific player.
- *
- * @param guid The GUID of the player whose events are tracked.
- */
-PlayerLogger::PlayerLogger(ObjectGuid const & guid) : logActiveMask(0), playerGuid(guid.GetCounter())
+PlayerLogger::PlayerLogger(ObjectGuid const & guid) : logActiveMask(0), playerGuid(GuidCounter(guid))
 {
     for (uint8 i = 0; i < MAX_PLAYER_LOG_ENTITIES; ++i)
     {
@@ -44,9 +39,6 @@ PlayerLogger::PlayerLogger(ObjectGuid const & guid) : logActiveMask(0), playerGu
     }
 }
 
-/**
- * @brief Destroys the player logger and frees all buffered log data.
- */
 PlayerLogger::~PlayerLogger()
 {
     for (uint8 i = 0; i < MAX_PLAYER_LOG_ENTITIES; ++i)
@@ -59,12 +51,6 @@ PlayerLogger::~PlayerLogger()
     }
 }
 
-/**
- * @brief Initializes storage for a log entity type.
- *
- * @param entity The log entity type to initialize.
- * @param maxLength Optional reservation size for the backing container.
- */
 void PlayerLogger::Initialize(PlayerLogEntity entity, uint32 maxLength)
 {
     if (data[entity])
@@ -110,16 +96,11 @@ void PlayerLogger::Initialize(PlayerLogEntity entity, uint32 maxLength)
     }
 }
 
-/**
- * @brief Clears stored data for the selected log mask.
- *
- * @param mask The set of log entity types to clear.
- */
 void PlayerLogger::Clean(PlayerLogMask mask)
 {
     for (uint8 i = 0; i < MAX_PLAYER_LOG_ENTITIES; ++i)
     {
-        if ((mask & CalcLogMask(PlayerLogEntity(i))) == 0)    // note that actual data presence is not checked here!
+        if ((mask & CalcLogMask(PlayerLogEntity(i))) == 0)
         {
             continue;
         }
@@ -133,14 +114,6 @@ void PlayerLogger::Clean(PlayerLogMask mask)
     }
 }
 
-/**
- * @brief Saves selected log buffers to the database.
- *
- * @param mask The set of log entity types to persist.
- * @param removeSaved true to clear buffers after successful save.
- * @param insideTransaction true if the caller already manages the transaction.
- * @return true if any data was written; otherwise, false.
- */
 bool PlayerLogger::SaveToDB(PlayerLogMask mask, bool removeSaved, bool insideTransaction)
 {
     bool written = false;
@@ -275,20 +248,12 @@ bool PlayerLogger::SaveToDB(PlayerLogMask mask, bool removeSaved, bool insideTra
     return written;
 }
 
-/**
- * @brief Starts the standard combat logging set.
- */
 void PlayerLogger::StartCombatLogging()
 {
     StartLogging(PLAYER_LOG_DAMAGE_GET);
     StartLogging(PLAYER_LOG_DAMAGE_DONE);
 }
 
-/**
- * @brief Starts logging for a specific entity type.
- *
- * @param entity The log entity type to activate.
- */
 void PlayerLogger::StartLogging(PlayerLogEntity entity)
 {
     if (data[entity] == nullptr)
@@ -308,12 +273,6 @@ void PlayerLogger::StartLogging(PlayerLogEntity entity)
     SetLogActiveMask(entity, true);
 }
 
-/**
- * @brief Stops logging for a specific entity type.
- *
- * @param entity The log entity type to deactivate.
- * @return The number of buffered records for that entity.
- */
 uint32 PlayerLogger::Stop(PlayerLogEntity entity)
 {
     SetLogActiveMask(entity, false);
@@ -321,12 +280,6 @@ uint32 PlayerLogger::Stop(PlayerLogEntity entity)
     return data[entity]->size();
 }
 
-/**
- * @brief Truncates selected log buffers to a maximum record count.
- *
- * @param mask The set of log entity types to inspect.
- * @param maxRecords The maximum number of records to retain per selected log.
- */
 void PlayerLogger::CheckAndTruncate(PlayerLogMask mask, uint32 maxRecords)
 {
     for (uint8 i = 0; i < MAX_PLAYER_LOG_ENTITIES; ++i)
@@ -387,15 +340,6 @@ void PlayerLogger::CheckAndTruncate(PlayerLogMask mask, uint32 maxRecords)
     }
 }
 
-/**
- * @brief Logs a damage or heal event for the player.
- *
- * @param done true when the player dealt the damage; false when the player received it.
- * @param damage The damage amount.
- * @param heal The heal amount.
- * @param unitGuid The related unit GUID.
- * @param spell The related spell identifier.
- */
 void PlayerLogger::LogDamage(bool done, uint16 damage, uint16 heal, ObjectGuid const & unitGuid, uint16 spell)
 {
     if (!IsLoggingActive(done ? PLAYER_LOGMASK_DAMAGE_DONE : PLAYER_LOGMASK_DAMAGE_GET))
@@ -403,21 +347,13 @@ void PlayerLogger::LogDamage(bool done, uint16 damage, uint16 heal, ObjectGuid c
         return;
     }
     PlayerLogDamage log = PlayerLogDamage(sWorld.GetUptime());
-    log.dmgUnit = (unitGuid.GetCounter() == playerGuid) ? 0 : (unitGuid.IsPlayer() ? unitGuid.GetCounter() : unitGuid.GetEntry());
-    log.SetCreature(unitGuid.IsCreatureOrPet());
+    log.dmgUnit = (GuidCounter(unitGuid) == playerGuid) ? 0 : ((unitGuid != 0 && GuidHigh(unitGuid) == HIGHGUID_PLAYER) ? GuidCounter(unitGuid) : GuidEntry(unitGuid));
+    log.SetCreature((GuidHigh(unitGuid) == HIGHGUID_UNIT || GuidHigh(unitGuid) == HIGHGUID_PET));
     log.damage = damage > 0 ? int16(damage) : -int16(heal);
     log.spell = spell;
     ((std::vector<PlayerLogDamage>*)(data[done ? PLAYER_LOG_DAMAGE_DONE : PLAYER_LOG_DAMAGE_GET]))->push_back(log);
 }
 
-/**
- * @brief Records a looting event for the player.
- *
- * @param type The loot source type.
- * @param droppedBy The source object GUID, if available.
- * @param itemGuid The looted item GUID.
- * @param id The fallback source identifier.
- */
 void PlayerLogger::LogLooting(LootSourceType type, ObjectGuid const & droppedBy, ObjectGuid const & itemGuid, uint32 id)
 {
     if (!IsLoggingActive(PLAYER_LOGMASK_LOOTING))
@@ -425,20 +361,13 @@ void PlayerLogger::LogLooting(LootSourceType type, ObjectGuid const & droppedBy,
         return;
     }
     PlayerLogLooting log = PlayerLogLooting(sWorld.GetUptime());
-    log.itemEntry = itemGuid.GetEntry();
+    log.itemEntry = GuidEntry(itemGuid);
     log.SetLootSourceType(type);
-    log.itemGuid = itemGuid.GetCounter();
-    log.droppedBy = droppedBy.IsEmpty() ? id : droppedBy.GetEntry();
+    log.itemGuid = GuidCounter(itemGuid);
+    log.droppedBy = (droppedBy == 0) ? id : GuidEntry(droppedBy);
     ((std::vector<PlayerLogLooting>*)(data[PLAYER_LOG_LOOTING]))->push_back(log);
 }
 
-/**
- * @brief Records a trade item transfer for the player.
- *
- * @param aquire true when the player receives the item; false when giving it away.
- * @param partner The trading partner GUID.
- * @param itemGuid The traded item GUID.
- */
 void PlayerLogger::LogTrading(bool aquire, ObjectGuid const & partner, ObjectGuid const & itemGuid)
 {
     if (!IsLoggingActive(PLAYER_LOGMASK_TRADE))
@@ -446,19 +375,13 @@ void PlayerLogger::LogTrading(bool aquire, ObjectGuid const & partner, ObjectGui
         return;
     }
     PlayerLogTrading log = PlayerLogTrading(sWorld.GetUptime());
-    log.itemEntry = itemGuid.GetEntry();
+    log.itemEntry = GuidEntry(itemGuid);
     log.SetItemAquired(aquire);
-    log.itemGuid = itemGuid.GetCounter();
-    log.partner = partner.GetCounter();
+    log.itemGuid = GuidCounter(itemGuid);
+    log.partner = GuidCounter(partner);
     ((std::vector<PlayerLogTrading>*)(data[PLAYER_LOG_TRADE]))->push_back(log);
 }
 
-/**
- * @brief Records a kill or death event for the player.
- *
- * @param killedEnemy true if the player killed the unit; false if killed by it.
- * @param unitGuid The related unit GUID.
- */
 void PlayerLogger::LogKilling(bool killedEnemy, ObjectGuid const & unitGuid)
 {
     if (!IsLoggingActive(PLAYER_LOGMASK_KILL))
@@ -466,15 +389,12 @@ void PlayerLogger::LogKilling(bool killedEnemy, ObjectGuid const & unitGuid)
         return;
     }
     PlayerLogKilling log = PlayerLogKilling(sWorld.GetUptime());
-    log.unitEntry = unitGuid.GetEntry();
+    log.unitEntry = GuidEntry(unitGuid);
     log.SetKill(killedEnemy);
-    log.unitGuid = unitGuid.GetCounter();
+    log.unitGuid = GuidCounter(unitGuid);
     ((std::vector<PlayerLogKilling>*)(data[PLAYER_LOG_KILL]))->push_back(log);
 }
 
-/**
- * @brief Records the player's current position.
- */
 void PlayerLogger::LogPosition()
 {
     if (!IsLoggingActive(PLAYER_LOGMASK_POSITION))
@@ -489,13 +409,6 @@ void PlayerLogger::LogPosition()
     }
 }
 
-/**
- * @brief Records a player progression event with position context.
- *
- * @param type The progress event type.
- * @param achieve The achieved level or stage value.
- * @param misc Additional event-specific data.
- */
 void PlayerLogger::LogProgress(ProgressType type, uint8 achieve, uint16 misc)
 {
     if (!IsLoggingActive(PLAYER_LOGMASK_PROGRESS))
@@ -513,12 +426,6 @@ void PlayerLogger::LogProgress(ProgressType type, uint8 achieve, uint16 misc)
     }
 }
 
-/**
- * @brief Enables or disables logging for a specific entity category.
- *
- * @param entity The logging category.
- * @param on true to enable logging; false to disable it.
- */
 void PlayerLogger::SetLogActiveMask(PlayerLogEntity entity, bool on)
 {
     if (on)
@@ -531,17 +438,12 @@ void PlayerLogger::SetLogActiveMask(PlayerLogEntity entity, bool on)
     }
 }
 
-/**
- * @brief Gets the current player or corpse-backed player instance for logging.
- *
- * @return The resolved player pointer, or null if unavailable.
- */
 Player* PlayerLogger::GetPlayer() const
 {
-    Player* pl = sPlayerRegistry.Find(ObjectGuid(HIGHGUID_PLAYER, playerGuid), true);
+    Player* pl = sPlayerRegistry.Find(MakeGuid(HIGHGUID_PLAYER, playerGuid), true);
     if (!pl)
     {
-        pl = sPlayerRegistry.Find(ObjectGuid(HIGHGUID_CORPSE, playerGuid), true);
+        pl = sPlayerRegistry.Find(MakeGuid(HIGHGUID_CORPSE, playerGuid), true);
     }
 
     if (!pl)
@@ -552,12 +454,6 @@ Player* PlayerLogger::GetPlayer() const
     return pl;
 }
 
-/**
- * @brief Copies a player's current map position into a log record.
- *
- * @param log The log record to populate.
- * @param me The player providing position data.
- */
 void PlayerLogger::FillPosition(PlayerLogPosition* log, Player* me)
 {
     log->map = uint16(me->GetMapId());

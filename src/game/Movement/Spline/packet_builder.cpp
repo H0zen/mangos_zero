@@ -23,29 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file packet_builder.cpp
- * @brief Movement spline network packet construction
- *
- * This file implements the PacketBuilder class which constructs network
- * packets for movement spline data. Handles:
- *
- * - Monster movement packets (MSG_MONSTER_MOVE)
- * - Linear and Catmull-Rom spline paths
- * - Facing/targeting information
- * - Path compression and packing
- *
- * The packet format includes:
- * - Source position
- * - Spline flags and duration
- * - Path points (absolute or relative)
- * - Final facing/target information
- *
- * @see PacketBuilder for the builder class
- * @see MoveSpline for the movement spline data
- * @see SMSG_MONSTER_MOVE for the opcode
- */
-
 #include "Utilities/Errors.h"
 #include "packet_builder.h"
 #include "MoveSpline.h"
@@ -54,39 +31,16 @@
 namespace Movement
 {
 
-    /**
-     * @namespace Movement
-     * @brief Movement system namespace
-     *
-     * Contains all movement-related classes and functions for
-     * spline-based movement and packet construction.
-     */
-
-    /**
-     * @brief Overloads the << operator to write a Vector3 to a ByteBuffer.
-     * @param b The ByteBuffer to write to.
-     * @param v The Vector3 to write.
-     */
     inline void operator << (ByteBuffer& b, const Vector3& v)
     {
         b << v.x << v.y << v.z;
     }
 
-    /**
-     * @brief Overloads the >> operator to read a Vector3 from a ByteBuffer.
-     * @param b The ByteBuffer to read from.
-     * @param v The Vector3 to read.
-     */
     inline void operator >> (ByteBuffer& b, Vector3& v)
     {
         b >> v.x >> v.y >> v.z;
     }
 
-    /**
-     * @brief Writes the common part of a monster move packet.
-     * @param move_spline The MoveSpline object containing movement data.
-     * @param data The WorldPacket to write the data to.
-     */
     void PacketBuilder::WriteCommonMonsterMovePart(const MoveSpline& move_spline, WorldPacket& data)
     {
         MoveSplineFlag splineflags = move_spline.splineflags;
@@ -113,41 +67,30 @@ namespace Movement
                 break;
         }
 
-        // add fake Enter_Cycle flag - needed for client-side cyclic movement (client will erase first spline vertex after first cycle done)
         splineflags.enter_cycle = move_spline.isCyclic();
-        // add fake Runmode flag - client has strange issues without that flag
+
         data << uint32((splineflags & ~MoveSplineFlag::Mask_No_Monster_Move) | MoveSplineFlag::Runmode);
         data << move_spline.Duration();
     }
 
-    /**
-     * @brief Writes a linear path to a ByteBuffer.
-     * @param spline The spline containing the path points.
-     * @param data The ByteBuffer to write the data to.
-     */
     void WriteLinearPath(const Spline<int32>& spline, ByteBuffer& data)
     {
-        Movement::SplineBase::ControlArray const& pathPoint = spline.getPoints(); // get ref of whole path points array
+        Movement::SplineBase::ControlArray const& pathPoint = spline.getPoints();
 
-        uint32 pathSize = spline.last() - spline.first() - 1; // -1 as we send destination first and last index is destination
-        MANGOS_ASSERT(pathSize >= 0);                       // should never be less than 0
+        uint32 pathSize = spline.last() - spline.first() - 1;
+        MANGOS_ASSERT(pathSize >= 0);
 
-        Vector3 destination = pathPoint[spline.last()];     // destination of this path should be send right after path size
+        Vector3 destination = pathPoint[spline.last()];
         data << pathSize;
         data << destination;
 
-        for (uint32 i = spline.first(); i < spline.first() + pathSize; i++) // from first real index (this array contain also special data)
+        for (uint32 i = spline.first(); i < spline.first() + pathSize; i++)
         {
-            Vector3 offset = destination - pathPoint[i];    // we have to send offset relative to destination instead of directly path point.
-            data.appendPackXYZ(offset.x, offset.y, offset.z); // we have to pack x,y,z before send
+            Vector3 offset = destination - pathPoint[i];
+            data.appendPackXYZ(offset.x, offset.y, offset.z);
         }
     }
 
-    /**
-     * @brief Writes a Catmull-Rom path to a ByteBuffer.
-     * @param spline The spline containing the path points.
-     * @param data The ByteBuffer to write the data to.
-     */
     void WriteCatmullRomPath(const Spline<int32>& spline, ByteBuffer& data)
     {
         uint32 count = spline.getPointCount() - 3;
@@ -155,24 +98,14 @@ namespace Movement
         data.append<Vector3>(&spline.getPoint(2), count);
     }
 
-    /**
-     * @brief Writes a cyclic Catmull-Rom path to a ByteBuffer.
-     * @param spline The spline containing the path points.
-     * @param data The ByteBuffer to write the data to.
-     */
     void WriteCatmullRomCyclicPath(const Spline<int32>& spline, ByteBuffer& data)
     {
         uint32 count = spline.getPointCount() - 3;
         data << uint32(count + 1);
-        data << spline.getPoint(1); // fake point, client will erase it from the spline after first cycle done
+        data << spline.getPoint(1);
         data.append<Vector3>(&spline.getPoint(1), count);
     }
 
-    /**
-     * @brief Writes a monster move packet.
-     * @param move_spline The MoveSpline object containing movement data.
-     * @param data The WorldPacket to write the data to.
-     */
     void PacketBuilder::WriteMonsterMove(const MoveSpline& move_spline, WorldPacket& data)
     {
         WriteCommonMonsterMovePart(move_spline, data);
@@ -196,11 +129,6 @@ namespace Movement
         }
     }
 
-    /**
-     * @brief Writes the creation data of a MoveSpline to a ByteBuffer.
-     * @param move_spline The MoveSpline object containing movement data.
-     * @param data The ByteBuffer to write the data to.
-     */
     void PacketBuilder::WriteCreate(const MoveSpline& move_spline, ByteBuffer& data)
     {
         MoveSplineFlag splineFlags = move_spline.splineflags;

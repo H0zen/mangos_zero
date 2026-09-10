@@ -128,7 +128,7 @@ struct is_shadowfang_keep : public InstanceScript
                     case TYPE_FREE_NPC:
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_COURTYARD_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_COURTYARD_DOOR);
                         }
                         m_auiEncounter[0] = uiData;
                         break;
@@ -152,7 +152,7 @@ struct is_shadowfang_keep : public InstanceScript
                     case TYPE_NANDOS:
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_ARUGAL_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_ARUGAL_DOOR);
                         }
                         m_auiEncounter[3] = uiData;
                         break;
@@ -165,7 +165,7 @@ struct is_shadowfang_keep : public InstanceScript
                             m_auiEncounter[5]++;
                             if (m_auiEncounter[5] > 3)
                             {
-                                DoUseDoorOrButton(GO_SORCERER_DOOR);
+                                DoUseDoorOrButtonByEntry(GO_SORCERER_DOOR);
                             }
                         }
                         break;

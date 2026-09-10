@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks of a flight master.
 namespace taxi
 {
     void TaxiNodeStatusQuery(Player& who, WorldPacket& packet);

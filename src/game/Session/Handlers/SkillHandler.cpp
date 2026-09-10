@@ -23,21 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SkillHandler.cpp
- * @brief Character talent and skill management handlers
- *
- * This file handles player-initiated talent and skill operations:
- * - LearnTalent: Spending talent points to acquire talents
- * - TalentWipeConfirm: Resetting all talents (via trainer)
- * - UnlearnSkill: Abandoning a profession skill
- *
- * These are distinct from automatic skill gains from crafting/usage,
- * which are handled elsewhere.
- *
- * @note Talent wipes require interaction with a class trainer NPC
- */
-
 #include "Platform/Define.h"
 #include "Opcodes.h"
 #include "Log.h"
@@ -46,18 +31,6 @@
 #include "WorldSession.h"
 #include "SkillAnswers.h"
 
-/**
- * @brief Handle talent learning (CMSG_LEARN_TALENT)
- * @param recv_data World packet containing talent_id and requested_rank
- *
- * Player spends talent points to learn or upgrade a talent.
- * Packet data:
- * - talent_id: ID from Talent.dbc
- * - requested_rank: Rank to learn (0-based)
- *
- * Validation and point deduction handled by Player::LearnTalent().
- * If player has an active pet, owner talent auras are recast on it.
- */
 void skills::LearnTalent(Player& who, WorldPacket& recv_data)
 {
     uint32 talent_id, requested_rank;
@@ -65,37 +38,22 @@ void skills::LearnTalent(Player& who, WorldPacket& recv_data)
 
     who.LearnTalent(talent_id, requested_rank);
 
-    // if player has a pet, update owner talent auras
     if (who.GetPet())
     {
         who.GetPet()->CastOwnerTalentAuras();
     }
 }
 
-/**
- * @brief Handle talent wipe confirmation (MSG_TALENT_WIPE_CONFIRM)
- * @param recv_data World packet containing trainer GUID
- *
- * Player confirms talent reset at a class trainer. Requirements:
- * - Target must be a trainer NPC
- * - NPC can train and reset talents for player's class
- * - Costs money (handled by resetTalents())
- *
- * Visual effect (spell 14867) is cast by the trainer on the player.
- * Pet talent auras are recast if player has an active pet.
- *
- * @note Player cannot be feign death during the interaction
- */
 void skills::TalentWipeConfirm(Player& who, WorldPacket& recv_data)
 {
     DETAIL_LOG("MSG_TALENT_WIPE_CONFIRM");
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
     recv_data >> guid;
 
     Creature* unit = who.GetNPCIfCanInteractWith(guid, UNIT_NPC_FLAG_TRAINER);
     if (!unit)
     {
-        DEBUG_LOG("WORLD: HandleTalentWipeConfirmOpcode - %s not found or you can't interact with him.", guid.GetString().c_str());
+        DEBUG_LOG("WORLD: HandleTalentWipeConfirmOpcode - %s not found or you can't interact with him.", GuidString(guid).c_str());
         return;
     }
 
@@ -104,7 +62,6 @@ void skills::TalentWipeConfirm(Player& who, WorldPacket& recv_data)
         return;
     }
 
-    // Remove fake death to allow interaction
     if (who.hasUnitState(UNIT_STAT_DIED))
     {
         who.RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
@@ -112,33 +69,21 @@ void skills::TalentWipeConfirm(Player& who, WorldPacket& recv_data)
 
     if (!(who.resetTalents()))
     {
-        WorldPacket data(MSG_TALENT_WIPE_CONFIRM, 8 + 4);   // No talents to reset
+        WorldPacket data(MSG_TALENT_WIPE_CONFIRM, 8 + 4);
         data << uint64(0);
         data << uint32(0);
         who.GetSession()->SendPacket(&data);
         return;
     }
 
-    // Visual effect: "Untalent Visual Effect"
     unit->CastSpell(&who, 14867, true);
 
-    // Recast owner talent auras on pet if present
     if (who.GetPet())
     {
         who.GetPet()->CastOwnerTalentAuras();
     }
 }
 
-/**
- * @brief Handle skill unlearning (CMSG_UNLEARN_SKILL)
- * @param recv_data World packet containing skill_id
- *
- * Player abandons a profession or secondary skill.
- * Sets skill level and maximum to 0, effectively removing it.
- *
- * @warning This action is permanent and removes all skill progress
- * @note Does not refund any costs or recipe purchases
- */
 void skills::UnlearnSkill(Player& who, WorldPacket& recv_data)
 {
     uint32 skill_id;

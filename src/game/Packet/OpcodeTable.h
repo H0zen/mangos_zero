@@ -49,14 +49,6 @@ enum PacketProcessing
 
 class Player;
 
-/**
- * Who answers one message from the client.
- *
- * An answer is written either as the session's, when it is about the account or
- * about a hero who is not in the world yet, or as the hero's own. A hero's
- * answer never sees the session: the dispatcher has already made sure he is
- * there and in the world before it calls, so there is nothing left to check.
- */
 struct OpcodeHandler
 {
     char const* name;
@@ -66,7 +58,6 @@ struct OpcodeHandler
     void (*answer)(WorldSession& session, WorldPacket& packet);
 };
 
-/// Hands a hero's answer the hero, so the table can hold one shape of answer.
 template <void (*Answer)(Player& who, WorldPacket& packet)>
 void PlayerAnswers(WorldSession& session, WorldPacket& packet)
 {

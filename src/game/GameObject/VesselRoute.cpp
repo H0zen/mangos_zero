@@ -31,17 +31,9 @@
 
 namespace
 {
-    /// Chords per span. The client's own figure, and a length is only ever as
-    /// right as the number of chords it was summed from.
+
     uint32 const CHORDS_PER_SPAN = 20;
 
-    /**
-     * A point on one span of a Catmull-Rom spline.
-     *
-     * The span is drawn over four nodes and runs between the middle two, so a
-     * leg of n nodes carries n-3 spans and its outermost node at each end only
-     * lends the curve its tangent.
-     */
     Geometry::Vector3 OnSpan(Geometry::Vector3 const* p, float t)
     {
         float const w0 = ((-0.5f * t + 1.0f) * t - 0.5f) * t;
@@ -52,7 +44,6 @@ namespace
         return p[0] * w0 + p[1] * w1 + p[2] * w2 + p[3] * w3;
     }
 
-    /// The span's length, as the client measures it: the sum of its chords.
     float SpanLength(Geometry::Vector3 const* p)
     {
         Geometry::Vector3 last = p[1];
@@ -68,28 +59,24 @@ namespace
         return total;
     }
 
-    /// What the vessel is doing over one run of water, and for how long.
     struct Profile
     {
         float speed = 0.0f;
         float accel = 0.0f;
-        float toSpeed = 0.0f;                               // seconds spent getting up to speed
-        float runUp = 0.0f;                                 // water covered while doing it
+        float toSpeed = 0.0f;
+        float runUp = 0.0f;
 
-        /// Pulling away from a berth, or coming into one: one change of speed.
         float Once(float ds) const
         {
             return runUp >= ds ? std::sqrt(2.0f * ds / accel) : (ds - runUp) / speed + toSpeed;
         }
 
-        /// Berth to berth: she leaves one and brakes into the next, so it is paid twice.
         float Twice(float ds) const
         {
             return runUp >= ds * 0.5f ? 2.0f * std::sqrt(ds / accel)
                                       : (ds - 2.0f * runUp) / speed + 2.0f * toSpeed;
         }
 
-        /// How far into a run of that length and shape she is after that long.
         float Travelled(float ds, uint32 ramps, float seconds) const
         {
             if (seconds <= 0.0f)
@@ -104,8 +91,7 @@ namespace
 
             if (ramps == 1)
             {
-                // She pulls away, and cruises once she is up to speed -- unless the run
-                // is too short for her ever to get there.
+
                 if (runUp >= ds)
                 {
                     return std::min(ds, 0.5f * accel * seconds * seconds);
@@ -117,8 +103,7 @@ namespace
 
             if (runUp >= ds * 0.5f)
             {
-                // Too short to reach cruising speed: she climbs to the halfway mark and
-                // falls away from it.
+
                 float const apex = std::sqrt(ds / accel);
                 if (seconds <= apex)
                 {
@@ -144,16 +129,14 @@ namespace
         }
     };
 
-    /// A leg while it is being built: the nodes, and where she berths on them.
     struct Building
     {
         uint32 map = 0;
         std::vector<Geometry::Vector3> nodes;
-        /// Index of the node she berths at, and how long she stays, in milliseconds.
+
         std::vector<std::pair<uint32, uint32>> berths;
     };
 
-    /// Every span's length, and the distance reached at every node.
     void Measure(VesselLeg& leg)
     {
         leg.reached.assign(leg.nodes.size() > 1 ? leg.nodes.size() - 1 : 0, 0.0f);
@@ -164,22 +147,18 @@ namespace
         }
     }
 
-    /// Rounded the way the client rounds every run before adding it on.
     uint32 Millis(float seconds)
     {
         return seconds > 0.0f ? uint32(std::lround(double(seconds) * 1000.0)) : 0u;
     }
 
-    /// The runs of water the berths cut the leg into, timed.
     void Time(VesselLeg& leg, std::vector<std::pair<uint32, uint32>> const& berths, Profile const& how)
     {
-        if (leg.reached.size() < 3)                         // fewer than four nodes is no span
+        if (leg.reached.size() < 3)
         {
             return;
         }
 
-        // Measured from the head of the leg, like `from` and `to` beside it. What the lap
-        // clock reads is turned into a leg offset once, by the caller.
         uint32 at = 0;
         float behind = 0.0f;
         size_t sailed = 0;
@@ -255,8 +234,6 @@ VesselRoute::VesselRoute(std::vector<TaxiPathNodeEntry const*> const& nodes, flo
 
         Building& leg = building.back();
 
-        // A berth on the first node of a leg is the one she has just left, so there is
-        // no water behind it to have sailed and the client does not record it.
         if ((node->Flags & TAXI_NODE_STOP) && !leg.nodes.empty())
         {
             leg.berths.emplace_back(uint32(leg.nodes.size()), node->Delay * IN_MILLISECONDS);
@@ -266,9 +243,6 @@ VesselRoute::VesselRoute(std::vector<TaxiPathNodeEntry const*> const& nodes, flo
         jumped = (node->Flags & TAXI_NODE_TELEPORT) != 0;
     }
 
-    // The client holds one berth list at a time and still has the last leg's when it
-    // totals the lap, so it charges that leg's berth times once for every leg. On every
-    // classic route the legs berth alike and it comes to the true sum.
     uint32 perLeg = 0;
     for (auto const& berth : building.back().berths)
     {
@@ -287,8 +261,6 @@ VesselRoute::VesselRoute(std::vector<TaxiPathNodeEntry const*> const& nodes, flo
         Measure(leg);
         Time(leg, built.berths, how);
 
-        // Only the sailing counts here: the time she lies berthed is charged once for the
-        // whole leg, from the one list the client still holds when it totals the lap.
         for (VesselLeg::Run const& run : leg.runs)
         {
             m_period += run.sails;
@@ -364,14 +336,13 @@ VesselPose VesselRoute::PoseAt(uint32 phaseMs) const
         }
         if (on < run.sails + run.waits)
         {
-            travelled = run.to;                             // lying at the berth
+            travelled = run.to;
             break;
         }
 
         travelled = run.to;
     }
 
-    // Which span of the leg that distance falls on, and how far along it.
     size_t node = 1;
     while (node + 1 < leg->reached.size() && leg->reached[node + 1] <= travelled)
     {

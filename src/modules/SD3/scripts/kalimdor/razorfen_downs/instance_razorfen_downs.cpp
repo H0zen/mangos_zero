@@ -98,7 +98,7 @@ struct is_razorfen_downs : public InstanceScript
                         {
                             return;
                         }
-                        if (Player *pPlayer = instance->GetPlayer(ObjectGuid(data)))
+                        if (Player *pPlayer = instance->GetPlayer(static_cast<ObjectGuid>(data)))
                         {
                             bWaveInMotion = true;
                             switch (iWaveNumber)

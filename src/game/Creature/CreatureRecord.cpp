@@ -135,9 +135,6 @@ SkillType CreatureRecord::RequiredLootSkill() const
         return SKILL_NONE;
     }
 
-    // Skinning, on everything this core has: the herbalism and mining answers are
-    // carried by flags no row in `creature_template` sets, because gathering from
-    // a corpse arrives with the expansions.
     if (Flags() & CREATURE_TYPEFLAGS_HERBLOOT)
     {
         return SKILL_HERBALISM;

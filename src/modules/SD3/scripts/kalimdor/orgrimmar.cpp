@@ -62,14 +62,14 @@ struct npc_shenthul : public CreatureScript
         uint32 m_uiSaluteTimer;
         uint32 m_uiResetTimer;
 
-        ObjectGuid m_playerGuid;
+        ObjectGuid m_playerGuid = 0;
 
         void Reset() override
         {
             m_uiSaluteTimer = 0;
             m_uiResetTimer = 0;
 
-            m_playerGuid.Clear();
+            m_playerGuid = 0;
         }
 
         void ReceiveEmote(Player* pPlayer, uint32 uiTextEmote) override
@@ -95,7 +95,7 @@ struct npc_shenthul : public CreatureScript
                 {
                     if (Player* pPlayer = m_creature->GetMap()->GetPlayer(m_playerGuid))
                     {
-                        if (pPlayer->IsPlayer() && pPlayer->GetQuestStatus(QUEST_SHATTERED_SALUTE) == QUEST_STATUS_INCOMPLETE)
+                        if (IsPlayer(pPlayer) && pPlayer->GetQuestStatus(QUEST_SHATTERED_SALUTE) == QUEST_STATUS_INCOMPLETE)
                         {
                             pPlayer->FailQuest(QUEST_SHATTERED_SALUTE);
                         }

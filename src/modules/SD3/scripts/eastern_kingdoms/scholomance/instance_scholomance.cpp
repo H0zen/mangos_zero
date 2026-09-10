@@ -300,14 +300,14 @@ struct is_scholomance : public InstanceScript
                             return;
                         }
                         m_auiEncounter[uiType] = uiData;
-                        DoUseDoorOrButton(GO_GATE_KIRTONOS);
+                        DoUseDoorOrButtonByEntry(GO_GATE_KIRTONOS);
                         break;
                     case TYPE_RATTLEGORE:
                         m_auiEncounter[uiType] = uiData;
                         break;
                     case TYPE_RAS_FROSTWHISPER:
                         m_auiEncounter[uiType] = uiData;
-                        DoUseDoorOrButton(GO_GATE_RAS);
+                        DoUseDoorOrButtonByEntry(GO_GATE_RAS);
                         break;
                     case TYPE_MALICIA:                                  // TODO this code can be simplified, when it is known which event-ids correspond to which room
                         m_auiEncounter[uiType] = uiData;
@@ -336,7 +336,7 @@ struct is_scholomance : public InstanceScript
                     case TYPE_GANDLING:
                         m_auiEncounter[uiType] = uiData;
                         // Close the door to main room, because the encounter will take place only in the main hall and random around all the 6 rooms
-                        DoUseDoorOrButton(GO_GATE_GANDLING);
+                        DoUseDoorOrButtonByEntry(GO_GATE_GANDLING);
                         break;
                     case TYPE_SIGNAL:
                         HandlePortalEvent(uiData, SPECIAL);
@@ -487,7 +487,7 @@ struct event_spell_gandling_shadow_portal : public MapEventScript
 
     bool OnReceived(uint32 uiEventId, Object* pSource, Object* /*pTarget*/, bool /*bIsStart*/) override
     {
-        if (pSource->IsCreature())
+        if (IsCreature(pSource))
         {
             if (InstanceData* pInstance = ((Creature*)pSource)->GetInstanceData())
             {

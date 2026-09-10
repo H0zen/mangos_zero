@@ -23,24 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file GridCommands.cpp
- * @brief Read-only LivingWorld grid/cell occupancy diagnostic commands.
- *
- * These GM-only, in-game-only commands report how many of a grid's 256 cells
- * contain DB-backed spawns, to help quantify whether future cell-cluster object
- * loading is worthwhile (LivingWorld Phase 1.5).
- *
- * IMPORTANT — all counts are STATIC DB spawn-definition counts (how many spawn
- * GUIDs are registered in each cell's spawn store), NOT live in-memory object
- * counts. The commands never load a grid, create a map, spawn anything, query
- * the database, or mutate world state:
- *  - occupancy is read from sObjectMgr's per-cell spawn store via the find-based,
- *    non-inserting GetCellObjectGuidsReadOnly();
- *  - load state is read via Map::IsGridLoaded() (never loads);
- *  - the anchor set is read via the existing ObjectMgr active-creature accessor.
- */
-
 #include "Chat.h"
 #include "Player.h"
 #include "Map.h"
@@ -55,7 +37,7 @@
 
 namespace
 {
-    uint32 const CELLS_PER_GRID = MAX_NUMBER_OF_CELLS * MAX_NUMBER_OF_CELLS; // 16 * 16 = 256
+    uint32 const CELLS_PER_GRID = MAX_NUMBER_OF_CELLS * MAX_NUMBER_OF_CELLS;
 
     struct CellOccupancy
     {
@@ -79,8 +61,6 @@ namespace
         uint32 TotalGuids() const { return creatures + gameobjects + corpses; }
     };
 
-    // Static DB spawn-definition occupancy for one grid. Read-only: reads only the
-    // ObjectMgr per-cell spawn store. Never loads/creates grids, never spawns.
     GridOccupancy ComputeGridOccupancy(uint32 mapId, uint32 gridX, uint32 gridY)
     {
         GridOccupancy occ;
@@ -129,13 +109,6 @@ namespace
     }
 }
 
-/**
- * @brief .grid info [gridX gridY]
- *
- * Reports static DB spawn-definition occupancy for one grid on the player's
- * current map: occupied/empty cell counts, total spawn GUIDs by type, and the
- * busiest cells. With no args, uses the player's current grid. Read-only.
- */
 bool ChatHandler::HandleGridInfoCommand(char* args)
 {
     Player* player = m_session ? m_session->GetPlayer() : nullptr;
@@ -207,14 +180,6 @@ bool ChatHandler::HandleGridInfoCommand(char* args)
     return true;
 }
 
-/**
- * @brief .grid anchors
- *
- * Reports static DB spawn-definition occupancy for the ENABLED startup anchor
- * grids on the player's current map (the CREATURE_FLAG_EXTRA_ACTIVE set plus any
- * LivingWorld anchors enabled by the current AnchorPolicyMask) -- not every
- * possible DB anchor. Used to measure how sparse anchor-held grids are. Read-only.
- */
 bool ChatHandler::HandleGridAnchorsCommand(char* args)
 {
     Player* player = m_session ? m_session->GetPlayer() : nullptr;
@@ -227,9 +192,6 @@ bool ChatHandler::HandleGridAnchorsCommand(char* args)
 
     uint32 mapId = player->GetMapId();
 
-    // Startup-active anchor set restricted to the player's current map. This is the
-    // *enabled* startup anchor set (extra-active + enabled LivingWorld anchors), not
-    // every possible DB anchor. Dedupe to unique anchor grids and tally anchors per grid.
     ActiveCreatureGuidsOnMap const* activeGuids = sObjectMgr.GetActiveCreatureGuids();
 
     std::map<std::pair<uint32, uint32>, uint32> anchorGridSpawnCount;

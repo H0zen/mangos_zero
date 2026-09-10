@@ -27,59 +27,32 @@
 #include "CreatureAI.h"
 #include "Creature.h"
 
-// Global instance of IdleMovementGenerator
 IdleMovementGenerator si_idleMovement;
 
-/**
- * @brief Resets the IdleMovementGenerator.
- * @param owner Reference to the unit.
- */
-void IdleMovementGenerator::Reset(Unit& /*owner*/)
+void IdleMovementGenerator::Reset(Unit& )
 {
 }
 
-/**
- * @brief Initializes the DistractMovementGenerator.
- * @param owner Reference to the unit.
- */
 void DistractMovementGenerator::Initialize(Unit& owner)
 {
     owner.addUnitState(UNIT_STAT_DISTRACTED);
 }
 
-/**
- * @brief Finalizes the DistractMovementGenerator.
- * @param owner Reference to the unit.
- */
 void DistractMovementGenerator::Finalize(Unit& owner)
 {
     owner.clearUnitState(UNIT_STAT_DISTRACTED);
 }
 
-/**
- * @brief Resets the DistractMovementGenerator.
- * @param owner Reference to the unit.
- */
 void DistractMovementGenerator::Reset(Unit& owner)
 {
     Initialize(owner);
 }
 
-/**
- * @brief Interrupts the DistractMovementGenerator.
- * @param owner Reference to the unit.
- */
-void DistractMovementGenerator::Interrupt(Unit& /*owner*/)
+void DistractMovementGenerator::Interrupt(Unit& )
 {
 }
 
-/**
- * @brief Updates the DistractMovementGenerator.
- * @param owner Reference to the unit.
- * @param time_diff Time difference.
- * @return True if the update was successful, false otherwise.
- */
-bool DistractMovementGenerator::Update(Unit& /*owner*/, uint32 diff)
+bool DistractMovementGenerator::Update(Unit& , uint32 diff)
 {
     if (diff > m_timer)
     {
@@ -90,10 +63,6 @@ bool DistractMovementGenerator::Update(Unit& /*owner*/, uint32 diff)
     return true;
 }
 
-/**
- * @brief Finalizes the AssistanceDistractMovementGenerator.
- * @param unit Reference to the unit.
- */
 void AssistanceDistractMovementGenerator::Finalize(Unit& unit)
 {
     unit.clearUnitState(UNIT_STAT_DISTRACTED);

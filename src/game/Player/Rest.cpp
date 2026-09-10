@@ -31,7 +31,7 @@
 
 void Rest::Bonus(float amount)
 {
-    // there is no next level to store a fraction of
+
     if (m_owner.getLevel() >= sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
     {
         amount = 0.0f;
@@ -59,7 +59,7 @@ void Rest::Bonus(float amount)
 
 uint32 Rest::SpendOn(uint32 xp)
 {
-    // rest can at most double the experience, never more
+
     uint32 spent = uint32(m_bonus);
     if (spent > xp)
     {
@@ -72,7 +72,7 @@ uint32 Rest::SpendOn(uint32 xp)
     return spent;
 }
 
-void Rest::Kind(RestType type, uint32 areaTriggerId /*= 0*/)
+void Rest::Kind(RestType type, uint32 areaTriggerId )
 {
     m_type = type;
 
@@ -80,7 +80,6 @@ void Rest::Kind(RestType type, uint32 areaTriggerId /*= 0*/)
     {
         m_owner.RemovePlayerFlag(PLAYER_FLAGS_RESTING);
 
-        // outside a resting place he is fair game where the realm says so
         if (sWorld.IsFFAPvPRealm())
         {
             m_owner.SetFFAPvP(true);
@@ -100,7 +99,7 @@ void Rest::Kind(RestType type, uint32 areaTriggerId /*= 0*/)
     }
 }
 
-float Rest::Over(time_t seconds, bool offline /*= false*/, bool inRestPlace /*= false*/) const
+float Rest::Over(time_t seconds, bool offline , bool inRestPlace ) const
 {
     rest::Rates paid;
     paid.inGame = sWorld.getConfig(CONFIG_FLOAT_RATE_REST_INGAME);

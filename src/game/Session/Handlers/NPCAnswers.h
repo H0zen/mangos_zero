@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks of the people who stand in the world.
 namespace npcs
 {
     void TabardVendorActivate(Player& who, WorldPacket& packet);

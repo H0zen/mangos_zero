@@ -25,45 +25,26 @@
 
 #pragma once
 
-// Everything the hit tables read about one side of a fight, and nothing else.
-//
-// Naming it makes the dependency finite: the roll below needs eleven numbers and
-// four flags, not a Unit. That is what lets a hit table be exercised on values,
-// and it is also a statement -- anything not here cannot influence whether a
-// blow lands, so a change that needs more has to say so by widening this.
-//
-// It is read fresh for each resolve and thrown away. It is not a snapshot kept
-// across a chain of procs, where it would go stale the moment the first effect
-// wrote.
-
 #include "Platform/Define.h"
 #include "ObjectGuid.h"
 
 namespace combat
 {
-    /// Chances are in hundredths of a percent, as the client's tables are: 5000
-    /// is five percent. Keeping the unit out of floats keeps the roll exact.
+
     struct Combatant
     {
-        ObjectGuid guid;
+        ObjectGuid guid = 0;
 
         uint32 level = 1;
         bool isPlayer = false;
         bool isPet = false;
 
-        /// A creature that has given up and is walking home takes nothing.
         bool isEvading = false;
 
-        /// A player who is not standing is hit critically by anything that can
-        /// crit at all.
         bool isSitting = false;
 
-        /// Read only by the glancing band, which lowers for caster classes and
-        /// raises its floor for warriors and rogues.
         uint8 classId = 0;
 
-        /// Current health. Only the victim's is read, to say whether the blow
-        /// kills and by how much it overshoots.
         int32 health = 0;
 
         int32 missChance = 0;
@@ -72,16 +53,12 @@ namespace combat
         int32 parryChance = 0;
         int32 blockChance = 0;
 
-        /// Attacker's skill with the weapon in hand, and the cap for its level.
         int32 weaponSkill = 0;
         int32 maxSkillForLevel = 0;
 
-        /// Victim's defence, and the cap for its level. Defence above the cap
-        /// does nothing, which the crushing-blow test relies on.
         int32 defenceSkill = 0;
         int32 maxDefenceForLevel = 0;
 
-        /// Creature flags. A player is always allowed all three.
         bool canParry = true;
         bool canBlock = true;
         bool canCrush = false;

@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <string>
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
@@ -57,12 +55,9 @@
 #include "DisableMgr.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Loads the list of reserved player names.
- */
 void ObjectMgr::LoadReservedPlayersNames()
 {
-    m_ReservedNames.clear();                                // need for reload case
+    m_ReservedNames.clear();
 
     QueryResult* result = WorldDatabase.Query("SELECT `name` FROM `reserved_name`");
 
@@ -106,12 +101,6 @@ void ObjectMgr::LoadReservedPlayersNames()
     sLog.outString();
 }
 
-/**
- * @brief Checks whether a player name is reserved.
- *
- * @param name The player name.
- * @return true if the name is reserved; otherwise, false.
- */
 bool ObjectMgr::IsReservedName(const std::string& name) const
 {
     std::wstring wstr;
@@ -134,22 +123,16 @@ enum LanguageType
     LT_ANY            = 0xFFFF
 };
 
-/**
- * @brief Determines the allowed language family for the current realm.
- *
- * @param create True when validating character creation names; otherwise false.
- * @return LanguageType The realm language mask to apply.
- */
 static LanguageType GetRealmLanguageType(bool create)
 {
     switch (sWorld.getConfig(CONFIG_UINT32_REALM_ZONE))
     {
-        case REALM_ZONE_UNKNOWN:                            // any language
+        case REALM_ZONE_UNKNOWN:
         case REALM_ZONE_DEVELOPMENT:
         case REALM_ZONE_TEST_SERVER:
         case REALM_ZONE_QA_SERVER:
             return LT_ANY;
-        case REALM_ZONE_UNITED_STATES:                      // extended-Latin
+        case REALM_ZONE_UNITED_STATES:
         case REALM_ZONE_OCEANIC:
         case REALM_ZONE_LATIN_AMERICA:
         case REALM_ZONE_ENGLISH:
@@ -157,29 +140,20 @@ static LanguageType GetRealmLanguageType(bool create)
         case REALM_ZONE_FRENCH:
         case REALM_ZONE_SPANISH:
             return LT_EXTENDEN_LATIN;
-        case REALM_ZONE_KOREA:                              // East-Asian
+        case REALM_ZONE_KOREA:
         case REALM_ZONE_TAIWAN:
         case REALM_ZONE_CHINA:
             return LT_EAST_ASIA;
-        case REALM_ZONE_RUSSIAN:                            // Cyrillic
+        case REALM_ZONE_RUSSIAN:
             return LT_CYRILLIC;
         default:
-            return create ? LT_BASIC_LATIN : LT_ANY;        // basic-Latin at create, any at login
+            return create ? LT_BASIC_LATIN : LT_ANY;
     }
 }
 
-/**
- * @brief Validates a wide-character string against realm language rules.
- *
- * @param wstr The string to validate.
- * @param strictMask The explicit language mask.
- * @param numericOrSpace True if digits or spaces are allowed.
- * @param create True when validating character creation names.
- * @return true if the string is valid; otherwise false.
- */
 bool isValidString(const std::wstring &wstr, uint32 strictMask, bool numericOrSpace, bool create = false)
 {
-    if (strictMask == 0)                                    // any language, ignore realm
+    if (strictMask == 0)
     {
         if (isExtendedLatinString(wstr, numericOrSpace))
         {
@@ -196,7 +170,7 @@ bool isValidString(const std::wstring &wstr, uint32 strictMask, bool numericOrSp
         return false;
     }
 
-    if (strictMask & 0x2)                                   // realm zone specific
+    if (strictMask & 0x2)
     {
         LanguageType lt = GetRealmLanguageType(create);
         if (lt & LT_EXTENDEN_LATIN)
@@ -224,7 +198,7 @@ bool isValidString(const std::wstring &wstr, uint32 strictMask, bool numericOrSp
         }
     }
 
-    if (strictMask & 0x1)                                   // basic Latin
+    if (strictMask & 0x1)
     {
         if (isBasicLatinString(wstr, numericOrSpace))
         {
@@ -235,13 +209,6 @@ bool isValidString(const std::wstring &wstr, uint32 strictMask, bool numericOrSp
     return false;
 }
 
-/**
- * @brief Validates a player name against length and language rules.
- *
- * @param name The player name to validate.
- * @param create true when validating at character creation time.
- * @return The player-name validation result code.
- */
 uint8 ObjectMgr::CheckPlayerName(const std::string& name, bool create)
 {
     std::wstring wname;
@@ -270,12 +237,6 @@ uint8 ObjectMgr::CheckPlayerName(const std::string& name, bool create)
     return CHAR_NAME_SUCCESS;
 }
 
-/**
- * @brief Validates a charter name against configured length and language rules.
- *
- * @param name The charter name to validate.
- * @return true if the charter name is valid; otherwise, false.
- */
 bool ObjectMgr::IsValidCharterName(const std::string& name)
 {
     std::wstring wname;
@@ -300,12 +261,6 @@ bool ObjectMgr::IsValidCharterName(const std::string& name)
     return isValidString(wname, strictMask, true);
 }
 
-/**
- * @brief Validates a pet name against configured length and language rules.
- *
- * @param name The pet name to validate.
- * @return The pet-name validation result code.
- */
 PetNameInvalidReason ObjectMgr::CheckPetName(const std::string& name)
 {
     std::wstring wname;

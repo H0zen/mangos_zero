@@ -29,34 +29,16 @@
 
 #include <ctime>
 
-/**
- * How long a character has been played, and since when.
- *
- * Two totals are kept, both in seconds: everything since he was made, and
- * everything since he reached the level he is on. The second is set back to
- * nothing each time he levels, which is why they are two numbers and not one
- * with a subtraction.
- *
- * Both are advanced from a single mark, moved forward every tick. The mark is
- * wall-clock time rather than the tick's own count, so time the server spends
- * stalled still counts as time he was played -- he was logged in for it.
- *
- * The hour he logged in is kept apart from the mark, because it never moves: it
- * is what the played-time answer and the session's own accounting are measured
- * from.
- */
 class PlayedTime
 {
     public:
 
-        /// Starts both clocks at the given hour, for a character coming into the world.
         void StartAt(time_t when)
         {
             m_loggedInAt = when;
             m_mark = when;
         }
 
-        /// Sets both totals to nothing, for a character who has just been made.
         void Fresh(time_t when)
         {
             m_mark = when;
@@ -73,7 +55,6 @@ class PlayedTime
         void Total(uint32 seconds) { m_total = seconds; }
         void AtThisLevel(uint32 seconds) { m_atThisLevel = seconds; }
 
-        /// Carries both totals up to the given hour and moves the mark there.
         void Advance(time_t now)
         {
             if (now <= m_mark)
@@ -87,13 +68,11 @@ class PlayedTime
             m_mark = now;
         }
 
-        /// How long since the mark, without moving it.
         uint32 Since(time_t now) const
         {
             return now > m_mark ? uint32(now - m_mark) : 0;
         }
 
-        /// He has reached a new level, so the second total starts again.
         void NewLevel() { m_atThisLevel = 0; }
 
     private:

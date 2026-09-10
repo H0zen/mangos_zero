@@ -125,8 +125,8 @@ struct spell_apply_salve : public SpellScript
     {
         if (uiSpellId == SPELL_APPLY_SALVE && uiEffIndex == EFFECT_INDEX_0)
         {
-            Creature *pCreatureTarget = ToCreature(pTarget);
-            if (!pCaster->IsPlayer() || !pCreatureTarget)
+            Creature *pCreatureTarget = static_cast<Creature*>(pTarget);
+            if (!IsPlayer(pCaster) || !pCreatureTarget)
             {
                 return true;
             }
@@ -155,11 +155,11 @@ struct spell_sacred_cleansing : public SpellScript
     {
         if (uiSpellId == SPELL_SACRED_CLEANSING && uiEffIndex == EFFECT_INDEX_1)
         {
-            if (!ToCreature(pTarget) || pTarget->GetEntry() != NPC_MORBENT)
+            if (!static_cast<Creature*>(pTarget) || pTarget->GetEntry() != NPC_MORBENT)
             {
                 return true;
             }
-            ToCreature(pTarget)->UpdateEntry(NPC_WEAKENED_MORBENT);
+            static_cast<Creature*>(pTarget)->UpdateEntry(NPC_WEAKENED_MORBENT);
         }
         return true;
     }
@@ -173,8 +173,8 @@ struct spell_melodious_rapture : public SpellScript
     {
         if (uiSpellId == SPELL_MELODIOUS_RAPTURE && uiEffIndex == EFFECT_INDEX_0)
         {
-            Creature *pCreatureTarget = ToCreature(pTarget);
-            if (!pCaster->IsPlayer() || !pCreatureTarget || (pCreatureTarget->GetEntry() != NPC_DEEPRUN_RAT))
+            Creature *pCreatureTarget = static_cast<Creature*>(pTarget);
+            if (!IsPlayer(pCaster) || !pCreatureTarget || (pCreatureTarget->GetEntry() != NPC_DEEPRUN_RAT))
             {
                 return true;
             }

@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
 #include "Log.h"
@@ -57,12 +55,9 @@
 #include "DisableMgr.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Loads base fishing skill requirements for areas.
- */
 void ObjectMgr::LoadFishingBaseSkillLevel()
 {
-    mFishingBaseForArea.clear();                            // for reload case
+    mFishingBaseForArea.clear();
 
     uint32 count = 0;
     QueryResult* result = WorldDatabase.Query("SELECT `entry`,`skill` FROM `skill_fishing_base_level`");
@@ -104,9 +99,6 @@ void ObjectMgr::LoadFishingBaseSkillLevel()
     sLog.outString();
 }
 
-/**
- * @brief Loads creature template spell assignments and validates their spell ids.
- */
 void ObjectMgr::LoadCreatureTemplateSpells()
 {
     sCreatureTemplateSpellsStorage.Load();

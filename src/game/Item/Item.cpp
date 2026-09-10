@@ -34,12 +34,6 @@
 #include "ItemEnchantmentMgr.h"
 #include "SQLStorages.h"
 
-/**
- * @brief Applies item set bonuses when an item is equipped.
- *
- * @param player The player receiving the set bonus.
- * @param item The item being added.
- */
 void AddItemsSetItem(Player* player, Item* item)
 {
     ItemPrototype const* proto = item->GetProto();
@@ -102,7 +96,7 @@ void AddItemsSetItem(Player* player, Item* item)
         {
             continue;
         }
-        // not enough for  spell
+
         if (set->SetThreshold[x] > eff->item_count)
         {
             continue;
@@ -122,10 +116,9 @@ void AddItemsSetItem(Player* player, Item* item)
             continue;
         }
 
-        // new spell
         for (uint32 y = 0; y < 8; ++y)
         {
-            if (!eff->spells[y])                            // free slot
+            if (!eff->spells[y])
             {
                 SpellEntry const* spellInfo = sSpellStore.LookupEntry(set->SetSpellID[x]);
                 if (!spellInfo)
@@ -134,7 +127,6 @@ void AddItemsSetItem(Player* player, Item* item)
                     break;
                 }
 
-                // spell casted only if fit form requirement, in other case will casted at form change
                 player->ApplyEquipSpell(spellInfo, nullptr, true);
                 eff->spells[y] = spellInfo;
                 break;
@@ -143,12 +135,6 @@ void AddItemsSetItem(Player* player, Item* item)
     }
 }
 
-/**
- * @brief Removes item set bonuses when an item is unequipped.
- *
- * @param player The player losing the set bonus.
- * @param proto The item prototype being removed.
- */
 void RemoveItemsSetItem(Player* player, ItemPrototype const* proto)
 {
     uint32 setid = proto->ItemSet;
@@ -172,7 +158,6 @@ void RemoveItemsSetItem(Player* player, ItemPrototype const* proto)
         }
     }
 
-    // can be in case now enough skill requirement for set appling but set has been appliend when skill requirement not enough
     if (!eff)
     {
         return;
@@ -187,7 +172,6 @@ void RemoveItemsSetItem(Player* player, ItemPrototype const* proto)
             continue;
         }
 
-        // enough for spell
         if (set->SetThreshold[x] <= eff->item_count)
         {
             continue;
@@ -197,7 +181,7 @@ void RemoveItemsSetItem(Player* player, ItemPrototype const* proto)
         {
             if (eff->spells[z] && eff->spells[z]->ID == set->SetSpellID[x])
             {
-                // spell can be not active if not fit form requirement
+
                 player->ApplyEquipSpell(eff->spells[z], nullptr, false);
                 eff->spells[z] = nullptr;
                 break;
@@ -205,7 +189,7 @@ void RemoveItemsSetItem(Player* player, ItemPrototype const* proto)
         }
     }
 
-    if (!eff->item_count)                                   // all items of a set were removed
+    if (!eff->item_count)
     {
         MANGOS_ASSERT(eff == player->ItemSetEff[setindex]);
         delete eff;
@@ -213,13 +197,6 @@ void RemoveItemsSetItem(Player* player, ItemPrototype const* proto)
     }
 }
 
-/**
- * @brief Checks whether an item can be placed into a specific bag type.
- *
- * @param pProto The item prototype to place.
- * @param pBagProto The bag prototype receiving the item.
- * @return true if the item fits the bag restrictions; otherwise, false.
- */
 bool ItemCanGoIntoBag(ItemPrototype const* pProto, ItemPrototype const* pBagProto)
 {
     if (!pProto || !pBagProto)
@@ -283,13 +260,9 @@ bool ItemCanGoIntoBag(ItemPrototype const* pProto, ItemPrototype const* pBagProt
     return false;
 }
 
-/**
- * @brief Creates an empty item instance.
- */
 Item::Item()
     : loot(nullptr)
 {
-    m_objectType |= TYPEMASK_ITEM;
     m_objectTypeId = TYPEID_ITEM;
     m_updateFlag = UPDATEFLAG_ALL;
 
@@ -300,46 +273,20 @@ Item::Item()
     m_lootState = ITEM_LOOT_NONE;
 }
 
-/**
- * @brief Destroys the item instance.
- */
 Item::~Item()
 {
 }
 
-
-
-
-
-
-
-
-
-/**
- * @brief Gets the prototype data for this item entry.
- *
- * @return The item prototype, or null if unavailable.
- */
 ItemPrototype const* Item::GetProto() const
 {
     return ObjectMgr::GetItemPrototype(GetEntry());
 }
 
-/**
- * @brief Gets the owning player of this item.
- *
- * @return The owner player, or null if offline or missing.
- */
 Player* Item::GetOwner()const
 {
     return sObjectMgr.GetPlayer(GetOwnerGuid());
 }
 
-/**
- * @brief Gets the skill associated with using this item.
- *
- * @return The skill identifier, or 0 if none applies.
- */
 uint32 Item::GetSkill()
 {
     const static uint32 item_weapon_skills[MAX_ITEM_SUBCLASS_WEAPON] =
@@ -385,11 +332,6 @@ uint32 Item::GetSkill()
     }
 }
 
-/**
- * @brief Gets the spell that teaches the skill for this item type.
- *
- * @return The teaching spell identifier, or 0 if none applies.
- */
 uint32 Item::GetSpell()
 {
     ItemPrototype const* proto = GetProto();
@@ -430,12 +372,6 @@ uint32 Item::GetSpell()
     return 0;
 }
 
-/**
- * @brief Generates a random property id for an item entry.
- *
- * @param item_id The item entry identifier.
- * @return The generated random property id, or 0 if none applies.
- */
 int32 Item::GenerateItemRandomPropertyId(uint32 item_id)
 {
     ItemPrototype const* itemProto = sItemStorage.LookupEntry<ItemPrototype>(item_id);
@@ -445,7 +381,6 @@ int32 Item::GenerateItemRandomPropertyId(uint32 item_id)
         return 0;
     }
 
-    // Random Property case
     if (itemProto->RandomProperty)
     {
         uint32 randomPropId = GetItemEnchantMod(itemProto->RandomProperty);
@@ -462,11 +397,6 @@ int32 Item::GenerateItemRandomPropertyId(uint32 item_id)
     return 0;
 }
 
-/**
- * @brief Applies random property enchantments to the item.
- *
- * @param randomPropId The random property identifier.
- */
 void Item::SetItemRandomProperties(int32 randomPropId)
 {
     if (!randomPropId)
@@ -492,17 +422,10 @@ void Item::SetItemRandomProperties(int32 randomPropId)
     }
 }
 
-/**
- * @brief Sets the item update state and queues it for owner persistence if needed.
- *
- * @param state The new update state.
- * @param forplayer Optional player context for queue management.
- */
 bool Item::SpendDuration(uint32 elapsed, Player* holder)
 {
     const uint32 left = GetUInt32Value(ITEM_FIELD_DURATION);
 
-    // No clock: it stays until something other than time takes it.
     if (!left)
     {
         return false;
@@ -515,7 +438,7 @@ bool Item::SpendDuration(uint32 elapsed, Player* holder)
     }
 
     SetUInt32Value(ITEM_FIELD_DURATION, left - elapsed);
-    SetState(ITEM_CHANGED, holder);                         // save new time in database
+    SetState(ITEM_CHANGED, holder);
 
     return false;
 }
@@ -529,13 +452,13 @@ void Item::SetState(ItemUpdateState state, Player* forplayer)
         if (!owner)
         {
             sLog.outError("Item::SetState - %s is owned by %s, who is not in world",
-                          GetGuidStr().c_str(), GetOwnerGuid().GetString().c_str());
+                          GetGuidStr().c_str(), GuidString(GetOwnerGuid()).c_str());
         }
     }
 
     if (uState == ITEM_NEW && state == ITEM_REMOVED)
     {
-        // pretend the item never existed
+
         if (owner)
         {
             owner->ItemSaves().Forget(this);
@@ -546,7 +469,7 @@ void Item::SetState(ItemUpdateState state, Player* forplayer)
 
     if (state != ITEM_UNCHANGED)
     {
-        // new items must stay in new state until saved
+
         if (uState != ITEM_NEW)
         {
             uState = state;
@@ -567,31 +490,16 @@ void Item::SetState(ItemUpdateState state, Player* forplayer)
     }
 }
 
-/**
- * @brief Gets the bag slot containing this item.
- *
- * @return The bag slot index, or the backpack slot for top-level items.
- */
 uint8 Item::GetBagSlot() const
 {
     return m_container ? m_container->GetSlot() : uint8(INVENTORY_SLOT_BAG_0);
 }
 
-/**
- * @brief Checks whether the item is equipped.
- *
- * @return true if the item occupies an equipment slot; otherwise, false.
- */
 bool Item::IsEquipped() const
 {
     return !IsInBag() && m_slot < EQUIPMENT_SLOT_END;
 }
 
-/**
- * @brief Checks whether the item can currently be traded.
- *
- * @return true if the item can be traded; otherwise, false.
- */
 bool Item::CanBeTraded() const
 {
     if (IsSoulBound())
@@ -628,14 +536,9 @@ bool Item::CanBeTraded() const
     return true;
 }
 
-/**
- * @brief Checks whether any enchantment makes the item soulbound.
- *
- * @return true if an enchantment binds the item; otherwise, false.
- */
 bool Item::IsBoundByEnchant() const
 {
-    // Check all enchants for soulbound
+
     for (uint32 enchant_slot = PERM_ENCHANTMENT_SLOT; enchant_slot < MAX_ENCHANTMENT_SLOT; ++enchant_slot)
     {
         uint32 enchant_id = GetEnchantmentId(EnchantmentSlot(enchant_slot));
@@ -658,57 +561,42 @@ bool Item::IsBoundByEnchant() const
     return false;
 }
 
-/**
- * @brief Checks whether the item satisfies a spell's equipment requirements.
- *
- * @param spellInfo The spell being evaluated.
- * @return true if the item matches the spell requirements; otherwise, false.
- */
 bool Item::IsFitToSpellRequirements(SpellEntry const* spellInfo) const
 {
     ItemPrototype const* proto = GetProto();
 
-    if (spellInfo->EquippedItemClass != -1)                 // -1 == any item class
+    if (spellInfo->EquippedItemClass != -1)
     {
-        if (spellInfo->ID == 13419 && 4 == int32(proto->Class))      // Special case for Enchant cloak minor Agility dbc file is wrong
+        if (spellInfo->ID == 13419 && 4 == int32(proto->Class))
         {
             return true;
         }
 
         if (spellInfo->EquippedItemClass != int32(proto->Class))
         {
-            return false; //  wrong item class
+            return false;
         }
 
-        if (spellInfo->EquippedItemSubclass != 0)       // 0 == any subclass
+        if (spellInfo->EquippedItemSubclass != 0)
         {
             if ((spellInfo->EquippedItemSubclass & (1 << proto->SubClass)) == 0)
             {
-                return false; // subclass not present in mask
+                return false;
             }
         }
     }
 
-    // Only check for item enchantments (TARGET_FLAG_ITEM), all other spells are either NPC spells
-    // or spells where slot requirements are already handled with AttributesEx3 fields
-    // and special code (Titan's Grip, Windfury Attack). Check clearly not applicable for Lava Lash.
-    if (spellInfo->EquippedItemInvTypes != 0 && (spellInfo->Targets & TARGET_FLAG_ITEM))    // 0 == any inventory type
+    if (spellInfo->EquippedItemInvTypes != 0 && (spellInfo->Targets & TARGET_FLAG_ITEM))
     {
         if ((spellInfo->EquippedItemInvTypes  & (1 << proto->InventoryType)) == 0)
         {
-            return false; // inventory type not present in mask
+            return false;
         }
     }
 
     return true;
 }
 
-/**
- * @brief Checks whether a unit is a valid target for using this item.
- *
- * @param pUnitTarget The candidate unit target.
- * @return true if the target matches item target requirements; otherwise, false.
- */
 bool Item::IsTargetValidForItemUse(Unit* pUnitTarget)
 {
     ItemRequiredTargetMapBounds bounds = sObjectMgr.GetItemRequiredTargetMapBounds(GetProto()->ItemId);
@@ -733,32 +621,12 @@ bool Item::IsTargetValidForItemUse(Unit* pUnitTarget)
     return false;
 }
 
-
-
-
-
-/**
- * @brief Checks whether the item is restricted to a different map or zone.
- *
- * @param cur_mapId The current map identifier.
- * @param cur_zoneId The current zone identifier.
- * @return true if the item is restricted elsewhere; otherwise, false.
- */
 bool Item::IsLimitedToAnotherMapOrZone(uint32 cur_mapId, uint32 cur_zoneId) const
 {
     ItemPrototype const* proto = GetProto();
     return proto && ((proto->Map && proto->Map != cur_mapId) || (proto->Area && proto->Area != cur_zoneId));
 }
 
-// Though the client has the information in the item's data field,
-// we have to send SMSG_ITEM_TIME_UPDATE to display the remaining
-// time.
-
-/**
- * @brief Sends the remaining duration update packet for a timed item.
- *
- * @param owner The player receiving the update.
- */
 void Item::SendTimeUpdate(Player* owner)
 {
 
@@ -769,25 +637,16 @@ void Item::SendTimeUpdate(Player* owner)
     }
 
     WorldPacket data(SMSG_ITEM_TIME_UPDATE, (8 + 4));
-    data << ObjectGuid(GetObjectGuid());
+    data << static_cast<ObjectGuid>(GetObjectGuid());
     data << uint32(duration);
     owner->GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Creates a new item or bag instance.
- *
- * @param item The item entry identifier.
- * @param count The desired stack count.
- * @param player The owning player.
- * @param randomPropertyId Optional random property override.
- * @return The created item instance, or null on failure.
- */
 Item* Item::CreateItem(uint32 item, uint32 count, Player const* player, uint32 randomPropertyId)
 {
     if (count < 1)
     {
-        return nullptr; // don't create item at zero count
+        return nullptr;
     }
 
     if (ItemPrototype const* pProto = ObjectMgr::GetItemPrototype(item))
@@ -797,7 +656,7 @@ Item* Item::CreateItem(uint32 item, uint32 count, Player const* player, uint32 r
             count = pProto->GetMaxStackSize();
         }
 
-        MANGOS_ASSERT(count != 0);                              // count != 0 && pProto->Stackable == 0 but checked at loading already
+        MANGOS_ASSERT(count != 0);
 
         Item* pItem = NewItemOrBag(pProto);
         if (pItem->Create(sMint.ItemGuids().Next(), item, player))
@@ -818,13 +677,6 @@ Item* Item::CreateItem(uint32 item, uint32 count, Player const* player, uint32 r
     return nullptr;
 }
 
-/**
- * @brief Creates a copy of the item with the requested count.
- *
- * @param count The stack count for the clone.
- * @param player The target owner.
- * @return The cloned item, or null on failure.
- */
 Item* Item::CloneItem(uint32 count, Player const* player) const
 {
     Item* newItem = CreateItem(GetEntry(), count, player, GetItemRandomPropertyId());
@@ -840,27 +692,19 @@ Item* Item::CloneItem(uint32 count, Player const* player) const
     return newItem;
 }
 
-/**
- * @brief Checks whether the item is bound to someone other than the given player.
- *
- * @param player The player attempting to use the item.
- * @return true if the item is bound away from that player; otherwise, false.
- */
 bool Item::IsBindedNotWith(Player const* player) const
 {
-    // own item
+
     if (GetOwnerGuid() == player->GetObjectGuid())
     {
         return false;
     }
 
-    // has loot with diff owner
     if (HasGeneratedLoot())
     {
         return true;
     }
 
-    // not binded item
     if (!IsSoulBound())
     {
         return false;
@@ -869,9 +713,6 @@ bool Item::IsBindedNotWith(Player const* player) const
     return true;
 }
 
-/**
- * @brief Adds the item to the map client update list.
- */
 void Item::AddToClientUpdateList()
 {
     if (Player* pl = GetOwner())
@@ -880,9 +721,6 @@ void Item::AddToClientUpdateList()
     }
 }
 
-/**
- * @brief Removes the item from the map client update list.
- */
 void Item::RemoveFromClientUpdateList()
 {
     if (Player* pl = GetOwner())
@@ -891,11 +729,6 @@ void Item::RemoveFromClientUpdateList()
     }
 }
 
-/**
- * @brief Builds update data for players who can observe the item.
- *
- * @param update_players The update packet aggregation map.
- */
 void Item::BuildUpdateData(UpdateDataMapType& update_players)
 {
     if (Player* pl = GetOwner())
@@ -906,27 +739,19 @@ void Item::BuildUpdateData(UpdateDataMapType& update_players)
     ClearUpdateMask(false);
 }
 
-/**
- * @brief Checks whether another stack can receive part of this item type.
- *
- * @param proto The prototype of the incoming item stack.
- * @return The inventory result describing merge eligibility.
- */
 InventoryResult Item::CanBeMergedPartlyWith(ItemPrototype const* proto) const
 {
-    // check item type
+
     if (GetEntry() != proto->ItemId)
     {
         return EQUIP_ERR_ITEM_CANT_STACK;
     }
 
-    // check free space (full stacks can't be target of merge
     if (GetCount() >= proto->GetMaxStackSize())
     {
         return EQUIP_ERR_ITEM_CANT_STACK;
     }
 
-    // not allow merge looting currently items
     if (HasGeneratedLoot())
     {
         return EQUIP_ERR_ALREADY_LOOTED;
@@ -935,15 +760,9 @@ InventoryResult Item::CanBeMergedPartlyWith(ItemPrototype const* proto) const
     return EQUIP_ERR_OK;
 }
 
-/**
- * @brief Checks whether a unit satisfies the required item-use target rule.
- *
- * @param pUnitTarget The candidate target unit.
- * @return true if the unit meets the stored requirements; otherwise, false.
- */
 bool ItemRequiredTarget::IsFitToRequirements(Unit* pUnitTarget) const
 {
-    if (!pUnitTarget->IsCreature())
+    if (!IsCreature(pUnitTarget))
     {
         return false;
     }
@@ -964,47 +783,40 @@ bool ItemRequiredTarget::IsFitToRequirements(Unit* pUnitTarget) const
     }
 }
 
-/**
- * @brief Updates the persisted loot state for the item.
- *
- * @param state The new loot update state.
- */
 void Item::SetLootState(ItemLootUpdateState state)
 {
-    // ITEM_LOOT_NONE -> ITEM_LOOT_TEMPORARY -> ITEM_LOOT_NONE
-    // ITEM_LOOT_NONE -> ITEM_LOOT_NEW -> ITEM_LOOT_NONE
-    // ITEM_LOOT_NONE -> ITEM_LOOT_NEW -> ITEM_LOOT_UNCHANGED [<-> ITEM_LOOT_CHANGED] -> ITEM_LOOT_REMOVED -> ITEM_LOOT_NONE
+
     switch (state)
     {
         case ITEM_LOOT_NONE:
         case ITEM_LOOT_NEW:
-            assert(false);                                 // not used in state change calls
+            assert(false);
             return;
         case ITEM_LOOT_TEMPORARY:
-            assert(m_lootState == ITEM_LOOT_NONE);          // called only for not generated yet loot case
+            assert(m_lootState == ITEM_LOOT_NONE);
             m_lootState = ITEM_LOOT_TEMPORARY;
             break;
         case ITEM_LOOT_CHANGED:
-            // new loot must stay in new state until saved, temporary must stay until remove
+
             if (m_lootState != ITEM_LOOT_NEW && m_lootState != ITEM_LOOT_TEMPORARY)
             {
                 m_lootState = m_lootState == ITEM_LOOT_NONE ? ITEM_LOOT_NEW : state;
             }
             break;
         case ITEM_LOOT_UNCHANGED:
-            // expected that called after DB update or load
+
             if (m_lootState == ITEM_LOOT_REMOVED)
             {
                 m_lootState = ITEM_LOOT_NONE;
             }
-            // temporary must stay until remove (ignore any changes)
+
             else if (m_lootState != ITEM_LOOT_TEMPORARY)
             {
                 m_lootState = ITEM_LOOT_UNCHANGED;
             }
             break;
         case ITEM_LOOT_REMOVED:
-            // if loot not saved then it existence in past can be just ignored
+
             if (m_lootState == ITEM_LOOT_NEW || m_lootState == ITEM_LOOT_TEMPORARY)
             {
                 m_lootState = ITEM_LOOT_NONE;
@@ -1021,11 +833,6 @@ void Item::SetLootState(ItemLootUpdateState state)
     }
 }
 
-/**
- * @brief Gets the bound script identifier for this item entry.
- *
- * @return The scripted item id.
- */
 uint32 Item::GetScriptId() const
 {
     return sScriptMgr.GetBoundScriptId(SCRIPTED_ITEM, GetEntry());

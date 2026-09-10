@@ -103,18 +103,13 @@ Item* Inventory::At(uint8 bag, uint8 slot) const
     return nullptr;
 }
 
-/**
- * The client reads one guid per place out of the character's own fields, in the
- * same order as the places themselves, so the field is the place said again on
- * the wire. Writing both here is what keeps them from ever disagreeing.
- */
 void Inventory::Own(uint8 slot, Item* item)
 {
     MANGOS_ASSERT(slot < PLAYER_SLOTS_COUNT);
 
     m_place[slot] = item;
     m_owner.SetGuidValue(uint16(PLAYER_FIELD_INV_SLOT_HEAD + slot * 2),
-                         item ? item->GetObjectGuid() : ObjectGuid());
+                         item ? item->GetObjectGuid() : 0);
 
     if (slot < EQUIPMENT_SLOT_END)
     {
@@ -128,7 +123,7 @@ void Inventory::Shows(uint8 slot, Item const* item)
     uint16 const piece = uint16(PLAYER_VISIBLE_ITEM_1_0 + slot * MAX_VISIBLE_ITEM_OFFSET);
     uint16 const suffix = uint16(PLAYER_VISIBLE_ITEM_1_PROPERTIES + slot * MAX_VISIBLE_ITEM_OFFSET);
 
-    m_owner.SetGuidValue(face, item ? item->GetCreatorGuid() : ObjectGuid());
+    m_owner.SetGuidValue(face, item ? item->GetCreatorGuid() : 0);
     m_owner.SetUInt32Value(piece, item ? item->GetEntry() : 0);
 
     for (uint32 which = 0; which < MAX_INSPECTED_ENCHANTMENT_SLOT; ++which)
@@ -139,8 +134,7 @@ void Inventory::Shows(uint8 slot, Item const* item)
 
     if (item)
     {
-        // Signed, and set as a short so that a negative suffix does not fill the
-        // high half with ones.
+
         m_owner.SetInt16Value(suffix, 0, int16(item->GetItemRandomPropertyId()));
         m_owner.SetUInt32Value(uint16(suffix + 1), item->GetItemSuffixFactor());
     }
@@ -214,8 +208,6 @@ void Inventory::StopClocks(Item* item)
         return;
     }
 
-    // The time left goes back into the item, so that it takes up where it left
-    // off if he picks the thing up again.
     for (auto itr = m_runningEnchants.begin(); itr != m_runningEnchants.end();)
     {
         if (itr->item != item)
@@ -260,8 +252,7 @@ void Inventory::StartEnchantClock(Item* item, EnchantmentSlot which, uint32 dura
 
 void Inventory::RunClocks(uint32 elapsed, bool realTimeOnly)
 {
-    // An item counts itself down and may drop out of the list while doing it, so
-    // the next one is taken before the current one is asked.
+
     for (auto itr = m_running.begin(); itr != m_running.end();)
     {
         Item* item = *itr;
@@ -281,7 +272,7 @@ void Inventory::RunEnchantClocks(uint32 elapsed)
 {
     for (auto itr = m_runningEnchants.begin(); itr != m_runningEnchants.end();)
     {
-        // Gone from the item by some other route, so there is nothing to count.
+
         if (!itr->item->GetEnchantmentId(itr->slot))
         {
             itr = m_runningEnchants.erase(itr);
@@ -346,7 +337,6 @@ Item* Inventory::Store(ItemPosCountVec const& plan, Item* item, bool tell)
         uint32 const count = step->count;
         ++step;
 
-        // The item itself goes in the last place; the others get copies.
         bool const isLast = step == plan.end();
         last = Put(place, item, count, !isLast, tell);
 
@@ -374,8 +364,7 @@ Item* Inventory::Put(uint16 place, Item* item, uint32 count, bool clone, bool te
 
     if (Item* sitting = At(bag, slot))
     {
-        // The same thing is already there, so the two stacks become one and the
-        // item that arrived is destroyed.
+
         if (BindsOnArrival(*sitting->GetProto(), place))
         {
             sitting->SetBinding(true);
@@ -383,8 +372,7 @@ Item* Inventory::Put(uint16 place, Item* item, uint32 count, bool clone, bool te
 
         if (clone)
         {
-            // The stack it came from is going to other places too, so only the
-            // count crosses over.
+
             sitting->SetCount(sitting->GetCount() + count);
             Changed(sitting, tell);
         }
@@ -393,7 +381,6 @@ Item* Inventory::Put(uint16 place, Item* item, uint32 count, bool clone, bool te
             Merge(sitting, item, count, tell);
         }
 
-        // Its own life is already being counted; only the enchantments are new.
         StartEnchantClocks(sitting);
         sitting->SetState(ITEM_CHANGED, &m_owner);
 
@@ -442,8 +429,6 @@ void Inventory::Wear(uint8 slot, Item* item)
         return;
     }
 
-    // A piece put on by a command was never picked up, so this is the first
-    // chance it has to be bound.
     ItemPrototype const& proto = *item->GetProto();
     if (proto.Bonding == BIND_WHEN_EQUIPPED || proto.Bonding == BIND_WHEN_PICKED_UP
         || proto.Bonding == BIND_QUEST_ITEM)
@@ -495,9 +480,8 @@ void Inventory::Take(uint8 bag, uint8 slot, bool tell)
         holder->RemoveItem(slot);
     }
 
-    item->SetGuidValue(ITEM_FIELD_CONTAINED, ObjectGuid());
-    // The owner is left alone: it is set again at the next store, and mail and
-    // auction read it while the item is in neither place.
+    item->SetGuidValue(ITEM_FIELD_CONTAINED, 0);
+
     item->SetSlot(NULL_SLOT);
 
     Changed(item, tell);
@@ -526,7 +510,7 @@ void Inventory::Destroy(uint8 bag, uint8 slot, bool tell)
 
     Gone(item, tell);
 
-    item->SetGuidValue(ITEM_FIELD_CONTAINED, ObjectGuid());
+    item->SetGuidValue(ITEM_FIELD_CONTAINED, 0);
     item->SetSlot(NULL_SLOT);
     item->SetState(ITEM_REMOVED, &m_owner);
 }
@@ -544,8 +528,6 @@ void Inventory::Merge(Item* into, Item* from, uint32 count, bool tell)
     Gone(from, tell);
     StopClocks(from);
 
-    // Named as his before the state changes, or a trade, a mail or a purchase
-    // would be writing an item with no owner.
     from->SetOwnerGuid(m_owner.GetObjectGuid());
     from->SetState(ITEM_REMOVED, &m_owner);
 }
@@ -586,9 +568,6 @@ void Inventory::ToBuyback(Item* item)
 
     Own(uint8(slot), item);
 
-    // The hour is written as seconds since he logged in, pushed ahead by a fixed
-    // amount that the client subtracts back off. What that amount stands for is
-    // not established here; it is kept as it is sent.
     uint32 const BUYBACK_STAMP_AHEAD = 30 * HOUR;
 
     uint16 const row = uint16(slot - BUYBACK_SLOT_START);
@@ -600,7 +579,6 @@ void Inventory::ToBuyback(Item* item)
                            proto ? proto->SellPrice * item->GetCount() : 0);
     m_owner.SetUInt32Value(uint16(PLAYER_FIELD_BUYBACK_TIMESTAMP_1 + row), sold);
 
-    // The next sale takes the place after this one while the row is filling up.
     if (NextBuyback() < BUYBACK_SLOT_END - 1)
     {
         NextBuyback(NextBuyback() + 1);
@@ -640,12 +618,10 @@ void Inventory::ClearBuyback(uint32 slot, bool destroy)
     Own(uint8(slot), nullptr);
 
     uint16 const row = uint16(slot - BUYBACK_SLOT_START);
-    m_owner.SetGuidValue(uint16(PLAYER_FIELD_VENDORBUYBACK_SLOT_1 + row * 2), ObjectGuid());
+    m_owner.SetGuidValue(uint16(PLAYER_FIELD_VENDORBUYBACK_SLOT_1 + row * 2), 0);
     m_owner.SetUInt32Value(uint16(PLAYER_FIELD_BUYBACK_PRICE_1 + row), 0);
     m_owner.SetUInt32Value(uint16(PLAYER_FIELD_BUYBACK_TIMESTAMP_1 + row), 0);
 
-    // The place just emptied is worth taking next only while the one already
-    // chosen is occupied.
     if (Own(uint8(NextBuyback())))
     {
         NextBuyback(slot);
@@ -692,7 +668,7 @@ Bag* Inventory::BagAt(uint8 slot) const
 
 bool Inventory::Exists(uint8 bag, uint8 slot, bool exact) const
 {
-    // "Wherever it fits" is a place only when the caller allows one.
+
     if (bag == NULL_BAG)
     {
         return !exact;
@@ -720,8 +696,6 @@ bool Inventory::Exists(uint8 bag, uint8 slot, bool exact) const
         return false;
     }
 
-    // A bag's places exist only as far as the bag is deep, so an empty bag slot
-    // has none at all.
     Bag* holder = BagAt(bag);
     if (!holder)
     {
@@ -731,14 +705,6 @@ bool Inventory::Exists(uint8 bag, uint8 slot, bool exact) const
     return slot == NULL_SLOT ? !exact : slot < holder->GetBagSize();
 }
 
-/**
- * Hands every item in the wanted regions to the visitor, in the order the
- * regions are listed, and stops as soon as the visitor says it has seen enough.
- *
- * All four searches below are this walk with a different question, which is why
- * the walk is written once. What they genuinely differ in is how far they look,
- * and that is the scope each of them passes.
- */
 template <typename Visit>
 void Inventory::Walk(uint32 scope, Visit visit) const
 {

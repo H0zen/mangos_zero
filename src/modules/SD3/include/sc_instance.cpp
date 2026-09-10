@@ -65,7 +65,7 @@ void ScriptedInstance::DoUseDoorOrButton(ObjectGuid guid, uint32 uiWithRestoreTi
  * @param uiWithRestoreTime (in seconds) if == 0 autoCloseTime will be used (if not 0 by default in *_template).
  * @param bUseAlternativeState Use to alternative state.
  */
-void ScriptedInstance::DoUseDoorOrButton(uint32 uiEntry, uint32 uiWithRestoreTime /*= 0*/, bool bUseAlternativeState /*= false*/)
+void ScriptedInstance::DoUseDoorOrButtonByEntry(uint32 uiEntry, uint32 uiWithRestoreTime /*= 0*/, bool bUseAlternativeState /*= false*/)
 {
     EntryGuidMap::iterator find = m_mGoEntryGuidStore.find(uiEntry);
     if (find != m_mGoEntryGuidStore.end())
@@ -142,7 +142,7 @@ void ScriptedInstance::DoToggleGameObjectFlags(ObjectGuid guid, uint32 uiGOflags
  * @param uiGOflags Which GO-flags to toggle.
  * @param bApply Should the GO-flags be applied or removed?
  */
-void ScriptedInstance::DoToggleGameObjectFlags(uint32 uiEntry, uint32 uiGOflags, bool bApply)
+void ScriptedInstance::DoToggleGameObjectFlagsByEntry(uint32 uiEntry, uint32 uiGOflags, bool bApply)
 {
     EntryGuidMap::iterator find = m_mGoEntryGuidStore.find(uiEntry);
     if (find != m_mGoEntryGuidStore.end())
@@ -161,7 +161,7 @@ void ScriptedInstance::DoToggleGameObjectFlags(uint32 uiEntry, uint32 uiGOflags,
  * @param uiEntry The entry ID of the GO.
  * @param uiTimeToDespawn (in seconds) Despawn the GO after this time, default is a minute.
  */
-void ScriptedInstance::DoRespawnGameObject(uint32 uiEntry, uint32 uiTimeToDespawn)
+void ScriptedInstance::DoRespawnGameObjectByEntry(uint32 uiEntry, uint32 uiTimeToDespawn)
 {
     EntryGuidMap::iterator find = m_mGoEntryGuidStore.find(uiEntry);
     if (find != m_mGoEntryGuidStore.end())

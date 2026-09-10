@@ -23,29 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Spell.cpp
- * @brief Spell casting and effect implementation
- *
- * This file implements the Spell class which handles spell casting:
- * - Spell validation and casting requirements
- * - Spell effect execution (damage, healing, summon, etc.)
- * - Spell targeting and area effects
- * - Spell cooldowns and resource costs
- * - Spell interruption and pushback
- * - Spell aura application
- * - Spell hit/miss calculations
- *
- * Spells are the primary combat mechanic in WoW, encompassing
- * abilities, talents, and item effects.
- *
- * @see Spell for the spell class
- * @see SpellAura for spell auras
- * @see SpellMgr for spell management
- */
-
-
-
 #include <algorithm>
 #include <iterator>
 #include <list>
@@ -83,20 +60,13 @@
 #include "Corpse.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Populates a unit target list for a specific implicit target mode.
- *
- * @param effIndex The effect index being processed.
- * @param targetMode The implicit target mode.
- * @param targetUnitMap The unit list being populated.
- */
 void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, UnitList& targetUnitMap)
 {
     const SpellEffectIndex effIndex = SpellEffectIndex(operation.slot);
 
     float radius;
     uint32 EffectChainTarget = operation.chainTargets;
-    uint32 unMaxTargets = m_spellInfo->MaxTargets;  // Get spell max affected targets
+    uint32 unMaxTargets = m_spellInfo->MaxTargets;
 
     GetSpellRangeAndRadius(effIndex, radius, EffectChainTarget, unMaxTargets);
 
@@ -112,23 +82,21 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             float angle = m_caster->Where().Facing();
             switch (targetMode)
             {
-                case TARGET_TOTEM_FIRE:  angle += M_PI_F * 0.25f; break;            // front - left
-                case TARGET_TOTEM_AIR:   angle += M_PI_F * 0.75f; break;            // back  - left
-                case TARGET_TOTEM_WATER: angle += M_PI_F * 1.25f; break;            // back  - right
-                case TARGET_TOTEM_EARTH: angle += M_PI_F * 1.75f; break;            // front - right
+                case TARGET_TOTEM_FIRE:  angle += M_PI_F * 0.25f; break;
+                case TARGET_TOTEM_AIR:   angle += M_PI_F * 0.75f; break;
+                case TARGET_TOTEM_WATER: angle += M_PI_F * 1.25f; break;
+                case TARGET_TOTEM_EARTH: angle += M_PI_F * 1.75f; break;
             }
 
             float x, y;
             float z = m_caster->Where().Z();
-            // Do not search for a free spot. TODO: Should there be searched for a free spot. There was once a discussion that in case this space was impossible (LOS) m_caster's position should be used.
-            // TODO Bring this back to memory and search for it!
+
             const Geometry::Vector3 near_ = PointNear(*m_caster, radius, angle);
             x = near_.x;
             y = near_.y;
             ClampToAllowedZ(*m_caster, x, y, z);
             m_targets.setDestination(x, y, z);
 
-            // Add Summoner
             targetUnitMap.push_back(m_caster);
             break;
         }
@@ -168,7 +136,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             break;
         case TARGET_ALL_ENEMY_IN_AREA_INSTANT:
         {
-            // targets the ground, not the units in the area
+
             switch (operation.verb)
             {
                 case SPELL_EFFECT_PERSISTENT_AREA_AURA:
@@ -211,7 +179,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             break;
         case TARGET_CASTER_COORDINATES:
         {
-            // Check original caster is GO - set its coordinates as src cast
+
             if (Occupant* caster = GetCastingObject())
             {
                 m_targets.setSource(caster->Where().X(), caster->Where().Y(), caster->Where().Z());
@@ -222,7 +190,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             FillAreaTargets(targetUnitMap, radius, cast::Around::Caster, cast::Side::Hostile);
             break;
         case TARGET_ALL_FRIENDLY_UNITS_AROUND_CASTER:
-            // selected friendly units (for casting objects) around casting object
+
             FillAreaTargets(targetUnitMap, radius, cast::Around::Caster, cast::Side::Friendly, GetCastingObject());
             break;
         case TARGET_ALL_FRIENDLY_UNITS_IN_AREA:
@@ -240,7 +208,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
         case TARGET_IN_FRONT_OF_CASTER:
         {
             cast::Around pushType = cast::Around::CasterInFront;
-            switch (m_spellInfo->SpellVisualID)            // Some spell require a different target fill
+            switch (m_spellInfo->SpellVisualID)
             {
                 case 3879: pushType = cast::Around::CasterBehind;     break;
                 case 7441: pushType = cast::Around::CasterInFront15; break;
@@ -293,7 +261,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             }
             break;
         case TARGET_ALL_ENEMY_IN_AREA_CHANNELED:
-            // targets the ground, not the units in the area
+
             if (operation.verb != SPELL_EFFECT_PERSISTENT_AREA_AURA)
             {
                 FillAreaTargets(targetUnitMap, radius, cast::Around::Spot, cast::Side::HostileForArea);
@@ -344,9 +312,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             if (SpellTargetPosition const* st = sSpellMgr.GetSpellTargetPosition(m_spellInfo->ID))
             {
                 m_targets.setDestination(st->target_X, st->target_Y, st->target_Z);
-                // TODO - maybe use an (internal) value for the map for neat far teleport handling
 
-                // far-teleport spells are handled in SpellEffect, elsewise report an error about an unexpected map (spells are always locally)
                 if (st->target_mapId != m_caster->GetMapId() && operation.verb != SPELL_EFFECT_TELEPORT_UNITS)
                 {
                     sLog.outError("SPELL: wrong map (%u instead %u) target coordinates for spell ID %u", st->target_mapId, m_caster->GetMapId(), m_spellInfo->ID);
@@ -368,7 +334,7 @@ void Spell::SetTargetMap(const cast::Operation& operation, uint32 targetMode, Un
             PickWhatTheSlotImplies(operation, targetUnitMap);
             break;
         default:
-            // sLog.outError( "SPELL: Unknown implicit target (%u) for spell ID %u", targetMode, m_spellInfo->Id );
+
             break;
     }
 

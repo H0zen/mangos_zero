@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Reaction.h"
 #include "Utilities/Errors.h"
 #include <vector>
@@ -73,12 +71,6 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Checks whether another player should be visible through group visibility rules.
- *
- * @param p The player to test visibility against.
- * @return True if the player is group-visible; otherwise, false.
- */
 bool Player::IsGroupVisibleFor(Player* p) const
 {
     switch (sWorld.getConfig(CONFIG_UINT32_GROUP_VISIBILITY))
@@ -92,12 +84,6 @@ bool Player::IsGroupVisibleFor(Player* p) const
     }
 }
 
-/**
- * @brief Checks whether this player and another player are in the same subgroup.
- *
- * @param p The other player to compare.
- * @return True if both players share the same group context; otherwise, false.
- */
 bool Player::IsInSameGroupWith(Player const* p) const
 {
     return (p == this ||
@@ -105,8 +91,6 @@ bool Player::IsInSameGroupWith(Player const* p) const
         GetGroup()->SameSubGroup(this, p)));
 }
 
-///- If the player is invited, remove him. If the group if then only 1 person, disband the group.
-/// \todo Shouldn't we also check if there is no other invitees before disbanding the group?
 void Player::UninviteFromGroup()
 {
     Group* group = Invites().ToParty();
@@ -117,7 +101,7 @@ void Player::UninviteFromGroup()
 
     group->RemoveInvite(this);
 
-    if (group->GetMembersCount() <= 1)                      // group has just 1 member => disband
+    if (group->GetMembersCount() <= 1)
     {
         if (group->IsCreated())
         {
@@ -133,33 +117,20 @@ void Player::UninviteFromGroup()
     }
 }
 
-/**
- * @brief Removes a member from a group and disposes of the group if it becomes empty.
- *
- * @param group The group to remove the member from.
- * @param guid The GUID of the member to remove.
- * @param removeMethod The group removal method to apply.
- */
 void Player::RemoveFromGroup(Group* group, ObjectGuid guid, uint8 removeMethod)
 {
     if (group)
     {
         if (group->RemoveMember(guid, removeMethod) <= 1)
         {
-            // group->Disband(); already disbanded in RemoveMember
+
             sObjectMgr.RemoveGroup(group);
             delete group;
-            // RemoveMember sets the player's group pointer to nullptr
+
         }
     }
 }
 
-/**
- * @brief Assigns the player to a group and subgroup.
- *
- * @param group The group to join, or nullptr to clear membership.
- * @param subgroup The subgroup index when joining a group.
- */
 void Player::SetGroup(Group* group, int8 subgroup)
 {
     if (group == nullptr)
@@ -168,7 +139,7 @@ void Player::SetGroup(Group* group, int8 subgroup)
     }
     else
     {
-        // never use SetGroup without a subgroup unless you specify nullptr for group
+
         MANGOS_ASSERT(subgroup >= 0);
         m_group.link(group, this);
         m_group.setSubGroup((uint8)subgroup);
@@ -176,9 +147,6 @@ void Player::SetGroup(Group* group, int8 subgroup)
 
 }
 
-/**
- * @brief Flushes pending group update data to out-of-range group members.
- */
 void Player::SendUpdateToOutOfRangeGroupMembers()
 {
     if (m_groupUpdateMask == GROUP_UPDATE_FLAG_NONE)
@@ -198,12 +166,6 @@ void Player::SendUpdateToOutOfRangeGroupMembers()
     }
 }
 
-/**
- * @brief Selects a random nearby raid member within a radius.
- *
- * @param radius The maximum search radius.
- * @return A random eligible raid member, or nullptr if none are found.
- */
 Player* Player::GetNextRandomRaidMember(float radius)
 {
     Group* pGroup = GetGroup();
@@ -219,7 +181,6 @@ Player* Player::GetNextRandomRaidMember(float radius)
     {
         Player* Target = itr->getSource();
 
-        // IsHostileTo check duel and controlled by enemy
         if (Target && Target != this && InReach(*this, *Target, radius) &&
             !Target->HasInvisibilityAura() && !IsHostile(*this, *Target))
         {
@@ -236,11 +197,6 @@ Player* Player::GetNextRandomRaidMember(float radius)
     return nearMembers[randTarget];
 }
 
-/**
- * @brief Checks whether the player is allowed to uninvite someone from the group.
- *
- * @return The party result code describing whether uninvite is allowed.
- */
 PartyResult Player::CanUninviteFromGroup() const
 {
     const Group* grp = GetGroup();
@@ -256,18 +212,12 @@ PartyResult Player::CanUninviteFromGroup() const
 
     if (Battle().InOne())
     {
-        return ERR_NOT_IN_GROUP; // error message is not so appropriated but no other option for classic
+        return ERR_NOT_IN_GROUP;
     }
 
     return ERR_PARTY_RESULT_OK;
 }
 
-/**
- * @brief Stores the player's original non-battleground group reference.
- *
- * @param group The original group, or nullptr to clear it.
- * @param subgroup The original subgroup index.
- */
 void Player::SetOriginalGroup(Group* group, int8 subgroup)
 {
     if (group == nullptr)
@@ -276,7 +226,7 @@ void Player::SetOriginalGroup(Group* group, int8 subgroup)
     }
     else
     {
-        // never use SetOriginalGroup without a subgroup unless you specify nullptr for group
+
         MANGOS_ASSERT(subgroup >= 0);
         m_originalGroup.link(group, this);
         m_originalGroup.setSubGroup((uint8)subgroup);

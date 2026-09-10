@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <set>
 #include "Utilities/MathDefines.h"
 #include "Unit.h"
@@ -60,8 +58,7 @@
 #include "Movement/Spline/MoveSplineInit.h"
 #include "Movement/Spline/MoveSpline.h"
 
-// TODO for melee need create structure as in
-void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, WeaponAttackType attackType /*= BASE_ATTACK*/)
+void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, WeaponAttackType attackType )
 {
     damageInfo->attacker         = this;
     damageInfo->target           = pVictim;
@@ -89,7 +86,6 @@ void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, Weapo
         return;
     }
 
-    // Select HitInfo/procAttacker/procVictim flag based on attack type
     switch (attackType)
     {
         case BASE_ATTACK:
@@ -99,19 +95,18 @@ void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, Weapo
             break;
         case OFF_ATTACK:
             damageInfo->procAttacker = PROC_FLAG_SUCCESSFUL_MELEE_HIT | PROC_FLAG_SUCCESSFUL_OFFHAND_HIT;
-            damageInfo->procVictim   = PROC_FLAG_TAKEN_MELEE_HIT;//|PROC_FLAG_TAKEN_OFFHAND_HIT // not used
+            damageInfo->procVictim   = PROC_FLAG_TAKEN_MELEE_HIT;
             damageInfo->HitInfo = HITINFO_LEFTSWING;
             break;
         case RANGED_ATTACK:
             damageInfo->procAttacker = PROC_FLAG_SUCCESSFUL_RANGED_HIT;
             damageInfo->procVictim   = PROC_FLAG_TAKEN_RANGED_HIT;
-            damageInfo->HitInfo = HITINFO_UNK3;             // test (dev note: test what? HitInfo flag possibly not confirmed.)
+            damageInfo->HitInfo = HITINFO_UNK3;
             break;
         default:
             break;
     }
 
-    // Physical Immune check
     if (damageInfo->target->IsImmuneToDamage(damageInfo->damageSchoolMask))
     {
         damageInfo->HitInfo       |= HITINFO_NORMALSWING;
@@ -123,11 +118,10 @@ void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, Weapo
         return;
     }
     uint32 damage = CalculateDamage(damageInfo->attackType, false);
-    // Add melee damage bonus
+
     damage = MeleeDamageBonusDone(damageInfo->target, damage, damageInfo->attackType);
     damage = damageInfo->target->MeleeDamageBonusTaken(this, damage, damageInfo->attackType);
 
-    // Calculate armor reduction
     if (damageInfo->damageSchoolMask < 2)
     {
         damageInfo->damage = CalcArmorReducedDamage(damageInfo->target, damage);
@@ -140,7 +134,6 @@ void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, Weapo
     }
     damageInfo->hitOutCome = RollMeleeOutcomeAgainst(damageInfo->target, damageInfo->attackType);
 
-    // Disable parry or dodge for ranged attack
     if (damageInfo->attackType == RANGED_ATTACK)
     {
         if (damageInfo->hitOutCome == MELEE_HIT_PARRY)
@@ -185,13 +178,12 @@ void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, Weapo
             damageInfo->TargetState  = VICTIMSTATE_NORMAL;
 
             damageInfo->procEx |= PROC_EX_CRITICAL_HIT;
-            // Crit bonus calc
+
             damageInfo->damage += damageInfo->damage;
             int32 mod = 0;
 
             uint32 crTypeMask = damageInfo->target->GetCreatureTypeMask();
 
-            // Increase crit damage from SPELL_AURA_MOD_CRIT_PERCENT_VERSUS
             mod += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_CRIT_PERCENT_VERSUS, crTypeMask);
             if (mod != 0)
             {
@@ -224,7 +216,7 @@ void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, Weapo
             }
             else
             {
-                damageInfo->procEx |= PROC_EX_NORMAL_HIT; // Partial blocks can still cause attacker procs
+                damageInfo->procEx |= PROC_EX_NORMAL_HIT;
             }
 
             damageInfo->damage      -= damageInfo->blocked_amount;
@@ -236,10 +228,10 @@ void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, Weapo
             damageInfo->HitInfo |= HITINFO_GLANCING;
             damageInfo->TargetState = VICTIMSTATE_NORMAL;
             damageInfo->procEx |= PROC_EX_NORMAL_HIT;
-            // calculate base values and mods
+
             float baseLowEnd = 1.3f;
             float baseHighEnd = 1.2f;
-            switch (getClass())                             // lowering base values for casters
+            switch (getClass())
             {
                 case CLASS_SHAMAN:
                 case CLASS_PRIEST:
@@ -252,29 +244,27 @@ void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, Weapo
             }
 
             float maxLowEnd = 0.6f;
-            switch (getClass())                             // upper for melee classes
+            switch (getClass())
             {
                 case CLASS_WARRIOR:
                 case CLASS_ROGUE:
-                    maxLowEnd = 0.91f;                      // If the attacker is a melee class then instead the lower value of 0.91
+                    maxLowEnd = 0.91f;
             }
 
-            // calculate values
             int32 diff = damageInfo->target->GetDefenseSkillValue() - GetWeaponSkillValue(damageInfo->attackType);
             float lowEnd  = baseLowEnd - (0.05f * diff);
             float highEnd = baseHighEnd - (0.03f * diff);
 
-            // apply max/min bounds
-            if (lowEnd < 0.01f)                             // the low end must not go bellow 0.01f
+            if (lowEnd < 0.01f)
             {
                 lowEnd = 0.01f;
             }
-            else if (lowEnd > maxLowEnd)                    // the smaller value of this and 0.6 is kept as the low end
+            else if (lowEnd > maxLowEnd)
             {
                 lowEnd = maxLowEnd;
             }
 
-            if (highEnd < 0.2f)                             // high end limits
+            if (highEnd < 0.2f)
             {
                 highEnd = 0.2f;
             }
@@ -283,7 +273,7 @@ void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, Weapo
                 highEnd = 0.99f;
             }
 
-            if (lowEnd > highEnd)                           // prevent negative range size
+            if (lowEnd > highEnd)
             {
                 lowEnd = highEnd;
             }
@@ -299,7 +289,7 @@ void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, Weapo
             damageInfo->HitInfo     |= HITINFO_CRUSHING;
             damageInfo->TargetState  = VICTIMSTATE_NORMAL;
             damageInfo->procEx |= PROC_EX_NORMAL_HIT;
-            // 150% normal damage
+
             damageInfo->damage += (damageInfo->damage / 2);
             break;
         }
@@ -308,12 +298,10 @@ void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, Weapo
             break;
     }
 
-    // Calculate absorb resist
     if (int32(damageInfo->damage) > 0)
     {
         damageInfo->procVictim |= PROC_FLAG_TAKEN_ANY_DAMAGE;
 
-        // Calculate absorb & resists
         damageInfo->target->CalculateDamageAbsorbAndResist(this, damageInfo->damageSchoolMask, DIRECT_DAMAGE, damageInfo->damage, &damageInfo->absorb, &damageInfo->resist, true);
         damageInfo->damage -= damageInfo->absorb + damageInfo->resist;
         if (damageInfo->absorb)
@@ -326,18 +314,12 @@ void Unit::CalculateMeleeDamage(Unit* pVictim, CalcDamageInfo* damageInfo, Weapo
             damageInfo->HitInfo |= HITINFO_RESIST;
         }
     }
-    else // Umpossible get negative result but....
+    else
     {
         damageInfo->damage = 0;
     }
 }
 
-/**
- * @brief Applies prepared melee damage and related proc logic.
- *
- * @param damageInfo The prepared melee damage information.
- * @param durabilityLoss True to apply durability loss rules.
- */
 void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
 {
     if (damageInfo == 0)
@@ -351,12 +333,11 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
         return;
     }
 
-    if (!pVictim->IsAlive() || pVictim->IsTaxiFlying() || (pVictim->IsCreature() && ((Creature*)pVictim)->IsInEvadeMode()))
+    if (!pVictim->IsAlive() || pVictim->IsTaxiFlying() || (IsCreature(pVictim) && ((Creature*)pVictim)->IsInEvadeMode()))
     {
         return;
     }
 
-    // Hmmmm dont like this emotes client must by self do all animations
     if (damageInfo->HitInfo & HITINFO_CRITICALHIT)
     {
         pVictim->HandleEmoteCommand(EMOTE_ONESHOT_WOUNDCRITICAL);
@@ -366,16 +347,15 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
         pVictim->HandleEmoteCommand(EMOTE_ONESHOT_PARRYSHIELD);
     }
 
-    // This seems to reduce the victims time until next attack if your attack was parried
     if (damageInfo->TargetState == VICTIMSTATE_PARRY)
     {
-        if (!pVictim->IsCreature() ||
+        if (!IsCreature(pVictim) ||
             !(((Creature*)pVictim)->GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_NO_PARRY_HASTEN))
         {
-            // Get attack timers
+
             float offtime = float(pVictim->getAttackTimer(OFF_ATTACK));
             float basetime = float(pVictim->getAttackTimer(BASE_ATTACK));
-            // Reduce attack time
+
             if (pVictim->haveOffhandWeapon() && offtime < basetime)
             {
                 float percent20 = pVictim->GetAttackTime(OFF_ATTACK) * 0.20f;
@@ -407,19 +387,15 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
         }
     }
 
-    // Call default DealDamage
     CleanDamage cleanDamage(damageInfo->cleanDamage, damageInfo->attackType, damageInfo->hitOutCome);
     DealDamage(pVictim, damageInfo->damage, &cleanDamage, DIRECT_DAMAGE, SpellSchoolMask(damageInfo->damageSchoolMask), nullptr, durabilityLoss);
 
-    // If this is a creature and it attacks from behind it has a probability to daze it's victim
     if ((!damageInfo->absorb) && (damageInfo->hitOutCome == MELEE_HIT_CRIT || damageInfo->hitOutCome == MELEE_HIT_CRUSHING || damageInfo->hitOutCome == MELEE_HIT_NORMAL || damageInfo->hitOutCome == MELEE_HIT_GLANCING) &&
-        !IsPlayer() && !((Creature*)this)->GetCharmerOrOwnerGuid() && !pVictim->Where().HasInArc(this->Where(), M_PI_F))
+        !IsPlayer(this) && !((Creature*)this)->GetCharmerOrOwnerGuid() && !pVictim->Where().HasInArc(this->Where(), M_PI_F))
     {
-        // -probability is between 0% and 40%
-        // 20% base chance
+
         float Probability = 20.0f;
 
-        // there is a newbie protection, at level 10 just 7% base chance; assuming linear function
         if (pVictim->getLevel() < 30)
         {
             Probability = 0.65f * pVictim->getLevel() + 0.5f;
@@ -442,7 +418,6 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
 
     }
 
-    // update at damage Judgement aura duration that applied by attacker at victim
     if (damageInfo->damage)
     {
         SpellAuraHolderMap const& vAuras = pVictim->GetSpellAuraHolderMap();
@@ -456,16 +431,14 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
         }
     }
 
-    // If not miss
     if (!(damageInfo->HitInfo & HITINFO_MISS))
     {
-        // on weapon hit casts
-        if (IsPlayer() && pVictim->IsAlive())
+
+        if (IsPlayer(this) && pVictim->IsAlive())
         {
             ((Player*)this)->CastItemCombatSpell(pVictim, damageInfo->attackType);
         }
 
-        // victim's damage shield
         for (const auto* shield : pVictim->GetAurasByType(SPELL_AURA_DAMAGE_SHIELD))
         {
             uint32 damage = shield->GetModifier()->m_amount;

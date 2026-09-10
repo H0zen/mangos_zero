@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <list>
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
@@ -58,16 +56,12 @@
 #include "DisableMgr.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Loads area trigger teleport destinations and access requirements.
- */
 void ObjectMgr::LoadAreaTriggerTeleports()
 {
-    mAreaTriggers.clear();                                  // need for reload case
+    mAreaTriggers.clear();
 
     uint32 count = 0;
 
-    //                                                0         1                2                       3                  4                  5                                6                    7
     QueryResult* result = WorldDatabase.Query("SELECT `id`, `target_map`, `target_position_x`, `target_position_y`, `target_position_z`, `target_orientation`, `status_failed_mangos_string_id`, `condition_id` FROM `areatrigger_teleport`");
     if (!result)
     {
@@ -136,9 +130,6 @@ void ObjectMgr::LoadAreaTriggerTeleports()
     sLog.outString();
 }
 
-/**
- * Searches for the areatrigger which teleports players out of the given map (only direct to continent)
- */
 AreaTrigger const* ObjectMgr::GetGoBackTrigger(uint32 map_id) const
 {
     InstanceTemplate const* temp = GetInstanceTemplate(map_id);
@@ -147,7 +138,6 @@ AreaTrigger const* ObjectMgr::GetGoBackTrigger(uint32 map_id) const
         return nullptr;
     }
 
-    // Try to find one that teleports to the map we want to enter
     std::list<AreaTrigger const*> ghostTrigger;
     AreaTrigger const* compareTrigger = nullptr;
     for (AreaTriggerMap::const_iterator itr = mAreaTriggers.begin(); itr != mAreaTriggers.end(); ++itr)
@@ -155,7 +145,7 @@ AreaTrigger const* ObjectMgr::GetGoBackTrigger(uint32 map_id) const
         if (itr->second.target_mapId == uint32(temp->ghostEntranceMap))
         {
             ghostTrigger.push_back(&itr->second);
-            // First run, only consider AreaTrigger that teleport in the proper map
+
             if ((!compareTrigger || itr->second.IsLessOrEqualThan(compareTrigger)) && sAreaTriggerStore.LookupEntry(itr->first)->mapid == map_id)
             {
                 if (itr->second.IsMinimal())
@@ -172,7 +162,6 @@ AreaTrigger const* ObjectMgr::GetGoBackTrigger(uint32 map_id) const
         return compareTrigger;
     }
 
-    // Second attempt: take one fitting
     for (std::list<AreaTrigger const*>::const_iterator itr = ghostTrigger.begin(); itr != ghostTrigger.end(); ++itr)
     {
         if (!compareTrigger || (*itr)->IsLessOrEqualThan(compareTrigger))
@@ -188,9 +177,6 @@ AreaTrigger const* ObjectMgr::GetGoBackTrigger(uint32 map_id) const
     return compareTrigger;
 }
 
-/**
- * Searches for the areatrigger which teleports players to the given map
- */
 AreaTrigger const* ObjectMgr::GetMapEntranceTrigger(uint32 Map) const
 {
     AreaTrigger const* compareTrigger = nullptr;
@@ -202,7 +188,7 @@ AreaTrigger const* ObjectMgr::GetMapEntranceTrigger(uint32 Map) const
         {
             if (mEntry->Instanceable())
             {
-                // Remark that IsLessOrEqualThan is no total order, and a->IsLeQ(b) != !b->IsLeQ(a)
+
                 if (!compareTrigger || compareTrigger->IsLessOrEqualThan(&itr->second))
                 {
                     compareTrigger = &itr->second;

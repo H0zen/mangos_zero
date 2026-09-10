@@ -23,15 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file CorpseRows.cpp
- * @brief The rows a corpse is written to and read back from.
- *
- * A body outlives the session that made it, so it is kept in `corpse` and read back when
- * the world starts again. What SQL that takes is nothing the corpse itself has to know,
- * which is why none of it is in Corpse.cpp.
- */
-
 #include "Corpse.h"
 
 #include "Database/DatabaseEnv.h"
@@ -44,22 +35,18 @@
 
 #include <sstream>
 
-/**
- * @brief Saves the corpse to the database.
- */
 void Corpse::SaveToDB()
 {
-    // bones should not be saved to DB (would be deleted on startup anyway)
+
     MANGOS_ASSERT(GetType() != CORPSE_BONES);
 
-    // prevent DB data inconsistence problems and duplicates
     CharacterDatabase.BeginTransaction();
     DeleteFromDB();
 
     std::ostringstream ss;
     ss  << "INSERT INTO `corpse` (`guid`,`player`,`position_x`,`position_y`,`position_z`,`orientation`,`map`,`time`,`corpse_type`,`instance`) VALUES ("
         << GetGUIDLow() << ", "
-        << GetOwnerGuid().GetCounter() << ", "
+        << GuidCounter(GetOwnerGuid()) << ", "
         << Where().X() << ", "
         << Where().Y() << ", "
         << Where().Z() << ", "
@@ -72,34 +59,20 @@ void Corpse::SaveToDB()
     CharacterDatabase.CommitTransaction();
 }
 
-/**
- * @brief Deletes the corpse record from the database.
- */
 void Corpse::DeleteFromDB()
 {
-    // bones should not be saved to DB (would be deleted on startup anyway)
+
     MANGOS_ASSERT(GetType() != CORPSE_BONES);
 
-    // all corpses (not bones)
     static SqlStatementID id;
 
     SqlStatement stmt = CharacterDatabase.CreateStatement(id, "DELETE FROM `corpse` WHERE `player` = ? AND `corpse_type` <> '0'");
-    stmt.PExecute(GetOwnerGuid().GetCounter());
+    stmt.PExecute(GuidCounter(GetOwnerGuid()));
 }
 
-/**
- * @brief Loads corpse data from the database.
- *
- * @param lowguid The low part of the corpse GUID.
- * @param fields The database fields containing corpse data.
- * @return true if the corpse was loaded successfully; otherwise, false.
- */
 bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
 {
-    ////                                                    0            1       2                  3                  4                  5                   6
-    // QueryResult *result = CharacterDatabase.Query("SELECT `corpse`.`guid`, `player`, `corpse`.`position_x`, `corpse`.`position_y`, `corpse`.`position_z`, `corpse`.`orientation`, `corpse`.`map`,"
-    ////   7     8            9         10      11    12     13           14            15              16       17
-    //    "`time`, `corpse_type`, `instance`, `gender`, `race`, `class`, `playerBytes`, `playerBytes2`, `equipmentCache`, `guildId`, `playerFlags` FROM `corpse`"
+
     uint32 playerLowGuid = fields[1].GetUInt32();
     float positionX     = fields[2].GetFloat();
     float positionY     = fields[3].GetFloat();
@@ -114,7 +87,7 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
 
     if (m_type >= MAX_CORPSE_TYPE)
     {
-        sLog.outError("%s Owner %s have wrong corpse type (%i), not load.", GetGuidStr().c_str(), GetOwnerGuid().GetString().c_str(), m_type);
+        sLog.outError("%s Owner %s have wrong corpse type (%i), not load.", GetGuidStr().c_str(), GuidString(GetOwnerGuid()).c_str(), m_type);
         return false;
     }
 
@@ -127,10 +100,9 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
     uint32 guildId      = fields[16].GetUInt32();
     uint32 playerFlags  = fields[17].GetUInt32();
 
-    ObjectGuid guid = ObjectGuid(HIGHGUID_CORPSE, lowguid);
-    ObjectGuid playerGuid = ObjectGuid(HIGHGUID_PLAYER, playerLowGuid);
+    ObjectGuid guid = MakeGuid(HIGHGUID_CORPSE, lowguid);
+    ObjectGuid playerGuid = MakeGuid(HIGHGUID_PLAYER, playerLowGuid);
 
-    // overwrite possible wrong/corrupted guid
     SetGuidValue(OBJECT_FIELD_GUID, guid);
     SetGuidValue(CORPSE_FIELD_OWNER, playerGuid);
 
@@ -144,7 +116,6 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
     }
     SetUInt32Value(CORPSE_FIELD_DISPLAY_ID, gender == GENDER_FEMALE ? info->displayId_f : info->displayId_m);
 
-    // Load equipment
     Tokens data = StrSplit(fields[15].GetCppString(), " ");
     for (uint8 slot = 0; slot < EQUIPMENT_SLOT_END; ++slot)
     {
@@ -181,9 +152,6 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
     }
     SetUInt32Value(CORPSE_FIELD_FLAGS, flags);
 
-    // no need to mark corpse as lootable, because corpses are not saved in battle grounds
-
-    // place
     SetLocationInstanceId(instanceid);
     SetLocationMapId(mapid);
     Place().MoveTo(positionX, positionY, positionZ, orientation);
@@ -191,7 +159,7 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
     if (!IsPlaceable(*this))
     {
         sLog.outError("%s Owner %s not created. Suggested coordinates isn't valid (X: %f Y: %f)",
-            GetGuidStr().c_str(), GetOwnerGuid().GetString().c_str(), Where().X(), Where().Y());
+            GetGuidStr().c_str(), GuidString(GetOwnerGuid()).c_str(), Where().X(), Where().Y());
         return false;
     }
 
@@ -199,4 +167,3 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
 
     return true;
 }
-

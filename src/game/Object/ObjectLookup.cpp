@@ -41,9 +41,7 @@ namespace ObjectLookup
             return nullptr;
         }
 
-        // A player is reachable wherever they are, so the global index answers
-        // before the reference object's map is even consulted.
-        if (guid.IsPlayer())
+        if ((guid != 0 && GuidHigh(guid) == HIGHGUID_PLAYER))
         {
             return sPlayerRegistry.Find(guid);
         }

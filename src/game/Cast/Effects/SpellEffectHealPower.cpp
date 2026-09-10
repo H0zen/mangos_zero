@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <random>
 #include "Platform/Define.h"
 #include <vector>
@@ -63,11 +61,6 @@
 #include "CellImpl.h"
 #include "Geometry/Vector3.h"
 
-/**
- * @brief Creates and attaches an aura effect to the current unit target.
- *
- * @param eff_idx The aura effect index.
- */
 void Spell::EffectApplyAura(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
@@ -77,16 +70,15 @@ void Spell::EffectApplyAura(const cast::Operation& operation)
         return;
     }
 
-    if (m_spellInfo->ID == 30918)                           // Improved Sprint
+    if (m_spellInfo->ID == 30918)
     {
-        // Don't need to apply any actual aura here, just remove snare and root effects from the target!
+
         unitTarget->RemoveAurasAtMechanicImmunity(IMMUNE_TO_ROOT_AND_SNARE_MASK, 30918, true);
         return;
     }
 
-    // ghost spell check, allow apply any auras at player loading in ghost mode (will be cleanup after load)
     if ((!unitTarget->IsAlive() && !(IsDeathOnlySpell(m_spellInfo) || IsDeathPersistentSpell(m_spellInfo))) &&
-        (!unitTarget->IsPlayer() || !((Player*)unitTarget)->GetSession()->PlayerLoading()))
+        (!IsPlayer(unitTarget) || !((Player*)unitTarget)->GetSession()->PlayerLoading()))
     {
         return;
     }
@@ -94,9 +86,8 @@ void Spell::EffectApplyAura(const cast::Operation& operation)
     Unit* caster = GetAffectiveCaster();
     if (!caster)
     {
-        // FIXME: currently we can't have auras applied explicitly by gameobjects
-        // so for auras from wild gameobjects (no owner) target used
-        if (m_originalCasterGUID.IsGameObject())
+
+        if ((GuidHigh(m_originalCasterGUID) == HIGHGUID_GAMEOBJECT))
         {
             caster = unitTarget;
         }
@@ -112,11 +103,6 @@ void Spell::EffectApplyAura(const cast::Operation& operation)
     m_spellAuraHolder->AddAura(aur, eff_idx);
 }
 
-/**
- * @brief Drains power from the unit target and optionally restores mana to the caster.
- *
- * @param eff_idx The effect index defining the drained power type.
- */
 void Spell::EffectPowerDrain(const cast::Operation& operation)
 {
     if (operation.miscValue < 0 || operation.miscValue >= MAX_POWERS)
@@ -145,7 +131,6 @@ void Spell::EffectPowerDrain(const cast::Operation& operation)
 
     int32 curPower = unitTarget->GetPower(drain_power);
 
-    // add spell damage bonus
     damage = m_caster->SpellDamageBonusDone(unitTarget, m_spellInfo, uint32(damage), SPELL_DIRECT_DAMAGE);
     damage = unitTarget->SpellDamageBonusTaken(m_caster, m_spellInfo, uint32(damage), SPELL_DIRECT_DAMAGE);
 
@@ -161,7 +146,6 @@ void Spell::EffectPowerDrain(const cast::Operation& operation)
 
     unitTarget->ModifyPower(drain_power, -new_damage);
 
-    // Don`t restore from self drain
     if (drain_power == POWER_MANA && m_caster != unitTarget)
     {
         float manaMultiplier = operation.amplitude;
@@ -181,27 +165,14 @@ void Spell::EffectPowerDrain(const cast::Operation& operation)
     }
 }
 
-/**
- * @brief Starts a scripted event defined by the spell effect.
- *
- * @param effectIndex The effect index providing the event identifier.
- */
 void Spell::EffectSendEvent(const cast::Operation& operation)
 {
-    /**
-     *  we do not handle a flag dropping or clicking on flag in battleground by sendevent system
-     *  TODO: Actually, why not...
-     */
+
     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell ScriptStart %u for spellid %u in EffectSendEvent ", operation.miscValue, m_spellInfo->ID);
 
     StartEvents_Event(m_caster->GetMap(), operation.miscValue, m_caster, focusObject, true, m_caster);
 }
 
-/**
- * @brief Burns target power and converts it into spell damage.
- *
- * @param eff_idx The effect index defining the burned power type.
- */
 void Spell::EffectPowerBurn(const cast::Operation& operation)
 {
     if (operation.miscValue < 0 || operation.miscValue >= MAX_POWERS)
@@ -244,16 +215,11 @@ void Spell::EffectPowerBurn(const cast::Operation& operation)
     m_damage += new_damage;
 }
 
-/**
- * @brief Accumulates healing for the current unit target.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectHeal(const cast::Operation& /*operation*/)
+void Spell::EffectHeal(const cast::Operation& )
 {
     if (unitTarget && unitTarget->IsAlive() && damage >= 0)
     {
-        // Try to get original caster
+
         Unit* caster = GetAffectiveCaster();
         if (!caster)
         {
@@ -262,16 +228,15 @@ void Spell::EffectHeal(const cast::Operation& /*operation*/)
 
         int32 addhealth = damage;
 
-        // Swiftmend - consumes Regrowth or Rejuvenation
         if (m_spellInfo->ID == 18562)
         {
             const auto RejorRegr = unitTarget->GetAurasByType(SPELL_AURA_PERIODIC_HEAL);
-            // find most short by duration
+
             Aura* targetAura = nullptr;
             for (auto* heal : RejorRegr)
             {
                 if (heal->GetSpellProto()->SpellClassSet == SPELLFAMILY_DRUID &&
-                    // Regrowth or Rejuvenation 0x40 | 0x10
+
                     (heal->GetSpellProto()->SpellClassMask & UI64LIT(0x0000000000000050)))
                 {
                     if (!targetAura || heal->GetAuraDuration() < targetAura->GetAuraDuration())
@@ -296,10 +261,9 @@ void Spell::EffectHeal(const cast::Operation& /*operation*/)
                 idx++;
             }
 
-            // Swiftmend heals 4/4 ticks of Rejuvenation and 6/7 of Regrowth
             int32 tickheal = targetAura->GetModifier()->m_amount;
             int32 tickcount = GetSpellDuration(targetAura->GetSpellProto()) / targetAura->GetSpellProto()->EffectAuraPeriod[idx];
-            if (targetAura->GetSpellProto()->SpellClassMask & UI64LIT(0x0000000000000040))        // Regrowth tickcount -= 1
+            if (targetAura->GetSpellProto()->SpellClassMask & UI64LIT(0x0000000000000040))
             {
                 tickcount -= 1;
             }
@@ -316,17 +280,12 @@ void Spell::EffectHeal(const cast::Operation& /*operation*/)
     }
 }
 
-/**
- * @brief Heals a mechanical target immediately.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectHealMechanical(const cast::Operation& /*operation*/)
+void Spell::EffectHealMechanical(const cast::Operation& )
 {
-    // Mechanic creature type should be correctly checked by targetCreatureType field
+
     if (unitTarget && unitTarget->IsAlive() && damage >= 0)
     {
-        // Try to get original caster
+
         Unit* caster = GetAffectiveCaster();
         if (!caster)
         {
@@ -340,11 +299,6 @@ void Spell::EffectHealMechanical(const cast::Operation& /*operation*/)
     }
 }
 
-/**
- * @brief Damages the target and heals the caster for a portion of the damage dealt.
- *
- * @param eff_idx The effect index providing the leech multiplier.
- */
 void Spell::EffectHealthLeech(const cast::Operation& operation)
 {
     if (!unitTarget)
@@ -386,15 +340,9 @@ void Spell::EffectHealthLeech(const cast::Operation& operation)
     }
 }
 
-/**
- * @brief Creates an item and stores it in the player's inventory.
- *
- * @param eff_idx The effect index creating the item.
- * @param itemtype The item entry to create.
- */
 void Spell::DoCreateItem(SpellEffectIndex eff_idx, uint32 itemtype)
 {
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }
@@ -409,7 +357,6 @@ void Spell::DoCreateItem(SpellEffectIndex eff_idx, uint32 itemtype)
         return;
     }
 
-    // bg reward have some special in code work
     uint32 bgType = 0;
     switch (m_spellInfo->ID)
     {
@@ -440,26 +387,23 @@ void Spell::DoCreateItem(SpellEffectIndex eff_idx, uint32 itemtype)
         num_to_add = pProto->Stackable;
     }
 
-    // init items_count to 1, since 1 item will be created regardless of specialization
     int items_count = 1;
 
-    // really will be created more items
     num_to_add *= items_count;
 
-    // can the player store the new item?
     ItemPosCountVec dest;
     uint32 no_space = 0;
     InventoryResult msg = player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, newitemid, num_to_add, &no_space);
     if (msg != EQUIP_ERR_OK)
     {
-        // convert to possible store amount
+
         if (msg == EQUIP_ERR_INVENTORY_FULL || msg == EQUIP_ERR_CANT_CARRY_MORE_OF_THIS)
         {
             num_to_add -= no_space;
         }
         else
         {
-            // if not created by another reason from full inventory or unique items amount limitation
+
             player->SendEquipError(msg, nullptr, nullptr, newitemid);
             return;
         }
@@ -467,33 +411,28 @@ void Spell::DoCreateItem(SpellEffectIndex eff_idx, uint32 itemtype)
 
     if (num_to_add)
     {
-        // create the new item and store it
+
         Item* pItem = player->StoreNewItem(dest, newitemid, true, Item::GenerateItemRandomPropertyId(newitemid));
 
-        // was it successful? return error if not
         if (!pItem)
         {
             player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
             return;
         }
 
-        // set the "Crafted by ..." property of the item
         if (pItem->GetProto()->Class != ITEM_CLASS_CONSUMABLE && pItem->GetProto()->Class != ITEM_CLASS_QUEST)
         {
             pItem->SetCreatorGuid(player->GetObjectGuid());
         }
 
-        // send info to the client
         player->SendNewItem(pItem, num_to_add, true, !bgType);
 
-        // we succeeded in creating at least one item, so a levelup is possible
         if (!bgType)
         {
             player->UpdateCraftSkill(m_spellInfo->ID);
         }
     }
 
-    // for battleground marks send by mail if not add all expected
     if (no_space > 0 && bgType)
     {
         if (BattleGround* bg = sBattleGroundMgr.GetBattleGroundTemplate(BattleGroundTypeId(bgType)))
@@ -503,21 +442,16 @@ void Spell::DoCreateItem(SpellEffectIndex eff_idx, uint32 itemtype)
     }
 }
 
-/**
- * @brief Handles item-creation effects and related special target cleanup.
- *
- * @param eff_idx The effect index creating the item.
- */
 void Spell::EffectCreateItem(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
 
     switch (m_spellInfo->ID)
     {
-        case SPELL_FILLING_EMPTY_JAR__CURSED_OOZE: // Spell 15698 (for Cursed Ooze)
-        case SPELL_FILLING_EMPTY_JAR__TAINTED_OOZE: // Spell 15699 (for Tainted Ooze)
+        case SPELL_FILLING_EMPTY_JAR__CURSED_OOZE:
+        case SPELL_FILLING_EMPTY_JAR__TAINTED_OOZE:
         {
-            if (unitTarget->IsCreature())
+            if (IsCreature(unitTarget))
             {
                 Creature* creature = static_cast<Creature*>(unitTarget);
                 if (creature->IsDead() && (creature->GetEntry() == CREATURE_TAINTED_OOZE || creature->GetEntry() == CREATURE_CURSED_OOZE))
@@ -528,9 +462,9 @@ void Spell::EffectCreateItem(const cast::Operation& operation)
 
             break;
         }
-        case SPELL_FILLING_EMPTY_JAR__PURE_OOZE: // Spell 15702 (for Primal, Muculent and Glutonous Ooze):
+        case SPELL_FILLING_EMPTY_JAR__PURE_OOZE:
         {
-            if (unitTarget->IsCreature())
+            if (IsCreature(unitTarget))
             {
                 Creature* creature = static_cast<Creature*>(unitTarget);
                 if (creature->IsDead() &&
@@ -549,17 +483,12 @@ void Spell::EffectCreateItem(const cast::Operation& operation)
     DoCreateItem(eff_idx, operation.itemType);
 }
 
-/**
- * @brief Creates a persistent area aura dynamic object.
- *
- * @param eff_idx The persistent area aura effect index.
- */
 void Spell::EffectPersistentAA(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
 
     Unit* pCaster = GetAffectiveCaster();
-    // FIXME: in case wild GO will used wrong affective caster (target in fact) as dynobject owner
+
     if (!pCaster)
     {
         pCaster = m_caster;
@@ -584,11 +513,6 @@ void Spell::EffectPersistentAA(const cast::Operation& operation)
     pCaster->GetMap()->Add(dynObj);
 }
 
-/**
- * @brief Restores power to the current unit target.
- *
- * @param eff_idx The effect index defining the power type.
- */
 void Spell::EffectEnergize(const cast::Operation& operation)
 {
     if (!unitTarget)
@@ -607,20 +531,19 @@ void Spell::EffectEnergize(const cast::Operation& operation)
 
     Powers power = Powers(operation.miscValue);
 
-    // Some level depends spells
     int level_multiplier = 0;
     int level_diff = 0;
     switch (m_spellInfo->ID)
     {
-        case 9512:                                          // Restore Energy
+        case 9512:
             level_diff = m_caster->getLevel() - 60;
             level_multiplier = 2;
             break;
-        case 24571:                                         // Blood Fury
+        case 24571:
             level_diff = m_caster->getLevel() - 60;
             level_multiplier = 10;
             break;
-        case 24532:                                         // Burst of Energy
+        case 24532:
             level_diff = m_caster->getLevel() - 60;
             level_multiplier = 4;
             break;

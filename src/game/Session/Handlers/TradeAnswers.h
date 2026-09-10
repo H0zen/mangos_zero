@@ -30,10 +30,9 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks while trading with someone.
 namespace trade
 {
-    /// Hands each side what the other put up, once both have accepted.
+
     void MoveItems(Player& who, Item* myItems[], Item* hisItems[]);
 
     void IgnoreTrade(Player& who, WorldPacket& packet);

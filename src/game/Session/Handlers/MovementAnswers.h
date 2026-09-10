@@ -26,19 +26,17 @@
 #pragma once
 
 class MovementInfo;
-class ObjectGuid;
+#include "ObjectGuid.h"
 class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client says about where he is and how he moves.
 namespace movement
 {
-    /// Whether what the client claims about where he is can be believed.
+
     bool Verify(Player& who, MovementInfo const& movementInfo, ObjectGuid const& guid);
     bool Verify(Player& who, MovementInfo const& movementInfo);
 
-    /// Puts the mover where the verified packet says he is.
     void Relocate(Player& who, MovementInfo& movementInfo);
 
     void MoveWorldportAck(WorldSession& session, WorldPacket& packet);

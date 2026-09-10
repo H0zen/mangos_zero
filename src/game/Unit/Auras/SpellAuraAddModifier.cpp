@@ -23,28 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SpellAuras.cpp
- * @brief Spell aura implementation
- *
- * This file implements the SpellAura class which handles spell auras:
- * - Aura application and removal
- * - Aura effect processing (stat modifiers, DoTs, HoTs, etc.)
- * - Aura stacking rules
- * - Aura dispelling mechanics
- * - Aura periodic effects
- * - Aura duration management
- * - Aura visual effects
- *
- * Auras are persistent effects applied by spells that modify
- * unit stats, deal damage over time, or provide other benefits.
- *
- * @see SpellAura for the aura class
- * @see Spell for spell casting
- */
-
-
-
 #include "SpellAuras.h"
 #include "Platform/Define.h"
 #include "Database/DatabaseEnv.h"
@@ -76,12 +54,9 @@
 #include "Language.h"
 #include "TemporarySummon.h"
 
-/*********************************************************/
-/***               BASIC AURA FUNCTION                 ***/
-/*********************************************************/
 void Aura::HandleAddModifier(bool apply, bool Real)
 {
-    if (!GetTarget()->IsPlayer() || !Real)
+    if (!IsPlayer(GetTarget()) || !Real)
     {
         return;
     }
@@ -95,22 +70,20 @@ void Aura::HandleAddModifier(bool apply, bool Real)
     {
         SpellEntry const* spellProto = GetSpellProto();
 
-        // Add custom charges for some mod aura
         switch (spellProto->ID)
         {
-            case 17941:                                     // Shadow Trance
-            case 22008:                                     // Netherwind Focus
+            case 17941:
+            case 22008:
                 GetHolder()->SetAuraCharges(1);
                 break;
         }
 
         m_spellmod = new SpellModifier(
             SpellModOp(m_modifier.m_miscvalue),
-            SpellModType(m_modifier.m_auraname),            // SpellModType value == spell aura types
+            SpellModType(m_modifier.m_auraname),
             m_modifier.m_amount,
             this,
-            // prevent expire spell mods with (charges > 0 && m_stackAmount > 1)
-            // all this spell expected expire not at use but at spell proc event check
+
             spellProto->CumulativeAura > 1 ? 0 : GetHolder()->GetAuraCharges());
     }
 

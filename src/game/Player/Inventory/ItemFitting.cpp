@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Inventory.h"
 
 #include "Bag.h"
@@ -34,15 +32,6 @@
 #include "SpellMgr.h"
 #include "Unit.h"
 
-/**
- * @brief Checks whether the player can carry more copies of a limited item.
- *
- * @param entry The item entry to evaluate.
- * @param count The additional quantity to add.
- * @param pItem An item instance to exclude from current ownership checks.
- * @param no_space_count Optional output for the quantity that exceeds the limit.
- * @return The inventory result describing the carry-limit check.
- */
 InventoryResult Inventory::RoomForMore(uint32 entry, uint32 count, Item* pItem, uint32* no_space_count) const
 {
     ItemPrototype const* pProto = ObjectMgr::GetItemPrototype(entry);
@@ -55,7 +44,6 @@ InventoryResult Inventory::RoomForMore(uint32 entry, uint32 count, Item* pItem, 
         return EQUIP_ERR_CANT_CARRY_MORE_OF_THIS;
     }
 
-    // no maximum
     if (pProto->MaxCount > 0)
     {
         uint32 curcount = Count(pProto->ItemId, SCOPE_EVERYWHERE, pItem);
@@ -73,53 +61,16 @@ InventoryResult Inventory::RoomForMore(uint32 entry, uint32 count, Item* pItem, 
     return EQUIP_ERR_OK;
 }
 
-/**
- * @brief Checks whether the player has an item from a required totem category.
- *
- * @param TotemCategory The required totem category identifier.
- * @return True if a matching item is present; otherwise, false.
- */
-/**
- * @brief Checks whether the player has an item from a required totem category.
- *
- * @param TotemCategory The required totem category identifier.
- * @return True if a matching item is present; otherwise, false.
- */
-bool Inventory::HasTotem(uint32 /*TotemCategory*/) const
+bool Inventory::HasTotem(uint32 ) const
 {
 
     return false;
 }
 
-/**
- * @brief Checks whether item count can be stored in a specific slot.
- *
- * @param bag The destination bag identifier.
- * @param slot The destination slot identifier.
- * @param dest The accumulated destination positions.
- * @param pProto The item prototype being stored.
- * @param count The remaining quantity to place.
- * @param swap True to allow occupying an already used slot.
- * @param pSrcItem The source item being moved.
- * @return The inventory result for the slot check.
- */
-/**
- * @brief Checks whether item count can be stored in a specific slot.
- *
- * @param bag The destination bag identifier.
- * @param slot The destination slot identifier.
- * @param dest The accumulated destination positions.
- * @param pProto The item prototype being stored.
- * @param count The remaining quantity to place.
- * @param swap True to allow occupying an already used slot.
- * @param pSrcItem The source item being moved.
- * @return The inventory result for the slot check.
- */
 InventoryResult Inventory::FitsHere(uint8 bag, uint8 slot, ItemPosCountVec& dest, ItemPrototype const* pProto, uint32& count, bool swap, Item* pSrcItem) const
 {
     Item* pItem2 = At(bag, slot);
 
-    // ignore move item (this slot will be empty at move)
     if (pItem2 == pSrcItem)
     {
         pItem2 = nullptr;
@@ -127,18 +78,16 @@ InventoryResult Inventory::FitsHere(uint8 bag, uint8 slot, ItemPosCountVec& dest
 
     uint32 need_space;
 
-    // empty specific slot - check item fit to slot
     if (!pItem2 || swap)
     {
         if (bag == INVENTORY_SLOT_BAG_0)
         {
-            // keyring case
+
             if (slot >= KEYRING_SLOT_START && slot < KEYRING_SLOT_START + MaxKeyring() && !(pProto->BagFamily == BAG_FAMILY_KEYS))
             {
                 return EQUIP_ERR_ITEM_DOESNT_GO_INTO_BAG;
             }
 
-            // prevent cheating
             if ((slot >= BUYBACK_SLOT_START && slot < BUYBACK_SLOT_END) || slot >= PLAYER_SLOT_END)
             {
                 return EQUIP_ERR_ITEM_DOESNT_GO_INTO_BAG;
@@ -169,13 +118,12 @@ InventoryResult Inventory::FitsHere(uint8 bag, uint8 slot, ItemPosCountVec& dest
             }
         }
 
-        // non empty stack with space
         need_space = pProto->Stackable;
     }
-    // non empty slot, check item type
+
     else
     {
-        // can be merged at least partly
+
         InventoryResult res  = pItem2->CanBeMergedPartlyWith(pProto);
         if (res != EQUIP_ERR_OK)
         {
@@ -199,43 +147,14 @@ InventoryResult Inventory::FitsHere(uint8 bag, uint8 slot, ItemPosCountVec& dest
     return EQUIP_ERR_OK;
 }
 
-/**
- * @brief Searches a bag for valid storage positions for an item.
- *
- * @param bag The bag identifier to search.
- * @param dest The accumulated destination positions.
- * @param pProto The item prototype being stored.
- * @param count The remaining quantity to place.
- * @param merge True to search existing stacks; false to search empty slots.
- * @param non_specialized True to restrict search to plain containers.
- * @param pSrcItem The source item being moved.
- * @param skip_bag A bag identifier to skip.
- * @param skip_slot A slot identifier to skip.
- * @return The inventory result for the bag search.
- */
-/**
- * @brief Searches a bag for valid storage positions for an item.
- *
- * @param bag The bag identifier to search.
- * @param dest The accumulated destination positions.
- * @param pProto The item prototype being stored.
- * @param count The remaining quantity to place.
- * @param merge True to search existing stacks; false to search empty slots.
- * @param non_specialized True to restrict search to plain containers.
- * @param pSrcItem The source item being moved.
- * @param skip_bag A bag identifier to skip.
- * @param skip_slot A slot identifier to skip.
- * @return The inventory result for the bag search.
- */
 InventoryResult Inventory::FitsInBag(uint8 bag, ItemPosCountVec& dest, ItemPrototype const* pProto, uint32& count, bool merge, bool non_specialized, Item* pSrcItem, uint8 skip_bag, uint8 skip_slot) const
 {
-    // skip specific bag already processed in first called _CanStoreItem_InBag
+
     if (bag == skip_bag)
     {
         return EQUIP_ERR_ITEM_DOESNT_GO_INTO_BAG;
     }
 
-    // skip nonexistent bag or self targeted bag
     Bag* pBag = (Bag*)At(INVENTORY_SLOT_BAG_0, bag);
     if (!pBag || pBag == pSrcItem)
     {
@@ -248,7 +167,6 @@ InventoryResult Inventory::FitsInBag(uint8 bag, ItemPosCountVec& dest, ItemProto
         return EQUIP_ERR_ITEM_DOESNT_GO_INTO_BAG;
     }
 
-    // specialized bag mode or non-specilized
     if (non_specialized != (pBagProto->Class == ITEM_CLASS_CONTAINER && pBagProto->SubClass == ITEM_SUBCLASS_CONTAINER))
     {
         return EQUIP_ERR_ITEM_DOESNT_GO_INTO_BAG;
@@ -261,7 +179,7 @@ InventoryResult Inventory::FitsInBag(uint8 bag, ItemPosCountVec& dest, ItemProto
 
     for (uint32 j = 0; j < pBag->GetBagSize(); ++j)
     {
-        // skip specific slot already processed in first called _CanStoreItem_InSpecificSlot
+
         if (j == skip_slot)
         {
             continue;
@@ -269,13 +187,11 @@ InventoryResult Inventory::FitsInBag(uint8 bag, ItemPosCountVec& dest, ItemProto
 
         Item* pItem2 = At(bag, j);
 
-        // ignore move item (this slot will be empty at move)
         if (pItem2 == pSrcItem)
         {
             pItem2 = nullptr;
         }
 
-        // if merge skip empty, if !merge skip non-empty
         if ((pItem2 != nullptr) != merge)
         {
             continue;
@@ -285,14 +201,13 @@ InventoryResult Inventory::FitsInBag(uint8 bag, ItemPosCountVec& dest, ItemProto
 
         if (pItem2)
         {
-            // can be merged at least partly
+
             uint8 res  = pItem2->CanBeMergedPartlyWith(pProto);
             if (res != EQUIP_ERR_OK)
             {
                 continue;
             }
 
-            // decrease at current stacksize
             need_space -= pItem2->GetCount();
         }
 
@@ -316,39 +231,11 @@ InventoryResult Inventory::FitsInBag(uint8 bag, ItemPosCountVec& dest, ItemProto
     return EQUIP_ERR_OK;
 }
 
-/**
- * @brief Searches a range of inventory slots for valid storage positions.
- *
- * @param slot_begin The first slot in the search range.
- * @param slot_end One past the last slot in the search range.
- * @param dest The accumulated destination positions.
- * @param pProto The item prototype being stored.
- * @param count The remaining quantity to place.
- * @param merge True to search existing stacks; false to search empty slots.
- * @param pSrcItem The source item being moved.
- * @param skip_bag A bag identifier to skip.
- * @param skip_slot A slot identifier to skip.
- * @return The inventory result for the slot-range search.
- */
-/**
- * @brief Searches a range of inventory slots for valid storage positions.
- *
- * @param slot_begin The first slot in the search range.
- * @param slot_end One past the last slot in the search range.
- * @param dest The accumulated destination positions.
- * @param pProto The item prototype being stored.
- * @param count The remaining quantity to place.
- * @param merge True to search existing stacks; false to search empty slots.
- * @param pSrcItem The source item being moved.
- * @param skip_bag A bag identifier to skip.
- * @param skip_slot A slot identifier to skip.
- * @return The inventory result for the slot-range search.
- */
 InventoryResult Inventory::FitsInRun(uint8 slot_begin, uint8 slot_end, ItemPosCountVec& dest, ItemPrototype const* pProto, uint32& count, bool merge, Item* pSrcItem, uint8 skip_bag, uint8 skip_slot) const
 {
     for (uint32 j = slot_begin; j < slot_end; ++j)
     {
-        // skip specific slot already processed in first called _CanStoreItem_InSpecificSlot
+
         if (INVENTORY_SLOT_BAG_0 == skip_bag && j == skip_slot)
         {
             continue;
@@ -356,13 +243,11 @@ InventoryResult Inventory::FitsInRun(uint8 slot_begin, uint8 slot_end, ItemPosCo
 
         Item* pItem2 = At(INVENTORY_SLOT_BAG_0, j);
 
-        // ignore move item (this slot will be empty at move)
         if (pItem2 == pSrcItem)
         {
             pItem2 = nullptr;
         }
 
-        // if merge skip empty, if !merge skip non-empty
         if ((pItem2 != nullptr) != merge)
         {
             continue;
@@ -372,14 +257,13 @@ InventoryResult Inventory::FitsInRun(uint8 slot_begin, uint8 slot_end, ItemPosCo
 
         if (pItem2)
         {
-            // can be merged at least partly
+
             uint8 res  = pItem2->CanBeMergedPartlyWith(pProto);
             if (res != EQUIP_ERR_OK)
             {
                 continue;
             }
 
-            // descrease at current stacksize
             need_space -= pItem2->GetCount();
         }
 
@@ -403,32 +287,6 @@ InventoryResult Inventory::FitsInRun(uint8 slot_begin, uint8 slot_end, ItemPosCo
     return EQUIP_ERR_OK;
 }
 
-/**
- * @brief Computes valid destinations for storing an item stack in inventory.
- *
- * @param bag The preferred destination bag, or NULL_BAG for auto-placement.
- * @param slot The preferred destination slot, or NULL_SLOT for auto-placement.
- * @param dest The accumulated destination positions.
- * @param entry The item entry being stored.
- * @param count The quantity to store.
- * @param pItem The source item being moved.
- * @param swap True to allow swapping with occupied slots.
- * @param no_space_count Optional output for the quantity that could not be placed.
- * @return The inventory result for the storage search.
- */
-/**
- * @brief Computes valid destinations for storing an item stack in inventory.
- *
- * @param bag The preferred destination bag, or NULL_BAG for auto-placement.
- * @param slot The preferred destination slot, or NULL_SLOT for auto-placement.
- * @param dest The accumulated destination positions.
- * @param entry The item entry being stored.
- * @param count The quantity to store.
- * @param pItem The source item being moved.
- * @param swap True to allow swapping with occupied slots.
- * @param no_space_count Optional output for the quantity that could not be placed.
- * @return The inventory result for the storage search.
- */
 InventoryResult Inventory::PlanToStore(uint8 bag, uint8 slot, ItemPosCountVec& dest, uint32 entry, uint32 count, Item* pItem, bool swap, uint32* no_space_count) const
 {
     DEBUG_LOG("STORAGE: CanStoreItem bag = %u, slot = %u, item = %u, count = %u", bag, slot, entry, count);
@@ -445,7 +303,7 @@ InventoryResult Inventory::PlanToStore(uint8 bag, uint8 slot, ItemPosCountVec& d
 
     if (pItem)
     {
-        // item used
+
         if (pItem->HasTemporaryLoot())
         {
             if (no_space_count)
@@ -465,8 +323,7 @@ InventoryResult Inventory::PlanToStore(uint8 bag, uint8 slot, ItemPosCountVec& d
         }
     }
 
-    // check count of items (skip for auto move for same player from bank)
-    uint32 no_similar_count = 0;                            // can't store this amount similar items
+    uint32 no_similar_count = 0;
     InventoryResult res = RoomForMore(entry, count, pItem, &no_similar_count);
     if (res != EQUIP_ERR_OK)
     {
@@ -481,7 +338,6 @@ InventoryResult Inventory::PlanToStore(uint8 bag, uint8 slot, ItemPosCountVec& d
         count -= no_similar_count;
     }
 
-    // in specific slot
     if (bag != NULL_BAG && slot != NULL_SLOT)
     {
         res = FitsHere(bag, slot, dest, pProto, count, swap, pItem);
@@ -509,15 +365,12 @@ InventoryResult Inventory::PlanToStore(uint8 bag, uint8 slot, ItemPosCountVec& d
         }
     }
 
-    // not specific slot or have space for partly store only in specific slot
-
-    // in specific bag
     if (bag != NULL_BAG)
     {
-        // search stack in bag for merge to
+
         if (pProto->Stackable > 1)
         {
-            if (bag == INVENTORY_SLOT_BAG_0)               // inventory
+            if (bag == INVENTORY_SLOT_BAG_0)
             {
                 res = FitsInRun(KEYRING_SLOT_START, KEYRING_SLOT_END, dest, pProto, count, true, pItem, bag, slot);
                 if (res != EQUIP_ERR_OK)
@@ -567,9 +420,9 @@ InventoryResult Inventory::PlanToStore(uint8 bag, uint8 slot, ItemPosCountVec& d
                     return EQUIP_ERR_CANT_CARRY_MORE_OF_THIS;
                 }
             }
-            else                                            // equipped bag
+            else
             {
-                // we need check 2 time (specialized/non_specialized), use NULL_BAG to prevent skipping bag
+
                 res = FitsInBag(bag, dest, pProto, count, true, false, pItem, NULL_BAG, slot);
                 if (res != EQUIP_ERR_OK)
                 {
@@ -601,10 +454,9 @@ InventoryResult Inventory::PlanToStore(uint8 bag, uint8 slot, ItemPosCountVec& d
             }
         }
 
-        // search free slot in bag for place to
-        if (bag == INVENTORY_SLOT_BAG_0)                    // inventory
+        if (bag == INVENTORY_SLOT_BAG_0)
         {
-            // search free slot - keyring case
+
             if (pProto->BagFamily == BAG_FAMILY_KEYS)
             {
                 uint32 keyringSize = MaxKeyring();
@@ -657,7 +509,7 @@ InventoryResult Inventory::PlanToStore(uint8 bag, uint8 slot, ItemPosCountVec& d
                 return EQUIP_ERR_CANT_CARRY_MORE_OF_THIS;
             }
         }
-        else                                                // equipped bag
+        else
         {
             res = FitsInBag(bag, dest, pProto, count, false, false, pItem, NULL_BAG, slot);
             if (res != EQUIP_ERR_OK)
@@ -690,9 +542,6 @@ InventoryResult Inventory::PlanToStore(uint8 bag, uint8 slot, ItemPosCountVec& d
         }
     }
 
-    // not specific bag or have space for partly store only in specific bag
-
-    // search stack for merge to
     if (pProto->Stackable > 1)
     {
         res = FitsInRun(KEYRING_SLOT_START, KEYRING_SLOT_END, dest, pProto, count, true, pItem, bag, slot);
@@ -793,7 +642,6 @@ InventoryResult Inventory::PlanToStore(uint8 bag, uint8 slot, ItemPosCountVec& d
         }
     }
 
-    // search free slot - special bag case
     if (pProto->BagFamily)
     {
         if (pProto->BagFamily == BAG_FAMILY_KEYS)
@@ -848,13 +696,11 @@ InventoryResult Inventory::PlanToStore(uint8 bag, uint8 slot, ItemPosCountVec& d
         }
     }
 
-    // Normally it would be impossible to autostore not empty bags
     if (pItem && pItem->IsBag() && !((Bag*)pItem)->IsEmpty())
     {
         return EQUIP_ERR_NONEMPTY_BAG_OVER_OTHER_BAG;
     }
 
-    // search free slot
     res = FitsInRun(INVENTORY_SLOT_ITEM_START, INVENTORY_SLOT_ITEM_END, dest, pProto, count, false, pItem, bag, slot);
     if (res != EQUIP_ERR_OK)
     {
@@ -910,12 +756,10 @@ InventoryResult Inventory::PlanToStore(uint8 bag, uint8 slot, ItemPosCountVec& d
     return EQUIP_ERR_INVENTORY_FULL;
 }
 
-//////////////////////////////////////////////////////////////////////////
 InventoryResult Inventory::PlanForAll(Item** pItems, int count) const
 {
     Item*    pItem2;
 
-    // fill space table
     int inv_slot_items[INVENTORY_SLOT_ITEM_END - INVENTORY_SLOT_ITEM_START];
     int inv_bags[INVENTORY_SLOT_BAG_END - INVENTORY_SLOT_BAG_START][MAX_BAG_SIZE];
     int inv_keys[KEYRING_SLOT_END - KEYRING_SLOT_START];
@@ -959,12 +803,10 @@ InventoryResult Inventory::PlanForAll(Item** pItems, int count) const
         }
     }
 
-    // check free space for all items
     for (int k = 0; k < count; ++k)
     {
         Item*  pItem = pItems[k];
 
-        // no item
         if (!pItem)
         {
             continue;
@@ -973,19 +815,16 @@ InventoryResult Inventory::PlanForAll(Item** pItems, int count) const
         DEBUG_LOG("STORAGE: CanStoreItems %i. item = %u, count = %u", k + 1, pItem->GetEntry(), pItem->GetCount());
         ItemPrototype const* pProto = pItem->GetProto();
 
-        // strange item
         if (!pProto)
         {
             return EQUIP_ERR_ITEM_NOT_FOUND;
         }
 
-        // item used
         if (pItem->HasTemporaryLoot())
         {
             return EQUIP_ERR_ALREADY_LOOTED;
         }
 
-        // item it 'bind'
         if (pItem->IsBindedNotWith(&m_owner))
         {
             return EQUIP_ERR_DONT_OWN_THAT_ITEM;
@@ -994,14 +833,12 @@ InventoryResult Inventory::PlanForAll(Item** pItems, int count) const
         Bag* pBag;
         ItemPrototype const* pBagProto;
 
-        // item is 'one item only'
         InventoryResult res = RoomForMore(pItem->GetEntry(), pItem->GetCount(), pItem);
         if (res != EQUIP_ERR_OK)
         {
             return res;
         }
 
-        // search stack for merge to
         if (pProto->Stackable > 1)
         {
             bool b_found = false;
@@ -1059,7 +896,6 @@ InventoryResult Inventory::PlanForAll(Item** pItems, int count) const
             }
         }
 
-        // special bag case
         if (pProto->BagFamily)
         {
             bool b_found = false;
@@ -1089,7 +925,6 @@ InventoryResult Inventory::PlanForAll(Item** pItems, int count) const
                 {
                     pBagProto = pBag->GetProto();
 
-                    // not plain container check
                     if (pBagProto && (pBagProto->Class != ITEM_CLASS_CONTAINER || pBagProto->SubClass != ITEM_SUBCLASS_CONTAINER) &&
                         ItemCanGoIntoBag(pProto, pBagProto))
                     {
@@ -1111,7 +946,6 @@ InventoryResult Inventory::PlanForAll(Item** pItems, int count) const
             }
         }
 
-        // search free slot
         bool b_found = false;
         for (int t = INVENTORY_SLOT_ITEM_START; t < INVENTORY_SLOT_ITEM_END; ++t)
         {
@@ -1127,7 +961,6 @@ InventoryResult Inventory::PlanForAll(Item** pItems, int count) const
             continue;
         }
 
-        // search free slot in bags
         for (int t = INVENTORY_SLOT_BAG_START; !b_found && t < INVENTORY_SLOT_BAG_END; ++t)
         {
             pBag = (Bag*)At(INVENTORY_SLOT_BAG_0, t);
@@ -1135,7 +968,6 @@ InventoryResult Inventory::PlanForAll(Item** pItems, int count) const
             {
                 pBagProto = pBag->GetProto();
 
-                // special bag already checked
                 if (pBagProto && (pBagProto->Class != ITEM_CLASS_CONTAINER || pBagProto->SubClass != ITEM_SUBCLASS_CONTAINER))
                 {
                     continue;
@@ -1153,7 +985,6 @@ InventoryResult Inventory::PlanForAll(Item** pItems, int count) const
             }
         }
 
-        // no free slot found?
         if (!b_found)
         {
             return EQUIP_ERR_BAG_FULL;
@@ -1163,17 +994,9 @@ InventoryResult Inventory::PlanForAll(Item** pItems, int count) const
     return EQUIP_ERR_OK;
 }
 
-//////////////////////////////////////////////////////////////////////////
-/**
- * @brief Checks whether an equipped or banked item can be unequipped.
- *
- * @param pos The packed item position.
- * @param swap True if the item is being swapped rather than simply removed.
- * @return The inventory result for the unequip check.
- */
 InventoryResult Inventory::CanTakeOff(uint16 pos, bool swap) const
 {
-    // Applied only to equipped items and bank bags
+
     if (!Inventory::IsWorn(pos) && !Inventory::HoldsBag(pos))
     {
         return EQUIP_ERR_OK;
@@ -1181,7 +1004,6 @@ InventoryResult Inventory::CanTakeOff(uint16 pos, bool swap) const
 
     Item* pItem = At(pos);
 
-    // Applied only to existing equipped item
     if (!pItem)
     {
         return EQUIP_ERR_OK;
@@ -1195,14 +1017,11 @@ InventoryResult Inventory::CanTakeOff(uint16 pos, bool swap) const
         return EQUIP_ERR_ITEM_NOT_FOUND;
     }
 
-    // item used
     if (pItem->HasTemporaryLoot())
     {
         return EQUIP_ERR_ALREADY_LOOTED;
     }
 
-    // do not allow unequipping gear except weapons, offhands, projectiles, relics in
-    // - combat
     if (!pProto->CanChangeEquipStateInCombat())
     {
         if (m_owner.IsInCombat())
@@ -1211,7 +1030,6 @@ InventoryResult Inventory::CanTakeOff(uint16 pos, bool swap) const
         }
     }
 
-    // prevent unequip item in process logout
     if (m_owner.GetSession()->isLogingOut())
     {
         return EQUIP_ERR_YOU_ARE_STUNNED;
@@ -1225,28 +1043,6 @@ InventoryResult Inventory::CanTakeOff(uint16 pos, bool swap) const
     return EQUIP_ERR_OK;
 }
 
-/**
- * @brief Checks whether an item can be stored in the bank and resolves destinations.
- *
- * @param bag The preferred destination bag, or NULL_BAG for auto-placement.
- * @param slot The preferred destination slot, or NULL_SLOT for auto-placement.
- * @param dest The accumulated destination positions.
- * @param pItem The item to bank.
- * @param swap True to allow swapping with occupied slots.
- * @param not_loading True when validating an active player action instead of load-time state.
- * @return The inventory result for the bank storage check.
- */
-/**
- * @brief Checks whether an item can be stored in the bank and resolves destinations.
- *
- * @param bag The preferred destination bag, or NULL_BAG for auto-placement.
- * @param slot The preferred destination slot, or NULL_SLOT for auto-placement.
- * @param dest The accumulated destination positions.
- * @param pItem The item to bank.
- * @param swap True to allow swapping with occupied slots.
- * @param not_loading True when validating an active player action instead of load-time state.
- * @return The inventory result for the bank storage check.
- */
 InventoryResult Inventory::PlanToBank(uint8 bag, uint8 slot, ItemPosCountVec& dest, Item* pItem, bool swap, bool not_loading) const
 {
     if (!pItem)
@@ -1263,7 +1059,6 @@ InventoryResult Inventory::PlanToBank(uint8 bag, uint8 slot, ItemPosCountVec& de
         return swap ? EQUIP_ERR_ITEMS_CANT_BE_SWAPPED : EQUIP_ERR_ITEM_NOT_FOUND;
     }
 
-    // item used
     if (pItem->HasTemporaryLoot())
     {
         return EQUIP_ERR_ALREADY_LOOTED;
@@ -1274,14 +1069,12 @@ InventoryResult Inventory::PlanToBank(uint8 bag, uint8 slot, ItemPosCountVec& de
         return EQUIP_ERR_DONT_OWN_THAT_ITEM;
     }
 
-    // check count of items (skip for auto move for same player from bank)
     InventoryResult res = RoomForMore(pItem->GetEntry(), pItem->GetCount(), pItem);
     if (res != EQUIP_ERR_OK)
     {
         return res;
     }
 
-    // in specific slot
     if (bag != NULL_BAG && slot != NULL_SLOT)
     {
         if (slot >= BANK_SLOT_BAG_START && slot < BANK_SLOT_BAG_END)
@@ -1315,9 +1108,6 @@ InventoryResult Inventory::PlanToBank(uint8 bag, uint8 slot, ItemPosCountVec& de
         }
     }
 
-    // not specific slot or have space for partly store only in specific slot
-
-    // in specific bag
     if (bag != NULL_BAG)
     {
         if (pProto->InventoryType == INVTYPE_BAG)
@@ -1329,7 +1119,6 @@ InventoryResult Inventory::PlanToBank(uint8 bag, uint8 slot, ItemPosCountVec& de
             }
         }
 
-        // search stack in bag for merge to
         if (pProto->Stackable > 1)
         {
             if (bag == INVENTORY_SLOT_BAG_0)
@@ -1365,7 +1154,6 @@ InventoryResult Inventory::PlanToBank(uint8 bag, uint8 slot, ItemPosCountVec& de
             }
         }
 
-        // search free slot in bag
         if (bag == INVENTORY_SLOT_BAG_0)
         {
             res = FitsInRun(BANK_SLOT_ITEM_START, BANK_SLOT_ITEM_END, dest, pProto, count, false, pItem, bag, slot);
@@ -1399,12 +1187,9 @@ InventoryResult Inventory::PlanToBank(uint8 bag, uint8 slot, ItemPosCountVec& de
         }
     }
 
-    // not specific bag or have space for partly store only in specific bag
-
-    // search stack for merge to
     if (pProto->Stackable > 1)
     {
-        // in slots
+
         res = FitsInRun(BANK_SLOT_ITEM_START, BANK_SLOT_ITEM_END, dest, pProto, count, true, pItem, bag, slot);
         if (res != EQUIP_ERR_OK)
         {
@@ -1416,7 +1201,6 @@ InventoryResult Inventory::PlanToBank(uint8 bag, uint8 slot, ItemPosCountVec& de
             return EQUIP_ERR_OK;
         }
 
-        // in special bags
         if (pProto->BagFamily)
         {
             for (int i = BANK_SLOT_BAG_START; i < BANK_SLOT_BAG_END; ++i)
@@ -1449,7 +1233,6 @@ InventoryResult Inventory::PlanToBank(uint8 bag, uint8 slot, ItemPosCountVec& de
         }
     }
 
-    // search free place in special bag
     if (pProto->BagFamily)
     {
         for (int i = BANK_SLOT_BAG_START; i < BANK_SLOT_BAG_END; ++i)
@@ -1467,7 +1250,6 @@ InventoryResult Inventory::PlanToBank(uint8 bag, uint8 slot, ItemPosCountVec& de
         }
     }
 
-    // search free space
     res = FitsInRun(BANK_SLOT_ITEM_START, BANK_SLOT_ITEM_END, dest, pProto, count, false, pItem, bag, slot);
     if (res != EQUIP_ERR_OK)
     {
@@ -1494,11 +1276,3 @@ InventoryResult Inventory::PlanToBank(uint8 bag, uint8 slot, ItemPosCountVec& de
     }
     return EQUIP_ERR_BANK_FULL;
 }
-
-/**
- * @brief Checks whether a specific item instance can currently be used or equipped.
- *
- * @param pItem The item instance to validate.
- * @param direct_action True if the check is for an immediate player action.
- * @return The inventory result for the use check.
- */

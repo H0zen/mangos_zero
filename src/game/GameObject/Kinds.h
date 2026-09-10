@@ -23,7 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
 #pragma once
 
 #include "Behaviour.h"
@@ -31,14 +30,6 @@
 #include "Chest.h"
 #include "CapturePoint.h"
 
-/**
- * A kind that keeps count of who has used it.
- *
- * Six kinds do, for four different reasons: a trap and a spellcaster spend
- * charges, a vein and a fishing hole are used up, a ritual needs a quorum, and a
- * goober pays out to everyone who took part. Asking a chair the same question
- * has no answer, which is why the count is here and not on every gameobject.
- */
 class CountingBehaviour : public GameObjectBehaviour
 {
     public:
@@ -51,14 +42,6 @@ class CountingBehaviour : public GameObjectBehaviour
         UserTally m_tally;
 };
 
-/**
- * The sixteen kinds of gameobject a player can click, one class each.
- *
- * A kind that is not here is one nothing happens to when it is used: those
- * get the base behaviour, which says so in the log.
- */
-
-/// A door swings open and shuts itself again.
 class DoorBehaviour : public GameObjectBehaviour
 {
     public:
@@ -69,7 +52,6 @@ class DoorBehaviour : public GameObjectBehaviour
         void InUse(uint32 elapsed) override;
 };
 
-/// A button is a door that trips something else as it opens.
 class ButtonBehaviour : public GameObjectBehaviour
 {
     public:
@@ -80,7 +62,6 @@ class ButtonBehaviour : public GameObjectBehaviour
         void InUse(uint32 elapsed) override;
 };
 
-/// A thing that hands out quests and takes them back.
 class QuestGiverBehaviour : public GameObjectBehaviour
 {
     public:
@@ -89,7 +70,6 @@ class QuestGiverBehaviour : public GameObjectBehaviour
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
 };
 
-/// A container with loot in it, and sometimes a trap under it.
 class ChestBehaviour : public CountingBehaviour
 {
     public:
@@ -101,14 +81,12 @@ class ChestBehaviour : public CountingBehaviour
         Tick Spent() override;
         void Respawning() override;
 
-        /// What it has taught, and how long it lingers once emptied.
         Chest& Lock() { return m_lock; }
 
     private:
         Chest m_lock;
 };
 
-/// A thing with no behaviour of its own beyond being clicked.
 class GenericBehaviour : public GameObjectBehaviour
 {
     public:
@@ -117,7 +95,6 @@ class GenericBehaviour : public GameObjectBehaviour
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
 };
 
-/// Something laid to go off when it is touched.
 class TrapBehaviour : public CountingBehaviour
 {
     public:
@@ -128,7 +105,6 @@ class TrapBehaviour : public CountingBehaviour
         Tick Standing() override;
 };
 
-/// A seat, with a slot per person it holds.
 class ChairBehaviour : public GameObjectBehaviour
 {
     public:
@@ -137,7 +113,6 @@ class ChairBehaviour : public GameObjectBehaviour
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
 };
 
-/// A thing a spell has to be cast near.
 class SpellFocusBehaviour : public GameObjectBehaviour
 {
     public:
@@ -146,7 +121,6 @@ class SpellFocusBehaviour : public GameObjectBehaviour
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
 };
 
-/// The catch-all clickable: levers, orbs, the odd quest prop.
 class GooberBehaviour : public CountingBehaviour
 {
     public:
@@ -157,7 +131,6 @@ class GooberBehaviour : public CountingBehaviour
         Tick Spent() override;
 };
 
-/// A point the client is told to look from.
 class CameraBehaviour : public GameObjectBehaviour
 {
     public:
@@ -166,7 +139,6 @@ class CameraBehaviour : public GameObjectBehaviour
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
 };
 
-/// The bobber a fishing cast puts on the water.
 class FishingNodeBehaviour : public GameObjectBehaviour
 {
     public:
@@ -177,7 +149,6 @@ class FishingNodeBehaviour : public GameObjectBehaviour
         Tick TimedOut() override;
 };
 
-/// A circle that needs several people standing in it.
 class RitualBehaviour : public CountingBehaviour
 {
     public:
@@ -186,7 +157,6 @@ class RitualBehaviour : public CountingBehaviour
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
 };
 
-/// A thing that casts one spell at whoever uses it.
 class SpellCasterBehaviour : public CountingBehaviour
 {
     public:
@@ -195,7 +165,6 @@ class SpellCasterBehaviour : public CountingBehaviour
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
 };
 
-/// The plinth a battleground flag stands on.
 class FlagStandBehaviour : public GameObjectBehaviour
 {
     public:
@@ -204,7 +173,6 @@ class FlagStandBehaviour : public GameObjectBehaviour
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
 };
 
-/// A patch of water with more in it than the rest.
 class FishingHoleBehaviour : public CountingBehaviour
 {
     public:
@@ -213,7 +181,6 @@ class FishingHoleBehaviour : public CountingBehaviour
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
 };
 
-/// A battleground flag lying where it was dropped.
 class FlagDropBehaviour : public GameObjectBehaviour
 {
     public:
@@ -222,7 +189,6 @@ class FlagDropBehaviour : public GameObjectBehaviour
         Casting UsedBy(Unit* user, bool scriptSaidYes) override;
 };
 
-/// A tower or banner one side takes from the other by standing near it.
 class CapturePointBehaviour : public GameObjectBehaviour
 {
     public:
@@ -231,14 +197,11 @@ class CapturePointBehaviour : public GameObjectBehaviour
         void InUse(uint32 elapsed) override;
         Tick Spent() override;
 
-        /// Where the bar stands, and which way it is going.
         CapturePoint& Bar() { return m_bar; }
         CapturePoint const& Bar() const { return m_bar; }
 
-        /// Put the bar where a saved game left it.
         void Restore(float value, bool isLocked);
 
-        /// Move it one step towards whoever is standing in the circle.
         void Tick();
 
     private:

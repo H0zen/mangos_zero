@@ -32,25 +32,10 @@ class Group;
 class Object;
 class Occupant;
 
-/**
- * Questions only some kinds of object answer.
- *
- * Handing out a quest, rolling for loot, having a respawn time: a creature and
- * a gameobject do these, an item starts a quest, and nothing else has anything
- * to say. Ask here and let this decide which kind it is talking to, so that the
- * roots of the hierarchy declare nothing on behalf of two of their leaves.
- */
-
-/// Does this object offer the quest -- a questgiver, a gameobject, or an item
-/// whose use starts it.
 bool StartsQuest(Object const& object, uint32 questId);
 
-/// Does this object take the quest back.
 bool EndsQuest(Object const& object, uint32 questId);
 
-/// The claim on what this object is holding, or nothing when it holds nothing
-/// anyone can take. Only a corpse and a chest ever do.
 LootClaim* ClaimOn(Occupant& holder);
 
-/// Persist when this object comes back, if it comes back at all.
 void SaveRespawnTime(Occupant& what);

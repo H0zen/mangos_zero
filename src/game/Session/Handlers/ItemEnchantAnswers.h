@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about enchantments on his things.
 namespace items
 {
     void WrapItem(Player& who, WorldPacket& packet);

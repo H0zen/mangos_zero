@@ -30,13 +30,6 @@
 
 #include <optional>
 
-/**
- * @brief Panic: bolt away from a fear source in short bursts, pausing a beat between them.
- *
- * Unlike wander, a flee leg REFUSES the router's straight-line fallback
- * (MOVE_REQUIRE_PATH): a panicking unit that cannot actually get somewhere must pick a
- * different somewhere, not bolt through a wall.
- */
 class FleeingMovementGenerator : public IntentMovementGenerator
 {
     public:
@@ -53,22 +46,16 @@ class FleeingMovementGenerator : public IntentMovementGenerator
         Motion::MoveIntent Intent(Unit& owner, Motion::MoveStatus const& status,
                                   uint32 diff) override;
 
-        /// Somewhere to bolt to, away from the fear source. Nothing when the bearing it
-        /// picked has no ground under it.
         std::optional<Motion::Vector3> PickFleePoint(Unit& owner) const;
 
     private:
-        ObjectGuid m_frightGuid;      ///< What the unit is running from.
+        ObjectGuid m_frightGuid = 0;
 
-        TimeTracker m_restTime{0};    ///< Time left standing before the next bolt.
-        Motion::Vector3 m_fleePoint;  ///< Where the current bolt is heading.
-        bool m_haveFleePoint = false; ///< False before the first point has been picked.
+        TimeTracker m_restTime{0};
+        Motion::Vector3 m_fleePoint;
+        bool m_haveFleePoint = false;
 };
 
-/**
- * @brief Fleeing that gives up after a fixed time and re-engages, rather than running
- *        until the aura that caused it is removed.
- */
 class TimedFleeingMovementGenerator final : public FleeingMovementGenerator
 {
     public:
@@ -84,5 +71,5 @@ class TimedFleeingMovementGenerator final : public FleeingMovementGenerator
                                   uint32 diff) override;
 
     private:
-        TimeTracker m_totalFleeTime; ///< How long the panic lasts.
+        TimeTracker m_totalFleeTime;
 };

@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
 #include "Policies/Singleton.h"
@@ -57,16 +55,6 @@
 #include "DisableMgr.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Finds the nearest reachable taxi node for a location and faction.
- *
- * @param x The world x coordinate.
- * @param y The world y coordinate.
- * @param z The world z coordinate.
- * @param mapid The map id.
- * @param team The player's faction.
- * @return The nearest taxi node id, or 0 if none matches.
- */
 uint32 ObjectMgr::GetNearestTaxiNode(float x, float y, float z, uint32 mapid, Team team)
 {
     bool found = false;
@@ -84,7 +72,6 @@ uint32 ObjectMgr::GetNearestTaxiNode(float x, float y, float z, uint32 mapid, Te
         uint8  field   = (uint8)((i - 1) / 32);
         uint32 submask = 1 << ((i - 1) % 32);
 
-        // skip not taxi network nodes
         if ((sTaxiNodesMask[field] & submask) == 0)
         {
             continue;
@@ -110,14 +97,6 @@ uint32 ObjectMgr::GetNearestTaxiNode(float x, float y, float z, uint32 mapid, Te
     return id;
 }
 
-/**
- * @brief Resolves the taxi path id and cost between two taxi nodes.
- *
- * @param source The source taxi node id.
- * @param destination The destination taxi node id.
- * @param path Receives the taxi path id.
- * @param cost Receives the travel cost.
- */
 void ObjectMgr::GetTaxiPath(uint32 source, uint32 destination, uint32& path, uint32& cost)
 {
     TaxiPathSetBySource::iterator src_i = sTaxiPathSetBySource.find(source);
@@ -142,19 +121,10 @@ void ObjectMgr::GetTaxiPath(uint32 source, uint32 destination, uint32& path, uin
     path = dest_i->second.ID;
 }
 
-/**
- * @brief Gets the taxi mount display id for a node and faction.
- *
- * @param id The taxi node id.
- * @param team The player's faction.
- * @param allowed_alt_team true to allow fallback to the opposite faction mount.
- * @return The creature display id used for the taxi mount, or 0 if unavailable.
- */
-uint32 ObjectMgr::GetTaxiMountDisplayId(uint32 id, Team team, bool allowed_alt_team /* = false */)
+uint32 ObjectMgr::GetTaxiMountDisplayId(uint32 id, Team team, bool allowed_alt_team )
 {
     uint16 mount_entry = 0;
 
-    // select mount creature id
     TaxiNodesEntry const* node = sTaxiNodesStore.LookupEntry(id);
     if (node)
     {

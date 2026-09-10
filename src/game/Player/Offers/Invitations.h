@@ -29,35 +29,16 @@
 
 class Group;
 
-/**
- * The invitations put to a character that he has not yet answered.
- *
- * A party invitation names the party itself, because the party holds the
- * invited list on its own side and both sides are cleared together: the party
- * is a live object for as long as the invitation stands. A guild invitation
- * names only the guild's id, so the guild is looked up when he answers -- it may
- * have been disbanded while the box sat on his screen.
- *
- * Each of them is answered once. Accepting and declining both clear it, and so
- * does leaving the world with the box still open.
- *
- * He can hold one of each at a time. A second invitation of the same kind is
- * refused by the handler before it ever reaches here, so what is kept is a
- * single party and a single guild rather than a list.
- */
 class Invitations
 {
     public:
 
-        /// The party that has asked him to join, or nothing.
         Group* ToParty() const { return m_party; }
         void ToParty(Group* party) { m_party = party; }
 
-        /// The guild that has asked him to join, by id, or nothing.
         uint32 ToGuild() const { return m_guild; }
         void ToGuild(uint32 guildId) { m_guild = guildId; }
 
-        /// Nothing stands open.
         void None()
         {
             m_party = nullptr;

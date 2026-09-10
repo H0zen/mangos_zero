@@ -97,7 +97,7 @@ struct npc_lazy_peon : public CreatureScript
                 m_creature->SetWalk(false);
                 ContactPointNear(*pLumber, m_creature, fX, fY, fZ, CONTACT_DISTANCE);
 
-                if (pInvoker->IsPlayer())
+                if (IsPlayer(pInvoker))
                 {
                     DoScriptText(SAY_PEON_AWAKE_1, m_creature, pInvoker);
                     ((Player*)pInvoker)->Journal().KillCredited(m_creature->GetEntry(), m_creature->GetObjectGuid());
@@ -172,12 +172,12 @@ struct spell_lazy_peon_awake : public SpellScript
         // always check spellid and effectindex
         if (uiSpellId == SPELL_AWAKEN_PEON && uiEffIndex == EFFECT_INDEX_0)
         {
-            Creature* pCreatureTarget = ToCreature(pTarget);
+            Creature* pCreatureTarget = static_cast<Creature*>(pTarget);
             if (!pCreatureTarget)
             {
                 return true;
             }
-            if (!pCreatureTarget->HasAura(SPELL_PEON_SLEEP) || !pCaster->IsPlayer() || pCreatureTarget->GetEntry() != NPC_SLEEPING_PEON)
+            if (!pCreatureTarget->HasAura(SPELL_PEON_SLEEP) || !IsPlayer(pCaster) || pCreatureTarget->GetEntry() != NPC_SLEEPING_PEON)
             {
                 return true;
             }

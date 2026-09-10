@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <iterator>
 #include <random>
 #include "Platform/Define.h"
@@ -66,16 +64,9 @@
 #include "CellImpl.h"
 #include "Geometry/Vector3.h"
 
-/**
- * @brief Executes script-driven spell effect behavior for special cases.
- *
- * @param eff_idx The script effect index.
- */
 void Spell::EffectScriptEffect(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
-
-    // TODO: we must implement hunter pet summon at login there (spell 6962)
 
     switch (m_spellInfo->SpellClassSet)
     {
@@ -83,24 +74,24 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
         {
             switch (m_spellInfo->ID)
             {
-                case 1509:                                  // GM Mode OFF
+                case 1509:
                 {
-                    if (unitTarget->IsPlayer())
+                    if (IsPlayer(unitTarget))
                     {
                         ((Player*)unitTarget)->SetGameMaster(false);
                     }
                     break;
                 }
-                case 18139:                                 // GM Mode ON
+                case 18139:
                 {
-                    if (unitTarget->IsPlayer())
+                    if (IsPlayer(unitTarget))
                     {
                         ((Player*)unitTarget)->SetGameMaster(true);
                     }
                     break;
                 }
 
-                case 5249:                                  // Ice Lock
+                case 5249:
                 {
                     if (unitTarget)
                     {
@@ -109,9 +100,9 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                     }
                     break;
                 }
-                case 8856:                                  // Bending Shinbone
+                case 8856:
                 {
-                    if (!itemTarget && !m_caster->IsPlayer())
+                    if (!itemTarget && !IsPlayer(m_caster))
                     {
                         return;
                     }
@@ -126,9 +117,9 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                     m_caster->CastSpell(m_caster, spell_id, true, nullptr);
                     return;
                 }
-                case 17512:                                 // Piccolo of the Flaming Fire
+                case 17512:
                 {
-                    if (!unitTarget || !unitTarget->IsPlayer())
+                    if (!unitTarget || !IsPlayer(unitTarget))
                     {
                         return;
                     }
@@ -137,8 +128,8 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
 
                     return;
                 }
-                case 22539:                                 // Shadow Flame (All script effects, not just end ones to
-                case 22972:                                 // prevent player from dodging the last triggered spell)
+                case 22539:
+                case 22972:
                 case 22975:
                 case 22976:
                 case 22977:
@@ -156,20 +147,18 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                         return;
                     }
 
-                    // Onyxia Scale Cloak
                     if (unitTarget->GetDummyAura(22683))
                     {
                         return;
                     }
 
-                    // Shadow Flame
                     m_caster->CastSpell(unitTarget, 22682, true);
                     return;
                 }
-                case 24194:                                 // Uther's Tribute
-                case 24195:                                 // Grom's Tribute
+                case 24194:
+                case 24195:
                 {
-                    if (!m_caster->IsPlayer())
+                    if (!IsPlayer(m_caster))
                     {
                         return;
                     }
@@ -206,14 +195,14 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
 
                     return;
                 }
-                case 24320:                                 // Poisonous Blood
+                case 24320:
                 {
                     unitTarget->CastSpell(unitTarget, 24321, true, nullptr, nullptr, m_caster->GetObjectGuid());
                     return;
                 }
-                case 24324:                                 // Blood Siphon
+                case 24324:
                 {
-                    if (!unitTarget || !unitTarget->IsPlayer())
+                    if (!unitTarget || !IsPlayer(unitTarget))
                     {
                         return;
                     }
@@ -221,63 +210,60 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                     unitTarget->CastSpell(m_caster, unitTarget->HasAura(24321) ? 24323 : 24322, true);
                     return;
                 }
-                case 24590:                                 // Brittle Armor - need remove one 24575 Brittle Armor aura
+                case 24590:
                     unitTarget->RemoveStacks(24575);
                     return;
-                case 24714:                                 // Trick
+                case 24714:
                 {
-                    if (!m_caster->IsPlayer())
+                    if (!IsPlayer(m_caster))
                     {
                         return;
                     }
 
-                    if (roll_chance_i(14))                  // Trick (can be different critter models). 14% since below can have 1 of 6
+                    if (roll_chance_i(14))
                     {
                         m_caster->CastSpell(m_caster, 24753, true);
                     }
-                    else                                    // Random Costume, 6 different (plus add. for gender)
+                    else
                     {
                         m_caster->CastSpell(m_caster, 24720, true);
                     }
 
                     return;
                 }
-                case 24717:                                 // Pirate Costume
+                case 24717:
                 {
-                    if (!unitTarget || !unitTarget->IsPlayer())
+                    if (!unitTarget || !IsPlayer(unitTarget))
                     {
                         return;
                     }
 
-                    // Pirate Costume (male or female)
                     m_caster->CastSpell(unitTarget, unitTarget->getGender() == GENDER_MALE ? 24708 : 24709, true);
                     return;
                 }
-                case 24718:                                 // Ninja Costume
+                case 24718:
                 {
-                    if (!unitTarget || !unitTarget->IsPlayer())
+                    if (!unitTarget || !IsPlayer(unitTarget))
                     {
                         return;
                     }
 
-                    // Ninja Costume (male or female)
                     m_caster->CastSpell(unitTarget, unitTarget->getGender() == GENDER_MALE ? 24711 : 24710, true);
                     return;
                 }
-                case 24719:                                 // Leper Gnome Costume
+                case 24719:
                 {
-                    if (!unitTarget || !unitTarget->IsPlayer())
+                    if (!unitTarget || !IsPlayer(unitTarget))
                     {
                         return;
                     }
 
-                    // Leper Gnome Costume (male or female)
                     m_caster->CastSpell(unitTarget, unitTarget->getGender() == GENDER_MALE ? 24712 : 24713, true);
                     return;
                 }
-                case 24720:                                 // Random Costume
+                case 24720:
                 {
-                    if (!unitTarget || !unitTarget->IsPlayer())
+                    if (!unitTarget || !IsPlayer(unitTarget))
                     {
                         return;
                     }
@@ -312,32 +298,29 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                     m_caster->CastSpell(unitTarget, spellId, true);
                     return;
                 }
-                case 24737:                                 // Ghost Costume
+                case 24737:
                 {
-                    if (!unitTarget || !unitTarget->IsPlayer())
+                    if (!unitTarget || !IsPlayer(unitTarget))
                     {
                         return;
                     }
 
-                    // Ghost Costume (male or female)
                     m_caster->CastSpell(unitTarget, unitTarget->getGender() == GENDER_MALE ? 24735 : 24736, true);
                     return;
                 }
-                case 24751:                                 // Trick or Treat
+                case 24751:
                 {
-                    if (!unitTarget || !unitTarget->IsPlayer())
+                    if (!unitTarget || !IsPlayer(unitTarget))
                     {
                         return;
                     }
 
-                    // Tricked or Treated
                     unitTarget->CastSpell(unitTarget, 24755, true);
 
-                    // Treat / Trick
                     unitTarget->CastSpell(unitTarget, roll_chance_i(50) ? 24714 : 24715, true);
                     return;
                 }
-                case 26004:                                 // Mistletoe
+                case 26004:
                 {
                     if (!unitTarget)
                     {
@@ -347,7 +330,7 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                     unitTarget->HandleEmote(EMOTE_ONESHOT_CHEER);
                     return;
                 }
-                case 26137:                                 // Rotate Trigger
+                case 26137:
                 {
                     if (!unitTarget)
                     {
@@ -357,9 +340,9 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                     unitTarget->CastSpell(unitTarget, urand(0, 1) ? 26009 : 26136, true);
                     return;
                 }
-                case 26218:                                 // Mistletoe
+                case 26218:
                 {
-                    if (!unitTarget || !unitTarget->IsPlayer())
+                    if (!unitTarget || !IsPlayer(unitTarget))
                     {
                         return;
                     }
@@ -369,11 +352,10 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                     m_caster->CastSpell(unitTarget, spells[urand(0, 1)], true);
                     return;
                 }
-                case 26275:                                 // PX-238 Winter Wondervolt TRAP
+                case 26275:
                 {
                     uint32 spells[4] = {26272, 26157, 26273, 26274};
 
-                    // check presence
                     for (int j = 0; j < 4; ++j)
                     {
                         if (unitTarget->HasAura(spells[j], EFFECT_INDEX_0))
@@ -385,20 +367,18 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                     unitTarget->CastSpell(unitTarget, spells[urand(0, 3)], true);
                     return;
                 }
-                case 26465:                                 // Mercurial Shield - need remove one 26464 Mercurial Shield aura
+                case 26465:
                     unitTarget->RemoveStacks(26464);
                     return;
-                case 26656:                                 // Summon Black Qiraji Battle Tank
+                case 26656:
                 {
                     if (!unitTarget)
                     {
                         return;
                     }
 
-                    // Prevent stacking of mounts
                     unitTarget->RemoveAurasOfType(SPELL_AURA_MOUNTED);
 
-                    // Two separate mounts depending on area id (allows use both in and out of specific instance)
                     if (unitTarget->GetTerrain()->GetAreaId(unitTarget->Where().X(), unitTarget->Where().Y(), unitTarget->Where().Z()) == 3428)
                     {
                         unitTarget->CastSpell(unitTarget, 25863, false);
@@ -410,7 +390,7 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
 
                     return;
                 }
-                case 27687:                                 // Summon Bone Minions
+                case 27687:
                 {
                     if (!unitTarget)
                     {
@@ -423,7 +403,7 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                     unitTarget->CastSpell(unitTarget, 27693, true);
                     return;
                 }
-                case 27695:                                 // Summon Bone Mages
+                case 27695:
                 {
                     if (!unitTarget)
                     {
@@ -436,9 +416,9 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                     unitTarget->CastSpell(unitTarget, 27699, true);
                     return;
                 }
-                case 28352:                                 // Breath of Sargeras
+                case 28352:
                 {
-                    if (!unitTarget || !unitTarget->IsPlayer())
+                    if (!unitTarget || !IsPlayer(unitTarget))
                     {
                         return;
                     }
@@ -447,7 +427,7 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                     return;
                 }
 
-                case 28374:                                 // Decimate (Naxxramas: Gluth)
+                case 28374:
                 {
                     if (!unitTarget)
                     {
@@ -461,7 +441,7 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                     }
                     return;
                 }
-                case 28560:                                 // Summon Blizzard
+                case 28560:
                 {
                     if (!unitTarget)
                     {
@@ -478,7 +458,7 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
         {
             switch (m_spellInfo->ID)
             {
-                case  6201:                                 // Healthstone creating spells
+                case  6201:
                 case  6202:
                 case  5699:
                 case 11729:
@@ -508,25 +488,25 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
 
                     static uint32 const itypes[5][3] =
                     {
-                        { 5512, 19004, 19005},              // Minor Healthstone
-                        { 5511, 19006, 19007},              // Lesser Healthstone
-                        { 5509, 19008, 19009},              // Healthstone
-                        { 5510, 19010, 19011},              // Greater Healthstone
-                        { 9421, 19012, 19013}               // Major Healthstone
+                        { 5512, 19004, 19005},
+                        { 5511, 19006, 19007},
+                        { 5509, 19008, 19009},
+                        { 5510, 19010, 19011},
+                        { 9421, 19012, 19013}
                     };
 
                     switch (m_spellInfo->ID)
                     {
                         case  6201:
-                            itemtype = itypes[0][rank]; break; // Minor Healthstone
+                            itemtype = itypes[0][rank]; break;
                         case  6202:
-                            itemtype = itypes[1][rank]; break; // Lesser Healthstone
+                            itemtype = itypes[1][rank]; break;
                         case  5699:
-                            itemtype = itypes[2][rank]; break; // Healthstone
+                            itemtype = itypes[2][rank]; break;
                         case 11729:
-                            itemtype = itypes[3][rank]; break; // Greater Healthstone
+                            itemtype = itypes[3][rank]; break;
                         case 11730:
-                            itemtype = itypes[4][rank]; break; // Major Healthstone
+                            itemtype = itypes[4][rank]; break;
                         default:
                             return;
                     }
@@ -538,7 +518,7 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
         }
         case SPELLFAMILY_PALADIN:
         {
-            // Holy Light
+
             if (m_spellInfo->SpellIconID == 70)
             {
                 if (!unitTarget || !unitTarget->IsAlive())
@@ -546,10 +526,10 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                     return;
                 }
                 int32 heal = damage;
-                int32 spellid = m_spellInfo->ID;            // send main spell id as basepoints for not used effect
-                m_caster->CastCustomSpell(unitTarget, 19968, &heal, &spellid, nullptr, true, nullptr, nullptr, ObjectGuid(), m_spellInfo);
+                int32 spellid = m_spellInfo->ID;
+                m_caster->CastCustomSpell(unitTarget, 19968, &heal, &spellid, nullptr, true, nullptr, nullptr, 0, m_spellInfo);
             }
-            // Flash of Light
+
             else if (m_spellInfo->SpellIconID  == 242)
             {
                 if (!unitTarget || !unitTarget->IsAlive())
@@ -557,7 +537,7 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                     return;
                 }
                 int32 heal = damage;
-                int32 spellid = m_spellInfo->ID;            // send main spell id as basepoints for not used effect
+                int32 spellid = m_spellInfo->ID;
                 m_caster->CastCustomSpell(unitTarget, 19993, &heal, &spellid, nullptr, true);
             }
             else if (m_spellInfo->SpellIconID == 205)
@@ -569,13 +549,11 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
 
                 uint32 spellId2 = 0;
 
-                // all seals have aura dummy
                 const auto m_dummyAuras = m_caster->GetAurasByType(SPELL_AURA_DUMMY);
                 for (auto* auraOf : m_dummyAuras)
                 {
                     SpellEntry const* spellInfo = auraOf->GetSpellProto();
 
-                    // the judgement spell id is stored in whatever effect index the seal's dummy aura occupies
                     if (!spellInfo || !IsSealSpell(auraOf->GetSpellProto()))
                     {
                         continue;
@@ -597,7 +575,6 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
                         continue;
                     }
 
-                    // found, remove seal
                     m_caster->RemoveAuras(auraOf->GetId());
 
                     break;
@@ -611,15 +588,12 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
         }
     }
 
-    // normal DB scripted effect
     if (!unitTarget)
     {
         return;
     }
 
-    // Script based implementation. Must be used only for not good for implementation in core spell effects
-    // So called only for not processed cases
-    if (unitTarget->IsCreature() || unitTarget->IsPlayer())
+    if (IsCreature(unitTarget) ||IsPlayer(unitTarget))
     {
         if (sScriptMgr.OnEffectScriptEffect(m_caster, m_spellInfo->ID, eff_idx, unitTarget, m_originalCasterGUID))
         {
@@ -627,7 +601,6 @@ void Spell::EffectScriptEffect(const cast::Operation& operation)
         }
     }
 
-    // Previous effect might have started script
     if (!ScriptMgr::CanSpellEffectStartDBScript(m_spellInfo, eff_idx))
     {
         return;

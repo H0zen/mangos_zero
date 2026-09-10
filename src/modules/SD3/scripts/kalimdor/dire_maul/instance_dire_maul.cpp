@@ -73,8 +73,8 @@ struct is_dire_maul : public InstanceScript
                     m_bDoNorthBeforeWest = false;
                 }
 
-                DoToggleGameObjectFlags(GO_WEST_LIBRARY_DOOR, GO_FLAG_NO_INTERACT, m_bDoNorthBeforeWest);
-                DoToggleGameObjectFlags(GO_WEST_LIBRARY_DOOR, GO_FLAG_LOCKED, !m_bDoNorthBeforeWest);
+                DoToggleGameObjectFlagsByEntry(GO_WEST_LIBRARY_DOOR, GO_FLAG_NO_INTERACT, m_bDoNorthBeforeWest);
+                DoToggleGameObjectFlagsByEntry(GO_WEST_LIBRARY_DOOR, GO_FLAG_LOCKED, !m_bDoNorthBeforeWest);
             }
 
             void OnCreatureCreate(Creature* pCreature) override
@@ -240,11 +240,11 @@ struct is_dire_maul : public InstanceScript
                         {
                             if (!m_bWallDestroyed)
                             {
-                                DoUseDoorOrButton(GO_CRUMBLE_WALL);
+                                DoUseDoorOrButtonByEntry(GO_CRUMBLE_WALL);
                                 m_bWallDestroyed = true;
                             }
 
-                            DoUseDoorOrButton(GO_CORRUPT_VINE);
+                            DoUseDoorOrButtonByEntry(GO_CORRUPT_VINE);
 
                             if (!m_lFelvineShardGUIDs.empty())
                             {
@@ -256,7 +256,7 @@ struct is_dire_maul : public InstanceScript
                         }
                         else if (uiData == SPECIAL && !m_bWallDestroyed)
                         {
-                            DoUseDoorOrButton(GO_CRUMBLE_WALL);
+                            DoUseDoorOrButtonByEntry(GO_CRUMBLE_WALL);
                             m_bWallDestroyed = true;
                         }
                         m_auiEncounter[uiType] = uiData;
@@ -266,7 +266,7 @@ struct is_dire_maul : public InstanceScript
                     case TYPE_WARPWOOD:
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_WARPWOOD_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_WARPWOOD_DOOR);
                         }
                         m_auiEncounter[uiType] = uiData;
                         break;
@@ -557,7 +557,7 @@ struct is_dire_maul : public InstanceScript
             void ProcessForceFieldOpening()
             {
                 // 'Open' the force field
-                DoUseDoorOrButton(GO_FORCEFIELD);
+                DoUseDoorOrButtonByEntry(GO_FORCEFIELD);
 
                 // Let the summoners attack Immol'Thar
                 Creature* pImmolThar = GetSingleCreatureFromStorage(NPC_IMMOLTHAR);
@@ -656,7 +656,7 @@ struct is_dire_maul : public InstanceScript
             GuidList m_lFelvineShardGUIDs;
 
             // West
-            ObjectGuid m_aCrystalGeneratorGuid[MAX_GENERATORS];
+            ObjectGuid m_aCrystalGeneratorGuid[MAX_GENERATORS] = {};
 
             GuidList m_luiHighborneSummonerGUIDs;
             GuidList m_lGeneratorGuardGUIDs;

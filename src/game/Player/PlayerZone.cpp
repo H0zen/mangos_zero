@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Transports.h"
 #include "TransportMap.h"
@@ -74,9 +72,6 @@
 
 #define ZONE_UPDATE_INTERVAL (1*IN_MILLISECONDS)
 
-/**
- * @brief Updates outdoor-only effects and exploration discovery for the current position.
- */
 void Player::CheckAreaExploreAndOutdoor()
 {
     if (!IsAlive())
@@ -89,9 +84,6 @@ void Player::CheckAreaExploreAndOutdoor()
         return;
     }
 
-    // A hull has no area table -- the client never shipped one -- so a step taken on deck
-    // asks the map the ship SAILS, at her own pose, and the whole deck changes zone at once
-    // as she crosses. Which is how it reads in game.
     uint32 anchorMap;
     float anchorX, anchorY, anchorZ;
     GetWorldAnchor(anchorMap, anchorX, anchorY, anchorZ);
@@ -106,11 +98,11 @@ void Player::CheckAreaExploreAndOutdoor()
             AreaTriggerEntry const* at = sAreaTriggerStore.LookupEntry(Resting().InnTrigger());
             if (!at || !IsPointInAreaTriggerZone(at, GetMapId(), Where().X(), Where().Y(), Where().Z()))
             {
-                // Player left inn (REST_TYPE_IN_CITY overrides REST_TYPE_IN_TAVERN, so just clear rest)
+
                 Resting().Kind(REST_TYPE_NO);
             }
         }
-        // Check if we need to reaply outdoor only passive spells
+
         const PlayerSpellMap& sp_list = GetSpellMap();
         for (PlayerSpellMap::const_iterator itr = sp_list.begin(); itr != sp_list.end(); ++itr)
         {
@@ -207,19 +199,12 @@ void Player::CheckAreaExploreAndOutdoor()
     }
 }
 
-/**
- * @brief Updates area-specific player state and auras.
- *
- * @param newArea The new area identifier.
- */
 void Player::UpdateArea(uint32 newArea)
 {
     m_areaUpdateId    = newArea;
 
     AreaTableEntry const* area = GetAreaEntryByAreaID(newArea);
 
-    // FFA_PVP flags are area and not zone id dependent
-    // so apply them accordingly
     if (area && (area->Flags & AREA_FLAG_ARENA))
     {
         if (!isGameMaster())
@@ -229,8 +214,7 @@ void Player::UpdateArea(uint32 newArea)
     }
     else
     {
-        // remove ffa flag only if not ffapvp realm
-        // removal in sanctuaries and capitals is handled in zone update
+
         if (IsFFAPvP() && !sWorld.IsFFAPvPRealm())
         {
             SetFFAPvP(false);
@@ -240,35 +224,24 @@ void Player::UpdateArea(uint32 newArea)
     UpdateAreaDependentAuras();
 }
 
-/**
- * @brief Updates zone and area state after the player changes location.
- *
- * @param newZone The new zone identifier.
- * @param newArea The new area identifier.
- * @param sendInitialWorldStates False when the entry hook already emitted the
- *        packet before the initial object batch; all other zone side effects
- *        still run.
- */
 void Player::UpdateZone(uint32 newZone, uint32 newArea, bool sendInitialWorldStates)
 {
-    /* If we're trying to update into a zone that doesn't exist, just return */
+
     AreaTableEntry const* zone = GetAreaEntryByAreaID(newZone);
     if (!zone)
     {
         return;
     }
 
-    /* If we're moving into a different zone */
     if (m_zoneUpdateId != newZone)
     {
-        // handle outdoor pvp zones
+
         sOutdoorPvPMgr.HandlePlayerLeaveZone(this, m_zoneUpdateId);
         sOutdoorPvPMgr.HandlePlayerEnterZone(this, newZone);
 
-
         if (sendInitialWorldStates)
         {
-            SendInitWorldStates(newZone);                   // only if really enters to new zone, not just area change, works strange...
+            SendInitWorldStates(newZone);
         }
 
         if (sWorld.getConfig(CONFIG_BOOL_WEATHER))
@@ -278,15 +251,11 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea, bool sendInitialWorldSta
         }
     }
 
-
     m_zoneUpdateId    = newZone;
     m_zoneUpdateTimer = ZONE_UPDATE_INTERVAL;
 
-    // zone changed, so area changed as well, update it
     UpdateArea(newArea);
 
-    // in PvP, any not controlled zone (except zone->team == 6, default case)
-    // in PvE, only opposition team capital
     switch (zone->FactionGroupMask)
     {
         case AREATEAM_ALLY:
@@ -296,55 +265,49 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea, bool sendInitialWorldSta
             pvpInfo.inHostileArea = GetTeam() != HORDE && (sWorld.IsPvPRealm() || zone->Flags & AREA_FLAG_CAPITAL);
             break;
         case AREATEAM_NONE:
-            // overwrite for battlegrounds, maybe batter some zone flags but current known not 100% fit to this
+
             pvpInfo.inHostileArea = sWorld.IsPvPRealm() || Battle().InOne();
             break;
-        default:                                            // 6 in fact
+        default:
             pvpInfo.inHostileArea = false;
             break;
     }
 
-    if (pvpInfo.inHostileArea)                              // in hostile area
+    if (pvpInfo.inHostileArea)
     {
         if (!IsPvP() || pvpInfo.endTimer != 0)
         {
             UpdatePvP(true, true);
         }
     }
-    else                                                    // in friendly area
+    else
     {
         if (IsPvP() && !HasPlayerFlag(PLAYER_FLAGS_IN_PVP) && pvpInfo.endTimer == 0)
         {
-            pvpInfo.endTimer = time(0); // start toggle-off
+            pvpInfo.endTimer = time(0);
         }
     }
 
-    if (zone->Flags & AREA_FLAG_CAPITAL)                    // in capital city
+    if (zone->Flags & AREA_FLAG_CAPITAL)
     {
         Resting().Kind(REST_TYPE_IN_CITY);
     }
     else if (HasPlayerFlag(PLAYER_FLAGS_RESTING) && Resting().Kind() != REST_TYPE_IN_TAVERN)
     {
-        // resting and not in tavern (leave city then); tavern leave handled in CheckAreaExploreAndOutdoor
+
         Resting().Kind(REST_TYPE_NO);
     }
 
-    // remove items with area/map limitations (delete only for alive player to allow back in ghost mode)
-    // if player resurrected at teleport this will be applied in resurrect code
     if (IsAlive())
     {
         DestroyZoneLimitedItem(true, newZone);
     }
 
-    // recent client version not send leave/join channel packets for built-in local channels
-    // When flying in a taxi we don't change channels in zero, for a proof video see:
-    // youtu.be/iUFpZeNGPSs?t=32m where it doesn't change the channel until he lands
     if (!IsTaxiFlying())
     {
         UpdateLocalChannels(newZone);
     }
 
-    // group update
     if (GetGroup())
     {
         SetGroupUpdateFlag(GROUP_UPDATE_FLAG_ZONE);
@@ -353,32 +316,27 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea, bool sendInitialWorldSta
     UpdateZoneDependentAuras();
 }
 
-/**
- * @brief Updates the invalid-instance homebind timer and teleports when it expires.
- *
- * @param time The elapsed update time in milliseconds.
- */
 void Player::UpdateHomebindTime(uint32 time)
 {
-    // GMs never get homebind timer online
+
     if (Binds().StillWelcome() || isGameMaster())
     {
-        if (Home().Countdown())                                // instance valid, but timer not reset
+        if (Home().Countdown())
         {
-            // hide reminder
+
             WorldPacket data(SMSG_RAID_GROUP_ONLY, 4 + 4);
             data << uint32(0);
-            data << uint32(ERR_RAID_GROUP_REQUIRED);        // error used only when timer = 0
+            data << uint32(ERR_RAID_GROUP_REQUIRED);
             GetSession()->SendPacket(&data);
         }
-        // instance is valid, reset homebind timer
+
         Home().Countdown(0);
     }
     else if (Home().Countdown() > 0)
     {
         if (time >= Home().Countdown())
         {
-            // teleport to homebind location
+
             TeleportTo(Home().MapId(), Home().X(), Home().Y(), Home().Z(), Where().Facing());
         }
         else
@@ -388,23 +346,20 @@ void Player::UpdateHomebindTime(uint32 time)
     }
     else
     {
-        // instance is invalid, start homebind timer
+
         Home().Countdown(60000);
-        // send message to player
+
         WorldPacket data(SMSG_RAID_GROUP_ONLY, 4 + 4);
         data << uint32(Home().Countdown());
-        data << uint32(ERR_RAID_GROUP_REQUIRED);        // error used only when timer = 0
+        data << uint32(ERR_RAID_GROUP_REQUIRED);
         GetSession()->SendPacket(&data);
         DEBUG_LOG("PLAYER: Player '%s' (GUID: %u) will be teleported to homebind in 60 seconds", GetName(), GetGUIDLow());
     }
 }
 
-/**
- * @brief Applies or removes auras that depend on the player's current zone.
- */
 void Player::UpdateZoneDependentAuras()
 {
-    // Some spells applied at enter into zone (with subzones), aura removed in UpdateAreaDependentAuras that called always at zone->area update
+
     SpellAreaForAreaMapBounds saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(m_zoneUpdateId);
     for (SpellAreaForAreaMap::const_iterator itr = saBounds.first; itr != saBounds.second; ++itr)
     {
@@ -412,13 +367,9 @@ void Player::UpdateZoneDependentAuras()
     }
 }
 
-/**
- * @brief Applies or removes auras that depend on the player's current subzone.
- */
 void Player::UpdateAreaDependentAuras()
 {
-    // remove auras from spells with area limitations
-    // use m_zoneUpdateId for speed: UpdateArea called from UpdateZone or instead UpdateZone in both cases m_zoneUpdateId up-to-date
+
     m_auras.RemoveWhere(
         [this](SpellAuraHolder* holder)
         {
@@ -427,7 +378,6 @@ void Player::UpdateAreaDependentAuras()
         },
         [this](SpellAuraHolder* holder) { RemoveHolder(holder); });
 
-    // some auras applied at subzone enter
     SpellAreaForAreaMapBounds saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(m_areaUpdateId);
     for (SpellAreaForAreaMap::const_iterator itr = saBounds.first; itr != saBounds.second; ++itr)
     {

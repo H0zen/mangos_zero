@@ -23,12 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-// Every side and every centre named here is one that a cast actually asks for.
-// The old set carried three more -- a circle drawn around the victim, and the
-// two sides that read "everyone but his own" and "everyone but his enemies" --
-// which no call site ever passed. They are gone rather than kept against a use
-// nobody has.
-
 #pragma once
 
 #include "Creature/Creature.h"
@@ -41,46 +35,33 @@
 
 namespace cast
 {
-    /// Which side of the caster an area is allowed to catch.
+
     enum class Side : uint8
     {
-        Hostile,        ///< only those he is at war with
-        Friendly,       ///< only his own side
-        HostileForArea, ///< as Hostile, except a player's area spares his own side and passes over totems
+        Hostile,
+        Friendly,
+        HostileForArea,
         Anyone
     };
 
-    /// What an area is drawn around.
-    ///
-    /// A circle drawn around the caster is not the same as a circle drawn around
-    /// a spot: the first counts both bounding radii, so a large creature is
-    /// caught by an edge that would miss a point standing where it stands.
     enum class Around : uint8
     {
-        CasterInFront,      ///< the wide cone a cleave opens, 120 degrees
+        CasterInFront,
         CasterInFront90,
         CasterInFront15,
-        CasterBehind,       ///< the same width, opening the other way
+        CasterBehind,
         Caster,
         Spot
     };
 
-    /// Where a spell's area sits and how far it goes.
     struct Reach
     {
         Around where = Around::Spot;
         float radius = 0.0f;
-        Occupant* from = nullptr;   ///< the caster the cones open from and the circle is drawn around
-        Geometry::Vector3 at;       ///< the spot a Spot circle is drawn around
+        Occupant* from = nullptr;
+        Geometry::Vector3 at;
     };
 
-    /**
-     * @brief Everyone an area catches.
-     *
-     * Walks the grid cells the area covers and keeps whoever stands inside it on
-     * the right side of the caster. It is handed the centre already worked out,
-     * so it knows nothing about the cast that opened it.
-     */
     class Catchment
     {
         public:
@@ -125,7 +106,6 @@ namespace cast
                     return false;
                 }
 
-                // mostly a phase check
                 if (!who.Where().ShareFrame(m_origin->Where()))
                 {
                     return false;
@@ -138,7 +118,7 @@ namespace cast
                     case Side::Friendly:
                         return IsFriendly(*m_origin, who);
                     case Side::HostileForArea:
-                        if (who.IsCreature() && static_cast<Creature&>(who).IsTotem())
+                        if (IsCreature(&who) && static_cast<Creature&>(who).IsTotem())
                         {
                             return false;
                         }
@@ -157,7 +137,6 @@ namespace cast
                     return who.Where().WithinDist(m_reach.at, m_reach.radius);
                 }
 
-                // every other centre is a thing, and a cast can be left without one
                 if (m_reach.from == nullptr)
                 {
                     return false;
@@ -191,7 +170,6 @@ namespace cast
             bool m_originIsPlayerLed;
     };
 
-    // Only creatures and players stand on a side and can be caught.
     template<> inline void Catchment::Visit(CorpseMapType&) {}
     template<> inline void Catchment::Visit(GameObjectMapType&) {}
     template<> inline void Catchment::Visit(DynamicObjectMapType&) {}

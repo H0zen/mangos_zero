@@ -39,9 +39,6 @@
 namespace AIRegistry
 {
 
-    /**
-     * @brief Registers built-in creature AI and movement generator factories.
-     */
     void Initialize()
     {
         (new CreatureAIFactory<NullCreatureAI>("NullAI"))->RegisterSelf();

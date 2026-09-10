@@ -23,22 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file QueryHandler.cpp
- * @brief Query opcode handlers for game data lookups
- *
- * This file handles query opcodes for requesting game data:
- * - CMSG_NAME_QUERY: Query character name by GUID
- * - CMSG_ITEM_QUERY: Query item info
- * - CMSG_GAMEOBJECT_QUERY: Query gameobject info
- * - CMSG_CREATURE_QUERY: Query creature info
- * - CMSG_PAGE_TEXT_QUERY: Query page text
- * - CMSG_QUERY_TIME: Query server time
- *
- * Query responses include name, display ID, and other metadata
- * for the requested object type.
- */
-
 #include "Platform/Define.h"
 #include <string>
 #include <vector>
@@ -59,11 +43,6 @@
 #include "SQLStorages.h"
 #include "Corpse.h"
 
-/**
- * @brief Sends an in-memory name query response for a player.
- *
- * @param p The player being queried.
- */
 void WorldSession::SendNameQueryOpcode(Player* p)
 {
     if (!p)
@@ -71,11 +50,10 @@ void WorldSession::SendNameQueryOpcode(Player* p)
         return;
     }
 
-    // guess size
-    WorldPacket data(SMSG_NAME_QUERY_RESPONSE, (8 + 25 + 1 + 4 + 4 + 4));   // guess size
-    data << p->GetObjectGuid();                             // player guid
-    data << p->GetName();                                   // CString(48): played name
-    data << uint8(0);                                       // CString(256): realm name for cross realm BG usage
+    WorldPacket data(SMSG_NAME_QUERY_RESPONSE, (8 + 25 + 1 + 4 + 4 + 4));
+    data << p->GetObjectGuid();
+    data << p->GetName();
+    data << uint8(0);
     data << uint32(p->getRace());
     data << uint32(p->getGender());
     data << uint32(p->getClass());
@@ -83,11 +61,6 @@ void WorldSession::SendNameQueryOpcode(Player* p)
     SendPacket(&data);
 }
 
-/**
- * @brief Starts an asynchronous database lookup for a player name query.
- *
- * @param guid The queried player guid.
- */
 void WorldSession::SendNameQueryOpcodeFromDB(ObjectGuid guid)
 {
     uint32 accountId = GetAccountId();
@@ -95,18 +68,12 @@ void WorldSession::SendNameQueryOpcodeFromDB(ObjectGuid guid)
                                   {
                                       WorldSession::SendNameQueryOpcodeFromDBCallBack(result, accountId);
                                   },
-        //          0     1     2     3       4
+
             "SELECT guid, name, race, gender, class "
             "FROM characters WHERE guid = '%u'",
-        guid.GetCounter());
+        GuidCounter(guid));
 }
 
-/**
- * @brief Completes an asynchronous player name query from the database.
- *
- * @param result The database result.
- * @param accountId The requesting account id.
- */
 void WorldSession::SendNameQueryOpcodeFromDBCallBack(QueryResult* result, uint32 accountId)
 {
     if (!result)
@@ -132,27 +99,21 @@ void WorldSession::SendNameQueryOpcodeFromDBCallBack(QueryResult* result, uint32
         pClass       = fields[4].GetUInt8();
     }
 
-    // guess size
     WorldPacket data(SMSG_NAME_QUERY_RESPONSE, (8 + (name.size()+1) + 1 + 4 + 4 + 4));
-    data << ObjectGuid(HIGHGUID_PLAYER, lowguid);
+    data << MakeGuid(HIGHGUID_PLAYER, lowguid);
     data << name;
-    data << uint8(0);                                       // realm name for cross realm BG usage
-    data << uint32(pRace);                                  // race
-    data << uint32(pGender);                                // gender
-    data << uint32(pClass);                                 // class
+    data << uint8(0);
+    data << uint32(pRace);
+    data << uint32(pGender);
+    data << uint32(pClass);
 
     session->SendPacket(&data);
     delete result;
 }
 
-/**
- * @brief Handles a client request to query another player's name.
- *
- * @param recv_data The incoming name query packet.
- */
 void queries::NameQuery(WorldSession& session, WorldPacket& recv_data)
 {
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
 
     recv_data >> guid;
 
@@ -168,29 +129,20 @@ void queries::NameQuery(WorldSession& session, WorldPacket& recv_data)
     }
 }
 
-/**
- * @brief Handles a client request for the current server time.
- *
- * @param recv_data The unused incoming packet.
- */
-void queries::QueryTime(WorldSession& session, WorldPacket& /*recv_data*/)
+void queries::QueryTime(WorldSession& session, WorldPacket& )
 {
     session.SendQueryTimeResponse();
 }
 
-/// Only _static_ data send in this packet !!!
 void queries::CreatureQuery(WorldSession& session, WorldPacket& recv_data)
 {
     uint32 entry;
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
 
     recv_data >> entry;
     recv_data >> guid;
 
     Creature* unit = session.GetPlayer()->GetMap()->GetAnyTypeCreature(guid);
-
-    // if (unit == nullptr)
-    //    sLog.outDebug( "WORLD: HandleCreatureQueryOpcode - (%u) NO SUCH UNIT! (GUID: %u, ENTRY: %u)", uint32(GUID_LOPART(guid)), guid, entry );
 
     CreatureInfo const* ci = ObjectMgr::GetCreatureTemplate(entry);
     if (ci)
@@ -203,28 +155,21 @@ void queries::CreatureQuery(WorldSession& session, WorldPacket& recv_data)
 
         DETAIL_LOG("WORLD: CMSG_CREATURE_QUERY '%s' - Entry: %u.", ci->Name, entry);
 
-        // THIS PACKET IS THE RECORD. What goes out here is what the client keeps
-        // about the kind, and CreatureRecord is that same thing read off the
-        // template, so the order below and its field list are one definition.
         CreatureRecord const record(*ci);
 
-        // guess size
         WorldPacket data(SMSG_CREATURE_QUERY_RESPONSE, 100);
-        data << uint32(entry);                              // creature entry
+        data << uint32(entry);
         data << name;
-        data << uint8(0) << uint8(0) << uint8(0);           // name2, name3, name4, always empty
+        data << uint8(0) << uint8(0) << uint8(0);
         data << subName;
         data << uint32(record.Flags());
-        // A pet is told to have no kind at all: what the client shows for one it
-        // takes from the family instead.
-        data << uint32(unit && unit->IsPet() ? 0 : record.Kind());
-        data << uint32(record.Family());                    // CreatureFamily.dbc
-        data << uint32(record.Rank());                      // normal, elite, rare elite, world boss, rare
-        data << uint32(0);                                  // sent and never read
-        data << uint32(record.PetSpells());                 // CreatureSpellData.dbc
 
-        // The one field that is about this creature rather than its kind, which
-        // is why it is taken from the creature when there is one to ask.
+        data << uint32(unit && unit->IsPet() ? 0 : record.Kind());
+        data << uint32(record.Family());
+        data << uint32(record.Rank());
+        data << uint32(0);
+        data << uint32(record.PetSpells());
+
         data << uint32(unit ? unit->GetUInt32Value(UNIT_FIELD_DISPLAYID)
                             : Creature::ChooseDisplayId(ci));
 
@@ -236,7 +181,7 @@ void queries::CreatureQuery(WorldSession& session, WorldPacket& recv_data)
     else
     {
         DEBUG_LOG("WORLD: CMSG_CREATURE_QUERY - Guid: %s Entry: %u NO CREATURE INFO!",
-            guid.GetString().c_str(), entry);
+            GuidString(guid).c_str(), entry);
         WorldPacket data(SMSG_CREATURE_QUERY_RESPONSE, 4);
         data << uint32(entry | 0x80000000);
         session.SendPacket(&data);
@@ -244,12 +189,11 @@ void queries::CreatureQuery(WorldSession& session, WorldPacket& recv_data)
     }
 }
 
-/// Only _static_ data send in this packet !!!
 void queries::GameObjectQuery(WorldSession& session, WorldPacket& recv_data)
 {
     uint32 entryID;
     recv_data >> entryID;
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
     recv_data >> guid;
 
     const GameObjectInfo* info = ObjectMgr::GetGameObjectInfo(entryID);
@@ -275,17 +219,17 @@ void queries::GameObjectQuery(WorldSession& session, WorldPacket& recv_data)
         data << uint32(info->type);
         data << uint32(info->displayId);
         data << Name;
-        data << uint8(0) << uint8(0) << uint8(0);   // name2, name3, name4
-        data << uint8(0);                           // one more name, client handles it a bit differently
-        data.append(info->raw.data, 24);            // these are read as int32
-        // data << float(info->size);               // [-ZERO] go size: not in Zero
+        data << uint8(0) << uint8(0) << uint8(0);
+        data << uint8(0);
+        data.append(info->raw.data, 24);
+
         session.SendPacket(&data);
         DEBUG_LOG("WORLD: Sent SMSG_GAMEOBJECT_QUERY_RESPONSE");
     }
     else
     {
         DEBUG_LOG("WORLD: CMSG_GAMEOBJECT_QUERY - Guid: %s Entry: %u Missing gameobject info!",
-            guid.GetString().c_str(), entryID);
+            GuidString(guid).c_str(), entryID);
         WorldPacket data(SMSG_GAMEOBJECT_QUERY_RESPONSE, 4);
         data << uint32(entryID | 0x80000000);
         session.SendPacket(&data);
@@ -293,12 +237,7 @@ void queries::GameObjectQuery(WorldSession& session, WorldPacket& recv_data)
     }
 }
 
-/**
- * @brief Handles a corpse query and returns corpse or graveyard location data.
- *
- * @param recv_data The unused incoming packet.
- */
-void queries::CorpseQuery(Player& who, WorldPacket& /*recv_data*/)
+void queries::CorpseQuery(Player& who, WorldPacket& )
 {
     DETAIL_LOG("WORLD: Received opcode MSG_CORPSE_QUERY");
 
@@ -307,7 +246,7 @@ void queries::CorpseQuery(Player& who, WorldPacket& /*recv_data*/)
     if (!corpse)
     {
         WorldPacket data(MSG_CORPSE_QUERY, 1);
-        data << uint8(0);                                   // corpse not found
+        data << uint8(0);
         who.GetSession()->SendPacket(&data);
         return;
     }
@@ -318,15 +257,14 @@ void queries::CorpseQuery(Player& who, WorldPacket& /*recv_data*/)
     float z = corpse->Where().Z();
     int32 mapid = corpsemapid;
 
-    // if corpse at different map
     if (corpsemapid != who.GetMapId())
     {
-        // search entrance map for proper show entrance
+
         if (InstanceTemplate const* corpseMapEntry = sObjectMgr.GetInstanceTemplate(mapid))
         {
             if (corpseMapEntry->ghostEntranceMap >= 0)
             {
-                // if corpse map have entrance
+
                 if (TerrainInfo const* entranceMap = sTerrainMgr.LoadTerrain(corpseMapEntry->ghostEntranceMap))
                 {
                     mapid = corpseMapEntry->ghostEntranceMap;
@@ -340,7 +278,7 @@ void queries::CorpseQuery(Player& who, WorldPacket& /*recv_data*/)
     }
 
     WorldPacket data(MSG_CORPSE_QUERY, 1 + (5 * 4));
-    data << uint8(1);                                       // corpse found
+    data << uint8(1);
     data << int32(mapid);
     data << float(x);
     data << float(y);
@@ -349,15 +287,10 @@ void queries::CorpseQuery(Player& who, WorldPacket& /*recv_data*/)
     who.GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Handles an NPC text query and sends localized gossip text options.
- *
- * @param recv_data The incoming NPC text query packet.
- */
 void queries::NpcTextQuery(WorldSession& session, WorldPacket& recv_data)
 {
     uint32 textID;
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
 
     recv_data >> textID;
     recv_data >> guid;
@@ -368,7 +301,7 @@ void queries::NpcTextQuery(WorldSession& session, WorldPacket& recv_data)
 
     GossipText const* pGossip = sObjectMgr.GetGossipText(textID);
 
-    WorldPacket data(SMSG_NPC_TEXT_UPDATE, 100);            // guess size
+    WorldPacket data(SMSG_NPC_TEXT_UPDATE, 100);
     data << textID;
 
     if (!pGossip)
@@ -437,23 +370,18 @@ void queries::NpcTextQuery(WorldSession& session, WorldPacket& recv_data)
     DEBUG_LOG("WORLD: Sent SMSG_NPC_TEXT_UPDATE");
 }
 
-/**
- * @brief Handles an item page text query and sends all linked pages.
- *
- * @param recv_data The incoming page text query packet.
- */
 void queries::PageTextQuery(WorldSession& session, WorldPacket& recv_data)
 {
     DETAIL_LOG("WORLD: Received opcode CMSG_PAGE_TEXT_QUERY");
 
     uint32 pageID;
     recv_data >> pageID;
-    recv_data.read_skip<uint64>();                          // guid
+    recv_data.read_skip<uint64>();
 
     while (pageID)
     {
         PageText const* pPage = sPageTextStore.LookupEntry<PageText>(pageID);
-        // guess size
+
         WorldPacket data(SMSG_PAGE_TEXT_QUERY_RESPONSE, 50);
         data << pageID;
 
@@ -490,9 +418,6 @@ void queries::PageTextQuery(WorldSession& session, WorldPacket& recv_data)
     }
 }
 
-/**
- * @brief Sends the current server time to the client.
- */
 void WorldSession::SendQueryTimeResponse()
 {
     WorldPacket data(SMSG_QUERY_TIME_RESPONSE, 4);

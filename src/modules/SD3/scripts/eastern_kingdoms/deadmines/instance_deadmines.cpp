@@ -61,7 +61,7 @@ struct is_deadmines : public InstanceScript
                 if (pPlayer->GetQuestStatus(QUEST_FORTUNE_AWAITS) == QUEST_STATUS_COMPLETE &&
                     !pPlayer->GetQuestRewardStatus(QUEST_FORTUNE_AWAITS))
                 {
-                    DoRespawnGameObject(GO_MYSTERIOUS_CHEST, HOUR);
+                    DoRespawnGameObjectByEntry(GO_MYSTERIOUS_CHEST, HOUR);
                 }
             }
 
@@ -140,19 +140,19 @@ struct is_deadmines : public InstanceScript
                     case TYPE_RHAHKZOR:
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_FACTORY_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_FACTORY_DOOR);
                         }
                         break;
                     case TYPE_SNEED:
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_MAST_ROOM_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_MAST_ROOM_DOOR);
                         }
                         break;
                     case TYPE_GILNID:
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_FOUNDRY_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_FOUNDRY_DOOR);
                         }
                         break;
                     case TYPE_IRON_CLAD_DOOR:
@@ -224,7 +224,7 @@ struct is_deadmines : public InstanceScript
                         switch (m_uiDoorStep)
                         {
                             case 0:
-                                DoUseDoorOrButton(GO_IRON_CLAD_DOOR, 0, true);
+                                DoUseDoorOrButtonByEntry(GO_IRON_CLAD_DOOR, 0, true);
 
                                 if (Creature* pMrSmite = GetSingleCreatureFromStorage(NPC_MR_SMITE))
                                 {

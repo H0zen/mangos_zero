@@ -23,16 +23,16 @@
 #include <limits>
 
 Mint::Mint()
-    : m_players("player guid", ObjectGuid::GetMaxCounter(HIGHGUID_PLAYER)),
-      m_items("item guid", ObjectGuid::GetMaxCounter(HIGHGUID_ITEM)),
-      m_corpses("corpse guid", ObjectGuid::GetMaxCounter(HIGHGUID_CORPSE)),
+    : m_players("player guid", GuidMaxCounter(HIGHGUID_PLAYER)),
+      m_items("item guid", GuidMaxCounter(HIGHGUID_ITEM)),
+      m_corpses("corpse guid", GuidMaxCounter(HIGHGUID_CORPSE)),
       m_auctions("auction id", std::numeric_limits<uint32>::max()),
       m_guilds("guild id", std::numeric_limits<uint32>::max()),
       m_groups("group id", std::numeric_limits<uint32>::max()),
       m_mails("mail id", std::numeric_limits<uint32>::max()),
       m_pets("pet number", std::numeric_limits<uint32>::max()),
-      m_staticCreatures("creature guid", ObjectGuid::GetMaxCounter(HIGHGUID_UNIT)),
-      m_staticGameObjects("gameobject guid", ObjectGuid::GetMaxCounter(HIGHGUID_GAMEOBJECT))
+      m_staticCreatures("creature guid", GuidMaxCounter(HIGHGUID_UNIT)),
+      m_staticGameObjects("gameobject guid", GuidMaxCounter(HIGHGUID_GAMEOBJECT))
 {
 }
 
@@ -42,10 +42,7 @@ uint32 Mint::Counter::Next()
 
     if (given >= m_ceiling - 1)
     {
-        // A spent range must never wrap. For players the value one below the
-        // ceiling is the reserved auction-house system owner, and handing it out
-        // would brand a real character with the forged owner's guid before the
-        // shutdown takes effect -- so nothing is handed out at all.
+
         sLog.outError("%s overflow!! Can't continue, shutting down server. ", m_name);
         World::StopNow(ERROR_EXIT_CODE);
         return 0;

@@ -23,21 +23,10 @@
 
 class DungeonPersistentState;
 
-/**
- * A hold on one copy of a dungeon: which copy, and whether it lasts.
- *
- * A temporary hold is taken on stepping inside and goes when the copy resets.
- * A permanent one is taken when a boss falls in a raid, or on entering a copy
- * the leader is already permanently held to, and goes only when it is given up.
- *
- * A character and a group hold a dungeon the same way. Who holds it decides
- * which table the hold is written to and which roll the copy keeps him on.
- */
 struct DungeonHold
 {
     DungeonPersistentState* state = nullptr;
     bool permanent = false;
 };
 
-/// The holds someone has, one to a map.
-typedef std::unordered_map<uint32 /*mapId*/, DungeonHold> DungeonHolds;
+typedef std::unordered_map<uint32 , DungeonHold> DungeonHolds;

@@ -210,7 +210,7 @@ struct is_blackfathom_deeps : public InstanceScript
                         }
                         else if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_PORTAL_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_PORTAL_DOOR);
                         }
                         break;
                     case TYPE_STONE:

@@ -32,22 +32,6 @@ class Creature;
 class GameObject;
 class Occupant;
 
-/**
- * Putting a new thing on a map.
- *
- * The summoner is an input in three roles -- it names the owner, it supplies
- * the map, and it is the anchor when no position is given -- and a creature is
- * what comes out. Two of the steps depend on what kind of thing is summoning:
- * a player lends its team, and a creature's AI is told what it made.
- *
- * @param summoner  Who is summoning, and where from.
- * @param id        Creature template, or gameobject entry.
- * @param x,y,z,ang Where. All zero means "in front of the summoner".
- * @param spwtype   When the summon despawns.
- * @param despwtime Despawn delay, in milliseconds.
- * @param asActiveObject Keep the summon updating with no players nearby.
- * @param setRun    Move at a run rather than a walk.
- */
 Creature* SummonCreature(Occupant& summoner, uint32 id, float x, float y, float z, float ang,
                          TempSpawnType spwtype, uint32 despwtime,
                          bool asActiveObject = false, bool setRun = false);

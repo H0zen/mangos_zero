@@ -117,7 +117,7 @@ struct boss_garr : public CreatureScript
             {
                 if (Creature* spawn = SummonCreature(*m_creature, NPC_FIRESWORN, m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z(), m_creature->Where().Facing(), TEMPSPAWN_CORPSE_DESPAWN, true))
                 {
-                    spawn->SetOwnerGuid(ObjectGuid());  // trying to prevent despawn of the summon at Garr death
+                    spawn->SetOwnerGuid(0);  // trying to prevent despawn of the summon at Garr death
                 }
                 m_uiExplodeAddTimer = 25 * IN_MILLISECONDS;
             }

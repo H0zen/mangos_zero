@@ -213,7 +213,7 @@ struct is_molten_core : public InstanceScript
                     case TYPE_MAJORDOMO:
                         if (uiData == DONE)
                         {
-                            DoRespawnGameObject(GO_CACHE_OF_THE_FIRE_LORD, HOUR);
+                            DoRespawnGameObjectByEntry(GO_CACHE_OF_THE_FIRE_LORD, HOUR);
                         }
                         // no break here!
                     case TYPE_LUCIFRON:
@@ -308,7 +308,7 @@ struct is_molten_core : public InstanceScript
                             {
                                 if (firesworn->IsAlive() && InReach(*firesworn, *garr, 20.0f, false))
                                 {
-                                    return guid.GetRawValue();
+                                    return guid;
                                 }
                             }
                         }

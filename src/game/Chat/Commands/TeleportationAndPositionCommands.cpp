@@ -23,17 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file TeleportationAndPositionCommands.cpp
- * @brief Implementation of player teleportation and position chat commands.
- *
- * This file contains chat command handlers for movement operations including:
- * - Player teleportation
- * - Waypoint editing
- * - Coordinate-based movement
- * - Location saving and loading
- */
-
 #include "CharacterRows.h"
 #include <cmath>
 #include <string>
@@ -48,17 +37,10 @@
 
 #ifdef _DEBUG_VMAPS
 #endif
-/**
- All commands related to Teleportation
- */
-
-/**
- Utilities methods an enums
- */
 
 enum CreatureLinkType
 {
-    CREATURE_LINK_RAW = -1,                   // non-link case
+    CREATURE_LINK_RAW = -1,
     CREATURE_LINK_GUID = 0,
     CREATURE_LINK_ENTRY = 1,
 };
@@ -72,7 +54,7 @@ static char const* const creatureKeys[] =
 
 enum GameobjectLinkType
 {
-    GAMEOBJECT_LINK_RAW = -1,                   // non-link case
+    GAMEOBJECT_LINK_RAW = -1,
     GAMEOBJECT_LINK_GUID = 0,
     GAMEOBJECT_LINK_ENTRY = 1,
 };
@@ -91,19 +73,9 @@ static char const* const areatriggerKeys[] =
     nullptr
 };
 
-/**
- * @brief Handler for HandleGoHelper command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGoHelper(Player* player, uint32 mapid, float x, float y, float const zPtr, float const ortPtr)
 {
-    // A DECK IS TAKEN VERBATIM. The sentinels below read a non-positive z or orientation as
-    // "not given" and substitute the player's own -- which holds for world coordinates and
-    // fails on a hull, whose model space is centred on itself: half of every deck is at
-    // negative z, and a facing of exactly 0 is an ordinary heading. Guessing either would
-    // land the destination somewhere else on the ship.
+
     const bool aboard = Transport::IsVesselMapId(mapid);
 
     float z;
@@ -118,7 +90,6 @@ bool ChatHandler::HandleGoHelper(Player* player, uint32 mapid, float x, float y,
             ort = ortPtr;
         }
 
-        // check full provided coordinates
         if (!MapCoords::Valid(mapid, x, y, z, ort))
         {
             PSendSysMessage(LANG_INVALID_TARGET_COORD, x, y, mapid);
@@ -128,7 +99,7 @@ bool ChatHandler::HandleGoHelper(Player* player, uint32 mapid, float x, float y,
     }
     else if (!aboard)
     {
-        // we need check x,y before ask Z or can crash at invalide coordinates
+
         if (!MapCoords::Valid(mapid, x, y))
         {
             PSendSysMessage(LANG_INVALID_TARGET_COORD, x, y, mapid);
@@ -136,25 +107,19 @@ bool ChatHandler::HandleGoHelper(Player* player, uint32 mapid, float x, float y,
             return false;
         }
 
-        // COmmented since it can be a problem when exploring zones !
-        //TerrainInfo const* map = sTerrainMgr.LoadTerrain(mapid);
-        //z = map->GetWaterOrGroundLevel(x, y, MAX_HEIGHT);
     }
 
-    // stop flight if need
     if (player->IsTaxiFlying())
     {
         player->GetMotionMaster()->MovementExpired();
         player->m_taxi.ClearTaxiDestinations();
     }
-    // save only in non-flight case
+
     else
     {
         player->SaveRecallPosition();
     }
 
-    // Reported only for a deck, and only because a refusal there is silent otherwise: he is
-    // left standing where he was, which looks exactly like a command that did nothing.
     if (!player->TeleportTo(mapid, x, y, z, ort) && aboard)
     {
         SendSysMessage("That vessel is between two maps right now. You have not been moved; "
@@ -166,16 +131,10 @@ bool ChatHandler::HandleGoHelper(Player* player, uint32 mapid, float x, float y,
     return true;
 }
 
-/**
- * @brief Handler for HandleSummonCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleSummonCommand(char* args)
 {
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     std::string target_name;
     if (!ExtractPlayerTarget(&args, &target, &target_guid, &target_name))
     {
@@ -193,7 +152,7 @@ bool ChatHandler::HandleSummonCommand(char* args)
     if (target)
     {
         std::string nameLink = playerLink(target_name);
-        // check online security
+
         if (HasLowerSecurity(target))
         {
             return false;
@@ -210,24 +169,23 @@ bool ChatHandler::HandleSummonCommand(char* args)
 
         if (pMap->IsBattleGround())
         {
-            // only allow if gm mode is on
+
             if (!target->isGameMaster())
             {
                 PSendSysMessage(LANG_CANNOT_GO_TO_BG_GM, nameLink.c_str());
                 SetSentErrorMessage(true);
                 return false;
             }
-            // if both players are in different bgs
+
             else if (target->Battle().Id() && player->Battle().Id() != target->Battle().Id())
             {
                 PSendSysMessage(LANG_CANNOT_GO_TO_BG_FROM_BG, nameLink.c_str());
                 SetSentErrorMessage(true);
                 return false;
             }
-            // all's well, set bg id
-            // when porting out from the bg, it will be reset to 0
+
             target->Battle().In(player->Battle().Id(), player->Battle().Kind());
-            // remember current position as entry point for return at bg end teleportation
+
             if (!target->GetMap()->IsBattleGround())
             {
                 target->Battle().RecordTheWayBack();
@@ -238,17 +196,16 @@ bool ChatHandler::HandleSummonCommand(char* args)
             Map* cMap = target->GetMap();
             if (cMap->Instanceable() && cMap->GetInstanceId() != pMap->GetInstanceId())
             {
-                // can not summon from instance to instance
+
                 PSendSysMessage(LANG_CANNOT_SUMMON_TO_INST, nameLink.c_str());
                 SetSentErrorMessage(true);
                 return false;
             }
 
-            // we are in instance, and can summon only player in our group with us as lead
             if (!player->GetGroup() || !target->GetGroup() ||
                 (target->GetGroup()->GetLeaderGuid() != player->GetObjectGuid()) ||
                 (player->GetGroup()->GetLeaderGuid() != player->GetObjectGuid()))
-                // the last check is a bit excessive, but let it be, just in case
+
             {
                 PSendSysMessage(LANG_CANNOT_SUMMON_TO_INST, nameLink.c_str());
                 SetSentErrorMessage(true);
@@ -262,26 +219,24 @@ bool ChatHandler::HandleSummonCommand(char* args)
             ChatHandler(target).PSendSysMessage(LANG_SUMMONED_BY, playerLink(player->GetName()).c_str());
         }
 
-        // stop flight if need
         if (target->IsTaxiFlying())
         {
             target->GetMotionMaster()->MovementExpired();
             target->m_taxi.ClearTaxiDestinations();
         }
-        // save only in non-flight case
+
         else
         {
             target->SaveRecallPosition();
         }
 
-        // before GM
         float x, y, z;
         ClosePointNear(*player, x, y, z, target->Where().Extent());
         target->TeleportTo(player->GetMapId(), x, y, z, target->Where().Facing());
     }
     else
     {
-        // check offline security
+
         if (HasLowerSecurity(nullptr, target_guid))
         {
             return false;
@@ -291,7 +246,6 @@ bool ChatHandler::HandleSummonCommand(char* args)
 
         PSendSysMessage(LANG_SUMMONING, nameLink.c_str(), GetMangosString(LANG_OFFLINE));
 
-        // in point where GM stay
         CharacterRows::SetPlaceOf(target_guid, player->GetMapId(),
             player->Where().X(),
             player->Where().Y(),
@@ -303,16 +257,10 @@ bool ChatHandler::HandleSummonCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleAppearCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleAppearCommand(char* args)
 {
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     std::string target_name;
     if (!ExtractPlayerTarget(&args, &target, &target_guid, &target_name))
     {
@@ -329,7 +277,7 @@ bool ChatHandler::HandleAppearCommand(char* args)
 
     if (target)
     {
-        // check online security
+
         if (HasLowerSecurity(target))
         {
             return false;
@@ -340,24 +288,23 @@ bool ChatHandler::HandleAppearCommand(char* args)
         Map* cMap = target->GetMap();
         if (cMap->IsBattleGround())
         {
-            // only allow if gm mode is on
+
             if (!_player->isGameMaster())
             {
                 PSendSysMessage(LANG_CANNOT_GO_TO_BG_GM, chrNameLink.c_str());
                 SetSentErrorMessage(true);
                 return false;
             }
-            // if both players are in different bgs
+
             else if (_player->Battle().Id() && _player->Battle().Id() != target->Battle().Id())
             {
                 PSendSysMessage(LANG_CANNOT_GO_TO_BG_FROM_BG, chrNameLink.c_str());
                 SetSentErrorMessage(true);
                 return false;
             }
-            // all's well, set bg id
-            // when porting out from the bg, it will be reset to 0
+
             _player->Battle().In(target->Battle().Id(), target->Battle().Kind());
-            // remember current position as entry point for return at bg end teleportation
+
             if (!_player->GetMap()->IsBattleGround())
             {
                 _player->Battle().RecordTheWayBack();
@@ -365,12 +312,10 @@ bool ChatHandler::HandleAppearCommand(char* args)
         }
         else if (cMap->IsDungeon())
         {
-            // we have to go to instance, and can go to player only if:
-            //   1) we are in his group (either as leader or as member)
-            //   2) we are not bound to any group and have GM mode on
+
             if (_player->GetGroup())
             {
-                // we are in group, we can go only if we are in the player group
+
                 if (_player->GetGroup() != target->GetGroup())
                 {
                     PSendSysMessage(LANG_CANNOT_GO_TO_INST_PARTY, chrNameLink.c_str());
@@ -380,7 +325,7 @@ bool ChatHandler::HandleAppearCommand(char* args)
             }
             else
             {
-                // we are not in group, let's verify our GM mode
+
                 if (!_player->isGameMaster())
                 {
                     PSendSysMessage(LANG_CANNOT_GO_TO_INST_GM, chrNameLink.c_str());
@@ -389,20 +334,17 @@ bool ChatHandler::HandleAppearCommand(char* args)
                 }
             }
 
-            // if the player or the player's group is bound to another instance
-            // the player will not be bound to another one
             DungeonHold* pBind = _player->Binds().To(target->GetMapId());
             if (!pBind)
             {
                 Group* group = _player->GetGroup();
-                // if no bind exists, create a solo bind
+
                 DungeonHold* gBind = group ? group->Binds().To(target->GetMapId()) : nullptr;
-                // if no bind exists, create a solo bind
+
                 if (!gBind)
                 {
                     DungeonPersistentState* save = ((DungeonMap*)target->GetMap())->GetPersistanceState();
 
-                    // if player is group leader then we need add group bind
                     if (group && group->IsLeader(_player->GetObjectGuid()))
                     {
                         group->Binds().BindTo(save, !save->CanReset());
@@ -421,19 +363,17 @@ bool ChatHandler::HandleAppearCommand(char* args)
             ChatHandler(target).PSendSysMessage(LANG_APPEARING_TO, GetNameLink().c_str());
         }
 
-        // stop flight if need
         if (_player->IsTaxiFlying())
         {
             _player->GetMotionMaster()->MovementExpired();
             _player->m_taxi.ClearTaxiDestinations();
         }
-        // save only in non-flight case
+
         else
         {
             _player->SaveRecallPosition();
         }
 
-        // to point to see at target with same orientation
         float x, y, z;
         ContactPointNear(*target, _player, x, y, z);
 
@@ -441,7 +381,7 @@ bool ChatHandler::HandleAppearCommand(char* args)
     }
     else
     {
-        // check offline security
+
         if (HasLowerSecurity(nullptr, target_guid))
         {
             return false;
@@ -451,7 +391,6 @@ bool ChatHandler::HandleAppearCommand(char* args)
 
         PSendSysMessage(LANG_APPEARING_AT, nameLink.c_str());
 
-        // to point where player stay (if loaded)
         float x, y, z, o;
         uint32 map;
         bool in_flight;
@@ -466,12 +405,6 @@ bool ChatHandler::HandleAppearCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGroupgoCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGroupgoCommand(char* args)
 {
     Player* target;
@@ -480,7 +413,6 @@ bool ChatHandler::HandleGroupgoCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(target))
     {
         return false;
@@ -501,11 +433,10 @@ bool ChatHandler::HandleGroupgoCommand(char* args)
     Map* gmMap = player->GetMap();
     bool to_instance = gmMap->Instanceable();
 
-    // we are in instance, and can summon only player in our group with us as lead
     if (to_instance &&
         (!player->GetGroup() || (grp->GetLeaderGuid() != player->GetObjectGuid()) ||
         (player->GetGroup()->GetLeaderGuid() != player->GetObjectGuid())))
-        // the last check is a bit excessive, but let it be, just in case
+
     {
         SendSysMessage(LANG_CANNOT_SUMMON_TO_INST);
         SetSentErrorMessage(true);
@@ -521,7 +452,6 @@ bool ChatHandler::HandleGroupgoCommand(char* args)
             continue;
         }
 
-        // check online security
         if (HasLowerSecurity(pl))
         {
             return false;
@@ -542,7 +472,7 @@ bool ChatHandler::HandleGroupgoCommand(char* args)
 
             if (plMap->Instanceable() && plMap->GetInstanceId() != gmMap->GetInstanceId())
             {
-                // can not summon from instance to instance
+
                 PSendSysMessage(LANG_CANNOT_SUMMON_TO_INST, plNameLink.c_str());
                 SetSentErrorMessage(true);
                 return false;
@@ -555,19 +485,17 @@ bool ChatHandler::HandleGroupgoCommand(char* args)
             ChatHandler(pl).PSendSysMessage(LANG_SUMMONED_BY, nameLink.c_str());
         }
 
-        // stop flight if need
         if (pl->IsTaxiFlying())
         {
             pl->GetMotionMaster()->MovementExpired();
             pl->m_taxi.ClearTaxiDestinations();
         }
-        // save only in non-flight case
+
         else
         {
             pl->SaveRecallPosition();
         }
 
-        // before GM
         float x, y, z;
         ClosePointNear(*m_session->GetPlayer(), x, y, z, pl->Where().Extent());
         pl->TeleportTo(m_session->GetPlayer()->GetMapId(), x, y, z, pl->Where().Facing());
@@ -576,12 +504,6 @@ bool ChatHandler::HandleGroupgoCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleRecallCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleRecallCommand(char* args)
 {
     Player* target;
@@ -590,7 +512,6 @@ bool ChatHandler::HandleRecallCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(target))
     {
         return false;
@@ -607,14 +528,6 @@ bool ChatHandler::HandleRecallCommand(char* args)
     return HandleGoHelper(target, back.MapId(), back.X(), back.Y(), back.Z(), back.Facing());
 }
 
-/**
- * @brief The transport half of .gps: where you are ON THE VESSEL, which is a map.
- *
- * There is one coordinate system aboard and this prints it. A hull's mesh IS its map's
- * terrain, so the position and the floor under it are read the same way they are anywhere
- * else -- and the vessel's own world pose is shown only to say which water she is on, with
- * the reminder that it is an estimate nothing is allowed to decide anything from.
- */
 void ChatHandler::ReportTransportPosition(Occupant* obj)
 {
     TransportMap* hull = obj->GetMap() ? obj->GetMap()->AsTransport() : nullptr;
@@ -622,7 +535,7 @@ void ChatHandler::ReportTransportPosition(Occupant* obj)
 
     if (!vessel)
     {
-        return;                                         // not aboard anything; nothing to say
+        return;
     }
 
     PSendSysMessage("--- TRANSPORT %u (%s), map %u ---", vessel->GetEntry(), vessel->GetName(),
@@ -655,8 +568,6 @@ void ChatHandler::ReportTransportPosition(Occupant* obj)
     PSendSysMessage("Deck mesh: Z:%.3f  (you are %+.3f above it), hull radius %.1f",
                     *deckZ, obj->Where().Z() - *deckZ, hull->HullRadius());
 
-    // The deck's slope under the feet, by sampling the mesh a short way out along the
-    // facing. This is the orientation a creature planted here would actually stand at.
     const float PROBE = 1.0f;
     const float lo = obj->Where().Facing();
     const auto aheadZ = hull->SurfaceAt(obj->Where().X() + PROBE * cos(lo),
@@ -675,12 +586,6 @@ void ChatHandler::ReportTransportPosition(Occupant* obj)
     }
 }
 
-/**
- * @brief Handler for HandleGPSCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGPSCommand(char* args)
 {
     Occupant* obj = nullptr;
@@ -737,8 +642,6 @@ bool ChatHandler::HandleGPSCommand(char* args)
     int gx = 63 - p.x_coord;
     int gy = 63 - p.y_coord;
 
-    // One baked tile carries terrain, liquid, area AND collision, so the old
-    // "have map / have vmap" pair collapses into a single question.
     uint32 have_map = TerrainInfo::ExistTile(obj->GetMapId(), gx, gy) ? 1 : 0;
     uint32 have_vmap = have_map;
 
@@ -771,9 +674,7 @@ bool ChatHandler::HandleGPSCommand(char* args)
     ReportTransportPosition(obj);
 
     DEBUG_LOG("Player %s GPS call for %s '%s' (%s: %u):",
-        m_session ? GetNameLink().c_str() : GetMangosString(LANG_CONSOLE_COMMAND),
-        (obj->IsPlayer() ? "player" : "creature"), obj->GetName(),
-        (obj->IsPlayer() ? "GUID" : "Entry"), (obj->IsPlayer() ? obj->GetGUIDLow() : obj->GetEntry()));
+        m_session ? GetNameLink().c_str() : GetMangosString(LANG_CONSOLE_COMMAND), (IsPlayer(obj) ? "player" : "creature"), obj->GetName(), (IsPlayer(obj) ? "GUID" : "Entry"), (IsPlayer(obj) ? obj->GetGUIDLow() : obj->GetEntry()));
 
     DEBUG_LOG(GetMangosString(LANG_MAP_POSITION),
         obj->GetMapId(), (mapEntry ? mapEntry->MapName_lang[sWorld.GetDefaultDbcLocale()] : "<unknown>"),
@@ -790,13 +691,8 @@ bool ChatHandler::HandleGPSCommand(char* args)
         PSendSysMessage(LANG_LIQUID_STATUS, liquid_status.level, liquid_status.depth_level, liquid_status.type_flags, res);
     }
 
-    // Additional collision debugging help
 #ifdef _DEBUG_VMAPS
-    // The old pair of numbers -- ".map only" against ".map plus .vmap" -- existed to
-    // diagnose the two files DISAGREEING. One baked tile carries both, produced in one
-    // pass, so there is no disagreement left to find and no reason to ask twice. The
-    // column answers strictly more than either number did: every surface over this
-    // point, in order, with what each one is.
+
     const world::terrain::Column column = obj->GetTerrain()->ColumnAt(
         obj->Where().X(), obj->Where().Y(), obj->Where().Z() + 50.0f, obj->Where().Z() - 500.0f);
 
@@ -828,12 +724,6 @@ bool ChatHandler::HandleGPSCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGetDistanceCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGetDistanceCommand(char* args)
 {
     Occupant* obj = nullptr;
@@ -865,7 +755,7 @@ bool ChatHandler::HandleGetDistanceCommand(char* args)
     }
 
     Player* player = m_session->GetPlayer();
-    // Calculate point-to-point distance
+
     float dx, dy, dz;
     dx = player->Where().X() - obj->Where().X();
     dy = player->Where().Y() - obj->Where().Y();
@@ -876,12 +766,6 @@ bool ChatHandler::HandleGetDistanceCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNearGraveCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNearGraveCommand(char* args)
 {
     Team g_team;
@@ -936,7 +820,7 @@ bool ChatHandler::HandleNearGraveCommand(char* args)
         {
             team_name = GetMangosString(LANG_COMMAND_GRAVEYARD_ALLIANCE);
         }
-        else                                                // Actually, this case can not happen
+        else
         {
             team_name = GetMangosString(LANG_COMMAND_GRAVEYARD_NOTEAM);
         }
@@ -973,12 +857,6 @@ bool ChatHandler::HandleNearGraveCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGoTaxinodeCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGoTaxinodeCommand(char* args)
 {
     Player* _player = m_session->GetPlayer();
@@ -1007,12 +885,6 @@ bool ChatHandler::HandleGoTaxinodeCommand(char* args)
     return HandleGoHelper(_player, node->map_id, node->x, node->y, node->z);
 }
 
-/**
- * @brief Handler for HandleGoCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGoCommand(char* args)
 {
     if (!*args)
@@ -1025,7 +897,6 @@ bool ChatHandler::HandleGoCommand(char* args)
     uint32 mapid;
     float x, y, z;
 
-    // raw coordinates case
     if (ExtractFloat(&args, x))
     {
         if (!ExtractFloat(&args, y))
@@ -1043,7 +914,7 @@ bool ChatHandler::HandleGoCommand(char* args)
             return false;
         }
     }
-    // link case
+
     else if (!ExtractLocationFromLink(&args, mapid, x, y, z))
     {
         return false;
@@ -1052,12 +923,6 @@ bool ChatHandler::HandleGoCommand(char* args)
     return HandleGoHelper(_player, mapid, x, y, z);
 }
 
-/**
- * @brief Handler for HandleGoXYCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGoXYCommand(char* args)
 {
     Player* _player = m_session->GetPlayer();
@@ -1080,15 +945,6 @@ bool ChatHandler::HandleGoXYCommand(char* args)
         return false;
     }
 
-    // Resolve ground height so a z-less ".go xy" lands on the surface instead
-    // of at z=0. Validate the coordinates FIRST: GetWaterOrGroundLevel indexes
-    // the terrain grid by x/y and crashes on out-of-range values -- this is the
-    // very reason HandleGoHelper checks IsValidMapCoord before any Z work. The
-    // shared helper no longer ground-snaps (disabled in b4e2348e so explicit
-    // negative z on ".go xyz" is preserved), so we do it here, guarded twice:
-    // valid coords, then a valid height (GetWaterOrGroundLevel returns
-    // < INVALID_HEIGHT when there is no map data). Otherwise keep the previous
-    // z=0 fallback and let HandleGoHelper reject the bad input with its message.
     float z = 0.0f;
     if (MapCoords::Valid(mapid, x, y))
     {
@@ -1105,12 +961,6 @@ bool ChatHandler::HandleGoXYCommand(char* args)
     return HandleGoHelper(_player, mapid, x, y, z);
 }
 
-/**
- * @brief Handler for HandleGoXYZCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGoXYZCommand(char* args)
 {
     Player* _player = m_session->GetPlayer();
@@ -1142,12 +992,6 @@ bool ChatHandler::HandleGoXYZCommand(char* args)
     return HandleGoHelper(_player, mapid, x, y, z);
 }
 
-/**
- * @brief Handler for HandleGoZoneXYCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGoZoneXYCommand(char* args)
 {
     Player* _player = m_session->GetPlayer();
@@ -1186,7 +1030,6 @@ bool ChatHandler::HandleGoZoneXYCommand(char* args)
         return false;
     }
 
-    // update to parent zone if exist (client map show only zones without parents)
     AreaTableEntry const* zoneEntry = areaEntry->ParentAreaID ? GetAreaEntryByAreaID(areaEntry->ParentAreaID) : areaEntry;
 
     MapEntry const* mapEntry = sMapStore.LookupEntry(zoneEntry->ContinentID);
@@ -1210,12 +1053,6 @@ bool ChatHandler::HandleGoZoneXYCommand(char* args)
     return HandleGoHelper(_player, mapEntry->MapID, x, y);
 }
 
-/**
- * @brief Handler for HandleGoGridCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGoGridCommand(char* args)
 {
     Player* _player = m_session->GetPlayer();
@@ -1238,30 +1075,12 @@ bool ChatHandler::HandleGoGridCommand(char* args)
         return false;
     }
 
-    // center of grid
     float x = (grid_x - CENTER_GRID_ID + 0.5f) * SIZE_OF_GRIDS;
     float y = (grid_y - CENTER_GRID_ID + 0.5f) * SIZE_OF_GRIDS;
 
     return HandleGoHelper(_player, mapid, x, y);
 }
 
-/** \brief Teleport the GM to the specified creature
- *
- * .go creature <GUID>     --> TP using creature.guid
- * .go creature azuregos   --> TP player to the mob with this name
- *                             Warning: If there is more than one mob with this name
- *                                      you will be teleported to the first one that is found.
- * .go creature id 6109    --> TP player to the mob, that has this creature_template.entry
- *                             Warning: If there is more than one mob with this "id"
- *                                      you will be teleported to the first one that is found.
- */
-
-/**
- * @brief Handler for HandleGoCreatureCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGoCreatureCommand(char* args)
 {
     if (!*args)
@@ -1270,9 +1089,8 @@ bool ChatHandler::HandleGoCreatureCommand(char* args)
     }
 
     Player* _player = m_session->GetPlayer();
-    ObjectGuid targetMobGuid;
+    ObjectGuid targetMobGuid = 0;
 
-    // "id" or number or [name] Shift-click form |color|Hcreature:creature_id|h[name]|h|r
     int crType;
     char* pParam1 = ExtractKeyFromLink(&args, creatureKeys, &crType);
     if (!pParam1)
@@ -1280,10 +1098,9 @@ bool ChatHandler::HandleGoCreatureCommand(char* args)
         return false;
     }
 
-    // User wants to teleport to the NPC's template entry
     if (crType == CREATURE_LINK_RAW && strcmp(pParam1, "id") == 0)
     {
-        // number or [name] Shift-click form |color|Hcreature_entry:creature_id|h[name]|h|r
+
         pParam1 = ExtractKeyFromLink(&args, "Hcreature_entry");
         if (!pParam1)
         {
@@ -1369,7 +1186,7 @@ bool ChatHandler::HandleGoCreatureCommand(char* args)
 
                 targetMobGuid = data->GetObjectGuid(lowguid);
             }
-            // Number is invalid - maybe the user specified the mob's name
+
             else
             {
                 std::string name = pParam1;
@@ -1416,7 +1233,6 @@ bool ChatHandler::HandleGoCreatureCommand(char* args)
         }
     }
 
-    // If we are on the same map then we can teleport to the creature
     Creature* targetMob = _player->GetMap()->GetAnyTypeCreature(targetMobGuid);
     if (targetMob)
     {
@@ -1424,27 +1240,19 @@ bool ChatHandler::HandleGoCreatureCommand(char* args)
     }
     else
     {
-        // Go to creature initial pos to be on teh right Map
+
         HandleGoHelper(_player, data->mapid, data->posX, data->posY, data->posZ);
 
-        // Inform player that he will need to make the command another time to go directly to the NPC
-        PSendSysMessage(LANG_COMMAND_EXECUTE_GOCRE_ANOTHER_TIME, targetMobGuid.GetCounter());
+        PSendSysMessage(LANG_COMMAND_EXECUTE_GOCRE_ANOTHER_TIME, GuidCounter(targetMobGuid));
     }
 
     return true;
 }
 
-/**
- * @brief Handler for HandleGoObjectCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGoObjectCommand(char* args)
 {
     Player* _player = m_session->GetPlayer();
 
-    // number or [name] Shift-click form |color|Hgameobject:go_guid|h[name]|h|r
     int goType;
     char* pParam1 = ExtractKeyFromLink(&args, gameobjectKeys, &goType);
     if (!pParam1)
@@ -1452,10 +1260,9 @@ bool ChatHandler::HandleGoObjectCommand(char* args)
         return false;
     }
 
-    // User wants to teleport to the GO's template entry
     if (goType == GAMEOBJECT_LINK_RAW && strcmp(pParam1, "id") == 0)
     {
-        // number or [name] Shift-click form |color|Hgameobject_entry:creature_id|h[name]|h|r
+
         pParam1 = ExtractKeyFromLink(&args, "Hgameobject_entry");
         if (!pParam1)
         {
@@ -1513,7 +1320,6 @@ bool ChatHandler::HandleGoObjectCommand(char* args)
                 return false;
             }
 
-            // by DB guid
             data = sObjectMgr.GetGOData(lowguid);
             if (!data)
             {
@@ -1528,7 +1334,7 @@ bool ChatHandler::HandleGoObjectCommand(char* args)
             uint32 lowguid;
             if (ExtractUInt32(&pParam1, lowguid))
             {
-                // by DB guid
+
                 data = sObjectMgr.GetGOData(lowguid);
                 if (!data)
                 {
@@ -1585,12 +1391,6 @@ bool ChatHandler::HandleGoObjectCommand(char* args)
     return HandleGoHelper(_player, data->mapid, data->posX, data->posY, data->posZ);
 }
 
-/**
- * @brief Handler for HandleGoGraveyardCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGoGraveyardCommand(char* args)
 {
     Player* _player = m_session->GetPlayer();
@@ -1612,12 +1412,6 @@ bool ChatHandler::HandleGoGraveyardCommand(char* args)
     return HandleGoHelper(_player, gy->map_id, gy->x, gy->y, gy->z);
 }
 
-/**
- * @brief Handler for HandleGoTriggerCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGoTriggerCommand(char* args)
 {
     Player* _player = m_session->GetPlayer();
@@ -1653,7 +1447,7 @@ bool ChatHandler::HandleGoTriggerCommand(char* args)
     }
 
     bool to_target = ExtractLiteralArg(&args, "target");
-    if (!to_target && *args)                                // can be fail also at syntax error
+    if (!to_target && *args)
     {
         return false;
     }
@@ -1676,12 +1470,6 @@ bool ChatHandler::HandleGoTriggerCommand(char* args)
     }
 }
 
-/**
- * @brief Handler for HandleTeleDelCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleTeleDelCommand(char* args)
 {
     if (!*args)
@@ -1702,12 +1490,6 @@ bool ChatHandler::HandleTeleDelCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleTeleAddCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleTeleAddCommand(char* args)
 {
     if (!*args)
@@ -1730,11 +1512,6 @@ bool ChatHandler::HandleTeleAddCommand(char* args)
         return false;
     }
 
-    // ABOARD, THIS IS ALREADY THE SHIP'S OWN FRAME and nothing has to be done about it: his
-    // map IS the hull and Where() is a position on it. What is stored is a deck spot and the
-    // deck's map id, which is the vessel's identity -- minted from her game object entry, so
-    // it is the same number after a restart. Player::TeleportTo reads it back as "put him
-    // aboard her", wherever she has sailed to by then.
     TransportMap* hull = player->GetMap() ? player->GetMap()->AsTransport() : nullptr;
     Transport* vessel = hull ? hull->Vessel() : nullptr;
 
@@ -1769,18 +1546,12 @@ bool ChatHandler::HandleTeleAddCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleTeleNameCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleTeleNameCommand(char* args)
 {
     char* nameStr = ExtractOptNotLastArg(&args);
 
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     std::string target_name;
     char* locationArgs = args;
     if (!ExtractPlayerTarget(&nameStr, &target, &target_guid, &target_name))
@@ -1788,7 +1559,6 @@ bool ChatHandler::HandleTeleNameCommand(char* args)
         return false;
     }
 
-    // id, or string, coordinates, or @playername, or [name] Shift-click form |color|Htele:id|h[name]|h|r
     if (args && args[0] == '@')
     {
         char* destPlayerName = args + 1;
@@ -1840,14 +1610,13 @@ bool ChatHandler::HandleTeleNameCommand(char* args)
         }
         else
         {
-            // player not online
+
             SendSysMessage(LANG_PLAYER_NOT_FOUND);
             SetSentErrorMessage(true);
             return false;
         }
     }
 
-    // Try to parse as coordinates: <mapid> <x> <y> <z> [orientation]
     uint32 mapId;
     float x, y, z, o = 0.0f;
     char* mapStr = ExtractLiteralArg(&args);
@@ -1878,7 +1647,7 @@ bool ChatHandler::HandleTeleNameCommand(char* args)
 
             if (target)
             {
-                // Online player
+
                 if (HasLowerSecurity(target))
                 {
                     return false;
@@ -1903,7 +1672,7 @@ bool ChatHandler::HandleTeleNameCommand(char* args)
             }
             else
             {
-                // offline player
+
                 if (HasLowerSecurity(nullptr, target_guid))
                 {
                     return false;
@@ -1920,7 +1689,6 @@ bool ChatHandler::HandleTeleNameCommand(char* args)
     }
     args = locationArgs;
 
-    // Not coordinates, restore args pointer and try as saved location name
     GameTele const* tele = ExtractGameTeleFromLink(&args);
     if (!tele)
     {
@@ -1931,7 +1699,7 @@ bool ChatHandler::HandleTeleNameCommand(char* args)
 
     if (target)
     {
-        // check online security
+
         if (HasLowerSecurity(target))
         {
             return false;
@@ -1956,7 +1724,7 @@ bool ChatHandler::HandleTeleNameCommand(char* args)
     }
     else
     {
-        // check offline security
+
         if (HasLowerSecurity(nullptr, target_guid))
         {
             return false;
@@ -1973,12 +1741,6 @@ bool ChatHandler::HandleTeleNameCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleTeleCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleTeleCommand(char* args)
 {
     if (!*args)
@@ -1988,7 +1750,6 @@ bool ChatHandler::HandleTeleCommand(char* args)
 
     Player* _player = m_session->GetPlayer();
 
-    // id, or string, or [name] Shift-click form |color|Htele:id|h[name]|h|r
     GameTele const* tele = ExtractGameTeleFromLink(&args);
 
     if (!tele)
@@ -2001,12 +1762,6 @@ bool ChatHandler::HandleTeleCommand(char* args)
     return HandleGoHelper(_player, tele->mapId, tele->position_x, tele->position_y, tele->position_z, tele->orientation);
 }
 
-/**
- * @brief Handler for HandleTeleGroupCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleTeleGroupCommand(char* args)
 {
     if (!*args)
@@ -2022,13 +1777,11 @@ bool ChatHandler::HandleTeleGroupCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(player))
     {
         return false;
     }
 
-    // id, or string, or [name] Shift-click form |color|Htele:id|h[name]|h|r
     GameTele const* tele = ExtractGameTeleFromLink(&args);
     if (!tele)
     {
@@ -2056,7 +1809,6 @@ bool ChatHandler::HandleTeleGroupCommand(char* args)
             continue;
         }
 
-        // check online security
         if (HasLowerSecurity(pl))
         {
             return false;
@@ -2076,13 +1828,12 @@ bool ChatHandler::HandleTeleGroupCommand(char* args)
             ChatHandler(pl).PSendSysMessage(LANG_TELEPORTED_TO_BY, nameLink.c_str());
         }
 
-        // stop flight if need
         if (pl->IsTaxiFlying())
         {
             pl->GetMotionMaster()->MovementExpired();
             pl->m_taxi.ClearTaxiDestinations();
         }
-        // save only in non-flight case
+
         else
         {
             pl->SaveRecallPosition();

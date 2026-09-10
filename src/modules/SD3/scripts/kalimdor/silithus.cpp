@@ -244,12 +244,12 @@ struct npc_anachronos_the_ancient : public CreatureScript
 
         uint8 m_uiEventStage;
 
-        ObjectGuid m_fandralGuid;
-        ObjectGuid m_merithraGuid;
-        ObjectGuid m_CaelestraszGuid;
-        ObjectGuid m_arygosGuid;
-        ObjectGuid m_playerGuid;
-        ObjectGuid m_triggerGuid;
+        ObjectGuid m_fandralGuid = 0;
+        ObjectGuid m_merithraGuid = 0;
+        ObjectGuid m_CaelestraszGuid = 0;
+        ObjectGuid m_arygosGuid = 0;
+        ObjectGuid m_playerGuid = 0;
+        ObjectGuid m_triggerGuid = 0;
 
         GuidList m_lQirajiWarriorsList;
 
@@ -667,7 +667,7 @@ struct npc_anachronos_the_ancient : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* pSender, Unit* pInvoker, uint32 /*uiMiscValue*/) override
         {
-            if (eventType == AI_EVENT_CUSTOM_A && pSender == m_creature && pInvoker->IsPlayer())
+            if (eventType == AI_EVENT_CUSTOM_A && pSender == m_creature &&IsPlayer(pInvoker))
             {
                 m_playerGuid = pInvoker->GetObjectGuid();
             }
@@ -831,7 +831,7 @@ struct npc_solenor_the_slayer : public CreatureScript
         uint32 m_uiTransformEmote_Timer;
         bool m_bTransform;
 
-        ObjectGuid m_hunterGuid;
+        ObjectGuid m_hunterGuid = 0;
         uint32 m_uiDreadfulFright_Timer;
         uint32 m_uiCreepingDoom_Timer;
         uint32 m_uiCastSoulFlame_Timer;
@@ -870,7 +870,7 @@ struct npc_solenor_the_slayer : public CreatureScript
                         DoCastSpellIfCan(m_creature, SPELL_SOUL_FLAME);
                     }
 
-                    m_hunterGuid.Clear();
+                    m_hunterGuid = 0;
                     m_uiDreadfulFright_Timer = urand(10000, 15000);
                     m_uiCreepingDoom_Timer = urand(3000, 6000);
                     break;
@@ -899,7 +899,7 @@ struct npc_solenor_the_slayer : public CreatureScript
         /** Solenor the Slayer */
         void Aggro(Unit* pWho) override
         {
-            if (pWho->getClass() == CLASS_HUNTER && (m_hunterGuid.IsEmpty() || m_hunterGuid == pWho->GetObjectGuid())/*&& pWho->GetQuestStatus(QUEST_STAVE_OF_THE_ANCIENTS) == QUEST_STATUS_INCOMPLETE*/)
+            if (pWho->getClass() == CLASS_HUNTER && ((m_hunterGuid == 0) || m_hunterGuid == pWho->GetObjectGuid())/*&& pWho->GetQuestStatus(QUEST_STAVE_OF_THE_ANCIENTS) == QUEST_STATUS_INCOMPLETE*/)
             {
                 m_hunterGuid = pWho->GetObjectGuid();
             }

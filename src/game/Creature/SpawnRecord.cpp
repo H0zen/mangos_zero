@@ -29,7 +29,7 @@
 
 namespace
 {
-    /// Forgets the hour a spawn was due back, in every state that remembers it.
+
     struct ForgetRespawnTime
     {
         explicit ForgetRespawnTime(uint32 guid) : i_guid(guid) {}
@@ -42,7 +42,6 @@ namespace
         uint32 i_guid;
     };
 
-    /// Takes one spawn out of whichever loaded map is holding it.
     struct TakeOutOfMap
     {
         explicit TakeOutOfMap(ObjectGuid guid) : i_guid(guid) {}
@@ -55,17 +54,16 @@ namespace
             }
         }
 
-        ObjectGuid i_guid;
+        ObjectGuid i_guid = 0;
     };
 
-    /// Puts one spawn into whichever loaded map has its ground under it.
     struct PutIntoMap
     {
         PutIntoMap(uint32 guid, CreatureData const* data) : i_guid(guid), i_data(data) {}
 
         void operator()(Map* map)
         {
-            // the spawn coordinates say which cell has to be loaded already
+
             if (map->IsCellLoaded(i_data->posX, i_data->posY))
             {
                 Creature* standing = new Creature;
@@ -88,14 +86,12 @@ bool npcs::Listed(Creature const& who)
 
 void npcs::Save(Creature& who)
 {
-    // One that was called up keeps no row, and asking it to is not an error.
+
     if (who.IsPet() || who.IsTemporarySummon())
     {
         return;
     }
 
-    // The map id is only good once it stands on a map, so this wants a creature
-    // that is already placed.
     if (!Listed(who))
     {
         sLog.outError("npcs::Save failed, can not get creature data!");
@@ -112,16 +108,13 @@ void npcs::SaveOn(Creature& who, uint32 mapId)
         return;
     }
 
-    // update in loaded data
     CreatureData& data = sObjectMgr.NewOrExistCreatureData(who.GetGUIDLow());
 
     uint32 displayId = who.GetNativeDisplayId();
 
-    // check if it's a custom model and if not, use 0 for displayId
     CreatureInfo const* cinfo = who.GetCreatureInfo();
     if (cinfo)
     {
-        // The following if-else assumes that there are 4 model fields and needs updating if this is changed.
 
         if (displayId != cinfo->ModelId[0] && displayId != cinfo->ModelId[1] &&
             displayId != cinfo->ModelId[2] && displayId != cinfo->ModelId[3])
@@ -146,7 +139,6 @@ void npcs::SaveOn(Creature& who, uint32 mapId)
         }
     }
 
-    // data->guid = guid don't must be update at save
     data.id = who.GetEntry();
     data.mapid = mapId;
     data.modelid_override = displayId;
@@ -156,17 +148,16 @@ void npcs::SaveOn(Creature& who, uint32 mapId)
     data.posZ = who.Where().Z();
     data.orientation = who.Where().Facing();
     data.spawntimesecs = who.Watch().RespawnDelay();
-    // prevent add data integrity problems
+
     data.spawndist = who.GetDefaultMovementType() == IDLE_MOTION_TYPE ? 0 : who.Stationed().Radius();
     data.currentwaypoint = 0;
     data.curhealth = who.GetHealth();
     data.curmana = who.GetPower(POWER_MANA);
     data.is_dead = who.Watch().DeadByDefault();
-    // prevent add data integrity problems
+
     data.movementType = !who.Stationed().Radius() && who.GetDefaultMovementType() == RANDOM_MOTION_TYPE
         ? IDLE_MOTION_TYPE : who.GetDefaultMovementType();
 
-    // updated in DB
     WorldDatabase.BeginTransaction();
 
     WorldDatabase.PExecuteLog("DELETE FROM `creature` WHERE `guid`=%u", who.GetGUIDLow());
@@ -182,13 +173,13 @@ void npcs::SaveOn(Creature& who, uint32 mapId)
        << data.posY << ","
        << data.posZ << ","
        << data.orientation << ","
-       << data.spawntimesecs << ","                        // respawn time
-       << (float) data.spawndist << ","                    // spawn distance (float)
-       << data.currentwaypoint << ","                      // currentwaypoint
-       << data.curhealth << ","                            // curhealth
-       << data.curmana << ","                              // curmana
-       << (data.is_dead  ? 1 : 0) << ","                   // is_dead
-       << uint32(data.movementType) << ")";                // default movement generator type, cast to prevent save as symbol
+       << data.spawntimesecs << ","
+       << (float) data.spawndist << ","
+       << data.currentwaypoint << ","
+       << data.curhealth << ","
+       << data.curmana << ","
+       << (data.is_dead  ? 1 : 0) << ","
+       << uint32(data.movementType) << ")";
 
     WorldDatabase.PExecuteLog("%s", ss.str().c_str());
 
@@ -197,8 +188,7 @@ void npcs::SaveOn(Creature& who, uint32 mapId)
 
 void npcs::Forget(Creature& who)
 {
-    // A pet's low guid is its pet number, which can name a `creature` row that
-    // belongs to something else entirely.
+
     if (who.IsPet() || who.IsTemporarySummon())
     {
         return;
@@ -239,11 +229,11 @@ void npcs::SaveRespawnTime(Creature& who)
         return;
     }
 
-    if (who.Watch().RespawnsAt() > time(nullptr))                         // dead (no corpse)
+    if (who.Watch().RespawnsAt() > time(nullptr))
     {
         who.GetMap()->GetPersistentState()->SaveCreatureRespawnTime(who.GetGUIDLow(), who.Watch().RespawnsAt());
     }
-    else if (who.Watch().CorpseGoesAt() > time(nullptr))               // dead (corpse)
+    else if (who.Watch().CorpseGoesAt() > time(nullptr))
     {
         who.GetMap()->GetPersistentState()->SaveCreatureRespawnTime(who.GetGUIDLow(), who.Watch().CorpseGoesAt() + who.Watch().RespawnDelay());
     }

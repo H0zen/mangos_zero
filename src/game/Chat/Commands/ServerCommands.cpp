@@ -23,17 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file ServerCommands.cpp
- * @brief Implementation of server management chat commands.
- *
- * This file contains chat command handlers for server operations including:
- * - Server status and information
- * - Player count display
- * - Server configuration queries
- * - Shutdown and restart operations
- */
-
 #include <string>
 #include "Chat.h"
 #include "ObjectMgr.h"
@@ -43,13 +32,7 @@
 #include "UpdateTime.h"
 #include "CorpseManager.h"
 
-/**
- * @brief Handler for HandleServerInfoCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleServerInfoCommand(char* /*args*/)
+bool ChatHandler::HandleServerInfoCommand(char* )
 {
     uint32 activeClientsNum = sWorld.GetActiveSessionCount();
     uint32 queuedClientsNum = sWorld.GetQueuedSessionCount();
@@ -85,41 +68,23 @@ bool ChatHandler::HandleServerInfoCommand(char* /*args*/)
     PSendSysMessage(LANG_USING_WORLD_DB, sWorld.GetDBVersion());
     PSendSysMessage(LANG_CONNECTED_USERS, activeClientsNum, maxActiveClientsNum, queuedClientsNum, maxQueuedClientsNum);
     PSendSysMessage(LANG_UPTIME, str.c_str());
-    PSendSysMessage("World Delay: %u", updateTime); // ToDo: move to language string
+    PSendSysMessage("World Delay: %u", updateTime);
 
     return true;
 }
 
-/**
- * @brief Handler for HandleServerMotdCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleServerMotdCommand(char* /*args*/)
+bool ChatHandler::HandleServerMotdCommand(char* )
 {
     PSendSysMessage(LANG_MOTD_CURRENT, sWorld.GetMotd());
     return true;
 }
 
-/**
- * @brief Handler for HandleServerShutDownCancelCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleServerShutDownCancelCommand(char* /*args*/)
+bool ChatHandler::HandleServerShutDownCancelCommand(char* )
 {
     sWorld.ShutdownCancel();
     return true;
 }
 
-/**
- * @brief Handler for HandleServerShutDownCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleServerShutDownCommand(char* args)
 {
     if (!*args)
@@ -132,7 +97,6 @@ bool ChatHandler::HandleServerShutDownCommand(char* args)
 
     int32 time = atoi(timeStr);
 
-    // Prevent interpret wrong arg value as 0 secs shutdown time
     if ((time == 0 && (timeStr[0] != '0' || timeStr[1] != '\0')) || time < 0)
     {
         return false;
@@ -142,15 +106,11 @@ bool ChatHandler::HandleServerShutDownCommand(char* args)
     {
         int32 exitCode = atoi(exitCodeStr);
 
-        // Handle atoi() errors
         if (exitCode == 0 && (exitCodeStr[0] != '0' || exitCodeStr[1] != '\0'))
         {
             return false;
         }
 
-        // Exit code should be in range of 0-125, 126-255 is used
-        // in many shells for their own return codes and code > 255
-        // is not supported in many others
         if (exitCode < 0 || exitCode > 125)
         {
             return false;
@@ -166,12 +126,6 @@ bool ChatHandler::HandleServerShutDownCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleServerRestartCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleServerRestartCommand(char* args)
 {
     if (!*args)
@@ -184,7 +138,6 @@ bool ChatHandler::HandleServerRestartCommand(char* args)
 
     int32 time = atoi(timeStr);
 
-    //  Prevent interpret wrong arg value as 0 secs shutdown time
     if ((time == 0 && (timeStr[0] != '0' || timeStr[1] != '\0')) || time < 0)
     {
         return false;
@@ -194,15 +147,11 @@ bool ChatHandler::HandleServerRestartCommand(char* args)
     {
         int32 exitCode = atoi(exitCodeStr);
 
-        // Handle atoi() errors
         if (exitCode == 0 && (exitCodeStr[0] != '0' || exitCodeStr[1] != '\0'))
         {
             return false;
         }
 
-        // Exit code should be in range of 0-125, 126-255 is used
-        // in many shells for their own return codes and code > 255
-        // is not supported in many others
         if (exitCode < 0 || exitCode > 125)
         {
             return false;
@@ -218,12 +167,6 @@ bool ChatHandler::HandleServerRestartCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleServerIdleRestartCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleServerIdleRestartCommand(char* args)
 {
     if (!*args)
@@ -236,7 +179,6 @@ bool ChatHandler::HandleServerIdleRestartCommand(char* args)
 
     int32 time = atoi(timeStr);
 
-    //  Prevent interpret wrong arg value as 0 secs shutdown time
     if ((time == 0 && (timeStr[0] != '0' || timeStr[1] != '\0')) || time < 0)
     {
         return false;
@@ -246,15 +188,11 @@ bool ChatHandler::HandleServerIdleRestartCommand(char* args)
     {
         int32 exitCode = atoi(exitCodeStr);
 
-        // Handle atoi() errors
         if (exitCode == 0 && (exitCodeStr[0] != '0' || exitCodeStr[1] != '\0'))
         {
             return false;
         }
 
-        // Exit code should be in range of 0-125, 126-255 is used
-        // in many shells for their own return codes and code > 255
-        // is not supported in many others
         if (exitCode < 0 || exitCode > 125)
         {
             return false;
@@ -270,12 +208,6 @@ bool ChatHandler::HandleServerIdleRestartCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleServerIdleShutDownCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleServerIdleShutDownCommand(char* args)
 {
     if (!*args)
@@ -288,7 +220,6 @@ bool ChatHandler::HandleServerIdleShutDownCommand(char* args)
 
     int32 time = atoi(timeStr);
 
-    //  Prevent interpret wrong arg value as 0 secs shutdown time
     if ((time == 0 && (timeStr[0] != '0' || timeStr[1] != '\0')) || time < 0)
     {
         return false;
@@ -298,15 +229,11 @@ bool ChatHandler::HandleServerIdleShutDownCommand(char* args)
     {
         int32 exitCode = atoi(exitCodeStr);
 
-        // Handle atoi() errors
         if (exitCode == 0 && (exitCodeStr[0] != '0' || exitCodeStr[1] != '\0'))
         {
             return false;
         }
 
-        // Exit code should be in range of 0-125, 126-255 is used
-        // in many shells for their own return codes and code > 255
-        // is not supported in many others
         if (exitCode < 0 || exitCode > 125)
         {
             return false;
@@ -322,25 +249,13 @@ bool ChatHandler::HandleServerIdleShutDownCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleServerExitCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleServerExitCommand(char* /*args*/)
+bool ChatHandler::HandleServerExitCommand(char* )
 {
     SendSysMessage(LANG_COMMAND_EXIT);
     World::StopNow(SHUTDOWN_EXIT_CODE);
     return true;
 }
 
-/**
- * @brief Handler for HandleServerLogFilterCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleServerLogFilterCommand(char* args)
 {
     if (!*args)
@@ -395,12 +310,6 @@ bool ChatHandler::HandleServerLogFilterCommand(char* args)
     return false;
 }
 
-/**
- * @brief Handler for HandleServerLogLevelCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleServerLogLevelCommand(char* args)
 {
     if (!*args)
@@ -413,24 +322,12 @@ bool ChatHandler::HandleServerLogLevelCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleServerCorpsesCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleServerCorpsesCommand(char* /*args*/)
+bool ChatHandler::HandleServerCorpsesCommand(char* )
 {
     sCorpseManager.RemoveOldCorpses();
     return true;
 }
 
-/**
- * @brief Handler for HandleServerResetAllRaidCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleServerResetAllRaidCommand(char* args)
 {
     PSendSysMessage("Global raid instances reset, all players in raid instances will be teleported to homebind!");
@@ -438,12 +335,6 @@ bool ChatHandler::HandleServerResetAllRaidCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleServerSetMotdCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleServerSetMotdCommand(char* args)
 {
     sWorld.SetMotd(args);
@@ -451,12 +342,6 @@ bool ChatHandler::HandleServerSetMotdCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleServerPLimitCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleServerPLimitCommand(char* args)
 {
     if (*args)
@@ -504,7 +389,6 @@ bool ChatHandler::HandleServerPLimitCommand(char* args)
             return false;
         }
 
-        // kick all low security level players
         if (sWorld.GetPlayerAmountLimit() > SEC_PLAYER)
         {
             sWorld.KickAllLess(sWorld.GetPlayerSecurityLimit());

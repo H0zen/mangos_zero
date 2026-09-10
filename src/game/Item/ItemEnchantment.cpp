@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Item.h"
 #include "ObjectMgr.h"
 #include "ObjectGuid.h"
@@ -33,17 +31,9 @@
 #include "ItemEnchantmentMgr.h"
 #include "SQLStorages.h"
 
-/**
- * @brief Sets enchantment data for a slot.
- *
- * @param slot The enchantment slot.
- * @param id The enchantment id.
- * @param duration The enchantment duration.
- * @param charges The remaining enchantment charges.
- */
 void Item::SetEnchantment(EnchantmentSlot slot, uint32 id, uint32 duration, uint32 charges)
 {
-    // Better lost small time at check in comparison lost time at item save to DB.
+
     if ((GetEnchantmentId(slot) == id) && (GetEnchantmentDuration(slot) == duration) && (GetEnchantmentCharges(slot) == charges))
     {
         return;
@@ -55,12 +45,6 @@ void Item::SetEnchantment(EnchantmentSlot slot, uint32 id, uint32 duration, uint
     SetState(ITEM_CHANGED);
 }
 
-/**
- * @brief Updates the duration for an enchantment slot.
- *
- * @param slot The enchantment slot.
- * @param duration The new duration.
- */
 void Item::SetEnchantmentDuration(EnchantmentSlot slot, uint32 duration)
 {
     if (GetEnchantmentDuration(slot) == duration)
@@ -72,12 +56,6 @@ void Item::SetEnchantmentDuration(EnchantmentSlot slot, uint32 duration)
     SetState(ITEM_CHANGED);
 }
 
-/**
- * @brief Updates the charges for an enchantment slot.
- *
- * @param slot The enchantment slot.
- * @param charges The new charge count.
- */
 void Item::SetEnchantmentCharges(EnchantmentSlot slot, uint32 charges)
 {
     if (GetEnchantmentCharges(slot) == charges)
@@ -89,11 +67,6 @@ void Item::SetEnchantmentCharges(EnchantmentSlot slot, uint32 charges)
     SetState(ITEM_CHANGED);
 }
 
-/**
- * @brief Clears all enchantment data from a slot.
- *
- * @param slot The enchantment slot.
- */
 void Item::ClearEnchantment(EnchantmentSlot slot)
 {
     if (!GetEnchantmentId(slot))

@@ -23,29 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Spell.cpp
- * @brief Spell casting and effect implementation
- *
- * This file implements the Spell class which handles spell casting:
- * - Spell validation and casting requirements
- * - Spell effect execution (damage, healing, summon, etc.)
- * - Spell targeting and area effects
- * - Spell cooldowns and resource costs
- * - Spell interruption and pushback
- * - Spell aura application
- * - Spell hit/miss calculations
- *
- * Spells are the primary combat mechanic in WoW, encompassing
- * abilities, talents, and item effects.
- *
- * @see Spell for the spell class
- * @see SpellAura for spell auras
- * @see SpellMgr for spell management
- */
-
-
-
 #include "Reaction.h"
 #include "Spell.h"
 #include "Database/DatabaseEnv.h"
@@ -75,16 +52,7 @@
 #include "SQLStorages.h"
 #include "DisableMgr.h"
 
-/**
- * @brief Fills a target list with everyone the spell's area catches.
- *
- * @param targetUnitMap        The list the caught units are added to
- * @param radius               How far the area reaches from its centre
- * @param where                What the area is drawn around
- * @param side                 Which side of the caster may be caught
- * @param originalCaster       Whose side is asked; the affective caster when none is given
- */
-void Spell::FillAreaTargets(UnitList& targetUnitMap, float radius, cast::Around where, cast::Side side, Occupant* originalCaster /*=nullptr*/)
+void Spell::FillAreaTargets(UnitList& targetUnitMap, float radius, cast::Around where, cast::Side side, Occupant* originalCaster )
 {
     Occupant* origin = originalCaster != nullptr ? originalCaster : GetAffectiveCasterObject();
     Occupant* castingObject = GetCastingObject();
@@ -119,23 +87,12 @@ void Spell::FillAreaTargets(UnitList& targetUnitMap, float radius, cast::Around 
         centreY = y;
     }
 
-    // the GM spell that reaches everyone, whatever they are and whose side they are on
     const bool catchesEveryone = m_spellInfo->ID == 1509;
 
     cast::Catchment catchment(targetUnitMap, reach, side, origin, catchesEveryone, Recipe().Says().castOnDead);
     Cell::VisitAllObjects(centreX, centreY, m_caster->GetMap(), catchment, radius);
 }
 
-/**
- * @brief Fills a target list with party or raid members around a reference unit.
- *
- * @param targetUnitMap The target list being populated.
- * @param member The reference member.
- * @param radius The search radius.
- * @param raid True to include the whole raid; false to limit to the subgroup.
- * @param withPets True to include pets.
- * @param withcaster True to include the caster when applicable.
- */
 void Spell::FillRaidOrPartyTargets(UnitList& targetUnitMap, Unit* member, float radius, bool raid, bool withPets, bool withcaster)
 {
     Player* pMember = member->GetCharmerOrOwnerPlayerOrPlayerItself();
@@ -149,7 +106,6 @@ void Spell::FillRaidOrPartyTargets(UnitList& targetUnitMap, Unit* member, float 
         {
             Player* Target = itr->getSource();
 
-            // IsHostileTo check duel and controlled by enemy
             if (Target && (raid || subgroup == Target->GetSubGroup()) &&
                 !IsHostile(*m_caster, *Target))
             {

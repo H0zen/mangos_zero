@@ -23,28 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SpellAuras.cpp
- * @brief Spell aura implementation
- *
- * This file implements the SpellAura class which handles spell auras:
- * - Aura application and removal
- * - Aura effect processing (stat modifiers, DoTs, HoTs, etc.)
- * - Aura stacking rules
- * - Aura dispelling mechanics
- * - Aura periodic effects
- * - Aura duration management
- * - Aura visual effects
- *
- * Auras are persistent effects applied by spells that modify
- * unit stats, deal damage over time, or provide other benefits.
- *
- * @see SpellAura for the aura class
- * @see Spell for spell casting
- */
-
-
-
 #include "SpellAuras.h"
 #include "Platform/Define.h"
 #include "Database/DatabaseEnv.h"
@@ -126,7 +104,7 @@ void Aura::HandleShapeshiftBoosts(bool apply)
             break;
         case FORM_SPIRITOFREDEMPTION:
             spellId1 = 27792;
-            spellId2 = 27795;                               // must be second, this important at aura remove to prevent to early iterator invalidation.
+            spellId2 = 27795;
             break;
         case FORM_GHOSTWOLF:
         case FORM_AMBIENT:
@@ -151,7 +129,7 @@ void Aura::HandleShapeshiftBoosts(bool apply)
             target->CastSpell(target, spellId2, true, nullptr, this);
         }
 
-        if (target->IsPlayer())
+        if (IsPlayer(target))
         {
             const PlayerSpellMap& sp_list = ((Player*)target)->GetSpellMap();
             for (PlayerSpellMap::const_iterator itr = sp_list.begin(); itr != sp_list.end(); ++itr)
@@ -172,7 +150,6 @@ void Aura::HandleShapeshiftBoosts(bool apply)
                 target->CastSpell(target, itr->first, true, nullptr, this);
             }
 
-            // Leader of the Pack
             if (((Player*)target)->HasSpell(17007))
             {
                 SpellEntry const* spellInfo = sSpellStore.LookupEntry(24932);
@@ -182,7 +159,6 @@ void Aura::HandleShapeshiftBoosts(bool apply)
                 }
             }
 
-            // Heart of the Wild
             if (HotWSpellId)
             {
                 const auto mModTotalStatPct = target->GetAurasByType(SPELL_AURA_MOD_TOTAL_STAT_PERCENTAGE);
@@ -212,7 +188,7 @@ void Aura::HandleShapeshiftBoosts(bool apply)
         Unit::SpellAuraHolderMap& tAuras = target->GetSpellAuraHolderMap();
         for (Unit::SpellAuraHolderMap::iterator itr = tAuras.begin(); itr != tAuras.end();)
         {
-            if ((itr->second->IsRemovedOnShapeLost() && itr->second->GetSpellProto()->ID != 12292) || itr->second->GetSpellProto()->ID == 24864)   // Feline Swiftness Passive 2a drop, Sweeping Strikes keep TODO
+            if ((itr->second->IsRemovedOnShapeLost() && itr->second->GetSpellProto()->ID != 12292) || itr->second->GetSpellProto()->ID == 24864)
             {
                 target->RemoveAuras(itr->second->GetId());
                 itr = tAuras.begin();
@@ -225,31 +201,18 @@ void Aura::HandleShapeshiftBoosts(bool apply)
     }
 }
 
-/**
- * @brief Applies or removes the empathy special-info flag for supported targets.
- *
- * @param apply True to apply the flag; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraEmpathy(bool apply, bool /*Real*/)
+void Aura::HandleAuraEmpathy(bool apply, bool )
 {
     Unit* target = GetTarget();
 
-    // This aura is expected to only work with CREATURE_TYPE_BEAST or players
     CreatureInfo const* ci = ObjectMgr::GetCreatureTemplate(target->GetEntry());
-    if (target->IsPlayer() || (target->IsCreature() && ci && ci->CreatureType == CREATURE_TYPE_BEAST))
+    if (IsPlayer(target) || (IsCreature(target) && ci && ci->CreatureType == CREATURE_TYPE_BEAST))
     {
         target->ApplyModUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_SPECIALINFO, apply);
     }
 }
 
-/**
- * @brief Applies or removes the untrackable unit byte flag.
- *
- * @param apply True to apply the flag; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraUntrackable(bool apply, bool /*Real*/)
+void Aura::HandleAuraUntrackable(bool apply, bool )
 {
     if (apply)
     {
@@ -261,13 +224,7 @@ void Aura::HandleAuraUntrackable(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Applies or removes the pacified unit flag.
- *
- * @param apply True to pacify; false to remove pacify.
- * @param Real Unused.
- */
-void Aura::HandleAuraModPacify(bool apply, bool /*Real*/)
+void Aura::HandleAuraModPacify(bool apply, bool )
 {
     if (apply)
     {
@@ -279,55 +236,35 @@ void Aura::HandleAuraModPacify(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Applies or removes both pacify and silence effects together.
- *
- * @param apply True to apply the effects; false to remove them.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraModPacifyAndSilence(bool apply, bool Real)
 {
     HandleAuraModPacify(apply, Real);
     HandleAuraModSilence(apply, Real);
 }
 
-/**
- * @brief Applies or removes the ghost player flag.
- *
- * @param apply True to apply the flag; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraGhost(bool apply, bool /*Real*/)
+void Aura::HandleAuraGhost(bool apply, bool )
 {
-    if (Player* player = ToPlayer(GetTarget()))
+    if (Player* player = static_cast<Player*>(GetTarget()))
     {
         player->ApplyPlayerFlag(PLAYER_FLAGS_GHOST, apply);
     }
 }
 
-/**
- * @brief Preserves or removes combo points retained by the aura.
- *
- * @param apply True to apply the retention aura; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraRetainComboPoints(bool apply, bool Real)
 {
-    // spells required only Real aura add/remove
+
     if (!Real)
     {
         return;
     }
 
-    if (!GetTarget()->IsPlayer())
+    if (!IsPlayer(GetTarget()))
     {
         return;
     }
 
     Player* target = (Player*)GetTarget();
 
-    // combo points was added in SPELL_EFFECT_ADD_COMBO_POINTS handler
-    // remove only if aura expire by time (in case combo points amount change aura removed without combo points lost)
     if (!apply && m_removeMode == AURA_REMOVE_BY_EXPIRE && target->GetComboTargetGuid())
     {
         if (Unit* unit = ObjectLookup::GetUnit(*GetTarget(), target->GetComboTargetGuid()))
@@ -337,12 +274,6 @@ void Aura::HandleAuraRetainComboPoints(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Applies or removes the non-attackable state.
- *
- * @param Apply True to make the target unattackable; false to remove the state.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleModUnattackable(bool Apply, bool Real)
 {
     if (Real && Apply)
@@ -353,15 +284,9 @@ void Aura::HandleModUnattackable(bool Apply, bool Real)
     GetTarget()->ApplyUnitFlag(UNIT_FLAG_NON_ATTACKABLE, Apply);
 }
 
-/**
- * @brief Handles Spirit of Redemption setup and forced death on expiration.
- *
- * @param apply True to enter the spirit state; false to end it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleSpiritOfRedemption(bool apply, bool Real)
 {
-    // spells required only Real aura add/remove
+
     if (!Real)
     {
         return;
@@ -369,44 +294,34 @@ void Aura::HandleSpiritOfRedemption(bool apply, bool Real)
 
     Unit* target = GetTarget();
 
-    // prepare spirit state
     if (apply)
     {
-        if (target->IsPlayer())
+        if (IsPlayer(target))
         {
-            // disable breath/etc timers
+
             ((Player*)target)->StopMirrorTimers();
 
-            // set stand state (expected in this form)
             if (!target->IsStandState())
             {
                 target->SetStandState(UNIT_STAND_STATE_STAND);
             }
         }
 
-        // interrupt casting when entering Spirit of Redemption
         if (target->IsNonMeleeSpellCasted(false))
         {
             target->InterruptNonMeleeSpells(false);
         }
 
-        // set health and mana to maximum
         target->SetHealth(target->GetMaxHealth());
         target->SetPower(POWER_MANA, target->GetMaxPower(POWER_MANA));
     }
-    // die at aura end
+
     else
     {
         target->DealDamage(target, target->GetHealth(), nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, GetSpellProto(), false);
     }
 }
 
-/**
- * @brief Calculates absorb shield bonuses for school absorb effects.
- *
- * @param apply True to apply the absorb aura; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleSchoolAbsorb(bool apply, bool Real)
 {
     if (!Real)
@@ -424,33 +339,33 @@ void Aura::HandleSchoolAbsorb(bool apply, bool Real)
     SpellEntry const* spellProto = GetSpellProto();
     if (apply)
     {
-        // prevent double apply bonuses
-        if (!target->IsPlayer() || !((Player*)target)->GetSession()->PlayerLoading())
+
+        if (!IsPlayer(target) || !((Player*)target)->GetSession()->PlayerLoading())
         {
             float DoneActualBenefit = 0.0f;
             switch (spellProto->SpellClassSet)
             {
                 case SPELLFAMILY_PRIEST:
-                    // Power Word: Shield
+
                     if (spellProto->SpellClassMask & UI64LIT(0x0000000000000001))
                     {
-                        //+30% from +healing bonus
+
                         DoneActualBenefit = caster->SpellBaseHealingBonusDone(GetSpellSchoolMask(spellProto)) * 0.3f;
                         break;
                     }
                     break;
                 case SPELLFAMILY_MAGE:
-                    // Frost Ward, Fire Ward
+
                     if (spellProto->IsFitToFamilyMask(UI64LIT(0x0000000100080108)))
-                        //+10% from +spell bonus
+
                     {
                         DoneActualBenefit = caster->SpellBaseDamageBonusDone(GetSpellSchoolMask(spellProto)) * 0.1f;
                     }
                     break;
                 case SPELLFAMILY_WARLOCK:
-                    // Shadow Ward
+
                     if (!spellProto->SpellClassMask)
-                        //+10% from +spell bonus
+
                     {
                         DoneActualBenefit = caster->SpellBaseDamageBonusDone(GetSpellSchoolMask(spellProto)) * 0.1f;
                     }

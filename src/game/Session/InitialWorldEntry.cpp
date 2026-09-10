@@ -33,8 +33,7 @@
 
 void InitialWorldEntryHook::AfterAddToWorld(Player& player)
 {
-    // Map admission supplies the authoritative world/transport anchor. Running
-    // sooner would derive zone state from the map the player is leaving.
+
     if (!player.IsInWorld() || m_context)
     {
         return;
@@ -47,8 +46,6 @@ void InitialWorldEntryHook::AfterAddToWorld(Player& player)
     player.GetWorldAnchor(context.anchorMapId, anchorX, anchorY, anchorZ);
     player.GetZoneAndAreaAboardOrHere(context.zoneId, context.areaId);
 
-    // These packets must precede the single initial object update; later login
-    // work consumes m_context instead of sending world states a second time.
     for (InitialWorldEntryPacket action :
          InitialWorldEntryPacketOrder(m_cinematicSequenceId != 0))
     {

@@ -45,5 +45,5 @@ class ReactorAI : public CreatureAI
         static int Permissible(const Creature*);
 
     private:
-        ObjectGuid i_victimGuid;
+        ObjectGuid i_victimGuid = 0;
 };

@@ -31,7 +31,6 @@ void Immunities::Grant(uint32 spellId, uint32 op, uint32 type)
 {
     SpellImmuneList& list = m_lists[op];
 
-    // One source per kind: whatever was holding this kind open lets go now.
     list.remove_if([type](SpellImmune const& held) { return held.type == type; });
 
     SpellImmune granted;

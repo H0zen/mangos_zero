@@ -25,21 +25,20 @@
 
 namespace
 {
-    /// The three guids a step is filed under: who started it, at whom, and whose
-    /// item it was if an item started it.
+
     struct Actors
     {
-        ObjectGuid source;
-        ObjectGuid target;
-        ObjectGuid owner;
+        ObjectGuid source = 0;
+        ObjectGuid target = 0;
+        ObjectGuid owner = 0;
     };
 
     Actors ActorsOf(Object* source, Object* target)
     {
         Actors who;
         who.source = source->GetObjectGuid();
-        who.target = target ? target->GetObjectGuid() : ObjectGuid();
-        who.owner = source->isType(TYPEMASK_ITEM) ? ((Item*)source)->GetOwnerGuid() : ObjectGuid();
+        who.target = target ? target->GetObjectGuid() : 0;
+        who.owner = IsType(source, TYPEMASK_ITEM) ? ((Item*)source)->GetOwnerGuid() : 0;
         return who;
     }
 }
@@ -71,21 +70,20 @@ bool ScriptSchedule::Start(DBScriptType type, uint32 id, Object* source, Object*
 
     Actors const who = ActorsOf(source, target);
 
-    if (execParams)                                         // Check if the execution should be uniquely
+    if (execParams)
     {
         for (Queue::const_iterator searchItr = m_due.begin(); searchItr != m_due.end(); ++searchItr)
         {
             if (searchItr->second.IsSameScript(type, id,
-                (execParams & SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE) ? who.source : ObjectGuid(),
-                (execParams & SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET) ? who.target : ObjectGuid(), who.owner))
+                (execParams & SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE) ? who.source : 0,
+                (execParams & SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET) ? who.target : 0, who.owner))
             {
-                DEBUG_FILTER_LOG(LOG_FILTER_DB_SCRIPTS, "DB-SCRIPTS: Process table `dbscripts [type=%d]` id %u. Skip script as script already started for source %s, target %s - ScriptsStartParams %u", type, id, who.source.GetString().c_str(), who.target.GetString().c_str(), execParams);
+                DEBUG_FILTER_LOG(LOG_FILTER_DB_SCRIPTS, "DB-SCRIPTS: Process table `dbscripts [type=%d]` id %u. Skip script as script already started for source %s, target %s - ScriptsStartParams %u", type, id, GuidString(who.source).c_str(), GuidString(who.target).c_str(), execParams);
                 return true;
             }
         }
     }
 
-    ///- Schedule script execution for all scripts in the script map
     ScriptChain const* chain = &(s->second);
     for (ScriptChain::const_iterator iter = chain->begin(); iter != chain->end(); ++iter)
     {
@@ -101,7 +99,6 @@ bool ScriptSchedule::Start(DBScriptType type, uint32 id, Object* source, Object*
 
 void ScriptSchedule::StartCommand(ScriptInfo const& script, uint32 delay, Object* source, Object* target)
 {
-    // NOTE: script record _must_ exist until command executed
 
     Actors const who = ActorsOf(source, target);
 
@@ -119,14 +116,13 @@ void ScriptSchedule::RunDue()
         return;
     }
 
-    ///- Process overdue queued scripts
     Queue::iterator iter = m_due.begin();
-    // ok as multimap is a *sorted* associative container
+
     while (!m_due.empty() && (iter->first <= sWorld.GetGameTime()))
     {
         if (iter->second.HandleScriptStep())
         {
-            // Terminate following script steps of this script
+
             DBScriptType type = iter->second.GetType();
             uint32 id = iter->second.GetId();
             ObjectGuid sourceGuid = iter->second.GetSourceGuid();

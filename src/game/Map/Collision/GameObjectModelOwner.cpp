@@ -23,12 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-// The only part of GameObjectModel that knows what a GameObject is.
-//
-// Everything else about a collidable body -- its geometry, its placement, its world box,
-// its raycasts -- needs no world at all, and keeping that half free of GameObject.h is
-// what lets it be built and tested without standing a server up.
-
 #include "GameObjectModel.h"
 
 #include "GameObject.h"
@@ -63,9 +57,7 @@ bool GameObjectModel::Initialize(const GameObject* pGo, uint32 displayId)
     }
 
     m_owner = pGo;
-    // Vanilla has no phasing. The field stays, because the collision index is
-    // shared with the cores that do phase, and every body sits in the only phase
-    // there is so the filter always passes.
+
     m_phaseMask = Map::PHASE_ANY;
     UpdatePose();
     return true;
@@ -92,4 +84,3 @@ void GameObjectModel::UpdatePose()
 
     DeriveBounds();
 }
-

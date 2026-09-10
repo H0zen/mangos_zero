@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
 #include "Policies/Singleton.h"
@@ -57,12 +55,9 @@
 #include "DisableMgr.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Loads faction-specific reputation reward rate multipliers.
- */
 void ObjectMgr::LoadReputationRewardRate()
 {
-    m_RepRewardRateMap.clear();                             // for reload case
+    m_RepRewardRateMap.clear();
 
     uint32 count = 0;
     QueryResult* result = WorldDatabase.Query("SELECT `faction`, `quest_rate`, `creature_rate`, `spell_rate` FROM `reputation_reward_rate`");
@@ -129,17 +124,14 @@ void ObjectMgr::LoadReputationRewardRate()
     sLog.outString();
 }
 
-/**
- * @brief Loads creature reputation rewards granted on kill.
- */
 void ObjectMgr::LoadReputationOnKill()
 {
     uint32 count = 0;
 
     QueryResult* result = WorldDatabase.Query(
-        //           0              1                       2
+
             "SELECT `creature_id`, `RewOnKillRepFaction1`, `RewOnKillRepFaction2`,"
-        //    3               4               5                     6               7               8                     9
+
             "`IsTeamAward1`, `MaxStanding1`, `RewOnKillRepValue1`, `IsTeamAward2`, `MaxStanding2`, `RewOnKillRepValue2`, `TeamDependent` "
             "FROM `creature_onkill_reputation`");
 
@@ -210,12 +202,9 @@ void ObjectMgr::LoadReputationOnKill()
     sLog.outString();
 }
 
-/**
- * @brief Loads reputation spillover templates for shared faction gains.
- */
 void ObjectMgr::LoadReputationSpilloverTemplate()
 {
-    m_RepSpilloverTemplateMap.clear();                      // for reload case
+    m_RepSpilloverTemplateMap.clear();
 
     uint32 count = 0;
     QueryResult* result = WorldDatabase.Query("SELECT `faction`, `faction1`, `rate_1`, `rank_1`, `faction2`, `rate_2`, `rank_2`, `faction3`, `rate_3`, `rank_3`, `faction4`, `rate_4`, `rank_4` FROM `reputation_spillover_template`");

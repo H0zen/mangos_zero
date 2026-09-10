@@ -70,15 +70,15 @@ class ScriptedInstance : public InstanceData
 
         // Change active state of doors or buttons
         void DoUseDoorOrButton(ObjectGuid guid, uint32 uiWithRestoreTime = 0, bool bUseAlternativeState = false);
-        void DoUseDoorOrButton(uint32 uiEntry, uint32 uiWithRestoreTime = 0, bool bUseAlternativeState = false);
+        void DoUseDoorOrButtonByEntry(uint32 uiEntry, uint32 uiWithRestoreTime = 0, bool bUseAlternativeState = false);
 
         // Respawns a GO having negative spawntimesecs in gameobject-table
         void DoRespawnGameObject(ObjectGuid guid, uint32 uiTimeToDespawn = MINUTE);
-        void DoRespawnGameObject(uint32 uiEntry, uint32 uiTimeToDespawn = MINUTE);
+        void DoRespawnGameObjectByEntry(uint32 uiEntry, uint32 uiTimeToDespawn = MINUTE);
 
         // Toggle the flags of a GO
         void DoToggleGameObjectFlags(ObjectGuid guid, uint32 uiGOflags, bool bApply);
-        void DoToggleGameObjectFlags(uint32 uiEntry, uint32 uiGOflags, bool bApply);
+        void DoToggleGameObjectFlagsByEntry(uint32 uiEntry, uint32 uiGOflags, bool bApply);
 
         // Sends world state update to all players in instance
         void DoUpdateWorldState(uint32 uiStateId, uint32 uiStateData);

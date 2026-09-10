@@ -23,7 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
 #include "Kinds.h"
 
 #include <cmath>
@@ -61,46 +60,35 @@
 #include "AnimatedTraps.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-// The one trap in the game that fires at a single creature and ignores everyone
-// else. It is in Dire Maul, and what it is aimed at is Slip'kik's guard.
 enum
 {
     GO_DIRE_MAUL_FIXED_TRAP = 179512,
     NPC_SLIPKIK_GUARD = 14323
 };
 
-/**
- * @brief A door swings and swings back on its own.
- */
 GameObjectBehaviour::Casting DoorBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
     cast.caster = user;
 
-    // doors never really despawn, only reset to default state/flags
     It().UseDoorOrButton();
 
-    // activate script
     if (!scriptSaidYes)
     {
         It().GetMap()->Scripts().Start(DBS_ON_GO_USE, It().GetGUIDLow(), cast.caster, &It());
     }
     return Casting();
 }
-/**
- * @brief A button does its work through whatever is linked to it.
- */
+
 GameObjectBehaviour::Casting ButtonBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
     cast.caster = user;
 
-    // buttons never really despawn, only reset to default state/flags
     It().UseDoorOrButton();
 
     It().TriggerLinkedGameObject(user);
 
-    // activate script
     if (!scriptSaidYes)
     {
         It().GetMap()->Scripts().Start(DBS_ON_GO_USE, It().GetGUIDLow(), cast.caster, &It());
@@ -108,15 +96,13 @@ GameObjectBehaviour::Casting ButtonBehaviour::UsedBy(Unit* user, bool scriptSaid
 
     return Casting();
 }
-/**
- * @brief A quest giver opens its dialogue.
- */
+
 GameObjectBehaviour::Casting QuestGiverBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
     cast.caster = user;
 
-    if (!user->IsPlayer())
+    if (!IsPlayer(user))
     {
         return Casting();
     }
@@ -131,22 +117,19 @@ GameObjectBehaviour::Casting QuestGiverBehaviour::UsedBy(Unit* user, bool script
 
     return Casting();
 }
-/**
- * @brief A chest hands over its loot, and may spring what is linked to it.
- */
+
 GameObjectBehaviour::Casting ChestBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
     cast.caster = user;
 
-    if (!user->IsPlayer())
+    if (!IsPlayer(user))
     {
         return Casting();
     }
 
     It().TriggerLinkedGameObject(user);
 
-    // TODO: possible must be moved to loot release (in different from linked triggering)
     if (It().GetGOInfo()->chest.eventId)
     {
         DEBUG_LOG("Chest ScriptStart id %u for %s (opened by %s)", It().GetGOInfo()->chest.eventId, It().GetGuidStr().c_str(), user->GetGuidStr().c_str());
@@ -155,9 +138,7 @@ GameObjectBehaviour::Casting ChestBehaviour::UsedBy(Unit* user, bool scriptSaidY
 
     return Casting();
 }
-/**
- * @brief A generic object is spent by being touched.
- */
+
 GameObjectBehaviour::Casting GenericBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
@@ -168,13 +149,10 @@ GameObjectBehaviour::Casting GenericBehaviour::UsedBy(Unit* user, bool scriptSai
         return Casting();
     }
 
-    // No known way to exclude some - only different approach is to select despawnable GOs by Entry
     It().SetLootState(GO_JUST_DEACTIVATED);
     return Casting();
 }
-/**
- * @brief A trap fires at whoever set it off.
- */
+
 GameObjectBehaviour::Casting TrapBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
@@ -192,49 +170,40 @@ GameObjectBehaviour::Casting TrapBehaviour::UsedBy(Unit* user, bool scriptSaidYe
     float radius = float(goInfo->trap.radius);
     bool IsBattleGroundTrap = !radius && goInfo->trap.cooldown == 3 && It().Clock().Moment() == 0;
 
-    // FIXME: when GO casting will be implemented trap must cast spell to target
     if (goInfo->trap.spellId)
     {
         caster->CastSpell(user, goInfo->trap.spellId, true, nullptr, nullptr, It().GetObjectGuid());
     }
-    // use template cooldown if provided
+
     It().UsableAt(time(nullptr) + (goInfo->trap.cooldown ? goInfo->trap.cooldown : uint32(4)));
 
-    // count charges
     if (goInfo->trap.charges > 0)
     {
         m_tally.Used();
     }
 
-    if (IsBattleGroundTrap && user->IsPlayer())
+    if (IsBattleGroundTrap &&IsPlayer(user))
     {
-        // BattleGround gameobjects case
+
         if (BattleGround* bg = static_cast<Player*>(user)->Battle().Ground())
         {
             bg->HandleTriggerBuff(It().GetObjectGuid());
         }
     }
 
-    // TODO: all traps can be activated, also those without spell.
-    // Some may have have animation and/or are expected to despawn.
-
-    // A few models will stand there doing nothing unless the animation is sent.
     if (sAnimatedTraps.NeedTelling(It().GetDisplayId()))
     {
         It().SendGameObjectCustomAnim();
     }
 
-    if (!scriptSaidYes && user->IsCreature())
+    if (!scriptSaidYes &&IsCreature(user))
     {
         sScriptMgr.OnGameObjectUse(user, &It());
     }
 
-    // TODO: Despawning of traps? (Also related to code in ::Update)
     return Casting();
 }
-/**
- * @brief A chair seats the player at its nearest free slot.
- */
+
 GameObjectBehaviour::Casting ChairBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
@@ -246,16 +215,13 @@ GameObjectBehaviour::Casting ChairBehaviour::UsedBy(Unit* user, bool scriptSaidY
         return Casting();
     }
 
-    if (!user->IsPlayer())
+    if (!IsPlayer(user))
     {
         return Casting();
     }
 
     Player* player = static_cast<Player*>(user);
 
-    // a chair may have n slots. we have to calculate their positions and teleport the player to the nearest one
-
-    // check if the db is sane
     if (info->chair.slots > 0)
     {
         float lowestDist = DEFAULT_VISIBILITY_DISTANCE;
@@ -263,27 +229,17 @@ GameObjectBehaviour::Casting ChairBehaviour::UsedBy(Unit* user, bool scriptSaidY
         float x_lowest = It().Where().X();
         float y_lowest = It().Where().Y();
 
-        // the object orientation + 1/2 pi
-        // every slot will be on that straight line
         float orthogonalOrientation = It().Where().Facing() + M_PI_F * 0.5f;
-        // find nearest slot
+
         for (uint32 i = 0; i < info->chair.slots; ++i)
         {
-            // the distance between this slot and the center of the go - imagine a 1D space
+
             float relativeDistance = (info->size * i) - (info->size * (info->chair.slots - 1) / 2.0f);
 
             float x_i = It().Where().X() + relativeDistance * cos(orthogonalOrientation);
             float y_i = It().Where().Y() + relativeDistance * sin(orthogonalOrientation);
 
-            // calculate the distance between the player and this slot
             float thisDistance = player->Where().DistanceTo(Geometry::Vector2(x_i, y_i));
-
-            /* debug code. It will spawn a npc on each slot to visualize them.
-            Creature* helper = SummonCreature(*player, 14496, x_i, y_i, It().Where().Z(), It().Where().Facing(), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 10000);
-            std::ostringstream output;
-            output << i << ": thisDist: " << thisDistance;
-            Utter(*helper, CHAT_TYPE_SAY, output.str().c_str());
-            */
 
             if (thisDistance <= lowestDist)
             {
@@ -296,15 +252,13 @@ GameObjectBehaviour::Casting ChairBehaviour::UsedBy(Unit* user, bool scriptSaidY
     }
     else
     {
-        // fallback, will always work
+
         player->TeleportTo(It().GetMapId(), It().Where().X(), It().Where().Y(), It().Where().Z(), It().Where().Facing(), TELE_TO_NOT_LEAVE_TRANSPORT | TELE_TO_NOT_LEAVE_COMBAT | TELE_TO_NOT_UNSUMMON_PET);
     }
     player->SetStandState(UNIT_STAND_STATE_SIT_LOW_CHAIR + info->chair.height);
     return Casting();
 }
-/**
- * @brief A spell focus only springs what is linked to it.
- */
+
 GameObjectBehaviour::Casting SpellFocusBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
@@ -312,20 +266,15 @@ GameObjectBehaviour::Casting SpellFocusBehaviour::UsedBy(Unit* user, bool script
 
     It().TriggerLinkedGameObject(user);
 
-    // some may be activated in addition? Conditions for this? (ex: entry 181616)
     return Casting();
 }
-/**
- * @brief A goober does something to whoever touched it, then shuts.
- */
+
 GameObjectBehaviour::Casting GooberBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
     cast.caster = user;
 
-    // Handle OutdoorPvP use cases
-    // Note: this may be also handled by DB spell scripts in the future, when the world state manager is implemented
-    if (user->IsPlayer())
+    if (IsPlayer(user))
     {
         Player* player = static_cast<Player*>(user);
         if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(player->GetCachedZoneId()))
@@ -341,7 +290,6 @@ GameObjectBehaviour::Casting GooberBehaviour::UsedBy(Unit* user, bool scriptSaid
     It().SetGoFlag(GO_FLAG_IN_USE);
     It().SetLootState(GO_ACTIVATED);
 
-    // this appear to be ok, however others exist in addition to this that should have custom (ex: 190510, 188692, 187389)
     if (info->goober.customAnim)
     {
         It().SendGameObjectCustomAnim();
@@ -353,17 +301,17 @@ GameObjectBehaviour::Casting GooberBehaviour::UsedBy(Unit* user, bool scriptSaid
 
     It().ClosesAt(time(nullptr) + info->GetAutoCloseTime());
 
-    if (user->IsPlayer())
+    if (IsPlayer(user))
     {
         Player* player = static_cast<Player*>(user);
 
-        if (info->goober.pageId)                    // show page...
+        if (info->goober.pageId)
         {
             WorldPacket data(SMSG_GAMEOBJECT_PAGETEXT, 8);
-            data << ObjectGuid(It().GetObjectGuid());
+            data << static_cast<ObjectGuid>(It().GetObjectGuid());
             player->GetSession()->SendPacket(&data);
         }
-        else if (info->goober.gossipID)             // ...or gossip, if page does not exist
+        else if (info->goober.gossipID)
         {
             if (!sScriptMgr.OnGossipHello(player, &It()))
             {
@@ -378,10 +326,9 @@ GameObjectBehaviour::Casting GooberBehaviour::UsedBy(Unit* user, bool scriptSaid
             StartEvents_Event(It().GetMap(), info->goober.eventId, player, &It());
         }
 
-        // possible quest objective for active quests
         if (info->goober.questId && sObjectMgr.GetQuestTemplate(info->goober.questId))
         {
-            // Quest require to be active for GO using
+
             if (player->GetQuestStatus(info->goober.questId) != QUEST_STATUS_INCOMPLETE)
             {
                 return cast;
@@ -391,7 +338,6 @@ GameObjectBehaviour::Casting GooberBehaviour::UsedBy(Unit* user, bool scriptSaid
         player->RewardPlayerAndGroupAtCast(&It());
     }
 
-    // activate script
     if (!scriptSaidYes)
     {
         It().GetMap()->Scripts().Start(DBS_ON_GO_USE, It().GetGUIDLow(), cast.caster, &It());
@@ -401,14 +347,11 @@ GameObjectBehaviour::Casting GooberBehaviour::UsedBy(Unit* user, bool scriptSaid
         return Casting();
     }
 
-    // cast this spell later if provided
     cast.spellId = info->goober.spellId;
 
     return cast;
 }
-/**
- * @brief A camera plays its cinematic to the player.
- */
+
 GameObjectBehaviour::Casting CameraBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
@@ -420,7 +363,7 @@ GameObjectBehaviour::Casting CameraBehaviour::UsedBy(Unit* user, bool scriptSaid
         return Casting();
     }
 
-    if (!user->IsPlayer())
+    if (!IsPlayer(user))
     {
         return Casting();
     }
@@ -439,15 +382,13 @@ GameObjectBehaviour::Casting CameraBehaviour::UsedBy(Unit* user, bool scriptSaid
 
     return Casting();
 }
-/**
- * @brief A bobber is pulled, and the catch is decided here.
- */
+
 GameObjectBehaviour::Casting FishingNodeBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
     cast.caster = user;
 
-    if (!user->IsPlayer())
+    if (!IsPlayer(user))
     {
         return Casting();
     }
@@ -461,11 +402,8 @@ GameObjectBehaviour::Casting FishingNodeBehaviour::UsedBy(Unit* user, bool scrip
 
     switch (It().getLootState())
     {
-        case GO_READY:                              // ready for loot
+        case GO_READY:
         {
-            // 1) skill must be >= base_zone_skill
-            // 2) if skill == base_zone_skill => 5% chance
-            // 3) chance is linear dependence from (base_zone_skill-skill)
 
             uint32 zone, subzone;
             It().GetTerrain()->GetZoneAndAreaId(zone, subzone, It().Where().X(), It().Where().Y(), It().Where().Z());
@@ -476,7 +414,6 @@ GameObjectBehaviour::Casting FishingNodeBehaviour::UsedBy(Unit* user, bool scrip
                 zone_skill = sObjectMgr.GetFishingBaseSkillLevel(zone);
             }
 
-            // provide error, no fishable zone or area should be 0
             if (!zone_skill)
             {
                 sLog.outErrorDb("Fishable areaId %u are not properly defined in `skill_fishing_base_level`.", subzone);
@@ -488,16 +425,14 @@ GameObjectBehaviour::Casting FishingNodeBehaviour::UsedBy(Unit* user, bool scrip
 
             DEBUG_LOG("Fishing check (skill: %i zone min skill: %i chance %i roll: %i", skill, zone_skill, chance, roll);
 
-            // normal chance
             bool success = skill >= zone_skill && chance >= roll;
             GameObject* fishingHole = nullptr;
 
-            // overwrite fail in case fishhole if allowed (after 3.3.0)
             if (!success)
             {
                 if (!sWorld.getConfig(CONFIG_BOOL_SKILL_FAIL_POSSIBLE_FISHINGPOOL))
                 {
-                    // TODO: find reasonable value for fishing hole search
+
                     fishingHole = It().LookupFishingHoleAround(20.0f + CONTACT_DISTANCE);
                     if (fishingHole)
                     {
@@ -505,9 +440,9 @@ GameObjectBehaviour::Casting FishingNodeBehaviour::UsedBy(Unit* user, bool scrip
                     }
                 }
             }
-            // just search fishhole for success case
+
             else
-                // TODO: find reasonable value for fishing hole search
+
             {
                 fishingHole = It().LookupFishingHoleAround(20.0f + CONTACT_DISTANCE);
             }
@@ -517,14 +452,13 @@ GameObjectBehaviour::Casting FishingNodeBehaviour::UsedBy(Unit* user, bool scrip
                 player->UpdateFishingSkill();
             }
 
-            // fish catch or fail and junk allowed (after 3.1.0)
             if (success || sWorld.getConfig(CONFIG_BOOL_SKILL_FAIL_LOOT_FISHING))
             {
-                // prevent removing GO at spell cancel
+
                 player->Conjured().RemoveObject(&It(), false);
                 It().SetOwnerGuid(player->GetObjectGuid());
 
-                if (fishingHole)                    // will set at success only
+                if (fishingHole)
                 {
                     fishingHole->Use(player);
                     It().SetLootState(GO_JUST_DEACTIVATED);
@@ -536,7 +470,7 @@ GameObjectBehaviour::Casting FishingNodeBehaviour::UsedBy(Unit* user, bool scrip
             }
             else
             {
-                // fish escaped, can be deleted now
+
                 It().SetLootState(GO_JUST_DEACTIVATED);
 
                 WorldPacket data(SMSG_FISH_ESCAPED, 0);
@@ -544,7 +478,7 @@ GameObjectBehaviour::Casting FishingNodeBehaviour::UsedBy(Unit* user, bool scrip
             }
             break;
         }
-        case GO_JUST_DEACTIVATED:                   // nothing to do, will be deleted at next update
+        case GO_JUST_DEACTIVATED:
             break;
         default:
         {
@@ -559,15 +493,13 @@ GameObjectBehaviour::Casting FishingNodeBehaviour::UsedBy(Unit* user, bool scrip
     player->FinishSpell(CURRENT_CHANNELED_SPELL);
     return Casting();
 }
-/**
- * @brief A ritual completes once enough casters have joined it.
- */
+
 GameObjectBehaviour::Casting RitualBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
     cast.caster = user;
 
-    if (!user->IsPlayer())
+    if (!IsPlayer(user))
     {
         return Casting();
     }
@@ -580,24 +512,21 @@ GameObjectBehaviour::Casting RitualBehaviour::UsedBy(Unit* user, bool scriptSaid
 
     if (owner)
     {
-        if (!owner->IsPlayer())
+        if (!IsPlayer(owner))
         {
             return Casting();
         }
 
-        // accept only use by player from same group as owner, excluding owner itself (unique use already added in spell effect)
         if (player == static_cast<Player*>(owner) || (info->summoningRitual.castersGrouped && !player->IsInSameRaidWith(static_cast<Player*>(owner))))
         {
             return Casting();
         }
 
-        // expect owner to already be channeling, so if not...
         if (!owner->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
         {
             return Casting();
         }
 
-        // in case summoning ritual caster is GO creator
         cast.caster = owner;
     }
     else
@@ -627,17 +556,14 @@ GameObjectBehaviour::Casting RitualBehaviour::UsedBy(Unit* user, bool scriptSaid
     {
         player->CastSpell(player, info->summoningRitual.animSpell, true);
 
-        // for this case, summoningRitual.spellId is always triggered
         cast.triggered = true;
     }
 
-    // full amount unique participants including original summoner, need more
     if (m_tally.Distinct() < info->summoningRitual.reqParticipants)
     {
         return Casting();
     }
 
-    // owner is first user for non-wild GO objects, if it offline value already set to current user
     if (!It().GetOwnerGuid())
     {
         if (Player* opener = It().GetMap()->GetPlayer(m_tally.First()))
@@ -648,33 +574,26 @@ GameObjectBehaviour::Casting RitualBehaviour::UsedBy(Unit* user, bool scriptSaid
 
     cast.spellId = info->summoningRitual.spellId;
 
-    // spell have reagent and mana cost but it not expected use its
-    // it triggered spell in fact casted at currently channeled GO
     cast.triggered = true;
 
-    // finish owners spell
     if (owner)
     {
         owner->FinishSpell(CURRENT_CHANNELED_SPELL);
     }
 
-    // can be deleted now, if
     if (!info->summoningRitual.ritualPersistent)
     {
         It().SetLootState(GO_JUST_DEACTIVATED);
     }
-    // reset ritual for this GO
+
     else
     {
         It().ClearAllUsesData();
     }
 
-    // go to end function to spell casting
     return cast;
 }
-/**
- * @brief A spell caster spends a charge to cast at whoever used it.
- */
+
 GameObjectBehaviour::Casting SpellCasterBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
@@ -691,12 +610,12 @@ GameObjectBehaviour::Casting SpellCasterBehaviour::UsedBy(Unit* user, bool scrip
     if (info->spellcaster.partyOnly)
     {
         Unit* caster = It().GetOwner();
-        if (!caster || !caster->IsPlayer())
+        if (!caster || !IsPlayer(caster))
         {
             return Casting();
         }
 
-        if (!user->IsPlayer() || !static_cast<Player*>(user)->IsInSameRaidWith(static_cast<Player*>(caster)))
+        if (!IsPlayer(user) || !static_cast<Player*>(user)->IsInSameRaidWith(static_cast<Player*>(caster)))
         {
             return Casting();
         }
@@ -707,15 +626,13 @@ GameObjectBehaviour::Casting SpellCasterBehaviour::UsedBy(Unit* user, bool scrip
     m_tally.Used();
     return cast;
 }
-/**
- * @brief A flag stand hands its flag to the player.
- */
+
 GameObjectBehaviour::Casting FlagStandBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
     cast.caster = user;
 
-    if (!user->IsPlayer())
+    if (!IsPlayer(user))
     {
         return Casting();
     }
@@ -724,29 +641,25 @@ GameObjectBehaviour::Casting FlagStandBehaviour::UsedBy(Unit* user, bool scriptS
 
     if (player->CanUseBattleGroundObject())
     {
-        // in battleground check
+
         BattleGround* bg = player->Battle().Ground();
         if (!bg)
         {
             return Casting();
         }
-        // The battleground knows its own flags: it looks this one up in the event
-        // table it was spawned from, and does nothing at all with an object that is
-        // not in it.
+
         bg->EventPlayerClickedOnFlag(player, &It());
-        return Casting();                                     // we don't need to delete flag ... it is despawned!
+        return Casting();
     }
     return cast;
 }
-/**
- * @brief A fishing hole gives up one of its catches.
- */
+
 GameObjectBehaviour::Casting FishingHoleBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
     cast.caster = user;
 
-    if (!user->IsPlayer())
+    if (!IsPlayer(user))
     {
         return Casting();
     }
@@ -756,15 +669,13 @@ GameObjectBehaviour::Casting FishingHoleBehaviour::UsedBy(Unit* user, bool scrip
     player->SendLoot(It().GetObjectGuid(), LOOT_FISHINGHOLE);
     return Casting();
 }
-/**
- * @brief A dropped flag is picked up or returned.
- */
+
 GameObjectBehaviour::Casting FlagDropBehaviour::UsedBy(Unit* user, bool scriptSaidYes)
 {
     Casting cast;
     cast.caster = user;
 
-    if (!user->IsPlayer())
+    if (!IsPlayer(user))
     {
         return Casting();
     }
@@ -773,33 +684,20 @@ GameObjectBehaviour::Casting FlagDropBehaviour::UsedBy(Unit* user, bool scriptSa
 
     if (player->CanUseBattleGroundObject())
     {
-        // in battleground check
+
         BattleGround* bg = player->Battle().Ground();
         if (!bg)
         {
             return Casting();
         }
-        // Asked the same way a flag on its stand is: the battleground looks the
-        // object up in its own event table and does nothing with one that is not in
-        // it, so which battleground and which flag are both its business.
+
         bg->EventPlayerClickedOnFlag(player, &It());
 
-        // A flag that has been picked up off the ground is gone from the ground,
-        // whatever the battleground made of it.
         It().Delete();
     }
     return cast;
 }
 
-
-/* ****************************** Being made ready ************************* */
-
-/**
- * @brief A trap is armed the tick after it is placed, not when it is placed.
- *
- * Its arming delay is only served against an owner who is already fighting, and
- * who that owner is cannot be asked until the object is in the world.
- */
 void TrapBehaviour::Arming()
 {
     Unit* owner = It().GetOwner();
@@ -811,9 +709,6 @@ void TrapBehaviour::Arming()
     It().SetLootState(GO_READY);
 }
 
-/**
- * @brief A bobber sits under the water until it is time for the fish to take it.
- */
 void FishingNodeBehaviour::Arming()
 {
     if (time(nullptr) <= It().Clock().Moment() - FISHING_BOBBER_READY_TIME)
@@ -821,10 +716,8 @@ void FishingNodeBehaviour::Arming()
         return;
     }
 
-    // The splash is what the caster is watching for; it is what says the bite may
-    // now be caught.
     Unit* caster = It().GetOwner();
-    if (caster && caster->IsPlayer())
+    if (caster &&IsPlayer(caster))
     {
         It().SetGoState(GO_STATE_ACTIVE);
         It().SendForcedObjectUpdate();
@@ -834,30 +727,16 @@ void FishingNodeBehaviour::Arming()
     It().SetLootState(GO_READY);
 }
 
-/**
- * @brief A chest is ready the moment it is looked at.
- */
 void ChestBehaviour::Arming()
 {
-    // A chest the data says refills is simply always ready. Nothing ever starts
-    // the countdown, so refilling is not implemented and the restock time in the
-    // template goes unread.
-    //
-    // <<TODO: implement it, or say in the schema that the column is not read. A
-    // chest with chestRestockTime set is meant to fill again after that long
-    // rather than despawn.
+
     It().SetLootState(GO_READY);
 }
 
-/* ****************************** The clock running out ******************** */
-
-/**
- * @brief Nobody caught anything, and the cast ends.
- */
 GameObjectBehaviour::Tick FishingNodeBehaviour::TimedOut()
 {
     Unit* caster = It().GetOwner();
-    if (caster && caster->IsPlayer())
+    if (caster &&IsPlayer(caster))
     {
         caster->FinishSpell(CURRENT_CHANNELED_SPELL);
 
@@ -869,12 +748,6 @@ GameObjectBehaviour::Tick FishingNodeBehaviour::TimedOut()
     return Tick::Stop;
 }
 
-/**
- * @brief A door left open closes again when its time is up.
- *
- * And then it is put back like anything else, which is why this carries on: a
- * battleground door is a permanent spawn and has to come back.
- */
 GameObjectBehaviour::Tick DoorBehaviour::TimedOut()
 {
     if (It().GetGoState() != GO_STATE_READY)
@@ -885,7 +758,6 @@ GameObjectBehaviour::Tick DoorBehaviour::TimedOut()
     return Tick::Carry;
 }
 
-/// The flags of Arathi Basin are buttons, and they close the same way.
 GameObjectBehaviour::Tick ButtonBehaviour::TimedOut()
 {
     if (It().GetGoState() != GO_STATE_READY)
@@ -896,26 +768,17 @@ GameObjectBehaviour::Tick ButtonBehaviour::TimedOut()
     return Tick::Carry;
 }
 
-/* ****************************** Standing there *************************** */
-
-/**
- * @brief A trap watches the ground around it for somebody to step on.
- */
 GameObjectBehaviour::Tick TrapBehaviour::Standing()
 {
     if (It().UsableAt() >= time(nullptr))
     {
-        return Tick::Stop;                                  // still arming
+        return Tick::Stop;
     }
 
-    // FIXME: this is activation radius (in different casting radius that must be selected from spell data)
-    // TODO: move activated state code (cast itself) to GO_ACTIVATED, in this place only check activating and set state
     float radius = float(Data().trap.radius);
     if (!radius)
     {
-        // No radius of its own: it goes off only when something else trips it,
-        // unless it is one of the battleground traps, which say so by carrying a
-        // cooldown of three and mean it as a radius.
+
         if (Data().trap.cooldown != 3)
         {
             return Tick::Stop;
@@ -947,7 +810,7 @@ GameObjectBehaviour::Tick TrapBehaviour::Standing()
 
     if (targetUnit)
     {
-        // prevent use if GO entry is "Fixed Trap" and target is not SLIKIK
+
         if (It().GetEntry() != GO_DIRE_MAUL_FIXED_TRAP || targetUnit->GetEntry() == NPC_SLIPKIK_GUARD)
         {
             It().Use(targetUnit);
@@ -957,10 +820,7 @@ GameObjectBehaviour::Tick TrapBehaviour::Standing()
     return Tick::Carry;
 }
 
-/* ****************************** Being used ******************************* */
-
-/// A door shuts itself at the moment it was told to.
-void DoorBehaviour::InUse(uint32 /*elapsed*/)
+void DoorBehaviour::InUse(uint32 )
 {
     if (It().ClosesAt() != 0 && It().ClosesAt() <= time(nullptr))
     {
@@ -968,8 +828,7 @@ void DoorBehaviour::InUse(uint32 /*elapsed*/)
     }
 }
 
-/// And so does a button.
-void ButtonBehaviour::InUse(uint32 /*elapsed*/)
+void ButtonBehaviour::InUse(uint32 )
 {
     if (It().ClosesAt() != 0 && It().ClosesAt() <= time(nullptr))
     {
@@ -977,15 +836,9 @@ void ButtonBehaviour::InUse(uint32 /*elapsed*/)
     }
 }
 
-/**
- * @brief An emptied chest lingers a moment before it goes.
- *
- * As long as anything is left in it the moment keeps being pushed back, so the
- * countdown only really starts when the last item is taken.
- */
-void ChestBehaviour::InUse(uint32 /*elapsed*/)
+void ChestBehaviour::InUse(uint32 )
 {
-    // TODO : Missing Loot::Update() method found in CMangos
+
     if (!It().loot.empty())
     {
         m_lock.EmptyAt(time(nullptr) + CHEST_LINGER);
@@ -996,8 +849,7 @@ void ChestBehaviour::InUse(uint32 /*elapsed*/)
     }
 }
 
-/// A goober is held in use until the moment its template names, and then released.
-void GooberBehaviour::InUse(uint32 /*elapsed*/)
+void GooberBehaviour::InUse(uint32 )
 {
     if (It().ClosesAt() > time(nullptr))
     {
@@ -1009,12 +861,6 @@ void GooberBehaviour::InUse(uint32 /*elapsed*/)
     It().ClosesAt(0);
 }
 
-
-/* ****************************** Finished with **************************** */
-
-/**
- * @brief What a goober was clicked for is cast on everyone who clicked it.
- */
 GameObjectBehaviour::Tick GooberBehaviour::Spent()
 {
     if (uint32 spellId = Data().goober.spellId)
@@ -1035,26 +881,16 @@ GameObjectBehaviour::Tick GooberBehaviour::Spent()
     return Tick::Carry;
 }
 
-
-/**
- * @brief An opened chest springs whatever was linked to it.
- */
 GameObjectBehaviour::Tick ChestBehaviour::Spent()
 {
     uint32 const trapEntry = Data().GetLinkedGameObjectEntry();
 
-    // <<TODO: the one hardcoded entry left in this file, and the shape is wrong to
-    // move as it stands. The key is the chest's linkedTrapId, which here names
-    // another chest rather than a trap and is being used as a marker; what it does
-    // with it is despawn a separate visual object standing on the same spot. Decide
-    // whether that is one chest's patch or the case of a general rule -- a visual
-    // that belongs to an object and goes when it goes -- before giving it a table.
-    if (trapEntry == 144064) // Special case for Gordunni Cobalt Visual
+    if (trapEntry == 144064)
     {
         float const range = 0.5f;
         GameObject* visualGO = nullptr;
 
-        MaNGOS::NearestGameObjectEntryInObjectRangeCheck go_check(It(), 177683, range); //177683 Visual Entry
+        MaNGOS::NearestGameObjectEntryInObjectRangeCheck go_check(It(), 177683, range);
         MaNGOS::GameObjectLastSearcher<MaNGOS::NearestGameObjectEntryInObjectRangeCheck> checker(visualGO, go_check);
 
         Cell::VisitGridObjects(&It(), checker, range);
@@ -1092,9 +928,6 @@ GameObjectBehaviour::Tick ChestBehaviour::Spent()
     return Tick::Carry;
 }
 
-/* ****************************** Coming back ****************************** */
-
-/// A vein is rolled afresh every time it comes back, so the ore it holds can change.
 void ChestBehaviour::Respawning()
 {
     It().RollIfMineralVein();

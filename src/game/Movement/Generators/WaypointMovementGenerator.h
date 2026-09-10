@@ -33,18 +33,8 @@
 #include <sstream>
 #include <vector>
 
-/// How long a patroller waits after being force-stopped by a player talking to it.
 #define STOP_TIME_FOR_PLAYER  (3 * MINUTE * IN_MILLISECONDS)
 
-/**
- * @brief Patrol: walk a list of waypoints, pausing, emoting and running scripts at the
- *        ones that say to.
- *
- * This is the one movement kind that must dictate the EXACT geometry of its leg rather
- * than name a destination and let the driver route to it: a smoothed segment welds
- * several waypoint legs into a single spline so the creature does not visibly stop and
- * relaunch at every node. It therefore hands the driver its own points on the intent.
- */
 class WaypointMovementGenerator final : public IntentMovementGenerator
 {
     public:
@@ -59,7 +49,6 @@ class WaypointMovementGenerator final : public IntentMovementGenerator
 
         bool GetResetPosition(Unit& owner, float& x, float& y, float& z, float& o) const override;
 
-        /// Load a path and start walking it after `initialDelay` ms.
         void InitializeWaypointPath(Unit& owner, int32 pathId, WaypointPathOrigin wpSource,
                                     uint32 initialDelay, uint32 overwriteEntry);
 
@@ -73,10 +62,8 @@ class WaypointMovementGenerator final : public IntentMovementGenerator
 
         void GetPathInformation(std::ostringstream& oss) const;
 
-        /// Extend (or cut short) the pause at the current node.
         void AddToWaypointPauseTime(int32 waitTimeDiff);
 
-        /// Jump the patrol to a given node; it moves on the next tick.
         bool SetNextWaypoint(uint32 pointId);
 
     protected:
@@ -84,36 +71,24 @@ class WaypointMovementGenerator final : public IntentMovementGenerator
                                   uint32 diff) override;
 
     private:
-        /// A waypoint reached inside an active smoothed segment.
+
         struct SegmentWaypoint
         {
-            uint32 pointId;        ///< Waypoint id in the path.
-            size_t pathPointIndex; ///< Index of its endpoint within the spline points.
+            uint32 pointId;
+            size_t pathPointIndex;
         };
 
         void LoadPath(Creature& creature, int32 pathId, WaypointPathOrigin wpOrigin,
                       uint32 overwriteEntry);
 
-        /// Advance to the next waypoint and prepare the leg that reaches it. This is the
-        /// old StartMove with the launching taken out: it still advances the node, fires
-        /// the AI informs and applies the node's model change, and it still builds the
-        /// smoothed geometry — but it hands that to the driver as an intent rather than
-        /// pushing a spline itself.
         Motion::MoveIntent PrepareMove(Creature& creature);
 
-        /// The intent that walks the leg PrepareMove built.
         Motion::MoveIntent WalkPreparedLeg() const;
 
-        /// Everything that happens on getting to a node: scripts, emotes, AI informs,
-        /// and the pause the node asks for.
         void OnArrived(Creature& creature);
 
-        /// Fire arrival handling for any smoothed waypoints the spline has now passed.
         void ProcessSegmentProgress(Creature& creature, int32 pathIndex);
 
-        /// Weld as many upcoming legs as will fit into one spline. Leaves m_legPoints
-        /// empty when the segment cannot be smoothed, and the driver then routes a plain
-        /// leg to the next node instead.
         void BuildSmoothPath(Creature& creature, WaypointPath::const_iterator startPoint);
 
         bool Stopped(Unit const& owner) const;
@@ -135,26 +110,16 @@ class WaypointMovementGenerator final : public IntentMovementGenerator
         TimeTracker m_nextMoveTime{0};
         bool m_isArrivalDone = false;
 
-        std::vector<SegmentWaypoint> m_segment; ///< Waypoints inside the smoothed leg.
-        size_t m_segmentArrivals = 0;           ///< How many of them we have passed.
+        std::vector<SegmentWaypoint> m_segment;
+        size_t m_segmentArrivals = 0;
 
-        /// The leg PrepareMove built. Empty points mean "not smoothed — route to
-        /// m_legEnd instead". The driver holds a pointer to these while the leg is in
-        /// flight, so they must not be rebuilt until the leg ends.
         Movement::PointsArray m_legPoints;
         Motion::Vector3 m_legEnd;
         Motion::Facing m_legFacing;
-        bool m_legWalk = true; ///< Pace of the leg; false only for a DB-flagged runner.
+        bool m_legWalk = true;
         bool m_haveLeg = false;
 };
 
-/**
- * @brief The player taxi flight.
- *
- * Deliberately NOT on the intent model: it lays one scripted spline through the taxi
- * nodes and watches the path index. There is nothing to route, nothing to re-path and
- * nothing to face, so an intent would buy it nothing.
- */
 class FlightPathMovementGenerator final : public MovementGenerator
 {
     public:
@@ -175,7 +140,6 @@ class FlightPathMovementGenerator final : public MovementGenerator
         TaxiPathNodeList const& GetPath() const { return *m_path; }
         uint32 GetCurrentNode() const { return m_currentNode; }
 
-        /// Index of the first node on a different map — where this leg of the flight ends.
         uint32 GetPathAtMapEnd() const;
 
         bool HasArrived() const { return m_currentNode >= m_path->size(); }

@@ -23,27 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Spell.cpp
- * @brief Spell casting and effect implementation
- *
- * This file implements the Spell class which handles spell casting:
- * - Spell validation and casting requirements
- * - Spell effect execution (damage, healing, summon, etc.)
- * - Spell targeting and area effects
- * - Spell cooldowns and resource costs
- * - Spell interruption and pushback
- * - Spell aura application
- * - Spell hit/miss calculations
- *
- * Spells are the primary combat mechanic in WoW, encompassing
- * abilities, talents, and item effects.
- *
- * @see Spell for the spell class
- * @see SpellAura for spell auras
- * @see SpellMgr for spell management
- */
-
 #include "Utilities/Errors.h"
 #include "Spell.h"
 #include "Database/DatabaseEnv.h"
@@ -78,12 +57,6 @@
 
 extern pEffect SpellEffects[TOTAL_SPELL_EFFECTS];
 
-/**
- * @brief Checks whether a spell matches the quest tame spell pattern.
- *
- * @param spellId The spell identifier to test.
- * @return True if the spell is a quest tame spell; otherwise, false.
- */
 bool IsQuestTameSpell(uint32 spellId)
 {
     SpellEntry const* spellproto = sSpellStore.LookupEntry(spellId);
@@ -113,11 +86,6 @@ SpellCastTargets::~SpellCastTargets()
 {
 }
 
-/**
- * @brief Sets a unit target and copies its current position as the destination.
- *
- * @param target The unit target.
- */
 void SpellCastTargets::setUnitTarget(Unit* target)
 {
     if (!target)
@@ -133,13 +101,6 @@ void SpellCastTargets::setUnitTarget(Unit* target)
     m_targetMask |= TARGET_FLAG_UNIT;
 }
 
-/**
- * @brief Sets the destination coordinates for the cast.
- *
- * @param x The destination X coordinate.
- * @param y The destination Y coordinate.
- * @param z The destination Z coordinate.
- */
 void SpellCastTargets::setDestination(float x, float y, float z)
 {
     m_destX = x;
@@ -148,13 +109,6 @@ void SpellCastTargets::setDestination(float x, float y, float z)
     m_targetMask |= TARGET_FLAG_DEST_LOCATION;
 }
 
-/**
- * @brief Sets the source coordinates for the cast.
- *
- * @param x The source X coordinate.
- * @param y The source Y coordinate.
- * @param z The source Z coordinate.
- */
 void SpellCastTargets::setSource(float x, float y, float z)
 {
     m_srcX = x;
@@ -163,23 +117,13 @@ void SpellCastTargets::setSource(float x, float y, float z)
     m_targetMask |= TARGET_FLAG_SOURCE_LOCATION;
 }
 
-/**
- * @brief Sets the game object target for the cast.
- *
- * @param target The game object target.
- */
 void SpellCastTargets::setGOTarget(GameObject* target)
 {
     m_GOTarget = target;
     m_GOTargetGUID = target->GetObjectGuid();
-    //    m_targetMask |= TARGET_FLAG_OBJECT;
+
 }
 
-/**
- * @brief Sets the item target for the cast.
- *
- * @param item The item target.
- */
 void SpellCastTargets::setItemTarget(Item* item)
 {
     if (!item)
@@ -193,35 +137,20 @@ void SpellCastTargets::setItemTarget(Item* item)
     m_targetMask |= TARGET_FLAG_ITEM;
 }
 
-/**
- * @brief Sets the current trade slot as the item target.
- *
- * @param caster The player performing the cast.
- */
 void SpellCastTargets::setTradeItemTarget(Player* caster)
 {
-    m_itemTargetGUID = ObjectGuid(uint64(TRADE_SLOT_NONTRADED));
+    m_itemTargetGUID = static_cast<ObjectGuid>(uint64(TRADE_SLOT_NONTRADED));
     m_itemTargetEntry = 0;
     m_targetMask |= TARGET_FLAG_TRADE_ITEM;
 
     Update(caster);
 }
 
-/**
- * @brief Sets the corpse target for the cast.
- *
- * @param corpse The corpse target.
- */
 void SpellCastTargets::setCorpseTarget(Corpse* corpse)
 {
     m_CorpseTargetGUID = corpse->GetObjectGuid();
 }
 
-/**
- * @brief Resolves stored target GUIDs into live object pointers.
- *
- * @param caster The casting unit used to resolve map-relative targets.
- */
 void SpellCastTargets::Update(Unit* caster)
 {
     m_GOTarget   = m_GOTargetGUID ? caster->GetMap()->GetGameObject(m_GOTargetGUID) : nullptr;
@@ -230,7 +159,7 @@ void SpellCastTargets::Update(Unit* caster)
         : nullptr;
 
     m_itemTarget = nullptr;
-    if (caster->IsPlayer())
+    if (IsPlayer(caster))
     {
         Player* player = ((Player*)caster);
 
@@ -242,9 +171,9 @@ void SpellCastTargets::Update(Unit* caster)
         {
             if (TradeData* pTrade = player->GetTradeData())
             {
-                if (m_itemTargetGUID.GetRawValue() < TRADE_SLOT_COUNT)
+                if (m_itemTargetGUID < TRADE_SLOT_COUNT)
                 {
-                    m_itemTarget = pTrade->GetTraderData()->GetItem(TradeSlots(m_itemTargetGUID.GetRawValue()));
+                    m_itemTarget = pTrade->GetTraderData()->GetItem(TradeSlots(m_itemTargetGUID));
                 }
             }
         }
@@ -256,12 +185,6 @@ void SpellCastTargets::Update(Unit* caster)
     }
 }
 
-/**
- * @brief Deserializes spell cast targets from a packet buffer.
- *
- * @param data The packet buffer to read.
- * @param caster The casting unit.
- */
 void SpellCastTargets::read(ByteBuffer& data, Unit* caster)
 {
     data >> m_targetMask;
@@ -276,20 +199,19 @@ void SpellCastTargets::read(ByteBuffer& data, Unit* caster)
         return;
     }
 
-    // TARGET_FLAG_UNK2 is used for non-combat pets, maybe other?
     if (m_targetMask & (TARGET_FLAG_UNIT | TARGET_FLAG_UNK2))
     {
-        data >> m_unitTargetGUID.ReadAsPacked();
+        data >> ReadPackedGuid(m_unitTargetGUID);
     }
 
     if (m_targetMask & (TARGET_FLAG_OBJECT | TARGET_FLAG_OBJECT_UNK | TARGET_FLAG_GAMEOBJECT_ITEM))
     {
-        data >> m_GOTargetGUID.ReadAsPacked();
+        data >> ReadPackedGuid(m_GOTargetGUID);
     }
 
-    if ((m_targetMask & (TARGET_FLAG_ITEM | TARGET_FLAG_TRADE_ITEM)) && caster->IsPlayer())
+    if ((m_targetMask & (TARGET_FLAG_ITEM | TARGET_FLAG_TRADE_ITEM)) &&IsPlayer(caster))
     {
-        data >> m_itemTargetGUID.ReadAsPacked();
+        data >> ReadPackedGuid(m_itemTargetGUID);
     }
 
     if (m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
@@ -317,18 +239,12 @@ void SpellCastTargets::read(ByteBuffer& data, Unit* caster)
 
     if (m_targetMask & (TARGET_FLAG_CORPSE | TARGET_FLAG_PVP_CORPSE))
     {
-        data >> m_CorpseTargetGUID.ReadAsPacked();
+        data >> ReadPackedGuid(m_CorpseTargetGUID);
     }
 
-    // find real units/GOs
     Update(caster);
 }
 
-/**
- * @brief Serializes spell cast targets into a packet buffer.
- *
- * @param data The packet buffer to write.
- */
 void SpellCastTargets::write(ByteBuffer& data) const
 {
     data << uint16(m_targetMask);
@@ -359,7 +275,7 @@ void SpellCastTargets::write(ByteBuffer& data) const
         }
         else if (m_targetMask & (TARGET_FLAG_CORPSE | TARGET_FLAG_PVP_CORPSE))
         {
-            data << m_CorpseTargetGUID.WriteAsPacked();
+            data << PackGuid(m_CorpseTargetGUID);
         }
         else
         {
@@ -398,11 +314,11 @@ void SpellCastTargets::write(ByteBuffer& data) const
 Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid originalCasterGUID, SpellEntry const* triggeredBy)
 {
     MANGOS_ASSERT(caster != nullptr && info != nullptr);
-    MANGOS_ASSERT(info == sSpellStore.LookupEntry(info->ID));   // `info` must be pointer to sSpellStore element
+    MANGOS_ASSERT(info == sSpellStore.LookupEntry(info->ID));
 
     m_spellInfo = info;
     m_recipe = cast::Recipes().Find(info->ID);
-    MANGOS_ASSERT(m_recipe != nullptr);                     // the book is filled before the world runs
+    MANGOS_ASSERT(m_recipe != nullptr);
     m_triggeredBySpellInfo = triggeredBy;
     m_caster = caster;
     m_selfContainer = nullptr;
@@ -414,18 +330,18 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
     m_applyMultiplierMask = 0;
     m_setsOffProcs = false;
 
-    m_spellSchoolMask = GetSpellSchoolMask(info);           // Can be override for some spell (wand shoot for example)
+    m_spellSchoolMask = GetSpellSchoolMask(info);
 
     if (Recipe().Swings() == RANGED_ATTACK)
     {
-        // wand case
-        if (!(m_caster->getClassMask() & CLASSMASK_WAND_USERS) && m_caster->IsPlayer())
+
+        if (!(m_caster->getClassMask() & CLASSMASK_WAND_USERS) &&IsPlayer(m_caster))
         {
             m_spellSchoolMask = GetSchoolMask(m_caster->GetWeaponDamageSchool(RANGED_ATTACK));
         }
 
     }
-    // Set health leech amount to zero
+
     m_healthLeech = 0;
 
     m_originalCasterGUID = originalCasterGUID ? originalCasterGUID : m_caster->GetObjectGuid();
@@ -443,7 +359,7 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
     m_TriggerSpells.clear();
     m_preCastSpells.clear();
     m_IsTriggeredSpell = triggered;
-    // m_AreaAura = false;
+
     m_CastItem = nullptr;
 
     unitTarget = nullptr;
@@ -452,17 +368,15 @@ Spell::Spell(Unit* caster, SpellEntry const* info, bool triggered, ObjectGuid or
     focusObject = nullptr;
     m_triggeredByAuraSpell  = nullptr;
 
-    // Auto Shot & Shoot (wand)
     m_autoRepeat = Recipe().Starts() == cast::Start::AutoRepeat;
 
-    m_powerCost = 0;                                        // setup to correct value in Spell::prepare, don't must be used before.
-    m_casttime = 0;                                         // setup to correct value in Spell::prepare, don't must be used before.
-    m_timer = 0;                                            // will set to cast time in prepare
+    m_powerCost = 0;
+    m_casttime = 0;
+    m_timer = 0;
     m_duration = 0;
 
     m_needAliveTargetMask = 0;
 
-    // determine reflection
     m_canReflect = false;
 
     if (m_spellInfo->DefenseType == SPELL_DAMAGE_CLASS_MAGIC && !Recipe().Says().ignoresLineOfSight)
@@ -494,12 +408,6 @@ Spell::~Spell()
 {
 }
 
-/**
- * @brief Resolves which spell entry should be used for bonus level penalty calculations.
- *
- * @param spellProto The spell being evaluated.
- * @return The spell entry to use for penalty calculations.
- */
 SpellEntry const* Spell::GetSpellBonusLevelPenaltySpell(SpellEntry const* spellProto) const
 {
     if (!spellProto || !m_triggeredBySpellInfo)
@@ -516,29 +424,9 @@ SpellEntry const* Spell::GetSpellBonusLevelPenaltySpell(SpellEntry const* spellP
     return spellProto;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * @brief Checks whether required alive targets are present in the current target list.
- *
- * @return True if all required effects have a valid alive target; otherwise, false.
- */
 bool Spell::IsAliveUnitPresentInTargetList()
 {
-    // Not need check return true
+
     if (m_needAliveTargetMask == 0)
     {
         return true;
@@ -552,30 +440,16 @@ bool Spell::IsAliveUnitPresentInTargetList()
         {
             Unit* unit = m_caster->GetObjectGuid() == enrolled.guid ? m_caster : ObjectLookup::GetUnit(*m_caster, enrolled.guid);
 
-            // either unit is alive and normal spell, or unit dead and deathonly-spell
             if (unit && (unit->IsAlive() != IsDeathOnlySpell(m_spellInfo)))
             {
-                needAliveTargetMask &= ~enrolled.slots;   // remove from need alive mask effect that have alive target
+                needAliveTargetMask &= ~enrolled.slots;
             }
         }
     }
 
-    // is all effects from m_needAliveTargetMask have alive targets
     return needAliveTargetMask == 0;
 }
 
-
-
-
-
-/**
- * @brief Prepares the spell cast, validates conditions, and starts cast processing.
- *
- * @param targets The resolved spell cast targets.
- * @param triggeredByAura The triggering aura, if this spell was aura-triggered.
- * @param chance Optional roll chance required before proceeding.
- * @return The resulting cast status.
- */
 SpellCastResult Spell::prepare(SpellCastTargets const* targets, Aura* triggeredByAura, uint32 chance)
 {
     m_targets = *targets;
@@ -590,11 +464,9 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, Aura* triggeredB
         m_triggeredByAuraSpell = triggeredByAura->GetSpellProto();
     }
 
-    // create and add update event for this spell
     SpellEvent* Event = new SpellEvent(this);
     m_caster->m_Events.AddEvent(Event, m_caster->m_Events.CalculateTime(1));
 
-    // Prevent casting at cast another spell (ServerSide check)
     if (!m_IsTriggeredSpell && m_caster->IsNonMeleeSpellCasted(false, true, true))
     {
         SendCastResult(SPELL_FAILED_SPELL_IN_PROGRESS);
@@ -609,11 +481,10 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, Aura* triggeredB
         return SPELL_FAILED_SPELL_UNAVAILABLE;
     }
 
-    // Fill cost data
     m_powerCost = CalculatePowerCost(m_spellInfo, m_caster, this, m_CastItem);
 
     SpellCastResult result = CheckCast(true);
-    if (result != SPELL_CAST_OK && !IsAutoRepeat())         // always cast autorepeat dummy for triggering
+    if (result != SPELL_CAST_OK && !IsAutoRepeat())
     {
         if (triggeredByAura)
         {
@@ -625,7 +496,6 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, Aura* triggeredB
         return result;
     }
 
-    // Roll chance to cast from spell list (must be after cast checks, this is why its here)
     if (chance)
     {
         if (!roll_chance_i(chance))
@@ -639,20 +509,14 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, Aura* triggeredB
 
     m_setsOffProcs = SetsOffProcs();
 
-    // calculate cast time (calculated after first CheckCast check to prevent charge counting for first CheckCast fail)
     m_casttime = GetSpellCastTime(m_spellInfo, this);
     m_duration = CalculateSpellDuration(m_spellInfo, m_caster);
 
-    // set timer base at cast time
     ReSetTimer();
 
-    // stealth must be removed at cast starting (at show channel bar)
-    // skip triggered spell (item equip spell casting and other not explicit character casts/item uses)
     if (!m_IsTriggeredSpell && isSpellBreakStealth(m_spellInfo))
     {
-        // Sap - don't exit Stealth yet to prevent getting in combat and making Sap impossible to cast
-        // Removing Stealth depends on talent later
-        // Pick Pocket - don't exit Stealth at all
+
         if (!(m_spellInfo->SpellClassSet == SPELLFAMILY_ROGUE && (m_spellInfo->SpellClassMask & UI64LIT(0x00000080) || m_spellInfo->SpellClassMask & 2147483648)))
         {
             m_caster->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
@@ -660,13 +524,11 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, Aura* triggeredB
         m_caster->RemoveAurasOfType(SPELL_AURA_FEIGN_DEATH);
     }
 
-    // add non-triggered (with cast time and without)
     if (!m_IsTriggeredSpell)
     {
-        // add to cast type slot
+
         m_caster->SetCurrentCastedSpell(this);
 
-        // will show cast bar
         SendSpellStart();
 
         TriggerGlobalCooldown();
@@ -682,42 +544,6 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, Aura* triggeredB
     return SPELL_CAST_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * @brief Gets the first queued unit target guid for an effect, falling back to the explicit target guid.
- *
- * @param effIndex The effect index to inspect.
- * @return The matching unit target guid, or the explicit unit target guid when none is queued.
- */
 ObjectGuid Spell::GetPrefilledOrUnitTargetGuid(SpellEffectIndex effIndex) const
 {
     for (const auto& enrolled : m_roster.Units())
@@ -731,38 +557,24 @@ ObjectGuid Spell::GetPrefilledOrUnitTargetGuid(SpellEffectIndex effIndex) const
     return m_targets.getUnitTargetGuid();
 }
 
-
-
-
-
-
-
-
-
-
-/**
- * @brief Applies spell pushback delay to a currently casting player spell.
- */
 void Spell::Delayed()
 {
-    if (!m_caster || !m_caster->IsPlayer())
+    if (!m_caster || !IsPlayer(m_caster))
     {
         return;
     }
 
     if (m_spellState == SPELL_STATE_DELAYED)
     {
-        return;                                              // spell is active and can't be time-backed
+        return;
     }
 
-    // spells not losing casting time ( slam, dynamites, bombs.. )
     if (!(m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_DAMAGE))
     {
         return;
     }
 
-    // check resist chance
-    int32 resistChance = 100;                               // must be initialized to 100 for percent modifiers
+    int32 resistChance = 100;
     ((Player*)m_caster)->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_NOT_LOSE_CASTING_TIME, resistChance, this);
     resistChance += m_caster->GetTotalAuraModifier(SPELL_AURA_RESIST_PUSHBACK) - 100;
     if (roll_chance_i(resistChance))
@@ -785,27 +597,23 @@ void Spell::Delayed()
     DETAIL_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell %u partially interrupted for (%d) ms at damage", m_spellInfo->ID, delaytime);
 
     WorldPacket data(SMSG_SPELL_DELAYED, 8 + 4);
-    data << ObjectGuid(m_caster->GetObjectGuid());
+    data << static_cast<ObjectGuid>(m_caster->GetObjectGuid());
     data << uint32(delaytime);
 
-    if (m_caster->IsPlayer())
+    if (IsPlayer(m_caster))
     {
         ((Player*)m_caster)->SendDirectMessage(&data);
     }
 }
 
-/**
- * @brief Applies pushback to an active channeled spell and linked aura durations.
- */
 void Spell::DelayedChannel()
 {
-    if (!m_caster || !m_caster->IsPlayer() || getState() != SPELL_STATE_CASTING)
+    if (!m_caster || !IsPlayer(m_caster) || getState() != SPELL_STATE_CASTING)
     {
         return;
     }
 
-    // check resist chance
-    int32 resistChance = 100;                               // must be initialized to 100 for percent modifiers
+    int32 resistChance = 100;
     ((Player*)m_caster)->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_NOT_LOSE_CASTING_TIME, resistChance, this);
     resistChance += m_caster->GetTotalAuraModifier(SPELL_AURA_RESIST_PUSHBACK) - 100;
     if (roll_chance_i(resistChance))
@@ -840,7 +648,7 @@ void Spell::DelayedChannel()
 
     for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
     {
-        // partially interrupt persistent area auras
+
         if (DynamicObject* dynObj = m_caster->Conjured().AreaOf(m_spellInfo->ID, SpellEffectIndex(j)))
         {
             dynObj->Delay(delaytime);
@@ -850,16 +658,13 @@ void Spell::DelayedChannel()
     SendChannelUpdate(m_timer);
 }
 
-/**
- * @brief Refreshes the cached original caster pointer from the stored guid.
- */
 void Spell::UpdateOriginalCasterPointer()
 {
     if (m_originalCasterGUID == m_caster->GetObjectGuid())
     {
         m_originalCaster = m_caster;
     }
-    else if (m_originalCasterGUID.IsGameObject())
+    else if ((GuidHigh(m_originalCasterGUID) == HIGHGUID_GAMEOBJECT))
     {
         GameObject* go = m_caster->IsInWorld() ? m_caster->GetMap()->GetGameObject(m_originalCasterGUID) : nullptr;
         m_originalCaster = go ? go->GetOwner() : nullptr;
@@ -871,9 +676,6 @@ void Spell::UpdateOriginalCasterPointer()
     }
 }
 
-/**
- * @brief Refreshes cached caster and target pointers from stored guids.
- */
 void Spell::UpdatePointers()
 {
     UpdateOriginalCasterPointer();
@@ -881,14 +683,6 @@ void Spell::UpdatePointers()
     m_targets.Update(m_caster);
 }
 
-
-
-
-/**
- * @brief Checks whether this spell cast should produce client-visible packets.
- *
- * @return True if packets should be sent to clients; otherwise, false.
- */
 bool Spell::IsNeedSendToClient() const
 {
     return m_spellInfo->SpellVisualID != 0 ||
@@ -897,11 +691,6 @@ bool Spell::IsNeedSendToClient() const
         (!m_triggeredByAuraSpell && !m_IsTriggeredSpell);
 }
 
-/**
- * @brief Checks whether the triggered spell still requires redundant cast-time handling.
- *
- * @return True if redundant cast-time handling is needed; otherwise, false.
- */
 bool Spell::IsTriggeredSpellWithRedundentCastTime() const
 {
     return m_triggeredByAuraSpell || (m_IsTriggeredSpell && (m_spellInfo->ManaCost || m_spellInfo->ManaCostPct));
@@ -925,142 +714,110 @@ SpellEvent::~SpellEvent()
     }
     else
     {
-        sLog.outError("~SpellEvent: %s %u tried to delete non-deletable spell %u. Was not deleted, causes memory leak.",
-            (m_Spell->GetCaster()->IsPlayer() ? "Player" : "Creature"), m_Spell->GetCaster()->GetGUIDLow(), m_Spell->m_spellInfo->ID);
+        sLog.outError("~SpellEvent: %s %u tried to delete non-deletable spell %u. Was not deleted, causes memory leak.", (IsPlayer(m_Spell->GetCaster()) ? "Player" : "Creature"), m_Spell->GetCaster()->GetGUIDLow(), m_Spell->m_spellInfo->ID);
     }
 }
 
-/**
- * @brief Advances spell execution within the event queue.
- *
- * @param e_time The event execution time.
- * @param p_time The elapsed update time in milliseconds.
- * @return True when the event is complete and can be removed; otherwise, false.
- */
 bool SpellEvent::Execute(uint64 e_time, uint32 p_time)
 {
-    // update spell if it is not finished
+
     if (m_Spell->getState() != SPELL_STATE_FINISHED)
     {
         m_Spell->update(p_time);
     }
 
-    // check spell state to process
     switch (m_Spell->getState())
     {
         case SPELL_STATE_FINISHED:
         {
-            // spell was finished, check deletable state
+
             if (m_Spell->IsDeletable())
             {
-                // check, if we do have unfinished triggered spells
-                return true;                                // spell is deletable, finish event
+
+                return true;
             }
-            // event will be re-added automatically at the end of routine)
+
             break;
         }
         case SPELL_STATE_CASTING:
         {
-            // this spell is in channeled state, process it on the next update
-            // event will be re-added automatically at the end of routine)
+
             break;
         }
         case SPELL_STATE_DELAYED:
         {
-            // first, check, if we have just started
+
             if (m_Spell->GetDelayStart() != 0)
             {
-                // no, we aren't, do the typical update
-                // check, if we have channeled spell on our hands
+
                 if (m_Spell->Recipe().Starts() == cast::Start::Channelled)
                 {
-                    // evented channeled spell is processed separately, casted once after delay, and not destroyed till finish
-                    // check, if we have casting anything else except this channeled spell and autorepeat
+
                     if (m_Spell->GetCaster()->IsNonMeleeSpellCasted(false, true, true))
                     {
-                        // another non-melee non-delayed spell is casted now, abort
+
                         m_Spell->cancel();
                     }
                     else
                     {
-                        // do the action (pass spell to channeling state)
+
                         m_Spell->handle_immediate();
                     }
-                    // event will be re-added automatically at the end of routine)
+
                 }
                 else
                 {
-                    // run the spell handler and think about what we can do next
+
                     uint64 t_offset = e_time - m_Spell->GetDelayStart();
                     uint64 n_offset = m_Spell->handle_delayed(t_offset);
                     if (n_offset)
                     {
-                        // re-add us to the queue
+
                         m_Spell->GetCaster()->m_Events.AddEvent(this, m_Spell->GetDelayStart() + n_offset, false);
-                        return false;                       // event not complete
+                        return false;
                     }
-                    // event complete
-                    // finish update event will be re-added automatically at the end of routine)
+
                 }
             }
             else
             {
-                // delaying had just started, record the moment
+
                 m_Spell->SetDelayStart(e_time);
-                // re-plan the event for the delay moment
+
                 m_Spell->GetCaster()->m_Events.AddEvent(this, e_time + m_Spell->GetDelayMoment(), false);
-                return false;                               // event not complete
+                return false;
             }
             break;
         }
         default:
         {
-            // all other states
-            // event will be re-added automatically at the end of routine)
+
             break;
         }
     }
 
-    // spell processing not complete, plan event on the next update interval
     m_Spell->GetCaster()->m_Events.AddEvent(this, e_time + 1, false);
-    return false;                                           // event not complete
+    return false;
 }
 
-/**
- * @brief Aborts the queued spell event and cancels the spell if needed.
- *
- * @param e_time Unused event time.
- */
-void SpellEvent::Abort(uint64 /*e_time*/)
+void SpellEvent::Abort(uint64 )
 {
-    // oops, the spell we try to do is aborted
+
     if (m_Spell->getState() != SPELL_STATE_FINISHED)
     {
         m_Spell->cancel();
     }
 }
 
-/**
- * @brief Checks whether the underlying spell can be deleted.
- *
- * @return True if the spell is deletable; otherwise, false.
- */
 bool SpellEvent::IsDeletable() const
 {
     return m_Spell->IsDeletable();
 }
 
-/**
- * @brief Checks whether a lockable game object is within spell range.
- *
- * @param go The game object being checked.
- * @return True if the object is within range; otherwise, false.
- */
 bool Spell::IsLockInRange(GameObject* go)
 {
     const SpellRangeEntry* srange = sSpellRangeStore.LookupEntry(m_spellInfo->RangeIndex);
 
-    // This check is not related to bounding radius
     float dx = m_caster->Where().X() - go->Where().X();
     float dy = m_caster->Where().Y() - go->Where().Y();
     float dz = m_caster->Where().Z() - go->Where().Z();
@@ -1068,24 +825,13 @@ bool Spell::IsLockInRange(GameObject* go)
     return (dx * dx + dy * dy + dz * dz < srange->RangeMax);
 }
 
-/**
- * @brief Validates whether the caster can open a lock with this spell effect.
- *
- * @param effIndex The effect index performing the open-lock action.
- * @param lockId The lock identifier.
- * @param skillId Receives the required skill type.
- * @param reqSkillValue Receives the required skill value.
- * @param skillValue Receives the caster's effective skill value.
- * @return The resulting cast status.
- */
 SpellCastResult Spell::CanOpenLock(SpellEffectIndex effIndex, uint32 lockId, SkillType& skillId, int32& reqSkillValue, int32& skillValue)
 {
-    if (!lockId)                                            // possible case for GO and maybe for items.
+    if (!lockId)
     {
         return SPELL_CAST_OK;
     }
 
-    // Get LockInfo
     LockEntry const* lockInfo = sLockStore.LookupEntry(lockId);
 
     if (!lockInfo)
@@ -1093,13 +839,13 @@ SpellCastResult Spell::CanOpenLock(SpellEffectIndex effIndex, uint32 lockId, Ski
         return SPELL_FAILED_BAD_TARGETS;
     }
 
-    bool reqKey = false;                                    // some locks not have reqs
+    bool reqKey = false;
 
     for (int j = 0; j < 8; ++j)
     {
         switch (lockInfo->Type[j])
         {
-            // check key item (many fit cases can be)
+
             case LOCK_KEY_ITEM:
             {
                 if (lockInfo->Index[j] && m_CastItem && m_CastItem->GetEntry() == lockInfo->Index[j])
@@ -1109,12 +855,11 @@ SpellCastResult Spell::CanOpenLock(SpellEffectIndex effIndex, uint32 lockId, Ski
                 reqKey = true;
                 break;
             }
-            // check key skill - only single first fit case can be
+
             case LOCK_KEY_SKILL:
             {
                 reqKey = true;
 
-                // wrong locktype, skip
                 if (uint32(Recipe().At(static_cast<uint8>(effIndex)).miscValue) != lockInfo->Index[j])
                 {
                     continue;
@@ -1124,13 +869,11 @@ SpellCastResult Spell::CanOpenLock(SpellEffectIndex effIndex, uint32 lockId, Ski
 
                 if (skillId != SKILL_NONE)
                 {
-                    // skill bonus provided by casting spell (mostly item spells)
-                    // add the damage modifier from the spell casted (cheat lock / skeleton key etc.) (use m_currentBasePoints, CalculateDamage returns wrong value)
+
                     uint32 spellSkillBonus = uint32(m_currentBasePoints[effIndex]);
                     reqSkillValue = lockInfo->Skill[j];
 
-                    // castitem check: rogue using skeleton keys. the skill values should not be added in this case.
-                    skillValue = m_CastItem || !m_caster->IsPlayer() ? 0
+                    skillValue = m_CastItem || !IsPlayer(m_caster) ? 0
                         : ((Player*)m_caster)->GetSkillValue(skillId);
 
                     skillValue += spellSkillBonus;
@@ -1154,13 +897,6 @@ SpellCastResult Spell::CanOpenLock(SpellEffectIndex effIndex, uint32 lockId, Ski
     return SPELL_CAST_OK;
 }
 
-
-
-/**
- * @brief Gets the world object that should be used as the effective spell origin.
- *
- * @return The effective caster world object.
- */
 Occupant* Spell::GetAffectiveCasterObject() const
 {
     if (!m_originalCasterGUID)
@@ -1168,21 +904,16 @@ Occupant* Spell::GetAffectiveCasterObject() const
         return m_caster;
     }
 
-    if (m_originalCasterGUID.IsGameObject() && m_caster->IsInWorld())
+    if ((GuidHigh(m_originalCasterGUID) == HIGHGUID_GAMEOBJECT) && m_caster->IsInWorld())
     {
         return m_caster->GetMap()->GetGameObject(m_originalCasterGUID);
     }
     return m_originalCaster;
 }
 
-/**
- * @brief Gets the world object used for cast-position and line-of-sight calculations.
- *
- * @return The casting world object.
- */
 Occupant* Spell::GetCastingObject() const
 {
-    if (m_originalCasterGUID.IsGameObject())
+    if ((GuidHigh(m_originalCasterGUID) == HIGHGUID_GAMEOBJECT))
     {
         return m_caster->IsInWorld() ? m_caster->GetMap()->GetGameObject(m_originalCasterGUID) : nullptr;
     }
@@ -1192,18 +923,12 @@ Occupant* Spell::GetCastingObject() const
     }
 }
 
-/**
- * @brief Clears the accumulated effect damage and healing counters.
- */
 void Spell::ResetEffectDamageAndHeal()
 {
     m_damage = 0;
     m_healing = 0;
 }
 
-/**
- * @brief Clears the cached cast item and unlinks it from target data when necessary.
- */
 void Spell::ClearCastItem()
 {
     if (m_CastItem == m_targets.getItemTarget())
@@ -1214,17 +939,6 @@ void Spell::ClearCastItem()
     m_CastItem = nullptr;
 }
 
-
-
-
-/**
- * @brief Resolves effective radius, chain target count, and target cap modifiers for an effect.
- *
- * @param effIndex The effect index being evaluated.
- * @param radius Receives the effective radius.
- * @param EffectChainTarget Receives the effective chain target count.
- * @param unMaxTargets Receives the effective maximum affected target count.
- */
 void Spell::GetSpellRangeAndRadius(SpellEffectIndex effIndex, float& radius, uint32& EffectChainTarget, uint32& unMaxTargets) const
 {
     if (Recipe().At(static_cast<uint8>(effIndex)).radiusIndex)
@@ -1245,28 +959,27 @@ void Spell::GetSpellRangeAndRadius(SpellEffectIndex effIndex, float& radius, uin
         }
     }
 
-    // custom target amount cases
     switch (m_spellInfo->SpellClassSet)
     {
         case SPELLFAMILY_GENERIC:
         {
             switch (m_spellInfo->ID)
             {
-                case 802:                                   // Mutate Bug (AQ40, Emperor Vek'nilash)
-                case 804:                                   // Explode Bug (AQ40, Emperor Vek'lor)
-                case 23138:                                 // Gate of Shazzrah (MC, Shazzrah)
-                case 24781:                                 // Dream Fog (Emerald Dragons)
-                case 28560:                                 // Summon Blizzard (Naxx, Sapphiron)
+                case 802:
+                case 804:
+                case 23138:
+                case 24781:
+                case 28560:
                     unMaxTargets = 1;
                     break;
-                case 10258:                                 // Awaken Vault Warder (Uldaman)
-                case 28542:                                 // Life Drain (Naxx, Sapphiron)
+                case 10258:
+                case 28542:
                     unMaxTargets = 2;
                     break;
-                case 28796:                                 // Poison Bolt Volley (Naxx, Faerlina)
+                case 28796:
                     unMaxTargets = 10;
                     break;
-                case 25991:                                 // Poison Bolt Volley (AQ40, Pincess Huhuran)
+                case 25991:
                     unMaxTargets = 15;
                     break;
             }
@@ -1276,22 +989,21 @@ void Spell::GetSpellRangeAndRadius(SpellEffectIndex effIndex, float& radius, uin
             break;
     }
 
-    // custom radius cases
     switch (m_spellInfo->SpellClassSet)
     {
         case SPELLFAMILY_GENERIC:
         {
             switch (m_spellInfo->ID)
             {
-                case 24811:                                 // Draw Spirit (Lethon)
+                case 24811:
                 {
-                    if (effIndex == EFFECT_INDEX_0)         // Copy range from EFF_1 to 0
+                    if (effIndex == EFFECT_INDEX_0)
                     {
                         radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(Recipe().At(EFFECT_INDEX_1).radiusIndex));
                     }
                     break;
                 }
-                case 28241:                                 // Poison (Naxxramas, Grobbulus Cloud)
+                case 28241:
                 {
                     if (SpellAuraHolder* auraHolder = m_caster->GetSpellAuraHolder(28158))
                     {
@@ -1309,23 +1021,17 @@ void Spell::GetSpellRangeAndRadius(SpellEffectIndex effIndex, float& radius, uin
     }
 }
 
-/**
- * @brief Validates whether the current target can be tamed by the caster.
- *
- * @param isGM True to allow game master override behavior.
- * @return The resulting cast status.
- */
 SpellCastResult Spell::CanTameUnit(bool isGM)
 {
-    // Spell can be triggered, we need to check original caster prior to caster
+
     Unit* caster = GetAffectiveCaster();
-    if (!caster || !caster->IsPlayer() ||
-        !m_targets.getUnitTarget() || m_targets.getUnitTarget()->IsPlayer())
+    if (!caster || !IsPlayer(caster) ||
+        !m_targets.getUnitTarget() ||IsPlayer(m_targets.getUnitTarget()))
     {
         return SPELL_FAILED_BAD_TARGETS;
     }
 
-    Player* plrCaster = ToPlayer(caster);
+    Player* plrCaster = static_cast<Player*>(caster);
 
     if (plrCaster->getClass() != CLASS_HUNTER)
     {

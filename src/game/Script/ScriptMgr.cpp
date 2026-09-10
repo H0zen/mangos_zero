@@ -23,27 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file ScriptMgr.cpp
- * @brief Script system manager implementation
- *
- * This file implements ScriptMgr which manages all game scripts:
- * - Creature AI scripts
- * - GameObject scripts
- * - Item scripts
- * - Area trigger scripts
- * - Spell scripts
- * - Quest scripts
- * - Instance scripts
- *
- * Scripts are loaded from script libraries and provide hooks for
- * customizing game behavior. The script manager routes events to
- * the appropriate script handlers.
- *
- * @see ScriptMgr for the manager class
- * @see ScriptedInstance for instance script base
- */
-
 #include "Utilities/Errors.h"
 #include <set>
 #include "ScriptMgr.h"
@@ -65,13 +44,11 @@
 #include "Mail.h"
 #include "LFGMgr.h"
 
-
 #ifdef ENABLE_SD3
 #include "system/ScriptDevMgr.h"
 #endif
 
-#include <cstring> /* std::strcmp */
-
+#include <cstring>
 
 ScriptMgr::ScriptMgr() : m_scheduledScripts(0)
 {
@@ -90,64 +67,6 @@ ScriptMgr::~ScriptMgr()
     m_dbScripts.clear();
 }
 
-
-
-
-
-
-
-
-// /////////////////////////////////////////////////////////
-//              DB SCRIPT ENGINE
-// /////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * @brief Loads or reloads the named script library.
- *
- * @param libName The script library name.
- * @return ScriptLoadResult The library loading result.
- */
 ScriptLoadResult ScriptMgr::LoadScriptLibrary(const char* libName)
 {
 #ifdef ENABLE_SD3
@@ -162,9 +81,6 @@ ScriptLoadResult ScriptMgr::LoadScriptLibrary(const char* libName)
     return SCRIPT_LOAD_ERR_NOT_FOUND;
 }
 
-/**
- * @brief Unloads the currently active script library.
- */
 void ScriptMgr::UnloadScriptLibrary()
 {
 #ifdef ENABLE_SD3
@@ -174,14 +90,9 @@ void ScriptMgr::UnloadScriptLibrary()
 #endif
 }
 
-/**
- * @brief Collects event ids that can legally start database event scripts.
- *
- * @param eventIds The set that receives discovered event ids.
- */
 void ScriptMgr::CollectPossibleEventIds(std::set<uint32>& eventIds)
 {
-    // Load all possible script entries from gameobjects
+
     for (SQLStorageBase::SQLSIterator<GameObjectInfo> itr = sGOStorage.getDataBegin<GameObjectInfo>(); itr < sGOStorage.getDataEnd<GameObjectInfo>(); ++itr)
     {
         switch (itr->type)
@@ -210,7 +121,6 @@ void ScriptMgr::CollectPossibleEventIds(std::set<uint32>& eventIds)
         }
     }
 
-    // Load all possible script entries from spells
     for (uint32 i = 1; i < sSpellStore.GetNumRows(); ++i)
     {
         SpellEntry const* spell = sSpellStore.LookupEntry(i);
@@ -230,23 +140,20 @@ void ScriptMgr::CollectPossibleEventIds(std::set<uint32>& eventIds)
     }
 }
 
-// Starters for events
-bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool isStart/*=true*/, Unit* forwardToPvp/*=nullptr*/)
+bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool isStart, Unit* forwardToPvp)
 {
     MANGOS_ASSERT(source);
 
-    // Handle SD3 script
     if (sScriptMgr.OnProcessEvent(id, source, target, isStart))
     {
         return true;
     }
 
-    // Handle PvP Calls
-    if (forwardToPvp && source->IsGameObject())
+    if (forwardToPvp &&IsGameObject(source))
     {
         BattleGround* bg = nullptr;
         OutdoorPvP* opvp = nullptr;
-        if (forwardToPvp->IsPlayer())
+        if (IsPlayer(forwardToPvp))
         {
             bg = ((Player*)forwardToPvp)->Battle().Ground();
             if (!bg)
@@ -260,7 +167,7 @@ bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool
             {
                 bg = ((BattleGroundMap*)map)->GetBG();
             }
-            else                                            // Use the go, because GOs don't move
+            else
             {
                 GameObject const* go = static_cast<GameObject*>(source);
                 opvp = sOutdoorPvPMgr.GetScript(go->GetTerrain()->GetZoneId(
@@ -280,11 +187,11 @@ bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool
     }
 
     ScriptExecutionParam execParam = SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE_TARGET;
-    if (source->isType(TYPEMASK_CREATURE_OR_GAMEOBJECT))
+    if (IsType(source, TYPEMASK_CREATURE_OR_GAMEOBJECT))
     {
         execParam = SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE;
     }
-    else if (target && target->isType(TYPEMASK_CREATURE_OR_GAMEOBJECT))
+    else if (target && IsType(target, TYPEMASK_CREATURE_OR_GAMEOBJECT))
     {
         execParam = SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET;
     }
@@ -292,56 +199,26 @@ bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool
     return map->Scripts().Start(DBS_ON_EVENT, id, source, target, execParam);
 }
 
-// Wrappers
 uint32 GetScriptId(const char* name)
 {
     return sScriptMgr.GetScriptId(name);
 }
 
-/**
- * @brief Returns the script name for a script id.
- *
- * @param id The internal script id.
- * @return char const* The matching script name.
- */
 char const* GetScriptName(uint32 id)
 {
     return sScriptMgr.GetScriptName(id);
 }
 
-/**
- * @brief Returns the number of registered script ids.
- *
- * @return uint32 The count of registered script ids.
- */
 uint32 GetScriptIdsCount()
 {
     return sScriptMgr.GetScriptIdsCount();
 }
 
-/**
- * @brief Sets the external waypoint table used by the waypoint manager.
- *
- * @param tableName The external waypoint table name.
- */
 void SetExternalWaypointTable(char const* tableName)
 {
     sWaypointMgr.SetExternalWPTable(tableName);
 }
 
-/**
- * @brief Adds a waypoint node from an external waypoint table.
- *
- * @param entry The creature entry owning the path.
- * @param pathId The path identifier.
- * @param pointId The waypoint point identifier.
- * @param x The waypoint X coordinate.
- * @param y The waypoint Y coordinate.
- * @param z The waypoint Z coordinate.
- * @param o The waypoint orientation.
- * @param waittime The wait time at the node.
- * @return true if the waypoint was added; otherwise false.
- */
 bool AddWaypointFromExternal(uint32 entry, int32 pathId, uint32 pointId, float x, float y, float z, float o, uint32 waittime)
 {
     return sWaypointMgr.AddExternalNode(entry, pathId, pointId, x, y, z, o, waittime);

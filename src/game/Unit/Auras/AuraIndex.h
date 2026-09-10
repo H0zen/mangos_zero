@@ -37,37 +37,14 @@ class Aura;
 
 namespace auras
 {
-    /**
-     * The auras of one unit, grouped by aura type.
-     *
-     * A unit is asked "what are your auras of type T" constantly while carrying
-     * auras of only a few types at once, so the type is the key and only the
-     * types actually present cost anything.
-     *
-     * Position in a block carries no meaning. Anything that wants the aura that
-     * arrived last asks for it and gets an answer from a recorded order of
-     * application, not from where an element happens to sit. The old engine read
-     * that by walking a list backwards, which quietly made the layout of a
-     * container part of the rules of taunt.
-     *
-     * The one real obligation here is that an aura may be applied or removed in
-     * the middle of a walk over these same auras, because that is what procs and
-     * effect handlers do. Three properties make that safe:
-     *
-     *  - each type owns a separately allocated block, so touching one type never
-     *    disturbs a walk over another;
-     *  - a removal leaves a hole instead of shifting its neighbours, so the
-     *    positions a walk has yet to reach do not change under it;
-     *  - a walk holds an index rather than a pointer, so it survives the block
-     *    growing beneath it.
-     */
+
     class Index
     {
         private:
             struct Entry
             {
                 Aura* aura = nullptr;
-                uint64_t rank = 0;      ///< order of application, never reused
+                uint64_t rank = 0;
             };
 
             struct Bucket
@@ -78,7 +55,7 @@ namespace auras
             };
 
         public:
-            /// The auras of one type, holes skipped, in no meaningful order.
+
             class Range
             {
                 public:
@@ -109,7 +86,6 @@ namespace auras
                         private:
                             bool AtEnd() const { return !m_bucket || m_at >= m_bucket->entries.size(); }
 
-                            /// Holes are not elements; step over them.
                             void Settle()
                             {
                                 while (m_bucket && m_at < m_bucket->entries.size() && !m_bucket->entries[m_at].aura)
@@ -143,8 +119,6 @@ namespace auras
                 Bucket& bucket = Claim(type);
                 const Entry fresh{aura, ++m_clock};
 
-                // Order lives in the rank, so reusing a slot costs nothing, and
-                // it puts the aura where a walk in progress has not been yet.
                 if (bucket.holes)
                 {
                     for (auto& slot : bucket.entries)
@@ -186,7 +160,6 @@ namespace auras
 
             bool Empty(AuraType type) const { return Of(type).empty(); }
 
-            /// The aura of this type applied most recently, or null.
             Aura* Newest(AuraType type) const
             {
                 const Bucket* bucket = Find(type);
@@ -206,14 +179,6 @@ namespace auras
                 return best ? best->aura : nullptr;
             }
 
-            /**
-             * Auras of this type, most recently applied first.
-             *
-             * A snapshot, because asking for an order means paying for one. The
-             * callers that want this -- taunt picking the latest taunter still
-             * able to hold aggro -- deal in a handful of auras, and a copy also
-             * frees them to remove auras while they walk it.
-             */
             std::vector<Aura*> ByRecency(AuraType type) const
             {
                 std::vector<Aura*> ordered;
@@ -246,7 +211,6 @@ namespace auras
 
             void Clear() { m_buckets.clear(); }
 
-            /// Live auras across every type; for diagnostics, not for hot paths.
             size_t Total() const
             {
                 size_t n = 0;
@@ -279,8 +243,6 @@ namespace auras
                     return **at;
                 }
 
-                // Each block is allocated on its own so its address outlives any
-                // reshuffling of the list of blocks.
                 auto fresh = std::make_unique<Bucket>();
                 fresh->type = type;
                 return **m_buckets.insert(at, std::move(fresh));

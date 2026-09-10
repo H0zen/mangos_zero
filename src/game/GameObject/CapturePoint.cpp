@@ -28,10 +28,9 @@
 
 namespace
 {
-    /// The band around the middle in which the tower belongs to nobody.
+
     float NeutralBand(uint32 neutralPercent) { return neutralPercent * 0.5f; }
 
-    /// Whole percents are what the bar is read in; the fraction only accumulates.
     int WholePercent(float slider) { return static_cast<int>(slider); }
 }
 
@@ -106,7 +105,6 @@ CaptureShift CapturePoint::Shift(Team pushing, GameObjectInfo const& info)
 
     CaptureShift shift;
 
-    // One side has dragged the bar all the way to their end.
     if (m_state != CaptureState::AllianceHolds && WholePercent(m_slider) == CAPTURE_SLIDER_ALLIANCE)
     {
         shift.eventId = info.capturePoint.winEventID1;
@@ -118,7 +116,6 @@ CaptureShift CapturePoint::Shift(Team pushing, GameObjectInfo const& info)
         m_state = CaptureState::HordeHolds;
     }
 
-    // The bar has left the neutral band on one side, taking the tower with it.
     else if (m_state != CaptureState::AllianceGaining && m_slider > CAPTURE_SLIDER_MIDDLE + band && pushing == ALLIANCE)
     {
         shift.eventId = info.capturePoint.progressEventID1;
@@ -132,14 +129,12 @@ CaptureShift CapturePoint::Shift(Team pushing, GameObjectInfo const& info)
         m_state = CaptureState::HordeGaining;
     }
 
-    // The bar has been dragged back into the band, and the tower is nobody's again.
     else if (m_state != CaptureState::Neutral && m_slider >= CAPTURE_SLIDER_MIDDLE - band && m_slider <= CAPTURE_SLIDER_MIDDLE + band)
     {
         shift.eventId = pushing == ALLIANCE ? info.capturePoint.neutralEventID1 : info.capturePoint.neutralEventID2;
         m_state = CaptureState::Neutral;
     }
 
-    // The other side still holds it, but the bar is moving away from them.
     else if ((m_state == CaptureState::HordeHolds || m_state == CaptureState::HordeGaining) && pushing == ALLIANCE)
     {
         shift.eventId = info.capturePoint.contestedEventID1;

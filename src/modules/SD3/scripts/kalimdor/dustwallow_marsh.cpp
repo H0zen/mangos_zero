@@ -657,7 +657,7 @@ struct npc_stinky_ignatz : public CreatureScript
         {
         }
 
-        ObjectGuid m_bogbeanPlantGuid;
+        ObjectGuid m_bogbeanPlantGuid = 0;
 
         void Reset() override {}
 
@@ -674,7 +674,7 @@ struct npc_stinky_ignatz : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* /*pSender*/, Unit* pInvoker, uint32 uiMiscValue) override
         {
-            if (eventType == AI_EVENT_START_ESCORT && pInvoker->IsPlayer())
+            if (eventType == AI_EVENT_START_ESCORT &&IsPlayer(pInvoker))
             {
                 DoScriptText(SAY_STINKY_BEGIN, m_creature);
                 Start(false, (Player*)pInvoker, GetQuestTemplateStore(uiMiscValue));
@@ -734,7 +734,7 @@ struct npc_stinky_ignatz : public CreatureScript
                 {
                     pBogbeanPlant->Use(m_creature);
                 }
-                m_bogbeanPlantGuid.Clear();
+                m_bogbeanPlantGuid = 0;
                 m_creature->HandleEmote(EMOTE_ONESHOT_NONE);
             }
         }

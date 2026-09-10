@@ -132,7 +132,7 @@ struct boss_thermaplugg : public CreatureScript
             uint32 faces[MAX_GNOME_FACES] = {GO_GNOME_FACE_1, GO_GNOME_FACE_2, GO_GNOME_FACE_3, GO_GNOME_FACE_4, GO_GNOME_FACE_5, GO_GNOME_FACE_6};
             for (int i = 0; i < MAX_GNOME_FACES; ++i)
             {
-                m_asBombFaces[i].m_gnomeFaceGuid = ObjectGuid(m_pInstance->GetData64(faces[i]));
+                m_asBombFaces[i].m_gnomeFaceGuid = static_cast<ObjectGuid>(m_pInstance->GetData64(faces[i]));
                 m_asBombFaces[i].m_bActivated = false;
                 m_asBombFaces[i].m_uiBombTimer = 0;
             }
@@ -360,9 +360,9 @@ struct spell_boss_thermaplugg : public SpellScript
         }
 
         // This spell should select a random Bomb-Face and activate it if needed
-        if (pCaster->GetEntry() == NPC_MEKGINEER_THERMAPLUGG && ToCreature(pCaster)->AI())
+        if (pCaster->GetEntry() == NPC_MEKGINEER_THERMAPLUGG && static_cast<Creature*>(pCaster)->AI())
         {
-            ToCreature(pCaster)->AI()->SendAIEvent(AI_EVENT_CUSTOM_A, pCaster, ToCreature(pCaster), urand(0, MAX_GNOME_FACES - 1));
+            static_cast<Creature*>(pCaster)->AI()->SendAIEvent(AI_EVENT_CUSTOM_A, pCaster, static_cast<Creature*>(pCaster), urand(0, MAX_GNOME_FACES - 1));
         }
 
         return true;

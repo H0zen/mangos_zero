@@ -170,7 +170,7 @@ struct boss_kelthuzad : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (!pVictim->IsPlayer())
+            if (!IsPlayer(pVictim))
             {
                 return;
             }
@@ -646,10 +646,10 @@ struct boss_kelthuzad : public CreatureScript
                                 DoScriptText(SAY_ANSWER_REQUEST, pLichKing);
                             }
 
-                            m_pInstance->DoUseDoorOrButton(GO_KELTHUZAD_WINDOW_1);
-                            m_pInstance->DoUseDoorOrButton(GO_KELTHUZAD_WINDOW_2);
-                            m_pInstance->DoUseDoorOrButton(GO_KELTHUZAD_WINDOW_3);
-                            m_pInstance->DoUseDoorOrButton(GO_KELTHUZAD_WINDOW_4);
+                            m_pInstance->DoUseDoorOrButtonByEntry(GO_KELTHUZAD_WINDOW_1);
+                            m_pInstance->DoUseDoorOrButtonByEntry(GO_KELTHUZAD_WINDOW_2);
+                            m_pInstance->DoUseDoorOrButtonByEntry(GO_KELTHUZAD_WINDOW_3);
+                            m_pInstance->DoUseDoorOrButtonByEntry(GO_KELTHUZAD_WINDOW_4);
 
                             m_uiLichKingAnswerTimer = 0;
                         }

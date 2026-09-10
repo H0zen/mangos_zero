@@ -28,19 +28,6 @@
 #include "Platform/Define.h"
 #include "QuestDef.h"
 
-/**
- * What ties one spawn to a quest.
- *
- * The world data keeps two multimaps per kind of spawn, entry to quest: one for
- * the quests it hands out and one for the quests it takes back. Both a creature
- * and a gameobject ask the same two questions of them, so the asking lives here
- * rather than twice in each class.
- *
- * The range is passed in as the pair of iterators the storage hands out, so
- * nothing here needs to know which of the four maps it is reading.
- */
-
-/// True when a range of entry-to-quest relations names this quest.
 template <typename Bounds>
 bool NamesQuest(Bounds const& relations, uint32 questId)
 {
@@ -55,15 +42,6 @@ bool NamesQuest(Bounds const& relations, uint32 questId)
     return false;
 }
 
-/**
- * True when a player is carrying this quest and has not been paid for it.
- *
- * Both a quest still being worked on and one ready to turn in count: the
- * question is whether the spawn that takes the quest back still has business
- * with this player, and it has until the reward is handed over. A quest already
- * rewarded leaves nothing to come back for, even when the log still shows it as
- * complete for a repeatable.
- */
 inline bool IsHandInPending(QuestStatus status, bool rewarded)
 {
     return !rewarded && (status == QUEST_STATUS_INCOMPLETE || status == QUEST_STATUS_COMPLETE);

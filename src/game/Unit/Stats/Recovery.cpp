@@ -28,7 +28,7 @@ regen::Share regen::PowerTick(Powers which, float spirit, uint32 maxPower,
             share.any = true;
             if (answering)
             {
-                // spirit only feeds the bar once the hold after spending is over
+
                 if (!spentRecently)
                 {
                     share.amount = (spirit / 5.0f + 17.0f) * rates.mana;
@@ -63,7 +63,7 @@ uint32 regen::HealthTick(float spirit, uint32 maxHealth, bool mastered, bool has
 
     if (mastered)
     {
-        // a charmed creature has no spirit of its own, so this can come to nothing
+
         back = uint32(spirit * (hasMana ? 0.25 : 0.80) * rate);
     }
 

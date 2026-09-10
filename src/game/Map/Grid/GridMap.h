@@ -108,7 +108,6 @@ enum GridMapLiquidStatus
     LIQUID_MAP_UNDER_WATER  = 0x00000008
 };
 
-// defined in DBC and left shifted for flag usage
 #define MAP_LIQUID_TYPE_NO_WATER    0x00
 #define MAP_LIQUID_TYPE_WATER       0x01
 #define MAP_LIQUID_TYPE_OCEAN       0x02
@@ -147,39 +146,17 @@ class Referencable
 
 typedef std::atomic<long> AtomicLong;
 
-#define MAX_HEIGHT            100000.0f                     // can be use for find ground height at surface
+#define MAX_HEIGHT            100000.0f
 
-// The ONE value that means "no height". There used to be a second, INVALID_HEIGHT_VALUE,
-// returned where this one was compared against -- so a caller that checked the wrong
-// constant accepted -200000 as a real height and never said so. Absence is std::optional
-// everywhere inside the core; this survives only for the scripting modules, which cannot
-// be changed from this repository.
 #define INVALID_HEIGHT       -100000.0f
 
-// A floor at most this far above the point still counts as the one it stands on. Small on
-// purpose: a wider tolerance answers someone on a floor with the roof over their head.
 #define FLOOR_SEARCH_UP            2.0f
 
-// How far the sweep starts ABOVE the point anyway, so a position buried in geometry -- a
-// spawn a yard into a hillside -- still finds the surface it would stand on. Buried deeper
-// than this is a broken coordinate, and no floor is the honest answer.
 #define FLOOR_BURIED_LIFT         50.0f
 
 #define FLOOR_SEARCH_DOWN      10000.0f
-#define DEFAULT_WATER_SEARCH      50.0f                     // default search distance to case detection water level
+#define DEFAULT_WATER_SEARCH      50.0f
 
-/**
- * @brief One map's terrain, as the game sees it.
- *
- * The geometry lives in world::terrain::FusedTerrain, which knows nothing of MaNGOS:
- * it answers in world coordinates and in the identifiers baked into the tile. This
- * class is the half that owns the DBC -- turning a WMO group id into a WMOAreaTable
- * entry, a LiquidType row into the flags the client expects, an AreaTable id into the
- * area bit the rest of the server passes around.
- *
- * A grid index (gx,gy) and a tile index (tx,ty) are the same pair here: both are
- * (int)(32 - coord / SIZE_OF_GRIDS).
- */
 class TerrainInfo : public Referencable<AtomicLong>
 {
     public:
@@ -188,19 +165,12 @@ class TerrainInfo : public Referencable<AtomicLong>
 
         uint32 GetMapId() const { return m_mapId; }
 
-        // True if a baked tile covers this grid. Replaces the old pair of map/vmap
-        // existence checks: one file now carries both.
         static bool ExistTile(uint32 mapid, int gx, int gy);
 
-        /// THE terrain query. Every surface crossing [zBottom, zTop] over (x,y); select
-        /// the one the question means on the result. `live` is the caller's runtime
-        /// geometry -- a Map owns one, a bare terrain lookup has none -- and `phasemask`
-        /// only ever reaches it.
         world::terrain::Column ColumnAt(float x, float y, float zTop, float zBottom,
                                         const world::terrain::ILiveGeometry* live = nullptr,
                                         uint32 phasemask = 0) const;
 
-        /// The floor under a point, static geometry only. Nothing when the column is bare.
         std::optional<float> StaticFloor(float x, float y, float z) const;
 
         std::optional<float> GetWaterLevel(float x, float y, float z, float* pGround = nullptr) const;
@@ -208,8 +178,6 @@ class TerrainInfo : public Referencable<AtomicLong>
         bool IsInWater(float x, float y, float z, GridMapLiquidData* data = 0) const;
         bool IsUnderWater(float x, float y, float z) const;
 
-        /// Enough standing water at (x, y) for a body of `radius` to swim in. Spawn
-        /// code asks this; it is game logic, not a terrain query, and stays here.
         bool IsSwimmable(float x, float y, float z, float radius = 1.5f,
                          GridMapLiquidData* data = nullptr) const;
         bool IsAboveWater(float x, float y, float z, float* pWaterZ = nullptr) const;
@@ -226,13 +194,9 @@ class TerrainInfo : public Referencable<AtomicLong>
         bool GetAreaInfo(float x, float y, float z, uint32& mogpflags, int32& adtId, int32& rootId, int32& groupId) const;
         bool IsOutdoors(float x, float y, float z) const;
 
-        // Static line of sight, and the nearest static hit along a segment as a fraction
-        // of it (> 1 when nothing blocks). Both take the segment VERBATIM -- any
-        // agent-height lift is the caller's, and every caller already applies its own.
         bool IsInLineOfSight(float x1, float y1, float z1, float x2, float y2, float z2) const;
         float NearestHitFraction(float x1, float y1, float z1, float x2, float y2, float z2) const;
 
-        // Ages the tile cache and reclaims what no active grid holds.
         void CleanUpGrids(const uint32 diff);
 
     protected:
@@ -246,14 +210,10 @@ class TerrainInfo : public Referencable<AtomicLong>
 
         const uint32 m_mapId;
 
-        // Mutable because every query is const and the cache loads lazily underneath.
         mutable world::terrain::FusedTerrain m_terrain;
 
         int16 m_GridRef[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 
-        /// Whether a navmesh tile was ever brought in for that grid. A reference
-        /// count of zero says nobody wants it now; it does not say there is
-        /// anything to release, and most of a map's grids never hold one.
         bool m_navLoaded[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 
         IntervalTimer i_timer;
@@ -262,7 +222,6 @@ class TerrainInfo : public Referencable<AtomicLong>
         LOCK_TYPE m_refMutex;
 };
 
-// class for managing TerrainData object and all sort of geometry querying operations
 class TerrainManager : public MaNGOS::Singleton<TerrainManager>
 {
         typedef std::unordered_map<uint32,  TerrainInfo*> TerrainDataMap;

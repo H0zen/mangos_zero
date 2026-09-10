@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Utilities/PackedValues.h"
 #include "Player.h"
 #include "Language.h"
@@ -92,14 +90,6 @@
 
 #define MAKE_SKILL_BONUS(t, p) MAKE_PAIR32(t,p)
 
-/**
- * @brief Applies or removes a base modifier affecting derived combat values.
- *
- * @param modGroup The modifier group to update.
- * @param modType The modifier type to apply.
- * @param amount The modifier amount.
- * @param apply True to apply the modifier; false to remove it.
- */
 void Player::HandleBaseModValue(BaseModGroup modGroup, BaseModType modType, float amount, bool apply)
 {
     if (modGroup >= BASEMOD_END || modType >= MOD_END)
@@ -139,13 +129,6 @@ void Player::HandleBaseModValue(BaseModGroup modGroup, BaseModType modType, floa
     }
 }
 
-/**
- * @brief Gets a stored base modifier value.
- *
- * @param modGroup The modifier group to query.
- * @param modType The modifier type to query.
- * @return The stored modifier value.
- */
 float Player::GetBaseModValue(BaseModGroup modGroup, BaseModType modType) const
 {
     if (modGroup >= BASEMOD_END || modType > MOD_END)
@@ -162,12 +145,6 @@ float Player::GetBaseModValue(BaseModGroup modGroup, BaseModType modType) const
     return m_auraBaseMod[modGroup][modType];
 }
 
-/**
- * @brief Gets the combined flat and percentage base modifier value for a group.
- *
- * @param modGroup The modifier group to query.
- * @return The total effective modifier value.
- */
 float Player::GetTotalBaseModValue(BaseModGroup modGroup) const
 {
     if (modGroup >= BASEMOD_END)
@@ -184,22 +161,11 @@ float Player::GetTotalBaseModValue(BaseModGroup modGroup) const
     return m_auraBaseMod[modGroup][FLAT_MOD] * m_auraBaseMod[modGroup][PCT_MOD];
 }
 
-/**
- * @brief Computes the player's current shield block value.
- *
- * @return The effective shield block amount.
- */
-/**
- * @brief Calculates melee critical strike chance gained from agility.
- *
- * @return The melee crit contribution from agility.
- */
 float Player::GetMeleeCritFromAgility()
 {
     float valLevel1 = 0.0f;
     float valLevel60 = 0.0f;
 
-    // critical
     switch (getClass())
     {
         case CLASS_PALADIN:
@@ -239,17 +205,11 @@ float Player::GetMeleeCritFromAgility()
     return GetStat(STAT_AGILITY) / classrate;
 }
 
-/**
- * @brief Calculates dodge chance gained from agility.
- *
- * @return The dodge contribution from agility.
- */
 float Player::GetDodgeFromAgility()
 {
     float valLevel1 = 0.0f;
     float valLevel60 = 0.0f;
 
-    // critical
     switch (getClass())
     {
         case CLASS_PALADIN:
@@ -291,20 +251,8 @@ float Player::GetDodgeFromAgility()
     return GetStat(STAT_AGILITY) / classrate;
 }
 
-/**
- * @brief Calculates spell critical strike chance gained from intellect.
- *
- * @return The spell crit contribution from intellect.
- */
 float Player::GetSpellCritFromIntellect()
 {
-    // Chance to crit is computed from INT and LEVEL as follows:
-    //   chance = base + INT / (rate0 + rate1 * LEVEL)
-    // The formula keeps the crit chance at %5 on every level unless the player
-    // increases his intelligence by other means (enchants, buffs, talents, ...)
-
-    //[TZERO] from mangos 3462 for 1.12 MUST BE CHECKED
-    //float val = 0.0f;
 
     static const struct
     {
@@ -313,23 +261,22 @@ float Player::GetSpellCritFromIntellect()
     }
     crit_data[MAX_CLASSES] =
     {
-        {   0.0f,   0.0f,  10.0f  },                        //  0: unused
-        {   0.0f,   0.0f,  10.0f  },                        //  1: warrior
-        {   3.70f, 14.77f,  0.65f },                        //  2: paladin
-        {   0.0f,   0.0f,  10.0f  },                        //  3: hunter
-        {   0.0f,   0.0f,  10.0f  },                        //  4: rogue
-        {   2.97f, 10.03f,  0.82f },                        //  5: priest
-        {   0.0f,   0.0f,  10.0f  },                        //  6: unused
-        {   3.54f, 11.51f,  0.80f },                        //  7: shaman
-        {   3.70f, 14.77f,  0.65f },                        //  8: mage
-        {   3.18f, 11.30f,  0.82f },                        //  9: warlock
-        {   0.0f,   0.0f,  10.0f  },                        // 10: unused
-        {   3.33f, 12.41f,  0.79f }                         // 11: druid
+        {   0.0f,   0.0f,  10.0f  },
+        {   0.0f,   0.0f,  10.0f  },
+        {   3.70f, 14.77f,  0.65f },
+        {   0.0f,   0.0f,  10.0f  },
+        {   0.0f,   0.0f,  10.0f  },
+        {   2.97f, 10.03f,  0.82f },
+        {   0.0f,   0.0f,  10.0f  },
+        {   3.54f, 11.51f,  0.80f },
+        {   3.70f, 14.77f,  0.65f },
+        {   3.18f, 11.30f,  0.82f },
+        {   0.0f,   0.0f,  10.0f  },
+        {   3.33f, 12.41f,  0.79f }
     };
     float crit_chance;
 
-    // only players use intelligence for critical chance computations
-    if (IsPlayer())
+    if (IsPlayer(this))
     {
         int my_class = getClass();
         float crit_ratio = crit_data[my_class].rate0 + crit_data[my_class].rate1 * getLevel();
@@ -345,11 +292,6 @@ float Player::GetSpellCritFromIntellect()
     return crit_chance;
 }
 
-/**
- * @brief Calculates health regeneration per spirit tick.
- *
- * @return The health regeneration value based on spirit and class.
- */
 float Player::OCTRegenHPPerSpirit()
 {
     float regen = 0.0f;
@@ -373,11 +315,6 @@ float Player::OCTRegenHPPerSpirit()
     return regen;
 }
 
-/**
- * @brief Calculates mana regeneration per spirit tick.
- *
- * @return The mana regeneration value based on spirit and class.
- */
 float Player::OCTRegenMPPerSpirit()
 {
     float addvalue = 0.0;
@@ -396,14 +333,11 @@ float Player::OCTRegenMPPerSpirit()
         case CLASS_WARLOCK: addvalue = (Spirit / 5 + 15);   break;
     }
 
-    addvalue /= 2.0f;   // the above addvalue are given per tick which occurs every 2 seconds, hence this divide by 2
+    addvalue /= 2.0f;
 
     return addvalue;
 }
 
-/**
- * @brief Restores attack timers from currently equipped weapon delays.
- */
 void Player::SetRegularAttackTime()
 {
     for (int i = 0; i < MAX_ATTACK; ++i)
@@ -424,7 +358,6 @@ void Player::SetRegularAttackTime()
     }
 }
 
-// skill+step, checking for max value
 bool Player::UpdateSkill(uint32 skill_id, uint32 step)
 {
     if (!skill_id)
@@ -475,12 +408,6 @@ bool Player::UpdateSkill(uint32 skill_id, uint32 step)
     return false;
 }
 
-/**
- * @brief What this server pays for each colour of attempt.
- *
- * Read in one place, because the four are one statement about how fast a profession is
- * meant to rise, and because everything below this line works on the values.
- */
 static skill::Chances ChancesPaid()
 {
     skill::Chances paid;
@@ -492,12 +419,6 @@ static skill::Chances ChancesPaid()
     return paid;
 }
 
-/**
- * @brief Attempts to increase a crafting skill based on a spell cast.
- *
- * @param spellid The crafting spell identifier.
- * @return True if the skill increased; otherwise, false.
- */
 bool Player::UpdateCraftSkill(uint32 spellid)
 {
     DEBUG_LOG("UpdateCraftSkill spellid %d", spellid);
@@ -525,23 +446,12 @@ bool Player::UpdateCraftSkill(uint32 spellid)
     return false;
 }
 
-/**
- * @brief Attempts to increase a gathering skill using profession-specific gain rules.
- *
- * @param SkillId The skill identifier to update.
- * @param SkillValue The current skill value.
- * @param RedLevel The red difficulty threshold for the source.
- * @param Multiplicator An additional gain chance multiplier.
- * @return True if the skill increased; otherwise, false.
- */
 bool Player::UpdateGatherSkill(uint32 SkillId, uint32 SkillValue, uint32 RedLevel, uint32 Multiplicator)
 {
     DEBUG_LOG("UpdateGatherSkill(SkillId %d SkillLevel %d RedLevel %d)", SkillId, SkillValue, RedLevel);
 
     const uint32 gathering_skill_gain = sWorld.getConfig(CONFIG_UINT32_SKILL_GAIN_GATHERING);
 
-    // The bands sit a hundred, fifty and twenty-five points above the level the node turns
-    // red at, which is what makes a node grey out as the gatherer outgrows it.
     const int32 chance = skill::ChanceAt(SkillValue, RedLevel + 100, RedLevel + 50, RedLevel + 25,
                                          ChancesPaid()) * int32(Multiplicator);
 
@@ -551,7 +461,6 @@ bool Player::UpdateGatherSkill(uint32 SkillId, uint32 SkillValue, uint32 RedLeve
         case SKILL_LOCKPICKING:
             return UpdateSkillPro(SkillId, chance, gathering_skill_gain);
 
-        // Skinning and mining thin out as the skill rises, each on its own step.
         case SKILL_SKINNING:
             return UpdateSkillPro(SkillId,
                                   skill::Thinned(chance, SkillValue,
@@ -567,11 +476,6 @@ bool Player::UpdateGatherSkill(uint32 SkillId, uint32 SkillValue, uint32 RedLeve
     return false;
 }
 
-/**
- * @brief Attempts to increase the player's fishing skill.
- *
- * @return True if the skill increased; otherwise, false.
- */
 bool Player::UpdateFishingSkill()
 {
     DEBUG_LOG("UpdateFishingSkill");
@@ -582,14 +486,6 @@ bool Player::UpdateFishingSkill()
     return UpdateSkillPro(SKILL_FISHING, skill::FishingChance(SkillValue), gathering_skill_gain);
 }
 
-/**
- * @brief Attempts to increase a skill using an explicit percentage chance.
- *
- * @param SkillId The skill identifier to update.
- * @param Chance The gain chance in tenths of a percent.
- * @param step The amount to increase the skill by.
- * @return True if the skill increased; otherwise, false.
- */
 bool Player::UpdateSkillPro(uint16 SkillId, int32 Chance, uint32 step)
 {
     DEBUG_LOG("UpdateSkillPro(SkillId %d, Chance %3.1f%%)", SkillId, Chance / 10.0);
@@ -598,7 +494,7 @@ bool Player::UpdateSkillPro(uint16 SkillId, int32 Chance, uint32 step)
         return false;
     }
 
-    if (Chance <= 0)                                        // speedup in 0 chance case
+    if (Chance <= 0)
     {
         DEBUG_LOG("Player::UpdateSkillPro Chance=%3.1f%% missed", Chance / 10.0);
         return false;
@@ -652,14 +548,9 @@ bool Player::UpdateSkillPro(uint16 SkillId, int32 Chance, uint32 step)
     return false;
 }
 
-/**
- * @brief Attempts to improve the player's weapon skill for an attack type.
- *
- * @param attType The attack type whose weapon skill should be updated.
- */
 void Player::UpdateWeaponSkill(WeaponAttackType attType)
 {
-    // no skill gain in pvp
+
     Unit* pVictim = getVictim();
     if (pVictim && pVictim->IsCharmerOrOwnerPlayerOrPlayerItself())
     {
@@ -668,12 +559,12 @@ void Player::UpdateWeaponSkill(WeaponAttackType attType)
 
     if (IsInFeralForm())
     {
-        return; // always maximized SKILL_FERAL_COMBAT in fact
+        return;
     }
 
     if (GetShapeshiftForm() == FORM_TREE)
     {
-        return; // use weapon but not skill up
+        return;
     }
 
     uint32 weaponSkillGain = sWorld.getConfig(CONFIG_UINT32_SKILL_GAIN_WEAPON);
@@ -691,16 +582,9 @@ void Player::UpdateWeaponSkill(WeaponAttackType attType)
     Sheet().AllCrits();
 }
 
-/**
- * @brief Attempts to improve weapon or defense skills from combat.
- *
- * @param pVictim The opposing unit involved in combat.
- * @param attType The attack type used for offensive skill checks.
- * @param defence True to evaluate defense gain; false for weapon skill gain.
- */
 void Player::UpdateCombatSkills(Unit* pVictim, WeaponAttackType attType, bool defence)
 {
-    uint32 plevel = getLevel();                             // if defense than pVictim == attacker
+    uint32 plevel = getLevel();
     uint32 greylevel = xp::GreyLevel(plevel);
     uint32 moblevel = pVictim->GetLevelForTarget(this);
     if (moblevel < greylevel)
@@ -721,8 +605,6 @@ void Player::UpdateCombatSkills(Unit* pVictim, WeaponAttackType attType, bool de
 
     int32 skilldif = 5 * plevel - (defence ? GetBaseDefenseSkillValue() : GetBaseWeaponSkillValue(attType));
 
-    // Max skill reached for level.
-    // Can in some cases be less than 0: having max skill and then .level -1 as example.
     if (skilldif <= 0)
     {
         return;
@@ -734,7 +616,7 @@ void Player::UpdateCombatSkills(Unit* pVictim, WeaponAttackType attType, bool de
         chance *= 0.1f * GetStat(STAT_INTELLECT);
     }
 
-    chance = chance < 1.0f ? 1.0f : chance;                 // minimum chance to increase skill is 1%
+    chance = chance < 1.0f ? 1.0f : chance;
 
     if (roll_chance_f(chance))
     {
@@ -753,13 +635,6 @@ void Player::UpdateCombatSkills(Unit* pVictim, WeaponAttackType attType, bool de
     }
 }
 
-/**
- * @brief Modifies the temporary or permanent bonus for a skill.
- *
- * @param skillid The skill identifier to modify.
- * @param val The bonus amount to add or remove.
- * @param talent True for permanent talent-based bonuses; false for temporary bonuses.
- */
 void Player::ModifySkillBonus(uint32 skillid, int32 val, bool talent)
 {
     SkillStatusMap::const_iterator itr = mSkillStatus.find(skillid);
@@ -774,19 +649,16 @@ void Player::ModifySkillBonus(uint32 skillid, int32 val, bool talent)
     int16 temp_bonus = SKILL_TEMP_BONUS(bonus_val);
     int16 perm_bonus = SKILL_PERM_BONUS(bonus_val);
 
-    if (talent)                                         // permanent bonus stored in high part
+    if (talent)
     {
         SetUInt32Value(bonusIndex, MAKE_SKILL_BONUS(temp_bonus, perm_bonus + val));
     }
-    else                                                // temporary/item bonus stored in low part
+    else
     {
         SetUInt32Value(bonusIndex, MAKE_SKILL_BONUS(temp_bonus + val, perm_bonus));
     }
 }
 
-/**
- * @brief Updates level-scaled skills to match the player's current level cap.
- */
 void Player::UpdateSkillsForLevel()
 {
     uint16 maxconfskill = sWorld.GetConfigMaxSkillValue();
@@ -820,10 +692,9 @@ void Player::UpdateSkillsForLevel()
         uint32 max = SKILL_MAX(data);
         uint32 val = SKILL_VALUE(data);
 
-        /// update only level dependent max skill values
         if (max != 1)
         {
-            /// maximize skill always
+
             if (alwaysMaxSkill)
             {
                 SetUInt32Value(valueIndex, MAKE_SKILL_VALUE(maxSkill, maxSkill));
@@ -832,7 +703,7 @@ void Player::UpdateSkillsForLevel()
                     skillStatus.uState = SKILL_CHANGED;
                 }
             }
-            else if (max != maxconfskill)                   /// update max skill value if current max skill not maximized
+            else if (max != maxconfskill)
             {
                 SetUInt32Value(valueIndex, MAKE_SKILL_VALUE(val, maxSkill));
                 if (skillStatus.uState != SKILL_NEW)
@@ -844,9 +715,6 @@ void Player::UpdateSkillsForLevel()
     }
 }
 
-/**
- * @brief Raises non-profession skills to their current maximum values.
- */
 void Player::UpdateSkillsToMaxSkillsForLevel()
 {
     for (SkillStatusMap::iterator itr = mSkillStatus.begin(); itr != mSkillStatus.end(); ++itr)
@@ -883,9 +751,7 @@ void Player::UpdateSkillsToMaxSkillsForLevel()
     }
 }
 
-// This functions sets a skill line value (and adds if doesn't exist yet)
-// To "remove" a skill line, set it's values to zero
-void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0*/)
+void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step )
 {
     if (!id)
     {
@@ -894,33 +760,30 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
 
     SkillStatusMap::iterator itr = mSkillStatus.find(id);
 
-    // has skill
     if (itr != mSkillStatus.end() && itr->second.uState != SKILL_DELETED)
     {
         SkillStatusData &skillStatus = itr->second;
         if (currVal)
         {
-            if (step)                                      // need update step
+            if (step)
             {
                 SetUInt32Value(PLAYER_SKILL_INDEX(skillStatus.pos), MAKE_PAIR32(id, step));
             }
 
-            // update value
             SetUInt32Value(PLAYER_SKILL_VALUE_INDEX(skillStatus.pos), MAKE_SKILL_VALUE(currVal, maxVal));
             if (skillStatus.uState != SKILL_NEW)
             {
                 skillStatus.uState = SKILL_CHANGED;
             }
-            // learnSkillRewardedSpells(id, currVal);       // pre-3.x have only 1 skill level req (so at learning only)
+
         }
-        else                                                // remove
+        else
         {
-            // clear skill fields
+
             SetUInt32Value(PLAYER_SKILL_INDEX(skillStatus.pos), 0);
             SetUInt32Value(PLAYER_SKILL_VALUE_INDEX(skillStatus.pos), 0);
             SetUInt32Value(PLAYER_SKILL_BONUS_INDEX(skillStatus.pos), 0);
 
-            // mark as deleted or simply remove from map if not saved yet
             if (skillStatus.uState != SKILL_NEW)
             {
                 skillStatus.uState = SKILL_DELETED;
@@ -930,7 +793,6 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
                 mSkillStatus.erase(itr);
             }
 
-            // remove all spells that related to this skill
             for (uint32 j = 0; j < sSkillLineAbilityStore.GetNumRows(); ++j)
             {
                 if (SkillLineAbilityEntry const* pAbility = sSkillLineAbilityStore.LookupEntry(j))
@@ -943,7 +805,7 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
             }
         }
     }
-    else if (currVal)                                       // add
+    else if (currVal)
     {
         for (int i = 0; i < PLAYER_MAX_SKILLS; ++i)
         {
@@ -959,7 +821,6 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
                 SetUInt32Value(PLAYER_SKILL_INDEX(i), MAKE_PAIR32(id, step));
                 SetUInt32Value(PLAYER_SKILL_VALUE_INDEX(i), MAKE_SKILL_VALUE(currVal, maxVal));
 
-                // insert new entry or update if not deleted old entry yet
                 if (itr != mSkillStatus.end())
                 {
                     itr->second.pos = i;
@@ -970,10 +831,8 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
                     mSkillStatus.insert(SkillStatusMap::value_type(id, SkillStatusData(i, SKILL_NEW)));
                 }
 
-                // apply skill bonuses
                 SetUInt32Value(PLAYER_SKILL_BONUS_INDEX(i), 0);
 
-                // temporary bonuses
                 const auto mModSkill = GetAurasByType(SPELL_AURA_MOD_SKILL);
                 for (auto* aura : mModSkill)
                 {
@@ -983,7 +842,6 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
                     }
                 }
 
-                // permanent bonuses
                 const auto mModSkillTalent = GetAurasByType(SPELL_AURA_MOD_SKILL_TALENT);
                 for (auto* aura : mModSkillTalent)
                 {
@@ -993,7 +851,6 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
                     }
                 }
 
-                // Learn all spells for skill
                 learnSkillRewardedSpells(id, currVal);
                 return;
             }
@@ -1001,12 +858,6 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
     }
 }
 
-/**
- * @brief Checks whether the player currently has a skill line.
- *
- * @param skill The skill identifier to test.
- * @return True if the skill exists and is not deleted; otherwise, false.
- */
 bool Player::HasSkill(uint32 skill) const
 {
     if (!skill)
@@ -1018,12 +869,6 @@ bool Player::HasSkill(uint32 skill) const
     return (itr != mSkillStatus.end() && itr->second.uState != SKILL_DELETED);
 }
 
-/**
- * @brief Gets the total current value of a skill including bonuses.
- *
- * @param skill The skill identifier to query.
- * @return The current effective skill value.
- */
 uint16 Player::GetSkillValue(uint32 skill) const
 {
     if (!skill)
@@ -1051,12 +896,6 @@ uint16 Player::GetSkillValue(uint32 skill) const
     return result < 0 ? 0 : result;
 }
 
-/**
- * @brief Gets the total maximum value of a skill including bonuses.
- *
- * @param skill The skill identifier to query.
- * @return The effective maximum skill value.
- */
 uint16 Player::GetMaxSkillValue(uint32 skill) const
 {
     if (!skill)
@@ -1084,12 +923,6 @@ uint16 Player::GetMaxSkillValue(uint32 skill) const
     return result < 0 ? 0 : result;
 }
 
-/**
- * @brief Gets the unmodified maximum value of a skill.
- *
- * @param skill The skill identifier to query.
- * @return The stored maximum skill value without bonuses.
- */
 uint16 Player::GetPureMaxSkillValue(uint32 skill) const
 {
     if (!skill)
@@ -1112,12 +945,6 @@ uint16 Player::GetPureMaxSkillValue(uint32 skill) const
     return SKILL_MAX(GetUInt32Value(PLAYER_SKILL_VALUE_INDEX(skillStatus.pos)));
 }
 
-/**
- * @brief Gets the base value of a skill including permanent bonuses.
- *
- * @param skill The skill identifier to query.
- * @return The base skill value with permanent bonuses applied.
- */
 uint16 Player::GetBaseSkillValue(uint32 skill) const
 {
     if (!skill)
@@ -1142,12 +969,6 @@ uint16 Player::GetBaseSkillValue(uint32 skill) const
     return result < 0 ? 0 : result;
 }
 
-/**
- * @brief Gets the raw stored value of a skill without bonuses.
- *
- * @param skill The skill identifier to query.
- * @return The raw stored skill value.
- */
 uint16 Player::GetPureSkillValue(uint32 skill) const
 {
     if (!skill)
@@ -1170,12 +991,6 @@ uint16 Player::GetPureSkillValue(uint32 skill) const
     return SKILL_VALUE(GetUInt32Value(PLAYER_SKILL_VALUE_INDEX(skillStatus.pos)));
 }
 
-/**
- * @brief Gets the permanent bonus value applied to a skill.
- *
- * @param skill The skill identifier to query.
- * @return The permanent skill bonus.
- */
 int16 Player::GetSkillPermBonusValue(uint32 skill) const
 {
     if (!skill)
@@ -1198,12 +1013,6 @@ int16 Player::GetSkillPermBonusValue(uint32 skill) const
     return SKILL_PERM_BONUS(GetUInt32Value(PLAYER_SKILL_BONUS_INDEX(skillStatus.pos)));
 }
 
-/**
- * @brief Gets the temporary bonus value applied to a skill.
- *
- * @param skill The skill identifier to query.
- * @return The temporary skill bonus.
- */
 int16 Player::GetSkillTempBonusValue(uint32 skill) const
 {
     if (!skill)
@@ -1226,9 +1035,6 @@ int16 Player::GetSkillTempBonusValue(uint32 skill) const
     return SKILL_TEMP_BONUS(GetUInt32Value(PLAYER_SKILL_BONUS_INDEX(skillStatus.pos)));
 }
 
-/**
- * @brief Applies all aura and item stat bonuses, then works his numbers out afresh.
- */
 void Player::_ApplyAllStatBonuses()
 {
     Tallied().Ready(false);
@@ -1241,9 +1047,6 @@ void Player::_ApplyAllStatBonuses()
     Sheet().Everything();
 }
 
-/**
- * @brief Removes all aura and item stat bonuses, then works his numbers out afresh.
- */
 void Player::_RemoveAllStatBonuses()
 {
     Tallied().Ready(false);

@@ -31,7 +31,7 @@
 #include <mutex>
 
 class Guild;
-class ObjectGuid;
+#include "ObjectGuid.h"
 
 class GuildMgr
 {

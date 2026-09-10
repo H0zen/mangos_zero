@@ -27,7 +27,6 @@
 
 #include "Platform/Define.h"
 
-/// What the world can cost him.
 enum EnvironmentalDamageType
 {
     DAMAGE_EXHAUSTED            = 0,
@@ -36,16 +35,13 @@ enum EnvironmentalDamageType
     DAMAGE_LAVA                 = 3,
     DAMAGE_SLIME                = 4,
     DAMAGE_FIRE                 = 5,
-    DAMAGE_FALL_TO_VOID         = 6  // fall without durability loss
+    DAMAGE_FALL_TO_VOID         = 6
 };
 
 class Map;
 class Player;
 struct LiquidTypeEntry;
 
-/**
- * What he is standing in. Internal values, never sent to the client.
- */
 enum PlayerUnderwaterState
 {
     UNDERWATER_NONE = 0x00,
@@ -57,81 +53,48 @@ enum PlayerUnderwaterState
     UNDERWATER_EXIST_TIMERS = 0x10
 };
 
-/// The bars the client draws over his portrait.
 enum MirrorTimerType
 {
     FATIGUE_TIMER               = 0,
     BREATH_TIMER                = 1,
-    FIRE_TIMER                  = 2  // Probably a mistake. More likely to be FEIGN_DEATH_TIMER
+    FIRE_TIMER                  = 2
 };
 
 #define MAX_TIMERS              3
 #define DISABLED_MIRROR_TIMER   -1
 
-/**
- * What the ground and the water are doing to a character.
- *
- * Three countdowns run against him: his breath under water, his strength in
- * dark water, and his skin in lava. The first two are drawn as bars on his
- * portrait, empty while he is in it and fill ten times as fast once he is out;
- * the third is not drawn at all, and only bites.
- *
- * A bar that runs out does not stop. It is wound back two seconds and takes its
- * toll again, so a character who stays under keeps losing health at that pace
- * until he leaves or dies. The two seconds are the beat of the harm, not a
- * grace.
- *
- * What he stands in is read from the ground beneath him whenever he moves, and
- * the liquid itself may carry a spell -- the slime of the Undercity does -- which
- * is put on him while he is in it and taken off when he leaves. Where a liquid
- * carries its own spell, the fire countdown stands down and lets the spell do
- * the work.
- */
 class Perils
 {
     public:
 
         explicit Perils(Player& who);
 
-        /// Reads the ground under him and sets what he is standing in.
         void Look(Map* where, float x, float y, float z);
 
-        /// Has the bars redrawn on the next run.
         void Redraw();
 
-        /// Runs the three countdowns.
         void Run(uint32 elapsed);
 
-        /// How long the given countdown lasts, or DISABLED_MIRROR_TIMER when it
-        /// does not run for him at all.
         int32 Longest(MirrorTimerType which) const;
 
-        /// Takes the bar off his portrait and forgets the countdown.
         void Stop(MirrorTimerType which);
 
         bool InWater() const { return m_inWater; }
 
-        /// Says he has entered or left the water, and settles what follows from it.
         void InWater(bool apply);
 
-        /// His breath has under two seconds left.
         bool Drowning() const;
 
-        /// The liquid he was last standing in, which may carry a spell.
         LiquidTypeEntry const* Liquid() const { return m_liquid; }
 
-        /// What the world costs him: drowning, exhaustion, lava, a fall.
         uint32 Harm(EnvironmentalDamageType type, uint32 damage);
 
-        /// Everything stands down, and nothing is drawn.
         void Clear();
 
     private:
 
-        /// One of the two bars: it empties while he is in it and fills once he is out.
         void RunBar(MirrorTimerType which, uint8 standingIn, uint32 elapsed);
 
-        /// What an emptied bar costs him.
         void Emptied(MirrorTimerType which);
 
         void RunFire(uint32 elapsed);

@@ -154,11 +154,11 @@ struct boss_arlokk : public CreatureScript
             {
                 if (m_pInstance)
                 {
-                    if (Creature* pTrigger = m_pInstance->instance->GetCreature(ObjectGuid(m_pInstance->GetData64(TYPE_SIGNAL_2))))
+                    if (Creature* pTrigger = m_pInstance->instance->GetCreature(static_cast<ObjectGuid>(m_pInstance->GetData64(TYPE_SIGNAL_2))))
                     {
                         SummonCreature(*m_creature, NPC_ZULIAN_PROWLER, pTrigger->Where().X(), pTrigger->Where().Y(), pTrigger->Where().Z(), 0, TEMPSPAWN_TIMED_OOC_DESPAWN, 30000);
                     }
-                    if (Creature* pTrigger = m_pInstance->instance->GetCreature(ObjectGuid(m_pInstance->GetData64(TYPE_SIGNAL_3))))
+                    if (Creature* pTrigger = m_pInstance->instance->GetCreature(static_cast<ObjectGuid>(m_pInstance->GetData64(TYPE_SIGNAL_3))))
                     {
                         SummonCreature(*m_creature, NPC_ZULIAN_PROWLER, pTrigger->Where().X(), pTrigger->Where().Y(), pTrigger->Where().Z(), 0, TEMPSPAWN_TIMED_OOC_DESPAWN, 30000);
                     }

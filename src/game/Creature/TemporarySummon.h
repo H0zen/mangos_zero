@@ -31,7 +31,7 @@
 class TemporarySummon : public Creature
 {
     public:
-        explicit TemporarySummon(ObjectGuid summoner = ObjectGuid());
+        explicit TemporarySummon(ObjectGuid summoner = 0);
         virtual ~TemporarySummon() {};
 
         void Update(uint32 update_diff, uint32 time) override;

@@ -23,32 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Player.h
- * @brief Player character class definition and related structures.
- *
- * This file defines the Player class which represents a player character in the game.
- * It extends the Unit class with player-specific functionality including:
- * - Character information and attributes
- * - Inventory and equipment management
- * - Quest and achievement tracking
- * - Talent and ability management
- * - Guild and group mechanics
- * - PvP rating and honor systems
- * - Mail and trade systems
- * - Reputation and faction standing
- * - Skill and profession systems
- * - Cosmetic customization
- * - Account and session management
- *
- * The file also contains enumerations and constants for player-related functionality.
- *
- * @see Player for the main player implementation
- * @see Unit for the base unit class
- * @see Item for player inventory items
- * @see Group for player grouping mechanics
- */
-
 #pragma once
 
 #include <unordered_map>
@@ -101,10 +75,10 @@
 #include "WorldSession.h"
 #include "Pet.h"
 #include "MapReference.h"
-#include "Util.h"                                           // for Tokens typedef
+#include "Util.h"
 #include "ReputationMgr.h"
-#include "SpellCooldownMgr.h"                                // held by value on Player; brings in SpellCooldown struct + owns the cooldown map
-#include "PetMgr.h"                                          // held by value on Player; owns stable-slot count + temp-unsummon pet number
+#include "SpellCooldownMgr.h"
+#include "PetMgr.h"
 #include "BattleGround.h"
 #include "DBCStores.h"
 #include "InitialWorldEntry.h"
@@ -130,184 +104,105 @@ struct AreaTrigger;
 
 #include "CinematicFlyover.h"
 
-
-
 #define PLAYER_MAX_SKILLS           127
 #define PLAYER_EXPLORED_ZONES_SIZE  64
 
-/**
- * @brief Spell modifier type enumeration
- *
- * Note: SPELLMOD_* values are aura types in fact.
- */
 enum SpellModType
 {
-    SPELLMOD_FLAT = 107, ///< Flat modifier (SPELL_AURA_ADD_FLAT_MODIFIER)
-    SPELLMOD_PCT = 108   ///< Percentage modifier (SPELL_AURA_ADD_PCT_MODIFIER)
+    SPELLMOD_FLAT = 107,
+    SPELLMOD_PCT = 108
 };
 
-
-/**
- * @brief Buy bank slot result enumeration
- */
 enum BuyBankSlotResult
 {
-    ERR_BANKSLOT_FAILED_TOO_MANY = 0,    ///< Failed - too many bank slots
-    ERR_BANKSLOT_INSUFFICIENT_FUNDS = 1, ///< Failed - insufficient funds
-    ERR_BANKSLOT_NOTBANKER = 2,          ///< Failed - not a banker
-    ERR_BANKSLOT_OK = 3                  ///< Success
+    ERR_BANKSLOT_FAILED_TOO_MANY = 0,
+    ERR_BANKSLOT_INSUFFICIENT_FUNDS = 1,
+    ERR_BANKSLOT_NOTBANKER = 2,
+    ERR_BANKSLOT_OK = 3
 };
 
-/**
- * @brief Player spell state enumeration
- */
 enum PlayerSpellState
 {
-    PLAYERSPELL_UNCHANGED = 0, ///< Spell unchanged
-    PLAYERSPELL_CHANGED = 1,   ///< Spell changed
-    PLAYERSPELL_NEW = 2,       ///< New spell
-    PLAYERSPELL_REMOVED = 3    ///< Spell removed
+    PLAYERSPELL_UNCHANGED = 0,
+    PLAYERSPELL_CHANGED = 1,
+    PLAYERSPELL_NEW = 2,
+    PLAYERSPELL_REMOVED = 3
 };
 
-/**
- * @brief Structure to hold player spell information
- */
 struct PlayerSpell
 {
-    PlayerSpellState state : 8; ///< State of the spell
-    bool active : 1;            ///< Show in spellbook
-    bool dependent : 1;         ///< Learned as result of another spell learn, skill grow, quest reward, etc
-    bool disabled : 1;          ///< First rank has been learned as a result of talent learn but currently talent unlearned, save max learned ranks
+    PlayerSpellState state : 8;
+    bool active : 1;
+    bool dependent : 1;
+    bool disabled : 1;
 };
 
 typedef std::unordered_map<uint32, PlayerSpell> PlayerSpellMap;
 
-/**
- * @brief Spell modifier structure
- *
- * Used for modifying other spells.
- */
 struct SpellModifier
 {
 
-    /**
-     * @brief Constructor
-     */
     SpellModifier() : op(SpellModOp()), type(SPELLMOD_FLAT), charges(0), value(0), spellId(0), lastAffected(nullptr) {}
 
-    /**
-     * @brief Constructor with uint64 mask
-     * @param _op Spell modifier operation
-     * @param _type Spell modifier type
-     * @param _value Modifier value
-     * @param _spellId Spell ID
-     * @param _mask Class family mask (uint64)
-     * @param _charges Number of charges
-     */
     SpellModifier(SpellModOp _op, SpellModType _type, int32 _value, uint32 _spellId, uint64 _mask, int16 _charges = 0)
         : op(_op), type(_type), charges(_charges), value(_value), mask(_mask), spellId(_spellId), lastAffected(nullptr)
     {}
 
-    /**
-     * @brief Constructor with ClassFamilyMask
-     * @param _op Spell modifier operation
-     * @param _type Spell modifier type
-     * @param _value Modifier value
-     * @param _spellId Spell ID
-     * @param _mask Class family mask
-     * @param _charges Number of charges
-     */
     SpellModifier(SpellModOp _op, SpellModType _type, int32 _value, uint32 _spellId, ClassFamilyMask _mask, int16 _charges = 0)
         : op(_op), type(_type), charges(_charges), value(_value), mask(_mask), spellId(_spellId), lastAffected(nullptr)
     {}
 
-    /**
-     * @brief Constructor with spell entry
-     * @param _op Spell modifier operation
-     * @param _type Spell modifier type
-     * @param _value Modifier value
-     * @param spellEntry Spell entry
-     * @param eff Spell effect index
-     * @param _charges Number of charges
-     */
     SpellModifier(SpellModOp _op, SpellModType _type, int32 _value, SpellEntry const* spellEntry, SpellEffectIndex eff, int16 _charges = 0);
 
-    /**
-     * @brief Constructor with aura
-     * @param _op Spell modifier operation
-     * @param _type Spell modifier type
-     * @param _value Modifier value
-     * @param aura Aura
-     * @param _charges Number of charges
-     */
     SpellModifier(SpellModOp _op, SpellModType _type, int32 _value, Aura const* aura, int16 _charges = 0);
 
-    /**
-     * @brief Check if modifier affects a spell
-     * @param spell Spell entry
-     * @return True if affected, false otherwise
-     */
     bool isAffectedOnSpell(SpellEntry const* spell) const;
 
-    SpellModOp op : 8;         ///< Operation type
-    SpellModType type : 8;     ///< Modifier type
-    int16 charges : 16;        ///< Number of charges
-    int32 value;               ///< Modifier value
-    ClassFamilyMask mask;      ///< Class family mask
-    uint32 spellId;            ///< Spell ID
-    Spell const* lastAffected; ///< Last affected spell (used for cleanup delayed remove spellmods at spell success or restore charges at cast fail)
+    SpellModOp op : 8;
+    SpellModType type : 8;
+    int16 charges : 16;
+    int32 value;
+    ClassFamilyMask mask;
+    uint32 spellId;
+    Spell const* lastAffected;
 };
 
-
-// SpellCooldown struct and SpellCooldowns typedef moved to SpellCooldownMgr.h.
-
-/**
- * @brief Trainer spell state enumeration
- */
 enum TrainerSpellState
 {
-    TRAINER_SPELL_GREEN = 0,          ///< Green (can learn)
-    TRAINER_SPELL_RED = 1,            ///< Red (cannot learn)
-    TRAINER_SPELL_GRAY = 2,           ///< Gray (already learned)
-    TRAINER_SPELL_GREEN_DISABLED = 10 ///< Green disabled (custom value, not sent to client: formally green but learn not allowed)
+    TRAINER_SPELL_GREEN = 0,
+    TRAINER_SPELL_RED = 1,
+    TRAINER_SPELL_GRAY = 2,
+    TRAINER_SPELL_GREEN_DISABLED = 10
 };
 
-/**
- * @brief Action button update state enumeration
- */
 enum ActionButtonUpdateState
 {
-    ACTIONBUTTON_UNCHANGED = 0, ///< Button unchanged
-    ACTIONBUTTON_CHANGED = 1,   ///< Button changed
-    ACTIONBUTTON_NEW = 2,       ///< New button
+    ACTIONBUTTON_UNCHANGED = 0,
+    ACTIONBUTTON_CHANGED = 1,
+    ACTIONBUTTON_NEW = 2,
     ACTIONBUTTON_DELETED        = 3
 };
 
-/**
- * @brief Action button type enumeration
- */
 enum ActionButtonType
 {
-    ACTION_BUTTON_SPELL = 0x00,                                   ///< Spell button
-    ACTION_BUTTON_C = 0x01,                                       ///< Click button
-    ACTION_BUTTON_MACRO = 0x40,                                   ///< Macro button
-    ACTION_BUTTON_CMACRO = ACTION_BUTTON_C | ACTION_BUTTON_MACRO, ///< Click macro button
-    ACTION_BUTTON_ITEM = 0x80                                     ///< Item button
+    ACTION_BUTTON_SPELL = 0x00,
+    ACTION_BUTTON_C = 0x01,
+    ACTION_BUTTON_MACRO = 0x40,
+    ACTION_BUTTON_CMACRO = ACTION_BUTTON_C | ACTION_BUTTON_MACRO,
+    ACTION_BUTTON_ITEM = 0x80
 };
 
 #define ACTION_BUTTON_ACTION(X) (uint32(X) & 0x00FFFFFF)
 #define ACTION_BUTTON_TYPE(X)   ((uint32(X) & 0xFF000000) >> 24)
 #define MAX_ACTION_BUTTON_ACTION_VALUE (0x00FFFFFF+1)
 
-// Structure to hold action button information
 struct ActionButton
 {
     ActionButton() : packedData(0), uState(ACTIONBUTTON_NEW) {}
 
-    uint32 packedData;               // Packed data containing action and type
-    ActionButtonUpdateState uState;  // Update state of the action button
+    uint32 packedData;
+    ActionButtonUpdateState uState;
 
-    // Helpers
     ActionButtonType GetType() const
     {
         return ActionButtonType(ACTION_BUTTON_TYPE(packedData));
@@ -334,34 +229,30 @@ struct ActionButton
 
 typedef std::map<uint8, ActionButton> ActionButtonList;
 
-// Structure to hold player create info item
 struct PlayerCreateInfoItem
 {
     PlayerCreateInfoItem(uint32 id, uint32 amount) : item_id(id), item_amount(amount) {}
 
-    uint32 item_id;     // Item ID
-    uint32 item_amount; // Item amount
+    uint32 item_id;
+    uint32 item_amount;
 };
 
 typedef std::list<PlayerCreateInfoItem> PlayerCreateInfoItems;
 
-// Structure to hold player class level info
 struct PlayerClassLevelInfo
 {
     PlayerClassLevelInfo() : basehealth(0), basemana(0) {}
-    uint16 basehealth; // Base health
-    uint16 basemana;   // Base mana
+    uint16 basehealth;
+    uint16 basemana;
 };
 
-// Structure to hold player class info
 struct PlayerClassInfo
 {
     PlayerClassInfo() : levelInfo(nullptr) {}
 
-    PlayerClassLevelInfo* levelInfo; // Level info array [level-1] 0..MaxPlayerLevel-1
+    PlayerClassLevelInfo* levelInfo;
 };
 
-// Structure to hold player level info
 struct PlayerLevelInfo
 {
     PlayerLevelInfo()
@@ -372,63 +263,59 @@ struct PlayerLevelInfo
         }
     }
 
-    uint8 stats[MAX_STATS]; // Stats array
+    uint8 stats[MAX_STATS];
 };
 
 typedef std::list<uint32> PlayerCreateInfoSpells;
 
-// Structure to hold player create info action
 struct PlayerCreateInfoAction
 {
     PlayerCreateInfoAction() : button(0), type(0), action(0) {}
     PlayerCreateInfoAction(uint8 _button, uint32 _action, uint8 _type) : button(_button), type(_type), action(_action) {}
 
-    uint8 button;  // Button index
-    uint8 type;    // Action type
-    uint32 action; // Action ID
+    uint8 button;
+    uint8 type;
+    uint32 action;
 };
 
 typedef std::list<PlayerCreateInfoAction> PlayerCreateInfoActions;
 
-// Structure to hold player info
 struct PlayerInfo
 {
-    // existence checked by displayId != 0             // existence checked by displayId != 0
+
     PlayerInfo() : displayId_m(0), displayId_f(0), levelInfo(nullptr), areaId(0), mapId(0), orientation(0.0f), positionX(0.0f), positionY(0.0f), positionZ(0.0f) {}
 
-    uint32 mapId;             // Map ID
-    uint32 areaId;            // Area ID
-    float positionX;          // Position X
-    float positionY;          // Position Y
-    float positionZ;          // Position Z
-    float orientation;        // Orientation
-    uint16 displayId_m;       // Display ID for male
-    uint16 displayId_f;       // Display ID for female
-    PlayerCreateInfoItems item; // Create info items
-    PlayerCreateInfoSpells spell; // Create info spells
-    PlayerCreateInfoActions action; // Create info actions
+    uint32 mapId;
+    uint32 areaId;
+    float positionX;
+    float positionY;
+    float positionZ;
+    float orientation;
+    uint16 displayId_m;
+    uint16 displayId_f;
+    PlayerCreateInfoItems item;
+    PlayerCreateInfoSpells spell;
+    PlayerCreateInfoActions action;
 
-    PlayerLevelInfo* levelInfo; // Level info array [level-1] 0..MaxPlayerLevel-1
+    PlayerLevelInfo* levelInfo;
 };
 
-// Structure to hold PvP info
 struct PvPInfo
 {
     PvPInfo() : inHostileArea(false), endTimer(0) {}
 
-    bool inHostileArea; // Is in hostile area
-    time_t endTimer;    // End timer
+    bool inHostileArea;
+    time_t endTimer;
 };
 
-// Structure to hold area information
 struct Areas
 {
-    uint32 areaID;   // Area ID
-    uint32 areaFlag; // Area flag
-    float x1;        // X1 coordinate
-    float x2;        // X2 coordinate
-    float y1;        // Y1 coordinate
-    float y2;        // Y2 coordinate
+    uint32 areaID;
+    uint32 areaFlag;
+    float x1;
+    float x2;
+    float y1;
+    float y2;
 };
 
 enum RaidGroupError
@@ -446,126 +333,109 @@ enum PlayerFlags
     PLAYER_FLAGS_GM                     = 0x00000008,
     PLAYER_FLAGS_GHOST                  = 0x00000010,
     PLAYER_FLAGS_RESTING                = 0x00000020,
-    PLAYER_FLAGS_UNK7                   = 0x00000040,       // admin?
+    PLAYER_FLAGS_UNK7                   = 0x00000040,
     PLAYER_FLAGS_FFA_PVP                = 0x00000080,
-    PLAYER_FLAGS_CONTESTED_PVP          = 0x00000100,       // Player has been involved in a PvP combat and will be attacked by contested guards
+    PLAYER_FLAGS_CONTESTED_PVP          = 0x00000100,
     PLAYER_FLAGS_IN_PVP                 = 0x00000200,
     PLAYER_FLAGS_HIDE_HELM              = 0x00000400,
     PLAYER_FLAGS_HIDE_CLOAK             = 0x00000800,
-    PLAYER_FLAGS_PARTIAL_PLAY_TIME      = 0x00001000,       // played long time
-    PLAYER_FLAGS_NO_PLAY_TIME           = 0x00002000,       // played too long time
+    PLAYER_FLAGS_PARTIAL_PLAY_TIME      = 0x00001000,
+    PLAYER_FLAGS_NO_PLAY_TIME           = 0x00002000,
     PLAYER_FLAGS_UNK15                  = 0x00004000,
-    PLAYER_FLAGS_UNK16                  = 0x00008000,       // strange visual effect (2.0.1), looks like PLAYER_FLAGS_GHOST flag
-    PLAYER_FLAGS_SANCTUARY              = 0x00010000,       // player entered sanctuary
-    PLAYER_FLAGS_TAXI_BENCHMARK         = 0x00020000,       // taxi benchmark mode (on/off) (2.0.1)
-    PLAYER_FLAGS_PVP_TIMER              = 0x00040000,       // 3.0.2, pvp timer active (after you disable pvp manually)
+    PLAYER_FLAGS_UNK16                  = 0x00008000,
+    PLAYER_FLAGS_SANCTUARY              = 0x00010000,
+    PLAYER_FLAGS_TAXI_BENCHMARK         = 0x00020000,
+    PLAYER_FLAGS_PVP_TIMER              = 0x00040000,
     PLAYER_FLAGS_XP_USER_DISABLED       = 0x02000000,
 };
 
-// used in (PLAYER_FIELD_BYTES, 0) byte values
 enum PlayerFieldByteFlags
 {
-    PLAYER_FIELD_BYTE_TRACK_STEALTHED   = 0x02, // Track stealthed units
-    PLAYER_FIELD_BYTE_RELEASE_TIMER     = 0x08, // Display time till auto release spirit
-    PLAYER_FIELD_BYTE_NO_RELEASE_WINDOW = 0x10  // Display no "release spirit" window at all
+    PLAYER_FIELD_BYTE_TRACK_STEALTHED   = 0x02,
+    PLAYER_FIELD_BYTE_RELEASE_TIMER     = 0x08,
+    PLAYER_FIELD_BYTE_NO_RELEASE_WINDOW = 0x10
 };
 
-// An aura may be marked in the spell data as needing sight to be seen at all:
-// column RequiredAuraVision carries a small number, and the client only shows
-// the aura to a player whose mask holds the bit for that number, less one.
 enum AuraVision
 {
     AURA_VISION_NONE         = 0x00,
-    AURA_VISION_AMORE_0      = 0x02,                        // base of the four SPELL_AURA_DETECT_AMORE values
+    AURA_VISION_AMORE_0      = 0x02,
     AURA_VISION_AMORE_1      = 0x04,
     AURA_VISION_AMORE_2      = 0x08,
     AURA_VISION_AMORE_3      = 0x10,
-    AURA_VISION_STEALTH      = 0x20,                        // the shimmer a stealthed unit carries
-    AURA_VISION_INVISIBILITY = 0x40                         // the glow an invisible unit carries
+    AURA_VISION_STEALTH      = 0x20,
+    AURA_VISION_INVISIBILITY = 0x40
 };
 
-
-// 2^n values for player extra flags
 enum PlayerExtraFlags
 {
-    // GM abilities
-    PLAYER_EXTRA_GM_ON              = 0x0001, // GM mode on
-    PLAYER_EXTRA_GM_ACCEPT_TICKETS  = 0x0002, // GM accepts tickets
-    PLAYER_EXTRA_ACCEPT_WHISPERS    = 0x0004, // Accept whispers
-    PLAYER_EXTRA_TAXICHEAT          = 0x0008, // Taxi cheat mode
-    PLAYER_EXTRA_GM_INVISIBLE       = 0x0010, // GM invisible mode
-    PLAYER_EXTRA_GM_CHAT            = 0x0020, // Show GM badge in chat messages
-    PLAYER_EXTRA_AUCTION_NEUTRAL    = 0x0040, // Neutral auction access
-    PLAYER_EXTRA_AUCTION_ENEMY      = 0x0080, // Enemy auction access, overwrites PLAYER_EXTRA_AUCTION_NEUTRAL
 
-    // Other states
-    PLAYER_EXTRA_PVP_DEATH          = 0x0100  // Store PvP death status until corpse creation
+    PLAYER_EXTRA_GM_ON              = 0x0001,
+    PLAYER_EXTRA_GM_ACCEPT_TICKETS  = 0x0002,
+    PLAYER_EXTRA_ACCEPT_WHISPERS    = 0x0004,
+    PLAYER_EXTRA_TAXICHEAT          = 0x0008,
+    PLAYER_EXTRA_GM_INVISIBLE       = 0x0010,
+    PLAYER_EXTRA_GM_CHAT            = 0x0020,
+    PLAYER_EXTRA_AUCTION_NEUTRAL    = 0x0040,
+    PLAYER_EXTRA_AUCTION_ENEMY      = 0x0080,
+
+    PLAYER_EXTRA_PVP_DEATH          = 0x0100
 };
 
-// 2^n values for at login flags
 enum AtLoginFlags
 {
-    AT_LOGIN_NONE                 = 0x00, // No special actions at login
-    AT_LOGIN_RENAME               = 0x01, // Rename character at login
-    AT_LOGIN_RESET_SPELLS         = 0x02, // Reset spells at login
-    AT_LOGIN_RESET_TALENTS        = 0x04, // Reset talents at login
-    // AT_LOGIN_CUSTOMIZE         = 0x08, -- used in post-3.x
-    // AT_LOGIN_RESET_PET_TALENTS = 0x10, -- used in post-3.x
-    AT_LOGIN_FIRST                = 0x20  // First login flag
+    AT_LOGIN_NONE                 = 0x00,
+    AT_LOGIN_RENAME               = 0x01,
+    AT_LOGIN_RESET_SPELLS         = 0x02,
+    AT_LOGIN_RESET_TALENTS        = 0x04,
+
+    AT_LOGIN_FIRST                = 0x20
 };
 
-// States for skill updates
 enum SkillUpdateState
 {
-    SKILL_UNCHANGED             = 0, // Skill unchanged
-    SKILL_CHANGED               = 1, // Skill changed
-    SKILL_NEW                   = 2, // New skill
-    SKILL_DELETED               = 3  // Skill deleted
+    SKILL_UNCHANGED             = 0,
+    SKILL_CHANGED               = 1,
+    SKILL_NEW                   = 2,
+    SKILL_DELETED               = 3
 };
 
-// Structure to hold skill status data
 struct SkillStatusData
 {
     SkillStatusData(uint8 _pos, SkillUpdateState _uState) : pos(_pos), uState(_uState) {}
 
-    uint8 pos;              // Position of the skill
-    SkillUpdateState uState; // Update state of the skill
+    uint8 pos;
+    SkillUpdateState uState;
 };
 
 typedef std::unordered_map<uint32, SkillStatusData> SkillStatusMap;
 
-
-
-// Reasons for transfer abort
 enum TransferAbortReason
 {
-    TRANSFER_ABORT_MAX_PLAYERS                  = 0x01,     // Transfer Aborted: instance is full
-    TRANSFER_ABORT_NOT_FOUND                    = 0x02,     // Transfer Aborted: instance not found
-    TRANSFER_ABORT_TOO_MANY_INSTANCES           = 0x03,     // You have entered too many instances recently.
-    TRANSFER_ABORT_SILENTLY                     = 0x04,     // no message shown; the same effect give values above 5
-    TRANSFER_ABORT_ZONE_IN_COMBAT               = 0x05,     // Unable to zone in while an encounter is in progress.
+    TRANSFER_ABORT_MAX_PLAYERS                  = 0x01,
+    TRANSFER_ABORT_NOT_FOUND                    = 0x02,
+    TRANSFER_ABORT_TOO_MANY_INSTANCES           = 0x03,
+    TRANSFER_ABORT_SILENTLY                     = 0x04,
+    TRANSFER_ABORT_ZONE_IN_COMBAT               = 0x05,
 };
 
-// Instance reset warning types
 enum InstanceResetWarningType
 {
-    RAID_INSTANCE_WARNING_HOURS     = 1, // WARNING! %s is scheduled to reset in %d hour(s).
-    RAID_INSTANCE_WARNING_MIN       = 2, // WARNING! %s is scheduled to reset in %d minute(s)!
-    RAID_INSTANCE_WARNING_MIN_SOON  = 3, // WARNING! %s is scheduled to reset in %d minute(s). Please exit the zone or you will be returned to your bind location!
-    RAID_INSTANCE_WELCOME           = 4  // Welcome to %s. This raid instance is scheduled to reset in %s.
+    RAID_INSTANCE_WARNING_HOURS     = 1,
+    RAID_INSTANCE_WARNING_MIN       = 2,
+    RAID_INSTANCE_WARNING_MIN_SOON  = 3,
+    RAID_INSTANCE_WELCOME           = 4
 };
 
-// Teleport options
 enum TeleportToOptions
 {
-    TELE_TO_GM_MODE             = 0x01, // GM mode teleport
-    TELE_TO_NOT_LEAVE_TRANSPORT = 0x02, // Do not leave transport
-    TELE_TO_NOT_LEAVE_COMBAT    = 0x04, // Do not leave combat
-    TELE_TO_NOT_UNSUMMON_PET    = 0x08, // Do not unsummon pet
-    TELE_TO_SPELL               = 0x10  // Teleport by spell
+    TELE_TO_GM_MODE             = 0x01,
+    TELE_TO_NOT_LEAVE_TRANSPORT = 0x02,
+    TELE_TO_NOT_LEAVE_COMBAT    = 0x04,
+    TELE_TO_NOT_UNSUMMON_PET    = 0x08,
+    TELE_TO_SPELL               = 0x10
 };
 
-// Used at player loading query list preparing, and later result selection
 enum PlayerLoginQueryIndex
 {
     PLAYER_LOGIN_QUERY_LOADFROM,
@@ -591,46 +461,43 @@ enum PlayerLoginQueryIndex
     MAX_PLAYER_LOGIN_QUERY
 };
 
-// Sources of reputation
 enum ReputationSource
 {
-    REPUTATION_SOURCE_KILL,   // Reputation from kills
-    REPUTATION_SOURCE_QUEST,  // Reputation from quests
-    REPUTATION_SOURCE_SPELL   // Reputation from spells
+    REPUTATION_SOURCE_KILL,
+    REPUTATION_SOURCE_QUEST,
+    REPUTATION_SOURCE_SPELL
 };
 
-// Player summoning auto-decline time (in seconds)
-#define MAX_MONEY_AMOUNT        (0x7FFFFFFF-1) // Maximum money amount
+#define MAX_MONEY_AMOUNT        (0x7FFFFFFF-1)
 
-// Enum to represent player rest states
 enum PlayerRestState
 {
-    REST_STATE_RESTED           = 0x01, // Player is rested
-    REST_STATE_NORMAL           = 0x02, // Player is in a normal state
-    REST_STATE_RAF_LINKED       = 0x04  // Exact use unknown
+    REST_STATE_RESTED           = 0x01,
+    REST_STATE_NORMAL           = 0x02,
+    REST_STATE_RAF_LINKED       = 0x04
 };
 
 enum PlayerMountResult
 {
-    MOUNTRESULT_INVALIDMOUNTEE  = 0,    // You can't mount that unit!
-    MOUNTRESULT_TOOFARAWAY      = 1,    // That mount is too far away!
-    MOUNTRESULT_ALREADYMOUNTED  = 2,    // You're already mounted!
-    MOUNTRESULT_NOTMOUNTABLE    = 3,    // That unit can't be mounted!
-    MOUNTRESULT_NOTYOURPET      = 4,    // That mount isn't your pet!
-    MOUNTRESULT_OTHER           = 5,    // internal
-    MOUNTRESULT_LOOTING         = 6,    // You can't mount while looting!
-    MOUNTRESULT_RACECANTMOUNT   = 7,    // You can't mount because of your race!
-    MOUNTRESULT_SHAPESHIFTED    = 8,    // You can't mount while shapeshifted!
-    MOUNTRESULT_FORCEDDISMOUNT  = 9,    // You dismount before continuing.
-    MOUNTRESULT_OK              = 10    // no error
+    MOUNTRESULT_INVALIDMOUNTEE  = 0,
+    MOUNTRESULT_TOOFARAWAY      = 1,
+    MOUNTRESULT_ALREADYMOUNTED  = 2,
+    MOUNTRESULT_NOTMOUNTABLE    = 3,
+    MOUNTRESULT_NOTYOURPET      = 4,
+    MOUNTRESULT_OTHER           = 5,
+    MOUNTRESULT_LOOTING         = 6,
+    MOUNTRESULT_RACECANTMOUNT   = 7,
+    MOUNTRESULT_SHAPESHIFTED    = 8,
+    MOUNTRESULT_FORCEDDISMOUNT  = 9,
+    MOUNTRESULT_OK              = 10
 };
 
 enum PlayerDismountResult
 {
-    DISMOUNTRESULT_NOPET        = 0,    // internal
-    DISMOUNTRESULT_NOTMOUNTED   = 1,    // You're not mounted!
-    DISMOUNTRESULT_NOTYOURPET   = 2,    // internal
-    DISMOUNTRESULT_OK           = 3     // no error
+    DISMOUNTRESULT_NOPET        = 0,
+    DISMOUNTRESULT_NOTMOUNTED   = 1,
+    DISMOUNTRESULT_NOTYOURPET   = 2,
+    DISMOUNTRESULT_OK           = 3
 };
 
 class PlayerTaxi
@@ -638,11 +505,10 @@ class PlayerTaxi
     public:
         PlayerTaxi();
         ~PlayerTaxi() {}
-        // Nodes
+
         void InitTaxiNodes(uint32 race, uint32 level);
         void LoadTaxiMask(const char* data);
 
-        // Check if a taxi node is known
         bool IsTaximaskNodeKnown(uint32 nodeidx) const
         {
             uint8  field   = uint8((nodeidx - 1) / 32);
@@ -650,7 +516,6 @@ class PlayerTaxi
             return (m_taximask[field] & submask) == submask;
         }
 
-        // Set a taxi node as known
         bool SetTaximaskNode(uint32 nodeidx)
         {
             uint8  field   = uint8((nodeidx - 1) / 32);
@@ -666,83 +531,66 @@ class PlayerTaxi
             }
         }
 
-        // Append taxi mask to data
         void AppendTaximaskTo(ByteBuffer& data, bool all);
 
-        // Load taxi destinations from string
         bool LoadTaxiDestinationsFromString(const std::string& values, Team team);
 
-        // Save taxi destinations to string
         std::string SaveTaxiDestinationsToString();
 
-        // Clear taxi destinations
         void ClearTaxiDestinations()
         {
             m_TaxiDestinations.clear();
         }
 
-        // Add a taxi destination
         void AddTaxiDestination(uint32 dest)
         {
             m_TaxiDestinations.push_back(dest);
         }
 
-        // Get the source of the taxi
         uint32 GetTaxiSource() const
         {
             return m_TaxiDestinations.empty() ? 0 : m_TaxiDestinations.front();
         }
 
-        // Get the destination of the taxi
         uint32 GetTaxiDestination() const
         {
             return m_TaxiDestinations.size() < 2 ? 0 : m_TaxiDestinations[1];
         }
 
-        // Get the current taxi path
         uint32 GetCurrentTaxiPath() const;
 
-        // Get the next taxi destination
         uint32 NextTaxiDestination()
         {
             m_TaxiDestinations.pop_front();
             return GetTaxiDestination();
         }
 
-        // Check if there are no taxi destinations
         bool empty() const
         {
             return m_TaxiDestinations.empty();
         }
 
-        // Friend function to output taxi information
         friend std::ostringstream& operator<< (std::ostringstream& ss, PlayerTaxi const& taxi);
 
     private:
-        TaxiMask m_taximask; // Mask of known taxi nodes
-        std::deque<uint32> m_TaxiDestinations; // Queue of taxi destinations
+        TaxiMask m_taximask;
+        std::deque<uint32> m_TaxiDestinations;
 };
 
-/**
- * Writes the taxi path state into a string stream.
- */
 std::ostringstream& operator<< (std::ostringstream& ss, PlayerTaxi const& taxi);
 
-
-// Structure to hold trade status information
 struct TradeStatusInfo
 {
     TradeStatusInfo() : Status(TRADE_STATUS_BUSY), TraderGuid(), Result(EQUIP_ERR_OK),
         IsTargetResult(false), ItemLimitCategoryId(0), Slot(0) {}
 
-    TradeStatus Status; // Status of the trade
-    ObjectGuid TraderGuid; // GUID of the trader
-    InventoryResult Result; // Result of the trade
-    bool IsTargetResult; // Indicates if the result is for the target
-    uint32 ItemLimitCategoryId; // Item limit category ID
-    uint8 Slot; // Slot of the item
+    TradeStatus Status;
+    ObjectGuid TraderGuid = 0;
+    InventoryResult Result;
+    bool IsTargetResult;
+    uint32 ItemLimitCategoryId;
+    uint8 Slot;
 };
-
 
 class Player : public Unit
 {
@@ -752,100 +600,86 @@ class Player : public Unit
         explicit Player(WorldSession* session);
         ~Player();
 
-        time_t lastTimeLooted; // Time when the player last looted
+        time_t lastTimeLooted;
 
-        void CleanupsBeforeDelete() override; // Cleanup operations before deleting the player
+        void CleanupsBeforeDelete() override;
 
-        void AddToWorld() override; // Add the player to the world
-        void RemoveFromWorld() override; // Remove the player from the world
+        void AddToWorld() override;
+        void RemoveFromWorld() override;
 
-        /// Nothing about the ground he stands on may take a player with it.
         bool OutlivesItsGrid() const override { return true; }
 
-        /// His client moved him; the server writes down where.
         void MovedTo(float x, float y, float z, float o) override { SetPosition(x, y, z, o); }
 
-        /// His client decides every step.
         bool MovesItself() const override { return true; }
 
         bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0, bool allowNoDelay = false);
 
-        // Teleport the player to a specific location using Destination
         bool TeleportTo(Geometry::Placement const& loc, uint32 options = 0)
         {
             return TeleportTo(loc.MapId(), loc.X(), loc.Y(), loc.Z(), loc.Facing(), options);
         }
 
-
-        // Set the summon point for the player
         void SetSummonPoint(uint32 mapid, float x, float y, float z)
         {
             m_summon.Offer(mapid, x, y, z, time(nullptr));
         }
-        void SummonIfPossible(bool agree); // Summon the player if possible
+        void SummonIfPossible(bool agree);
 
-        // Create a new player
         bool Create(uint32 guidlow, const std::string& name, uint8 race, uint8 class_, uint8 gender, uint8 skin, uint8 face, uint8 hairStyle, uint8 hairColor, uint8 facialHair, uint8 outfitId);
 
-        void Update(uint32 update_diff, uint32 time) override; // Update the player
+        void Update(uint32 update_diff, uint32 time) override;
 
-
-
-        bool IsInWater() const override // Check if the player is in water
+        bool IsInWater() const override
         {
             return m_perils.InWater();
         }
-        bool IsUnderWater() const override; // Check if the player is underwater
+        bool IsUnderWater() const override;
         bool IsDrowning() const { return m_perils.Drowning(); }
 
-        /// What the ground and the water are doing to him.
         Perils& Dangers() { return m_perils; }
         Perils const& Dangers() const { return m_perils; }
 
-        /// How much he has had to drink.
         Drink& Drinking() { return m_drink; }
         Drink const& Drinking() const { return m_drink; }
-        bool IsFalling() // Check if the player is falling
+        bool IsFalling()
         {
             return Where().Z() < m_lastFallZ;
         }
 
-        // A context is supplied only for the initial login lifecycle; null keeps
-        // ordinary teleport callers on their established packet sequence.
         void SendInitialPacketsBeforeAddToMap(bool deferLoginTimeSpeed = false);
         void SendInitialPacketsAfterAddToMap(InitialWorldEntryContext const* initialEntry = nullptr);
         void SendLoginTimeSpeed();
-        void SendInstanceResetWarning(uint32 mapid, uint32 time); // Send instance reset warning
+        void SendInstanceResetWarning(uint32 mapid, uint32 time);
 
-        // Get the NPC if the player can interact with it
         Creature* GetNPCIfCanInteractWith(ObjectGuid guid, uint32 npcflagmask);
-        // Get the game object if the player can interact with it
+
         GameObject* GetGameObjectIfCanInteractWith(ObjectGuid guid, uint32 gameobject_type = MAX_GAMEOBJECT_TYPE) const;
 
-        void ToggleAFK(); // Toggle AFK status
-        void ToggleDND(); // Toggle DND status
-        bool isAFK() const // Check if the player is AFK
+        void ToggleAFK();
+        void ToggleDND();
+        bool isAFK() const
         {
             return HasPlayerFlag(PLAYER_FLAGS_AFK);
         }
-        bool isDND() const // Check if the player is DND
+        bool isDND() const
         {
             return HasPlayerFlag(PLAYER_FLAGS_DND);
         }
-        ChatTagFlags GetChatTag() const; // Get the chat tag flags
-        std::string autoReplyMsg; // Auto-reply message
+        ChatTagFlags GetChatTag() const;
+        std::string autoReplyMsg;
 
-        PlayerSocial* GetSocial() // Get the player's social data
+        PlayerSocial* GetSocial()
         {
             return m_social;
         }
 
-        void SetCreatedDate(uint32 createdDate) // Set the created date of the player
+        void SetCreatedDate(uint32 createdDate)
         {
             m_created_date = createdDate;
         }
 
-        uint32 GetCreatedDate() // Get the created date of the player
+        uint32 GetCreatedDate()
         {
             return m_created_date;
         }
@@ -856,13 +690,10 @@ class Player : public Unit
             m_taxi.InitTaxiNodes(getRace(), getLevel());
         }
 
-        // Activate taxi path to specified nodes
         bool ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc = nullptr, uint32 spellid = 0);
 
-        // Activate taxi path to specified taxi path ID
         bool ActivateTaxiPathTo(uint32 taxi_path_id, uint32 spellid = 0);
 
-        // Continue the taxi flight
         void ContinueTaxiFlight();
         void Mount(uint32 mount, uint32 spellId = 0) override;
         void Unmount(bool from_aura = false) override;
@@ -870,36 +701,25 @@ class Player : public Unit
         void SendDismountResult(PlayerDismountResult result);
         bool isAcceptTickets() const { return GetSession()->GetSecurity() >= SEC_GAMEMASTER && (m_ExtraFlags & PLAYER_EXTRA_GM_ACCEPT_TICKETS); }
 
-        // Set the accept ticket state
         void SetAcceptTicket(bool on) { if (on) { m_ExtraFlags |= PLAYER_EXTRA_GM_ACCEPT_TICKETS; } else { m_ExtraFlags &= ~PLAYER_EXTRA_GM_ACCEPT_TICKETS; } }
 
-        // Check if the player accepts whispers
         bool isAcceptWhispers() const { return m_ExtraFlags & PLAYER_EXTRA_ACCEPT_WHISPERS; }
 
-        // Set the accept whispers state
         void SetAcceptWhispers(bool on) { if (on) { m_ExtraFlags |= PLAYER_EXTRA_ACCEPT_WHISPERS; } else { m_ExtraFlags &= ~PLAYER_EXTRA_ACCEPT_WHISPERS; } }
 
-        // Check if the player is a game master
         bool isGameMaster() const { return m_ExtraFlags & PLAYER_EXTRA_GM_ON; }
 
-        /// Which marked auras this player may see on others. A stealthed player
-        /// is given the bit for the stealth shimmer, which is how one rogue makes
-        /// out another; an invisible one is given the bit for the glow.
         bool CanSeeAura(uint8 vision) const { return HasByteFlag(PLAYER_FIELD_BYTES2, 1, vision); }
         void ApplyAuraVision(uint8 vision, bool apply)
         {
             ApplyModByteFlag(PLAYER_FIELD_BYTES2, 1, vision, apply);
         }
 
-        /// Which of the extra action bars the client shows.
         uint8 GetActionBars() const { return GetByteValue(PLAYER_FIELD_BYTES, 2); }
         void SetActionBars(uint8 bars) { SetByteValue(PLAYER_FIELD_BYTES, 2, bars); }
 
-        /// The combo points the client draws over the target.
         void SetShownComboPoints(uint8 points) { SetByteValue(PLAYER_FIELD_BYTES, 1, points); }
 
-        /// Whether the client counts down to an automatic spirit release, and
-        /// whether tracking also picks out stealthed units.
         void ShowReleaseTimer(bool on)
         {
             ApplyModByteFlag(PLAYER_FIELD_BYTES, 0, PLAYER_FIELD_BYTE_RELEASE_TIMER, on);
@@ -909,22 +729,17 @@ class Player : public Unit
             ApplyModByteFlag(PLAYER_FIELD_BYTES, 0, PLAYER_FIELD_BYTE_TRACK_STEALTHED, on);
         }
 
-        /// The honour rank the PvP tab shows, the highest ever reached, and how
-        /// far the bar between ranks is filled, scaled to a byte.
         void SetShownHonorRank(uint8 rank) { SetByteValue(PLAYER_BYTES_3, 3, rank); }
         void SetShownHighestHonorRank(uint8 rank) { SetByteValue(PLAYER_FIELD_BYTES, 3, rank); }
         uint8 GetHonorBar() const { return GetByteValue(PLAYER_FIELD_BYTES2, 0); }
         void SetHonorBar(uint8 filled) { SetByteValue(PLAYER_FIELD_BYTES2, 0, filled); }
 
-        /// The client packs the drunkenness meter and the gender bit together.
         uint16 GetDrunkAndGender() const { return GetUInt16Value(PLAYER_BYTES_3, 0); }
         void SetDrunkAndGender(uint16 drunk, uint8 gender)
         {
             SetUInt16Value(PLAYER_BYTES_3, 0, (drunk & 0xFFFE) | gender);
         }
 
-        /// What the minimap needle points at. The bit is the tracked kind, less
-        /// one, and the two words are searched separately by the client.
         enum class Tracked { Creatures, Resources };
         void ApplyTracking(Tracked what, uint32 bit, bool on)
         {
@@ -937,7 +752,6 @@ class Player : public Unit
             SetUInt32Value(PLAYER_TRACK_RESOURCES, 0);
         }
 
-        /// A bit per explored area, in as many words as there are areas.
         uint32 GetExploredZones(uint16 slot) const
         {
             return GetUInt32Value(PLAYER_EXPLORED_ZONES_1 + slot);
@@ -947,11 +761,9 @@ class Player : public Unit
             SetUInt32Value(PLAYER_EXPLORED_ZONES_1 + slot, mask);
         }
 
-        /// The flag both duellists are pointed at while the duel stands.
         ObjectGuid const& GetDuelArbiterGuid() const { return GetGuidValue(PLAYER_DUEL_ARBITER); }
         void SetDuelArbiterGuid(ObjectGuid const& guid) { SetGuidValue(PLAYER_DUEL_ARBITER, guid); }
 
-        /// How much more or less damage of a school the character sheet claims.
         void ApplyDamageDonePercent(uint32 school, float percent, bool apply)
         {
             ApplyModSignedFloatValue(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + school, percent, apply);
@@ -961,9 +773,6 @@ class Player : public Unit
             SetFloatValue(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + school, percent);
         }
 
-        /// What everyone around is told about the player: away, dead, resting,
-        /// in a duel, hiding a helm. Distinct from the unit flags, which say
-        /// what may be done to them.
         bool HasPlayerFlag(uint32 flag) const { return HasFlag(PLAYER_FLAGS, flag); }
         void SetPlayerFlag(uint32 flag) { SetFlag(PLAYER_FLAGS, flag); }
         void RemovePlayerFlag(uint32 flag) { RemoveFlag(PLAYER_FLAGS, flag); }
@@ -972,28 +781,20 @@ class Player : public Unit
         uint32 GetPlayerFlags() const { return GetUInt32Value(PLAYER_FLAGS); }
         void SetAllPlayerFlags(uint32 flags) { SetUInt32Value(PLAYER_FLAGS, flags); }
 
-        // Set the game master state
         void SetGameMaster(bool on);
 
-        // Check if the player has GM chat enabled
         bool isGMChat() const { return GetSession()->GetSecurity() >= SEC_MODERATOR && (m_ExtraFlags & PLAYER_EXTRA_GM_CHAT); }
 
-        // Set the GM chat state
         void SetGMChat(bool on) { if (on) { m_ExtraFlags |= PLAYER_EXTRA_GM_CHAT; } else { m_ExtraFlags &= ~PLAYER_EXTRA_GM_CHAT; } }
 
-        // Check if the player is a taxi cheater
         bool IsTaxiCheater() const { return m_ExtraFlags & PLAYER_EXTRA_TAXICHEAT; }
 
-        // Set the taxi cheater state
         void SetTaxiCheater(bool on) { if (on) { m_ExtraFlags |= PLAYER_EXTRA_TAXICHEAT; } else { m_ExtraFlags &= ~PLAYER_EXTRA_TAXICHEAT; } }
 
-        // Check if the player is visible as a GM
         bool isGMVisible() const { return !(m_ExtraFlags & PLAYER_EXTRA_GM_INVISIBLE); }
 
-        // Set the GM visibility state
         void SetGMVisible(bool on);
 
-        // Set the PvP death state
         void SetPvPDeath(bool on)
         {
             if (on)
@@ -1006,14 +807,11 @@ class Player : public Unit
             }
         }
 
-        // Get the auction access mode
-        // 0 = own auction, -1 = enemy auction, 1 = goblin auction
         int GetAuctionAccessMode() const
         {
             return m_ExtraFlags & PLAYER_EXTRA_AUCTION_ENEMY ? -1 : (m_ExtraFlags & PLAYER_EXTRA_AUCTION_NEUTRAL ? 1 : 0);
         }
 
-        // Set the auction access mode
         void SetAuctionAccessMode(int state)
         {
             m_ExtraFlags &= ~(PLAYER_EXTRA_AUCTION_ENEMY | PLAYER_EXTRA_AUCTION_NEUTRAL);
@@ -1028,154 +826,89 @@ class Player : public Unit
             }
         }
 
-        // Give experience points to the player
         void GiveXP(uint32 xp, Unit* victim);
 
-        // Give a level to the player
         void GiveLevel(uint32 level);
 
-        // Initialize stats for the player's level
         void InitStatsForLevel(bool reapplyMods = false);
 
-        // Played Time Stuff
+        void SetDeathState(DeathState s) override;
 
-        /// When this session began. Times the client is given are counted
-        /// from it rather than from the wall clock.
-
-
-        // Get the total played time
-
-        // Get the played time at the current level
-
-        // Set the death state of the player
-        void SetDeathState(DeathState s) override; // overwrite Unit::SetDeathState
-
-        /**
-         * \brief: compute rest bonus
-         * \param: time_t timePassed > time from last check
-         * \param: bool offline      > is the player was offline?
-         * \param: bool inRestPlace  > if it was offline, is the player was in city/tavern/inn?
-         * \returns: float
-         **/
-
-        // Get the rest type
-
-
-        // Remove the player's pet
         void RemovePet(PetSaveMode mode) { m_petMgr.Remove(mode); }
 
-        // Remove the player's mini pet
         void RemoveMiniPet();
         Pet* GetMiniPet() const override;
 
-        // Set the player's mini pet (used only in Pet::Unsummon/Spell::DoSummon)
         void _SetMiniPet(Pet* pet)
         {
-            m_miniPetGuid = pet ? pet->GetObjectGuid() : ObjectGuid();
+            m_miniPetGuid = pet ? pet->GetObjectGuid() : 0;
         }
 
-        // Player communication methods
         void Say(const std::string& text, const uint32 language);
         void Yell(const std::string& text, const uint32 language);
         void TextEmote(const std::string& text);
 
-        /**
-         * This will log a whisper depending on the setting LogWhispers in mangosd.conf, for a list
-         * of available levels please see \ref WhisperLoggingLevels. The logging is done to database
-         * in the table characters.character_whispers and includes to/from, text and when the whisper
-         * was sent.
-         *
-         * @param text the text that was sent
-         * @param receiver guid of the receiver of the message
-         * \see WhisperLoggingLevels
-         * \see eConfigUInt32Values::CONFIG_UINT32_LOG_WHISPERS
-         */
         void LogWhisper(const std::string& text, ObjectGuid receiver);
         void Whisper(const std::string& text, const uint32 language, ObjectGuid receiver);
 
-        /*********************************************************/
-        /***                    STORAGE SYSTEM                 ***/
-        /*********************************************************/
-
-        // Set the virtual item slot
         void SetVirtualItemSlot(uint8 i, Item* item);
-        void SetSheath(SheathState sheathed) override;      // overwrite Unit version
+        void SetSheath(SheathState sheathed) override;
         bool ViableEquipSlots(ItemPrototype const* proto, uint8 *viable_slots) const;
         uint8 FindEquipSlot(ItemPrototype const* proto, uint32 slot, bool swap) const;
 
-        // Get the count of the specified item
         uint32 GetItemCount(uint32 item, bool inBankAlso = false, Item* skipItem = nullptr) const
         {
             return m_inventory.Count(item, inBankAlso ? SCOPE_EVERYWHERE : SCOPE_TO_HAND, skipItem);
         }
 
-        // Get the item by its GUID
         Item* GetItemByGuid(ObjectGuid guid) const { return m_inventory.ByGuid(guid); }
 
-        // Get the item by its entry ID (only for special cases)
         Item* GetItemByEntry(uint32 item) const { return m_inventory.ByEntry(item); }
 
-        // Get the item by its position
         Item* GetItemByPos(uint16 pos) const { return m_inventory.At(pos); }
 
-        // Get the item by its bag and slot
         Item* GetItemByPos(uint8 bag, uint8 slot) const { return m_inventory.At(bag, slot); }
         Item* GetWeaponForAttack(WeaponAttackType attackType) const
         {
             return GetWeaponForAttack(attackType, false, false);
         }
 
-        // Get the weapon for the specified attack type with additional options
         Item* GetWeaponForAttack(WeaponAttackType attackType, bool nonbroken, bool useable) const;
 
-        // Get the shield (if usable)
         Item* GetShield(bool useable = false) const;
 
-        /// Everything he owns that sits in a place: worn, carried, banked, and
-        /// the vendor's buyback row.
         Inventory& Owns() { return m_inventory; }
         Inventory const& Owns() const { return m_inventory; }
 
-        /// The items this player has changed and not yet written.
         ItemSaveQueue& ItemSaves() { return m_inventory.Saves(); }
         ItemSaveQueue const& ItemSaves() const { return m_inventory.Saves(); }
 
-        // Check if the position is valid
         bool IsValidPos(uint16 pos, bool explicit_pos) const { return m_inventory.Exists(Inventory::Container(pos), Inventory::Slot(pos), explicit_pos); }
 
-        // Check if the position is valid (overloaded)
         bool IsValidPos(uint8 bag, uint8 slot, bool explicit_pos) const { return m_inventory.Exists(bag, slot, explicit_pos); }
 
-        // Get the count of bank bag slots
         uint8 GetBankBagSlotCount() const { return GetByteValue(PLAYER_BYTES_2, 2); }
 
-        // Set the count of bank bag slots
         void SetBankBagSlotCount(uint8 count) { SetByteValue(PLAYER_BYTES_2, 2, count); }
 
-        // Check if the player has the specified item count
         bool HasItemCount(uint32 item, uint32 count, bool inBankAlso = false) const
         {
             return m_inventory.Holds(item, count, inBankAlso ? SCOPE_EVERYWHERE : SCOPE_TO_HAND);
         }
 
-        // Check if the player has an item that fits the spell requirements
         bool HasItemFitToSpellReqirements(SpellEntry const* spellInfo, Item const* ignoreItem = nullptr);
 
-        // Check if the player can cast the spell without reagents
         bool CanNoReagentCast(SpellEntry const* spellInfo) const;
         bool HasItemWithIdEquipped(uint32 item, uint32 count, uint8 except_slot = NULL_SLOT) const;
         InventoryResult CanTakeMoreSimilarItems(Item* pItem) const { return m_inventory.RoomForMore(pItem->GetEntry(), pItem->GetCount(), pItem); }
 
-        // Check if the player can take more similar items (overloaded)
         InventoryResult CanTakeMoreSimilarItems(uint32 entry, uint32 count) const { return m_inventory.RoomForMore(entry, count, nullptr); }
 
-        // Check if the player can store a new item
         InventoryResult CanStoreNewItem(uint8 bag, uint8 slot, ItemPosCountVec& dest, uint32 item, uint32 count, uint32* no_space_count = nullptr) const
         {
             return m_inventory.PlanToStore(bag, slot, dest, item, count, nullptr, false, no_space_count);
         }
 
-        // Check if the player can store an item
         InventoryResult CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec& dest, Item* pItem, bool swap = false) const
         {
             if (!pItem)
@@ -1186,43 +919,33 @@ class Player : public Unit
             return m_inventory.PlanToStore(bag, slot, dest, pItem->GetEntry(), count, pItem, swap, nullptr);
         }
 
-        // Check if the player can store multiple items
         InventoryResult CanStoreItems(Item** pItem, int count) const
         {
             return m_inventory.PlanForAll(pItem, count);
         }
 
-        // Check if the player can equip a new item
         InventoryResult CanEquipNewItem(uint8 slot, uint16& dest, uint32 item, bool swap) const;
 
-        // Check if the player can equip an item
         InventoryResult CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool swap, bool direct_action = true) const;
 
-        // Check if the player can equip a unique item
         InventoryResult CanEquipUniqueItem(Item* pItem, uint8 except_slot = NULL_SLOT) const;
 
-        // Check if the player can equip a unique item (overloaded)
         InventoryResult CanEquipUniqueItem(ItemPrototype const* itemProto, uint8 except_slot = NULL_SLOT) const;
 
-        // Check if the player can unequip items
         InventoryResult CanUnequipItems(uint32 item, uint32 count) const;
 
-        // Check if the player can unequip an item
         InventoryResult CanUnequipItem(uint16 src, bool swap) const
         {
             return m_inventory.CanTakeOff(src, swap);
         }
 
-        // Check if the player can bank an item
         InventoryResult CanBankItem(uint8 bag, uint8 slot, ItemPosCountVec& dest, Item* pItem, bool swap, bool not_loading = true) const
         {
             return m_inventory.PlanToBank(bag, slot, dest, pItem, swap, not_loading);
         }
 
-        // Check if the player can use an item
         InventoryResult CanUseItem(Item* pItem, bool direct_action = true) const;
 
-        // Check if the player has an item with the specified totem category
         bool HasItemTotemCategory(uint32 TotemCategory) const
         {
             return m_inventory.HasTotem(TotemCategory);
@@ -1230,320 +953,207 @@ class Player : public Unit
         InventoryResult CanUseItem(ItemPrototype const* pItem, bool direct_action = true) const;
         InventoryResult CanUseAmmo(uint32 item) const;
 
-        /// Runs ONLY the Eluna OnCanUseItem veto (D5). Returns EQUIP_ERR_OK when
-        /// Eluna is compiled out or there is no veto. Used by the deferred-Eluna
-        /// browse pass, which has already had every non-Eluna sub-filter enforced
-        /// worker-side.
         InventoryResult CanUseItemEluna(uint32 itemEntry) const;
 
-        // Store a new item
         Item* StoreNewItem(ItemPosCountVec const& pos, uint32 item, bool update, int32 randomPropertyId = 0);
 
-        // Store an item
         Item* StoreItem(ItemPosCountVec const& pos, Item* pItem, bool update)
         {
             return m_inventory.Store(pos, pItem, update);
         }
 
-        // Equip a new item
         Item* EquipNewItem(uint16 pos, uint32 item, bool update);
 
-        // Equip an item
         Item* EquipItem(uint16 pos, Item* pItem, bool update);
 
-        // Automatically unequip the offhand item if needed
         void AutoUnequipOffhandIfNeed();
 
-        // Store a new item in the best slots
         bool StoreNewItemInBestSlots(uint32 item_id, uint32 item_count);
 
-        // Store a new item in the inventory slot
         Item* StoreNewItemInInventorySlot(uint32 itemEntry, uint32 amount);
 
-        // Automatically store loot
         void AutoStoreLoot(Occupant const* lootTarget, uint32 loot_id, LootStore const& store, bool broadcast = false, uint8 bag = NULL_BAG, uint8 slot = NULL_SLOT);
 
-        // Automatically store loot (overloaded)
         void AutoStoreLoot(Loot& loot, bool broadcast = false, uint8 bag = NULL_BAG, uint8 slot = NULL_SLOT);
 
-        // Convert an item to a new item ID
         Item* ConvertItem(Item* item, uint32 newItemId);
 
-        // Internal methods for storing items
-
-        // Apply equipment cooldown
         void ApplyEquipCooldown(Item* pItem);
 
-        // Set the ammo
         void SetAmmo(uint32 item);
 
-        // Remove the ammo
         void RemoveAmmo();
 
-        // Check if the ammo is compatible
         bool CheckAmmoCompatibility(const ItemPrototype* ammo_proto) const;
 
-        // Quickly equip an item
         void QuickEquipItem(uint16 pos, Item* pItem) { m_inventory.QuickWear(pos, pItem); }
 
-        // Visualize an item
-
-        // Bank an item
         Item* BankItem(ItemPosCountVec const& dest, Item* pItem, bool update)
         {
             return StoreItem(dest, pItem, update);
         }
 
-        // Bank an item (overloaded)
         Item* BankItem(uint16 pos, Item* pItem, bool update);
 
-        // Remove an item
         void RemoveItem(uint8 bag, uint8 slot, bool update);
 
-        // Move an item from the inventory
         void MoveItemFromInventory(uint8 bag, uint8 slot, bool update);
 
-        // Move an item to the inventory
         void MoveItemToInventory(ItemPosCountVec const& dest, Item* pItem, bool update, bool in_characterInventoryDB = false);
 
-        // Remove item-dependent auras and casts
         void RemoveItemDependentAurasAndCasts(Item* pItem);
 
-        // Destroy an item
         void DestroyItem(uint8 bag, uint8 slot, bool update);
 
-        // Destroy a specified count of items
         uint32 DestroyItemCount(uint32 item, uint32 count, bool update, bool unequip_check = false, bool delete_from_bank = false, bool delete_from_buyback = false);
 
-        // Destroy a specified count of items (overloaded)
         void DestroyItemCount(Item* item, uint32& count, bool update);
-        // Destroy all conjured items
+
         void DestroyConjuredItems(bool update);
 
-        // Destroy items limited to a specific zone
         void DestroyZoneLimitedItem(bool update, uint32 new_zone);
 
-        // Split an item stack into two stacks
         void SplitItem(uint16 src, uint16 dst, uint32 count);
 
-        // Swap two items
         void SwapItem(uint16 src, uint16 dst);
 
-        // Pour one bag into the other so that the two can change places
         bool PourBagInto(Item* pSrcItem, uint16 src, Item* pDstItem, uint16 dst);
 
-        // Add an item to the buyback slot
         void AddItemToBuyBackSlot(Item* pItem) { m_inventory.ToBuyback(pItem); }
 
-        // Get an item from the buyback slot
         Item* GetItemFromBuyBackSlot(uint32 slot) { return m_inventory.InBuyback(slot); }
 
-        // Remove an item from the buyback slot
         void RemoveItemFromBuyBackSlot(uint32 slot, bool del) { m_inventory.ClearBuyback(slot, del); }
 
         uint32 GetMaxKeyringSize() const { return Inventory::MaxKeyring(); }
 
-        // Send an equipment error message
         void SendEquipError(InventoryResult msg, Item* pItem, Item* pItem2 = nullptr, uint32 itemid = 0) const;
 
-        // Send a buy error message
         void SendBuyError(BuyResult msg, Creature* pCreature, uint32 item, uint32 param);
 
-        // Send a sell error message
         void SendSellError(SellResult msg, Creature* pCreature, ObjectGuid itemGuid, uint32 param);
         void SendOpenContainer();
 
-
-
-
-        // Check if a two-handed weapon is used
         bool IsTwoHandUsed() const
         {
             Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
             return mainItem && mainItem->GetProto()->InventoryType == INVTYPE_2HWEAPON;
         }
 
-        // Send a new item notification
         void SendNewItem(Item* item, uint32 count, bool received, bool created, bool broadcast = false, bool showInChat = true);
 
-        // Buy an item from a vendor
         bool BuyItemFromVendor(ObjectGuid vendorGuid, uint32 item, uint8 count, uint8 bag, uint8 slot);
 
-        // Get the reputation price discount
         float GetReputationPriceDiscount(Creature const* pCreature) const;
 
-        // Get the trader
         Player* GetTrader() const { return m_trade ? m_trade->GetTrader() : nullptr; }
 
-        // Get the trade data
         TradeData* GetTradeData() const { return m_trade; }
 
-        /// Opens a trade with someone, dropping whatever trade he was in.
         void OpenTradeWith(Player* other);
 
-        /// Ends the trade he is in.
         void DropTrade();
 
-        // Cancel the trade
         void TradeCancel(bool sendback);
 
-        // Apply or remove an enchantment
         void ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool apply_dur = true, bool ignore_condition = false);
 
-        // Apply or remove all enchantments from an item
         void ApplyEnchantment(Item* item, bool apply);
 
-        // Load the player's corpse
         void LoadCorpse();
 
-        // Load the player's pet
         void LoadPet();
 
-        // Stable-slot count now owned by m_petMgr (see GetStableSlots/SetStableSlots).
-
-        /*********************************************************/
-        /***                    GOSSIP SYSTEM                  ***/
-        /*********************************************************/
-
-        // Prepare the gossip menu
         void PrepareGossipMenu(Occupant* pSource, uint32 menuId = 0);
 
-        // Send the prepared gossip menu
         void SendPreparedGossip(Occupant* pSource);
         void OnGossipSelect(Occupant* pSource, uint32 gossipListId);
 
-        // Get the gossip text ID for a menu
         uint32 GetGossipTextId(uint32 menuId, Occupant* pSource);
 
-        // Get the gossip text ID for a source
         uint32 GetGossipTextId(Occupant* pSource);
 
-        // Get the default gossip menu for a source
         uint32 GetDefaultGossipMenuForSource(Occupant* pSource);
 
-        /*********************************************************/
-        /***                    QUEST SYSTEM                   ***/
-        /*********************************************************/
-
-        // Return player level when QuestLevel is dynamic (-1)
         uint32 GetQuestLevelForPlayer(Quest const* pQuest) const { return pQuest && (pQuest->GetQuestLevel() > 0) ? (uint32)pQuest->GetQuestLevel() : getLevel(); }
 
-        // Prepare the quest menu
         void PrepareQuestMenu(ObjectGuid guid);
 
-        // Send the prepared quest menu
         void SendPreparedQuest(ObjectGuid guid);
 
-        // Check if a quest is active
-        bool IsActiveQuest(uint32 quest_id) const; // can be taken or taken
+        bool IsActiveQuest(uint32 quest_id) const;
 
-        // Quest is taken and not yet rewarded
-        // if completed_or_not = 0 (or any other value except 1 or 2) - returns true, if quest is taken and doesn't depend if quest is completed or not
-        // if completed_or_not = 1 - returns true, if quest is taken but not completed
-        // if completed_or_not = 2 - returns true, if quest is taken and already completed
-        bool IsCurrentQuest(uint32 quest_id, uint8 completed_or_not = 0) const; // taken and not yet rewarded
+        bool IsCurrentQuest(uint32 quest_id, uint8 completed_or_not = 0) const;
 
-        // Get the next quest in a chain
         Quest const* GetNextQuest(ObjectGuid guid, Quest const* pQuest);
 
-        // Check if the player can see the start of a quest
         bool CanSeeStartQuest(Quest const* pQuest) const;
 
-        // Check if the player can take a quest
         bool CanTakeQuest(Quest const* pQuest, bool msg) const;
 
-        // Check if the player can add a quest
         bool CanAddQuest(Quest const* pQuest, bool msg) const;
 
-        // Check if the player can complete a quest
         bool CanCompleteQuest(uint32 quest_id) const;
 
-        // Check if the player can complete a repeatable quest
         bool CanCompleteRepeatableQuest(Quest const* pQuest) const;
 
-        // Check if the player can reward a quest
         bool CanRewardQuest(Quest const* pQuest, bool msg) const;
 
-        // Check if the player can reward a quest with a specific reward
         bool CanRewardQuest(Quest const* pQuest, uint32 reward, bool msg) const;
-        // Retrieve a quest template
-        // The returned quest can then be used by AddQuest( ) to add to the character_queststatus table
+
         Quest const* GetQuestTemplate(uint32 quest_id);
         void AddQuest(Quest const* pQuest, Object* questGiver);
 
-        // Complete a quest
         void CompleteQuest(uint32 quest_id, QuestStatus status = QUEST_STATUS_COMPLETE);
 
-        // Mark a quest as incomplete
         void IncompleteQuest(uint32 quest_id);
 
-        // Reward a quest
         void RewardQuest(Quest const* pQuest, uint32 reward, Object* questGiver, bool announce = true);
 
-        // Fail a quest
         void FailQuest(uint32 quest_id);
 
-        // Check if the player satisfies the skill requirements for a quest
         bool SatisfyQuestSkill(Quest const* qInfo, bool msg) const;
 
-        // Check if the player satisfies the level requirements for a quest
         bool SatisfyQuestLevel(Quest const* qInfo, bool msg) const;
 
-        // Check if the player satisfies the quest log requirements
         bool SatisfyQuestLog(bool msg) const;
 
-        // Check if the player satisfies the previous quest requirements
         bool SatisfyQuestPreviousQuest(Quest const* qInfo, bool msg) const;
 
-        // Check if the player satisfies the class requirements for a quest
         bool SatisfyQuestClass(Quest const* qInfo, bool msg) const;
 
-        // Check if the player satisfies the race requirements for a quest
         bool SatisfyQuestRace(Quest const* qInfo, bool msg) const;
 
-        // Check if the player satisfies the reputation requirements for a quest
         bool SatisfyQuestReputation(Quest const* qInfo, bool msg) const;
 
-        // Check if the player satisfies the status requirements for a quest
         bool SatisfyQuestStatus(Quest const* qInfo, bool msg) const;
 
-        // Check if the player satisfies the timed requirements for a quest
         bool SatisfyQuestTimed(Quest const* qInfo, bool msg) const;
 
-        // Check if the player satisfies the exclusive group requirements for a quest
         bool SatisfyQuestExclusiveGroup(Quest const* qInfo, bool msg) const;
 
-        // Check if the player satisfies the next chain requirements for a quest
         bool SatisfyQuestNextChain(Quest const* qInfo, bool msg) const;
 
-        // Check if the player satisfies the previous chain requirements for a quest
         bool SatisfyQuestPrevChain(Quest const* qInfo, bool msg) const;
         bool CanGiveQuestSourceItemIfNeed(Quest const* pQuest, ItemPosCountVec* dest = nullptr) const;
 
-        // Give the quest source item if needed
         void GiveQuestSourceItemIfNeed(Quest const* pQuest);
 
-        // Take the quest source item
         bool TakeQuestSourceItem(uint32 quest_id, bool msg);
 
-        // Check if the player has the quest reward status
         bool GetQuestRewardStatus(uint32 quest_id) const;
 
-        // Get the quest status
         QuestStatus GetQuestStatus(uint32 quest_id) const;
 
-        // Set the quest status
         void SetQuestStatus(uint32 quest_id, QuestStatus status);
-        // This is used to change the quest's rewarded state
+
         void SetQuestRewarded(uint32 quest_id, bool rewarded);
 
-        // Get the quest ID from a quest slot
         uint32 GetQuestSlotQuestId(uint16 slot) const
         {
             return GetUInt32Value(quests::FieldOf(slot, QUEST_ID_OFFSET));
         }
 
-        // Set the quest slot
         void SetQuestSlot(uint16 slot, uint32 quest_id, uint32 timer = 0)
         {
             SetUInt32Value(quests::FieldOf(slot, QUEST_ID_OFFSET), quest_id);
@@ -1551,14 +1161,12 @@ class Player : public Unit
             SetUInt32Value(quests::FieldOf(slot, QUEST_TIME_OFFSET), timer);
         }
 
-        // Set the quest slot counter
         void SetQuestSlotCounter(uint16 slot, uint8 counter, uint8 count)
         {
             uint16 const field = quests::FieldOf(slot, QUEST_COUNT_STATE_OFFSET);
             SetUInt32Value(field, quests::WithCounter(GetUInt32Value(field), counter, count));
         }
 
-        // Get the quest slot counter
         uint8 GetQuestSlotCounter(uint16 slot, uint8 counter) const
         {
             return quests::CounterIn(GetUInt32Value(quests::FieldOf(slot, QUEST_COUNT_STATE_OFFSET)), counter);
@@ -1577,7 +1185,6 @@ class Player : public Unit
             SetUInt32Value(quests::FieldOf(slot, QUEST_TIME_OFFSET), timer);
         }
 
-        // Swap two quest slots
         void SwapQuestSlot(uint16 slot1, uint16 slot2)
         {
             for (uint16 word = 0; word < MAX_QUEST_OFFSET; ++word)
@@ -1590,318 +1197,194 @@ class Player : public Unit
             }
         }
 
-        // Update the world objects for quests
         void UpdateForQuestObjects();
 
-        // Check if the player can share a quest
         bool CanShareQuest(uint32 quest_id) const;
 
-        // Send a quest reward notification
         void SendQuestReward(Quest const* pQuest, uint32 XP);
 
-        // Send a quest failed notification
         void SendQuestFailed(uint32 quest_id);
         void SendQuestFailedAtTaker(uint32 quest_id, uint32 reason = INVALIDREASON_DONT_HAVE_REQ);
         void SendQuestTimerFailed(uint32 quest_id);
 
-        // Send a response for the ability to take a quest
         void SendCanTakeQuestResponse(uint32 msg) const;
 
-        // Send a quest confirm accept notification
         void SendQuestConfirmAccept(Quest const* pQuest, Player* pReceiver);
         void SendPushToPartyResponse(Player* pPlayer, uint8 msg);
-        // Get the divider GUID
+
         ObjectGuid GetDividerGuid() const { return m_journal.Divider(); }
 
-        // Set the divider GUID
         void SetDividerGuid(ObjectGuid guid) { m_journal.Divider(guid); }
 
-        // Clear the divider GUID
         void ClearDividerGuid() { m_journal.NoDivider(); }
 
-        // Get the in-game time
         uint32 GetInGameTime()
         {
             return m_ingametime;
         }
 
-        // Set the in-game time
         void SetInGameTime(uint32 time) { m_ingametime = time; }
 
-        // Add a timed quest
         void AddTimedQuest(uint32 quest_id) { m_journal.StartTiming(quest_id); }
 
-        // Remove a timed quest
         void RemoveTimedQuest(uint32 quest_id) { m_journal.StopTiming(quest_id); }
 
-        /*********************************************************/
-        /***                   LOAD SYSTEM                     ***/
-        /*********************************************************/
-
-        // Load the player from the database
         bool LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder);
 
-        // Get the zone ID from the database
-
-        /// Zone and area for wherever this player stands -- inherited from the vessel when
-        /// he is aboard one, because a deck map carries no area table of its own.
         void GetZoneAndAreaAboardOrHere(uint32& zone, uint32& area) const;
 
-        /// Map and position for world-level lookups (graveyards, area triggers) -- the
-        /// vessel's when aboard one, because a deck map has no area table.
         void GetWorldAnchor(uint32& mapId, float& x, float& y, float& z) const;
 
-        /// THE MAP HE IS ACTUALLY ADDED TO when he enters the world -- at login, and on
-        /// the far side of a teleport. Aboard a vessel that is HER map, never the one he
-        /// was just told about: the client is handed the world map she sails and nothing
-        /// else, ever, and the server puts him where he really stands.
         Map* BoardingMap() const;
 
-        /// Terrain for world-level questions -- the vessel's map when aboard one.
         TerrainInfo const* AnchorTerrain() const;
 
-        /// Mirror this player's transport state onto his minions -- for a type-11 LIFT,
-        /// which nobody boards and which the client animates on its own.
         void UpdateLiftMinions();
 
-        // Get the level from the database
-
-        // Load the position from the database
-
-        /*********************************************************/
-        /***                   SAVE SYSTEM                     ***/
-        /*********************************************************/
-
-        // Save the player to the database
         void SaveToDB();
 
-        // Save the inventory and gold to the database
-        void SaveInventoryAndGoldToDB(); // fast save function for item/money cheating preventing
+        void SaveInventoryAndGoldToDB();
 
-        // Save the gold to the database
         void SaveGoldToDB();
 
-        // Set a uint32 value in an array
-
-        // Save the player's position in the database
-
-        // Delete a player from the database
-
-        // Delete old characters from the database
-
-        // Delete old characters from the database, keeping characters for a specified number of days
-
-
-        // Send a pet tame failure message
         void SendPetTameFailure(PetTameFailureReason reason);
 
-        // Set the player's bind point
         void SetBindPoint(ObjectGuid guid);
 
-        // Send a talent wipe confirmation message
         void SendTalentWipeConfirm(ObjectGuid guid);
         void RewardRage(uint32 damage, bool attacker);
         void SendPetSkillWipeConfirm();
 
-        // Regenerate all resources
         void RegenerateAll();
 
-        // Regenerate a specific power
         void Regenerate(Powers power);
 
-        // Regenerate health
         void RegenerateHealth();
 
-        // Set the regeneration timer
         void setRegenTimer(uint32 time)
         {
             m_recovery.NextIn(time);
         }
 
-
-        // Get the player's money
         uint32 GetMoney() const
         {
             return GetUInt32Value(PLAYER_FIELD_COINAGE);
         }
 
-        // Modify the player's money
         void ModifyMoney(int32 d);
 
-        // Set the player's money
         void SetMoney(uint32 value)
         {
             SetUInt32Value(PLAYER_FIELD_COINAGE, value);
             m_journal.MoneyNowIs(value);
         }
 
-        // Get the player's quest status map
         QuestStatusMap& getQuestStatusMap() { return m_journal.All(); }
 
-        /// Every quest he has taken, and how far he has got with each.
         QuestJournal& Journal() { return m_journal; }
         QuestJournal const& Journal() const { return m_journal; }
 
-        // Get the player's current selection GUID
         ObjectGuid const& GetSelectionGuid() const { return m_curSelectionGuid; }
 
-        // Set the player's current selection GUID
         void SetSelectionGuid(ObjectGuid guid) { m_curSelectionGuid = guid; SetTargetGuid(guid); }
 
-        // Get the player's combo points
         uint8 GetComboPoints() const { return m_comboPoints; }
 
-        // Get the player's combo target GUID
         ObjectGuid const& GetComboTargetGuid() const { return m_comboTargetGuid; }
 
-        // Add combo points to the player
         void AddComboPoints(Unit* target, int8 count);
 
-        // Clear the player's combo points
         void ClearComboPoints();
         void SetComboPoints();
 
-        // Send a mail result message
         void SendMailResult(uint32 mailId, MailResponseType mailAction, MailResponseResult mailError, uint32 equipError = 0, uint32 item_guid = 0, uint32 item_count = 0);
 
-        /*********************************************************/
-        /*** MAILED ITEMS SYSTEM ***/
-        /*********************************************************/
-
-
-
-        // Initialize pet spells
         void PetSpellInitialize();
 
-        // Initialize charm spells
         void CharmSpellInitialize();
 
-        // Initialize possess spells
         void PossessSpellInitialize();
 
-        // Remove the pet action bar
         void RemovePetActionBar() { m_petMgr.RemoveActionBar(); }
 
-        // Check if the player has a specific spell
         bool HasSpell(uint32 spell) const override;
 
-        // Check if the player has an active spell
-        bool HasActiveSpell(uint32 spell) const; // show in spellbook
+        bool HasActiveSpell(uint32 spell) const;
 
-        // Get the state of a trainer spell
         TrainerSpellState GetTrainerSpellState(TrainerSpell const* trainer_spell, uint32 reqLevel) const;
 
-        // Check if a spell fits the player's class and race
         bool IsSpellFitByClassAndRace(uint32 spell_id, uint32* pReqlevel = nullptr) const;
 
-        // Check if a passive-like spell needs to be cast when learned
         bool IsNeedCastPassiveLikeSpellAtLearn(SpellEntry const* spellInfo) const;
 
-        // Check if the player is immune to a spell effect
         bool IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex index, bool castOnSelf) const override;
 
-        // Knock back the player from a target
         void KnockBackFrom(Unit* target, float horizontalSpeed, float verticalSpeed);
 
-        // Send proficiency information to the client
         void SendProficiency(ItemClass itemClass, uint32 itemSubclassMask);
 
-        // Send initial spells to the client
         void SendInitialSpells();
 
-        // Add a spell to the player
         bool addSpell(uint32 spell_id, bool active, bool learning, bool dependent, bool disabled);
 
-        // Learn a spell
         void learnSpell(uint32 spell_id, bool dependent);
         void removeSpell(uint32 spell_id, bool disabled = false, bool learn_low_rank = true);
         void resetSpells();
 
-        // Learn the player's default spells
         void learnDefaultSpells();
 
-        // Learn quest-rewarded spells
         void learnQuestRewardedSpells();
 
-        // Learn quest-rewarded spells for a specific quest
         void learnQuestRewardedSpells(Quest const* quest);
 
-        // Learn a high-rank spell
         void learnSpellHighRank(uint32 spellid);
 
-        // Get the player's free talent points
         uint32 GetFreeTalentPoints() const
         {
             return GetUInt32Value(PLAYER_CHARACTER_POINTS1);
         }
 
-        // Set the player's free talent points
         void SetFreeTalentPoints(uint32 points);
 
-        // Update the player's free talent points
         void UpdateFreeTalentPoints(bool resetIfNeed = true);
 
-        // Reset the player's talents
         bool resetTalents(bool no_cost = false);
 
-        // Get the cost to reset the player's talents
         uint32 resetTalentsCost() const;
 
-        // Initialize the player's talents for their level
         void InitTalentForLevel();
 
-        // Learn a talent
         void LearnTalent(uint32 talentId, uint32 talentRank);
 
-        // Calculate the player's talent points
         uint32 CalculateTalentsPoints() const;
 
-        // Get the player's free primary profession points
         uint32 GetFreePrimaryProfessionPoints() const
         {
             return GetUInt32Value(PLAYER_CHARACTER_POINTS2);
         }
 
-        // Set the player's free primary professions
         void SetFreePrimaryProfessions(uint16 profs)
         {
             SetUInt32Value(PLAYER_CHARACTER_POINTS2, profs);
         }
 
-        // Initialize the player's primary professions
         void InitPrimaryProfessions();
 
-        // Get the player's spell map
         PlayerSpellMap const& GetSpellMap() const
         {
             return m_spells;
         }
 
-        // Get the player's spell map (non-const)
         PlayerSpellMap& GetSpellMap()
         {
             return m_spells;
         }
 
-        // Get the player's spell cooldown map
         SpellCooldowns const& GetSpellCooldownMap() const { return m_spellCooldownMgr.GetSpellCooldownMap(); }
 
-        // Add a spell modifier to the player
-
-        // Check if the player is affected by a spell modifier
-
-        // Apply a spell modifier to a value
-
-        // Get a spell modifier for a specific operation and spell ID
-
-        // Remove spell modifiers for a specific spell
-
-        // Reset spell modifiers due to a canceled spell
-
-        static uint32 const infinityCooldownDelay = MONTH; // used for set "infinity cooldowns" for spells and check
+        static uint32 const infinityCooldownDelay = MONTH;
         static uint32 const infinityCooldownDelayCheck = MONTH / 2;
 
-        // Spell-cooldown API — thin delegating wrappers around m_spellCooldownMgr.
         bool HasSpellCooldown(uint32 spell_id) const { return m_spellCooldownMgr.HasSpellCooldown(spell_id); }
 
         time_t GetSpellCooldownDelay(uint32 spell_id) const { return m_spellCooldownMgr.GetSpellCooldownDelay(spell_id); }
@@ -1912,17 +1395,14 @@ class Player : public Unit
 
         void SendCooldownEvent(SpellEntry const* spellInfo, uint32 itemId = 0, Spell* spell = nullptr) { m_spellCooldownMgr.SendCooldownEvent(spellInfo, itemId, spell); }
 
-        // Prohibit a spell school for a specific duration
         void ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs) override;
 
         void RemoveSpellCooldown(uint32 spell_id, bool update = false) { m_spellCooldownMgr.RemoveSpellCooldown(spell_id, update); }
 
         void RemoveSpellCategoryCooldown(uint32 cat, bool update = false) { m_spellCooldownMgr.RemoveSpellCategoryCooldown(cat, update); }
 
-        // Send a clear cooldown message to the client
         void SendClearCooldown(uint32 spell_id, Unit* target);
 
-        // Get the global cooldown manager
         GlobalCooldownMgr& GetGlobalCooldownMgr()
         {
             return m_GlobalCooldownMgr;
@@ -1934,7 +1414,6 @@ class Player : public Unit
 
         void _SaveSpellCooldowns() { m_spellCooldownMgr.SaveToDB(); }
 
-        // Set resurrect request data
         void setResurrectRequestData(ObjectGuid guid, uint32 mapId, float X, float Y, float Z, uint32 health, uint32 mana)
         {
             m_resurrect.from = guid;
@@ -1943,86 +1422,66 @@ class Player : public Unit
             m_resurrect.mana = mana;
         }
 
-        // Clear resurrect request data
         void clearResurrectRequestData() { m_resurrect.Withdraw(); }
 
-        // Check if resurrect is requested by a specific GUID
         bool isRessurectRequestedBy(ObjectGuid guid) const { return m_resurrect.StandsFrom(guid); }
 
-        // Check if resurrect is requested
         bool isRessurectRequested() const { return m_resurrect.Stands(); }
 
-        // Resurrect using request data
         void ResurectUsingRequestData();
 
-        // Bring him back on the terms of the offer standing over him
         void RaiseOnOffer();
 
-        // Get the cinematic ID
         uint32 getCinematic()
         {
             return m_cinematic;
         }
 
-        // Set the cinematic ID
         void setCinematic(uint32 cine)
         {
             m_cinematic = cine;
         }
 
-        // Validate action button data
         static bool IsActionButtonDataValid(uint8 button, uint32 action, uint8 type, Player* player);
 
-        // Add an action button
         ActionButton* addActionButton(uint8 button, uint32 action, uint8 type);
 
-        // Remove an action button
         void removeActionButton(uint8 button);
 
-        // Send initial action buttons to the client
         void SendInitialActionButtons() const;
 
         PvPInfo pvpInfo;
-        // Update PvP state
+
         void UpdatePvP(bool state, bool ovrride = false);
 
-        // Check if the player is in Free-for-All PvP mode
         bool IsFFAPvP() const
         {
             return HasPlayerFlag(PLAYER_FLAGS_FFA_PVP);
         }
 
-        // Set Free-for-All PvP mode
         void SetFFAPvP(bool state);
 
-        // Update the player's zone
         void UpdateZone(uint32 newZone, uint32 newArea, bool sendInitialWorldStates = true);
 
-        // Update the player's area
         void UpdateArea(uint32 newArea);
 
-        // Get the cached zone ID
         uint32 GetCachedZoneId() const
         {
             return m_zoneUpdateId;
         }
 
-        // Update zone-dependent auras
         void UpdateZoneDependentAuras();
-        void UpdateAreaDependentAuras();                    // subzones
+        void UpdateAreaDependentAuras();
 
         void UpdatePvPFlag(time_t currTime);
 
-        // Update contested PvP state
         void UpdateContestedPvP(uint32 currTime);
 
-        // Set the contested PvP timer
         void SetContestedPvPTimer(uint32 newTime)
         {
             m_contestedPvPTimer = newTime;
         }
 
-        // Reset contested PvP state
         void ResetContestedPvP()
         {
             clearUnitState(UNIT_STAT_ATTACK_PLAYER);
@@ -2030,22 +1489,15 @@ class Player : public Unit
             m_contestedPvPTimer = 0;
         }
 
-        // Check if the player is in a duel with another player
-
-
-        // Check if the player is visible for another player in the group
         bool IsGroupVisibleFor(Player* p) const;
 
-        // Check if the player is in the same group with another player
         bool IsInSameGroupWith(Player const* p) const;
 
-        // Check if the player is in the same raid with another player
         bool IsInSameRaidWith(Player const* p) const
         {
             return p == this || (GetGroup() != nullptr && GetGroup() == p->GetGroup());
         }
 
-        // Uninvite the player from the group
         void UninviteFromGroup();
         static void RemoveFromGroup(Group* group, ObjectGuid guid, uint8 removeMethod = GROUP_LEAVE);
         void RemoveFromGroup()
@@ -2053,124 +1505,91 @@ class Player : public Unit
             RemoveFromGroup(GetGroup(), GetObjectGuid());
         }
 
-        // Send update to out-of-range group members
         void SendUpdateToOutOfRangeGroupMembers();
 
-        // Set the player's guild ID
         void SetInGuild(uint32 GuildId)
         {
             SetUInt32Value(PLAYER_GUILDID, GuildId);
         }
 
-        // Set the player's guild rank
         void SetRank(uint32 rankId)
         {
             SetUInt32Value(PLAYER_GUILDRANK, rankId);
         }
 
-        // Get the player's guild ID
         uint32 GetGuildId()
         {
             return GetUInt32Value(PLAYER_GUILDID);
         }
 
-        // Get the player's guild ID from the database
-
-        // Get the player's guild rank
         uint32 GetRank()
         {
             return GetUInt32Value(PLAYER_GUILDRANK);
         }
 
-        // Get the player's guild rank from the database
-
         static void RemovePetitionsAndSigns(ObjectGuid guid);
 
-        // Update the player's skill
         bool UpdateSkill(uint32 skill_id, uint32 step);
 
-        // Update the player's skill proficiency
         bool UpdateSkillPro(uint16 SkillId, int32 Chance, uint32 step);
 
-        // Update the player's crafting skill
         bool UpdateCraftSkill(uint32 spellid);
 
-        // Update the player's gathering skill
         bool UpdateGatherSkill(uint32 SkillId, uint32 SkillValue, uint32 RedLevel, uint32 Multiplicator = 1);
 
-        // Update the player's fishing skill
         bool UpdateFishingSkill();
 
-        // Get the player's base defense skill value
         uint32 GetBaseDefenseSkillValue() const
         {
             return GetPureSkillValue(SKILL_DEFENSE);
         }
 
-        // Get the player's base weapon skill value
         uint32 GetBaseWeaponSkillValue(WeaponAttackType attType) const;
 
-        /// The numbers he fights with, and how they are worked out.
         PlayerSheet& Sheet() override { return m_sheet; }
         PlayerSheet const& Sheet() const override { return m_sheet; }
 
         Pace& Pacing() override { return m_pace; }
         Pace const& Pacing() const override { return m_pace; }
 
-        // Get melee critical chance from agility
         float GetMeleeCritFromAgility();
 
-        // Get dodge chance from agility
         float GetDodgeFromAgility();
 
-        // Get spell critical chance from intellect
         float GetSpellCritFromIntellect();
 
-        // Get health regeneration per spirit
         float OCTRegenHPPerSpirit();
 
-        // Get mana regeneration per spirit
         float OCTRegenMPPerSpirit();
 
-        // Get the GUID of the loot
         ObjectGuid const& GetLootGuid() const
         {
             return m_lootGuid;
         }
 
-        // Set the GUID of the loot
         void SetLootGuid(ObjectGuid const& guid)
         {
             m_lootGuid = guid;
         }
 
-        // Remove the insignia of the player
         void RemovedInsignia(Player* looterPlr);
 
-        // Get the player's session
         WorldSession* GetSession() const
         {
             return m_session;
         }
 
-        // Set the player's session
         void SetSession(WorldSession* s)
         {
             m_session = s;
         }
 
-        // Build the create update block for the player
         void BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) const override;
 
-        // Destroy the player for another player
         void DestroyForPlayer(Player* target) const override;
 
-        // Send log XP gain
         void SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 RestXP);
 
-
-
-        // Notifiers for various attack swing errors
         void SendAttackSwingCantAttack();
         void SendAttackSwingCancelAttack();
         void SendAttackSwingDeadTarget();
@@ -2180,69 +1599,42 @@ class Player : public Unit
         void SendAutoRepeatCancel();
         void SendExplorationExperience(uint32 Area, uint32 Experience);
 
-
-        // Send reset instance success
         void SendResetInstanceSuccess(uint32 MapId);
 
-        // Send reset instance failed
         void SendResetInstanceFailed(uint32 reason, uint32 MapId);
 
-        // Send reset failed notification
         void SendResetFailedNotify(uint32 mapid);
 
-        // Set the player's position
         bool SetPosition(float x, float y, float z, float orientation, bool teleport = false);
 
-        // Update the player's underwater state
-
-        // Send a message to the set of players
-
-        // Send a message to the set of players within a range
-
-        // Send a message to the set of players within a range, with an option for own team only
-
-        // Get the player's corpse
         Corpse* GetCorpse() const;
 
-        // Spawn the player's corpse bones
         void SpawnCorpseBones();
 
-        // Create a corpse for the player
         Corpse* CreateCorpse();
 
-        // Kill the player
         void KillPlayer();
 
-        // Get the resurrection spell ID
         uint32 GetResurrectionSpellId();
 
-        // Resurrect the player
         void ResurrectPlayer(float restore_percent, bool applySickness = false);
 
-        // Build the player repopulation
         void BuildPlayerRepop();
 
-        // Repopulate the player at the graveyard
         void RepopAtGraveyard();
 
-        // Handle durability loss for all items
         void DurabilityLossAll(double percent, bool inventory);
 
-        // Handle durability loss for a specific item
         void DurabilityLoss(Item* item, double percent);
 
-        // Handle durability points loss for all items
         void DurabilityPointsLossAll(int32 points, bool inventory);
 
-        // Handle durability points loss for a specific item
         void DurabilityPointsLoss(Item* item, int32 points);
 
-        // Handle durability point loss for a specific equipment slot
         void DurabilityPointLossForEquipSlot(EquipmentSlots slot);
         uint32 DurabilityRepairAll(bool cost, float discountMod);
         uint32 DurabilityRepair(uint16 pos, bool cost, float discountMod);
 
-        // Stop all mirror timers
         void StopMirrorTimers()
         {
             m_perils.Stop(FATIGUE_TIMER);
@@ -2250,171 +1642,115 @@ class Player : public Unit
             m_perils.Stop(FIRE_TIMER);
         }
 
-        // Set levitate state
         void SetLevitate(bool enable) override;
 
-        // Set can fly state
         void SetCanFly(bool enable) override;
 
-        // Set feather fall state
         void SetFeatherFall(bool enable) override;
 
-        // Set hover state
         void SetHover(bool enable) override;
 
-        // Set root state
         void SetRoot(bool enable) override;
 
-        // Set water walk state
         void SetWaterWalk(bool enable) override;
 
-        // Handle joining a channel
         void JoinedChannel(Channel* c);
 
-        // Handle leaving a channel
         void LeftChannel(Channel* c);
 
-        // Cleanup channels
         void CleanupChannels();
 
-        // Update local channels based on the new zone
         void UpdateLocalChannels(uint32 newZone);
 
-        // Leave the Looking For Group (LFG) channel
         void LeaveLFGChannel();
 
-        // Update the player's defense
         void UpdateDefense();
 
-        // Update the player's weapon skill
         void UpdateWeaponSkill(WeaponAttackType attType);
 
-        // Update the player's combat skills
         void UpdateCombatSkills(Unit* pVictim, WeaponAttackType attType, bool defence);
 
-        // Set the player's skill
         void SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step = 0);
 
-        // Get the maximum skill value
         uint16 GetMaxSkillValue(uint32 skill) const;
 
-        // Get the pure maximum skill value
         uint16 GetPureMaxSkillValue(uint32 skill) const;
 
-        // Get the skill value
         uint16 GetSkillValue(uint32 skill) const;
 
-        // Get the base skill value
         uint16 GetBaseSkillValue(uint32 skill) const;
 
-        // Get the pure skill value
         uint16 GetPureSkillValue(uint32 skill) const;
 
-        // Get the permanent bonus value for a skill
         int16 GetSkillPermBonusValue(uint32 skill) const;
 
-        // Get the temporary bonus value for a skill
         int16 GetSkillTempBonusValue(uint32 skill) const;
 
-        // Check if the player has a specific skill
         bool HasSkill(uint32 skill) const;
 
-        // Learn spells rewarded by a skill
         void learnSkillRewardedSpells(uint32 id, uint32 value);
 
-        // Get the teleport destination
         Geometry::Placement& GetTeleportDest() { return m_teleport.To(); }
 
-        // Terms the pending teleport was ordered on
         uint32 GetTeleportOptions() const { return m_teleport.Options(); }
 
-        // Check if the player is being teleported
         bool IsBeingTeleported() const { return m_teleport.InFlight(); }
 
-        // Check if the player is being teleported near
         bool IsBeingTeleportedNear() const { return m_teleport.InFlightNear(); }
 
-        // Check if the player is being teleported far
         bool IsBeingTeleportedFar() const { return m_teleport.InFlightFar(); }
 
-        // Set the semaphore for near teleportation
         void SetSemaphoreTeleportNear(bool semphsetting) { m_teleport.FlyingNear(semphsetting); }
 
-        // Set the semaphore for far teleportation
         void SetSemaphoreTeleportFar(bool semphsetting) { m_teleport.FlyingFar(semphsetting); }
 
-        // Process delayed operations
         void ProcessDelayedOperations();
 
-        // Check area exploration and outdoor status
         void CheckAreaExploreAndOutdoor();
 
-        // Get the team for a specific race
         static Team TeamForRace(uint8 race);
 
-        // Get the player's team
         Team GetTeam() const { return m_team; }
 
-        // Get the player's team ID
         PvpTeamIndex GetTeamId() const { return m_team == ALLIANCE ? TEAM_INDEX_ALLIANCE : TEAM_INDEX_HORDE; }
 
-        // Get the faction for a specific race
         static uint32 getFactionForRace(uint8 race);
 
-        // Set the faction for a specific race
         void setFactionForRace(uint8 race);
 
-        // Initialize display IDs
         void InitDisplayIds();
 
-        // Check if the player is at group reward distance
         bool IsAtGroupRewardDistance(Occupant const* pRewardSource) const;
 
-        // Reward a single player at a kill
         void RewardSinglePlayerAtKill(Unit* pVictim);
 
-        // Reward the player and group at an event
         void RewardPlayerAndGroupAtEvent(uint32 creature_id, Occupant* pRewardSource);
 
-        // Reward the player and group at a cast
         void RewardPlayerAndGroupAtCast(Occupant* pRewardSource, uint32 spellid = 0);
 
-        // Check if the player is an honor or XP target
         bool isHonorOrXPTarget(Unit* pVictim) const;
 
-        // Get the player's reputation manager
         ReputationMgr& GetReputationMgr()
         {
             return m_reputationMgr;
         }
 
-        // Get the player's reputation manager (const version)
         ReputationMgr const& GetReputationMgr() const { return m_reputationMgr; }
 
-        // Get the player's reputation rank for a specific faction
         ReputationRank GetReputationRank(uint32 faction_id) const;
 
-        // Reward reputation for killing a unit
         void RewardReputation(Unit* pVictim, float rate);
 
-        // Reward reputation for completing a quest
         void RewardReputation(Quest const* pQuest);
 
-        // Calculate the reputation gain
         int32 CalculateReputationGain(ReputationSource source, int32 rep, int32 faction, uint32 creatureOrQuestLevel = 0, bool noAuraBonus = false);
 
-        // Update skills for the player's level
         void UpdateSkillsForLevel();
 
-        // Update skills to the maximum for the player's level
         void UpdateSkillsToMaxSkillsForLevel();
 
-        // Modify the skill bonus
         void ModifySkillBonus(uint32 skillid, int32 val, bool talent);
 
-        /*********************************************************/
-        /***                  HONOR SYSTEM                     ***/
-        /*********************************************************/
         bool AddHonorCP(float honor, uint8 type, uint32 victim, uint8 victimType)
         {
             return m_honor.Add(honor, type, victim, victimType);
@@ -2424,72 +1760,41 @@ class Player : public Unit
         void ClearHonorInfo() { m_honor.Forget(); }
         bool RewardHonor(Unit* pVictim, uint32 groupsize);
 
-        /// What he has done in the war, and where it leaves him standing.
         HonorLedger& Honors() { return m_honor; }
         HonorLedger const& Honors() const { return m_honor; }
-        // Assume only Players and Units as kills
-        // TYPEID_OBJECT used for CP from BG,quests etc.
+
         uint32 CalculateTotalKills(Unit* Victim, uint32 fromDate, uint32 toDate) const
         {
             return m_honor.KillsOf(Victim, fromDate, toDate);
         }
-        // Acessors of honor rank
+
         HonorRankInfo GetHonorRankInfo() const { return m_honor.Rank(); }
         void SetHonorRankInfo(HonorRankInfo rank) { m_honor.Rank(rank); }
-        // Acessors of total honor points
+
         void SetRankPoints(float rankPoints) { m_honor.Points(rankPoints); }
         float GetRankPoints(void) const { return m_honor.Points(); }
-        // Acessors of highest rank
+
         HonorRankInfo GetHonorHighestRankInfo() const { return m_honor.HighestRank(); }
         void SetHonorHighestRankInfo(HonorRankInfo hr) { m_honor.HighestRank(hr); }
-        // Acessors of rating
+
         float GetStoredHonor() const { return m_honor.Stored(); }
         void SetStoredHonor(float rating) { m_honor.Stored(rating); }
-        // Acessors of lifetime
+
         uint32 GetHonorStoredKills(bool honorable) const { return m_honor.Kills(honorable); }
         void SetHonorStoredKills(uint32 kills, bool honorable) { m_honor.Kills(kills, honorable); }
-        // Acessors of last week standing
+
         int32 GetHonorLastWeekStandingPos() const { return m_honor.LastWeekPlace(); }
         void SetHonorLastWeekStandingPos(int32 standingPos) { m_honor.LastWeekPlace(standingPos); }
         void SendPvPCredit(ObjectGuid guid, uint32 rank, uint32 points);
 
-        /*********************************************************/
-        /***                  PVP SYSTEM                       ***/
-        /*********************************************************/
-
-        // Set the player's drunk value
-
-        // Get the player's drunk value
-
-        // Get the drunken state by value
-
-        // Get the player's death timer
         uint32 GetDeathTimer() const { return m_deathTimer; }
 
-        // Get the corpse reclaim delay
         uint32 GetCorpseReclaimDelay(bool pvp) const;
 
-        // Update the corpse reclaim delay
         void UpdateCorpseReclaimDelay();
 
-        // Send the corpse reclaim delay
         void SendCorpseReclaimDelay(bool load = false);
 
-        // Get the player's shield block value
-
-        // Check if the player can parry
-
-        // Set the player's ability to parry
-
-        // Check if the player can block
-
-        // Set the player's ability to block
-
-        // Check if the player can dual wield
-
-        // Set the player's ability to dual wield
-
-        // in 0.12 and later in Unit
         void InitStatBuffMods()
         {
             for (int i = STAT_STRENGTH; i < MAX_STATS; ++i)
@@ -2516,62 +1821,43 @@ class Player : public Unit
 
         void SetRegularAttackTime();
 
-        // Set the base modifier value
         void SetBaseModValue(BaseModGroup modGroup, BaseModType modType, float value) { m_auraBaseMod[modGroup][modType] = value; }
 
-        // Handle the base modifier value
         void HandleBaseModValue(BaseModGroup modGroup, BaseModType modType, float amount, bool apply);
 
-        // Get the base modifier value
         float GetBaseModValue(BaseModGroup modGroup, BaseModType modType) const;
 
-        // Get the total base modifier value
         float GetTotalBaseModValue(BaseModGroup modGroup) const;
 
-        // Get the total percentage modifier value
         float GetTotalPercentageModValue(BaseModGroup modGroup) const { return m_auraBaseMod[modGroup][FLAT_MOD] + m_auraBaseMod[modGroup][PCT_MOD]; }
 
-        // Apply all stat bonuses
         void _ApplyAllStatBonuses();
 
-        // Remove all stat bonuses
         void _RemoveAllStatBonuses();
 
-        // Apply weapon-dependent aura mods
         void _ApplyWeaponDependentAuraMods(Item* item, WeaponAttackType attackType, bool apply);
 
-        // Apply weapon-dependent aura crit mod
         void _ApplyWeaponDependentAuraCritMod(Item* item, WeaponAttackType attackType, Aura* aura, bool apply);
 
-        // Apply weapon-dependent aura damage mod
         void _ApplyWeaponDependentAuraDamageMod(Item* item, WeaponAttackType attackType, Aura* aura, bool apply);
 
-        // Apply item mods
         void _ApplyItemMods(Item* item, uint8 slot, bool apply);
 
-        // Remove all item mods
         void _RemoveAllItemMods();
 
-        // Apply all item mods
         void _ApplyAllItemMods();
 
-        // Apply item bonuses
         void _ApplyItemBonuses(ItemPrototype const* proto, uint8 slot, bool apply);
 
-        // Apply ammo bonuses
         void _ApplyAmmoBonuses();
         void InitDataForForm(bool reapplyMods = false);
 
-        // Apply or remove an equip spell from an item
         void ApplyItemEquipSpell(Item* item, bool apply, bool form_change = false);
 
-        // Apply or remove an equip spell from a spell entry
         void ApplyEquipSpell(SpellEntry const* spellInfo, Item* item, bool apply, bool form_change = false);
 
-        // Update equip spells when the player's form changes
         void UpdateEquipSpellsAtFormChange();
 
-        // Cast a combat spell from an item
         void CastItemCombatSpell(Unit* Target, WeaponAttackType attType);
         void CastItemUseSpell(Item* item, SpellCastTargets const& targets);
 
@@ -2579,125 +1865,60 @@ class Player : public Unit
         void SendInitWorldStates(uint32 mapId, uint32 zone);
         void SendUpdateWorldState(uint32 Field, uint32 Value);
 
-        // Send a direct message to the client
         void SendDirectMessage(WorldPacket* data) const;
 
-        // Send aura durations for a target to the client
         void SendAuraDurationsForTarget(Unit* target);
 
-        // Player menu for interactions
         PlayerMenu* PlayerTalkClass;
 
-        // List of item set effects
         std::vector<ItemSetEffect*> ItemSetEff;
 
-        // Send loot information to the client
         void SendLoot(ObjectGuid guid, LootType loot_type);
 
-        // Send loot release information to the client
         void SendLootRelease(ObjectGuid guid);
 
-        // Notify the client that a loot item was removed
         void SendNotifyLootItemRemoved(uint8 lootSlot);
 
-        // Notify the client that loot money was removed
         void SendNotifyLootMoneyRemoved();
 
-        /*********************************************************/
-        /***               BATTLEGROUND SYSTEM                 ***/
-        /*********************************************************/
-
-        // Check if the player is in a battleground
-
-        // Check if the player is in an arena
         bool InArena() const;
 
-        // Get the battleground ID
-
-        // Get the battleground type ID
-
-        // Get the battleground instance
-
-        // Get the minimum level for a battleground bracket
         static uint32 GetMinLevelForBattleGroundBracketId(BattleGroundBracketId bracket_id, BattleGroundTypeId bgTypeId);
 
-        // Get the maximum level for a battleground bracket
         static uint32 GetMaxLevelForBattleGroundBracketId(BattleGroundBracketId bracket_id, BattleGroundTypeId bgTypeId);
 
-        // Get the battleground bracket ID from the player's level
         BattleGroundBracketId GetBattleGroundBracketIdFromLevel(BattleGroundTypeId bgTypeId) const;
 
-        // Set the battleground ID and type
-
-        // Get the battleground entry point
-
-        // Set the battleground entry point
-
-        // Set the battleground team
-
-        // Get the battleground team
-
-        // Leave the battleground
-
-        // Check if the player can join a battleground
-
-        // Check if the player has access to a battleground by level
         bool GetBGAccessByLevel(BattleGroundTypeId bgTypeId) const;
 
-        // Check if the player can use a battleground object
         bool CanUseBattleGroundObject();
 
-        // Check if the player is totally immune
         bool isTotalImmune();
 
-        // Check if the player is in an active state for capture point capturing
         bool CanUseCapturePoint();
-
-        /*********************************************************/
-        /***                    REST SYSTEM                    ***/
-        /*********************************************************/
-
-
-        /*********************************************************/
-        /***              ENVIRONMENTAL SYSTEM                  ***/
-        /*********************************************************/
-
-
-        /*********************************************************/
-        /***               FLOOD FILTER SYSTEM                 ***/
-        /*********************************************************/
 
         void UpdateSpeakTime();
 
-        // Check if the player can speak
         bool CanSpeak() const;
 
-        /*********************************************************/
-        /***                 VARIOUS SYSTEMS                   ***/
-        /*********************************************************/
         float m_rageDecayRate;
         float m_rageDecayMultiplier;
 
-        bool HasMovementFlag(MovementFlags f) const;        // for script access to m_movementInfo.HasMovementFlag
+        bool HasMovementFlag(MovementFlags f) const;
         void UpdateFallInformationIfNeed(MovementInfo const& minfo, uint16 opcode);
 
-        // Set fall information
         void SetFallInformation(uint32 time, float z)
         {
             m_lastFallTime = time;
             m_lastFallZ = z;
         }
 
-        // Handle fall
         void HandleFall(MovementInfo const& movementInfo);
 
-        // Build a teleport acknowledgment message
         void BuildTeleportAckMsg(WorldPacket& data, float x, float y, float z, float ang) const;
 
-        // Check if the player is moving
         bool isMoving() const { return m_movementInfo.HasMovementFlag(movementFlagsMask); }
 
-        // Check if the player is moving or turning
         bool isMovingOrTurning() const { return m_movementInfo.HasMovementFlag(movementOrTurningFlagsMask); }
 
         bool CanSwim() const override { return true; }
@@ -2708,129 +1929,89 @@ class Player : public Unit
         bool IsClientControl(Unit* target) const;
         void SetClientControl(Unit* target, uint8 allowMove);
 
-        // Set the mover for the player
         void SetMover(Unit* target) { m_mover = target ? target : this; }
 
-        // Get the mover for the player
         Unit* GetMover() const { return m_mover; }
 
-        // Check if the player is the self mover
         bool IsSelfMover() const { return m_mover == this; }
 
-        // Get the far sight GUID
         ObjectGuid const& GetFarSightGuid() const { return GetGuidValue(PLAYER_FARSIGHT); }
 
-        // Get the transport for the player
         Transport* GetTransport() const { return m_transport; }
 
-        // Set the transport for the player
         void SetTransport(Transport* t) { m_transport = t; }
 
-        // Get the X offset of the player's position on the transport
         float GetTransOffsetX() const { return m_movementInfo.GetTransportPos()->x; }
 
-        // Get the Y offset of the player's position on the transport
         float GetTransOffsetY() const { return m_movementInfo.GetTransportPos()->y; }
 
-        // Get the Z offset of the player's position on the transport
         float GetTransOffsetZ() const { return m_movementInfo.GetTransportPos()->z; }
 
-        // Get the orientation offset of the player's position on the transport
         float GetTransOffsetO() const { return m_movementInfo.GetTransportPos()->o; }
 
-        // Get the transport time
         uint32 GetTransTime() const { return m_movementInfo.GetTransportTime(); }
 
-        // Get the save timer
         uint32 GetSaveTimer() const { return m_nextSave; }
 
-        // Set the save timer
         void SetSaveTimer(uint32 timer) { m_nextSave = timer; }
 
-        // Recall position
-        /// Where he stood when a command last bookmarked him, so that the same
-        /// command can put him back.
         Geometry::Placement m_recall;
 
-        // Save the recall position
         void SaveRecallPosition();
 
-        // Set the homebind location
         void SetHomebindToLocation(Geometry::Placement const& loc, uint32 area_id);
 
-        // Relocate the player to the homebind location
         void RelocateToHomebind()
         {
             SetLocationMapId(m_hearth.MapId());
             Place().MoveTo(m_hearth.X(), m_hearth.Y(), m_hearth.Z());
         }
 
-        // Teleport the player to the homebind location
         bool TeleportToHomebind(uint32 options = 0)
         {
             return TeleportTo(m_hearth.MapId(), m_hearth.X(), m_hearth.Y(), m_hearth.Z(), Where().Facing(), options);
         }
 
-        /// The inn he is bound to.
         Hearth& Home() { return m_hearth; }
         Hearth const& Home() const { return m_hearth; }
 
-        /// The rest he has stored up, and where he is storing it.
         Rest& Resting() { return m_rest; }
         Rest const& Resting() const { return m_rest; }
 
-        /// The letters waiting for him.
         Mailbox& Post() { return m_post; }
         Mailbox const& Post() const { return m_post; }
 
-        /// How long he has been played, and since when.
         PlayedTime& Played() { return m_played; }
         PlayedTime const& Played() const { return m_played; }
 
-        /// What he is trained to wear and wield, and what he can do so armed.
         Weaponry& Arms() { return m_arms; }
         Weaponry const& Arms() const { return m_arms; }
 
-        /// The standing changes his talents and auras make to his own spells.
         SpellModifiers& SpellMods() { return m_spellMods; }
         SpellModifiers const& SpellMods() const { return m_spellMods; }
 
-        /// His side of the duel he is in.
         Duel& Duelling() { return m_duel; }
         Duel const& Duelling() const { return m_duel; }
 
-        /// The places he holds in battleground queues.
         QueueSlots& Queues() { return m_queues; }
         QueueSlots const& Queues() const { return m_queues; }
 
-        /// His stay in a battleground: which one, which side, the way back.
         BattleGroundStay& Battle() { return m_battle; }
         BattleGroundStay const& Battle() const { return m_battle; }
 
-        /// The dungeons he is held to.
         DungeonBinds& Binds() { return m_binds; }
         DungeonBinds const& Binds() const { return m_binds; }
 
-        /// Puts off something that must wait until he has arrived.
         void ScheduleDelayedOperation(uint32 operation) { m_teleport.OnArrival(operation); }
 
         time_t LoginTime() const { return m_played.LoggedInAt(); }
 
-        // Get an object by type mask
         Object* GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask);
 
-        // Currently visible objects at the player's client
         GuidSet m_clientGUIDs;
 
-        /// The ships, zeppelins and lifts his client already holds. A SECOND ledger, and
-        /// the separation is the point: the sweep's elimination walks m_clientGUIDs and
-        /// would take a platform away by distance, which is the one thing that must never
-        /// happen to something the client is animating from its own data. Kept out of that
-        /// set, a platform was also never remembered as sent -- so every sweep built it a
-        /// fresh create block, and each one reset the hull's phase under the passengers.
         GuidSet m_clientPlatforms;
 
-        // Check if an object is visible to the client
         bool HaveAtClient(Occupant const* u)
         {
             return u == this ||
@@ -2838,179 +2019,122 @@ class Player : public Unit
                    m_clientPlatforms.find(u->GetObjectGuid()) != m_clientPlatforms.end();
         }
 
-        /// Writes down that the client now holds it, in whichever ledger suits its kind.
         void Remember(Occupant* target);
 
-        /// Whichever ledger holds it, the client is done with it.
         void ForgetAtClient(ObjectGuid guid)
         {
             m_clientGUIDs.erase(guid);
             m_clientPlatforms.erase(guid);
         }
 
-        // Check if the player is visible in the grid for another player
         bool IsVisibleInGridForPlayer(Player* pl) const override;
 
-        // Check if the player is visible globally for another player
         bool IsVisibleGloballyFor(Player* pl) const;
 
-        // Update the visibility of a target from a viewpoint
         void UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target);
         void UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target, UpdateData& data, std::set<Occupant*>& visibleNow);
 
-        // Handle detection of stealthed units
         void HandleStealthedUnitsDetection();
 
-        // Get the player's camera
         Camera& GetCamera()
         {
             return m_camera;
         }
 
-        // Get the cinematic flyover manager
         CinematicFlyover* GetCinematicFlyover() { return m_cinematicFlyover.get(); }
 
-        // Set the cinematic flyover manager
         void SetCinematicFlyover(std::unique_ptr<CinematicFlyover> flyover) { m_cinematicFlyover = std::move(flyover); }
 
-        // Initial-login presentation state; unrelated spell roots are not owned here.
         void ScheduleLoginEffect();
         void BeginLoginCinematicRoot();
         void ReleaseLoginCinematicRoot();
 
-        // Forced speed changes
         uint8 m_forced_speed_changes[MAX_MOVE_TYPE];
 
-        // Check if the player has a specific at-login flag
         bool HasAtLoginFlag(AtLoginFlags f) const { return m_atLoginFlags & f; }
 
-        // Set an at-login flag for the player
         void SetAtLoginFlag(AtLoginFlags f) { m_atLoginFlags |= f; }
 
-        // Remove an at-login flag for the player
         void RemoveAtLoginFlag(AtLoginFlags f, bool in_db_also = false);
 
-        // Pet-metadata API — thin delegating wrappers around m_petMgr.
         uint32 GetStableSlots() const { return m_petMgr.GetStableSlots(); }
         void SetStableSlots(uint32 slots) { m_petMgr.SetStableSlots(slots); }
         uint32 GetTemporaryUnsummonedPetNumber() const { return m_petMgr.GetTemporaryUnsummonedPetNumber(); }
         void SetTemporaryUnsummonedPetNumber(uint32 petnumber) { m_petMgr.SetTemporaryUnsummonedPetNumber(petnumber); }
         void UnsummonPetTemporaryIfAny() { m_petMgr.UnsummonTemporaryIfAny(); }
         void ResummonPetTemporaryUnSummonedIfAny() { m_petMgr.ResummonTemporaryUnsummonedIfAny(); }
-        bool IsPetNeedBeTemporaryUnsummoned() const { return !IsInWorld() || !IsAlive() || IsMounted() /*+in flight*/; }
+        bool IsPetNeedBeTemporaryUnsummoned() const { return !IsInWorld() || !IsAlive() || IsMounted() ; }
 
-        // Send cinematic start to the client
         void SendCinematicStart(uint32 CinematicSequenceId);
 
-        /*********************************************************/
-        /***                 INSTANCE SYSTEM                   ***/
-        /*********************************************************/
-
-
-        // Update the homebind time
         void UpdateHomebindTime(uint32 time);
 
+        static void ConvertInstancesToGroup(Player* player, Group* group = nullptr, ObjectGuid player_guid = 0);
 
-
-        // Convert instances to group
-        static void ConvertInstancesToGroup(Player* player, Group* group = nullptr, ObjectGuid player_guid = ObjectGuid());
-
-
-        // Get the area trigger lock status
         AreaLockStatus GetAreaTriggerLockStatus(AreaTrigger const* at, uint32& miscRequirement);
         void SendTransferAbortedByLockStatus(MapEntry const* mapEntry, AreaTrigger const* at, AreaLockStatus lockStatus, uint32 miscRequirement = 0);
 
-        /*********************************************************/
-        /***                   GROUP SYSTEM                    ***/
-        /*********************************************************/
-
-        // Get the group invite
-
-        // Set the group invite
-
-        // Get the group
         Group* GetGroup()
         {
             return m_group.getTarget();
         }
 
-        // Get the group (const version)
         const Group* GetGroup() const { return (const Group*)m_group.getTarget(); }
 
-        /// What has been put to him and is waiting on an answer.
         Invitations& Invites() { return m_invitations; }
         Invitations const& Invites() const { return m_invitations; }
 
-        // Get the group reference
         GroupReference& GetGroupRef()
         {
             return m_group;
         }
 
-        // Set the group
         void SetGroup(Group* group, int8 subgroup = -1);
 
-        // Get the subgroup
         uint8 GetSubGroup() const { return m_group.getSubGroup(); }
 
-        // Get the group update flag
         uint32 GetGroupUpdateFlag() const { return m_groupUpdateMask; }
 
-        // Set the group update flag
         void SetGroupUpdateFlag(uint32 flag) { m_groupUpdateMask |= flag; }
 
-        // Get the aura update mask
         const uint64& GetAuraUpdateMask() const { return m_auraUpdateMask; }
 
-        // Set the aura update mask
         void SetAuraUpdateMask(uint8 slot) { m_auraUpdateMask |= (uint64(1) << slot); }
 
-        // Get the next random raid member within a radius
         Player* GetNextRandomRaidMember(float radius);
 
-        // Check if the player can be uninvited from the group
         PartyResult CanUninviteFromGroup() const;
 
-        // Set the battleground raid group
         void SetBattleGroundRaid(Group* group, int8 subgroup = -1);
 
-        // Remove the player from the battleground raid group
         void RemoveFromBattleGroundRaid();
 
-        // Get the original group
         Group* GetOriginalGroup()
         {
             return m_originalGroup.getTarget();
         }
 
-        // Get the original group reference
         GroupReference& GetOriginalGroupRef()
         {
             return m_originalGroup;
         }
 
-        // Get the original subgroup
         uint8 GetOriginalSubGroup() const { return m_originalGroup.getSubGroup(); }
 
-        // Set the original group
         void SetOriginalGroup(Group* group, int8 subgroup = -1);
 
-        // Get the grid reference
         GridReference<Player>& GetGridRef()
         {
             return m_gridRef;
         }
 
-        // Get the map reference
         MapReference& GetMapRef()
         {
             return m_mapRef;
         }
 
-        // Check if the player is tapped by the player or their group
         bool IsTappedByMeOrMyGroup(Creature* creature);
 
-        // Check if the player is allowed to loot a creature
         bool isAllowedToLoot(Creature* creature);
 
         bool canSeeSpellClickOn(Creature const* creature) const;
@@ -3018,11 +2142,7 @@ class Player : public Unit
         void SaveMail();
     protected:
 
-        uint32 m_contestedPvPTimer; // Timer for contested PvP state
-
-        /*********************************************************/
-        /***               BATTLEGROUND SYSTEM                 ***/
-        /*********************************************************/
+        uint32 m_contestedPvPTimer;
 
         QueueSlots m_queues;
 
@@ -3033,240 +2153,145 @@ class Player : public Unit
         PlayerSheet m_sheet;
         Pace m_pace;
 
-        /*********************************************************/
-        /***                    QUEST SYSTEM                   ***/
-        /*********************************************************/
-
         QuestJournal m_journal;
 
-        uint32 m_ingametime; // In-game time
+        uint32 m_ingametime;
 
-        /*********************************************************/
-        /***                   LOAD SYSTEM                     ***/
-        /*********************************************************/
-
-        // Load player actions from the database
         void _LoadActions(QueryResult* result);
 
-        // Load player auras from the database
         void _LoadAuras(QueryResult* result, uint32 timediff);
 
-        // Load bound instances from the database
         void _LoadHonorCP(QueryResult* result) { m_honor.LoadFromDB(result); }
         void _LoadInventory(QueryResult* result, uint32 timediff);
 
-        // Load item loot from the database
         void _LoadItemLoot(QueryResult* result);
 
-        // Load player mails from the database
         void _LoadMails(QueryResult* result);
 
-        // Load mailed items from the database
         void _LoadMailedItems(QueryResult* result);
 
-        // Load quest status from the database
         void _LoadQuestStatus(QueryResult* result);
         void _LoadGroup(QueryResult* result);
 
-        // Load player skills from the database
         void _LoadSkills(QueryResult* result);
 
-        // Load player spells from the database
         void _LoadSpells(QueryResult* result);
 
-        // Load home bind information from the database
         bool _LoadHomeBind(QueryResult* result);
         void _LoadBGData(QueryResult* result);
 
-        // Load data into a data field
-
-        /*********************************************************/
-        /***                   SAVE SYSTEM                     ***/
-        /*********************************************************/
-
-        // Save player actions to the database
         void _SaveActions();
 
-        // Save player auras to the database
         void _SaveAuras();
 
-        // Save player inventory to the database
         void _SaveInventory();
         void _SaveHonorCP() { m_honor.SaveToDB(); }
 
         void _SaveQuestStatus();
         void _SaveSkills();
 
-        // Save player spells to the database
         void _SaveSpells();
 
-        // Save battleground data to the database
         void _SaveBGData();
 
-        // Save player stats to the database
         void _SaveStats();
 
-
-        /*********************************************************/
-        /***              ENVIRONMENTAL SYSTEM                 ***/
-        /*********************************************************/
-
-        // Handle sobering effect
-
-        // Send mirror timer to the client
-
-        // Stop mirror timer
-
-        // Handle drowning effect
-
-        // Get the maximum timer value for a mirror timer
-
-        /*********************************************************/
-        /***                  HONOR SYSTEM                     ***/
-        /*********************************************************/
         HonorLedger m_honor;
 
-        // Output debug stats values
         void outDebugStatsValues() const;
 
-        ObjectGuid m_lootGuid; // Loot GUID
+        ObjectGuid m_lootGuid = 0;
 
-        Team m_team; // Player's team
-        uint32 m_nextSave; // Next save time
-        time_t m_speakTime; // Last speak time
-        uint32 m_speakCount; // Speak count
+        Team m_team;
+        uint32 m_nextSave;
+        time_t m_speakTime;
+        uint32 m_speakCount;
 
-        uint32 m_atLoginFlags; // At-login flags
+        uint32 m_atLoginFlags;
 
         Inventory m_inventory;
 
+        uint32 m_ExtraFlags;
+        ObjectGuid m_curSelectionGuid = 0;
 
-        uint32 m_ExtraFlags; // Extra flags
-        ObjectGuid m_curSelectionGuid; // Current selection GUID
+        ObjectGuid m_comboTargetGuid = 0;
+        int8 m_comboPoints;
 
-        ObjectGuid m_comboTargetGuid; // Combo target GUID
-        int8 m_comboPoints; // Combo points
+        SkillStatusMap mSkillStatus;
 
-        SkillStatusMap mSkillStatus; // Skill status map
+        PlayerSpellMap m_spells;
 
-
-        PlayerSpellMap m_spells; // Player spells
-        // Spell-cooldown map now owned by m_spellCooldownMgr.
-
-        GlobalCooldownMgr m_GlobalCooldownMgr; // Global cooldown manager
+        GlobalCooldownMgr m_GlobalCooldownMgr;
 
         float m_auraBaseMod[BASEMOD_END][MOD_END];
-        ActionButtonList m_actionButtons; // Action button list
-
+        ActionButtonList m_actionButtons;
 
         ResurrectOffer m_resurrect;
 
-        WorldSession* m_session; // Player session
+        WorldSession* m_session;
 
         typedef std::list<Channel*> JoinedChannelsList;
-        JoinedChannelsList m_channels; // List of joined channels
+        JoinedChannelsList m_channels;
 
-        uint32 m_cinematic; // Cinematic ID
+        uint32 m_cinematic;
 
-        TradeData* m_trade; // Trade data
+        TradeData* m_trade;
 
+        uint32 m_zoneUpdateId;
+        uint32 m_zoneUpdateTimer;
+        uint32 m_areaUpdateId;
+        uint32 m_positionStatusUpdateTimer;
 
-        uint32 m_zoneUpdateId; // Zone update ID
-        uint32 m_zoneUpdateTimer; // Zone update timer
-        uint32 m_areaUpdateId; // Area update ID
-        uint32 m_positionStatusUpdateTimer; // Position status update timer
+        uint32 m_deathTimer;
+        time_t m_deathExpireTime;
 
-        uint32 m_deathTimer; // Death timer
-        time_t m_deathExpireTime; // Death expire time
+        Transport* m_transport;
 
+        uint32 m_resetTalentsCost;
+        time_t m_resetTalentsTime;
+        uint32 m_usedTalentCount;
 
+        PlayerSocial* m_social;
 
-        //////////////////// Rest System/////////////////////
-        //////////////////// Rest System/////////////////////
-
-        // Transports
-        Transport* m_transport; // Player transport
-
-        uint32 m_resetTalentsCost; // Reset talents cost
-        time_t m_resetTalentsTime; // Reset talents time
-        uint32 m_usedTalentCount; // Used talent count
-
-        // Social
-        PlayerSocial* m_social; // Player social data
-
-        // Groups
-        GroupReference m_group; // Group reference
+        GroupReference m_group;
 
         Invitations m_invitations;
-        GroupReference m_originalGroup; // Original group reference
-        uint32 m_groupUpdateMask; // Group update mask
-        uint64 m_auraUpdateMask; // Aura update mask
+        GroupReference m_originalGroup;
+        uint32 m_groupUpdateMask;
+        uint64 m_auraUpdateMask;
 
-        ObjectGuid m_miniPetGuid; // Mini pet GUID
+        ObjectGuid m_miniPetGuid = 0;
 
-        // Player summoning
         SummonOffer m_summon;
 
     private:
         uint32 m_created_date = 0;
 
-
-        // internal common parts for CanStore/StoreItem functions
-
-        // Check if an item can be stored in a bag
-
-        // Check if an item can be stored in inventory slots
-
-        // Store an item in a specific position
-
-        // Update known currencies for the player
         void UpdateKnownCurrencies(uint32 itemId, bool apply);
 
-        // Adjust quest required item count
-
-        // Set the ability to delay teleport
         void SetCanDelayTeleport(bool setting) { m_teleport.MayWait(setting); }
 
-        // Check if the player has a delayed teleport
         bool IsHasDelayedTeleport() const { return m_teleport.Waits(IsAlive()); }
 
-        // Set the delayed teleport flag if possible
         bool SetDelayedTeleportFlagIfCan() { return m_teleport.WaitIfItMay(IsAlive()); }
 
-        // Schedule a delayed operation
-
-        // The unit that is currently moving the player
         Unit* m_mover;
 
-        // The player's camera
         Camera m_camera;
 
-        // Cinematic flyover manager (optional, for first-login intro visibility)
         std::unique_ptr<CinematicFlyover> m_cinematicFlyover;
 
         LoginCinematicRootOwnership m_loginCinematicRootOwnership;
 
-        // Countdown (ms) for the periodic observer-side visibility sweep
         uint32 m_visibilityObserverSweepTimer;
 
-        // Grid reference for the player
         GridReference<Player> m_gridRef;
 
-        // Map reference for the player
         MapReference m_mapRef;
 
-
-        // Homebind coordinates
-
-        // Last fall time and Z coordinate
         uint32 m_lastFallTime;
         float  m_lastFallZ;
 
-        // Last liquid type the player was in
-
-        // Mirror timers for various effects
-
-        /// Where he has been sent, and what is owed when he lands.
         TeleportOrder m_teleport;
 
         Perils m_perils;
@@ -3287,32 +2312,19 @@ class Player : public Unit
 
         Duel m_duel;
 
-        // Detect invisibility timer
         uint32 m_DetectInvTimer;
 
-        // Temporary-removed pet cache and stable-slot count now owned by m_petMgr.
-
-        // Reputation manager for the player
         ReputationMgr  m_reputationMgr;
 
-        // Owns the spell-cooldown map + load/save/apply lifecycle
         SpellCooldownMgr m_spellCooldownMgr;
 
-        // Owns stable-slot count + temp-unsummon pet number
         PetMgr m_petMgr;
 };
 
-/**
- * Applies item set bonuses for an item that has been equipped by the player.
- */
 void AddItemsSetItem(Player* player, Item* item);
 
-/**
- * Removes item set bonuses for an item template that is no longer active on the player.
- */
 void RemoveItemsSetItem(Player* player, ItemPrototype const* proto);
 
-// "the bodies of template functions must be made available in a header file"
 template <class T>
 T SpellModifiers::Apply(uint32 spellId, SpellModOp op, T& base, Spell const* spell)
 {
@@ -3338,13 +2350,12 @@ T SpellModifiers::Apply(uint32 spellId, SpellModOp op, T& base, Spell const* spe
         }
         else if (mod->type == SPELLMOD_PCT)
         {
-            // a share of nothing is nothing, and it must not cost a charge
+
             if (base == T(0))
             {
                 continue;
             }
 
-            // an instant-cast talent leaves casts over ten seconds alone
             if (mod->op == SPELLMOD_CASTING_TIME && base >= T(10 * IN_MILLISECONDS) && mod->value <= -100)
             {
                 continue;
@@ -3360,7 +2371,6 @@ T SpellModifiers::Apply(uint32 spellId, SpellModOp op, T& base, Spell const* spe
                 spell = m_owner.FindCurrentSpellBySpellId(spellId);
             }
 
-            // one charge per spell, however many numbers it asks about
             if (!mod->lastAffected || mod->lastAffected != spell)
             {
                 --mod->charges;

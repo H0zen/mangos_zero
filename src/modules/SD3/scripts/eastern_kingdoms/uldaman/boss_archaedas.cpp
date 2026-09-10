@@ -187,8 +187,8 @@ struct boss_archaedas : public CreatureScript
             {
                 if (m_uiAwakeDwarfTimer < uiDiff)
                 {
-                    m_pInstance->SetData64(TYPE_SIGNAL, m_creature->GetObjectGuid().GetRawValue());
-                    if (Creature* pEarthen = m_pInstance->instance->GetCreature(ObjectGuid(m_pInstance->GetData64(TYPE_SIGNAL))))
+                    m_pInstance->SetData64(TYPE_SIGNAL, m_creature->GetObjectGuid());
+                    if (Creature* pEarthen = m_pInstance->instance->GetCreature(static_cast<ObjectGuid>(m_pInstance->GetData64(TYPE_SIGNAL))))
                     {
                         if (DoCastSpellIfCan(pEarthen, SPELL_AWAKEN_EARTHEN_DWARF) == CAST_OK)
                         {
@@ -239,9 +239,9 @@ struct spell_npc_vault_warder : public SpellScript
         {
             if (pCreatureTarget->GetEntry() == NPC_VAULT_WARDER)
             {
-                ToCreature(pCreatureTarget)->RemoveAuras(SPELL_STONED);
+                static_cast<Creature*>(pCreatureTarget)->RemoveAuras(SPELL_STONED);
 
-                ScriptedInstance* pInstance = static_cast<ScriptedInstance*>(ToCreature(pCreatureTarget)->GetInstanceData());
+                ScriptedInstance* pInstance = static_cast<ScriptedInstance*>(static_cast<Creature*>(pCreatureTarget)->GetInstanceData());
                 if (!pInstance)
                 {
                     return true;
@@ -249,7 +249,7 @@ struct spell_npc_vault_warder : public SpellScript
 
                 if (Creature* pArchaedas = pInstance->GetSingleCreatureFromStorage(NPC_ARCHAEDAS))
                 {
-                    ToCreature(pCreatureTarget)->AI()->AttackStart(pArchaedas->getVictim());
+                    static_cast<Creature*>(pCreatureTarget)->AI()->AttackStart(pArchaedas->getVictim());
                 }
 
                 return true;

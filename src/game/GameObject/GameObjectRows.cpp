@@ -23,15 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file GameObjectRows.cpp
- * @brief The rows a world object is spawned from and written back to.
- *
- * A chest, a door and a herb are rows in `gameobject` that a map reads when it opens the
- * grid they stand in, and that a builder writes back with `.gobject add`. What SQL that
- * takes is nothing the object itself has to know.
- */
-
 #include "GameObject.h"
 
 #include "Database/DatabaseEnv.h"
@@ -46,13 +37,9 @@
 
 #include <sstream>
 
-/**
- * @brief Saves the loaded game object back to the database.
- */
 void GameObject::SaveToDB()
 {
-    // this should only be used when the gameobject has already been loaded
-    // preferably after adding to map, because mapid may not be valid otherwise
+
     GameObjectData const* data = sObjectMgr.GetGOData(GetGUIDLow());
     if (!data)
     {
@@ -63,11 +50,6 @@ void GameObject::SaveToDB()
     SaveToDB(GetMapId());
 }
 
-/**
- * @brief Saves the game object spawn data to the database for a map.
- *
- * @param mapid The map id to persist.
- */
 void GameObject::SaveToDB(uint32 mapid)
 {
     const GameObjectInfo* goI = GetGOInfo();
@@ -77,10 +59,8 @@ void GameObject::SaveToDB(uint32 mapid)
         return;
     }
 
-    // update in loaded data (changing data only in this place)
     GameObjectData& data = sObjectMgr.NewGOData(GetGUIDLow());
 
-    // data->guid = guid don't must be update at save
     data.id = GetEntry();
     data.mapid = mapid;
     data.posX = GetGoPositionX();
@@ -95,7 +75,6 @@ void GameObject::SaveToDB(uint32 mapid)
     data.animprogress = GetGoAnimProgress();
     data.go_state = GetGoState();
 
-    // updated in DB
     std::ostringstream ss;
     ss << "INSERT INTO `gameobject` VALUES ( "
        << GetGUIDLow() << ", "
@@ -121,7 +100,7 @@ void GameObject::SaveToDB(uint32 mapid)
 
 namespace
 {
-    /// Clears the respawn time this object is remembered by, in every copy of its map.
+
     struct GameObjectRespawnDeleteWorker
     {
         explicit GameObjectRespawnDeleteWorker(uint32 guid) : i_guid(guid) {}
@@ -135,9 +114,6 @@ namespace
     };
 }
 
-/**
- * @brief Deletes the static database spawn record for this game object.
- */
 void GameObject::DeleteFromDB()
 {
     if (!HasStaticDBSpawnData())
@@ -154,4 +130,3 @@ void GameObject::DeleteFromDB()
     WorldDatabase.PExecuteLog("DELETE FROM `game_event_gameobject` WHERE `guid` = '%u'", GetGUIDLow());
     WorldDatabase.PExecuteLog("DELETE FROM `gameobject_battleground` WHERE `guid` = '%u'", GetGUIDLow());
 }
-

@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Creature.h"
 #include "DBCStores.h"
 #include "SpellMgr.h"
@@ -60,11 +58,6 @@
 #include "MovementGenerator.h"
 #include "Policies/Singleton.h"
 
-/**
- * @brief Adds cooldown tracking for a creature spell and its category.
- *
- * @param spellid The spell identifier.
- */
 void Unit::AddCreatureSpellCooldown(uint32 spellid)
 {
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellid);
@@ -86,12 +79,6 @@ void Unit::AddCreatureSpellCooldown(uint32 spellid)
     }
 }
 
-/**
- * @brief Checks whether a spell category cooldown is still active.
- *
- * @param spell_id The spell identifier.
- * @return true if the category cooldown is active; otherwise, false.
- */
 bool Unit::HasCategoryCooldown(uint32 spell_id) const
 {
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(spell_id);
@@ -105,12 +92,6 @@ bool Unit::HasCategoryCooldown(uint32 spell_id) const
                                      time(nullptr));
 }
 
-/**
- * @brief Checks whether a spell or its category is currently on cooldown.
- *
- * @param spell_id The spell identifier.
- * @return true if a cooldown is active; otherwise, false.
- */
 bool Unit::HasSpellCooldown(uint32 spell_id) const
 {
     return m_repertoire.SpellDown(spell_id, time(nullptr)) || HasCategoryCooldown(spell_id);

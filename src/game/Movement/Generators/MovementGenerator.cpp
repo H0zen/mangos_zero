@@ -26,14 +26,8 @@
 #include "MovementGenerator.h"
 #include "Unit.h"
 
-/**
- * @brief Checks if the movement generator is still active (top movement generator) after some not safe for this calls.
- * @param owner Reference to the unit.
- * @return True if the movement generator is still active, false otherwise.
- */
 bool MovementGenerator::IsActive(Unit& owner)
 {
-    // When movement generator list modified from Update movegen object erase delayed,
-    // so pointer still valid and be used for check
+
     return !owner.GetMotionMaster()->empty() && owner.GetMotionMaster()->top() == this;
 }

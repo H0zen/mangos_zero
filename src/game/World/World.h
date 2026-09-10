@@ -23,10 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/// \addtogroup world The World
-/// @{
-/// \file
-
 #pragma once
 
 #include <unordered_map>
@@ -48,16 +44,14 @@
 #include <vector>
 #include <atomic>
 
-
 class Object;
-class ObjectGuid;
+#include "ObjectGuid.h"
 class WorldPacket;
 class WorldSession;
 class Player;
 class SqlResultQueue;
 class QueryResult;
 
-// ServerMessages.dbc
 enum ServerMessageType
 {
     SERVER_MSG_SHUTDOWN_TIME          = 1,
@@ -81,7 +75,6 @@ enum ShutdownExitCode
     RESTART_EXIT_CODE  = 2,
 };
 
-/// Timers for different object refresh rates
 enum WorldTimers
 {
     WUPDATE_AUCTIONS = 0,
@@ -93,7 +86,6 @@ enum WorldTimers
     WUPDATE_COUNT
 };
 
-/// Configuration elements
 enum eConfigUInt32Values
 {
     CONFIG_UINT32_COMPRESSION = 0,
@@ -208,7 +200,6 @@ enum eConfigUInt32Values
     CONFIG_UINT32_VALUE_COUNT
 };
 
-/// Configuration elements
 enum eConfigInt32Values
 {
     CONFIG_INT32_DEATH_SICKNESS_LEVEL = 0,
@@ -217,7 +208,6 @@ enum eConfigInt32Values
     CONFIG_INT32_VALUE_COUNT
 };
 
-/// Server config
 enum eConfigFloatValues
 {
     CONFIG_FLOAT_RATE_HEALTH = 0,
@@ -292,7 +282,6 @@ enum eConfigFloatValues
     CONFIG_FLOAT_VALUE_COUNT
 };
 
-/// Configuration elements
 enum eConfigBoolValues
 {
     CONFIG_BOOL_GRID_UNLOAD = 0,
@@ -349,14 +338,12 @@ enum eConfigBoolValues
     CONFIG_BOOL_ENABLE_QUEST_TRACKER,
     CONFIG_BOOL_GM_TICKET_OFFLINE_CLOSING,
 
-    // Recommended Or New Flag
     CONFIG_BOOL_REALM_RECOMMENDED_OR_NEW_ENABLED,
     CONFIG_BOOL_REALM_RECOMMENDED_OR_NEW,
 
     CONFIG_BOOL_VALUE_COUNT
 };
 
-/// Type of server
 enum RealmType
 {
     REALM_TYPE_NORMAL   = 0,
@@ -364,52 +351,50 @@ enum RealmType
     REALM_TYPE_NORMAL2  = 4,
     REALM_TYPE_RP       = 6,
     REALM_TYPE_RPPVP    = 8,
-    REALM_TYPE_FFA_PVP  = 16                                // custom, free for all pvp mode like arena PvP in all zones except rest activated places and sanctuaries
-    // replaced by REALM_PVP in realm list
+    REALM_TYPE_FFA_PVP  = 16
+
 };
 
-// [-ZERO] Need drop not existed cases
 enum RealmZone
 {
-    REALM_ZONE_UNKNOWN       = 0,                           // any language
-    REALM_ZONE_DEVELOPMENT   = 1,                           // any language
-    REALM_ZONE_UNITED_STATES = 2,                           // extended-Latin
-    REALM_ZONE_OCEANIC       = 3,                           // extended-Latin
-    REALM_ZONE_LATIN_AMERICA = 4,                           // extended-Latin
-    REALM_ZONE_TOURNAMENT_5  = 5,                           // basic-Latin at create, any at login
-    REALM_ZONE_KOREA         = 6,                           // East-Asian
-    REALM_ZONE_TOURNAMENT_7  = 7,                           // basic-Latin at create, any at login
-    REALM_ZONE_ENGLISH       = 8,                           // extended-Latin
-    REALM_ZONE_GERMAN        = 9,                           // extended-Latin
-    REALM_ZONE_FRENCH        = 10,                          // extended-Latin
-    REALM_ZONE_SPANISH       = 11,                          // extended-Latin
-    REALM_ZONE_RUSSIAN       = 12,                          // Cyrillic
-    REALM_ZONE_TOURNAMENT_13 = 13,                          // basic-Latin at create, any at login
-    REALM_ZONE_TAIWAN        = 14,                          // East-Asian
-    REALM_ZONE_TOURNAMENT_15 = 15,                          // basic-Latin at create, any at login
-    REALM_ZONE_CHINA         = 16,                          // East-Asian
-    REALM_ZONE_CN1           = 17,                          // basic-Latin at create, any at login
-    REALM_ZONE_CN2           = 18,                          // basic-Latin at create, any at login
-    REALM_ZONE_CN3           = 19,                          // basic-Latin at create, any at login
-    REALM_ZONE_CN4           = 20,                          // basic-Latin at create, any at login
-    REALM_ZONE_CN5           = 21,                          // basic-Latin at create, any at login
-    REALM_ZONE_CN6           = 22,                          // basic-Latin at create, any at login
-    REALM_ZONE_CN7           = 23,                          // basic-Latin at create, any at login
-    REALM_ZONE_CN8           = 24,                          // basic-Latin at create, any at login
-    REALM_ZONE_TOURNAMENT_25 = 25,                          // basic-Latin at create, any at login
-    REALM_ZONE_TEST_SERVER   = 26,                          // any language
-    REALM_ZONE_TOURNAMENT_27 = 27,                          // basic-Latin at create, any at login
-    REALM_ZONE_QA_SERVER     = 28,                          // any language
-    REALM_ZONE_CN9           = 29                           // basic-Latin at create, any at login
+    REALM_ZONE_UNKNOWN       = 0,
+    REALM_ZONE_DEVELOPMENT   = 1,
+    REALM_ZONE_UNITED_STATES = 2,
+    REALM_ZONE_OCEANIC       = 3,
+    REALM_ZONE_LATIN_AMERICA = 4,
+    REALM_ZONE_TOURNAMENT_5  = 5,
+    REALM_ZONE_KOREA         = 6,
+    REALM_ZONE_TOURNAMENT_7  = 7,
+    REALM_ZONE_ENGLISH       = 8,
+    REALM_ZONE_GERMAN        = 9,
+    REALM_ZONE_FRENCH        = 10,
+    REALM_ZONE_SPANISH       = 11,
+    REALM_ZONE_RUSSIAN       = 12,
+    REALM_ZONE_TOURNAMENT_13 = 13,
+    REALM_ZONE_TAIWAN        = 14,
+    REALM_ZONE_TOURNAMENT_15 = 15,
+    REALM_ZONE_CHINA         = 16,
+    REALM_ZONE_CN1           = 17,
+    REALM_ZONE_CN2           = 18,
+    REALM_ZONE_CN3           = 19,
+    REALM_ZONE_CN4           = 20,
+    REALM_ZONE_CN5           = 21,
+    REALM_ZONE_CN6           = 22,
+    REALM_ZONE_CN7           = 23,
+    REALM_ZONE_CN8           = 24,
+    REALM_ZONE_TOURNAMENT_25 = 25,
+    REALM_ZONE_TEST_SERVER   = 26,
+    REALM_ZONE_TOURNAMENT_27 = 27,
+    REALM_ZONE_QA_SERVER     = 28,
+    REALM_ZONE_CN9           = 29
 };
 
-/// Storage class for commands issued for delayed execution
 struct CliCommandHolder
 {
     typedef void Print(void*, const char*);
     typedef void CommandFinished(void*, bool success);
 
-    uint32 m_cliAccountId;                                  // 0 for console commands
+    uint32 m_cliAccountId;
     AccountTypes m_cliAccessLevel;
     void* m_callbackArg;
     char* m_command;
@@ -430,8 +415,6 @@ struct CliCommandHolder
     }
 };
 
-/// The World
-
 typedef std::unordered_map<uint32, WorldSession*> SessionMap;
 
 class World
@@ -447,51 +430,43 @@ class World
         WorldSession* FindSession(uint32 id) const;
         void AddSession(WorldSession* s);
         bool RemoveSession(uint32 id);
-        /// Get the number of current active sessions
+
         void UpdateMaxSessionCounters();
         const SessionMap& GetAllSessions() const { return m_sessions; }
         uint32 GetActiveAndQueuedSessionCount() const { return m_sessions.size(); }
         uint32 GetActiveSessionCount() const { return m_sessions.size() - m_QueuedSessions.size(); }
         uint32 GetQueuedSessionCount() const { return m_QueuedSessions.size(); }
-        /// Get the maximum number of parallel sessions on the server since last reboot
+
         uint32 GetMaxQueuedSessionCount() const { return m_maxQueuedSessionCount; }
         uint32 GetMaxActiveSessionCount() const { return m_maxActiveSessionCount; }
 
-        /// Get the active session server limit (or security level limitations)
         uint32 GetPlayerAmountLimit() const { return m_playerLimit >= 0 ? m_playerLimit : 0; }
         AccountTypes GetPlayerSecurityLimit() const { return m_playerLimit <= 0 ? AccountTypes(-m_playerLimit) : SEC_PLAYER; }
 
-        /// Set the active session server limit (or security level limitation)
         void SetPlayerLimit(int32 limit, bool needUpdate = false);
 
-        // player Queue
         typedef std::list<WorldSession*> Queue;
         void AddQueuedSession(WorldSession*);
         bool RemoveQueuedSession(WorldSession* session);
         int32 GetQueuedSessionPos(WorldSession*);
 
-        /// \todo Actions on m_allowMovement still to be implemented
-        /// Is movement allowed?
         bool getAllowMovement() const { return m_allowMovement; }
-        /// Allow/Disallow object movements
+
         void SetAllowMovement(bool allow) { m_allowMovement = allow; }
 
-        /// Set a new Message of the Day
         void SetMotd(const std::string& motd) { m_motd = motd; }
-        /// Get the current Message of the Day
+
         const char* GetMotd() const { return m_motd.c_str(); }
         void showFooter(uint32 startupMs);
 
         LocaleConstant GetDefaultDbcLocale() const { return m_defaultDbcLocale; }
 
-        /// Get the path where data (dbc, maps) are stored on disk
         std::string GetDataPath() const { return m_dataPath; }
 
-        /// When server started?
         time_t const& GetStartTime() const { return m_startTime; }
-        /// What time is it?
+
         time_t const& GetGameTime() const { return m_gameTime; }
-        /// Uptime (in secs)
+
         uint32 GetUptime() const { return uint32(m_gameTime - m_startTime); }
 
         uint32 GetDateByLocalTime(const std::tm now) const { return uint32(now.tm_year*365 + (now.tm_year-1)/4 + now.tm_yday); }
@@ -502,11 +477,10 @@ class World
             uint32 today = GetDateToday();
             uint32 mDay  = getConfig(CONFIG_UINT32_MAINTENANCE_DAY);
             std::tm date     = safe_localtime(m_gameTime);
-            // formula to find last mDay of gregorian calendary
+
             return today - ((date.tm_wday - mDay  + 7) % 7);
         }
 
-        /// Get the maximum skill level a player can reach
         uint16 GetConfigMaxSkillValue() const
         {
             uint32 lvl = getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL);
@@ -522,7 +496,6 @@ class World
         void SendZoneUnderAttackMessage(uint32 zoneId, Team team);
         void SendDefenseMessage(uint32 zoneId, int32 textId);
 
-        /// Are we in the middle of a shutdown?
         bool IsShutdowning() const { return m_ShutdownTimer > 0; }
         void ShutdownServ(uint32 time, uint32 options, uint8 exitcode);
         void ShutdownCancel();
@@ -538,78 +511,36 @@ class World
             return m_stopEvent;
         }
 
-        /**
-         * @brief One tick, and the four steps it is made of.
-         *
-         * The shape is `ARCH.md` §10: a serial phase, then one thread per map, then
-         * what can only be done once no map is running. Written as named calls rather
-         * than as one body, so that a system added later has somewhere it belongs and
-         * the question "where does this go" has an answer that can be checked.
-         *
-         * §10's phase C -- one gathered write per session -- is not a step here and must
-         * not become one. It lives in `net::SendQueue`, which coalesces everything a tick
-         * queued into the next single write by swapping a pending buffer for an in-flight
-         * one. The loop does not need to know when a socket is writable, and the
-         * transport does not need to know when a tick ended.
-         */
         void Update(uint32 diff);
 
         void UpdateSessions(uint32 diff);
 
-        /// The tick's own clocks, wound before anything reads them.
         void AdvanceClocks(uint32 diff);
 
-        /**
-         * @brief PHASE A -- serial, one thread.
-         *
-         * The systems that belong to no map: auctions, mail, the battleground and
-         * meeting-stone queues. And the session drain, which is what feeds the maps
-         * their work for this tick.
-         *
-         * Nothing here may touch a map's contents. A system that needs to is in the
-         * wrong phase.
-         */
         void RunOffMapSystems(uint32 diff);
 
-        /**
-         * @brief PHASE B -- one thread per map, and the barrier at the end of it.
-         *
-         * Everything that lives on a map moves here and nowhere else.
-         */
         void RunMaps(uint32 diff);
 
-        /**
-         * @brief After the barrier, where no map is running.
-         *
-         * Deferred removals, persistence, and the housekeeping that must see a tick
-         * already finished rather than one in progress.
-         */
         void SettleTick(uint32 diff);
 
-        /// Get a server configuration element (see #eConfigFloatValues)
         void setConfig(eConfigFloatValues index, float value) { m_configFloatValues[index] = value; }
-        /// Get a server configuration element (see #eConfigFloatValues)
+
         float getConfig(eConfigFloatValues rate) const { return m_configFloatValues[rate]; }
 
-        /// Set a server configuration element (see #eConfigUInt32Values)
         void setConfig(eConfigUInt32Values index, uint32 value) { m_configUint32Values[index] = value; }
-        /// Get a server configuration element (see #eConfigUInt32Values)
+
         uint32 getConfig(eConfigUInt32Values index) const { return m_configUint32Values[index]; }
 
-        /// Set a server configuration element (see #eConfigInt32Values)
         void setConfig(eConfigInt32Values index, int32 value) { m_configInt32Values[index] = value; }
-        /// Get a server configuration element (see #eConfigInt32Values)
+
         int32 getConfig(eConfigInt32Values index) const { return m_configInt32Values[index]; }
 
-        /// Set a server configuration element (see #eConfigBoolValues)
         void setConfig(eConfigBoolValues index, bool value) { m_configBoolValues[index] = value; }
-        /// Get a server configuration element (see #eConfigBoolValues)
+
         bool getConfig(eConfigBoolValues index) const { return m_configBoolValues[index]; }
 
-        /// Get configuration about force-loaded maps
         bool isForceLoadMap(uint32 id) const { return m_configForceLoadMapIds.find(id) != m_configForceLoadMapIds.end(); }
 
-        /// Are we on a "Player versus Player" server?
         bool IsPvPRealm()
         {
             return (getConfig(CONFIG_UINT32_GAME_TYPE) == REALM_TYPE_PVP || getConfig(CONFIG_UINT32_GAME_TYPE) == REALM_TYPE_RPPVP || getConfig(CONFIG_UINT32_GAME_TYPE) == REALM_TYPE_FFA_PVP);
@@ -625,7 +556,6 @@ class World
         BanReturn BanAccount(BanMode mode, std::string nameOrIP, uint32 duration_secs, std::string reason, const std::string &author);
         bool RemoveBanAccount(BanMode mode, std::string nameOrIP);
 
-        // for max speed access
         static float GetMaxVisibleDistanceOnContinents()    { return m_MaxVisibleDistanceOnContinents; }
         static float GetMaxVisibleDistanceInInstances()     { return m_MaxVisibleDistanceInInstances;  }
         static float GetMaxVisibleDistanceInBGArenas()      { return m_MaxVisibleDistanceInBGArenas;   }
@@ -653,7 +583,6 @@ class World
 
         LocaleConstant GetAvailableDbcLocale(LocaleConstant locale) const { if (m_availableDbcLocaleMask & (1 << locale)) { return locale; } else { return m_defaultDbcLocale; } }
 
-        // used World DB version
         void LoadDBVersion();
         char const* GetDBVersion()
         {
@@ -662,20 +591,11 @@ class World
 
         void LoadBroadcastStrings();
 
-        /**
-         * \brief: force all client to request player data
-         * \param: ObjectGuid guid : guid of the specified player
-         * \returns: void
-         *
-         * Description: InvalidatePlayerDataToAllClient force all connected clients to clear specified player cache
-         * FullName: World::InvalidatePlayerDataToAllClient
-         * Access: public
-         **/
         void InvalidatePlayerDataToAllClient(ObjectGuid guid);
 
     protected:
         void _UpdateGameTime();
-        // callback for UpdateRealmCharacters
+
         void _UpdateRealmCharCount(QueryResult* resultCharCount, uint32 accountId);
 
     private:
@@ -695,7 +615,6 @@ class World
         bool configNoReload(bool reload, eConfigFloatValues index, char const* fieldname, float defvalue);
         bool configNoReload(bool reload, eConfigBoolValues index, char const* fieldname, bool defvalue);
 
-        // AutoBroadcast system
         void AutoBroadcast();
         struct BroadcastString
         {
@@ -751,14 +670,13 @@ class World
         bool m_configBoolValues[CONFIG_BOOL_VALUE_COUNT];
 
         int32 m_playerLimit;
-        LocaleConstant m_defaultDbcLocale;                  // from config for one from loaded DBC locales
-        uint32 m_availableDbcLocaleMask;                    // by loaded DBC
+        LocaleConstant m_defaultDbcLocale;
+        uint32 m_availableDbcLocaleMask;
         void DetectDBCLang();
         bool m_allowMovement;
         std::string m_motd;
         std::string m_dataPath;
 
-        // for max speed access
         static float m_MaxVisibleDistanceOnContinents;
         static float m_MaxVisibleDistanceInInstances;
         static float m_MaxVisibleDistanceInBGArenas;
@@ -773,24 +691,18 @@ class World
         static bool   m_visibility_observer_sweep_enabled;
         static uint32 m_visibility_observer_sweep_interval;
 
-        // CLI command holder to be thread safe
         MaNGOS::LockedQueue<CliCommandHolder*> cliCmdQueue;
 
-        // Player Queue
         Queue m_QueuedSessions;
 
-        // sessions that are added async
         void AddSession_(WorldSession* s);
         MaNGOS::LockedQueue<WorldSession*> addSessQueue;
 
-        // used versions
         std::string m_DBVersion;
 
-        // List of Maps that should be force-loaded on startup
         std::set<uint32> m_configForceLoadMapIds;
 };
 
 extern uint32 realmID;
 
 #define sWorld MaNGOS::Singleton<World>::Instance()
-/// @}

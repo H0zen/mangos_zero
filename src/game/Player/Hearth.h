@@ -28,21 +28,6 @@
 #include "Platform/Define.h"
 #include "Geometry/Placement.h"
 
-/**
- * The inn a character is bound to, and where his stone takes him.
- *
- * Five numbers that only ever travel together: which map, which area, and the
- * point in it. The area is kept beside the point rather than looked up from it,
- * because it is what the innkeeper wrote down and it is what goes back into the
- * row -- reading it off the terrain later could give a different answer if the
- * map data changed under him.
- *
- * A character always has one. If the row is missing or names a place he can no
- * longer reach, his race's starting inn is written in and saved.
- *
- * The countdown is the other half of the same idea: inside an instance he is not
- * held to, it runs down and then sends him here.
- */
 class Hearth
 {
     public:
@@ -66,8 +51,6 @@ class Hearth
             m_at = Geometry::Vector3(x, y, z);
         }
 
-        /// Milliseconds before he is sent home from an instance that does not
-        /// hold him, or nothing when no such countdown runs.
         uint32 Countdown() const { return m_countdown; }
         void Countdown(uint32 left) { m_countdown = left; }
 

@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about a corpse he may take from.
 namespace spoils
 {
     void AutostoreItem(Player& who, WorldPacket& packet);

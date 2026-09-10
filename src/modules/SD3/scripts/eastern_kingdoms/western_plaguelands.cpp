@@ -72,12 +72,12 @@ struct npc_the_scourge_cauldron : public CreatureScript
 
         void MoveInLineOfSight(Unit* who) override
         {
-            if (!who || !who->IsPlayer())
+            if (!who || !IsPlayer(who))
             {
                 return;
             }
 
-            if (who->IsPlayer())
+            if (IsPlayer(who))
             {
                 switch (m_creature->GetTerrain()->GetAreaId(m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z()))
                 {
@@ -263,8 +263,8 @@ struct npc_taelan_fordring : public CreatureScript
         bool m_bHasMount;
         bool m_bTaelanDead;
 
-        ObjectGuid m_isillenGuid;
-        ObjectGuid m_tirionGuid;
+        ObjectGuid m_isillenGuid = 0;
+        ObjectGuid m_tirionGuid = 0;
         GuidList m_lCavalierGuids;
 
         uint32 m_uiHolyCleaveTimer;
@@ -345,13 +345,13 @@ struct npc_taelan_fordring : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* /*pSender*/, Unit* pInvoker, uint32 uiMiscValue) override
         {
-            if (eventType == AI_EVENT_START_ESCORT && pInvoker->IsPlayer())
+            if (eventType == AI_EVENT_START_ESCORT &&IsPlayer(pInvoker))
             {
                 Start(false, (Player*)pInvoker, GetQuestTemplateStore(uiMiscValue));
                 DoScriptText(SAY_ESCORT_START, m_creature);
                 m_creature->SetFactionTemporary(FACTION_ESCORT_N_FRIEND_PASSIVE, TEMPFACTION_RESTORE_RESPAWN);
             }
-            else if (eventType == AI_EVENT_CUSTOM_A && pInvoker->IsPlayer() && uiMiscValue == QUEST_ID_SCARLET_SUBTERFUGE)
+            else if (eventType == AI_EVENT_CUSTOM_A &&IsPlayer(pInvoker) && uiMiscValue == QUEST_ID_SCARLET_SUBTERFUGE)
             {
                 StartNextDialogueText(NPC_SCARLET_CAVALIER);
             }
@@ -724,8 +724,8 @@ struct spell_npc_taelan_fordring : public SpellScript
         // always check spellid and effectindex
         if (uiSpellId == SPELL_TAELAN_DEATH && uiEffIndex == EFFECT_INDEX_0 && pCaster->GetEntry() == NPC_ISILLIEN)
         {
-            ToCreature(pCreatureTarget)->AI()->EnterEvadeMode();
-            pCaster->SetFacingToObject(ToCreature(pCreatureTarget));
+            static_cast<Creature*>(pCreatureTarget)->AI()->EnterEvadeMode();
+            pCaster->SetFacingToObject(static_cast<Creature*>(pCreatureTarget));
             ((Creature*)pCaster)->AI()->EnterEvadeMode();
 
             return true;
@@ -754,7 +754,7 @@ struct npc_isillien : public CreatureScript
         bool m_bTirionSpawned;
         bool m_bTaelanDead;
 
-        ObjectGuid m_taelanGuid;
+        ObjectGuid m_taelanGuid = 0;
 
         uint32 m_uiManaBurnTimer;
         uint32 m_uFlashHealTimer;
@@ -951,7 +951,7 @@ struct npc_tirion_fordring : public CreatureScript
     {
         npc_tirion_fordringAI(Creature* pCreature) : npc_escortAI(pCreature) {}
 
-        ObjectGuid m_taelanGuid;
+        ObjectGuid m_taelanGuid = 0;
 
         uint32 m_uiHolyCleaveTimer;
         uint32 m_uiHolyStrikeTimer;

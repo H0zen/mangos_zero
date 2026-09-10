@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about what he has learnt.
 namespace skills
 {
     void LearnTalent(Player& who, WorldPacket& packet);

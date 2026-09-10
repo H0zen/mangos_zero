@@ -152,7 +152,7 @@ class instance_dire_maul : public ScriptedInstance
         GuidList m_lFelvineShardGUIDs;
 
         // West
-        ObjectGuid m_aCrystalGeneratorGuid[MAX_GENERATORS];
+        ObjectGuid m_aCrystalGeneratorGuid[MAX_GENERATORS] = {};
 
         GuidList m_luiHighborneSummonerGUIDs;
         GuidList m_lGeneratorGuardGUIDs;

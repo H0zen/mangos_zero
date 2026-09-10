@@ -33,22 +33,14 @@
 class Unit;
 struct SpellEntry;
 
-/**
- * What somebody else's unit looks like on your bar, and what it has been told.
- *
- * A pet, a charmed creature and a possessed one are driven the same way: a row of
- * buttons, a stance that says how much it does on its own, and a standing order.
- * All of that belongs to the driving, not to the unit being driven.
- */
-
 enum ActiveStates
 {
-    ACT_PASSIVE  = 0x01,                                    // 0x01 - passive
-    ACT_DISABLED = 0x81,                                    // 0x80 - castable
-    ACT_ENABLED  = 0xC1,                                    // 0x40 | 0x80 - auto cast + castable
-    ACT_COMMAND  = 0x07,                                    // 0x01 | 0x02 | 0x04
-    ACT_REACTION = 0x06,                                    // 0x02 | 0x04
-    ACT_DECIDE   = 0x00                                     // custom
+    ACT_PASSIVE  = 0x01,
+    ACT_DISABLED = 0x81,
+    ACT_ENABLED  = 0xC1,
+    ACT_COMMAND  = 0x07,
+    ACT_REACTION = 0x06,
+    ACT_DECIDE   = 0x00
 };
 
 enum ReactStates
@@ -77,7 +69,6 @@ struct UnitActionBarEntry
 
     uint32 packedData;
 
-    // helper
     ActiveStates GetType() const { return ActiveStates(UNIT_ACTION_BUTTON_TYPE(packedData)); }
     uint32 GetAction() const { return UNIT_ACTION_BUTTON_ACTION(packedData); }
     bool IsActionBarForSpell() const
@@ -114,11 +105,6 @@ enum ActionBarIndex
 
 #define MAX_UNIT_ACTION_BAR_INDEX (ACTION_BAR_INDEX_END-ACTION_BAR_INDEX_START)
 
-/**
- * This structure/class is used when someone is charming (ie: mind control spell and the like)
- * someone else, to get the charmed ones action bar, the spells and such. It also takes care
- * of pets the charmed one has etc.
- */
 class CharmInfo
 {
     public:
@@ -145,7 +131,6 @@ class CharmInfo
         void InitPetActionBar();
         void InitEmptyActionBar();
 
-        // return true if successful
         bool AddSpellToActionBar(uint32 spellid, ActiveStates newstate = ACT_DECIDE);
         bool RemoveSpellFromActionBar(uint32 spell_id);
         void LoadPetActionBar(const std::string& data);

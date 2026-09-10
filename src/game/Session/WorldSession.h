@@ -23,10 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/// \addtogroup u2w
-/// @{
-/// \file
-
 #pragma once
 
 #include "Common/ServerDefines.h"
@@ -51,7 +47,6 @@ struct AuctionEntry;
 struct AuctionHouseEntry;
 struct TradeStatusInfo;
 
-class ObjectGuid;
 class Creature;
 class Item;
 class Object;
@@ -73,77 +68,46 @@ class IClientLink;
 
 struct OpcodeHandler;
 
-/**
- * @brief Party operation enumeration
- */
 enum PartyOperation
 {
-    PARTY_OP_INVITE = 0, ///< Invite to party
-    PARTY_OP_LEAVE = 2   ///< Leave party
+    PARTY_OP_INVITE = 0,
+    PARTY_OP_LEAVE = 2
 };
 
-/**
- * @brief Party result enumeration
- */
 enum PartyResult
 {
-    ERR_PARTY_RESULT_OK = 0,       ///< Success
-    ERR_BAD_PLAYER_NAME_S = 1,     ///< Bad player name
-    ERR_TARGET_NOT_IN_GROUP_S = 2, ///< Target not in group
-    ERR_GROUP_FULL = 3,            ///< Group full
-    ERR_ALREADY_IN_GROUP_S = 4,    ///< Already in group
-    ERR_NOT_IN_GROUP = 5,          ///< Not in group
-    ERR_NOT_LEADER = 6,            ///< Not leader
-    ERR_PLAYER_WRONG_FACTION = 7,  ///< Player wrong faction
-    ERR_IGNORING_YOU_S = 8         ///< Ignoring you
+    ERR_PARTY_RESULT_OK = 0,
+    ERR_BAD_PLAYER_NAME_S = 1,
+    ERR_TARGET_NOT_IN_GROUP_S = 2,
+    ERR_GROUP_FULL = 3,
+    ERR_ALREADY_IN_GROUP_S = 4,
+    ERR_NOT_IN_GROUP = 5,
+    ERR_NOT_LEADER = 6,
+    ERR_PLAYER_WRONG_FACTION = 7,
+    ERR_IGNORING_YOU_S = 8
 };
 
-/**
- * @brief Tutorial data state enumeration
- */
 enum TutorialDataState
 {
-    TUTORIALDATA_UNCHANGED = 0, ///< Tutorial data unchanged
-    TUTORIALDATA_CHANGED = 1,   ///< Tutorial data changed
-    TUTORIALDATA_NEW = 2        ///< New tutorial data
+    TUTORIALDATA_UNCHANGED = 0,
+    TUTORIALDATA_CHANGED = 1,
+    TUTORIALDATA_NEW = 2
 };
 
-/**
- * @brief World session class
- *
- * Player session in the World.
- */
 class WorldSession
 {
     friend class CharacterHandler;
 
     public:
-        /**
-         * @brief Constructor
-         * @param id Session ID
-         * @param link Client protocol link
-         * @param mailbox Incoming packet mailbox
-         * @param sec Account security level
-         * @param mute_time Mute time
-         * @param locale Locale
-         */
+
         WorldSession(uint32 id, std::shared_ptr<proto::IClientLink> link,
                      std::shared_ptr<SessionMailbox> mailbox, AccountTypes sec,
                      time_t mute_time, LocaleConstant locale);
 
-        /**
-         * @brief Destructor
-         */
         ~WorldSession();
 
-        /**
-         * @brief Check if player is loading
-         * @return True if loading
-         */
         void SetPlayerLoading(bool loading) { m_playerLoading = loading; }
 
-        /// Records this ping and reports how many came too fast in a row, or nothing
-        /// when the rate is what it should be.
         uint32 PingsTooFast();
 
         bool PlayerLoading() const
@@ -151,19 +115,11 @@ class WorldSession
             return m_playerLoading;
         }
 
-        /**
-         * @brief Check if player is logging out
-         * @return True if logging out
-         */
         bool PlayerLogout() const
         {
             return m_playerLogout;
         }
 
-        /**
-         * @brief Check if player is logging out with save
-         * @return True if logging out with save
-         */
         bool PlayerLogoutWithSave() const
         {
             return m_playerLogout && m_playerSave;
@@ -205,7 +161,7 @@ class WorldSession
         }
         void ClearNpcWatchLastGuid()
         {
-            m_npcWatchLastGuid.Clear();
+            m_npcWatchLastGuid = 0;
         }
         char const* GetPlayerName() const;
         void SetSecurity(AccountTypes security)
@@ -221,32 +177,26 @@ class WorldSession
             _player = plr;
         }
 
-        // Compare login against the map this session actually advertised on
-        // the character screen, not a newer database value.
         bool HasMatchingCharacterEnumMap(ObjectGuid const& guid, uint32 mapId) const
         {
-            return m_characterEnumMaps.Matches(guid.GetRawValue(), mapId);
+            return m_characterEnumMaps.Matches(guid, mapId);
         }
 
-        /// Session in auth.queue currently
         void SetInQueue(bool state)
         {
             m_inQueue = state;
         }
 
-        /// Is the user engaged in a log out process?
         bool isLogingOut() const
         {
             return _logoutTime || m_playerLogout;
         }
 
-        /// Engage the logout process for the user
         void LogoutRequest(time_t requestTime)
         {
             _logoutTime = requestTime;
         }
 
-        /// Is logout cooldown expired?
         bool ShouldLogOut(time_t currTime) const
         {
             return (_logoutTime > 0 && currTime >= _logoutTime + 20);
@@ -257,17 +207,12 @@ class WorldSession
 
         void QueuePacket(WorldPacket* new_packet);
 
-        /// Dispatch one packet by its opcode's required status. Ownership
-        /// stays with the caller.
         void HandlePacket(WorldPacket& packet);
 
-        /// The map that runs this packet, or nullptr to answer it in the serial
-        /// phase.
         Map* MapForPacket(const WorldPacket& packet) const;
 
         bool Update();
 
-        /// Handle the authentication waiting queue (to be completed)
         void SendAuthWaitQue(uint32 position);
 
         void SendNameQueryOpcode(Player* p);
@@ -296,7 +241,6 @@ class WorldSession
 
         void SendPetitionQueryOpcode(ObjectGuid petitionguid);
 
-        // pet
         void SendPetNameQuery(ObjectGuid guid, uint32 petnumber);
         void SendStablePet(ObjectGuid guid);
         void SendStableResult(uint8 res);
@@ -322,53 +266,37 @@ class WorldSession
             }
         }
 
-        // auction
         void SendAuctionHello(Unit* unit);
         void SendAuctionCommandResult(AuctionEntry* auc, AuctionAction Action, AuctionError ErrorCode, InventoryResult invError = EQUIP_ERR_OK, uint32 newOutbid = 0);
-        /// By-value variant of SendAuctionCommandResult: builds
-        /// SMSG_AUCTION_COMMAND_RESULT from raw values so a deferred custody
-        /// closure can snapshot the auction Id (the buyout path deletes the
-        /// AuctionEntry before the deferred queue runs -- spec I5).
+
         void SendAuctionCommandResultData(uint32 aucId, AuctionAction Action, AuctionError ErrorCode, InventoryResult invError, uint32 newOutbid);
         void SendAuctionBidderNotification(AuctionEntry* auction, bool won);
-        /// By-value variant of SendAuctionBidderNotification: builds
-        /// SMSG_AUCTION_BIDDER_NOTIFICATION from raw values snapshotted before a
-        /// custody co-commit (spec I5).
+
         void SendAuctionBidderNotificationData(uint32 houseId, uint32 id, uint32 bidder, uint32 bid, uint32 outbid, uint32 itemTemplate, int32 itemRand, bool won);
         void SendAuctionOwnerNotification(AuctionEntry* auction, bool sold);
-        /// By-value variant of SendAuctionOwnerNotification: builds
-        /// SMSG_AUCTION_OWNER_NOTIFICATION from raw values snapshotted before a
-        /// custody co-commit, so a deferred closure can fire it after the
-        /// AuctionEntry is gone (spec I5).
+
         void SendAuctionOwnerNotificationData(uint32 houseId, uint32 id, uint32 bid, uint32 outbid, uint32 bidderGuidLow, uint32 itemTemplate, int32 itemRand, bool sold);
         void SendAuctionRemovedNotification(AuctionEntry* auction);
-        /// By-value variant of SendAuctionRemovedNotification: builds
-        /// SMSG_AUCTION_REMOVED_NOTIFICATION from raw values snapshotted before a
-        /// custody co-commit, so a deferred closure can fire it after the
-        /// AuctionEntry is gone (spec I5 / S5).
+
         void SendAuctionRemovedNotificationData(uint32 id, uint32 itemTemplate, int32 itemRand);
         static void SendAuctionOutbiddedMail(AuctionEntry* auction);
         void SendAuctionCancelledToBidderMail(AuctionEntry* auction);
         AuctionHouseEntry const* GetCheckedAuctionHouseForAuctioneer(ObjectGuid guid);
 
-        // Item Enchantment
         void SendEnchantmentLog(ObjectGuid targetGuid, ObjectGuid casterGuid, uint32 itemId, uint32 spellId);
         void SendItemEnchantTimeUpdate(ObjectGuid playerGuid, ObjectGuid itemGuid, uint32 slot, uint32 duration);
 
-        // Taxi
         void SendTaxiStatus(ObjectGuid guid);
         void SendTaxiMenu(Creature* unit);
         void SendDoFlight(uint32 mountDisplayId, uint32 path, uint32 pathNode = 0);
         bool SendLearnNewTaxiNode(Creature* unit);
         void SendActivateTaxiReply(ActivateTaxiReply reply);
 
-        // Guild Team
         void SendGuildCommandResult(uint32 typecmd, const std::string& str, uint32 cmdresult);
         void SendPetitionShowList(ObjectGuid guid);
         void SendSaveGuildEmblem(uint32 msg);
         void SendBattleGroundJoinError(uint8 err);
 
-        // Meetingstone
         void SendMeetingstoneFailed(uint8 status);
         void SendMeetingstoneSetqueue(uint32 areaid, uint8 status);
 
@@ -376,12 +304,8 @@ class WorldSession
 
         void DoLootRelease(ObjectGuid lguid);
 
-        // Account mute time
         time_t m_muteTime;
 
-        // Locales
-        // Locale reported during realm authentication, before any fallback to
-        // the DBC locales installed on this server.
         LocaleConstant GetClientLocale() const
         {
             return m_clientLocale;
@@ -407,60 +331,35 @@ class WorldSession
         void SetClientTimeDelay(uint32 delay) { m_clientTimeDelay = delay; }
         uint32 getDialogStatus(Player* pPlayer, Object* questgiver, uint32 defstatus);
 
-        // Misc
         void SendKnockBack(float angle, float horizontalSpeed, float verticalSpeed);
         void SendPlaySpellVisual(ObjectGuid guid, uint32 spellArtKit);
-
-        // opcodes handlers
 
         void HandleCharEnumOpcode(WorldPacket& recvPacket);
         void HandleCharEnum(QueryResult* result);
         void HandlePlayerLogin(LoginQueryHolder* holder);
 
-        // played time
         void HandlePlayedTime(WorldPacket& recvPacket);
 
-        // new
         void HandleMoveUnRootAck(WorldPacket& recvPacket);
         void HandleMoveRootAck(WorldPacket& recvPacket);
 
-        // new inspect
         void HandleInspectOpcode(WorldPacket& recvPacket);
 
-        // new party stats
         void HandleInspectHonorStatsOpcode(WorldPacket& recvPacket);
 
         void HandleFeatherFallAck(WorldPacket& recv_data);
 
-
-
-        // character view
         void HandleShowingHelmOpcode(WorldPacket& recv_data);
         void HandleShowingCloakOpcode(WorldPacket& recv_data);
 
-        // repair
-
-        // Knockback
-
-
         void HandleRepopRequestOpcode(WorldPacket& recvPacket);
 
-        /**
-         * Method which handles the loot Opcode sent by the client, happens when the player is actually looting the object.
-         * It generates required loot on purpose.
-         */
-
-        /**
-         * Method which handles the loot release opcode sent by the client, happens when the player has end looting the object.
-         * It will take care of the looting state of the object depending on the case.
-         */
         void HandleWhoOpcode(WorldPacket& recvPacket);
         void HandleLogoutRequestOpcode(WorldPacket& recvPacket);
         void HandlePlayerLogoutOpcode(WorldPacket& recvPacket);
         void HandleLogoutCancelOpcode(WorldPacket& recvPacket);
 
         void SendGMTicketStatusUpdate(GMTicketStatus statusCode);
-
 
         void HandleTogglePvP(WorldPacket& recvPacket);
 
@@ -475,39 +374,15 @@ class WorldSession
 
         void HandleAreaTriggerOpcode(WorldPacket& recvPacket);
 
-
         void HandleUpdateAccountData(WorldPacket& recvPacket);
         void HandleRequestAccountData(WorldPacket& recvPacket);
         void HandleSetActionButtonOpcode(WorldPacket& recvPacket);
 
         void HandleMeetingStoneInfoOpcode(WorldPacket& recPacket);
 
-
-
-
-
-        // Movement Handler
-        void HandleMoveWorldportAckOpcode();                // for server-side calls
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        void HandleMoveWorldportAckOpcode();
 
         bool CanInteractWithQuestGiver(ObjectGuid guid, char const* descr);
-
 
         bool processChatmessageFurtherAfterSecurityChecks(std::string&, uint32);
         void SendPlayerNotFoundNotice(const std::string &name);
@@ -517,7 +392,6 @@ class WorldSession
         void HandleReclaimCorpseOpcode(WorldPacket& recvPacket);
         void HandleResurrectResponseOpcode(WorldPacket& recvPacket);
 
-
         void HandleCompleteCinematic(WorldPacket& recvPacket);
         void HandleNextCinematicCamera(WorldPacket& recvPacket);
 
@@ -526,14 +400,10 @@ class WorldSession
         void HandleTutorialClearOpcode(WorldPacket& recv_data);
         void HandleTutorialResetOpcode(WorldPacket& recv_data);
 
-        // Pet
-
         void HandleSetActionBarTogglesOpcode(WorldPacket& recv_data);
 
         static void HandleChangePlayerNameOpcodeCallBack(QueryResult* result, uint32 accountId, std::string newname);
 
-
-        // BattleGround
         void HandleBattleGroundPlayerPositionsOpcode(WorldPacket& recv_data);
         void HandlePVPLogDataOpcode(WorldPacket& recv_data);
         void HandleBattlefieldStatusOpcode(WorldPacket& recv_data);
@@ -546,16 +416,12 @@ class WorldSession
         void HandleCancelMountAuraOpcode(WorldPacket& recv_data);
         void HandleRequestPetInfoOpcode(WorldPacket& recv_data);
 
-
         void HandleSetTaxiBenchmarkOpcode(WorldPacket& recv_data);
 
-
     private:
-        // private trade methods
 
         void ExecuteOpcode(OpcodeHandler const& opHandle, WorldPacket* packet);
 
-        // logging helper
         void LogUnexpectedOpcode(WorldPacket* packet, const char* reason);
         void LogUnprocessedTail(WorldPacket* packet);
 
@@ -570,11 +436,11 @@ class WorldSession
         uint32 _accountId;
 
         time_t _logoutTime;
-        bool m_inQueue;                                     // session wait in auth.queue
-        bool m_playerLoading;                               // code processed in LoginPlayer
-        bool m_playerLogout;                                // code processed in LogoutPlayer
+        bool m_inQueue;
+        bool m_playerLoading;
+        bool m_playerLogout;
         bool m_playerRecentlyLogout;
-        bool m_playerSave;                                  // code processed in LogoutPlayer with save request
+        bool m_playerSave;
         LocaleConstant m_clientLocale;
         LocaleConstant m_sessionDbcLocale;
         int m_sessionDbLocaleIndex;
@@ -582,7 +448,6 @@ class WorldSession
         uint32 m_Tutorials[8];
         TutorialDataState m_tutorialState;
         uint32 m_clientTimeDelay;
-        ObjectGuid m_npcWatchLastGuid;
+        ObjectGuid m_npcWatchLastGuid = 0;
         SessionPingTracker m_pingTracker;
 };
-/// @}

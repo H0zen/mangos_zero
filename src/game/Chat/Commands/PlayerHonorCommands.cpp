@@ -23,26 +23,10 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file PlayerHonorCommands.cpp
- * @brief Implementation of player honor and ranking chat commands.
- *
- * This file contains chat command handlers for honor operations including:
- * - Honor point modification
- * - Rank and rating management
- * - Honor status display
- */
-
 #include "Chat.h"
 #include "ObjectMgr.h"
 
-/**
- * @brief Handler for HandleHonorShow command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleHonorShow(char* /*args*/)
+bool ChatHandler::HandleHonorShow(char* )
 {
     Player* target = getSelectedPlayer();
     if (!target)
@@ -84,7 +68,7 @@ bool ChatHandler::HandleHonorShow(char* /*args*/)
         LANG_ALI_MARSHAL,
         LANG_ALI_FIELD_MARSHAL,
         LANG_ALI_GRAND_MARSHAL,
-        // LANG_GAME_MASTER
+
     };
     static int16 horde_ranks[HONOR_RANK_COUNT] =
     {
@@ -107,7 +91,7 @@ bool ChatHandler::HandleHonorShow(char* /*args*/)
         LANG_HRD_GENERAL,
         LANG_HRD_WARLORD,
         LANG_HRD_HIGH_WARLORD,
-        // LANG_GAME_MASTER
+
     };
     char const* rank_name = nullptr;
     char const* hrank_name = nullptr;
@@ -140,12 +124,6 @@ bool ChatHandler::HandleHonorShow(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleHonorAddCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleHonorAddCommand(char* args)
 {
     if (!*args)
@@ -161,7 +139,6 @@ bool ChatHandler::HandleHonorAddCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(target))
     {
         return false;
@@ -173,13 +150,7 @@ bool ChatHandler::HandleHonorAddCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleHonorAddKillCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleHonorAddKillCommand(char* /*args*/)
+bool ChatHandler::HandleHonorAddKillCommand(char* )
 {
     Unit* target = getSelectedUnit();
     if (!target)
@@ -189,7 +160,6 @@ bool ChatHandler::HandleHonorAddKillCommand(char* /*args*/)
         return false;
     }
 
-    // check online security
     if (target == m_session->GetPlayer())
     {
         return false;
@@ -199,13 +169,7 @@ bool ChatHandler::HandleHonorAddKillCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleHonorUpdateCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleHonorUpdateCommand(char* /*args*/)
+bool ChatHandler::HandleHonorUpdateCommand(char* )
 {
     Player* target = getSelectedPlayer();
     if (!target)
@@ -219,12 +183,6 @@ bool ChatHandler::HandleHonorUpdateCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyHonorCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyHonorCommand(char* args)
 {
     if (!*args)
@@ -252,14 +210,13 @@ bool ChatHandler::HandleModifyHonorCommand(char* args)
         return false;
     }
 
-    // hack code
     if (hasStringAbbr(field, "points"))
     {
         if (amount < 0 || amount > 255)
         {
             return false;
         }
-        // rank points is sent to client with same size of uint8(255) for each rank
+
         target->SetHonorBar(amount);
     }
     else if (hasStringAbbr(field, "rank"))
@@ -316,12 +273,6 @@ bool ChatHandler::HandleModifyHonorCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleResetHonorCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleResetHonorCommand(char* args)
 {
     Player* target;

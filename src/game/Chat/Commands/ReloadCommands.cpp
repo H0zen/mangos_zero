@@ -23,17 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file ReloadCommands.cpp
- * @brief Implementation of data reload chat commands.
- *
- * This file contains chat command handlers for reloading game data including:
- * - Database table reloads
- * - Configuration reloads
- * - Spell and skill data reloads
- * - Quest and NPC data reloads
- */
-
 #include "Chat.h"
 #include "Language.h"
 #include "SpellMgr.h"
@@ -47,13 +36,7 @@
 #include "Cast/Recipe/RecipeBook.h"
 #include "Cast/Triggers/TriggerBook.h"
 
-/**
- * @brief Handler for HandleReloadSpellLinkedCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSpellLinkedCommand(char* /*arg*/)
+bool ChatHandler::HandleReloadSpellLinkedCommand(char* )
 {
     sLog.outString("Re-Loading spell linked table...");
     sSpellMgr.LoadSpellLinked();
@@ -61,13 +44,7 @@ bool ChatHandler::HandleReloadSpellLinkedCommand(char* /*arg*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadAllSpellCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadAllSpellCommand(char* /*args*/)
+bool ChatHandler::HandleReloadAllSpellCommand(char* )
 {
     HandleReloadSpellAffectCommand((char*)"a");
     HandleReloadSpellAreaCommand((char*)"a");
@@ -86,13 +63,7 @@ bool ChatHandler::HandleReloadAllSpellCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadAllCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadAllCommand(char* /*args*/)
+bool ChatHandler::HandleReloadAllCommand(char* )
 {
     HandleReloadSkillFishingBaseLevelCommand((char*)"");
 
@@ -115,28 +86,16 @@ bool ChatHandler::HandleReloadAllCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadAllAreaCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadAllAreaCommand(char* /*args*/)
+bool ChatHandler::HandleReloadAllAreaCommand(char* )
 {
-    // HandleReloadQuestAreaTriggersCommand((char*)""); -- reloaded in HandleReloadAllQuestCommand
+
     HandleReloadAreaTriggerTeleportCommand((char*)"");
     HandleReloadAreaTriggerTavernCommand((char*)"");
     HandleReloadGameGraveyardZoneCommand((char*)"");
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadAllLootCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadAllLootCommand(char* /*args*/)
+bool ChatHandler::HandleReloadAllLootCommand(char* )
 {
     sLog.outString("Re-Loading Loot Tables...");
     LoadLootTables();
@@ -144,12 +103,6 @@ bool ChatHandler::HandleReloadAllLootCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadAllNpcCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleReloadAllNpcCommand(char* args)
 {
     HandleReloadNpcTrainerCommand((char*)"a");
@@ -158,13 +111,7 @@ bool ChatHandler::HandleReloadAllNpcCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadAllQuestCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadAllQuestCommand(char* /*args*/)
+bool ChatHandler::HandleReloadAllQuestCommand(char* )
 {
     HandleReloadQuestAreaTriggersCommand((char*)"a");
     HandleReloadQuestTemplateCommand((char*)"a");
@@ -175,13 +122,7 @@ bool ChatHandler::HandleReloadAllQuestCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadAllScriptsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadAllScriptsCommand(char* /*args*/)
+bool ChatHandler::HandleReloadAllScriptsCommand(char* )
 {
     if (sScriptMgr.IsScriptScheduled())
     {
@@ -204,13 +145,7 @@ bool ChatHandler::HandleReloadAllScriptsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadAllEventAICommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadAllEventAICommand(char* /*args*/)
+bool ChatHandler::HandleReloadAllEventAICommand(char* )
 {
     HandleReloadEventAITextsCommand((char*)"a");
     HandleReloadEventAISummonsCommand((char*)"a");
@@ -218,15 +153,9 @@ bool ChatHandler::HandleReloadAllEventAICommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadAllGossipsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleReloadAllGossipsCommand(char* args)
 {
-    if (*args != 'a')                                       // already reload from all_scripts
+    if (*args != 'a')
     {
         HandleReloadDBScriptsOnGossipCommand((char*)"a");
     }
@@ -235,13 +164,7 @@ bool ChatHandler::HandleReloadAllGossipsCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadAllItemCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadAllItemCommand(char* /*args*/)
+bool ChatHandler::HandleReloadAllItemCommand(char* )
 {
     HandleReloadPageTextsCommand((char*)"a");
     HandleReloadItemEnchantementsCommand((char*)"a");
@@ -249,13 +172,7 @@ bool ChatHandler::HandleReloadAllItemCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadAllLocalesCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadAllLocalesCommand(char* /*args*/)
+bool ChatHandler::HandleReloadAllLocalesCommand(char* )
 {
     HandleReloadLocalesCreatureCommand((char*)"a");
     HandleReloadLocalesGameobjectCommand((char*)"a");
@@ -269,13 +186,7 @@ bool ChatHandler::HandleReloadAllLocalesCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadConfigCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadConfigCommand(char* /*args*/)
+bool ChatHandler::HandleReloadConfigCommand(char* )
 {
     sLog.outString("Re-Loading config settings...");
     sWorld.LoadConfigSettings(true);
@@ -284,13 +195,7 @@ bool ChatHandler::HandleReloadConfigCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadAreaTriggerTavernCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadAreaTriggerTavernCommand(char* /*args*/)
+bool ChatHandler::HandleReloadAreaTriggerTavernCommand(char* )
 {
     sLog.outString("Re-Loading Tavern Area Triggers...");
     sObjectMgr.LoadTavernAreaTriggers();
@@ -298,13 +203,7 @@ bool ChatHandler::HandleReloadAreaTriggerTavernCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadAreaTriggerTeleportCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadAreaTriggerTeleportCommand(char* /*args*/)
+bool ChatHandler::HandleReloadAreaTriggerTeleportCommand(char* )
 {
     sLog.outString("Re-Loading AreaTrigger teleport definitions...");
     sObjectMgr.LoadAreaTriggerTeleports();
@@ -312,13 +211,7 @@ bool ChatHandler::HandleReloadAreaTriggerTeleportCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadAutoBroadcastCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadAutoBroadcastCommand(char* /*args*/)
+bool ChatHandler::HandleReloadAutoBroadcastCommand(char* )
 {
     sLog.outString("Re-Loading broadcast strings...");
     sWorld.LoadBroadcastStrings();
@@ -326,26 +219,14 @@ bool ChatHandler::HandleReloadAutoBroadcastCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadCommandCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadCommandCommand(char* /*args*/)
+bool ChatHandler::HandleReloadCommandCommand(char* )
 {
     load_command_table = true;
     SendGlobalSysMessage("DB table `command` will be reloaded at next chat command use.", SEC_MODERATOR);
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadCreatureQuestRelationsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadCreatureQuestRelationsCommand(char* /*args*/)
+bool ChatHandler::HandleReloadCreatureQuestRelationsCommand(char* )
 {
     sLog.outString("Loading creature quest givers...");
     sObjectMgr.LoadCreatureQuestRelations();
@@ -353,13 +234,7 @@ bool ChatHandler::HandleReloadCreatureQuestRelationsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadCreatureQuestInvRelationsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadCreatureQuestInvRelationsCommand(char* /*args*/)
+bool ChatHandler::HandleReloadCreatureQuestInvRelationsCommand(char* )
 {
     sLog.outString("Loading creature quest takers...");
     sObjectMgr.LoadCreatureInvolvedRelations();
@@ -367,13 +242,7 @@ bool ChatHandler::HandleReloadCreatureQuestInvRelationsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadConditionsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadConditionsCommand(char* /*args*/)
+bool ChatHandler::HandleReloadConditionsCommand(char* )
 {
     sLog.outString("Re-Loading `conditions`... ");
     sObjectMgr.LoadConditions();
@@ -381,13 +250,7 @@ bool ChatHandler::HandleReloadConditionsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadCreaturesStatsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadCreaturesStatsCommand(char* /*args*/)
+bool ChatHandler::HandleReloadCreaturesStatsCommand(char* )
 {
     sLog.outString("Re-Loading stats data...");
     sObjectMgr.LoadCreatureClassLvlStats();
@@ -395,13 +258,7 @@ bool ChatHandler::HandleReloadCreaturesStatsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadCreatureSpellsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadCreatureSpellsCommand(char* /*args*/)
+bool ChatHandler::HandleReloadCreatureSpellsCommand(char* )
 {
     sLog.outString("Re-Loading Creature Spells... (`creature_spells`)");
     sObjectMgr.LoadCreatureSpells();
@@ -409,26 +266,14 @@ bool ChatHandler::HandleReloadCreatureSpellsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadGossipMenuCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadGossipMenuCommand(char* /*args*/)
+bool ChatHandler::HandleReloadGossipMenuCommand(char* )
 {
     sObjectMgr.LoadGossipMenus();
     SendGlobalSysMessage("DB tables `gossip_menu` and `gossip_menu_option` reloaded.", SEC_MODERATOR);
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadGOQuestRelationsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadGOQuestRelationsCommand(char* /*args*/)
+bool ChatHandler::HandleReloadGOQuestRelationsCommand(char* )
 {
     sLog.outString("Loading gameobject quest givers...");
     sObjectMgr.LoadGameobjectQuestRelations();
@@ -436,13 +281,7 @@ bool ChatHandler::HandleReloadGOQuestRelationsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadGOQuestInvRelationsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadGOQuestInvRelationsCommand(char* /*args*/)
+bool ChatHandler::HandleReloadGOQuestInvRelationsCommand(char* )
 {
     sLog.outString("Loading gameobject quest takers...");
     sObjectMgr.LoadGameobjectInvolvedRelations();
@@ -450,13 +289,7 @@ bool ChatHandler::HandleReloadGOQuestInvRelationsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadQuestAreaTriggersCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadQuestAreaTriggersCommand(char* /*args*/)
+bool ChatHandler::HandleReloadQuestAreaTriggersCommand(char* )
 {
     sLog.outString("Re-Loading Quest Area Triggers...");
     sObjectMgr.LoadQuestAreaTriggers();
@@ -464,32 +297,19 @@ bool ChatHandler::HandleReloadQuestAreaTriggersCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadQuestTemplateCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadQuestTemplateCommand(char* /*args*/)
+bool ChatHandler::HandleReloadQuestTemplateCommand(char* )
 {
     sLog.outString("Re-Loading Quest Templates...");
     sObjectMgr.LoadQuests();
     SendGlobalSysMessage("DB table `quest_template` (quest definitions) reloaded.", SEC_MODERATOR);
 
-    /// dependent also from `gameobject` but this table not reloaded anyway
     sLog.outString("Re-Loading GameObjects for quests...");
     sObjectMgr.LoadGameObjectForQuests();
     SendGlobalSysMessage("Data GameObjects for quests reloaded.", SEC_MODERATOR);
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLootTemplatesCreatureCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLootTemplatesCreatureCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLootTemplatesCreatureCommand(char* )
 {
     sLog.outString("Re-Loading Loot Tables... (`creature_loot_template`)");
     LoadLootTemplates_Creature();
@@ -498,13 +318,7 @@ bool ChatHandler::HandleReloadLootTemplatesCreatureCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLootTemplatesDisenchantCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLootTemplatesDisenchantCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLootTemplatesDisenchantCommand(char* )
 {
     sLog.outString("Re-Loading Loot Tables... (`disenchant_loot_template`)");
     LoadLootTemplates_Disenchant();
@@ -513,13 +327,7 @@ bool ChatHandler::HandleReloadLootTemplatesDisenchantCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLootTemplatesFishingCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLootTemplatesFishingCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLootTemplatesFishingCommand(char* )
 {
     sLog.outString("Re-Loading Loot Tables... (`fishing_loot_template`)");
     LoadLootTemplates_Fishing();
@@ -528,13 +336,7 @@ bool ChatHandler::HandleReloadLootTemplatesFishingCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLootTemplatesGameobjectCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLootTemplatesGameobjectCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLootTemplatesGameobjectCommand(char* )
 {
     sLog.outString("Re-Loading Loot Tables... (`gameobject_loot_template`)");
     LoadLootTemplates_Gameobject();
@@ -543,13 +345,7 @@ bool ChatHandler::HandleReloadLootTemplatesGameobjectCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLootTemplatesItemCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLootTemplatesItemCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLootTemplatesItemCommand(char* )
 {
     sLog.outString("Re-Loading Loot Tables... (`item_loot_template`)");
     LoadLootTemplates_Item();
@@ -558,13 +354,7 @@ bool ChatHandler::HandleReloadLootTemplatesItemCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLootTemplatesPickpocketingCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLootTemplatesPickpocketingCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLootTemplatesPickpocketingCommand(char* )
 {
     sLog.outString("Re-Loading Loot Tables... (`pickpocketing_loot_template`)");
     LoadLootTemplates_Pickpocketing();
@@ -573,13 +363,7 @@ bool ChatHandler::HandleReloadLootTemplatesPickpocketingCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLootTemplatesMailCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLootTemplatesMailCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLootTemplatesMailCommand(char* )
 {
     sLog.outString("Re-Loading Loot Tables... (`mail_loot_template`)");
     LoadLootTemplates_Mail();
@@ -588,13 +372,7 @@ bool ChatHandler::HandleReloadLootTemplatesMailCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLootTemplatesReferenceCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLootTemplatesReferenceCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLootTemplatesReferenceCommand(char* )
 {
     sLog.outString("Re-Loading Loot Tables... (`reference_loot_template`)");
     LoadLootTemplates_Reference();
@@ -602,13 +380,7 @@ bool ChatHandler::HandleReloadLootTemplatesReferenceCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLootTemplatesSkinningCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLootTemplatesSkinningCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLootTemplatesSkinningCommand(char* )
 {
     sLog.outString("Re-Loading Loot Tables... (`skinning_loot_template`)");
     LoadLootTemplates_Skinning();
@@ -617,13 +389,7 @@ bool ChatHandler::HandleReloadLootTemplatesSkinningCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadMangosStringCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadMangosStringCommand(char* /*args*/)
+bool ChatHandler::HandleReloadMangosStringCommand(char* )
 {
     sLog.outString("Re-Loading mangos_string Table!");
     sObjectMgr.LoadMangosStrings();
@@ -631,12 +397,6 @@ bool ChatHandler::HandleReloadMangosStringCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadNpcGossipCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleReloadNpcGossipCommand(char* args)
 {
     sLog.outString("Re-Loading 'gossip_menus' Table!");
@@ -647,13 +407,7 @@ bool ChatHandler::HandleReloadNpcGossipCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadNpcTextCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadNpcTextCommand(char* /*args*/)
+bool ChatHandler::HandleReloadNpcTextCommand(char* )
 {
     sLog.outString("Re-Loading `npc_text` Table!");
     sObjectMgr.LoadGossipText();
@@ -661,13 +415,7 @@ bool ChatHandler::HandleReloadNpcTextCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadNpcTrainerCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadNpcTrainerCommand(char* /*args*/)
+bool ChatHandler::HandleReloadNpcTrainerCommand(char* )
 {
     sLog.outString("Re-Loading `npc_trainer_template` Table!");
     sObjectMgr.LoadTrainerTemplates();
@@ -679,15 +427,9 @@ bool ChatHandler::HandleReloadNpcTrainerCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadNpcVendorCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadNpcVendorCommand(char* /*args*/)
+bool ChatHandler::HandleReloadNpcVendorCommand(char* )
 {
-    // not safe reload vendor template tables independent...
+
     sLog.outString("Re-Loading `npc_vendor_template` Table!");
     sObjectMgr.LoadVendorTemplates();
     SendGlobalSysMessage("DB table `npc_vendor_template` reloaded.", SEC_MODERATOR);
@@ -698,13 +440,7 @@ bool ChatHandler::HandleReloadNpcVendorCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadPointsOfInterestCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadPointsOfInterestCommand(char* /*args*/)
+bool ChatHandler::HandleReloadPointsOfInterestCommand(char* )
 {
     sLog.outString("Re-Loading `points_of_interest` Table!");
     sObjectMgr.LoadPointsOfInterest();
@@ -712,13 +448,7 @@ bool ChatHandler::HandleReloadPointsOfInterestCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadReservedNameCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadReservedNameCommand(char* /*args*/)
+bool ChatHandler::HandleReloadReservedNameCommand(char* )
 {
     sLog.outString("Loading ReservedNames... (`reserved_name`)");
     sObjectMgr.LoadReservedPlayersNames();
@@ -726,13 +456,7 @@ bool ChatHandler::HandleReloadReservedNameCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadReputationRewardRateCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadReputationRewardRateCommand(char* /*args*/)
+bool ChatHandler::HandleReloadReputationRewardRateCommand(char* )
 {
     sLog.outString("Re-Loading `reputation_reward_rate` Table!");
     sObjectMgr.LoadReputationRewardRate();
@@ -740,13 +464,7 @@ bool ChatHandler::HandleReloadReputationRewardRateCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadReputationSpilloverTemplateCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadReputationSpilloverTemplateCommand(char* /*args*/)
+bool ChatHandler::HandleReloadReputationSpilloverTemplateCommand(char* )
 {
     sLog.outString("Re-Loading `reputation_spillover_template` Table!");
     sObjectMgr.LoadReputationSpilloverTemplate();
@@ -754,13 +472,7 @@ bool ChatHandler::HandleReloadReputationSpilloverTemplateCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadScriptBindingCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadScriptBindingCommand(char* /*args*/)
+bool ChatHandler::HandleReloadScriptBindingCommand(char* )
 {
     sLog.outString("Trying to re-load `script_binding` Table!");
     if (sScriptMgr.ReloadScriptBinding())
@@ -774,13 +486,7 @@ bool ChatHandler::HandleReloadScriptBindingCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadSkillFishingBaseLevelCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSkillFishingBaseLevelCommand(char* /*args*/)
+bool ChatHandler::HandleReloadSkillFishingBaseLevelCommand(char* )
 {
     sLog.outString("Re-Loading Skill Fishing base level requirements...");
     sObjectMgr.LoadFishingBaseSkillLevel();
@@ -788,13 +494,7 @@ bool ChatHandler::HandleReloadSkillFishingBaseLevelCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadSpellAffectCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSpellAffectCommand(char* /*args*/)
+bool ChatHandler::HandleReloadSpellAffectCommand(char* )
 {
     sLog.outString("Re-Loading SpellAffect definitions...");
     sSpellMgr.LoadSpellAffects();
@@ -802,13 +502,7 @@ bool ChatHandler::HandleReloadSpellAffectCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadSpellAreaCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSpellAreaCommand(char* /*args*/)
+bool ChatHandler::HandleReloadSpellAreaCommand(char* )
 {
     sLog.outString("Re-Loading SpellArea Data...");
     sSpellMgr.LoadSpellAreas();
@@ -816,13 +510,7 @@ bool ChatHandler::HandleReloadSpellAreaCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadSpellBonusesCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSpellBonusesCommand(char* /*args*/)
+bool ChatHandler::HandleReloadSpellBonusesCommand(char* )
 {
     sLog.outString("Re-Loading Spell Bonus Data...");
     sSpellMgr.LoadSpellBonuses();
@@ -831,13 +519,7 @@ bool ChatHandler::HandleReloadSpellBonusesCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Reads `spell_dummy` again.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSpellDummyCommand(char* /*args*/)
+bool ChatHandler::HandleReloadSpellDummyCommand(char* )
 {
     sLog.outString("Re-Loading what a spell with no description of its own throws...");
     cast::Triggers().Load();
@@ -845,13 +527,7 @@ bool ChatHandler::HandleReloadSpellDummyCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadSpellChainCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSpellChainCommand(char* /*args*/)
+bool ChatHandler::HandleReloadSpellChainCommand(char* )
 {
     sLog.outString("Re-Loading Spell Chain Data... ");
     sSpellMgr.LoadSpellChains();
@@ -859,13 +535,7 @@ bool ChatHandler::HandleReloadSpellChainCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadSpellElixirCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSpellElixirCommand(char* /*args*/)
+bool ChatHandler::HandleReloadSpellElixirCommand(char* )
 {
     sLog.outString("Re-Loading Spell Elixir types...");
     sSpellMgr.LoadSpellElixirs();
@@ -873,13 +543,7 @@ bool ChatHandler::HandleReloadSpellElixirCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadSpellLearnSpellCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSpellLearnSpellCommand(char* /*args*/)
+bool ChatHandler::HandleReloadSpellLearnSpellCommand(char* )
 {
     sLog.outString("Re-Loading Spell Learn Spells...");
     sSpellMgr.LoadSpellLearnSpells();
@@ -887,13 +551,7 @@ bool ChatHandler::HandleReloadSpellLearnSpellCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadSpellProcEventCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSpellProcEventCommand(char* /*args*/)
+bool ChatHandler::HandleReloadSpellProcEventCommand(char* )
 {
     sLog.outString("Re-Loading Spell Proc Event conditions...");
     sSpellMgr.LoadSpellProcEvents();
@@ -902,13 +560,7 @@ bool ChatHandler::HandleReloadSpellProcEventCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadSpellProcItemEnchantCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSpellProcItemEnchantCommand(char* /*args*/)
+bool ChatHandler::HandleReloadSpellProcItemEnchantCommand(char* )
 {
     sLog.outString("Re-Loading Spell Proc Item Enchant...");
     sSpellMgr.LoadSpellProcItemEnchant();
@@ -916,13 +568,7 @@ bool ChatHandler::HandleReloadSpellProcItemEnchantCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadSpellScriptTargetCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSpellScriptTargetCommand(char* /*args*/)
+bool ChatHandler::HandleReloadSpellScriptTargetCommand(char* )
 {
     sLog.outString("Re-Loading SpellsScriptTarget...");
     sSpellMgr.LoadSpellScriptTarget();
@@ -930,13 +576,7 @@ bool ChatHandler::HandleReloadSpellScriptTargetCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadSpellTargetPositionCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSpellTargetPositionCommand(char* /*args*/)
+bool ChatHandler::HandleReloadSpellTargetPositionCommand(char* )
 {
     sLog.outString("Re-Loading spell target destination coordinates...");
     sSpellMgr.LoadSpellTargetPositions();
@@ -944,13 +584,7 @@ bool ChatHandler::HandleReloadSpellTargetPositionCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadSpellThreatsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSpellThreatsCommand(char* /*args*/)
+bool ChatHandler::HandleReloadSpellThreatsCommand(char* )
 {
     sLog.outString("Re-Loading Aggro Spells Definitions...");
     sSpellMgr.LoadSpellThreats();
@@ -959,13 +593,7 @@ bool ChatHandler::HandleReloadSpellThreatsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadSpellPetAurasCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadSpellPetAurasCommand(char* /*args*/)
+bool ChatHandler::HandleReloadSpellPetAurasCommand(char* )
 {
     sLog.outString("Re-Loading Spell pet auras...");
     sSpellMgr.LoadSpellPetAuras();
@@ -973,13 +601,7 @@ bool ChatHandler::HandleReloadSpellPetAurasCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadPageTextsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadPageTextsCommand(char* /*args*/)
+bool ChatHandler::HandleReloadPageTextsCommand(char* )
 {
     sLog.outString("Re-Loading Page Texts...");
     sObjectMgr.LoadPageTexts();
@@ -987,13 +609,7 @@ bool ChatHandler::HandleReloadPageTextsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadItemEnchantementsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadItemEnchantementsCommand(char* /*args*/)
+bool ChatHandler::HandleReloadItemEnchantementsCommand(char* )
 {
     sLog.outString("Re-Loading Item Random Enchantments Table...");
     LoadRandomEnchantmentsTable();
@@ -1001,13 +617,7 @@ bool ChatHandler::HandleReloadItemEnchantementsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadItemRequiredTragetCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadItemRequiredTragetCommand(char* /*args*/)
+bool ChatHandler::HandleReloadItemRequiredTragetCommand(char* )
 {
     sLog.outString("Re-Loading Item Required Targets Table...");
     sObjectMgr.LoadItemRequiredTarget();
@@ -1015,13 +625,7 @@ bool ChatHandler::HandleReloadItemRequiredTragetCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadBattleEventCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadBattleEventCommand(char* /*args*/)
+bool ChatHandler::HandleReloadBattleEventCommand(char* )
 {
     sLog.outString("Re-Loading BattleGround Eventindexes...");
     sBattleGroundMgr.LoadBattleEventIndexes();
@@ -1029,13 +633,7 @@ bool ChatHandler::HandleReloadBattleEventCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadEventAITextsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadEventAITextsCommand(char* /*args*/)
+bool ChatHandler::HandleReloadEventAITextsCommand(char* )
 {
     sLog.outString("Re-Loading Texts from `creature_ai_texts`...");
     sEventAIMgr.LoadCreatureEventAI_Texts(true);
@@ -1043,13 +641,7 @@ bool ChatHandler::HandleReloadEventAITextsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadEventAISummonsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadEventAISummonsCommand(char* /*args*/)
+bool ChatHandler::HandleReloadEventAISummonsCommand(char* )
 {
     sLog.outString("Re-Loading Summons from `creature_ai_summons`...");
     sEventAIMgr.LoadCreatureEventAI_Summons(true);
@@ -1057,13 +649,7 @@ bool ChatHandler::HandleReloadEventAISummonsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadEventAIScriptsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadEventAIScriptsCommand(char* /*args*/)
+bool ChatHandler::HandleReloadEventAIScriptsCommand(char* )
 {
     sLog.outString("Re-Loading Scripts from `creature_ai_scripts`...");
     sEventAIMgr.LoadCreatureEventAI_Scripts();
@@ -1071,13 +657,7 @@ bool ChatHandler::HandleReloadEventAIScriptsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadDbScriptStringCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadDbScriptStringCommand(char* /*args*/)
+bool ChatHandler::HandleReloadDbScriptStringCommand(char* )
 {
     sLog.outString("Re-Loading Script strings from `db_script_string`...");
     sScriptMgr.LoadDbScriptStrings();
@@ -1085,12 +665,6 @@ bool ChatHandler::HandleReloadDbScriptStringCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadDBScriptsOnGossipCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleReloadDBScriptsOnGossipCommand(char* args)
 {
     if (sScriptMgr.IsScriptScheduled())
@@ -1115,12 +689,6 @@ bool ChatHandler::HandleReloadDBScriptsOnGossipCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadDBScriptsOnSpellCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleReloadDBScriptsOnSpellCommand(char* args)
 {
     if (sScriptMgr.IsScriptScheduled())
@@ -1145,12 +713,6 @@ bool ChatHandler::HandleReloadDBScriptsOnSpellCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadDBScriptsOnCreatureSpellCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleReloadDBScriptsOnCreatureSpellCommand(char* args)
 {
     if (sScriptMgr.IsScriptScheduled())
@@ -1175,12 +737,6 @@ bool ChatHandler::HandleReloadDBScriptsOnCreatureSpellCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadDBScriptsOnQuestStartCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleReloadDBScriptsOnQuestStartCommand(char* args)
 {
     if (sScriptMgr.IsScriptScheduled())
@@ -1205,12 +761,6 @@ bool ChatHandler::HandleReloadDBScriptsOnQuestStartCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadDBScriptsOnQuestEndCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleReloadDBScriptsOnQuestEndCommand(char* args)
 {
     if (sScriptMgr.IsScriptScheduled())
@@ -1235,12 +785,6 @@ bool ChatHandler::HandleReloadDBScriptsOnQuestEndCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadDBScriptsOnEventCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleReloadDBScriptsOnEventCommand(char* args)
 {
     if (sScriptMgr.IsScriptScheduled())
@@ -1265,12 +809,6 @@ bool ChatHandler::HandleReloadDBScriptsOnEventCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadDBScriptsOnGoUseCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleReloadDBScriptsOnGoUseCommand(char* args)
 {
     if (sScriptMgr.IsScriptScheduled())
@@ -1296,12 +834,6 @@ bool ChatHandler::HandleReloadDBScriptsOnGoUseCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadDBScriptsOnCreatureDeathCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleReloadDBScriptsOnCreatureDeathCommand(char* args)
 {
     if (sScriptMgr.IsScriptScheduled())
@@ -1326,13 +858,7 @@ bool ChatHandler::HandleReloadDBScriptsOnCreatureDeathCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadGameGraveyardZoneCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadGameGraveyardZoneCommand(char* /*args*/)
+bool ChatHandler::HandleReloadGameGraveyardZoneCommand(char* )
 {
     sLog.outString("Re-Loading Graveyard-zone links...");
     sObjectMgr.LoadGraveyardZones();
@@ -1340,13 +866,7 @@ bool ChatHandler::HandleReloadGameGraveyardZoneCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadGameTeleCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadGameTeleCommand(char* /*args*/)
+bool ChatHandler::HandleReloadGameTeleCommand(char* )
 {
     sLog.outString("Re-Loading Game Tele coordinates...");
     sObjectMgr.LoadGameTele();
@@ -1354,13 +874,7 @@ bool ChatHandler::HandleReloadGameTeleCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLocalesCreatureCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLocalesCreatureCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLocalesCreatureCommand(char* )
 {
     sLog.outString("Re-Loading Locales Creature ...");
     sObjectMgr.LoadCreatureLocales();
@@ -1368,13 +882,7 @@ bool ChatHandler::HandleReloadLocalesCreatureCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLocalesGameobjectCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLocalesGameobjectCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLocalesGameobjectCommand(char* )
 {
     sLog.outString("Re-Loading Locales Gameobject ... ");
     sObjectMgr.LoadGameObjectLocales();
@@ -1382,13 +890,7 @@ bool ChatHandler::HandleReloadLocalesGameobjectCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLocalesGossipMenuOptionCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLocalesGossipMenuOptionCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLocalesGossipMenuOptionCommand(char* )
 {
     sLog.outString("Re-Loading Locales Gossip Menu Option ... ");
     sObjectMgr.LoadGossipMenuItemsLocales();
@@ -1396,13 +898,7 @@ bool ChatHandler::HandleReloadLocalesGossipMenuOptionCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLocalesItemCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLocalesItemCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLocalesItemCommand(char* )
 {
     sLog.outString("Re-Loading Locales Item ... ");
     sObjectMgr.LoadItemLocales();
@@ -1410,13 +906,7 @@ bool ChatHandler::HandleReloadLocalesItemCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLocalesNpcTextCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLocalesNpcTextCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLocalesNpcTextCommand(char* )
 {
     sLog.outString("Re-Loading Locales NPC Text ... ");
     sObjectMgr.LoadGossipTextLocales();
@@ -1424,13 +914,7 @@ bool ChatHandler::HandleReloadLocalesNpcTextCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLocalesCommandHelpCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLocalesCommandHelpCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLocalesCommandHelpCommand(char* )
 {
     sLog.outString("Re-Loading Locales Command Help ... ");
     sCommandMgr.LoadCommandHelpLocale();
@@ -1438,13 +922,7 @@ bool ChatHandler::HandleReloadLocalesCommandHelpCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLocalesPageTextCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLocalesPageTextCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLocalesPageTextCommand(char* )
 {
     sLog.outString("Re-Loading Locales Page Text ... ");
     sObjectMgr.LoadPageTextLocales();
@@ -1452,13 +930,7 @@ bool ChatHandler::HandleReloadLocalesPageTextCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLocalesPointsOfInterestCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLocalesPointsOfInterestCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLocalesPointsOfInterestCommand(char* )
 {
     sLog.outString("Re-Loading Locales Points Of Interest ... ");
     sObjectMgr.LoadPointOfInterestLocales();
@@ -1466,13 +938,7 @@ bool ChatHandler::HandleReloadLocalesPointsOfInterestCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadLocalesQuestCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadLocalesQuestCommand(char* /*args*/)
+bool ChatHandler::HandleReloadLocalesQuestCommand(char* )
 {
     sLog.outString("Re-Loading Locales Quest ... ");
     sObjectMgr.LoadQuestLocales();
@@ -1480,13 +946,7 @@ bool ChatHandler::HandleReloadLocalesQuestCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleReloadDisablesCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleReloadDisablesCommand(char* /*args*/)
+bool ChatHandler::HandleReloadDisablesCommand(char* )
 {
     sLog.outString("Re-loading Disables...");
     DisableMgr::LoadDisables();

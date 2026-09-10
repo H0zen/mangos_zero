@@ -73,7 +73,6 @@ void Player::TradeCancel(bool sendback)
     {
         Player* trader = m_trade->GetTrader();
 
-        // send yellow "Trade canceled" message to both traders
         if (sendback)
         {
             GetSession()->SendCancelTrade();
@@ -81,7 +80,6 @@ void Player::TradeCancel(bool sendback)
 
         trader->GetSession()->SendCancelTrade();
 
-        // cleanup
         delete m_trade;
         m_trade = nullptr;
         delete trader->m_trade;

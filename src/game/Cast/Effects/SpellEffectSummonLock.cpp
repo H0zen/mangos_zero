@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <random>
 #include "Utilities/Errors.h"
 #include "Platform/Define.h"
@@ -65,13 +63,6 @@
 #include "CellImpl.h"
 #include "Geometry/Vector3.h"
 
-/**
- * @brief Opens or sends loot for the specified object guid.
- *
- * @param guid The loot source guid.
- * @param loottype The loot type to open.
- * @param lockType The lock interaction type.
- */
 void Spell::SendLoot(ObjectGuid guid, LootType loottype, LockType lockType)
 {
     if (gameObjTarget)
@@ -88,7 +79,7 @@ void Spell::SendLoot(ObjectGuid guid, LootType loottype, LockType lockType)
 
             case GAMEOBJECT_TYPE_CHEST:
                 gameObjTarget->Use(m_caster);
-                // Don't return, let loots been taken
+
                 break;
 
             case GAMEOBJECT_TYPE_TRAP:
@@ -105,25 +96,19 @@ void Spell::SendLoot(ObjectGuid guid, LootType loottype, LockType lockType)
         }
     }
 
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return;
     }
 
-    // Send loot
     ((Player*)m_caster)->SendLoot(guid, loottype);
 }
 
-/**
- * @brief Opens a locked game object or item and awards related skill progress.
- *
- * @param eff_idx The open-lock effect index.
- */
 void Spell::EffectOpenLock(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
 
-    if (!m_caster || !m_caster->IsPlayer())
+    if (!m_caster || !IsPlayer(m_caster))
     {
         DEBUG_LOG("WORLD: Open Lock - No Player Caster!");
         return;
@@ -132,21 +117,19 @@ void Spell::EffectOpenLock(const cast::Operation& operation)
     Player* player = (Player*)m_caster;
 
     uint32 lockId = 0;
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
 
-    // Get lockId
     if (gameObjTarget)
     {
         GameObjectInfo const* goInfo = gameObjTarget->GetGOInfo();
-        // Arathi Basin banner opening !
+
         if ((goInfo->type == GAMEOBJECT_TYPE_BUTTON && goInfo->button.noDamageImmune) ||
             (goInfo->type == GAMEOBJECT_TYPE_GOOBER && goInfo->goober.losOK))
         {
-            // CanUseBattleGroundObject() already called in CheckCast()
-            // in battleground check
+
             if (BattleGround* bg = player->Battle().Ground())
             {
-                // check if it's correct bg
+
                 if (bg->GetTypeID() == BATTLEGROUND_AB || bg->GetTypeID() == BATTLEGROUND_AV)
                 {
                     bg->EventPlayerClickedOnFlag(player, gameObjTarget);
@@ -156,8 +139,7 @@ void Spell::EffectOpenLock(const cast::Operation& operation)
         }
         else if (goInfo->type == GAMEOBJECT_TYPE_FLAGSTAND)
         {
-            // CanUseBattleGroundObject() already called in CheckCast()
-            // in battleground check
+
             if (player->Battle().Ground())
             {
                 return;
@@ -188,7 +170,6 @@ void Spell::EffectOpenLock(const cast::Operation& operation)
         return;
     }
 
-    // mark item as unlocked
     if (itemTarget)
     {
         itemTarget->SetItemFlag(ITEM_DYNFLAG_UNLOCKED);
@@ -201,15 +182,14 @@ void Spell::EffectOpenLock(const cast::Operation& operation)
 
     SendLoot(guid, LOOT_SKINNING, LockType(operation.miscValue));
 
-    // not allow use skill grow at item base open
     if (!m_CastItem && skillId != SKILL_NONE)
     {
-        // update skill if really known
+
         if (uint32 pureSkillValue = player->GetPureSkillValue(skillId))
         {
             if (gameObjTarget)
             {
-                // Allow one skill-up until respawned
+
                 Chest& lock = gameObjTarget->Behaves<ChestBehaviour>()->Lock();
 
                 if (!lock.HasTaught(player->GetObjectGuid()) &&
@@ -220,34 +200,27 @@ void Spell::EffectOpenLock(const cast::Operation& operation)
             }
             else if (itemTarget)
             {
-                // Do one skill-up
+
                 player->UpdateGatherSkill(skillId, pureSkillValue, reqSkillValue);
             }
         }
     }
 }
 
-/**
- * @brief Replaces the cast item with another item entry.
- *
- * @param eff_idx The effect index defining the replacement item.
- */
 void Spell::EffectSummonChangeItem(const cast::Operation& operation)
 {
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return;
     }
 
     Player* player = (Player*)m_caster;
 
-    // applied only to using item
     if (!m_CastItem)
     {
         return;
     }
 
-    // ... only to item in own inventory/bank/equip_slot
     if (m_CastItem->GetOwnerGuid() != player->GetObjectGuid())
     {
         return;
@@ -261,20 +234,14 @@ void Spell::EffectSummonChangeItem(const cast::Operation& operation)
 
     Item* oldItem = m_CastItem;
 
-    // prevent crash at access and unexpected charges counting with item update queue corrupt
     ClearCastItem();
 
     player->ConvertItem(oldItem, newitemid);
 }
 
-/**
- * @brief Grants weapon or armor proficiency to a player target.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectProficiency(const cast::Operation& /*operation*/)
+void Spell::EffectProficiency(const cast::Operation& )
 {
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }
@@ -293,11 +260,6 @@ void Spell::EffectProficiency(const cast::Operation& /*operation*/)
     }
 }
 
-/**
- * @brief Creates and attaches an area aura for the current unit target.
- *
- * @param eff_idx The area aura effect index.
- */
 void Spell::EffectApplyAreaAura(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);

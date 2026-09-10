@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about casting and about what is on him.
 namespace spells
 {
     void UseItem(Player& who, WorldPacket& packet);

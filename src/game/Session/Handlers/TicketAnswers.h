@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about a ticket to a game master.
 namespace tickets
 {
     void GMTicketGetTicket(WorldSession& session, WorldPacket& packet);

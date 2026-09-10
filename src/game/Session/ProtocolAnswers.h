@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// The messages the protocol itself answers, and the ones nothing answers.
 namespace protocol
 {
     void Ping(WorldSession& session, WorldPacket& packet);

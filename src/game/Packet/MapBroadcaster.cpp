@@ -37,7 +37,7 @@ Audience Audience::Around(Occupant const& subject)
     who.m_how = Gathering::Near;
     who.m_subject = &subject;
     who.m_on = subject.FindMap();
-    who.m_skip = ToPlayer(&subject);
+    who.m_skip = static_cast<Player const*>(&subject);
 
     return who;
 }
@@ -100,7 +100,7 @@ bool Audience::Admits(Player const* listener) const
 
     if (m_ownTeamOnly)
     {
-        Player const* subject = ToPlayer(m_subject);
+        Player const* subject = static_cast<Player const*>(m_subject);
         if (subject && listener->GetTeam() != subject->GetTeam())
         {
             return false;
@@ -119,8 +119,6 @@ uint32 Deliver(Audience const& who, MapBroadcaster::Listener const& tell)
 {
     uint32 told = 0;
 
-    // A subject outside the world has no map: there is nothing standing around him to
-    // hear this, while his own client is still owed it.
     if (MapBroadcaster* stage = who.On())
     {
         told += stage->Reach(who, tell);
@@ -128,7 +126,7 @@ uint32 Deliver(Audience const& who, MapBroadcaster::Listener const& tell)
 
     if (who.WithSubject())
     {
-        if (Player* self = const_cast<Player*>(ToPlayer(who.Subject())))
+        if (Player* self = const_cast<Player*>(static_cast<Player const*>(who.Subject())))
         {
             if (self->GetSession())
             {

@@ -119,7 +119,7 @@ struct npc_escortAI : public ScriptedAI
         void AddEscortState(uint32 uiEscortState) { m_uiEscortState |= uiEscortState; }
         void RemoveEscortState(uint32 uiEscortState) { m_uiEscortState &= ~uiEscortState; }
 
-        ObjectGuid m_playerGuid;
+        ObjectGuid m_playerGuid = 0;
         uint32 m_uiWPWaitTimer;
         uint32 m_uiPlayerCheckTimer;
         uint32 m_uiEscortState;

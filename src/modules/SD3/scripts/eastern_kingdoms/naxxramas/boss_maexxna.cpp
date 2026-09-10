@@ -78,7 +78,7 @@ struct npc_web_wrap : public CreatureScript
     {
         npc_web_wrapAI(Creature* pCreature) : ScriptedAI(pCreature) {}
 
-        ObjectGuid m_victimGuid;
+        ObjectGuid m_victimGuid = 0;
         uint32 m_uiWebWrapTimer;
 
         void Reset() override
@@ -91,7 +91,7 @@ struct npc_web_wrap : public CreatureScript
 
         void SetVictim(Unit* pVictim)
         {
-            if (pVictim && pVictim->IsPlayer())
+            if (pVictim &&IsPlayer(pVictim))
             {
                 // Vanilla spell 28618, 28619, 28620, 28621 had effect SPELL_EFFECT_PLAYER_PULL with EffectMiscValue = 200, 300, 400 and 500
                 // All these spells trigger 28622 after 1 or 2 seconds

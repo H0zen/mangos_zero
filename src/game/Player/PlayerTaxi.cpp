@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <string>
 #include <cstdlib>
 #include "Player.h"
@@ -70,11 +68,6 @@
 #include "DisableMgr.h"
 #include <sstream>
 
-/**
- * @brief Loads the known taxi-node bitmask from a serialized string.
- *
- * @param data The serialized taxi mask data.
- */
 void PlayerTaxi::LoadTaxiMask(const char* data)
 {
     Tokens tokens = StrSplit(data, " ");
@@ -83,32 +76,19 @@ void PlayerTaxi::LoadTaxiMask(const char* data)
     Tokens::iterator iter;
     for (iter = tokens.begin(), index = 0; (index < TaxiMaskSize) && (iter != tokens.end()); ++iter, ++index)
     {
-        // load and set bits only for existing taxi nodes
+
         m_taximask[index] = sTaxiNodesMask[index] & uint32(std::strtoul((*iter).c_str(), nullptr, 10));
     }
 }
 
-/**
- * @brief Appends the player's taxi-node mask to a packet buffer.
- *
- * @param data The destination packet buffer.
- * @param all true to append all existing nodes instead of only known nodes.
- */
 void PlayerTaxi::AppendTaximaskTo(ByteBuffer& data, bool all)
 {
     for (uint8 i = 0; i < TaxiMaskSize; ++i)
     {
-        data << uint32(all ? sTaxiNodesMask[i] : m_taximask[i]); // all or just known existing nodes
+        data << uint32(all ? sTaxiNodesMask[i] : m_taximask[i]);
     }
 }
 
-/**
- * @brief Loads active taxi destinations from a serialized path string.
- *
- * @param values The serialized taxi destination list.
- * @param team The player's faction team.
- * @return true if the taxi route is valid; otherwise, false.
- */
 bool PlayerTaxi::LoadTaxiDestinationsFromString(const std::string& values, Team team)
 {
     ClearTaxiDestinations();
@@ -126,7 +106,6 @@ bool PlayerTaxi::LoadTaxiDestinationsFromString(const std::string& values, Team 
         return true;
     }
 
-    // Check integrity
     if (m_TaxiDestinations.size() < 2)
     {
         return false;
@@ -143,7 +122,6 @@ bool PlayerTaxi::LoadTaxiDestinationsFromString(const std::string& values, Team 
         }
     }
 
-    // can't load taxi path without mount set (quest taxi path?)
     if (!sObjectMgr.GetTaxiMountDisplayId(GetTaxiSource(), team, true))
     {
         return false;
@@ -152,11 +130,6 @@ bool PlayerTaxi::LoadTaxiDestinationsFromString(const std::string& values, Team 
     return true;
 }
 
-/**
- * @brief Serializes the current taxi destination list.
- *
- * @return The serialized taxi destination string.
- */
 std::string PlayerTaxi::SaveTaxiDestinationsToString()
 {
     if (m_TaxiDestinations.empty())
@@ -174,11 +147,6 @@ std::string PlayerTaxi::SaveTaxiDestinationsToString()
     return ss.str();
 }
 
-/**
- * @brief Gets the taxi path id for the current first route segment.
- *
- * @return The current taxi path id, or 0 if no valid route exists.
- */
 uint32 PlayerTaxi::GetCurrentTaxiPath() const
 {
     if (m_TaxiDestinations.size() < 2)

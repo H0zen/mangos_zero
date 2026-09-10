@@ -30,11 +30,6 @@
 class Unit;
 class TargetedMovementGeneratorBase;
 
-/**
- * @brief Follower reference manager class
- *
- * Manages follower references for targeted movement generators.
- */
 class FollowerRefManager : public RefManager<Unit, TargetedMovementGeneratorBase>
 {
 };

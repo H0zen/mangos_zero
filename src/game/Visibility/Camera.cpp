@@ -34,43 +34,24 @@
 #include "Player.h"
 #include "TransportMap.h"
 
-/**
- * @brief Creates a camera bound to a player.
- *
- * @param pl The player that owns this camera.
- */
 Camera::Camera(Player* pl) : m_owner(*pl), m_source(pl)
 {
     m_source->GetViewPoint().Attach(this);
 }
 
-/**
- * @brief Destroys the camera and detaches it from the current viewpoint.
- */
 Camera::~Camera()
 {
-    // view of camera should be already reseted to owner (RemoveFromWorld -> Event_RemovedFromWorld -> ResetView)
+
     MANGOS_ASSERT(m_source == &m_owner);
 
-    // for symmetry with constructor and way to make viewpoint's list empty
     m_source->GetViewPoint().Detach(this);
 }
 
-/**
- * @brief Forwards a packet to the camera owner.
- *
- * @param data The packet to send.
- */
 void Camera::ReceivePacket(WorldPacket* data)
 {
     m_owner.SendDirectMessage(data);
 }
 
-/**
- * @brief Updates camera registration for the current viewpoint.
- *
- * Rebinds the camera to the source grid and refreshes owner visibility state.
- */
 void Camera::UpdateForCurrentViewPoint()
 {
     m_gridRef.unlink();
@@ -83,16 +64,7 @@ void Camera::UpdateForCurrentViewPoint()
     UpdateVisibilityForOwner();
 }
 
-/**
- * @brief Changes the camera viewpoint.
- *
- * Moves the camera from its current source to a new world object and optionally
- * updates the player's farsight field.
- *
- * @param obj The new viewpoint object.
- * @param update_far_sight_field true to update the player's farsight field; otherwise, false.
- */
-void Camera::SetView(Occupant* obj, bool update_far_sight_field /*= true*/)
+void Camera::SetView(Occupant* obj, bool update_far_sight_field )
 {
     MANGOS_ASSERT(obj);
 
@@ -107,13 +79,12 @@ void Camera::SetView(Occupant* obj, bool update_far_sight_field /*= true*/)
         return;
     }
 
-    if (!obj->isType(TypeMask(TYPEMASK_DYNAMICOBJECT | TYPEMASK_UNIT)))
+    if (!IsType(obj, TypeMask(TYPEMASK_DYNAMICOBJECT | TYPEMASK_UNIT)))
     {
         sLog.outError("Camera::SetView, viewpoint type is not available for client");
         return;
     }
 
-    // detach and deregister from active objects if there are no more reasons to be active
     m_source->GetViewPoint().Detach(this);
     if (!m_source->IsActiveObject())
     {
@@ -131,17 +102,12 @@ void Camera::SetView(Occupant* obj, bool update_far_sight_field /*= true*/)
 
     if (update_far_sight_field)
     {
-        m_owner.SetGuidValue(PLAYER_FARSIGHT, (m_source == &m_owner ? ObjectGuid() : m_source->GetObjectGuid()));
+        m_owner.SetGuidValue(PLAYER_FARSIGHT, (m_source == &m_owner ? 0 : m_source->GetObjectGuid()));
     }
 
     UpdateForCurrentViewPoint();
 }
 
-/**
- * @brief Handles visibility loss for the active viewpoint.
- *
- * Resets the camera when the owner can no longer see the current source object.
- */
 void Camera::Event_ViewPointVisibilityChanged()
 {
     if (!m_owner.HaveAtClient(m_source))
@@ -150,22 +116,11 @@ void Camera::Event_ViewPointVisibilityChanged()
     }
 }
 
-/**
- * @brief Restores the camera view to its owner.
- *
- * @param update_far_sight_field true to update the player's farsight field; otherwise, false.
- */
-void Camera::ResetView(bool update_far_sight_field /*= true*/)
+void Camera::ResetView(bool update_far_sight_field )
 {
     SetView(&m_owner, update_far_sight_field);
 }
 
-/**
- * @brief Handles the camera being added to the world.
- *
- * @param batch Shared initial-login data for the owner camera, or null for an
- *        ordinary visibility rebuild.
- */
 void Camera::Event_AddedToWorld(InitialWorldUpdateBatch* batch)
 {
     GridType* grid = m_source->GetViewPoint().m_grid;
@@ -175,9 +130,6 @@ void Camera::Event_AddedToWorld(InitialWorldUpdateBatch* batch)
     UpdateVisibilityForOwnerInBatch(batch);
 }
 
-/**
- * @brief Handles the camera being removed from the world.
- */
 void Camera::Event_RemovedFromWorld()
 {
     if (m_source == &m_owner)
@@ -189,53 +141,30 @@ void Camera::Event_RemovedFromWorld()
     ResetView();
 }
 
-/**
- * @brief Handles viewpoint movement updates.
- */
 void Camera::Event_Moved()
 {
     m_gridRef.unlink();
     m_source->GetViewPoint().m_grid->AddWorldObject(this);
 }
 
-/**
- * @brief Updates owner visibility for a specific target.
- *
- * @param target The world object whose visibility should be updated.
- */
 void Camera::UpdateVisibilityOf(Occupant* target)
 {
     m_owner.UpdateVisibilityOf(m_source, target);
 }
 
-/**
- * @brief Updates owner visibility for a target using accumulated update data.
- *
- * @param target The world object whose visibility should be updated.
- * @param data The update packet data being built.
- * @param vis The set of currently visible objects.
- */
 void Camera::UpdateVisibilityOf(Occupant* target, UpdateData& data, std::set<Occupant*>& vis)
 {
     m_owner.UpdateVisibilityOf(m_source, target, data, vis);
 }
 
-/**
- * @brief Rebuilds visibility for the camera owner around the current source.
- */
 void Camera::UpdateVisibilityForOwner()
 {
     UpdateVisibilityForOwnerInBatch(nullptr);
 }
 
-/**
- * Rebuilds owner visibility while optionally appending create blocks to the
- * initial self/transport batch instead of sending a second update packet.
- */
 void Camera::UpdateVisibilityForOwnerInBatch(InitialWorldUpdateBatch* batch)
 {
-    // Honor a per-viewpoint visibility distance override (e.g. the cinematic
-    // flyover body widens the populate radius); otherwise use the map default.
+
     float visibilityDistance = m_source->GetVisibilityDistanceOverride();
     if (visibilityDistance <= 0.0f)
     {
@@ -245,11 +174,6 @@ void Camera::UpdateVisibilityForOwnerInBatch(InitialWorldUpdateBatch* batch)
     MaNGOS::VisibleNotifier notifier(*this, batch);
     Cell::VisitAllObjects(m_source, notifier, visibilityDistance, false);
 
-    // The other side of a vessel's boundary. A deck and the shore it sails past are two
-    // maps, and no cell visit of one reaches the other -- so the same notifier is run over
-    // the far side as well. ONE elimination follows, over both, which is the whole point:
-    // an object that drops out of reach across the boundary is destroyed by the ordinary
-    // sweep instead of by a ledger somebody has to remember to keep.
     std::vector<RelaySource> relayed;
     TransportMap::CollectRelaySources(m_source, visibilityDistance, relayed);
     for (RelaySource const& src : relayed)
@@ -267,11 +191,6 @@ void Camera::UpdateVisibilityForOwnerInBatch(InitialWorldUpdateBatch* batch)
     notifier.Notify();
 }
 
-//////////////////
-
-/**
- * @brief Destroys a viewpoint instance.
- */
 ViewPoint::~ViewPoint()
 {
     if (!m_cameras.empty())

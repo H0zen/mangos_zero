@@ -163,7 +163,7 @@ struct npc_blastmaster_emi_shortfuse : public CreatureScript
 
         uint8 m_uiPhase;
         uint32 m_uiPhaseTimer;
-        ObjectGuid m_playerGuid;
+        ObjectGuid m_playerGuid = 0;
         bool m_bDidAggroText, m_bSouthernCaveInOpened, m_bNorthernCaveInOpened;
         GuidList m_luiSummonedMobGUIDs;
 
@@ -284,11 +284,11 @@ struct npc_blastmaster_emi_shortfuse : public CreatureScript
 
             if (m_bSouthernCaveInOpened)                        // close southern cave-in door
             {
-                m_pInstance->DoUseDoorOrButton(GO_CAVE_IN_SOUTH);
+                m_pInstance->DoUseDoorOrButtonByEntry(GO_CAVE_IN_SOUTH);
             }
             if (m_bNorthernCaveInOpened)                        // close northern cave-in door
             {
-                m_pInstance->DoUseDoorOrButton(GO_CAVE_IN_NORTH);
+                m_pInstance->DoUseDoorOrButtonByEntry(GO_CAVE_IN_NORTH);
             }
 
             for (GuidList::const_iterator itr = m_luiSummonedMobGUIDs.begin(); itr != m_luiSummonedMobGUIDs.end(); ++itr)
@@ -322,7 +322,7 @@ struct npc_blastmaster_emi_shortfuse : public CreatureScript
                     // Open Southern Cave-In
                     if (m_pInstance && !m_bSouthernCaveInOpened)
                     {
-                        m_pInstance->DoUseDoorOrButton(GO_CAVE_IN_SOUTH);
+                        m_pInstance->DoUseDoorOrButtonByEntry(GO_CAVE_IN_SOUTH);
                     }
                     m_bSouthernCaveInOpened = true;
                     break;
@@ -334,7 +334,7 @@ struct npc_blastmaster_emi_shortfuse : public CreatureScript
                     // Open Northern Cave-In
                     if (m_pInstance && !m_bNorthernCaveInOpened)
                     {
-                        m_pInstance->DoUseDoorOrButton(GO_CAVE_IN_NORTH);
+                        m_pInstance->DoUseDoorOrButtonByEntry(GO_CAVE_IN_NORTH);
                     }
                     m_bNorthernCaveInOpened = true;
                     break;
@@ -505,7 +505,7 @@ struct npc_blastmaster_emi_shortfuse : public CreatureScript
                             // Close southern cave-in and let charges explode
                             if (m_pInstance)
                             {
-                                m_pInstance->DoUseDoorOrButton(GO_CAVE_IN_SOUTH);
+                                m_pInstance->DoUseDoorOrButtonByEntry(GO_CAVE_IN_SOUTH);
                                 m_bSouthernCaveInOpened = false;
                                 m_pInstance->SetData(TYPE_EXPLOSIVE_CHARGE, DATA_EXPLOSIVE_CHARGE_USE);
                             }
@@ -632,7 +632,7 @@ struct npc_blastmaster_emi_shortfuse : public CreatureScript
                             // Close northern cave-in and let charges explode
                             if (m_pInstance)
                             {
-                                m_pInstance->DoUseDoorOrButton(GO_CAVE_IN_NORTH);
+                                m_pInstance->DoUseDoorOrButtonByEntry(GO_CAVE_IN_NORTH);
                                 m_bNorthernCaveInOpened = false;
                                 m_pInstance->SetData(TYPE_EXPLOSIVE_CHARGE, DATA_EXPLOSIVE_CHARGE_USE);
                             }
@@ -737,7 +737,7 @@ struct npc_kernobee : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* /*pSender*/, Unit* pInvoker, uint32 uiMiscValue) override
         {
-            if (eventType == AI_EVENT_START_EVENT && pInvoker->IsPlayer())
+            if (eventType == AI_EVENT_START_EVENT &&IsPlayer(pInvoker))
             {
                 // No idea why he has UNIT_STAND_STATE_DEAD in UDB ..
                 m_creature->SetStandState(UNIT_STAND_STATE_STAND);

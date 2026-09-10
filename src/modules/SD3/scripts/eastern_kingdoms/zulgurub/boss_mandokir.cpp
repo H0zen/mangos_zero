@@ -120,7 +120,7 @@ struct boss_mandokir : public CreatureScript
         uint8 m_uiKillCount;
 
         float m_fTargetThreat;
-        ObjectGuid m_watchTargetGuid;
+        ObjectGuid m_watchTargetGuid = 0;
 
         void Reset() override
         {
@@ -193,7 +193,7 @@ struct boss_mandokir : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->IsPlayer())
+            if (IsPlayer(pVictim))
             {
                 ++m_uiKillCount;
 
@@ -302,7 +302,7 @@ struct boss_mandokir : public CreatureScript
                         DoCastSpellIfCan(pWatchTarget, SPELL_CHARGE);
                     }
 
-                    m_watchTargetGuid.Clear();
+                    m_watchTargetGuid = 0;
                 }
                 else
                 {
@@ -360,7 +360,7 @@ struct boss_mandokir : public CreatureScript
                     {
                         Unit* pTarget = m_creature->GetMap()->GetUnit((*i)->getUnitGuid());
 
-                        if (pTarget && pTarget->IsPlayer() && InMeleeReach(*m_creature, *pTarget))
+                        if (pTarget &&IsPlayer(pTarget) && InMeleeReach(*m_creature, *pTarget))
                         {
                             ++uiTargetInRangeCount;
                         }
@@ -423,7 +423,7 @@ struct mob_ohgan : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->IsPlayer())
+            if (IsPlayer(pVictim))
             {
                 if (m_creature->IsInCombat())
                 {

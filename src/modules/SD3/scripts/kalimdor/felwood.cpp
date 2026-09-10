@@ -75,7 +75,7 @@ struct npc_kitten : public CreatureScript
     {
         npc_kittenAI(Creature* pCreature) : FollowerAI(pCreature)
         {
-            if (pCreature->GetOwner() && pCreature->GetOwner()->IsPlayer())
+            if (pCreature->GetOwner() &&IsPlayer(pCreature->GetOwner()))
             {
                 StartFollow((Player*)pCreature->GetOwner());
                 SetFollowPaused(true);
@@ -142,7 +142,7 @@ struct spell_npc_kitten : public SpellScript
         // always check spellid and effectindex
         if (uiSpellId == SPELL_CORRUPT_SABER_VISUAL && uiEffIndex == EFFECT_INDEX_0)
         {
-            Creature *pCreatureTarget = ToCreature(pTarget);
+            Creature *pCreatureTarget = static_cast<Creature*>(pTarget);
             // Not nice way, however using UpdateEntry will not be correct.
             if (const CreatureInfo* pTemp = GetCreatureTemplateStore(NPC_CORRUPT_SABER))
             {
@@ -348,7 +348,7 @@ struct npc_kroshius : public CreatureScript
             m_uiPhase = 0;  //TODO check this
         }
 
-        ObjectGuid m_playerGuid;
+        ObjectGuid m_playerGuid = 0;
         uint32 m_uiKnockBackTimer;
         uint32 m_uiPhaseTimer;
 
@@ -357,7 +357,7 @@ struct npc_kroshius : public CreatureScript
         void Reset() override
         {
             m_uiKnockBackTimer = urand(5000, 8000);
-            m_playerGuid.Clear();
+            m_playerGuid = 0;
 
             if (!m_uiPhase)
             {
@@ -386,9 +386,9 @@ struct npc_kroshius : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* pSender, Unit* pInvoker, uint32 /*uiMiscValue*/) override
         {
-            if (eventType == AI_EVENT_CUSTOM_A && pSender == m_creature && pInvoker->IsPlayer())
+            if (eventType == AI_EVENT_CUSTOM_A && pSender == m_creature &&IsPlayer(pInvoker))
             {
-                DoRevive(ToPlayer(pInvoker));
+                DoRevive(static_cast<Player*>(pInvoker));
             }
         }
 
@@ -467,7 +467,7 @@ struct event_npc_kroshius : public MapEventScript
     {
         if (uiEventId == EVENT_KROSHIUS_REVIVE)
         {
-            if (pSource->IsPlayer())
+            if (IsPlayer(pSource))
             {
                 if (Creature* pKroshius = GetClosestCreatureWithEntry((Player*)pSource, NPC_KROSHIUS, 20.0f))
                 {
@@ -521,7 +521,7 @@ struct npc_captured_arkonarin : public CreatureScript
     {
         npc_captured_arkonarinAI(Creature* pCreature) : npc_escortAI(pCreature) {}
 
-        ObjectGuid m_treyGuid;
+        ObjectGuid m_treyGuid = 0;
 
         bool m_bCanAttack;
 
@@ -565,7 +565,7 @@ struct npc_captured_arkonarin : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* /*pSender*/, Unit* pInvoker, uint32 uiMiscValue) override
         {
-            if (eventType == AI_EVENT_START_ESCORT && pInvoker->IsPlayer())
+            if (eventType == AI_EVENT_START_ESCORT &&IsPlayer(pInvoker))
             {
                 m_creature->SetStandState(UNIT_STAND_STATE_STAND);
                 m_creature->SetFactionTemporary(FACTION_ESCORT_N_NEUTRAL_ACTIVE, TEMPFACTION_RESTORE_RESPAWN);
@@ -831,7 +831,7 @@ struct npc_arei : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* /*pSender*/, Unit* pInvoker, uint32 uiMiscValue) override
         {
-            if (eventType == AI_EVENT_START_ESCORT && pInvoker->IsPlayer())
+            if (eventType == AI_EVENT_START_ESCORT &&IsPlayer(pInvoker))
             {
                 DoScriptText(SAY_AREI_ESCORT_START, m_creature, pInvoker);
 

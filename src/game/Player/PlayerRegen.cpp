@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -70,12 +68,6 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Awards rage generated from dealing or receiving damage.
- *
- * @param damage The raw damage amount used for rage generation.
- * @param attacker True when the player dealt the damage; false when the player received it.
- */
 void Player::RewardRage(uint32 damage, bool attacker)
 {
     float addRage;
@@ -90,7 +82,6 @@ void Player::RewardRage(uint32 damage, bool attacker)
     {
         addRage = damage / rageconversion * 2.5f;
 
-        // Berserker Rage effect
         if (HasAura(18499, EFFECT_INDEX_0))
         {
             addRage *= 1.3f;
@@ -102,9 +93,6 @@ void Player::RewardRage(uint32 damage, bool attacker)
     ModifyPower(POWER_RAGE, uint32(addRage * 10));
 }
 
-/**
- * @brief Regenerates the player's health and power resources for the current tick.
- */
 void Player::RegenerateAll()
 {
     if (!m_recovery.Due() ||
@@ -113,7 +101,6 @@ void Player::RegenerateAll()
         return;
     }
 
-    // Not in combat or they have regeneration
     if (!IsInCombat() || HasAuraType(SPELL_AURA_MOD_REGEN_DURING_COMBAT) ||
         HasAuraType(SPELL_AURA_MOD_HEALTH_REGEN_IN_COMBAT) || IsPolymorphed() || HasAuraType(SPELL_AURA_MOD_POWER_REGEN))
     {
@@ -131,11 +118,6 @@ void Player::RegenerateAll()
     m_recovery.NextIn(REGEN_TIME_FULL);
 }
 
-/**
- * @brief Regenerates or decays a specific player power type.
- *
- * @param power The power type to update.
- */
 void Player::Regenerate(Powers power)
 {
     uint32 curValue = GetPower(power);
@@ -151,7 +133,7 @@ void Player::Regenerate(Powers power)
             float ManaIncreaseRate = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_MANA);
             if (recentCast)
             {
-                // Mangos Updates Mana in intervals of 2s, which is correct
+
                 addvalue = Sheet().ManaRegenCasting() * ManaIncreaseRate * 2.00f;
             }
             else
@@ -159,11 +141,11 @@ void Player::Regenerate(Powers power)
                 addvalue = Sheet().ManaRegenStanding() * ManaIncreaseRate * 2.00f;
             }
         }   break;
-        case POWER_RAGE:                                    // Regenerate rage
+        case POWER_RAGE:
         {
             addvalue = (m_rageDecayRate * m_rageDecayMultiplier);
         }   break;
-        case POWER_ENERGY:                                  // Regenerate energy (rogue)
+        case POWER_ENERGY:
         {
             float EnergyRate = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_ENERGY);
             addvalue = 20 * EnergyRate;
@@ -177,8 +159,6 @@ void Player::Regenerate(Powers power)
             break;
     }
 
-    // The two mana rates are worked out by the sheet
-    // Exist only for POWER_MANA, POWER_ENERGY, POWER_FOCUS auras
     if (power != POWER_MANA)
     {
         const auto ModPowerRegenPCTAuras = GetAurasByType(SPELL_AURA_MOD_POWER_REGEN_PERCENT);
@@ -218,9 +198,6 @@ void Player::Regenerate(Powers power)
     SetPower(power, curValue);
 }
 
-/**
- * @brief Regenerates the player's health based on state, auras, and rates.
- */
 void Player::RegenerateHealth()
 {
     uint32 curValue = GetHealth();
@@ -235,12 +212,11 @@ void Player::RegenerateHealth()
 
     float addvalue = 0.0f;
 
-    // polymorphed case
     if (IsPolymorphed())
     {
         addvalue = (float)GetMaxHealth() / 3;
     }
-    // normal regen case (maybe partly in combat case)
+
     else if (!IsInCombat() || HasAuraType(SPELL_AURA_MOD_REGEN_DURING_COMBAT))
     {
         addvalue = OCTRegenHPPerSpirit() * HealthIncreaseRate;
@@ -263,7 +239,6 @@ void Player::RegenerateHealth()
         }
     }
 
-    // always regeneration bonus (including combat)
     addvalue += GetTotalAuraModifier(SPELL_AURA_MOD_HEALTH_REGEN_IN_COMBAT);
 
     if (addvalue < 0)

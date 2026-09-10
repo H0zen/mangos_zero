@@ -35,25 +35,11 @@ class Unit;
 class Occupant;
 struct MangosStringLocale;
 
-/**
- * What an object makes the people around it hear or see.
- *
- * A line differs from another line in two respects only: which chat message it
- * goes out as, and who hears it. `ChatType` already names both -- a say carries
- * one range, a yell another, a whisper reaches one listener and a zone yell a
- * whole zone -- so it is the parameter, not a function name.
- *
- * The literal form takes the text as given; the other reads it from the string
- * table in each listener's own locale, and takes the kind from the entry.
- */
 void Utter(Occupant const& speaker, ChatType kind, char const* text,
            Unit const* target = nullptr, Language language = LANG_UNIVERSAL);
 
 void Utter(Occupant const& speaker, MangosStringLocale const* line, Unit const* target = nullptr);
 
-/// How a sound reaches the listener: placed at the object so the client can
-/// attenuate it by distance, played flat wherever the listener is, or as music,
-/// which the client crossfades rather than layers.
 enum class SoundKind
 {
     AtObject,
@@ -61,19 +47,12 @@ enum class SoundKind
     Music,
 };
 
-/// One sound, to one client or to everyone who can see the source.
 void PlaySound(Occupant const& source, SoundKind kind, uint32 soundId, Player const* target = nullptr);
 
-/// One sound to a whole map, or to one zone of it. For a script that plays to a room
-/// nobody is standing in the middle of.
 void PlaySoundToMap(Map& map, uint32 soundId, uint32 zoneId = 0);
 
-/// A creature's yell heard by the whole map, whether or not the creature is on it: the
-/// line is read from the string table in each listener's own locale. The speaker is named
-/// by guid, or by template when nothing is spawned to speak.
 void YellToMap(Map& map, ObjectGuid speaker, int32 textId, Language language, Unit const* target);
 void YellToMap(Map& map, CreatureInfo const* speaker, int32 textId, Language language,
                Unit const* target, uint32 senderLowGuid = 0);
 
-/// The puff of an object vanishing.
 void SendDespawnAnimation(Occupant const& what);

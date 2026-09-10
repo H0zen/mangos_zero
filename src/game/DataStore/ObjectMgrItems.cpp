@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Common/Locales.h"
 #include <string>
 #include "ObjectMgr.h"
@@ -63,12 +61,9 @@
 #include <limits>
 #include <set>
 
-/**
- * @brief Loads localized item names and descriptions.
- */
 void ObjectMgr::LoadItemLocales()
 {
-    mItemLocaleMap.clear();                                 // need for reload case
+    mItemLocaleMap.clear();
 
     QueryResult* result = WorldDatabase.Query("SELECT `entry`,`name_loc1`,`description_loc1`,`name_loc2`,`description_loc2`,`name_loc3`,`description_loc3`,`name_loc4`,`description_loc4`,`name_loc5`,`description_loc5`,`name_loc6`,`description_loc6`,`name_loc7`,`description_loc7`,`name_loc8`,`description_loc8` FROM `locales_item`");
 
@@ -141,21 +136,17 @@ void ObjectMgr::LoadItemLocales()
 struct SQLItemLoader : public SQLStorageLoaderBase<SQLItemLoader, SQLStorage>
 {
     template<class D>
-        void convert_from_str(uint32 /*field_pos*/, char const* src, D& dst)
+        void convert_from_str(uint32 , char const* src, D& dst)
     {
         dst = D(sScriptMgr.GetScriptId(src));
     }
 };
 
-/**
- * @brief Loads item prototypes and validates core item metadata.
- */
 void ObjectMgr::LoadItemPrototypes()
 {
     SQLItemLoader loader;
     loader.Load(sItemStorage);
 
-    // check data correctness
     for (uint32 i = 1; i < sItemStorage.GetMaxEntry(); ++i)
     {
         ItemPrototype const* proto = sItemStorage.LookupEntry<ItemPrototype >(i);
@@ -173,7 +164,7 @@ void ObjectMgr::LoadItemPrototypes()
         if (proto->SubClass >= MaxItemSubclassValues[proto->Class])
         {
             sLog.outErrorDb("Item (Entry: %u) has wrong Subclass value (%u) for class %u", i, proto->SubClass, proto->Class);
-            const_cast<ItemPrototype*>(proto)->SubClass = 0;// exist for all item classes
+            const_cast<ItemPrototype*>(proto)->SubClass = 0;
         }
 
         if (proto->Quality >= MAX_ITEM_QUALITY)
@@ -218,7 +209,7 @@ void ObjectMgr::LoadItemPrototypes()
         }
 
         {
-            // can be used in equip slot, as page read use in inventory, or spell casting at use
+
             bool req = proto->InventoryType != INVTYPE_NON_EQUIP || proto->PageText;
             if (!req)
             {
@@ -293,7 +284,7 @@ void ObjectMgr::LoadItemPrototypes()
 
         for (int j = 0; j < MAX_ITEM_PROTO_STATS; ++j)
         {
-            // for ItemStatValue != 0
+
             if (proto->ItemStat[j].ItemStatValue && proto->ItemStat[j].ItemStatType >= MAX_ITEM_MOD)
             {
                 sLog.outErrorDb("Item (Entry: %u) has wrong stat_type%d (%u)", i, j + 1, proto->ItemStat[j].ItemStatType);
@@ -310,7 +301,6 @@ void ObjectMgr::LoadItemPrototypes()
             }
         }
 
-        // normal spell list
         {
             for (int j = 0; j < MAX_ITEM_PROTO_SPELLS; ++j)
             {
@@ -327,7 +317,7 @@ void ObjectMgr::LoadItemPrototypes()
                     const_cast<ItemPrototype*>(proto)->Spells[j].SpellId = 0;
                     const_cast<ItemPrototype*>(proto)->Spells[j].SpellTrigger = ITEM_SPELLTRIGGER_ON_USE;
                 }
-                // on hit can be sued only at weapon
+
                 else if (proto->Spells[j].SpellTrigger == ITEM_SPELLTRIGGER_CHANCE_ON_HIT)
                 {
                     if (proto->Class != ITEM_CLASS_WEAPON)
@@ -461,7 +451,6 @@ void ObjectMgr::LoadItemPrototypes()
         }
     }
 
-    // check some dbc referenced items (avoid duplicate reports)
     std::set<uint32> notFoundOutfit;
     for (uint32 i = 1; i < sCharStartOutfitStore.GetNumRows(); ++i)
     {
@@ -496,12 +485,9 @@ void ObjectMgr::LoadItemPrototypes()
     sLog.outString();
 }
 
-/**
- * @brief Loads required target constraints for item use.
- */
 void ObjectMgr::LoadItemRequiredTarget()
 {
-    m_ItemRequiredTarget.clear();                           // needed for reload case
+    m_ItemRequiredTarget.clear();
 
     uint32 count = 0;
 

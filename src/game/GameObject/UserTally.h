@@ -27,27 +27,12 @@
 
 #include "ObjectGuid.h"
 
-/**
- * A count of how often something has been used, and by whom.
- *
- * Most objects only need the count: a vein gives up so many ores, a fishing
- * hole so many casts, a trap so many charges, and when the count reaches what
- * the template allows the object is done.
- *
- * A summoning ritual needs the names as well. It completes when enough
- * different players have joined it, so the same one clicking twice must not
- * count twice, and the spell is cast by whoever laid the circle down rather
- * than by whoever happened to click last. A goober needs them for the same
- * reason at the other end: everyone who touched it is paid at once when it
- * shuts.
- */
 class UserTally
 {
     public:
-        /// One more use, by nobody worth remembering.
+
         void Used() { ++m_uses; }
 
-        /// One more use, by someone the object has to keep track of.
         void UsedBy(ObjectGuid const& who)
         {
             Used();
@@ -63,20 +48,18 @@ class UserTally
         uint32 Uses() const { return m_uses; }
         uint32 Distinct() const { return static_cast<uint32>(m_users.size()); }
 
-        /// Whoever used it first, which for a ritual is whoever laid it down.
         ObjectGuid const& First() const { return m_first; }
         GuidSet const& Everyone() const { return m_users; }
 
-        /// The object is as good as untouched again.
         void Forget()
         {
             m_uses = 0;
-            m_first.Clear();
+            m_first = 0;
             m_users.clear();
         }
 
     private:
         uint32     m_uses = 0;
-        ObjectGuid m_first;
+        ObjectGuid m_first = 0;
         GuidSet    m_users;
 };

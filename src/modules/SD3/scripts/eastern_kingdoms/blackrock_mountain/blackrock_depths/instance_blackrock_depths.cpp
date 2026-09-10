@@ -336,7 +336,7 @@ void instance_blackrock_depths::OnObjectCreate(GameObject* pGo)
             {
                 // bar or Plugger event done: open the Grim Guzzler door
                 // tell the instance script it is open to prevent some of the other events
-                DoUseDoorOrButton(GO_BAR_DOOR);
+                DoUseDoorOrButtonByEntry(GO_BAR_DOOR);
                 SetBarDoorIsOpen();
             }
             break;
@@ -355,7 +355,7 @@ void instance_blackrock_depths::SetData(uint32 uiType, uint32 uiData)
             // If finished the arena event after theldren fight
             if (uiData == DONE && m_auiEncounter[0] == SPECIAL)
             {
-                DoRespawnGameObject(GO_ARENA_SPOILS, HOUR);
+                DoRespawnGameObjectByEntry(GO_ARENA_SPOILS, HOUR);
             }
             m_auiEncounter[0] = uiData;
             break;
@@ -393,7 +393,7 @@ void instance_blackrock_depths::SetData(uint32 uiType, uint32 uiData)
             }
             if (uiData == DONE)
             {
-                DoUseDoorOrButton(GO_SECRET_DOOR);
+                DoUseDoorOrButtonByEntry(GO_SECRET_DOOR);
             }
             m_auiEncounter[1] = uiData;
             break;
@@ -419,7 +419,7 @@ void instance_blackrock_depths::SetData(uint32 uiType, uint32 uiData)
                 break;
             }
             // Combat door
-            DoUseDoorOrButton(GO_TOMB_ENTER);
+            DoUseDoorOrButtonByEntry(GO_TOMB_ENTER);
             // Start the event
             if (uiData == IN_PROGRESS)
             {
@@ -444,16 +444,16 @@ void instance_blackrock_depths::SetData(uint32 uiType, uint32 uiData)
             }
             if (uiData == DONE)
             {
-                DoRespawnGameObject(GO_CHEST_SEVEN, HOUR);
-                DoUseDoorOrButton(GO_TOMB_EXIT);
+                DoRespawnGameObjectByEntry(GO_CHEST_SEVEN, HOUR);
+                DoUseDoorOrButtonByEntry(GO_TOMB_EXIT);
             }
             m_auiEncounter[3] = uiData;
             break;
         case TYPE_LYCEUM:
             if (uiData == DONE)
             {
-                DoUseDoorOrButton(GO_GOLEM_ROOM_N);
-                DoUseDoorOrButton(GO_GOLEM_ROOM_S);
+                DoUseDoorOrButtonByEntry(GO_GOLEM_ROOM_N);
+                DoUseDoorOrButtonByEntry(GO_GOLEM_ROOM_S);
             }
             m_auiEncounter[4] = uiData;
             break;
@@ -461,17 +461,17 @@ void instance_blackrock_depths::SetData(uint32 uiType, uint32 uiData)
             switch (uiData)
             {
                 case IN_PROGRESS:
-                    DoUseDoorOrButton(GO_GOLEM_ROOM_N);
-                    DoUseDoorOrButton(GO_GOLEM_ROOM_S);
+                    DoUseDoorOrButtonByEntry(GO_GOLEM_ROOM_N);
+                    DoUseDoorOrButtonByEntry(GO_GOLEM_ROOM_S);
                     break;
                 case FAIL:
-                    DoUseDoorOrButton(GO_GOLEM_ROOM_N);
-                    DoUseDoorOrButton(GO_GOLEM_ROOM_S);
+                    DoUseDoorOrButtonByEntry(GO_GOLEM_ROOM_N);
+                    DoUseDoorOrButtonByEntry(GO_GOLEM_ROOM_S);
                     break;
                 case DONE:
-                    DoUseDoorOrButton(GO_GOLEM_ROOM_N);
-                    DoUseDoorOrButton(GO_GOLEM_ROOM_S);
-                    DoUseDoorOrButton(GO_THRONE_ROOM);
+                    DoUseDoorOrButtonByEntry(GO_GOLEM_ROOM_N);
+                    DoUseDoorOrButtonByEntry(GO_GOLEM_ROOM_S);
+                    DoUseDoorOrButtonByEntry(GO_THRONE_ROOM);
                     break;
             }
             m_auiEncounter[5] = uiData;
@@ -488,7 +488,7 @@ void instance_blackrock_depths::SetData(uint32 uiType, uint32 uiData)
         case TYPE_FLAMELASH:
             for (int i = 0; i < MAX_DWARF_RUNES; ++i)
             {
-                DoUseDoorOrButton(GO_DWARFRUNE_A01 + i);
+                DoUseDoorOrButtonByEntry(GO_DWARFRUNE_A01 + i);
             }
             return;
         case TYPE_HURLEY:
@@ -743,7 +743,7 @@ void instance_blackrock_depths::HandleBarPatrol(uint8 uiStep)
                 // if relevant, open the bar door and tell the instance it is open
                 if (!m_bIsBarDoorOpen)
                 {
-                    DoUseDoorOrButton(GO_BAR_DOOR);
+                    DoUseDoorOrButtonByEntry(GO_BAR_DOOR);
                     SetBarDoorIsOpen();
                 }
 

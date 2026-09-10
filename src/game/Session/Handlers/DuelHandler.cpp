@@ -23,22 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file DuelHandler.cpp
- * @brief Player duel request handling
- *
- * This file implements handlers for duel-related opcodes:
- * - CMSG_DUEL_ACCEPTED: Target player accepts the duel
- * - CMSG_DUEL_CANCELLED: Player cancels or forfeits the duel
- *
- * Duel lifecycle:
- * 1. Challenger sends duel request (handled elsewhere)
- * 2. Target accepts (HandleDuelAcceptedOpcode)
- * 3. 3-second countdown begins
- * 4. Duel starts (players can attack each other)
- * 5. Duel ends by forfeit, death, or distance
- */
-
 #include <ctime>
 #include "WorldPacket.h"
 #include "WorldSession.h"
@@ -46,22 +30,12 @@
 #include "Log.h"
 #include "Player.h"
 
-/**
- * @brief Handle duel acceptance from the challenged player
- * @param recvPacket World packet containing opponent GUID
- *
- * Validates the duel request and initiates the countdown if accepted.
- * Only the player who was challenged can accept (not the initiator).
- *
- * On success, both players receive a 3-second countdown before the
- * duel officially begins.
- */
 void duels::DuelAccepted(Player& who, WorldPacket& recvPacket)
 {
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
     recvPacket >> guid;
 
-    if (!who.Duelling().Stands())                                 // ignore accept from duel-sender
+    if (!who.Duelling().Stands())
     {
         return;
     }
@@ -86,28 +60,15 @@ void duels::DuelAccepted(Player& who, WorldPacket& recvPacket)
     plTarget->Duelling().TellCountdown(3000);
 }
 
-/**
- * @brief Handle duel cancellation or forfeit
- * @param recvPacket World packet (may contain opponent GUID)
- *
- * Handles two scenarios:
- * 1. Active duel forfeit: If duel has started, caster surrenders
- *    and casts "Beg" emote (spell 7267)
- * 2. Request cancellation: If duel hasn't started, simply cancels the request
- *
- * @note /forfeit command also triggers this handler
- */
 void duels::DuelCancelled(Player& who, WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_DUEL_CANCELLED");
 
-    // no duel requested
     if (!who.Duelling().Stands())
     {
         return;
     }
 
-    // player surrendered in a duel using /forfeit
     if (who.Duelling().StartedAt() != 0)
     {
         who.CombatStopWithPets(true);
@@ -116,14 +77,12 @@ void duels::DuelCancelled(Player& who, WorldPacket& recvPacket)
             who.Duelling().Against()->CombatStopWithPets(true);
         }
 
-        who.CastSpell(&who, 7267, true);    // beg
+        who.CastSpell(&who, 7267, true);
         who.Duelling().Complete(DUEL_WON);
         return;
     }
 
-    // player either discarded the duel using the "discard button"
-    // or used "/forfeit" before countdown reached 0
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
     recvPacket >> guid;
 
     who.Duelling().Complete(DUEL_INTERRUPTED);

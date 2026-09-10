@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <string>
 #include "Utilities/PackedValues.h"
 #include "Player.h"
@@ -72,12 +70,6 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Builds the current gossip menu for a source object.
- *
- * @param pSource The gossip source object.
- * @param menuId The gossip menu identifier to prepare.
- */
 void Player::PrepareGossipMenu(Occupant* pSource, uint32 menuId)
 {
     PlayerMenu* pMenu = PlayerTalkClass;
@@ -87,10 +79,8 @@ void Player::PrepareGossipMenu(Occupant* pSource, uint32 menuId)
 
     GossipMenuItemsMapBounds pMenuItemBounds = sObjectMgr.GetGossipMenuItemsMapBounds(menuId);
 
-    // prepares quest menu when true
     bool canSeeQuests = menuId == GetDefaultGossipMenuForSource(pSource);
 
-    // if canSeeQuests (the default, top level menu) and no menu options exist for this, use options from default options
     if (pMenuItemBounds.first == pMenuItemBounds.second && canSeeQuests)
     {
         pMenuItemBounds = sObjectMgr.GetGossipMenuItemsMapBounds(0);
@@ -104,7 +94,7 @@ void Player::PrepareGossipMenu(Occupant* pSource, uint32 menuId)
 
         if (gossipMenu.conditionId && !sObjectMgr.IsPlayerMeetToCondition(gossipMenu.conditionId, this, GetMap(), pSource, CONDITION_FROM_GOSSIP_OPTION))
         {
-            if (isGameMaster())                             // Let GM always see menu items regardless of conditions
+            if (isGameMaster())
             {
                 isGMSkipConditionCheck = true;
             }
@@ -114,11 +104,11 @@ void Player::PrepareGossipMenu(Occupant* pSource, uint32 menuId)
                 {
                     canSeeQuests = false;
                 }
-                continue;                                   // Skip this option
+                continue;
             }
         }
 
-        if (pSource->IsCreature())
+        if (IsCreature(pSource))
         {
             Creature* pCreature = (Creature*)pSource;
 
@@ -137,7 +127,7 @@ void Player::PrepareGossipMenu(Occupant* pSource, uint32 menuId)
                     hasMenuItem = false;
                     break;
                 case GOSSIP_OPTION_ARMORER:
-                    hasMenuItem = false;                    // added in special mode
+                    hasMenuItem = false;
                     break;
                 case GOSSIP_OPTION_SPIRITHEALER:
                     if (!IsDead())
@@ -198,14 +188,14 @@ void Player::PrepareGossipMenu(Occupant* pSource, uint32 menuId)
                 case GOSSIP_OPTION_PETITIONER:
                 case GOSSIP_OPTION_TABARDDESIGNER:
                 case GOSSIP_OPTION_AUCTIONEER:
-                    break;                                  // no checks
+                    break;
                 default:
                     sLog.outErrorDb("Creature entry %u have unknown gossip option %u for menu %u", pCreature->GetEntry(), gossipMenu.option_id, gossipMenu.menu_id);
                     hasMenuItem = false;
                     break;
             }
         }
-        else if (pSource->IsGameObject())
+        else if (IsGameObject(pSource))
         {
             GameObject* pGo = (GameObject*)pSource;
 
@@ -268,28 +258,8 @@ void Player::PrepareGossipMenu(Occupant* pSource, uint32 menuId)
         PrepareQuestMenu(pSource->GetObjectGuid());
     }
 
-    // some gossips aren't handled in normal way ... so we need to do it this way .. TODO: handle it in normal way ;-)
-    /*if (pMenu->Empty())
-    {
-        if (pCreature->HasNpcFlag(UNIT_NPC_FLAG_TRAINER))
-        {
-            // output error message if need
-            pCreature->IsTrainerOf(this, true);
-        }
-
-        if (pCreature->HasNpcFlag(UNIT_NPC_FLAG_BATTLEMASTER))
-        {
-            // output error message if need
-            pCreature->CanInteractWithBattleMaster(this, true);
-        }
-    }*/
 }
 
-/**
- * @brief Sends the prepared gossip or quest menu for a source object.
- *
- * @param pSource The source object whose prepared menu should be sent.
- */
 void Player::SendPreparedGossip(Occupant* pSource)
 {
     if (!pSource)
@@ -297,27 +267,24 @@ void Player::SendPreparedGossip(Occupant* pSource)
         return;
     }
 
-    if (pSource->IsCreature())
+    if (IsCreature(pSource))
     {
-        // in case no gossip flag and quest menu not empty, open quest menu (client expect gossip menu with this flag)
-        if (!ToCreature(pSource)->HasNpcFlag(UNIT_NPC_FLAG_GOSSIP) && !PlayerTalkClass->GetQuestMenu().Empty())
+
+        if (!static_cast<Creature*>(pSource)->HasNpcFlag(UNIT_NPC_FLAG_GOSSIP) && !PlayerTalkClass->GetQuestMenu().Empty())
         {
             SendPreparedQuest(pSource->GetObjectGuid());
             return;
         }
     }
-    else if (pSource->IsGameObject())
+    else if (IsGameObject(pSource))
     {
-        // probably need to find a better way here
+
         if (!PlayerTalkClass->GetGossipMenu().GetMenuId() && !PlayerTalkClass->GetQuestMenu().Empty())
         {
             SendPreparedQuest(pSource->GetObjectGuid());
             return;
         }
     }
-
-    // in case non empty gossip menu (that not included quests list size) show it
-    // (quest entries from quest menu will be included in list)
 
     uint32 textId = GetGossipTextId(pSource);
 
@@ -329,12 +296,6 @@ void Player::SendPreparedGossip(Occupant* pSource)
     PlayerTalkClass->SendGossipMenu(textId, pSource->GetObjectGuid());
 }
 
-/**
- * @brief Handles selection of a gossip menu option.
- *
- * @param pSource The gossip source object.
- * @param gossipListId The selected menu item index.
- */
 void Player::OnGossipSelect(Occupant* pSource, uint32 gossipListId)
 {
     GossipMenu& gossipmenu = PlayerTalkClass->GetGossipMenu();
@@ -349,7 +310,7 @@ void Player::OnGossipSelect(Occupant* pSource, uint32 gossipListId)
     uint32 gossipOptionId = menu_item.m_gOptionId;
     ObjectGuid guid = pSource->GetObjectGuid();
 
-    if (pSource->IsGameObject())
+    if (IsGameObject(pSource))
     {
         if (gossipOptionId > GOSSIP_OPTION_QUESTGIVER)
         {
@@ -361,8 +322,6 @@ void Player::OnGossipSelect(Occupant* pSource, uint32 gossipListId)
     GossipMenuItemData const* pMenuData = gossipmenu.GetItemData(gossipListId);
     GossipMenuItemData menuData = {};
 
-    // if pMenuData exist we need to keep a copy of actual data for the following code to process
-    // call like PrepareGossipMenu or SendPreparedGossip might change the value
     if (pMenuData)
     {
         menuData = *pMenuData;
@@ -377,7 +336,6 @@ void Player::OnGossipSelect(Occupant* pSource, uint32 gossipListId)
                 PlayerTalkClass->SendPointOfInterest(menuData.m_gAction_poi);
             }
 
-            // send new menu || close gossip || stay at current menu
             if (menuData.m_gAction_menu > 0)
             {
                 PrepareGossipMenu(pSource, uint32(menuData.m_gAction_menu));
@@ -461,26 +419,20 @@ void Player::OnGossipSelect(Occupant* pSource, uint32 gossipListId)
 
     if (pMenuData && menuData.m_gAction_script)
     {
-        if (pSource->IsCreature())
+        if (IsCreature(pSource))
         {
             GetMap()->Scripts().Start(DBS_ON_GOSSIP, menuData.m_gAction_script, pSource, this, SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE);
         }
-        else if (pSource->IsGameObject())
+        else if (IsGameObject(pSource))
         {
             GetMap()->Scripts().Start(DBS_ON_GOSSIP, menuData.m_gAction_script, this, pSource, SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET);
         }
     }
 }
 
-/**
- * @brief Gets the default gossip text identifier for a source object.
- *
- * @param pSource The gossip source object.
- * @return The gossip text identifier to display.
- */
 uint32 Player::GetGossipTextId(Occupant* pSource)
 {
-    if (!pSource || !pSource->IsCreature())
+    if (!pSource || !IsCreature(pSource))
     {
         return DEFAULT_GOSSIP_MESSAGE;
     }
@@ -493,13 +445,6 @@ uint32 Player::GetGossipTextId(Occupant* pSource)
     return DEFAULT_GOSSIP_MESSAGE;
 }
 
-/**
- * @brief Resolves the gossip text identifier for a specific gossip menu.
- *
- * @param menuId The gossip menu identifier.
- * @param pSource The gossip source object.
- * @return The resolved gossip text identifier.
- */
 uint32 Player::GetGossipTextId(uint32 menuId, Occupant* pSource)
 {
     uint32 textId = DEFAULT_GOSSIP_MESSAGE;
@@ -516,8 +461,7 @@ uint32 Player::GetGossipTextId(uint32 menuId, Occupant* pSource)
     for (GossipMenusMap::const_iterator itr = pMenuBounds.first; itr != pMenuBounds.second; ++itr)
     {
         GossipMenus const& gossipMenu = itr->second;
-        // Take the text that has the highest conditionId of all fitting
-        // No condition and no text with condition found OR higher and fitting condition found
+
         if ((!gossipMenu.conditionId && !lastConditionId) ||
             (gossipMenu.conditionId > lastConditionId && sObjectMgr.IsPlayerMeetToCondition(gossipMenu.conditionId, this, GetMap(), pSource, CONDITION_FROM_GOSSIP_MENU)))
         {
@@ -527,7 +471,6 @@ uint32 Player::GetGossipTextId(uint32 menuId, Occupant* pSource)
         }
     }
 
-    // Start related script
     if (scriptId)
     {
         GetMap()->Scripts().Start(DBS_ON_GOSSIP, scriptId, this, pSource, SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET);
@@ -536,19 +479,13 @@ uint32 Player::GetGossipTextId(uint32 menuId, Occupant* pSource)
     return textId;
 }
 
-/**
- * @brief Gets the default gossip menu identifier for a source object.
- *
- * @param pSource The gossip source object.
- * @return The default gossip menu identifier, or zero if none exists.
- */
 uint32 Player::GetDefaultGossipMenuForSource(Occupant* pSource)
 {
-    if (pSource->IsCreature())
+    if (IsCreature(pSource))
     {
         return ((Creature*)pSource)->GetCreatureInfo()->GossipMenuId;
     }
-    else if (pSource->IsGameObject())
+    else if (IsGameObject(pSource))
     {
         return((GameObject*)pSource)->GetGOInfo()->GetGossipMenuId();
     }

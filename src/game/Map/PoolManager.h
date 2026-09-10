@@ -42,14 +42,12 @@ struct PoolTemplateData
 {
     PoolTemplateData() : mapEntry(nullptr), MaxLimit(0), AutoSpawn(false) {}
 
-    MapEntry const* mapEntry;                               // Map id used for pool creature/gameobject spams. In case non-instanceable map
-    // it can be not unique but base at sharing same pool system dynamic data in this case this is not important.
-    // nullptr is no spawns by some reason
+    MapEntry const* mapEntry;
+
     uint32  MaxLimit;
-    bool AutoSpawn;                                         // spawn at pool system start (not part of another pool and not part of event spawn)
+    bool AutoSpawn;
     std::string description;
 
-    // helpers
     bool CanBeSpawnedAtMap(MapEntry const* entry) const
     {
         return mapEntry && (mapEntry == entry || (!entry->Instanceable() && !mapEntry->Instanceable()));
@@ -68,7 +66,7 @@ struct PoolObject
         void CheckEventLinkAndReport(uint32 poolId, int16 event_id, std::map<uint32, int16> const& creature2event, std::map<uint32, int16> const& go2event) const;
 };
 
-class Pool                                                  // for Pool of Pool case
+class Pool
 {
 };
 
@@ -147,14 +145,13 @@ class PoolManager
         ~PoolManager() {};
 
         void LoadFromDB();
-        void Initialize(MapPersistentState* state);         // called at new MapPersistentState object create
+        void Initialize(MapPersistentState* state);
 
         uint16 GetMaxPoolId() const { return max_pool_id; }
 
         template<typename T>
             uint16 IsPartOfAPool(uint32 db_guid_or_pool_id) const;
 
-        // Method that tell if the creature/gameobject/pool is part of top level pool and return the pool id if yes
         template<typename T>
             uint16 IsPartOfTopPool(uint32 db_guid_or_pool_id) const
         {
@@ -183,11 +180,9 @@ class PoolManager
         template<typename T>
             void UpdatePool(MapPersistentState& mapState, uint16 pool_id, uint32 db_guid_or_pool_id = 0);
 
-        // used for calling from global systems when need spawn pool in all appropriate map instances
         void SpawnPoolInMaps(uint16 pool_id, bool instantly);
         void DespawnPoolInMaps(uint16 pool_id);
 
-        // used for calling from global systems when need initialize spawn pool state in appropriate (possible) map persistent state
         void InitSpawnPool(MapPersistentState& mapState, uint16 pool_id);
 
         template<typename T>
@@ -217,7 +212,6 @@ class PoolManager
         PoolGroupGameObjectMap mPoolGameobjectGroups;
         PoolGroupPoolMap mPoolPoolGroups;
 
-        // static maps DB low guid -> pool id
         SearchMap mCreatureSearchMap;
         SearchMap mGameobjectSearchMap;
         SearchMap mPoolSearchMap;
@@ -225,7 +219,6 @@ class PoolManager
 
 #define sPoolMgr MaNGOS::Singleton<PoolManager>::Instance()
 
-// Method that tell if the creature is part of a pool and return the pool id if yes
 template<>
     inline uint16 PoolManager::IsPartOfAPool<Creature>(uint32 db_guid) const
 {
@@ -238,7 +231,6 @@ template<>
     return 0;
 }
 
-// Method that tell if the gameobject is part of a pool and return the pool id if yes
 template<>
     inline uint16 PoolManager::IsPartOfAPool<GameObject>(uint32 db_guid) const
 {
@@ -251,7 +243,6 @@ template<>
     return 0;
 }
 
-// Method that tell if the pool is part of another pool and return the pool id if yes
 template<>
     inline uint16 PoolManager::IsPartOfAPool<Pool>(uint32 pool_id) const
 {

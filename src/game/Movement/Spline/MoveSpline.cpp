@@ -38,10 +38,6 @@ namespace Movement
     extern float computeFallElevation(float time_passed, bool isSafeFall, float start_velocy);
     extern float computeFallElevation(float time_passed);
 
-    /**
-     * @brief Computes the current position on the spline.
-     * @return The computed location.
-     */
     Location MoveSpline::ComputePosition() const
     {
         MANGOS_ASSERT(Initialized());
@@ -70,7 +66,7 @@ namespace Movement
             {
                 c.orientation = atan2(facing.f.y - c.y, facing.f.x - c.x);
             }
-            // nothing to do for MoveSplineFlag::Final_Target flag
+
         }
         else
         {
@@ -82,10 +78,6 @@ namespace Movement
         return c;
     }
 
-    /**
-     * @brief Computes the elevation during a fall.
-     * @param el The elevation to be computed.
-     */
     void MoveSpline::computeFallElevation(float& el) const
     {
         float z_now = spline.getPoint(spline.first()).z - Movement::computeFallElevation(MSToSec(time_passed));
@@ -100,20 +92,11 @@ namespace Movement
         }
     }
 
-    /**
-     * @brief Computes the duration of the movement.
-     * @param length The length of the path.
-     * @param velocity The velocity of the movement.
-     * @return The computed duration in milliseconds.
-     */
     inline uint32 computeDuration(float length, float velocity)
     {
         return SecToMS(length / velocity);
     }
 
-    /**
-     * @brief Struct for initializing fall parameters.
-     */
     struct FallInitializer
     {
         FallInitializer(float _start_elevation) : start_elevation(_start_elevation) {}
@@ -129,9 +112,6 @@ namespace Movement
         minimal_duration = 1,
     };
 
-    /**
-     * @brief Struct for initializing common parameters.
-     */
     struct CommonInitializer
     {
         CommonInitializer(float _velocity) : velocityInv(1000.f / _velocity), time(minimal_duration) {}
@@ -144,19 +124,13 @@ namespace Movement
         }
     };
 
-    /**
-     * @brief Initializes the spline with the given arguments.
-     * @param args The initialization arguments.
-     */
     void MoveSpline::init_spline(const MoveSplineInitArgs& args)
     {
         const SplineBase::EvaluationMode modes[2] = {SplineBase::ModeLinear, SplineBase::ModeCatmullrom};
         if (args.flags.cyclic)
         {
             uint32 cyclic_point = 0;
-            // MoveSplineFlag::Enter_Cycle support dropped
-            // if (splineflags & SPLINEFLAG_ENTER_CYCLE)
-            // cyclic_point = 1;   // shouldn't be modified, came from client
+
             spline.init_cyclic_spline(&args.path[0], args.path.size(), modes[args.flags.isSmooth()], cyclic_point);
         }
         else
@@ -164,7 +138,6 @@ namespace Movement
             spline.init_spline(&args.path[0], args.path.size(), modes[args.flags.isSmooth()]);
         }
 
-        // init spline timestamps
         if (splineflags.falling)
         {
             FallInitializer init(spline.getPoint(spline.first()).z);
@@ -176,7 +149,6 @@ namespace Movement
             spline.initLengths(init);
         }
 
-        // TODO: what to do in such cases? problem is in input data (all points are at same coords)
         if (spline.length() < minimal_duration)
         {
             sLog.outError("MoveSpline::init_spline: zero length spline, wrong input data?");
@@ -185,10 +157,6 @@ namespace Movement
         point_Idx = spline.first();
     }
 
-    /**
-     * @brief Initializes the MoveSpline with the given arguments.
-     * @param args The initialization arguments.
-     */
     void MoveSpline::Initialize(const MoveSplineInitArgs& args)
     {
         splineflags = args.flags;
@@ -197,7 +165,6 @@ namespace Movement
         point_Idx_offset = args.path_Idx_offset;
         time_passed = 0;
 
-        // detect Stop command
         if (splineflags.done)
         {
             spline.clear();
@@ -207,21 +174,11 @@ namespace Movement
         init_spline(args);
     }
 
-    /**
-     * @brief Default constructor for MoveSpline.
-     */
     MoveSpline::MoveSpline() : m_Id(0), time_passed(0), point_Idx(0), point_Idx_offset(0)
     {
         splineflags.done = true;
     }
 
-    /// ============================================================================================
-
-    /**
-     * @brief Validates the MoveSpline initialization arguments.
-     * @param unit The unit to validate against.
-     * @return True if the arguments are valid, false otherwise.
-     */
     bool MoveSplineInitArgs::Validate(Unit* unit) const
     {
 #define CHECK(exp) \
@@ -232,18 +189,11 @@ namespace Movement
         }
         CHECK(path.size() > 1);
         CHECK(velocity > 0.f);
-        // CHECK(_checkPathBounds());
+
         return true;
 #undef CHECK
     }
 
-    // MONSTER_MOVE packet format limitation for not CatmullRom movement:
-    // each vertex offset packed into 11 bytes
-
-    /**
-     * @brief Checks the bounds of the path for non-CatmullRom movement.
-     * @return True if the path bounds are valid, false otherwise.
-     */
     bool MoveSplineInitArgs::_checkPathBounds() const
     {
         if (!(flags & MoveSplineFlag::Mask_CatmullRom) && path.size() > 2)
@@ -267,13 +217,6 @@ namespace Movement
         return true;
     }
 
-    /// ============================================================================================
-
-    /**
-     * @brief Updates the state of the MoveSpline.
-     * @param ms_time_diff The time difference in milliseconds.
-     * @return The result of the update.
-     */
     MoveSpline::UpdateResult MoveSpline::_updateState(int32& ms_time_diff)
     {
         if (Finalized())
@@ -316,10 +259,6 @@ namespace Movement
         return result;
     }
 
-    /**
-     * @brief Converts the MoveSpline to a string representation.
-     * @return The string representation of the MoveSpline.
-     */
     std::string MoveSpline::ToString() const
     {
         std::stringstream str;
@@ -347,9 +286,6 @@ namespace Movement
         return str.str();
     }
 
-    /**
-     * @brief Finalizes the MoveSpline.
-     */
     void MoveSpline::_Finalize()
     {
         splineflags.done = true;
@@ -357,10 +293,6 @@ namespace Movement
         time_passed = Duration();
     }
 
-    /**
-     * @brief Gets the current path index.
-     * @return The current path index.
-     */
     int32 MoveSpline::currentPathIdx() const
     {
         int32 point = point_Idx_offset + point_Idx - spline.first() + (int)Finalized();

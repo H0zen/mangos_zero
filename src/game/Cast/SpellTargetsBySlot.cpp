@@ -23,15 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SpellTargetsBySlot.cpp
- * @brief The targets a slot picks for itself.
- *
- * A row can say that a slot's target is whatever the slot's own verb
- * implies, and then the answer depends on the verb, and for a good many
- * spells on the spell. This is that answer.
- */
-
 #include <algorithm>
 #include <iterator>
 #include <list>
@@ -69,12 +60,6 @@
 #include "Corpse.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Finds the nearest thing a corpse search accepts.
- *
- * @tparam T The corpse search predicate type.
- * @return The first match, or null when there is none within range.
- */
 template<typename T>
 Occupant* Spell::FindCorpseUsing()
 {
@@ -95,25 +80,17 @@ Occupant* Spell::FindCorpseUsing()
     return result;
 }
 
-/**
- * @brief Picks the targets a slot's own verb implies.
- *
- * @param operation      The slot being filled.
- * @param targetUnitMap  The list the picked units are added to.
- */
 void Spell::PickWhatTheSlotImplies(const cast::Operation& operation, UnitList& targetUnitMap)
 {
     const SpellEffectIndex effIndex = SpellEffectIndex(operation.slot);
 
-        // add here custom effects that need default target.
-        // FOR EVERY TARGET TYPE THERE IS A DIFFERENT FILL!!
         switch (operation.verb)
         {
             case SPELL_EFFECT_DUMMY:
             {
                 switch (m_spellInfo->ID)
                 {
-                    case 20577:                         // Cannibalize
+                    case 20577:
                     {
                         Occupant* result = FindCorpseUsing<MaNGOS::CannibalizeObjectCheck> ();
 
@@ -136,8 +113,8 @@ void Spell::PickWhatTheSlotImplies(const cast::Operation& operation, UnitList& t
                         }
                         else
                         {
-                            // clear cooldown at fail
-                            if (m_caster->IsPlayer())
+
+                            if (IsPlayer(m_caster))
                             {
                                 ((Player*)m_caster)->RemoveSpellCooldown(m_spellInfo->ID, true);
                             }
@@ -153,7 +130,7 @@ void Spell::PickWhatTheSlotImplies(const cast::Operation& operation, UnitList& t
                         }
                         break;
                 }
-                // Add AoE target-mask to self, if no target-dest provided already
+
                 if ((m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) == 0)
                 {
                     m_targets.setDestination(m_caster->Where().X(), m_caster->Where().Y(), m_caster->Where().Z());
@@ -181,14 +158,14 @@ void Spell::PickWhatTheSlotImplies(const cast::Operation& operation, UnitList& t
                 {
                     targetUnitMap.push_back(m_targets.getUnitTarget());
                 }
-                // Triggered spells have additional spell targets - cast them even if no explicit unit target is given (required for spell 50516 for example)
+
                 else if (operation.verb == SPELL_EFFECT_TRIGGER_SPELL)
                 {
                     targetUnitMap.push_back(m_caster);
                 }
                 break;
             case SPELL_EFFECT_SUMMON_PLAYER:
-                if (m_caster->IsPlayer() && ((Player*)m_caster)->GetSelectionGuid())
+                if (IsPlayer(m_caster) && ((Player*)m_caster)->GetSelectionGuid())
                 {
                     if (Player* target = sObjectMgr.GetPlayer(((Player*)m_caster)->GetSelectionGuid()))
                     {
@@ -214,16 +191,7 @@ void Spell::PickWhatTheSlotImplies(const cast::Operation& operation, UnitList& t
                 break;
             case SPELL_EFFECT_TELEPORT_UNITS:
             case SPELL_EFFECT_SUMMON:
-                /** [-ZERO]  if (m_spellInfo->EffectMiscValueB[effIndex] == SUMMON_TYPE_POSESSED ||
-                 *              m_spellInfo->EffectMiscValueB[effIndex] == SUMMON_TYPE_POSESSED2)
-                 *              {
-                 *                  if (m_targets.getUnitTarget())
-                 *                  {
-                 *                      targetUnitMap.push_back(m_targets.getUnitTarget());
-                 *                  }
-                 *              }
-                 *              else
-                 */
+
                 {
                     targetUnitMap.push_back(m_caster);
                 }
@@ -263,11 +231,11 @@ void Spell::PickWhatTheSlotImplies(const cast::Operation& operation, UnitList& t
             case SPELL_EFFECT_APPLY_AURA:
                 switch (operation.aura)
                 {
-                    case SPELL_AURA_ADD_FLAT_MODIFIER:  // some spell mods auras have 0 target modes instead expected TARGET_SELF(1) (and present for other ranks for same spell for example)
+                    case SPELL_AURA_ADD_FLAT_MODIFIER:
                     case SPELL_AURA_ADD_PCT_MODIFIER:
                         targetUnitMap.push_back(m_caster);
                         break;
-                    default:                            // apply to target in other case
+                    default:
                         if (m_targets.getUnitTarget())
                         {
                             targetUnitMap.push_back(m_targets.getUnitTarget());
@@ -276,7 +244,7 @@ void Spell::PickWhatTheSlotImplies(const cast::Operation& operation, UnitList& t
                 }
                 break;
             case SPELL_EFFECT_APPLY_AREA_AURA_PARTY:
-                // AreaAura
+
                 if ((m_spellInfo->Attributes == (SPELL_ATTR_NOT_SHAPESHIFT | SPELL_ATTR_DONT_AFFECT_SHEATH_STATE | SPELL_ATTR_CASTABLE_WHILE_MOUNTED | SPELL_ATTR_CASTABLE_WHILE_SITTING)) || (m_spellInfo->Attributes == SPELL_ATTR_NOT_SHAPESHIFT))
                 {
                     SetTargetMap(operation, TARGET_AREAEFFECT_PARTY, targetUnitMap);

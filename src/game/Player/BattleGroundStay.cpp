@@ -46,13 +46,13 @@ bool BattleGroundStay::TeleportBack()
 
 bool BattleGroundStay::MayJoin() const
 {
-    // the deserter's debuff keeps him out
+
     return m_owner.GetDummyAura(26013) == nullptr;
 }
 
-void BattleGroundStay::RecordTheWayBack(Player* leader /*= nullptr*/)
+void BattleGroundStay::RecordTheWayBack(Player* leader )
 {
-    // a chat command, or joining alone, means he leads himself back
+
     if (!leader || !leader->IsInWorld() || leader->IsTaxiFlying() ||
         leader->GetMap()->IsDungeon() || leader->GetMap()->IsBattleGround())
     {
@@ -63,7 +63,7 @@ void BattleGroundStay::RecordTheWayBack(Player* leader /*= nullptr*/)
     {
         if (leader->GetMap()->IsDungeon())
         {
-            // out of a dungeon he comes back to that dungeon's graveyard
+
             if (WorldSafeLocsEntry const* grave = sObjectMgr.GetClosestGraveYard(
                     leader->Where().X(), leader->Where().Y(), leader->Where().Z(),
                     leader->GetMapId(), leader->GetTeam()))
@@ -87,14 +87,13 @@ void BattleGroundStay::RecordTheWayBack(Player* leader /*= nullptr*/)
         }
     }
 
-    // where nothing else can be worked out, his inn
     m_cameFrom = Geometry::Placement::Somewhere(m_owner.Home().MapId(),
                                                 Geometry::Vector3(m_owner.Home().X(), m_owner.Home().Y(), m_owner.Home().Z()),
                                                 0.0f);
     m_unsaved = true;
 }
 
-void BattleGroundStay::Leave(bool teleportBack /*= true*/)
+void BattleGroundStay::Leave(bool teleportBack )
 {
     BattleGround* ground = Ground();
     if (!ground)
@@ -104,7 +103,6 @@ void BattleGroundStay::Leave(bool teleportBack /*= true*/)
 
     ground->RemovePlayerAtLeave(m_owner.GetObjectGuid(), teleportBack, true);
 
-    // after the removal, so that he is alive again for the cast
     if (m_owner.isGameMaster() || !sWorld.getConfig(CONFIG_BOOL_BATTLEGROUND_CAST_DESERTER))
     {
         return;
@@ -115,12 +113,11 @@ void BattleGroundStay::Leave(bool teleportBack /*= true*/)
         return;
     }
 
-    // he may already be on his way out, in which case the debuff waits for him
     if (m_owner.IsBeingTeleportedFar())
     {
         m_owner.ScheduleDelayedOperation(DELAYED_SPELL_CAST_DESERTER);
         return;
     }
 
-    m_owner.CastSpell(&m_owner, 26013, true);               // Deserter
+    m_owner.CastSpell(&m_owner, 26013, true);
 }

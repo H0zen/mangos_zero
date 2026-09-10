@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <algorithm>
 #include "Creature.h"
 #include "World.h"
@@ -60,12 +58,7 @@
 #include "MovementGenerator.h"
 #include "Policies/Singleton.h"
 
-/**
- * @brief Selects the creature level and recalculates level-dependent stats.
- *
- * @param forcedLevel Optional forced level override.
- */
-void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
+void Creature::SelectLevel(uint32 forcedLevel )
 {
     CreatureInfo const* cinfo = GetCreatureInfo();
     if (!cinfo)
@@ -73,7 +66,7 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
         return;
     }
 
-    uint32 rank = IsPet() ? 0 : cinfo->Rank;                // TODO :: IsPet probably not needed here
+    uint32 rank = IsPet() ? 0 : cinfo->Rank;
 
     uint32 const minlevel = cinfo->MinLevel;
     uint32 const maxlevel = cinfo->MaxLevel;
@@ -86,13 +79,8 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
 
     SetLevel(level);
 
-    //////////////////////////////////////////////////////////////////////////
-    // Calculate level dependent stats
-    //////////////////////////////////////////////////////////////////////////
-
     stats::Vitals made;
 
-    // TODO: Remove cinfo->ArmorMultiplier test workaround to disable classlevelstats when DB is ready
     CreatureClassLvlStats const* cCLS = sObjectMgr.GetCreatureClassLvlStats(level, cinfo->UnitClass);
     if (cinfo->ArmorMultiplier > 0 && cCLS)
     {
@@ -108,7 +96,7 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
     else
     {
         sLog.outError("Creature::SelectLevel> Error trying to set level(%u) for creature %s without enough data to do it!", level, GetGuidStr().c_str());
-        // probably wrong
+
         made.health = (cinfo->MaxLevelHealth / cinfo->MaxLevel) * level;
         made.mana = (cinfo->MaxLevelMana / cinfo->MaxLevel) * level;
     }
@@ -116,18 +104,12 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
     const uint32 health = stats::ScaledHealth(made.health, rates.health);
     const uint32 mana = made.mana;
 
-    //////////////////////////////////////////////////////////////////////////
-    // Set values
-    //////////////////////////////////////////////////////////////////////////
-
-    // health
     SetCreateHealth(health);
     SetMaxHealth(health);
     SetHealth(health);
 
     Tallied().Value(UNIT_MOD_HEALTH, BASE_VALUE, float(health));
 
-    // all power types
     for (int i = POWER_MANA; i <= POWER_HAPPINESS; ++i)
     {
         uint32 maxValue;
@@ -143,13 +125,11 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
 
         uint32 value = maxValue;
 
-        // For non regenerating powers set 0
         if ((i == POWER_ENERGY || i == POWER_MANA) && !IsRegeneratingPower())
         {
             value = 0;
         }
 
-        // Mana requires an extra field to be set
         if (i == POWER_MANA)
         {
             SetCreateMana(value);
@@ -160,7 +140,6 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
         Tallied().Value(UnitMods(UNIT_MOD_POWER_START + i), BASE_VALUE, float(value));
     }
 
-    // damage
     float damagemod = rates.damage;
 
     SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, cinfo->MinMeleeDmg * damagemod);
@@ -175,13 +154,6 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
     Tallied().Value(UNIT_MOD_ATTACK_POWER, BASE_VALUE, cinfo->MeleeAttackPower * damagemod);
 }
 
-/**
- * @brief What this server multiplies a rank's numbers by.
- *
- * The three rates are read together because they are one statement about how hard a rank is
- * meant to be, and because this is the only place in the level arithmetic that a
- * configuration is read at all: everything below the call is a function of the values.
- */
 stats::RankRates Creature::RatesFor(int32 rank)
 {
     stats::RankRates rates;
@@ -208,7 +180,7 @@ stats::RankRates Creature::RatesFor(int32 rank)
             rates.damage = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_RARE_DAMAGE);
             rates.spellDamage = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_RARE_SPELLDAMAGE);
             break;
-        // An elite, and anything whose row names a rank this build does not know.
+
         case CREATURE_ELITE_ELITE:
         default:
             rates.health = sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_ELITE_ELITE_HP);

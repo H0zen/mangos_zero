@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -70,12 +68,6 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Applies percentage-based durability loss to equipped items and optionally inventory items.
- *
- * @param percent The fraction of maximum durability to remove.
- * @param inventory True to include inventory and bag contents.
- */
 void Player::DurabilityLossAll(double percent, bool inventory)
 {
     for (int i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
@@ -88,8 +80,6 @@ void Player::DurabilityLossAll(double percent, bool inventory)
 
     if (inventory)
     {
-        // bags not have durability
-        // for (int i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; ++i)
 
         for (int i = INVENTORY_SLOT_ITEM_START; i < INVENTORY_SLOT_ITEM_END; ++i)
         {
@@ -98,9 +88,6 @@ void Player::DurabilityLossAll(double percent, bool inventory)
                 DurabilityLoss(pItem, percent);
             }
         }
-
-        // keys not have durability
-        // for (int i = KEYRING_SLOT_START; i < KEYRING_SLOT_END; ++i)
 
         for (int i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; ++i)
         {
@@ -118,12 +105,6 @@ void Player::DurabilityLossAll(double percent, bool inventory)
     }
 }
 
-/**
- * @brief Applies percentage-based durability loss to a single item.
- *
- * @param item The item to damage.
- * @param percent The fraction of maximum durability to remove.
- */
 void Player::DurabilityLoss(Item* item, double percent)
 {
     if (!item)
@@ -148,12 +129,6 @@ void Player::DurabilityLoss(Item* item, double percent)
     DurabilityPointsLoss(item, pDurabilityLoss);
 }
 
-/**
- * @brief Applies flat durability loss to equipped items and optionally inventory items.
- *
- * @param points The number of durability points to remove.
- * @param inventory True to include inventory and bag contents.
- */
 void Player::DurabilityPointsLossAll(int32 points, bool inventory)
 {
     for (int i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
@@ -165,8 +140,6 @@ void Player::DurabilityPointsLossAll(int32 points, bool inventory)
     }
     if (inventory)
     {
-        // bags not have durability
-        // for (int i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; ++i)
 
         for (int i = INVENTORY_SLOT_ITEM_START; i < INVENTORY_SLOT_ITEM_END; ++i)
         {
@@ -175,9 +148,6 @@ void Player::DurabilityPointsLossAll(int32 points, bool inventory)
                 DurabilityPointsLoss(pItem, points);
             }
         }
-
-        // keys not have durability
-        // for (int i = KEYRING_SLOT_START; i < KEYRING_SLOT_END; ++i)
 
         for (int i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; ++i)
         {
@@ -195,12 +165,6 @@ void Player::DurabilityPointsLossAll(int32 points, bool inventory)
     }
 }
 
-/**
- * @brief Applies flat durability loss to a single item.
- *
- * @param item The item to damage.
- * @param points The number of durability points to remove.
- */
 void Player::DurabilityPointsLoss(Item* item, int32 points)
 {
     int32 pMaxDurability = item->GetUInt32Value(ITEM_FIELD_MAXDURABILITY);
@@ -218,7 +182,7 @@ void Player::DurabilityPointsLoss(Item* item, int32 points)
 
     if (pOldDurability != pNewDurability)
     {
-        // modify item stats _before_ Durability set to 0 to pass _ApplyItemMods internal check
+
         if (pNewDurability == 0 && pOldDurability > 0 && item->IsEquipped())
         {
             _ApplyItemMods(item, item->GetSlot(), false);
@@ -226,7 +190,6 @@ void Player::DurabilityPointsLoss(Item* item, int32 points)
 
         item->SetUInt32Value(ITEM_FIELD_DURABILITY, pNewDurability);
 
-        // modify item stats _after_ restore durability to pass _ApplyItemMods internal check
         if (pNewDurability > 0 && pOldDurability == 0 && item->IsEquipped())
         {
             _ApplyItemMods(item, item->GetSlot(), true);
@@ -236,11 +199,6 @@ void Player::DurabilityPointsLoss(Item* item, int32 points)
     }
 }
 
-/**
- * @brief Removes one durability point from an equipped item slot.
- *
- * @param slot The equipment slot to damage.
- */
 void Player::DurabilityPointLossForEquipSlot(EquipmentSlots slot)
 {
     if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
@@ -249,25 +207,15 @@ void Player::DurabilityPointLossForEquipSlot(EquipmentSlots slot)
     }
 }
 
-/**
- * @brief Repairs all eligible equipped and carried items.
- *
- * @param cost True to charge the player for repairs.
- * @param discountMod The vendor discount multiplier to apply.
- * @return The total repair cost.
- */
 uint32 Player::DurabilityRepairAll(bool cost, float discountMod)
 {
     uint32 TotalCost = 0;
-    // equipped, backpack, bags itself
+
     for (int i = EQUIPMENT_SLOT_START; i < INVENTORY_SLOT_ITEM_END; ++i)
     {
         TotalCost += DurabilityRepair(((INVENTORY_SLOT_BAG_0 << 8) | i), cost, discountMod);
     }
 
-    // bank, buyback and keys not repaired
-
-    // items in inventory bags
     for (int j = INVENTORY_SLOT_BAG_START; j < INVENTORY_SLOT_BAG_END; ++j)
     {
         for (int i = 0; i < MAX_BAG_SIZE; ++i)
@@ -278,14 +226,6 @@ uint32 Player::DurabilityRepairAll(bool cost, float discountMod)
     return TotalCost;
 }
 
-/**
- * @brief Repairs a single item to full durability.
- *
- * @param pos The packed inventory position of the item.
- * @param cost True to charge the player for the repair.
- * @param discountMod The vendor discount multiplier to apply.
- * @return The repair cost for the item.
- */
 uint32 Player::DurabilityRepair(uint16 pos, bool cost, float discountMod)
 {
     Item* item = GetItemByPos(pos);
@@ -331,7 +271,7 @@ uint32 Player::DurabilityRepair(uint16 pos, bool cost, float discountMod)
 
             costs = uint32(costs * discountMod);
 
-            if (costs == 0)                                 // fix for ITEM_QUALITY_ARTIFACT
+            if (costs == 0)
             {
                 costs = 1;
             }
@@ -351,7 +291,6 @@ uint32 Player::DurabilityRepair(uint16 pos, bool cost, float discountMod)
     item->SetUInt32Value(ITEM_FIELD_DURABILITY, maxDurability);
     item->SetState(ITEM_CHANGED, this);
 
-    // reapply mods for total broken and repaired item if equipped
     if (Inventory::IsWorn(pos) && !curDurability)
     {
         _ApplyItemMods(item, pos & 255, true);

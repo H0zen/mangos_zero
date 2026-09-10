@@ -23,17 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file DebugCommands.cpp
- * @brief Implementation of debug and diagnostic chat commands.
- *
- * This file contains chat command handlers for debugging including:
- * - Player state inspection
- * - Unit information display
- * - Combat logging and analysis
- * - AI and path debugging
- */
-
 #include <cstdlib>
 #include "Utterance.h"
 #include "Platform/Define.h"
@@ -65,12 +54,6 @@
 #include "CellImpl.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Handler for HandleDebugSendSpellFailCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugSendSpellFailCommand(char* args)
 {
     if (!*args)
@@ -114,12 +97,6 @@ bool ChatHandler::HandleDebugSendSpellFailCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugSendPoiCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugSendPoiCommand(char* args)
 {
     Player* pPlayer = m_session->GetPlayer();
@@ -147,12 +124,6 @@ bool ChatHandler::HandleDebugSendPoiCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugSendEquipErrorCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugSendEquipErrorCommand(char* args)
 {
     if (!*args)
@@ -165,12 +136,6 @@ bool ChatHandler::HandleDebugSendEquipErrorCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugSendSellErrorCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugSendSellErrorCommand(char* args)
 {
     if (!*args)
@@ -179,16 +144,10 @@ bool ChatHandler::HandleDebugSendSellErrorCommand(char* args)
     }
 
     uint8 msg = atoi(args);
-    m_session->GetPlayer()->SendSellError(SellResult(msg), 0, ObjectGuid(), 0);
+    m_session->GetPlayer()->SendSellError(SellResult(msg), 0, 0, 0);
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugSendBuyErrorCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugSendBuyErrorCommand(char* args)
 {
     if (!*args)
@@ -201,16 +160,10 @@ bool ChatHandler::HandleDebugSendBuyErrorCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugRecvOpcodeCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleDebugRecvOpcodeCommand(char* /*args*/)
+bool ChatHandler::HandleDebugRecvOpcodeCommand(char* )
 {
     Unit* unit = getSelectedUnit();
-    if (!unit || (!unit->IsPlayer()))
+    if (!unit || (!IsPlayer(unit)))
     {
         unit = m_session->GetPlayer();
     }
@@ -314,16 +267,10 @@ bool ChatHandler::HandleDebugRecvOpcodeCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugSendOpcodeCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleDebugSendOpcodeCommand(char* /*args*/)
+bool ChatHandler::HandleDebugSendOpcodeCommand(char* )
 {
     Unit* unit = getSelectedUnit();
-    if (!unit || (!unit->IsPlayer()))
+    if (!unit || (!IsPlayer(unit)))
     {
         unit = m_session->GetPlayer();
     }
@@ -422,19 +369,13 @@ bool ChatHandler::HandleDebugSendOpcodeCommand(char* /*args*/)
     DEBUG_LOG("Sending opcode %u, %s", data.GetOpcode(), LookupOpcodeName(data.GetOpcode()));
 
     data.hexlike();
-    ToPlayer(unit)->SendDirectMessage(&data);
+    static_cast<Player*>(unit)->SendDirectMessage(&data);
 
     PSendSysMessage(LANG_COMMAND_OPCODESENT, data.GetOpcode(), unit->GetName());
 
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugUpdateWorldStateCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugUpdateWorldStateCommand(char* args)
 {
     uint32 world;
@@ -453,16 +394,9 @@ bool ChatHandler::HandleDebugUpdateWorldStateCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugPlayCinematicCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugPlayCinematicCommand(char* args)
 {
-    // USAGE: .debug play cinematic #cinematicid
-    // #cinematicid - ID decimal number from CinemaicSequences.dbc (1st column)
+
     uint32 dwId;
     if (!ExtractUInt32(&args, dwId))
     {
@@ -480,27 +414,14 @@ bool ChatHandler::HandleDebugPlayCinematicCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugPlayMovieCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugPlayMovieCommand(char* args)
 {
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugPlaySoundCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugPlaySoundCommand(char* args)
 {
-    // USAGE: .debug playsound #soundid
-    // #soundid - ID decimal number from SoundEntries.dbc (1st column)
+
     uint32 dwSoundId;
     if (!ExtractUInt32(&args, dwSoundId))
     {
@@ -535,12 +456,6 @@ bool ChatHandler::HandleDebugPlaySoundCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugSendChannelNotifyCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugSendChannelNotifyCommand(char* args)
 {
     const char* name = "test";
@@ -552,20 +467,14 @@ bool ChatHandler::HandleDebugSendChannelNotifyCommand(char* args)
     }
 
     WorldPacket data(SMSG_CHANNEL_NOTIFY, (1 + 10));
-    data << uint8(code);                                    // notify type
-    data << name;                                           // channel name
+    data << uint8(code);
+    data << name;
     data << uint32(0);
     data << uint32(0);
     m_session->SendPacket(&data);
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugSendChatMsgCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugSendChatMsgCommand(char* args)
 {
     const char* msg = args;
@@ -582,12 +491,6 @@ bool ChatHandler::HandleDebugSendChatMsgCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugSendQuestPartyMsgCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugSendQuestPartyMsgCommand(char* args)
 {
     uint32 msg;
@@ -604,13 +507,7 @@ bool ChatHandler::HandleDebugSendQuestPartyMsgCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugGetLootRecipientCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleDebugGetLootRecipientCommand(char* /*args*/)
+bool ChatHandler::HandleDebugGetLootRecipientCommand(char* )
 {
     Creature* target = getSelectedCreature();
     if (!target)
@@ -626,7 +523,7 @@ bool ChatHandler::HandleDebugGetLootRecipientCommand(char* /*args*/)
     {
         PSendSysMessage("loot recipient: %s with raw data %s from group %u",
             recipient->GetGuidStr().c_str(),
-            target->Claim().TakerGuid().GetString().c_str(),
+            GuidString(target->Claim().TakerGuid()).c_str(),
             target->Claim().GroupId());
     }
     else
@@ -637,12 +534,6 @@ bool ChatHandler::HandleDebugGetLootRecipientCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugSendQuestInvalidMsgCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugSendQuestInvalidMsgCommand(char* args)
 {
     uint32 msg = std::strtoul(args, nullptr, 10);
@@ -650,12 +541,6 @@ bool ChatHandler::HandleDebugSendQuestInvalidMsgCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugGetItemStateCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugGetItemStateCommand(char* args)
 {
     if (!*args)
@@ -728,7 +613,7 @@ bool ChatHandler::HandleDebugGetItemStateCommand(char* args)
                 if (item->GetState() == state)
                 {
                     PSendSysMessage("%s bag: 255 slot: %u owner: %s",
-                        item->GetGuidStr().c_str(),  item->GetSlot(), item->GetOwnerGuid().GetString().c_str());
+                        item->GetGuidStr().c_str(),  item->GetSlot(), GuidString(item->GetOwnerGuid()).c_str());
                 }
             }
             else
@@ -741,7 +626,7 @@ bool ChatHandler::HandleDebugGetItemStateCommand(char* args)
                     {
                         PSendSysMessage("%s bag: %u slot: %u owner: %s",
                             item2->GetGuidStr().c_str(), item2->GetBagSlot(), item2->GetSlot(),
-                            item2->GetOwnerGuid().GetString().c_str());
+                            GuidString(item2->GetOwnerGuid()).c_str());
                     }
                 }
             }
@@ -807,7 +692,7 @@ bool ChatHandler::HandleDebugGetItemStateCommand(char* args)
             {
                 PSendSysMessage("%s at slot %u owner (%s) and inventory owner (%s) don't match!",
                     item->GetGuidStr().c_str(), item->GetSlot(),
-                    item->GetOwnerGuid().GetString().c_str(), player->GetGuidStr().c_str());
+                    GuidString(item->GetOwnerGuid()).c_str(), player->GetGuidStr().c_str());
                 error = true; continue;
             }
 
@@ -848,7 +733,7 @@ bool ChatHandler::HandleDebugGetItemStateCommand(char* args)
                     {
                         PSendSysMessage("%s in bag %u at slot %u owner (%s) and inventory owner (%s) don't match!",
                             item2->GetGuidStr().c_str(), bag->GetSlot(), item2->GetSlot(),
-                            item2->GetOwnerGuid().GetString().c_str(), player->GetGuidStr().c_str());
+                            GuidString(item2->GetOwnerGuid()).c_str(), player->GetGuidStr().c_str());
                         error = true; continue;
                     }
 
@@ -891,7 +776,7 @@ bool ChatHandler::HandleDebugGetItemStateCommand(char* args)
             {
                 PSendSysMessage("queue(%zu): %s has the owner (%s) and inventory owner (%s) don't match!",
                     i, item->GetGuidStr().c_str(),
-                    item->GetOwnerGuid().GetString().c_str(), player->GetGuidStr().c_str());
+                    GuidString(item->GetOwnerGuid()).c_str(), player->GetGuidStr().c_str());
                 error = true; continue;
             }
 
@@ -925,44 +810,19 @@ bool ChatHandler::HandleDebugGetItemStateCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugBattlegroundCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleDebugBattlegroundCommand(char* /*args*/)
+bool ChatHandler::HandleDebugBattlegroundCommand(char* )
 {
     sBattleGroundMgr.ToggleTesting();
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugSpellCheckCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleDebugSpellCheckCommand(char* /*args*/)
+bool ChatHandler::HandleDebugSpellCheckCommand(char* )
 {
     sLog.outString("Check expected in code spell properties base at table 'spell_check' content...");
     sSpellMgr.CheckUsedSpells("spell_check");
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugAnimCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-/**
- * @brief Put a synthetic crowd where the caller stands.
- *
- * `.debug crowd [count] [radius]`. Administrator only: this fills a map with
- * hundreds of players that are not people, and the point of it is to make the
- * server sweat.
- */
 bool ChatHandler::HandleDebugCrowdSpawnCommand(char* args)
 {
     Player* me = m_session ? m_session->GetPlayer() : nullptr;
@@ -1013,8 +873,7 @@ bool ChatHandler::HandleDebugCrowdSpawnCommand(char* args)
     return true;
 }
 
-/// `.debug uncrowd` -- send them all home.
-bool ChatHandler::HandleDebugCrowdDespawnCommand(char* /*args*/)
+bool ChatHandler::HandleDebugCrowdDespawnCommand(char* )
 {
     const uint32 released = synthetic::SyntheticCrowd::Instance().Despawn();
     PSendSysMessage("Synthetic crowd: %u released.", released);
@@ -1033,12 +892,6 @@ bool ChatHandler::HandleDebugAnimCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugSetAuraStateCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugSetAuraStateCommand(char* args)
 {
     int32 state;
@@ -1057,7 +910,7 @@ bool ChatHandler::HandleDebugSetAuraStateCommand(char* args)
 
     if (!state)
     {
-        // reset all states
+
         for (int i = 1; i <= 32; ++i)
         {
             unit->ModifyAuraState(AuraState(i), false);
@@ -1069,24 +922,17 @@ bool ChatHandler::HandleDebugSetAuraStateCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleSetValueHelper command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleSetValueHelper(Object* target, uint32 field, char* typeStr, char* valStr)
 {
     ObjectGuid guid = target->GetObjectGuid();
 
-    // not allow access to nonexistent or critical for work field
     if (field >= target->GetValuesCount() || field <= OBJECT_FIELD_ENTRY)
     {
-        PSendSysMessage(LANG_TOO_BIG_INDEX, field, guid.GetString().c_str(), target->GetValuesCount());
+        PSendSysMessage(LANG_TOO_BIG_INDEX, field, GuidString(guid).c_str(), target->GetValuesCount());
         return false;
     }
 
-    uint32 base;                                            // 0 -> float
+    uint32 base;
     if (!typeStr)
     {
         base = 10;
@@ -1120,9 +966,9 @@ bool ChatHandler::HandleSetValueHelper(Object* target, uint32 field, char* typeS
             return false;
         }
 
-        DEBUG_LOG(GetMangosString(LANG_SET_UINT), guid.GetString().c_str(), field, iValue);
+        DEBUG_LOG(GetMangosString(LANG_SET_UINT), GuidString(guid).c_str(), field, iValue);
         target->SetUInt32Value(field , iValue);
-        PSendSysMessage(LANG_SET_UINT_FIELD, guid.GetString().c_str(), field, iValue);
+        PSendSysMessage(LANG_SET_UINT_FIELD, GuidString(guid).c_str(), field, iValue);
     }
     else
     {
@@ -1132,20 +978,14 @@ bool ChatHandler::HandleSetValueHelper(Object* target, uint32 field, char* typeS
             return false;
         }
 
-        DEBUG_LOG(GetMangosString(LANG_SET_FLOAT), guid.GetString().c_str(), field, fValue);
+        DEBUG_LOG(GetMangosString(LANG_SET_FLOAT), GuidString(guid).c_str(), field, fValue);
         target->SetFloatValue(field , fValue);
-        PSendSysMessage(LANG_SET_FLOAT_FIELD, guid.GetString().c_str(), field, fValue);
+        PSendSysMessage(LANG_SET_FLOAT_FIELD, GuidString(guid).c_str(), field, fValue);
     }
 
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugSetItemValueCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugSetItemValueCommand(char* args)
 {
     uint32 guid;
@@ -1172,7 +1012,7 @@ bool ChatHandler::HandleDebugSetItemValueCommand(char* args)
         return false;
     }
 
-    Item* item = m_session->GetPlayer()->GetItemByGuid(ObjectGuid(HIGHGUID_ITEM, guid));
+    Item* item = m_session->GetPlayer()->GetItemByGuid(MakeGuid(HIGHGUID_ITEM, guid));
     if (!item)
     {
         return false;
@@ -1181,12 +1021,6 @@ bool ChatHandler::HandleDebugSetItemValueCommand(char* args)
     return HandleSetValueHelper(item, field, typeStr, valStr);
 }
 
-/**
- * @brief Handler for HandleDebugSetValueCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugSetValueCommand(char* args)
 {
     Unit* target = getSelectedUnit();
@@ -1218,23 +1052,17 @@ bool ChatHandler::HandleDebugSetValueCommand(char* args)
     return HandleSetValueHelper(target, field, typeStr, valStr);
 }
 
-/**
- * @brief Handler for HandleGetValueHelper command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGetValueHelper(Object* target, uint32 field, char* typeStr)
 {
     ObjectGuid guid = target->GetObjectGuid();
 
     if (field >= target->GetValuesCount())
     {
-        PSendSysMessage(LANG_TOO_BIG_INDEX, field, guid.GetString().c_str(), target->GetValuesCount());
+        PSendSysMessage(LANG_TOO_BIG_INDEX, field, GuidString(guid).c_str(), target->GetValuesCount());
         return false;
     }
 
-    uint32 base;                                            // 0 -> float
+    uint32 base;
     if (!typeStr)
     {
         base = 10;
@@ -1268,7 +1096,7 @@ bool ChatHandler::HandleGetValueHelper(Object* target, uint32 field, char* typeS
         {
             case 2:
             {
-                // starting 0 if need as required bitstring format
+
                 std::string res;
                 res.reserve(1 + 32 + 1);
                 res = (iValue & (1 << (32 - 1))) ? "0" : " ";
@@ -1276,36 +1104,30 @@ bool ChatHandler::HandleGetValueHelper(Object* target, uint32 field, char* typeS
                 {
                     res += (iValue & (1 << (i - 1))) ? "1" : "0";
                 }
-                DEBUG_LOG(GetMangosString(LANG_GET_BITSTR), guid.GetString().c_str(), field, res.c_str());
-                PSendSysMessage(LANG_GET_BITSTR_FIELD, guid.GetString().c_str(), field, res.c_str());
+                DEBUG_LOG(GetMangosString(LANG_GET_BITSTR), GuidString(guid).c_str(), field, res.c_str());
+                PSendSysMessage(LANG_GET_BITSTR_FIELD, GuidString(guid).c_str(), field, res.c_str());
                 break;
             }
             case 16:
-                DEBUG_LOG(GetMangosString(LANG_GET_HEX), guid.GetString().c_str(), field, iValue);
-                PSendSysMessage(LANG_GET_HEX_FIELD, guid.GetString().c_str(), field, iValue);
+                DEBUG_LOG(GetMangosString(LANG_GET_HEX), GuidString(guid).c_str(), field, iValue);
+                PSendSysMessage(LANG_GET_HEX_FIELD, GuidString(guid).c_str(), field, iValue);
                 break;
             case 10:
             default:
-                DEBUG_LOG(GetMangosString(LANG_GET_UINT), guid.GetString().c_str(), field, iValue);
-                PSendSysMessage(LANG_GET_UINT_FIELD, guid.GetString().c_str(), field, iValue);
+                DEBUG_LOG(GetMangosString(LANG_GET_UINT), GuidString(guid).c_str(), field, iValue);
+                PSendSysMessage(LANG_GET_UINT_FIELD, GuidString(guid).c_str(), field, iValue);
         }
     }
     else
     {
         float fValue = target->GetFloatValue(field);
-        DEBUG_LOG(GetMangosString(LANG_GET_FLOAT), guid.GetString().c_str(), field, fValue);
-        PSendSysMessage(LANG_GET_FLOAT_FIELD, guid.GetString().c_str(), field, fValue);
+        DEBUG_LOG(GetMangosString(LANG_GET_FLOAT), GuidString(guid).c_str(), field, fValue);
+        PSendSysMessage(LANG_GET_FLOAT_FIELD, GuidString(guid).c_str(), field, fValue);
     }
 
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugGetItemValueCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugGetItemValueCommand(char* args)
 {
     uint32 guid;
@@ -1321,12 +1143,12 @@ bool ChatHandler::HandleDebugGetItemValueCommand(char* args)
     }
 
     char* typeStr = ExtractLiteralArg(&args);
-    if (!typeStr && *args)                                  // optional arg but check format fail case
+    if (!typeStr && *args)
     {
         return false;
     }
 
-    Item* item = m_session->GetPlayer()->GetItemByGuid(ObjectGuid(HIGHGUID_ITEM, guid));
+    Item* item = m_session->GetPlayer()->GetItemByGuid(MakeGuid(HIGHGUID_ITEM, guid));
     if (!item)
     {
         return false;
@@ -1335,12 +1157,6 @@ bool ChatHandler::HandleDebugGetItemValueCommand(char* args)
     return HandleGetValueHelper(item, field, typeStr);
 }
 
-/**
- * @brief Handler for HandleDebugGetValueCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugGetValueCommand(char* args)
 {
     Unit* target = getSelectedUnit();
@@ -1358,7 +1174,7 @@ bool ChatHandler::HandleDebugGetValueCommand(char* args)
     }
 
     char* typeStr = ExtractLiteralArg(&args);
-    if (!typeStr && *args)                                  // optional arg but check format fail case
+    if (!typeStr && *args)
     {
         return false;
     }
@@ -1366,24 +1182,17 @@ bool ChatHandler::HandleDebugGetValueCommand(char* args)
     return HandleGetValueHelper(target, field, typeStr);
 }
 
-/**
- * @brief Handler for HandlerDebugModValueHelper command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandlerDebugModValueHelper(Object* target, uint32 field, char* typeStr, char* valStr)
 {
     ObjectGuid guid = target->GetObjectGuid();
 
-    // not allow access to nonexistent or critical for work field
     if (field >= target->GetValuesCount() || field <= OBJECT_FIELD_ENTRY)
     {
-        PSendSysMessage(LANG_TOO_BIG_INDEX, field, guid.GetString().c_str(), target->GetValuesCount());
+        PSendSysMessage(LANG_TOO_BIG_INDEX, field, GuidString(guid).c_str(), target->GetValuesCount());
         return false;
     }
 
-    uint32 type;                                            // 0 -> float 1 -> int add 2-> bit or 3 -> bit and  4 -> bit and not
+    uint32 type;
     if (strncmp(typeStr, "int", strlen(typeStr)) == 0)
     {
         type = 1;
@@ -1392,15 +1201,15 @@ bool ChatHandler::HandlerDebugModValueHelper(Object* target, uint32 field, char*
     {
         type = 0;
     }
-    else if (strncmp(typeStr, "|=", strlen("|=") + 1) == 0) // exactly copy
+    else if (strncmp(typeStr, "|=", strlen("|=") + 1) == 0)
     {
         type = 2;
     }
-    else if (strncmp(typeStr, "&=", strlen("&=") + 1) == 0) // exactly copy
+    else if (strncmp(typeStr, "&=", strlen("&=") + 1) == 0)
     {
         type = 3;
     }
-    else if (strncmp(typeStr, "&=~", strlen("&=~") + 1) == 0) // exactly copy
+    else if (strncmp(typeStr, "&=~", strlen("&=~") + 1) == 0)
     {
         type = 4;
     }
@@ -1418,28 +1227,28 @@ bool ChatHandler::HandlerDebugModValueHelper(Object* target, uint32 field, char*
         }
 
         uint32 value = target->GetUInt32Value(field);
-        const std::string guidText = guid.GetString();
+        const std::string guidText = GuidString(guid);
         const char* guidString = guidText.c_str();
 
         switch (type)
         {
             default:
-            case 1:                                         // int +
+            case 1:
                 value = uint32(int32(value) + int32(iValue));
                 DEBUG_LOG(GetMangosString(LANG_CHANGE_INT32), guidString, field, iValue, value, value);
                 PSendSysMessage(LANG_CHANGE_INT32_FIELD, guidString, field, iValue, value, value);
                 break;
-            case 2:                                         // |= bit or
+            case 2:
                 value |= iValue;
                 DEBUG_LOG(GetMangosString(LANG_CHANGE_HEX), guidString, field, typeStr, iValue, value);
                 PSendSysMessage(LANG_CHANGE_HEX_FIELD, guidString, field, typeStr, iValue, value);
                 break;
-            case 3:                                         // &= bit and
+            case 3:
                 value &= iValue;
                 DEBUG_LOG(GetMangosString(LANG_CHANGE_HEX), guidString, field, typeStr, iValue, value);
                 PSendSysMessage(LANG_CHANGE_HEX_FIELD, guidString, field, typeStr, iValue, value);
                 break;
-            case 4:                                         // &=~ bit and not
+            case 4:
                 value &= ~iValue;
                 DEBUG_LOG(GetMangosString(LANG_CHANGE_HEX), guidString, field, typeStr, iValue, value);
                 PSendSysMessage(LANG_CHANGE_HEX_FIELD, guidString, field, typeStr, iValue, value);
@@ -1460,8 +1269,8 @@ bool ChatHandler::HandlerDebugModValueHelper(Object* target, uint32 field, char*
 
         value += fValue;
 
-        DEBUG_LOG(GetMangosString(LANG_CHANGE_FLOAT), guid.GetString().c_str(), field, fValue, value);
-        PSendSysMessage(LANG_CHANGE_FLOAT_FIELD, guid.GetString().c_str(), field, fValue, value);
+        DEBUG_LOG(GetMangosString(LANG_CHANGE_FLOAT), GuidString(guid).c_str(), field, fValue, value);
+        PSendSysMessage(LANG_CHANGE_FLOAT_FIELD, GuidString(guid).c_str(), field, fValue, value);
 
         target->SetFloatValue(field, value);
     }
@@ -1469,12 +1278,6 @@ bool ChatHandler::HandlerDebugModValueHelper(Object* target, uint32 field, char*
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugModItemValueCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugModItemValueCommand(char* args)
 {
     uint32 guid;
@@ -1501,7 +1304,7 @@ bool ChatHandler::HandleDebugModItemValueCommand(char* args)
         return false;
     }
 
-    Item* item = m_session->GetPlayer()->GetItemByGuid(ObjectGuid(HIGHGUID_ITEM, guid));
+    Item* item = m_session->GetPlayer()->GetItemByGuid(MakeGuid(HIGHGUID_ITEM, guid));
     if (!item)
     {
         return false;
@@ -1510,12 +1313,6 @@ bool ChatHandler::HandleDebugModItemValueCommand(char* args)
     return HandlerDebugModValueHelper(item, field, typeStr, valStr);
 }
 
-/**
- * @brief Handler for HandleDebugModValueCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugModValueCommand(char* args)
 {
     Unit* target = getSelectedUnit();
@@ -1533,7 +1330,7 @@ bool ChatHandler::HandleDebugModValueCommand(char* args)
     }
 
     char* typeStr = ExtractLiteralArg(&args);
-    if (!typeStr && *args)                                  // optional arg but check format fail case
+    if (!typeStr && *args)
     {
         return false;
     }
@@ -1547,12 +1344,6 @@ bool ChatHandler::HandleDebugModValueCommand(char* args)
     return HandlerDebugModValueHelper(target, field, typeStr, valStr);
 }
 
-/**
- * @brief Handler for HandleDebugSpellCoefsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugSpellCoefsCommand(char* args)
 {
     uint32 spellid = ExtractSpellIdFromLink(&args);
@@ -1576,7 +1367,7 @@ bool ChatHandler::HandleDebugSpellCoefsCommand(char* args)
     bool isDirectHeal = false;
     for (int i = 0; i < 3; ++i)
     {
-        // Heals (Also count Mana Shield and Absorb effects as heals)
+
         if (spellEntry->Effect[i] == SPELL_EFFECT_HEAL || spellEntry->Effect[i] == SPELL_EFFECT_HEAL_MAX_HEALTH ||
             (spellEntry->Effect[i] == SPELL_EFFECT_APPLY_AURA && (spellEntry->EffectAura[i] == SPELL_AURA_SCHOOL_ABSORB || spellEntry->EffectAura[i] == SPELL_AURA_PERIODIC_HEAL)))
         {
@@ -1588,7 +1379,7 @@ bool ChatHandler::HandleDebugSpellCoefsCommand(char* args)
     bool isDotHeal = false;
     for (int i = 0; i < 3; ++i)
     {
-        // Periodic Heals
+
         if (spellEntry->Effect[i] == SPELL_EFFECT_APPLY_AURA && spellEntry->EffectAura[i] == SPELL_AURA_PERIODIC_HEAL)
         {
             isDotHeal = true;
@@ -1609,12 +1400,6 @@ bool ChatHandler::HandleDebugSpellCoefsCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDebugSpellModsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDebugSpellModsCommand(char* args)
 {
     char* typeStr = ExtractLiteralArg(&args);
@@ -1663,7 +1448,6 @@ bool ChatHandler::HandleDebugSpellModsCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(chr))
     {
         return false;
@@ -1686,15 +1470,7 @@ bool ChatHandler::HandleDebugSpellModsCommand(char* args)
     return true;
 }
 
-/**
- * @brief `.debug minion` -- where a player's minions actually are, deck boundary and all.
- *
- * The steady state is what needs reading, not the transition: a pet left on a deck looks
- * exactly like a pet that followed and stopped, and the difference is a map id. So this
- * reports three things that must agree and usually do not: what the master OWNS, what stands
- * on the master's own map, and what stands on every deck sailing that map.
- */
-bool ChatHandler::HandleDebugMinionCommand(char* /*args*/)
+bool ChatHandler::HandleDebugMinionCommand(char* )
 {
     Player* master = getSelectedPlayer();
     if (!master)
@@ -1711,7 +1487,7 @@ bool ChatHandler::HandleDebugMinionCommand(char* /*args*/)
 
     PSendSysMessage("master   %s", DescribeSpatially(master).c_str());
     PSendSysMessage("petguid  %s  transport=%s",
-                    master->GetPetGuid().GetString().c_str(),
+                    GuidString(master->GetPetGuid()).c_str(),
                     master->GetTransport() ? "yes" : "no");
 
     int owned = 0;
@@ -1737,8 +1513,6 @@ bool ChatHandler::HandleDebugMinionCommand(char* /*args*/)
 
     DumpPetsOn(on, "onmap");
 
-    // The decks are the other half of the answer: a pet the master no longer owns is still
-    // standing somewhere, and it is almost always on the hull he walked off.
     if (TransportMap* deck = on->AsTransport())
     {
         if (Transport* vessel = deck->Vessel())
@@ -1763,15 +1537,7 @@ bool ChatHandler::HandleDebugMinionCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief `.debug vessel` -- the numbers the relay across a deck boundary decides on.
- *
- * A vessel's world pose is asked exactly one question: which grid of the world she sits in.
- * Everyone in that grid sees aboard and is seen from aboard. So what has to be read is the
- * grid she reports, the grid the caller stands in, and whether the two agree -- printed for
- * every vessel sailing the caller's map, or for the one he is standing on.
- */
-bool ChatHandler::HandleDebugVesselCommand(char* /*args*/)
+bool ChatHandler::HandleDebugVesselCommand(char* )
 {
     Player* caller = m_session ? m_session->GetPlayer() : nullptr;
     Map* on = caller ? caller->FindMap() : nullptr;
@@ -1861,7 +1627,6 @@ bool ChatHandler::HandleDebugVesselCommand(char* /*args*/)
     return true;
 }
 
-/// Every pet standing on one map, whoever owns it. `label` says which map it was.
 void ChatHandler::DumpPetsOn(Map* on, char const* label)
 {
     for (auto const& entry : on->GetObjectsStore().GetElements<Pet>())

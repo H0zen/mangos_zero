@@ -29,61 +29,22 @@
 
 #include <chrono>
 
-/**
- * @brief GameTime namespace provides time-related functions for the game server
- */
 namespace GameTime
 {
 
-    /**
-     * @brief Get the server start time
-     * @return Server start time as Unix timestamp
-     */
     time_t GetStartTime();
 
-    /**
-     * @brief Get the current server time (Unix timestamp in seconds)
-     * @return Current server time as Unix timestamp
-     */
     time_t GetGameTime();
 
-    /**
-     * @brief Get milliseconds since server start
-     * @return Milliseconds elapsed since server start
-     */
     uint32 GetGameTimeMS();
 
-    /**
-     * @brief Absolute wall-clock milliseconds since the Unix epoch.
-     *
-     * For anything whose phase must survive a restart. GetGameTimeMS() counts from process
-     * start, so `time % period` resets to zero every boot -- a transport keyed off it sails
-     * from the beginning of its route each time the server comes up, and the client, which
-     * interpolates the hull from the value we send, then draws it somewhere the server does
-     * not believe it is.
-     */
     uint64 GetAbsoluteTimeMS();
 
-    /**
-     * @brief Get current chrono system_clock time point
-     * @return Current system_clock time point
-     */
     std::chrono::system_clock::time_point GetGameTimeSystemPoint();
 
-    /**
-     * @brief Get current chrono steady_clock time point
-     * @return Current steady_clock time point
-     */
     std::chrono::steady_clock::time_point GetGameTimeSteadyPoint();
 
-    /**
-     * @brief Get server uptime in seconds
-     * @return Server uptime in seconds
-     */
     uint32 GetUptime();
 
-    /**
-     * @brief Update game timers
-     */
     void UpdateGameTimers();
 }

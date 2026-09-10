@@ -25,9 +25,6 @@
 
 #include "NullCreatureAI.h"
 
-/**
- * @brief Destroys the null creature AI instance.
- */
 NullCreatureAI::~NullCreatureAI()
 {
 }

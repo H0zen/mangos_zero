@@ -23,33 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file MiscHandler.cpp
- * @brief Miscellaneous opcode handlers
- *
- * This file handles miscellaneous opcodes that don't fit into
- * other specific handler categories:
- *
- * - CMSG_NAME_QUERY: Query character name by GUID
- * - CMSG_PING: Client ping/pong
- * - CMSG_LOGOUT_REQUEST: Logout request
- * - CMSG_LOGOUT_CANCEL: Cancel logout
- * - CMSG_ZONE_UPDATE: Zone update
- * - CMSG_SET_ACTIONBAR_TOGGLES: Set action bar toggles
- * - CMSG_SET_ACTIONBAR_TEXT: Set action bar text
- * - CMSG_MOVE_TIME_SKIPPED: Movement time skipped
- * - CMSG_MOVE_FALL_RESET: Fall reset
- * - CMSG_WORLD_STATE_UI_TIMER: UI timer
- * - CMSG_NEXT_CINEMATIC_CAMERA: Cinematic camera
- * - CMSG_COMPLETE_CINEMATIC: Complete cinematic
- * - CMSG_SET_FACTION_AT_WAR: Set faction at war
- * - CMSG_SET_WATCHED_FACTION: Set watched faction
- * - CMSG_TOGGLE_PVP: Toggle PVP flag
- * - CMSG_SET_PLAYER_DECLARED_NAME: Set player name
- */
-
-
-
 #include "Platform/Define.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -77,12 +50,7 @@
 #include "DBCEnums.h"
 #include <zlib.h>
 
-/**
- * @brief Resets the player's or group's saved instances.
- *
- * @param recv_data The received opcode packet.
- */
-void instances::ResetInstances(Player& who, WorldPacket& /*recv_data*/)
+void instances::ResetInstances(Player& who, WorldPacket& )
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_RESET_INSTANCES");
 

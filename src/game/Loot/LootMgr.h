@@ -41,16 +41,15 @@ class LootStore;
 class Occupant;
 
 #define MAX_NR_LOOT_ITEMS 16
-// note: the client can not show more than 16 items total
+
 #define MAX_NR_QUEST_ITEMS 32
-// unrelated to the number of quest items shown, just for reserve
 
 enum PermissionTypes : int
 {
     ALL_PERMISSION    = 0,
     GROUP_PERMISSION  = 1,
     MASTER_PERMISSION = 2,
-    OWNER_PERMISSION  = 3,                                  // for single player only loots
+    OWNER_PERMISSION  = 3,
     NONE_PERMISSION   = 4
 };
 
@@ -60,35 +59,32 @@ enum LootType : int
     LOOT_PICKPOCKETING          = 2,
     LOOT_FISHING                = 3,
     LOOT_DISENCHANTING          = 4,
-    // ignored always by client
-    LOOT_SKINNING               = 6,                        // unsupported by client, sending LOOT_PICKPOCKETING instead
 
-    LOOT_FISHINGHOLE            = 20,                       // unsupported by client, sending LOOT_FISHING instead
-    LOOT_FISHING_FAIL           = 21,                       // unsupported by client, sending LOOT_FISHING instead
-    LOOT_INSIGNIA               = 22                        // unsupported by client, sending LOOT_CORPSE instead
+    LOOT_SKINNING               = 6,
+
+    LOOT_FISHINGHOLE            = 20,
+    LOOT_FISHING_FAIL           = 21,
+    LOOT_INSIGNIA               = 22
 };
 
 enum LootSlotType
 {
-    LOOT_SLOT_NORMAL  = 0,                                  // can be looted
-    LOOT_SLOT_VIEW    = 1,                                  // can be only view (ignore any loot attempts)
-    LOOT_SLOT_MASTER  = 2,                                  // can be looted only master (error message)
-    LOOT_SLOT_REQS    = 3,                                  // can't be looted (error message about missing reqs)
-    MAX_LOOT_SLOT_TYPE                                      // custom, use for mark skipped from show items
+    LOOT_SLOT_NORMAL  = 0,
+    LOOT_SLOT_VIEW    = 1,
+    LOOT_SLOT_MASTER  = 2,
+    LOOT_SLOT_REQS    = 3,
+    MAX_LOOT_SLOT_TYPE
 };
 
 namespace loot
 {
-    /// What a server multiplies a drop's chance by, one for each quality and one for the
-    /// items a reference pulls in.
+
     struct DropRates
     {
         float byQuality[MAX_ITEM_QUALITY] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
         float referenced = 1.0f;
     };
 
-    /// The chance this entry actually rolls at. A hundred percent stays a certainty
-    /// whatever the rates say, which is what makes a quest item a quest item.
     inline float ChanceOf(float stated, bool rated, bool isReference, uint32 quality,
                           DropRates const& rates)
     {
@@ -105,7 +101,6 @@ namespace loot
         return stated * (quality < MAX_ITEM_QUALITY ? rates.byQuality[quality] : 1.0f);
     }
 
-    /// The coin on a body, at the rate this server pays.
     inline uint32 Coin(uint32 least, uint32 most, uint32 rolled, float rate)
     {
         if (most == 0)
@@ -124,48 +119,43 @@ namespace loot
 
 struct LootStoreItem
 {
-    uint32  itemid;                                         // id of the item
-    float   chance;                                         // always positive, chance to drop for both quest and non-quest items, chance to be used for refs
-    int32   mincountOrRef;                                  // mincount for drop items (positive) or minus referenced TemplateleId (negative)
+    uint32  itemid;
+    float   chance;
+    int32   mincountOrRef;
     uint8   group       : 7;
-    bool    needs_quest : 1;                                // quest drop (negative ChanceOrQuestChance in DB)
-    uint8   maxcount    : 8;                                // max drop count for the item (mincountOrRef positive) or Ref multiplicator (mincountOrRef negative)
-    uint16  conditionId : 16;                               // additional loot condition Id
+    bool    needs_quest : 1;
+    uint8   maxcount    : 8;
+    uint16  conditionId : 16;
 
-    // Constructor, converting ChanceOrQuestChance -> (chance, needs_quest)
-    // displayid is filled in IsValid() which must be called after
     LootStoreItem(uint32 _itemid, float _chanceOrQuestChance, int8 _group, uint16 _conditionId, int32 _mincountOrRef, uint8 _maxcount)
         : itemid(_itemid), chance(fabs(_chanceOrQuestChance)), mincountOrRef(_mincountOrRef),
         group(_group), needs_quest(_chanceOrQuestChance < 0), maxcount(_maxcount), conditionId(_conditionId)
     {}
 
-    bool Roll(bool rate) const;                             // Checks if the entry takes it's chance (at loot generation)
+    bool Roll(bool rate) const;
     bool IsValid(LootStore const& store, uint32 entry) const;
-    // Checks correctness of values
+
 };
 
 struct LootItem
 {
     uint32  itemid;
     int32   randomPropertyId;
-    uint16  conditionId       : 16;                         // allow compiler pack structure
+    uint16  conditionId       : 16;
     uint8   count             : 8;
     bool    is_looted         : 1;
     bool    is_blocked        : 1;
-    bool    freeforall        : 1;                          // free for all
+    bool    freeforall        : 1;
     bool    is_underthreshold : 1;
     bool    is_counted        : 1;
-    bool    needs_quest       : 1;                          // quest drop
-    /* Winner of the roll. Stored for full inventory. */
-    ObjectGuid winner;
+    bool    needs_quest       : 1;
 
-    // Constructor, copies most fields from LootStoreItem, generates random count and random suffixes/properties
-    // Should be called for non-reference LootStoreItem entries only (mincountOrRef > 0)
+    ObjectGuid winner = 0;
+
     explicit LootItem(LootStoreItem const& li);
 
     LootItem(uint32 itemid_, uint32 count_, int32 randomPropertyId_ = 0);
 
-    // Basic checks for player/item compatibility - if false no chance to see the item in the loot
     bool AllowedForPlayer(Player const* player, Occupant const* lootTarget) const;
     LootSlotType GetSlotTypeForSharedLoot(PermissionTypes permission, Player* viewer, Occupant const* lootTarget, bool condition_ok = false) const;
 };
@@ -174,7 +164,7 @@ typedef std::vector<LootItem> LootItemList;
 
 struct QuestItem
 {
-    uint8   index;                                          // position in quest_items;
+    uint8   index;
     bool    is_looted;
 
     QuestItem()
@@ -207,7 +197,7 @@ class LootStore
         void Verify() const;
 
         void LoadAndCollectLootIds(LootIdSet& ids_set);
-        void CheckLootRefs(LootIdSet* ref_set = nullptr) const;// check existence reference and remove it from ref_set
+        void CheckLootRefs(LootIdSet* ref_set = nullptr) const;
         void ReportUnusedIds(LootIdSet const& ids_set) const;
         void ReportNotExistedId(uint32 id) const;
 
@@ -215,22 +205,8 @@ class LootStore
         bool HaveQuestLootFor(uint32 loot_id) const;
         bool HaveQuestLootForPlayer(uint32 loot_id, Player* player) const;
 
-        /**
-         * function which indicates whether there's at least one shared quest item dropped for a given player
-         *
-         * \param loot_id uint32 indicating the loot template id.
-         * \param player Player const* to the player that needs to get loot or not.
-         * \return bool if there's at least one Shared Quest Loot available.
-         */
         bool HaveSharedQuestLootForPlayer(uint32 loot_id, Player* player) const;
 
-        /**
-         * function which indicates whether there's at least one starting quest item dropped for a given player
-         *
-         * \param loot_id uint32 indicating the loot template id.
-         * \param player Player const* to the player that needs to get loot or not.
-         * \return bool if there's at least one Starting Quest Loot available.
-         */
         bool HaveStartingQuestLootForPlayer(uint32 loot_id, Player* player) const;
 
         LootTemplate const* GetLootFor(uint32 loot_id) const;
@@ -250,49 +226,29 @@ class LootStore
 
 class LootTemplate
 {
-    class LootGroup;                                   // A set of loot definitions for items (refs are not allowed inside)
+    class LootGroup;
     typedef std::vector<LootGroup> LootGroups;
 
     public:
-        // Adds an entry to the group (at loading stage)
+
         void AddEntry(LootStoreItem& item);
-        // Rolls for every item in the template and adds the rolled items the the loot
+
         void Process(Loot& loot, LootStore const& store, bool rate, uint8 GroupId = 0) const;
 
-        // True if template includes at least 1 quest drop entry
         bool HasQuestDrop(LootTemplateMap const& store, uint8 GroupId = 0) const;
-        // True if template includes at least 1 quest drop for an active quest of the player
+
         bool HasQuestDropForPlayer(LootTemplateMap const& store, Player const* player, uint8 GroupId = 0) const;
 
-        /**
-         * function which indicates whether there's at least one shared quest item dropped for a given player
-         *
-         * \param store LootTemplateMap const& which provides the source store of items drop.
-         * \param player Player const* to the player that needs to get loot or not.
-         * \param GroupId uint8 indicates the GroupId for the given LootTemplate (see database).
-         * \return bool if there's at least one Shared Quest Loot available.
-         */
         bool HasSharedQuestDropForPlayer(LootTemplateMap const& store, Player const* player, uint8 GroupId = 0) const;
 
-        /**
-         * function which indicates whether there's at least one starting quest item dropped for a given player
-         *
-         * \param store LootTemplateMap const& which provides the source store of items drop.
-         * \param player Player const* to the player that needs to get loot or not.
-         * \param GroupId uint8 indicates the GroupId for the given LootTemplate (see database).
-         * \return bool if there's at least one starting Quest Loot available.
-         */
         bool HasStartingQuestDropForPlayer(LootTemplateMap const& store, Player const* player, uint8 GroupId = 0) const;
 
-        // Checks integrity of the template
         void Verify(LootStore const& store, uint32 Id) const;
         void CheckLootRefs(LootIdSet* ref_set) const;
     private:
-        LootStoreItemList Entries;                          // not grouped only
-        LootGroups        Groups;                           // groups have own (optimised) processing, grouped entries go there
+        LootStoreItemList Entries;
+        LootGroups        Groups;
 };
-
-//=====================================================
 
 class LootValidatorRef :  public Reference<Loot, LootValidatorRef>
 {
@@ -301,8 +257,6 @@ class LootValidatorRef :  public Reference<Loot, LootValidatorRef>
         void targetObjectDestroyLink() override {}
         void sourceObjectDestroyLink() override {}
 };
-
-//=====================================================
 
 class LootValidatorRefManager : public RefManager<Loot, LootValidatorRef>
 {
@@ -340,17 +294,10 @@ class LootValidatorRefManager : public RefManager<Loot, LootValidatorRef>
         }
 };
 
-//=====================================================
 struct LootView;
 
-/**
- * Serializes a loot item entry into a byte buffer.
- */
 ByteBuffer& operator<<(ByteBuffer& b, LootItem const& li);
 
-/**
- * Serializes a loot view into a byte buffer.
- */
 ByteBuffer& operator<<(ByteBuffer& b, LootView const& lv);
 
 struct Loot
@@ -364,7 +311,7 @@ struct Loot
     LootItemList items;
     uint32 gold;
     uint8 unlootedCount;
-    LootType loot_type;                                 // required for for proper item loot finish (store internal loot types in different from 3.x version, in fact this meaning that it send same loot types for interesting cases like 3.x version code, skip pre-3.x client loot type limitaitons)
+    LootType loot_type;
 
     Loot(Occupant const* lootTarget, uint32 _gold = 0) : gold(_gold), unlootedCount(0), loot_type(LOOT_CORPSE), m_lootTarget(lootTarget) {}
     ~Loot()
@@ -372,13 +319,11 @@ struct Loot
         clear();
     }
 
-    // if loot becomes invalid this reference is used to inform the listener
     void addLootValidatorRef(LootValidatorRef* pLootValidatorRef)
     {
         m_LootValidatorRefManager.insertFirst(pLootValidatorRef);
     }
 
-    // void clear();
     void clear()
     {
         for (QuestItemMap::const_iterator itr = m_playerQuestItems.begin(); itr != m_playerQuestItems.end(); ++itr)
@@ -416,17 +361,11 @@ struct Loot
     void AddLooter(ObjectGuid guid) { m_playersLooting.insert(guid); }
     void RemoveLooter(ObjectGuid guid) { m_playersLooting.erase(guid); }
 
-    /**
-     * function IsWinner returns whether the player won at least one item during a roll.
-     * \param player Pointer indicating the player who may have won a loot.
-     * \return boolean true if the player has won at least one loot, false otherwise.
-     */
     bool IsWinner(Player * player);
 
     void generateMoneyLoot(uint32 minAmount, uint32 maxAmount);
     bool FillLoot(uint32 loot_id, LootStore const& store, Player* loot_owner, bool personal, bool noEmptyError = false);
 
-    // Inserts the item into the loot (called by LootTemplate processors)
     void AddItem(LootStoreItem const& item);
 
     LootItem* LootItemInSlot(uint32 lootslot, Player* player, QuestItem** qitem = nullptr, QuestItem** ffaitem = nullptr, QuestItem** conditem = nullptr);
@@ -448,10 +387,8 @@ struct Loot
         QuestItemMap m_playerFFAItems;
         QuestItemMap m_playerNonQuestNonFFAConditionalItems;
 
-        // All rolls are registered here. They need to know, when the loot is not valid anymore
         LootValidatorRefManager m_LootValidatorRefManager;
 
-        // What is looted
         Occupant const* m_lootTarget;
 };
 
@@ -473,49 +410,22 @@ extern LootStore LootTemplates_Pickpocketing;
 extern LootStore LootTemplates_Skinning;
 extern LootStore LootTemplates_Disenchant;
 
-/**
- * Loads creature loot templates.
- */
 void LoadLootTemplates_Creature();
 
-/**
- * Loads fishing loot templates.
- */
 void LoadLootTemplates_Fishing();
 
-/**
- * Loads gameobject loot templates.
- */
 void LoadLootTemplates_Gameobject();
 
-/**
- * Loads item loot templates.
- */
 void LoadLootTemplates_Item();
 
-/**
- * Loads mail loot templates.
- */
 void LoadLootTemplates_Mail();
 
-/**
- * Loads pickpocketing loot templates.
- */
 void LoadLootTemplates_Pickpocketing();
 
-/**
- * Loads skinning loot templates.
- */
 void LoadLootTemplates_Skinning();
 
-/**
- * Loads disenchant loot templates.
- */
 void LoadLootTemplates_Disenchant();
 
-/**
- * Loads reference loot templates used by other loot tables.
- */
 void LoadLootTemplates_Reference();
 
 inline void LoadLootTables()

@@ -23,17 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file WaypointCommands.cpp
- * @brief Implementation of waypoint path editing chat commands.
- *
- * This file contains chat command handlers for waypoint operations including:
- * - Waypoint path creation and editing
- * - Waypoint property modification
- * - Path movement testing
- * - NPC path assignment
- */
-
 #include <string>
 #include <list>
 #include "Chat.h"
@@ -43,7 +32,7 @@
 #include "WaypointMovementGenerator.h"
 #include "TemporarySummon.h"
 #include "MoveMap.h"
-#include "PathFinder.h" // for mmap manager
+#include "PathFinder.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
@@ -52,7 +41,6 @@
 #include <map>
 #include <typeinfo>
 
-/// Helper function
 inline Creature* Helper_CreateWaypointFor(Creature* wpOwner, WaypointPathOrigin wpOrigin, int32 pathId, uint32 wpId, WaypointNode const* wpNode, CreatureInfo const* waypointInfo)
 {
     TemporarySummonWaypoint* wpCreature = new TemporarySummonWaypoint(wpOwner->GetObjectGuid(), wpId, pathId, (uint32)wpOrigin);
@@ -70,16 +58,10 @@ inline Creature* Helper_CreateWaypointFor(Creature* wpOwner, WaypointPathOrigin 
 
     wpCreature->SetActiveObjectState(true);
 
-    wpCreature->Summon(TEMPSPAWN_TIMED_DESPAWN, 5 * MINUTE * IN_MILLISECONDS); // Also initializes the AI and MMGen
+    wpCreature->Summon(TEMPSPAWN_TIMED_DESPAWN, 5 * MINUTE * IN_MILLISECONDS);
     return wpCreature;
 }
 
-/**
- * @brief Despawns temporary visual waypoint creatures owned by a player.
- *
- * @param player The player used as the center of the search.
- * @param ownerGuid The owner guid assigned to the visual waypoints.
- */
 inline void UnsummonVisualWaypoints(Player const* player, ObjectGuid ownerGuid)
 {
     std::list<Creature*> waypoints;
@@ -107,24 +89,6 @@ inline void UnsummonVisualWaypoints(Player const* player, ObjectGuid ownerGuid)
     }
 }
 
-/** Add a waypoint to a creature
- * .wp add [dbGuid] [pathId] [source]
- *
- * The user can either select an npc or provide its dbGuid.
- * Also the user can specify pathId and source if wanted.
- *
- * The user can even select a visual waypoint - then the new waypoint
- * is placed *after* the selected one - this makes insertion of new
- * waypoints possible.
- *
- * .wp add [pathId] [source]
- * -> adds a waypoint to the currently selected creature, to path pathId in source-storage
- *
- * .wp add guid [pathId] [source]
- * -> if no npc is selected, expect the creature provided with guid argument
- *
- * @return true - command did succeed, false - something went wrong
- */
 bool ChatHandler::HandleWpAddCommand(char* args)
 {
     DEBUG_LOG("DEBUG: HandleWpAddCommand");
@@ -132,18 +96,18 @@ bool ChatHandler::HandleWpAddCommand(char* args)
     CreatureInfo const* waypointInfo = ObjectMgr::GetCreatureTemplate(VISUAL_WAYPOINT);
     if (!waypointInfo || waypointInfo->GetHighGuid() != HIGHGUID_UNIT)
     {
-        return false;                                       // must exist as normal creature in mangos.sql 'creature_template'
+        return false;
     }
 
     Creature* targetCreature = getSelectedCreature();
-    WaypointPathOrigin wpDestination = PATH_NO_PATH;        ///< into which storage
-    int32 wpPathId = 0;                                     ///< along which path
-    uint32 wpPointId = 0;                                   ///< pointId if a waypoint was selected, in this case insert after
+    WaypointPathOrigin wpDestination = PATH_NO_PATH;
+    int32 wpPathId = 0;
+    uint32 wpPointId = 0;
     Creature* wpOwner;
 
     if (targetCreature)
     {
-        // Check if the user did specify a visual waypoint
+
         if (targetCreature->GetEntry() == VISUAL_WAYPOINT && targetCreature->GetSubtype() == CREATURE_SUBTYPE_TEMPORARY_SUMMON)
         {
             TemporarySummonWaypoint* wpTarget = dynamic_cast<TemporarySummonWaypoint*>(targetCreature);
@@ -154,24 +118,23 @@ bool ChatHandler::HandleWpAddCommand(char* args)
                 return false;
             }
 
-            // Who moves along this waypoint?
             wpOwner = targetCreature->GetMap()->GetAnyTypeCreature(wpTarget->GetSummonerGuid());
             if (!wpOwner)
             {
-                PSendSysMessage(LANG_WAYPOINT_NOTFOUND_NPC, wpTarget->GetSummonerGuid().GetString().c_str());
+                PSendSysMessage(LANG_WAYPOINT_NOTFOUND_NPC, GuidString(wpTarget->GetSummonerGuid()).c_str());
                 SetSentErrorMessage(true);
                 return false;
             }
             wpDestination = (WaypointPathOrigin)wpTarget->GetPathOrigin();
             wpPathId = wpTarget->GetPathId();
-            wpPointId = wpTarget->GetWaypointId() + 1;      // Insert as next waypoint
+            wpPointId = wpTarget->GetWaypointId() + 1;
         }
-        else // normal creature selected
+        else
         {
             wpOwner = targetCreature;
         }
     }
-    else //!targetCreature - first argument must be dbGuid
+    else
     {
         uint32 dbGuid;
         if (!ExtractUInt32(&args, dbGuid))
@@ -205,25 +168,25 @@ bool ChatHandler::HandleWpAddCommand(char* args)
         }
     }
 
-    if (wpDestination == PATH_NO_PATH)                      // No Waypoint selected, parse additional params
+    if (wpDestination == PATH_NO_PATH)
     {
-        if (ExtractOptInt32(&args, wpPathId, 0))            // Fill path-id and source
+        if (ExtractOptInt32(&args, wpPathId, 0))
         {
             uint32 src = (uint32)PATH_NO_PATH;
             if (ExtractOptUInt32(&args, src, src))
             {
                 wpDestination = (WaypointPathOrigin)src;
             }
-            else // pathId provided but no destination
+            else
             {
                 if (wpPathId != 0)
                 {
-                    wpDestination = PATH_FROM_ENTRY;        // Multiple Paths must only be assigned by entry
+                    wpDestination = PATH_FROM_ENTRY;
                 }
             }
         }
 
-        if (wpDestination == PATH_NO_PATH)                  // No overwrite params. Do best estimate
+        if (wpDestination == PATH_NO_PATH)
         {
             if (wpOwner->GetMotionMaster()->GetCurrentMovementGeneratorType() == WAYPOINT_MOTION_TYPE)
             {
@@ -232,10 +195,10 @@ bool ChatHandler::HandleWpAddCommand(char* args)
                     wpMMGen->GetPathInformation(wpPathId, wpDestination);
                 }
             }
-            // Get information about default path if no current path. If no default path, prepare data dependendy on uniqueness
+
             if (wpDestination == PATH_NO_PATH && !sWaypointMgr.GetDefaultPath(wpOwner->GetEntry(), wpOwner->GetGUIDLow(), &wpDestination))
             {
-                wpDestination = PATH_FROM_ENTRY;                // Default place to store paths
+                wpDestination = PATH_FROM_ENTRY;
                 if (npcs::Listed(*wpOwner))
                 {
                     QueryResult* result = WorldDatabase.PQuery("SELECT COUNT(`id`) FROM `creature` WHERE `id` = %u", wpOwner->GetEntry());
@@ -249,9 +212,6 @@ bool ChatHandler::HandleWpAddCommand(char* args)
         }
     }
 
-    // All arguments parsed
-    // wpOwner will get a new waypoint inserted into wpPath = GetPathFromOrigin(wpOwner, wpDestination, wpPathId) at wpPointId
-
     float x, y, z;
     x = m_session->GetPlayer()->Where().X();
     y = m_session->GetPlayer()->Where().Y();
@@ -263,7 +223,6 @@ bool ChatHandler::HandleWpAddCommand(char* args)
         return false;
     }
 
-    // Unsummon old visuals, summon new ones
     UnsummonVisualWaypoints(m_session->GetPlayer(), wpOwner->GetObjectGuid());
     WaypointPath const* wpPath = sWaypointMgr.GetPathFromOrigin(wpOwner->GetEntry(), wpOwner->GetGUIDLow(), wpPathId, wpDestination);
     for (WaypointPath::const_iterator itr = wpPath->begin(); itr != wpPath->end(); ++itr)
@@ -279,43 +238,8 @@ bool ChatHandler::HandleWpAddCommand(char* args)
     PSendSysMessage(LANG_WAYPOINT_ADDED, wpPointId, wpOwner->GetGuidStr().c_str(), wpPathId, WaypointManager::GetOriginString(wpDestination).c_str());
 
     return true;
-}                                                           // HandleWpAddCommand
+}
 
-/**
- * .wp modify waittime | scriptid | orientation | del | move [dbGuid, id] [value]
- *
- * waittime <Delay>
- *   User has selected a visual waypoint before.
- *   Delay <Delay> is added to this waypoint. Everytime the
- *   NPC comes to this waypoint, it will wait Delay millieseconds.
- *
- * waittime <DBGuid> <WPNUM> <Delay>
- *   User has not selected visual waypoint before.
- *   For the waypoint <WPNUM> for the NPC with <DBGuid>
- *   an delay Delay is added to this waypoint
- *   Everytime the NPC comes to this waypoint, it will wait Delay millieseconds.
- *
- * scriptid <scriptId>
- *   User has selected a visual waypoint before.
- *   <scriptId> is added to this waypoint. Everytime the
- *   NPC comes to this waypoint, the DBScript scriptId is executed.
- *
- * scriptid <DBGuid> <WPNUM> <scriptId>
- *   User has not selected visual waypoint before.
- *   For the waypoint <WPNUM> for the NPC with <DBGuid>
- *   an emote <scriptId> is added.
- *   Everytime the NPC comes to this waypoint, the DBScript scriptId is executed.
- *
- * orientation [DBGuid, WpNum] <Orientation>
- *   Set the orientation of the selected waypoint or waypoint given with DbGuid/ WpId
- *   to the value of <Orientation>.
- *
- * del [DBGuid, WpId]
- *   Remove the selected waypoint or waypoint given with DbGuid/ WpId.
- *
- * move [DBGuid, WpId]
- *   Move the selected waypoint or waypoint given with DbGuid/ WpId to player's current positiion.
- */
 bool ChatHandler::HandleWpModifyCommand(char* args)
 {
     DEBUG_LOG("DEBUG: HandleWpModifyCommand");
@@ -328,10 +252,9 @@ bool ChatHandler::HandleWpModifyCommand(char* args)
     CreatureInfo const* waypointInfo = ObjectMgr::GetCreatureTemplate(VISUAL_WAYPOINT);
     if (!waypointInfo || waypointInfo->GetHighGuid() != HIGHGUID_UNIT)
     {
-        return false; // must exist as normal creature in mangos.sql 'creature_template'
+        return false;
     }
 
-    // first arg: add del text emote spell waittime move
     char* subCmd_str = ExtractLiteralArg(&args);
     if (!subCmd_str)
     {
@@ -339,18 +262,14 @@ bool ChatHandler::HandleWpModifyCommand(char* args)
     }
 
     std::string subCmd = subCmd_str;
-    // Check
-    // Remember: "show" must also be the name of a column!
+
     if ((subCmd != "waittime") && (subCmd != "scriptid") && (subCmd != "orientation") && (subCmd != "del") && (subCmd != "move"))
     {
         return false;
     }
 
-    // Next arg is: <GUID> <WPNUM> <ARGUMENT>
-
-    // Did user provide a GUID or did the user select a creature?
-    Creature* targetCreature = getSelectedCreature();       // Expect a visual waypoint to be selected
-    Creature* wpOwner;                               // Who moves along the waypoint
+    Creature* targetCreature = getSelectedCreature();
+    Creature* wpOwner;
     uint32 wpId = 0;
     WaypointPathOrigin wpSource = PATH_NO_PATH;
     int32 wpPathId = 0;
@@ -359,7 +278,6 @@ bool ChatHandler::HandleWpModifyCommand(char* args)
     {
         DEBUG_LOG("DEBUG: HandleWpModifyCommand - User did select an NPC");
 
-        // Check if the user did specify a visual waypoint
         if (targetCreature->GetEntry() != VISUAL_WAYPOINT || targetCreature->GetSubtype() != CREATURE_SUBTYPE_TEMPORARY_SUMMON)
         {
             PSendSysMessage(LANG_WAYPOINT_VP_SELECT);
@@ -374,11 +292,10 @@ bool ChatHandler::HandleWpModifyCommand(char* args)
             return false;
         }
 
-        // Who moves along this waypoint?
         wpOwner = targetCreature->GetMap()->GetAnyTypeCreature(wpTarget->GetSummonerGuid());
         if (!wpOwner)
         {
-            PSendSysMessage(LANG_WAYPOINT_NOTFOUND_NPC, wpTarget->GetSummonerGuid().GetString().c_str());
+            PSendSysMessage(LANG_WAYPOINT_NOTFOUND_NPC, GuidString(wpTarget->GetSummonerGuid()).c_str());
             SetSentErrorMessage(true);
             return false;
         }
@@ -390,7 +307,7 @@ bool ChatHandler::HandleWpModifyCommand(char* args)
     else
     {
         uint32 dbGuid = 0;
-        // User did provide <GUID> <WPNUM>
+
         if (!ExtractUInt32(&args, dbGuid))
         {
             SendSysMessage(LANG_WAYPOINT_NOGUID);
@@ -422,7 +339,7 @@ bool ChatHandler::HandleWpModifyCommand(char* args)
         }
     }
 
-    if (wpSource == PATH_NO_PATH)                           // No waypoint selected
+    if (wpSource == PATH_NO_PATH)
     {
         if (wpOwner->GetMotionMaster()->GetCurrentMovementGeneratorType() == WAYPOINT_MOTION_TYPE)
         {
@@ -453,7 +370,6 @@ bool ChatHandler::HandleWpModifyCommand(char* args)
         return false;
     }
 
-    // If no visual WP was selected, but we are not going to remove it
     if (!targetCreature && subCmd != "del")
     {
         targetCreature = Helper_CreateWaypointFor(wpOwner, wpSource, wpPathId, wpId, &(point->second), waypointInfo);
@@ -465,7 +381,7 @@ bool ChatHandler::HandleWpModifyCommand(char* args)
         }
     }
 
-    if (subCmd == "del")                                    // Remove WP, no additional command required
+    if (subCmd == "del")
     {
         sWaypointMgr.DeleteNode(wpOwner->GetEntry(), wpOwner->GetGUIDLow(), wpId, wpPathId, wpSource);
 
@@ -478,7 +394,7 @@ bool ChatHandler::HandleWpModifyCommand(char* args)
         {
             wpOwner->SetDefaultMovementType(RANDOM_MOTION_TYPE);
             wpOwner->GetMotionMaster()->Initialize();
-            if (wpOwner->IsAlive())                         // Dead creature will reset movement generator at respawn
+            if (wpOwner->IsAlive())
             {
                 wpOwner->SetDeathState(JUST_DIED);
                 wpOwner->Respawn();
@@ -489,14 +405,13 @@ bool ChatHandler::HandleWpModifyCommand(char* args)
         PSendSysMessage(LANG_WAYPOINT_REMOVED);
         return true;
     }
-    else if (subCmd == "move")                              // Move to player position, no additional command required
+    else if (subCmd == "move")
     {
         float x, y, z;
         x = m_session->GetPlayer()->Where().X();
         y = m_session->GetPlayer()->Where().Y();
         z = m_session->GetPlayer()->Where().Z();
 
-        // Move visual waypoint
         targetCreature->NearTeleportTo(x, y, z, targetCreature->Where().Facing());
 
         sWaypointMgr.SetNodePosition(wpOwner->GetEntry(), wpOwner->GetGUIDLow(), wpId, wpPathId, wpSource, x, y, z);
@@ -542,21 +457,6 @@ bool ChatHandler::HandleWpModifyCommand(char* args)
     return true;
 }
 
-/**
- * .wp show info | on | off | first | last [dbGuid] [pathId [wpOrigin] ]
- *
- * info -> User has selected a visual waypoint before
- *
- * on -> User has selected an NPC; all visual waypoints for this
- *       NPC are added to the world
- *
- * on <dbGuid> -> User did not select an NPC - instead the dbGuid of the
- *              NPC is provided. All visual waypoints for this NPC
- *              are added from the world.
- *
- * off -> User has selected an NPC; all visual waypoints for this
- *        NPC are removed from the world.
- */
 bool ChatHandler::HandleWpShowCommand(char* args)
 {
     DEBUG_LOG("DEBUG: HandleWpShowCommand");
@@ -569,27 +469,24 @@ bool ChatHandler::HandleWpShowCommand(char* args)
     CreatureInfo const* waypointInfo = ObjectMgr::GetCreatureTemplate(VISUAL_WAYPOINT);
     if (!waypointInfo || waypointInfo->GetHighGuid() != HIGHGUID_UNIT)
     {
-        return false; // must exist as normal creature in mangos.sql 'creature_template'
+        return false;
     }
-
-    // first arg: info, on, off, first, last
 
     char* subCmd_str = ExtractLiteralArg(&args);
     if (!subCmd_str)
     {
         return false;
     }
-    std::string subCmd = subCmd_str;                        ///< info, on, off, first, last
+    std::string subCmd = subCmd_str;
 
     uint32 dbGuid = 0;
     int32 wpPathId = 0;
     WaypointPathOrigin wpOrigin = PATH_NO_PATH;
 
-    // User selected an npc?
     Creature* targetCreature = getSelectedCreature();
     if (targetCreature)
     {
-        if (ExtractOptInt32(&args, wpPathId, 0))            // Fill path-id and source
+        if (ExtractOptInt32(&args, wpPathId, 0))
         {
             uint32 src;
             if (ExtractOptUInt32(&args, src, (uint32)PATH_NO_PATH))
@@ -598,14 +495,14 @@ bool ChatHandler::HandleWpShowCommand(char* args)
             }
         }
     }
-    else    // Guid must be provided
+    else
     {
-        if (!ExtractUInt32(&args, dbGuid))                  // No creature selected and no dbGuid provided
+        if (!ExtractUInt32(&args, dbGuid))
         {
             return false;
         }
 
-        if (ExtractOptInt32(&args, wpPathId, 0))            // Fill path-id and source
+        if (ExtractOptInt32(&args, wpPathId, 0))
         {
             uint32 src = (uint32)PATH_NO_PATH;
             if (ExtractOptUInt32(&args, src, src))
@@ -614,7 +511,6 @@ bool ChatHandler::HandleWpShowCommand(char* args)
             }
         }
 
-        // Params now parsed, check them
         CreatureData const* data = sObjectMgr.GetCreatureData(dbGuid);
         if (!data)
         {
@@ -632,13 +528,12 @@ bool ChatHandler::HandleWpShowCommand(char* args)
         }
     }
 
-    Creature* wpOwner;                               ///< Npc that is moving
-    TemporarySummonWaypoint* wpTarget = nullptr;               // Define here for wp-info command
+    Creature* wpOwner;
+    TemporarySummonWaypoint* wpTarget = nullptr;
 
-    // Show info for the selected waypoint (Step one: get moving npc)
     if (subCmd == "info")
     {
-        // Check if the user did specify a visual waypoint
+
         if (targetCreature->GetEntry() != VISUAL_WAYPOINT || targetCreature->GetSubtype() != CREATURE_SUBTYPE_TEMPORARY_SUMMON)
         {
             PSendSysMessage(LANG_WAYPOINT_VP_SELECT);
@@ -653,16 +548,14 @@ bool ChatHandler::HandleWpShowCommand(char* args)
             return false;
         }
 
-        // Who moves along this waypoint?
         wpOwner = targetCreature->GetMap()->GetAnyTypeCreature(wpTarget->GetSummonerGuid());
         if (!wpOwner)
         {
-            PSendSysMessage(LANG_WAYPOINT_NOTFOUND_NPC, wpTarget->GetSummonerGuid().GetString().c_str());
+            PSendSysMessage(LANG_WAYPOINT_NOTFOUND_NPC, GuidString(wpTarget->GetSummonerGuid()).c_str());
             SetSentErrorMessage(true);
             return false;
         }
 
-        // Ignore params, use information of selected waypoint!
         wpOrigin = (WaypointPathOrigin)wpTarget->GetPathOrigin();
         wpPathId = wpTarget->GetPathId();
     }
@@ -671,9 +564,8 @@ bool ChatHandler::HandleWpShowCommand(char* args)
         wpOwner = targetCreature;
     }
 
-    // Get the path
     WaypointPath* wpPath = nullptr;
-    if (wpOrigin != PATH_NO_PATH)                           // Might have been provided by param
+    if (wpOrigin != PATH_NO_PATH)
     {
         wpPath = sWaypointMgr.GetPathFromOrigin(wpOwner->GetEntry(), wpOwner->GetGUIDLow(), wpPathId, wpOrigin);
     }
@@ -700,10 +592,9 @@ bool ChatHandler::HandleWpShowCommand(char* args)
         return false;
     }
 
-    // Show info for the selected waypoint (Step two: Show actual info)
     if (subCmd == "info")
     {
-        // Find the waypoint
+
         WaypointPath::const_iterator point = wpPath->find(wpTarget->GetWaypointId());
         if (point == wpPath->end())
         {
@@ -761,7 +652,6 @@ bool ChatHandler::HandleWpShowCommand(char* args)
             return false;
         }
 
-        // player->PlayerTalkClass->SendPointOfInterest(x, y, 6, 6, 0, "First Waypoint");
         return true;
     }
 
@@ -774,7 +664,6 @@ bool ChatHandler::HandleWpShowCommand(char* args)
             return false;
         }
 
-        // player->PlayerTalkClass->SendPointOfInterest(x, y, 6, 6, 0, "Last Waypoint");
         return true;
     }
 
@@ -786,14 +675,8 @@ bool ChatHandler::HandleWpShowCommand(char* args)
     }
 
     return false;
-}                                                           // HandleWpShowCommand
+}
 
-/**
- * @brief Handler for HandleWpExportCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleWpExportCommand(char* args)
 {
     if (!*args)
@@ -807,7 +690,7 @@ bool ChatHandler::HandleWpExportCommand(char* args)
 
     if (Creature* targetCreature = getSelectedCreature())
     {
-        // Check if the user did specify a visual waypoint
+
         if (targetCreature->GetEntry() == VISUAL_WAYPOINT && targetCreature->GetSubtype() == CREATURE_SUBTYPE_TEMPORARY_SUMMON)
         {
             TemporarySummonWaypoint* wpTarget = dynamic_cast<TemporarySummonWaypoint*>(targetCreature);
@@ -818,18 +701,17 @@ bool ChatHandler::HandleWpExportCommand(char* args)
                 return false;
             }
 
-            // Who moves along this waypoint?
             wpOwner = targetCreature->GetMap()->GetAnyTypeCreature(wpTarget->GetSummonerGuid());
             if (!wpOwner)
             {
-                PSendSysMessage(LANG_WAYPOINT_NOTFOUND_NPC, wpTarget->GetSummonerGuid().GetString().c_str());
+                PSendSysMessage(LANG_WAYPOINT_NOTFOUND_NPC, GuidString(wpTarget->GetSummonerGuid()).c_str());
                 SetSentErrorMessage(true);
                 return false;
             }
             wpOrigin = (WaypointPathOrigin)wpTarget->GetPathOrigin();
             wpPathId = wpTarget->GetPathId();
         }
-        else // normal creature selected
+        else
         {
             wpOwner = targetCreature;
         }
@@ -868,7 +750,6 @@ bool ChatHandler::HandleWpExportCommand(char* args)
         }
     }
 
-    // wpOwner is now known, in case of export by visual waypoint also the to be exported path
     char* export_str = ExtractLiteralArg(&args);
     if (!export_str)
     {
@@ -877,20 +758,20 @@ bool ChatHandler::HandleWpExportCommand(char* args)
         return false;
     }
 
-    if (wpOrigin == PATH_NO_PATH)                           // No WP selected, Extract optional arguments
+    if (wpOrigin == PATH_NO_PATH)
     {
-        if (ExtractOptInt32(&args, wpPathId, 0))            // Fill path-id and source
+        if (ExtractOptInt32(&args, wpPathId, 0))
         {
             uint32 src = (uint32)PATH_NO_PATH;
             if (ExtractOptUInt32(&args, src, src))
             {
                 wpOrigin = (WaypointPathOrigin)src;
             }
-            else // pathId provided but no destination
+            else
             {
                 if (wpPathId != 0)
                 {
-                    wpOrigin = PATH_FROM_ENTRY;             // Multiple Paths must only be assigned by entry
+                    wpOrigin = PATH_FROM_ENTRY;
                 }
             }
         }
@@ -955,7 +836,7 @@ bool ChatHandler::HandleWpExportCommand(char* args)
         outfile << itr->second.z << ",";
         outfile << itr->second.orientation << ",";
         outfile << itr->second.delay << ",";
-        if (wpOrigin != PATH_FROM_EXTERNAL)                 // Only for normal waypoints
+        if (wpOrigin != PATH_FROM_EXTERNAL)
         {
             outfile << itr->second.script_id << ")";
         }

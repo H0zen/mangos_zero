@@ -134,7 +134,7 @@ struct spell_boss_ambassador_flamelash : public SpellScript
     {
         if (uiSpellId == SPELL_BURNING_SPIRIT && uiEffIndex == EFFECT_INDEX_1)
         {
-            ToCreature(pCreatureTarget)->CastSpell(ToCreature(pCreatureTarget), SPELL_BURNING_SPIRIT_BUFF, true);
+            static_cast<Creature*>(pCreatureTarget)->CastSpell(static_cast<Creature*>(pCreatureTarget), SPELL_BURNING_SPIRIT_BUFF, true);
             return true;
         }
 

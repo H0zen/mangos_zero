@@ -20,25 +20,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 #include "CinematicFlyoverRoute.h"
 #include "SharedDefines.h"
 
-// GENERATED FILE - do not hand-edit. Regenerate with:
-//     python .ai_tools/bake_cinematic_routes.py --out <this file>
-//
-// World-space camera routes for the eight starting-race intro cinematics.
-// Derived offline from client data: CinematicCamera.dbc provides a world
-// origin and facing per cinematic; the referenced camera-only M2 model
-// provides the flyby as keyframed position/target tracks relative to the
-// camera base vector. world = origin + RotZ(facing) * (base + key value).
-// Orientation per keyframe faces the interpolated target track position.
-// Only derived coordinates are stored here; no client assets are shipped.
-// Each route's final keyframe lands at that race's player spawn point
-// (verified against playercreateinfo, 5.6-12.2 yd, camera ending on the
-// newly created character).
-
-// Human (race 1, cinematic 142, map 0)
 static const CinematicFlyoverKeyframe s_humanKeyframes[] = {
     { 0, -8922.42f, 543.34f, 144.58f, 0.7977f },
     { 3533, -8941.30f, 529.32f, 125.54f, 0.7752f },
@@ -63,15 +47,14 @@ static const CinematicFlyoverKeyframe s_humanKeyframes[] = {
 };
 
 static const CinematicFlyoverRoute s_humanRoute = {
-    1,     // raceId (Human)
-    142,   // cinematicId
-    0,     // mapId (Eastern Kingdoms)
-    87467, // durationMs
+    1,
+    142,
+    0,
+    87467,
     sizeof(s_humanKeyframes) / sizeof(CinematicFlyoverKeyframe),
     s_humanKeyframes
 };
 
-// Orc (race 2, cinematic 235, map 1)
 static const CinematicFlyoverKeyframe s_orcKeyframes[] = {
     { 0, 369.84f, -4705.95f, 76.67f, 2.6119f },
     { 1600, 373.16f, -4708.63f, 70.90f, 2.5974f },
@@ -98,15 +81,14 @@ static const CinematicFlyoverKeyframe s_orcKeyframes[] = {
 };
 
 static const CinematicFlyoverRoute s_orcRoute = {
-    2,     // raceId (Orc)
-    235,   // cinematicId
-    1,     // mapId (Kalimdor)
-    70167, // durationMs
+    2,
+    235,
+    1,
+    70167,
     sizeof(s_orcKeyframes) / sizeof(CinematicFlyoverKeyframe),
     s_orcKeyframes
 };
 
-// Dwarf (race 3, cinematic 234, map 0)
 static const CinematicFlyoverKeyframe s_dwarfKeyframes[] = {
     { 0, -5041.88f, -824.64f, 541.27f, 5.7394f },
     { 800, -5043.23f, -823.65f, 541.25f, 5.7390f },
@@ -139,15 +121,14 @@ static const CinematicFlyoverKeyframe s_dwarfKeyframes[] = {
 };
 
 static const CinematicFlyoverRoute s_dwarfRoute = {
-    3,     // raceId (Dwarf)
-    234,   // cinematicId
-    0,     // mapId (Eastern Kingdoms)
-    59600, // durationMs
+    3,
+    234,
+    0,
+    59600,
     sizeof(s_dwarfKeyframes) / sizeof(CinematicFlyoverKeyframe),
     s_dwarfKeyframes
 };
 
-// Night Elf (race 4, cinematic 122, map 1)
 static const CinematicFlyoverKeyframe s_nightelfKeyframes[] = {
     { 333, 9693.22f, 1041.14f, 1393.94f, 4.2989f },
     { 10367, 9691.12f, 1019.42f, 1350.81f, 5.3342f },
@@ -184,15 +165,14 @@ static const CinematicFlyoverKeyframe s_nightelfKeyframes[] = {
 };
 
 static const CinematicFlyoverRoute s_nightelfRoute = {
-    4,     // raceId (Night Elf)
-    122,   // cinematicId
-    1,     // mapId (Kalimdor)
-    102333, // durationMs
+    4,
+    122,
+    1,
+    102333,
     sizeof(s_nightelfKeyframes) / sizeof(CinematicFlyoverKeyframe),
     s_nightelfKeyframes
 };
 
-// Undead (race 5, cinematic 2, map 0)
 static const CinematicFlyoverKeyframe s_undeadKeyframes[] = {
     { 0, 2163.21f, 1524.32f, 78.97f, 3.1378f },
     { 4333, 2154.60f, 1524.34f, 79.16f, 3.3887f },
@@ -219,15 +199,14 @@ static const CinematicFlyoverKeyframe s_undeadKeyframes[] = {
 };
 
 static const CinematicFlyoverRoute s_undeadRoute = {
-    5,     // raceId (Undead)
-    2,     // cinematicId
-    0,     // mapId (Eastern Kingdoms)
-    102033, // durationMs
+    5,
+    2,
+    0,
+    102033,
     sizeof(s_undeadKeyframes) / sizeof(CinematicFlyoverKeyframe),
     s_undeadKeyframes
 };
 
-// Tauren (race 6, cinematic 202, map 1)
 static const CinematicFlyoverKeyframe s_taurenKeyframes[] = {
     { 0, -1175.48f, 116.46f, 251.14f, 4.4463f },
     { 4533, -1175.61f, 124.15f, 226.10f, 4.4463f },
@@ -251,15 +230,14 @@ static const CinematicFlyoverKeyframe s_taurenKeyframes[] = {
 };
 
 static const CinematicFlyoverRoute s_taurenRoute = {
-    6,     // raceId (Tauren)
-    202,   // cinematicId
-    1,     // mapId (Kalimdor)
-    70333, // durationMs
+    6,
+    202,
+    1,
+    70333,
     sizeof(s_taurenKeyframes) / sizeof(CinematicFlyoverKeyframe),
     s_taurenKeyframes
 };
 
-// Gnome (race 7, cinematic 162, map 0)
 static const CinematicFlyoverKeyframe s_gnomeKeyframes[] = {
     { 0, -5080.12f, 445.40f, 414.29f, 5.7097f },
     { 4233, -5087.95f, 450.21f, 414.11f, 5.6720f },
@@ -291,15 +269,14 @@ static const CinematicFlyoverKeyframe s_gnomeKeyframes[] = {
 };
 
 static const CinematicFlyoverRoute s_gnomeRoute = {
-    7,     // raceId (Gnome)
-    162,   // cinematicId
-    0,     // mapId (Eastern Kingdoms)
-    76667, // durationMs
+    7,
+    162,
+    0,
+    76667,
     sizeof(s_gnomeKeyframes) / sizeof(CinematicFlyoverKeyframe),
     s_gnomeKeyframes
 };
 
-// Troll (race 8, cinematic 182, map 1)
 static const CinematicFlyoverKeyframe s_trollKeyframes[] = {
     { 0, -791.36f, -4945.88f, 31.06f, 3.6349f },
     { 9867, -780.53f, -4941.30f, 30.85f, 3.4950f },
@@ -325,15 +302,14 @@ static const CinematicFlyoverKeyframe s_trollKeyframes[] = {
 };
 
 static const CinematicFlyoverRoute s_trollRoute = {
-    8,     // raceId (Troll)
-    182,   // cinematicId
-    1,     // mapId (Kalimdor)
-    57767, // durationMs
+    8,
+    182,
+    1,
+    57767,
     sizeof(s_trollKeyframes) / sizeof(CinematicFlyoverKeyframe),
     s_trollKeyframes
 };
 
-/// Returns the baked intro flyover route for a race, or nullptr if none exists.
 const CinematicFlyoverRoute* GetCinematicFlyoverRouteForRace(uint8 raceId)
 {
     switch (raceId)

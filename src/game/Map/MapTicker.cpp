@@ -59,8 +59,7 @@ void MapTicker::Halt()
 
 void MapTicker::SetInterval(uint32 ms)
 {
-    // Capped, not floored: a round further apart than this leaves a map's own timers --
-    // respawns, spell ticks, grid expiry -- reading a diff too coarse to be worth anything.
+
     if (ms > MIN_MAP_UPDATE_DELAY)
     {
         ms = MIN_MAP_UPDATE_DELAY;
@@ -104,22 +103,14 @@ void MapTicker::Run(uint32 diff)
         m_pool.wait();
     }
 
-    // PAST THE BARRIER, WHERE NO MAP IS RUNNING. A vessel that reached the end of one world
-    // map decided so on that map's thread, and could go no further there: arriving writes
-    // into the destination's active list, object store and player list, and the destination
-    // may have been updating on another core at that very moment. Here nothing is.
     sFleet.SettleCrossings();
 
-    // Named first, retired after: retiring a map destroys it, and the sheet must not be
-    // rearranged under the walk that is reading it.
     std::vector<MapKey> retiring;
 
     for (auto const& filed : sMapRoster.All())
     {
         Map* map = filed.second;
 
-        // A deck outlives every voyage: it is opened once and never retired, because no
-        // player ever enters it to keep it awake and her crew have nowhere else to be.
         if (map->AsTransport())
         {
             continue;

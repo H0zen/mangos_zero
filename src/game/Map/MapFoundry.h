@@ -39,40 +39,22 @@ class Player;
 class Transport;
 class TransportMap;
 
-/**
- * @brief Where a map is cast, and the only place one ever is.
- *
- * The caller says what it wants, in its own terms: a continent, a vessel's deck, or the map
- * a particular player belongs on. It never says which C++ class that is -- deciding that is
- * the whole of this class's job. What comes back is already filed with MapRoster and ready
- * to be walked into.
- *
- * The bench lock is held across a whole Open, so two threads asking for the same continent
- * at once get one map rather than two. MapRoster keeps its own lock for the sheet itself;
- * the order is bench first, sheet second, never the reverse.
- */
 class MapFoundry : public MaNGOS::Singleton<MapFoundry>
 {
         friend class MaNGOS::Singleton<MapFoundry>;
 
     public:
 
-        /// A continent or any other map everybody shares. Casts it on the first ask.
         Map* OpenWorld(uint32 mapId);
 
-        /// A vessel's own map. Only the vessel can ask, because only she can be its owner.
         TransportMap* OpenDeck(uint32 deckMapId, Transport& vessel);
 
-        /// The map this player belongs on: his instance if the map has copies, else the world's.
         Map* OpenFor(Player& player, uint32 mapId);
 
-        /// Cast an unfiled dungeon copy. InstanceLedger files it; nobody else calls this.
         DungeonMap* CastDungeon(uint32 mapId, uint32 instanceId, DungeonPersistentState* save);
 
-        /// Cast an unfiled battleground copy, bound to its battleground both ways.
         BattleGroundMap* CastBattleGround(uint32 mapId, uint32 instanceId, BattleGround* bg);
 
-        /// How long a grid with nobody in it is kept before it is dropped.
         void SetGridCleanUpDelay(uint32 ms);
         uint32 GridCleanUpDelay() const { return m_gridCleanUpDelay; }
 
@@ -84,7 +66,6 @@ class MapFoundry : public MaNGOS::Singleton<MapFoundry>
         MapFoundry(MapFoundry const&) = delete;
         MapFoundry& operator=(MapFoundry const&) = delete;
 
-        /// Find or cast the single shared copy of a non-instanceable map.
         Map* Shared(uint32 mapId, Transport* vessel);
 
         uint32 m_gridCleanUpDelay;

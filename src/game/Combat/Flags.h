@@ -25,25 +25,14 @@
 
 #pragma once
 
-// One Outcome, told three ways.
-//
-// The core answers in a Result and a set of amplifiers. The client wants a
-// HitInfo mask and a
-// VictimState; the proc system wants its own mask. All three say the same thing,
-// so the translation belongs in one place rather than being rebuilt at each
-// site that needs a different dialect -- which is how they drift, and how a
-// blocked hit ends up procing as a plain one.
-
 #include "Combat/Blow.h"
 
 namespace combat
 {
-    /// The HitInfo mask an attacker-state update carries for this outcome.
+
     uint32 ToHitInfo(const Outcome& outcome);
 
-    /// The VictimState field that accompanies it.
     uint32 ToVictimState(const Outcome& outcome);
 
-    /// The mask the proc system matches against.
     uint32 ToProcEx(const Outcome& outcome);
 }

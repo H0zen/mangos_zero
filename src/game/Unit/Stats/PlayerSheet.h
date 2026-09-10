@@ -21,18 +21,6 @@
 
 class Player;
 
-/**
- * The numbers a character fights with.
- *
- * Nearly everything here is derived rather than folded: armour from agility and
- * intellect, health from stamina, mana from intellect, attack power from
- * strength and agility by class and by whatever shape a druid is in. The rules
- * are a table, and a table is either exercised or trusted.
- *
- * Three of the numbers have nowhere on the wire to live -- the crit chance of
- * each spell school, and the two rates a character regains mana at, standing
- * and casting -- so they are kept here and asked for by name.
- */
 class PlayerSheet : public StatSheet
 {
     public:
@@ -48,12 +36,8 @@ class PlayerSheet : public StatSheet
         void Swing(WeaponAttackType attType) override;
         uint32 ShieldBlock() const override;
 
-        /// What a swing of that hand comes to, without writing it down. This is
-        /// the one the blow itself is rolled from.
         void SwingRange(WeaponAttackType attType, bool normalized, float& least, float& most);
 
-        /// The damage and healing his gear and auras add, per school, which the
-        /// client shows him and the server never reads.
         void SpellDamageAndHealing();
 
         void Defences();
@@ -73,9 +57,8 @@ class PlayerSheet : public StatSheet
 
     private:
 
-        /// The health the first twenty stamina buy, and the rest.
         float HealthFromStamina() const;
-        /// The same rule for mana out of intellect.
+
         float ManaFromIntellect() const;
 
         Player& m_owner;

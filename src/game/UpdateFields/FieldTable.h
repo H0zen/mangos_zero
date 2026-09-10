@@ -29,24 +29,16 @@
 #include "Utilities/Errors.h"
 #include "ObjectGuid.h"
 
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
+
 class Object;
 class Player;
 
-/**
- * What every update field is, and who may be told about it.
- *
- * The client carries this as data -- a 20-byte record per field giving its name,
- * width, storage kind and a word of visibility flags -- and replicates it per
- * dword so any raw wire index resolves in one step. This is that table.
- *
- * Nothing here is a guess. It is generated from the client's own records, and
- * the generator refuses to run if a single index disagrees with the server's
- * enum.
- */
 namespace Fields
 {
-    /// How the value is stored, which is what says whether it needs converting
-    /// on the way out: the server keeps some INT fields in a float.
+
     enum class Kind : uint8
     {
         Int,
@@ -56,27 +48,20 @@ namespace Fields
         TwoShort,
     };
 
-    /// The client's own visibility word. A field is sent when this intersects
-    /// the observer's audience, so a field flagged VisNone -- the paddings --
-    /// can never be sent at all.
     enum Visibility : uint16
     {
         VisNone      = 0x000,
-        VisPublic    = 0x001,   ///< anyone who can see the object
-        VisPrivate   = 0x002,   ///< the object itself
-        VisOwner     = 0x004,   ///< whoever owns it: a pet's master, an item's holder
-        VisItemOwner = 0x010,   ///< only ever on ITEM fields, always with VisOwner
-        VisSpecial   = 0x020,   ///< inspectable detail: damage, resistances
-        VisParty     = 0x040,   ///< only on the twenty quest-log fields
-        VisDynamic   = 0x100,   ///< health and the dynamic flags: sent to all, but rewritten per observer
+        VisPublic    = 0x001,
+        VisPrivate   = 0x002,
+        VisOwner     = 0x004,
+        VisItemOwner = 0x010,
+        VisSpecial   = 0x020,
+        VisParty     = 0x040,
+        VisDynamic   = 0x100,
     };
 
-    /// Which visibility bits an observer is entitled to. Built per (object,
-    /// observer) pair; the mask to send is the union of the bits it carries.
     typedef uint16 Audience;
 
-    /// One per dword. `index` is the first dword of the field this dword belongs
-    /// to, so a multi-dword field is recognisable from any of its parts.
     struct Descriptor
     {
         uint16      index;
@@ -89,9 +74,9 @@ namespace Fields
     struct Table
     {
         Descriptor const* fields;
-        uint16            count;        ///< dwords in this class, i.e. *_END
-        uint16            blocks;       ///< mask blocks: (count + 31) / 32
-        uint32 const*     visibility;   ///< nine masks of `blocks` dwords, one per visibility bit
+        uint16            count;
+        uint16            blocks;
+        uint32 const*     visibility;
 
         Descriptor const& At(uint16 index) const
         {
@@ -102,60 +87,47 @@ namespace Fields
         uint32 const* MaskForBit(uint8 bit) const { return visibility + bit * blocks; }
     };
 
-    /// Mask blocks of the widest class, PLAYER: ceil(1282 / 32). The client
-    /// checks this same limit before reading a mask, so it is the ceiling for
-    /// every object and a send mask fits on the stack.
     uint16 const MaxBlocks = 41;
 
-    /// The table for a TypeID. Generated; see FieldTable.cpp.
     Table const& For(uint8 typeId);
 
-    /// What this observer may be told about this object.
     Audience AudienceFor(Object const& object, Player const& observer);
 
-    /// Fold an audience into a mask of the fields it admits.
     void MaskFor(Table const& table, Audience audience, uint32* out);
 
-    /**
-     * The value to put on the wire, which is not always the value that is
-     * stored: a creature's health is a percentage to everyone but itself, a
-     * trainer is not a trainer to a class it does not teach, and a corpse is
-     * only lootable to whoever may loot it.
-     *
-     * Returns the raw value when the field means the same thing to everybody.
-     */
     uint32 Project(Object const& object, Player& observer, uint16 index, uint32 raw);
 
-    /**
-     * Hit points as an observer who may not read the real figure is told them.
-     *
-     * A unit that is alive never reads as zero, or a sliver of health on a big
-     * pool would look dead.
-     */
     uint32 HealthAsPercent(uint32 current, uint32 max);
 
-    /**
-     * Who is given a unit's real hit points, rather than a percentage of them.
-     *
-     * The unit itself, and whoever owns or charms it -- a hunter's pet frame
-     * shows exact figures, and the pet's own fields are the only channel that
-     * can carry them. Everyone else reads a percentage, party and raid
-     * included: their frames show numbers because SMSG_PARTY_MEMBER_STATS
-     * carries them separately.
-     *
-     * @param unit     The unit whose health is being sent.
-     * @param owner    Its owner or charmer, empty when it has none.
-     * @param observer Who is being told.
-     */
     bool ReadsRealHitPoints(ObjectGuid const& unit, ObjectGuid const& owner, ObjectGuid const& observer);
 
-    /// Fields that must go out on every update block, because what they mean to
-    /// an observer can change while the stored value stands still.
-    bool AlwaysResend(uint8 typeId, uint16 index);
-
-    /// Fields the mirror does not hold. The object keeps them as its own state,
-    /// the mirror slot stays zero, and Project is what reads them -- so a create
-    /// block asks the projection whether there is anything to send, rather than
-    /// looking at a slot nobody fills.
     bool LivesOutside(uint8 typeId, uint16 index);
+
+    uint32 const* OutsideMask(uint8 typeId);
+
+    inline uint8 LowestSet(uint32 word)
+    {
+#if defined(_MSC_VER)
+        unsigned long bit;
+        _BitScanForward(&bit, word);
+        return uint8(bit);
+#else
+        return uint8(__builtin_ctz(word));
+#endif
+    }
+
+    template<typename Fn>
+    void ForEachSet(uint32 const* mask, uint16 blocks, Fn&& fn)
+    {
+        for (uint16 block = 0; block < blocks; ++block)
+        {
+            uint32 word = mask[block];
+            while (word)
+            {
+                uint8 const bit = LowestSet(word);
+                fn(uint16(block * 32 + bit));
+                word &= word - 1;
+            }
+        }
+    }
 }

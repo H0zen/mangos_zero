@@ -91,7 +91,7 @@ void Perils::Tell(MirrorTimerType which, uint32 most, uint32 left, int32 rate)
     data << most;
     data << rate;
     data << uint8(0);
-    data << uint32(0);                                      // Spell ID
+    data << uint32(0);
     m_owner.GetSession()->SendPacket(&data);
 }
 
@@ -149,7 +149,6 @@ uint32 Perils::Harm(EnvironmentalDamageType type, uint32 damage)
         return 0;
     }
 
-    // Absorb and resist some environmental damage types
     uint32 absorb = 0;
     uint32 resist = 0;
     if (type == DAMAGE_LAVA)
@@ -191,11 +190,11 @@ uint32 Perils::Harm(EnvironmentalDamageType type, uint32 damage)
 
     uint32 final_damage = m_owner.DealDamage(&m_owner, damage, nullptr, damageType, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);
 
-    if (type == DAMAGE_FALL && !m_owner.IsAlive()) // DealDamage does not apply item durability loss at self-damage
+    if (type == DAMAGE_FALL && !m_owner.IsAlive())
     {
         DEBUG_LOG("We fell to death, losing 10 percent durability");
         m_owner.DurabilityLossAll(0.10f, false);
-        // Durability lost message
+
         WorldPacket data2(SMSG_DURABILITY_DAMAGE_DEATH, 0);
         m_owner.GetSession()->SendPacket(&data2);
     }
@@ -205,7 +204,7 @@ uint32 Perils::Harm(EnvironmentalDamageType type, uint32 damage)
 
 void Perils::Emptied(MirrorTimerType which)
 {
-    // TODO: Check this formula
+
     uint32 const damage = m_owner.GetMaxHealth() / 5 + urand(0, m_owner.getLevel() - 1);
 
     if (which == BREATH_TIMER)
@@ -270,7 +269,7 @@ void Perils::RunBar(MirrorTimerType which, uint8 standingIn, uint32 elapsed)
 
 void Perils::RunFire(uint32 elapsed)
 {
-    // A liquid that carries its own spell does the burning itself.
+
     if (!(m_standingIn & UNDERWATER_INLAVA) || (m_liquid && m_liquid->SpellID))
     {
         m_left[FIRE_TIMER] = DISABLED_MIRROR_TIMER;
@@ -288,7 +287,7 @@ void Perils::RunFire(uint32 elapsed)
     if (m_left[FIRE_TIMER] < 0)
     {
         m_left[FIRE_TIMER] += 2 * IN_MILLISECONDS;
-        // TODO: Check this formula
+
         Harm(DAMAGE_LAVA, urand(600, 700));
     }
 }
@@ -324,14 +323,8 @@ void Perils::InWater(bool apply)
         return;
     }
 
-    // define player in water by opcodes
-    // move player's guid into HateOfflineList of those mobs
-    // which can't swim and move guid back into ThreatList when
-    // on surface.
-    // TODO: exist also swimming mobs, and function must be symmetric to enter/leave water
     m_inWater = apply;
 
-    // remove auras that need water/land
     m_owner.RemoveAurasWithInterruptFlags(apply ? AURA_INTERRUPT_FLAG_NOT_ABOVEWATER : AURA_INTERRUPT_FLAG_NOT_UNDERWATER);
 
     m_owner.GetHostileRefManager().updateThreatTables();
@@ -387,7 +380,6 @@ void Perils::Look(Map* where, float x, float y, float z)
         m_liquid = nullptr;
     }
 
-    // All liquids type - check under water position
     if (found.type_flags & (MAP_LIQUID_TYPE_WATER | MAP_LIQUID_TYPE_OCEAN | MAP_LIQUID_TYPE_MAGMA | MAP_LIQUID_TYPE_SLIME))
     {
         if (res & LIQUID_MAP_UNDER_WATER)
@@ -400,7 +392,6 @@ void Perils::Look(Map* where, float x, float y, float z)
         }
     }
 
-    // Allow travel in dark water on taxi or transport
     if ((found.type_flags & MAP_LIQUID_TYPE_DARK_WATER) && !m_owner.IsTaxiFlying() && !m_owner.GetTransport())
     {
         m_standingIn |= UNDERWATER_INDARKWATER;
@@ -410,7 +401,6 @@ void Perils::Look(Map* where, float x, float y, float z)
         m_standingIn &= ~UNDERWATER_INDARKWATER;
     }
 
-    // in lava check, anywhere in lava level
     if (found.type_flags & MAP_LIQUID_TYPE_MAGMA)
     {
         if (res & (LIQUID_MAP_UNDER_WATER | LIQUID_MAP_IN_WATER | LIQUID_MAP_WATER_WALK))
@@ -423,7 +413,6 @@ void Perils::Look(Map* where, float x, float y, float z)
         }
     }
 
-    // in slime check, anywhere in slime level
     if (found.type_flags & MAP_LIQUID_TYPE_SLIME)
     {
         if (res & (LIQUID_MAP_UNDER_WATER | LIQUID_MAP_IN_WATER | LIQUID_MAP_WATER_WALK))

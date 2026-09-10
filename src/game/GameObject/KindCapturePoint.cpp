@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <algorithm>
 #include <cstdlib>
 #include <list>
@@ -56,29 +54,18 @@
 #include "GameObjectAI.h"
 #include "Geometry/Quat.h"
 
-/**
- * @brief Puts the bar where a saved game left it.
- *
- * @param value The slider value the point is left at.
- * @param isLocked true when the point is not to be contested yet.
- */
 void CapturePointBehaviour::Restore(float value, bool isLocked)
 {
     m_bar.SliderAt(value, It().GetGOInfo()->capturePoint.neutralPercent);
 
-    // only activate non-locked capture point
     if (!isLocked)
     {
         It().SetLootState(GO_ACTIVATED);
     }
 }
 
-/**
- * @brief Pushes the bar toward whichever side has more players by the point.
- */
 void CapturePointBehaviour::Tick()
 {
-    // TODO: On retail: Ticks every 5.2 seconds. slider value increase when new player enters on tick
 
     GameObjectInfo const* info = It().GetGOInfo();
     float const radius = info->capturePoint.radius;
@@ -91,8 +78,6 @@ void CapturePointBehaviour::Tick()
     uint32 const neutralPercent = info->capturePoint.neutralPercent;
     int const oldValue = static_cast<int>(m_bar.Slider());
 
-    // Alliance counts up and horde counts down, so what is left is by how much
-    // one side outnumbers the other, and its sign says which side that is.
     GuidSet gone(m_bar.Standing());
     int superiority = 0;
 
@@ -108,7 +93,7 @@ void CapturePointBehaviour::Tick()
             player->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
             player->SendUpdateWorldState(info->capturePoint.worldState2, oldValue);
             player->SendUpdateWorldState(info->capturePoint.worldState1, WORLD_STATE_ADD);
-            // also redundantly sent on retail to prevent displaying the initial capture direction on client capture slider incorrectly
+
             player->SendUpdateWorldState(info->capturePoint.worldState2, oldValue);
         }
     }
@@ -123,7 +108,6 @@ void CapturePointBehaviour::Tick()
         m_bar.Left(guid);
     }
 
-    // nobody outnumbers anybody, so the bar stays where it is (works because minSuperiority is always 1)
     if (superiority == 0)
     {
         if (m_bar.IsDeserted())
@@ -133,14 +117,11 @@ void CapturePointBehaviour::Tick()
         return;
     }
 
-    // keeps the object loaded while anyone stands by it, so that an idle grid
-    // cannot freeze the list of who is there
     It().SetActiveObjectState(true);
 
     int const maxSuperiority = info->capturePoint.maxSuperiority;
     superiority = std::max(-maxSuperiority, std::min(superiority, maxSuperiority));
 
-    // time to capture from 0% to 100% is maxTime for minSuperiority amount of players and minTime for maxSuperiority amount of players (linear function: y = dy/dx*x+d)
     float seconds = info->capturePoint.minTime;
     if (int deltaSuperiority = maxSuperiority - info->capturePoint.minSuperiority)
     {
@@ -149,16 +130,13 @@ void CapturePointBehaviour::Tick()
 
     Team const pushing = superiority > 0 ? ALLIANCE : HORDE;
 
-    // the share of the whole bar that one tick is worth
     m_bar.SliderTowards(pushing, 100.0f * (CAPTURE_TICK / 1000.0f) / seconds);
 
-    // the bar is read in whole percents, so a smaller move says nothing yet
     if (static_cast<int>(m_bar.Slider()) == oldValue)
     {
         return;
     }
 
-    // on retail this is also sent to newly added players even though they already received a slider value
     for (auto* player : capturingPlayers)
     {
         player->SendUpdateWorldState(info->capturePoint.worldState2, static_cast<uint32>(m_bar.Slider()));
@@ -180,7 +158,6 @@ void CapturePointBehaviour::Tick()
     }
 }
 
-/// The bar moves on its own clock while anybody is standing in the circle.
 void CapturePointBehaviour::InUse(uint32 elapsed)
 {
     if (m_bar.IsTickDue(elapsed))
@@ -189,16 +166,9 @@ void CapturePointBehaviour::InUse(uint32 elapsed)
     }
 }
 
-/**
- * @brief A capture point is never spent, only locked and reopened.
- *
- * It goes straight back to ready rather than through the tail, because the tail
- * despawns anything showing full progress -- which, for a tower being taken, is
- * every tower at the moment it changes hands.
- */
 GameObjectBehaviour::Tick CapturePointBehaviour::Spent()
 {
-    // The bar is not drawn for a locked point, so nobody is left standing in it.
+
     for (auto const& guid : m_bar.Standing())
     {
         if (Player* owner = It().GetMap()->GetPlayer(guid))

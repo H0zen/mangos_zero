@@ -163,7 +163,7 @@ struct npc_gilthares : public CreatureScript
             }
 
             // only aggro text if not player and only in this area
-            if (!pWho->IsPlayer() && m_creature->GetTerrain()->GetAreaId(m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z()) == AREA_MERCHANT_COAST)
+            if (!IsPlayer(pWho) && m_creature->GetTerrain()->GetAreaId(m_creature->Where().X(), m_creature->Where().Y(), m_creature->Where().Z()) == AREA_MERCHANT_COAST)
             {
                 // appears to be pretty much random (possible only if escorter not in combat with pWho yet?)
                 switch (urand(0, 3))
@@ -258,7 +258,7 @@ struct npc_taskmaster_fizzule : public CreatureScript
 
         void SpellHit(Unit* pCaster, const SpellEntry* pSpell) override
         {
-            if (pCaster->IsPlayer() && (SD3_SpellId(pSpell) == SPELL_FLARE || SD3_SpellId(pSpell) == SPELL_FOLLY))
+            if (IsPlayer(pCaster) && (SD3_SpellId(pSpell) == SPELL_FLARE || SD3_SpellId(pSpell) == SPELL_FOLLY))
             {
                 ++m_uiFlareCount;
 
@@ -361,8 +361,8 @@ struct npc_twiggy_flathead : public CreatureScript
         uint32 m_uiChallengerCount;
         uint8 m_uiStep;
 
-        ObjectGuid m_playerGuid;
-        ObjectGuid m_bigWillGuid;
+        ObjectGuid m_playerGuid = 0;
+        ObjectGuid m_bigWillGuid = 0;
         GuidVector m_vAffrayChallengerGuidsVector;
 
         void Reset() override
@@ -373,8 +373,8 @@ struct npc_twiggy_flathead : public CreatureScript
             m_uiChallengerCount = 0;
             m_uiStep = 0;
 
-            m_playerGuid.Clear();
-            m_bigWillGuid.Clear();
+            m_playerGuid = 0;
+            m_bigWillGuid = 0;
             m_vAffrayChallengerGuidsVector.clear();
         }
 
@@ -464,9 +464,9 @@ struct npc_twiggy_flathead : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* pSender, Unit* pInvoker, uint32 /*uiMiscValue*/) override
         {
-            if (eventType == AI_EVENT_CUSTOM_A && pSender == m_creature && pInvoker->IsPlayer())
+            if (eventType == AI_EVENT_CUSTOM_A && pSender == m_creature &&IsPlayer(pInvoker))
             {
-                CanStartEvent(ToPlayer(pInvoker));
+                CanStartEvent(static_cast<Player*>(pInvoker));
             }
         }
 
@@ -875,7 +875,7 @@ struct npc_regthar_deathgate : public CreatureScript
 
         void JustSummoned(Creature* pSummoned)
         {
-            SendAIEventAround(AI_EVENT_CUSTOM_A, ToUnit(pSummoned), 0, 40.0f);
+            SendAIEventAround(AI_EVENT_CUSTOM_A, static_cast<Unit*>(pSummoned), 0, 40.0f);
 
             if (pSummoned->GetEntry() == NPC_HORDE_DEFENDER) //replace died creature from list with new spawned one
             {
@@ -1211,7 +1211,7 @@ struct npc_regthar_deathgate : public CreatureScript
             pPlayer->SEND_GOSSIP_MENU(2534, pCreature->GetObjectGuid());
             if (npc_regthar_deathgateAI* pRegtharAI = dynamic_cast<npc_regthar_deathgateAI*>(pCreature->AI()))
             {
-                pRegtharAI->StartEvent(pPlayer->GetObjectGuid().GetRawValue());
+                pRegtharAI->StartEvent(pPlayer->GetObjectGuid());
             }
         }
         return true;
@@ -1256,7 +1256,7 @@ struct horde_defender : public CreatureScript
             if (eventType == AI_EVENT_CUSTOM_A)
             {
                 m_creature->AddThreat(pInvoker, 0.0f);
-                pSender->AddThreat(ToUnit(m_creature), 0.0f);
+                pSender->AddThreat(static_cast<Unit*>(m_creature), 0.0f);
             }
         }
 
@@ -1348,7 +1348,7 @@ struct kolkar_invader : public CreatureScript
             if (eventType == AI_EVENT_CUSTOM_A)
             {
                 m_creature->AddThreat(pInvoker, 0.0f);
-                pSender->AddThreat(ToUnit(m_creature), 0.0f);
+                pSender->AddThreat(static_cast<Unit*>(m_creature), 0.0f);
             }
         }
 
@@ -1424,7 +1424,7 @@ struct warlord_kromzar : public CreatureScript
 
         void JustDied(Unit* /**/)
         {
-            m_creature->CastSpell(ToUnit(m_creature), 13965, true);
+            m_creature->CastSpell(static_cast<Unit*>(m_creature), 13965, true);
         }
 
         void JustRespawned() override

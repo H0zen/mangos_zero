@@ -23,13 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SpellCheckCaster.cpp
- * @brief Everything about the caster himself that can refuse a cast.
- * Cooldowns, the global cooldown, where a battleground has got to, whether he
- * is stealthed, mounted or dead, and what his own auras leave him able to do.
- */
-
 #include "Reaction.h"
 #include "Utilities/MathDefines.h"
 #include "Spell.h"
@@ -63,17 +56,10 @@
 #include "DisableMgr.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Asks whether the caster is in any state to cast this at all.
- *
- * @param strict True while the cast is being started rather than finished.
- *
- * @return The reason the cast is refused, or SPELL_CAST_OK.
- */
 SpellCastResult Spell::CheckTheCasterMay(bool strict)
 {
-    // check cooldowns to prevent cheating (ignore passive spells, that client side visual only)
-    if (m_caster->IsPlayer() && !Recipe().Says().passive &&
+
+    if (IsPlayer(m_caster) && !Recipe().Says().passive &&
         ((Player*)m_caster)->HasSpellCooldown(m_spellInfo->ID))
     {
         if (m_triggeredByAuraSpell)
@@ -86,14 +72,12 @@ SpellCastResult Spell::CheckTheCasterMay(bool strict)
         }
     }
 
-    // check global cooldown
     if (strict && !m_IsTriggeredSpell && HasGlobalCooldown())
     {
         return SPELL_FAILED_NOT_READY;
     }
 
-    // only allow triggered spells if at an ended battleground
-    if (!m_IsTriggeredSpell && m_caster->IsPlayer())
+    if (!m_IsTriggeredSpell &&IsPlayer(m_caster))
     {
         if (BattleGround* bg = ((Player*)m_caster)->Battle().Ground())
         {
@@ -104,7 +88,7 @@ SpellCastResult Spell::CheckTheCasterMay(bool strict)
         }
     }
 
-    if (!m_IsTriggeredSpell && m_spellInfo->ID == 2479) //honorless target as non-triggered spell
+    if (!m_IsTriggeredSpell && m_spellInfo->ID == 2479)
     {
         return SPELL_FAILED_DONT_REPORT;
     }
@@ -115,7 +99,6 @@ SpellCastResult Spell::CheckTheCasterMay(bool strict)
         return SPELL_FAILED_AFFECTING_COMBAT;
     }
 
-    // Backstab position check
     if (m_spellInfo->ID == 53 || m_spellInfo->ID == 2589 || m_spellInfo->ID == 7159)
     {
         if (Unit* target = m_targets.getUnitTarget())
@@ -128,7 +111,7 @@ SpellCastResult Spell::CheckTheCasterMay(bool strict)
         }
     }
 
-    if (m_caster->IsPlayer() && !((Player*)m_caster)->isGameMaster() &&
+    if (IsPlayer(m_caster) && !((Player*)m_caster)->isGameMaster() &&
         sWorld.getConfig(CONFIG_BOOL_VMAP_INDOOR_CHECK))
     {
         if (Recipe().Says().outdoorsOnly &&
@@ -143,11 +126,10 @@ SpellCastResult Spell::CheckTheCasterMay(bool strict)
             return SPELL_FAILED_ONLY_INDOORS;
         }
     }
-    // only check at first call, Stealth auras are already removed at second call
-    // for now, ignore triggered spells
+
     if (strict && !m_IsTriggeredSpell)
     {
-        // Can not be used in this stance/form
+
         SpellCastResult shapeError = GetErrorAtShapeshiftedCast(m_spellInfo, m_caster->GetShapeshiftForm());
         if (shapeError != SPELL_CAST_OK)
         {
@@ -160,19 +142,17 @@ SpellCastResult Spell::CheckTheCasterMay(bool strict)
         }
     }
 
-    // caster state requirements
     if (m_spellInfo->CasterAuraState && !m_caster->HasAuraState(AuraState(m_spellInfo->CasterAuraState)))
     {
         return SPELL_FAILED_CANT_DO_THAT_YET;
     }
 
-    if (m_caster->IsPlayer())
+    if (IsPlayer(m_caster))
     {
-        // cancel autorepeat spells if cast start when moving
-        // (not wand currently autorepeat cast delayed to moving stop anyway in spell update code)
+
         if (((Player*)m_caster)->isMoving())
         {
-            // skip stuck spell to allow use it in falling case and apply spell limitations at movement
+
             if ((!((Player*)m_caster)->m_movementInfo.HasMovementFlag(MOVEFLAG_FALLINGFAR) || Recipe().At(EFFECT_INDEX_0).verb != SPELL_EFFECT_STUCK) &&
                 (IsAutoRepeat() || (m_spellInfo->AuraInterruptFlags & AURA_INTERRUPT_FLAG_NOT_SEATED) != 0))
             {
@@ -183,11 +163,10 @@ SpellCastResult Spell::CheckTheCasterMay(bool strict)
         if (!m_IsTriggeredSpell && NeedsComboPoints(m_spellInfo) &&
             (!m_targets.getUnitTarget() || m_targets.getUnitTarget()->GetObjectGuid() != ((Player*)m_caster)->GetComboTargetGuid()))
         {
-            // warrior not have real combo-points at client side but use this way for mark allow Overpower use
+
             return m_caster->getClass() == CLASS_WARRIOR ? SPELL_FAILED_CANT_DO_THAT_YET : SPELL_FAILED_NO_COMBO_POINTS;
         }
 
-        // Loatheb Corrupted Mind spell failed
         switch (m_spellInfo->SpellClassSet)
         {
             case SPELLFAMILY_DRUID:
@@ -214,14 +193,6 @@ SpellCastResult Spell::CheckTheCasterMay(bool strict)
     return SPELL_CAST_OK;
 }
 
-/**
- * @brief Asks whether the ground the caster stands on allows this cast.
- *
- * Some spells belong to one map, zone or area and nowhere else, and a mounted
- * player casts almost nothing at all.
- *
- * @return The reason the cast is refused, or SPELL_CAST_OK.
- */
 SpellCastResult Spell::CheckWhereTheCasterStands()
 {
     uint32 zone, area;
@@ -234,8 +205,7 @@ SpellCastResult Spell::CheckWhereTheCasterStands()
         return here;
     }
 
-    // a creature may cast from the saddle, a player may not
-    if (m_caster->IsMounted() && m_caster->IsPlayer() && !m_IsTriggeredSpell &&
+    if (m_caster->IsMounted() &&IsPlayer(m_caster) && !m_IsTriggeredSpell &&
         !(Recipe().Starts() == cast::Start::Passive) && !Recipe().Says().castableWhileMounted)
     {
         return m_caster->IsTaxiFlying() ? SPELL_FAILED_NOT_ON_TAXI : SPELL_FAILED_NOT_MOUNTED;

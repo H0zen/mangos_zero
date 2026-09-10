@@ -23,35 +23,16 @@ class Creature;
 class Map;
 class Unit;
 
-/**
- * What one creature's fortunes do to another's.
- *
- * Two creatures can be tied together in the data: one is the master and the
- * other follows it. When the master is pulled, dies, gives up the chase, is
- * cleared away or comes back, the ones tied to it are told, and they aggro,
- * despawn, respawn or follow it home in turn. A creature can also be held back
- * from spawning at all until the one it waits on is dead.
- *
- * Which creature is tied to which is the map's business -- the holder there
- * keeps the lists. What lives here is the one creature's side of it: whether
- * anything at all listens to it, whether its own spawn waits on someone, and
- * the naming of what has just happened to it.
- */
 class CreatureLinks
 {
     public:
 
         explicit CreatureLinks(Creature& whose) : m_owner(whose) {}
 
-        /// Puts the creature on the map's lists, as a follower, as a master, or
-        /// as both, according to what the data says of it.
         void Enrol(Map& map);
 
-        /// Whether anything is tied to this creature at all.
         bool AnyoneListens() const { return m_listenedTo; }
 
-        /// Whether its own spawn waits on another creature, and whether that
-        /// other has cleared the way.
         void WaitsOnAnother() { m_spawnWaits = true; }
         bool MayRespawn() const;
 
@@ -61,7 +42,6 @@ class CreatureLinks
         void Respawned();
         void Despawned();
 
-        /// Sends it back to walk with its master, if it has one to walk with.
         bool RefollowMaster();
 
     private:

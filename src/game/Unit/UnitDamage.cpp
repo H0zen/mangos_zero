@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Unit.h"
 #include "Combat/Mitigate.h"
 #include "Combat/Reading.h"
@@ -64,18 +62,10 @@
 #include <stdarg.h>
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Reduces physical damage by the victim's effective armor.
- *
- * @param pVictim The victim whose armor is used.
- * @param damage The incoming physical damage.
- * @return The reduced damage amount.
- */
 uint32 Unit::CalcArmorReducedDamage(Unit* pVictim, const uint32 damage)
 {
     float armor = (float)pVictim->GetArmor();
 
-    // Ignore enemy armor by SPELL_AURA_MOD_TARGET_RESISTANCE aura
     armor += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_TARGET_RESISTANCE, SPELL_SCHOOL_MASK_NORMAL);
 
     if (armor < 0.0f)
@@ -102,30 +92,18 @@ uint32 Unit::CalcArmorReducedDamage(Unit* pVictim, const uint32 damage)
     return (newdamage > 1) ? newdamage : 1;
 }
 
-/**
- * @brief Calculates resistance, absorbs, and split-damage effects for incoming damage.
- *
- * @param pCaster The attacking caster.
- * @param schoolMask The incoming damage school mask.
- * @param damagetype The damage effect type.
- * @param damage The incoming damage amount.
- * @param absorb Output absorbed amount.
- * @param resist Output resisted amount.
- * @param canReflect Unused reflection flag placeholder.
- */
-void Unit::CalculateDamageAbsorbAndResist(Unit* pCaster, SpellSchoolMask schoolMask, DamageEffectType damagetype, const uint32 damage, uint32* absorb, uint32* resist, bool /*canReflect*/)
+void Unit::CalculateDamageAbsorbAndResist(Unit* pCaster, SpellSchoolMask schoolMask, DamageEffectType damagetype, const uint32 damage, uint32* absorb, uint32* resist, bool )
 {
     if (!pCaster || !IsAlive() || !damage)
     {
         return;
     }
 
-    // Magic damage, check for resists
     if ((schoolMask & SPELL_SCHOOL_MASK_NORMAL) == 0)
     {
-        // Get base victim resistance for school
+
         float tmpvalue2 = (float)GetResistance(GetFirstSchoolInMask(schoolMask));
-        // Ignore resistance by self SPELL_AURA_MOD_TARGET_RESISTANCE aura
+
         tmpvalue2 += (float)pCaster->GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_TARGET_RESISTANCE, schoolMask);
 
         tmpvalue2 *= (float)(0.15f / getLevel());
@@ -173,14 +151,6 @@ void Unit::CalculateDamageAbsorbAndResist(Unit* pCaster, SpellSchoolMask schoolM
 
     int32 remaining = damage - int32(*resist);
 
-    // Shields and splitting are decided by the combat core, which reads and
-    // decides but writes nothing, and then spent here. The split plan is handed
-    // to the caster rather than dealt: it is owed by this blow and is delivered
-    // once the blow itself has been applied, in DealDamage. Dealing it here
-    // would let the recipient die, proc and pull threat before the hit that
-    // split the damage had landed at all.
-    // The blow has one school. Spell data stores a mask, so it narrows here,
-    // once, rather than inside the core.
     const combat::School school = combat::FirstSchoolIn(schoolMask);
 
     const combat::Defences defences =
@@ -203,21 +173,13 @@ void Unit::CalculateDamageAbsorbAndResist(Unit* pCaster, SpellSchoolMask schoolM
     }
 }
 
-/**
- * @brief Calculates block, absorb, and resist results for spell-based damage.
- *
- * @param pCaster The attacking caster.
- * @param damageInfo The mutable spell damage information.
- * @param spellProto The spell entry causing damage.
- * @param attType The associated attack type.
- */
 void Unit::CalculateAbsorbResistBlock(Unit* pCaster, SpellNonMeleeDamage* damageInfo, SpellEntry const* spellProto, WeaponAttackType attType)
 {
     bool blocked = false;
-    // Get blocked status
+
     switch (spellProto->DefenseType)
     {
-        // Melee and Ranged Spells
+
         case SPELL_DAMAGE_CLASS_RANGED:
         case SPELL_DAMAGE_CLASS_MELEE:
             blocked = IsSpellBlocked(pCaster, spellProto, attType);

@@ -35,42 +35,33 @@ class Item;
 
 namespace cast
 {
-    /// One unit a cast reaches. The verdict is reckoned when the unit is written
-    /// down, long before the spell arrives, because the client is told the whole
-    /// outcome in the same message that starts the missile flying.
+
     struct UnitTarget
     {
-        ObjectGuid guid;
-        uint64 arrivesInMs = 0;             ///< flight time from the caster, zero for a spell that lands at once
-        uint32 hitInfo = 0;                 ///< what the weapon blow reports, for the spells that swing one
-        uint32 damage = 0;                  ///< carried from the launch to the arrival for delayed spells
+        ObjectGuid guid = 0;
+        uint64 arrivesInMs = 0;
+        uint32 hitInfo = 0;
+        uint32 damage = 0;
         SpellMissInfo verdict = SPELL_MISS_NONE;
-        SpellMissInfo reflectedVerdict = SPELL_MISS_NONE;   ///< what happens to the caster when this unit reflects
-        uint8 slots = 0;                    ///< bit per recipe slot that applies to this unit
-        bool served = false;                ///< the slots have already been run on it
+        SpellMissInfo reflectedVerdict = SPELL_MISS_NONE;
+        uint8 slots = 0;
+        bool served = false;
     };
 
-    /// One gameobject a cast reaches. A gameobject neither dodges nor resists, so
-    /// it carries no verdict.
     struct ObjectTarget
     {
-        ObjectGuid guid;
+        ObjectGuid guid = 0;
         uint64 arrivesInMs = 0;
         uint8 slots = 0;
         bool served = false;
     };
 
-    /// One item a cast reaches. The item is in a bag the caster owns, so nothing
-    /// flies to it and nothing can go wrong on the way.
     struct ItemTarget
     {
         Item* item = nullptr;
         uint8 slots = 0;
     };
 
-    /// Everyone and everything one cast reaches. The roster is written while the
-    /// targets are chosen and read again when the spell lands: a target named
-    /// twice by two slots is one line with two bits, not two lines.
     class Roster
     {
         public:
@@ -93,11 +84,8 @@ namespace cast
             std::vector<ItemTarget>& Items() { return m_items; }
             const std::vector<ItemTarget>& Items() const { return m_items; }
 
-            /// Does any line on the roster want this recipe slot run on it?
             bool ServesSlot(uint8 slot) const;
 
-            /// The shortest flight time on the roster, zero when everything lands
-            /// at once. This is when the cast next needs waking.
             uint64 SoonestArrivalMs() const;
 
         private:

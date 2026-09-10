@@ -54,7 +54,6 @@ namespace cast
             highest = highest > row->ID ? highest : row->ID;
         }
 
-        // Addresses are taken only after the vector has stopped growing.
         m_byId.assign(static_cast<size_t>(highest) + 1, nullptr);
         for (const auto& recipe : m_recipes)
         {
@@ -140,7 +139,7 @@ namespace cast
                         recipe.m_announces.byCaster = PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL;
                         recipe.m_announces.byTarget = PROC_FLAG_TAKEN_POSITIVE_SPELL;
                     }
-                    else if (recipe.Says().autoRepeats)      // a wand swinging on its own
+                    else if (recipe.Says().autoRepeats)
                     {
                         recipe.m_announces.byCaster = PROC_FLAG_SUCCESSFUL_RANGED_HIT;
                         recipe.m_announces.byTarget = PROC_FLAG_TAKEN_RANGED_HIT;
@@ -153,7 +152,6 @@ namespace cast
                     break;
             }
 
-            // the four hunter traps, so that Entrapment hears them go off
             if (recipe.ClassSet() == SPELLFAMILY_HUNTER && (recipe.ClassMask() & UI64LIT(0x000020000000001C)))
             {
                 recipe.m_announces.byCaster |= PROC_FLAG_ON_TRAP_ACTIVATION;

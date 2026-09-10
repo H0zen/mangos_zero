@@ -61,7 +61,7 @@ void npc_escortAI::GetAIInformation(ChatHandler& reader)
     oss << "EscortAI ";
     if (m_playerGuid)
     {
-        oss << "started for " << m_playerGuid.GetString() << " ";
+        oss << "started for " << GuidString(m_playerGuid) << " ";
     }
     if (m_pQuestForEscort)
     {
@@ -616,7 +616,7 @@ void npc_escortAI::Start(bool bRun, const Player* pPlayer, const Quest* pQuest, 
     // set variables
     m_bIsRunning = bRun;
 
-    m_playerGuid = pPlayer ? pPlayer->GetObjectGuid() : ObjectGuid();
+    m_playerGuid = pPlayer ? pPlayer->GetObjectGuid() : 0;
     m_pQuestForEscort = pQuest;
 
     m_bCanInstantRespawn = bInstantRespawn;
@@ -637,7 +637,7 @@ void npc_escortAI::Start(bool bRun, const Player* pPlayer, const Quest* pQuest, 
     // disable npcflags
     m_creature->SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
 
-    debug_log("SD3: EscortAI started with %zu waypoints. Run = %d, PlayerGuid = %s", WaypointList.size(), m_bIsRunning, m_playerGuid.GetString().c_str());
+    debug_log("SD3: EscortAI started with %zu waypoints. Run = %d, PlayerGuid = %s", WaypointList.size(), m_bIsRunning, GuidString(m_playerGuid).c_str());
 
     CurrentWP = WaypointList.begin();
 

@@ -51,7 +51,6 @@ class Totem : public Creature
         void SetDuration(uint32 dur) { Term().Grant(TEMPSPAWN_TIMED_DESPAWN, dur); }
         void SetOwner(Unit* owner);
 
-        /// A totem fights with no numbers of its own.
         StatSheet& Sheet() override { return m_sheet; }
         StatSheet const& Sheet() const override { return m_sheet; }
 

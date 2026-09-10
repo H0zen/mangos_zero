@@ -29,33 +29,18 @@
 #include "Policies/Singleton.h"
 #include "Utilities/Timer.h"
 
-/**
- * @brief The clock that gives every open map its turn, and the barrier at the end of it.
- *
- * One round is: every world map updated, in parallel when there are worker threads; then
- * the barrier, where nothing is running and the vessels between two maps are handed over;
- * then the maps that nobody needs any more are retired.
- *
- * A vessel's deck is never in the round. It belongs to the vessel, which ticks it nested
- * inside the tick of the map she sails, and it is never retired: no player enters it to
- * keep it awake and her crew have nowhere else to be.
- */
 class MapTicker : public MaNGOS::Singleton<MapTicker>
 {
         friend class MaNGOS::Singleton<MapTicker>;
 
     public:
 
-        /// Put the worker threads to work. Zero threads means every map ticks on this one.
         void Start(uint32 threads);
 
-        /// Drain what is queued, then stop and join the workers.
         void Halt();
 
-        /// How long a round waits before the next one. Capped, so a map cannot go stale.
         void SetInterval(uint32 ms);
 
-        /// One round, if the interval has come round.
         void Run(uint32 diff);
 
     private:

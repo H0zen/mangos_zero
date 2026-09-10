@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
 #include "Policies/Singleton.h"
@@ -60,19 +58,12 @@
 struct SQLGameObjectLoader : public SQLStorageLoaderBase<SQLGameObjectLoader, SQLHashStorage>
 {
     template<class D>
-        void convert_from_str(uint32 /*field_pos*/, char const* src, D& dst)
+        void convert_from_str(uint32 , char const* src, D& dst)
     {
         dst = D(sScriptMgr.GetScriptId(src));
     }
 };
 
-/**
- * @brief Validates a referenced gameobject lock id.
- *
- * @param goInfo The gameobject template being checked.
- * @param dataN The referenced lock id.
- * @param N The source data index.
- */
 inline void CheckGOLockId(GameObjectInfo const* goInfo, uint32 dataN, uint32 N)
 {
     if (sLockStore.LookupEntry(dataN))
@@ -84,13 +75,6 @@ inline void CheckGOLockId(GameObjectInfo const* goInfo, uint32 dataN, uint32 N)
         goInfo->id, goInfo->type, N, dataN, dataN);
 }
 
-/**
- * @brief Validates that a linked trap entry exists and is a trap gameobject.
- *
- * @param goInfo The gameobject template being checked.
- * @param dataN The referenced trap entry.
- * @param N The source data index.
- */
 inline void CheckGOLinkedTrapId(GameObjectInfo const* goInfo, uint32 dataN, uint32 N)
 {
     if (GameObjectInfo const* trapInfo = sGOStorage.LookupEntry<GameObjectInfo>(dataN))
@@ -101,20 +85,13 @@ inline void CheckGOLinkedTrapId(GameObjectInfo const* goInfo, uint32 dataN, uint
                 goInfo->id, goInfo->type, N, dataN, dataN, GAMEOBJECT_TYPE_TRAP);
         }
     }
-    else        // too many error reports about nonexistent trap templates
+    else
     {
         ERROR_DB_STRICT_LOG("Gameobject (Entry: %u GoType: %u) have data%d=%u but trap GO (Entry %u) not exist in `gameobject_template`.",
             goInfo->id, goInfo->type, N, dataN, dataN);
     }
 }
 
-/**
- * @brief Validates a referenced spell id in gameobject data.
- *
- * @param goInfo The gameobject template being checked.
- * @param dataN The referenced spell id.
- * @param N The source data index.
- */
 inline void CheckGOSpellId(GameObjectInfo const* goInfo, uint32 dataN, uint32 N)
 {
     if (sSpellStore.LookupEntry(dataN))
@@ -126,13 +103,6 @@ inline void CheckGOSpellId(GameObjectInfo const* goInfo, uint32 dataN, uint32 N)
         goInfo->id, goInfo->type, N, dataN, dataN);
 }
 
-/**
- * @brief Validates and clamps chair height data for a gameobject.
- *
- * @param goInfo The gameobject template being checked.
- * @param dataN The chair height value.
- * @param N The source data index.
- */
 inline void CheckAndFixGOChairHeightId(GameObjectInfo const* goInfo, uint32 const& dataN, uint32 N)
 {
     if (dataN <= (UNIT_STAND_STATE_SIT_HIGH_CHAIR - UNIT_STAND_STATE_SIT_LOW_CHAIR))
@@ -143,20 +113,12 @@ inline void CheckAndFixGOChairHeightId(GameObjectInfo const* goInfo, uint32 cons
     sLog.outErrorDb("Gameobject (Entry: %u GoType: %u) have data%d=%u but correct chair height in range 0..%i.",
         goInfo->id, goInfo->type, N, dataN, UNIT_STAND_STATE_SIT_HIGH_CHAIR - UNIT_STAND_STATE_SIT_LOW_CHAIR);
 
-    // prevent client and server unexpected work
     const_cast<uint32&>(dataN) = 0;
 }
 
-/**
- * @brief Validates a boolean no-damage-immune flag in gameobject data.
- *
- * @param goInfo The gameobject template being checked.
- * @param dataN The field value.
- * @param N The source data index.
- */
 inline void CheckGONoDamageImmuneId(GameObjectInfo const* goInfo, uint32 dataN, uint32 N)
 {
-    // 0/1 correct values
+
     if (dataN <= 1)
     {
         return;
@@ -166,16 +128,9 @@ inline void CheckGONoDamageImmuneId(GameObjectInfo const* goInfo, uint32 dataN, 
         goInfo->id, goInfo->type, N, dataN);
 }
 
-/**
- * @brief Validates a boolean consumable flag in gameobject data.
- *
- * @param goInfo The gameobject template being checked.
- * @param dataN The field value.
- * @param N The source data index.
- */
 inline void CheckGOConsumable(GameObjectInfo const* goInfo, uint32 dataN, uint32 N)
 {
-    // 0/1 correct values
+
     if (dataN <= 1)
     {
         return;
@@ -185,13 +140,6 @@ inline void CheckGOConsumable(GameObjectInfo const* goInfo, uint32 dataN, uint32
         goInfo->id, goInfo->type, N, dataN);
 }
 
-/**
- * @brief Validates and fixes minimum capture time data for a gameobject.
- *
- * @param goInfo The gameobject template being checked.
- * @param dataN The minimum capture time value.
- * @param N The source data index.
- */
 inline void CheckAndFixGOCaptureMinTime(GameObjectInfo const* goInfo, uint32 const& dataN, uint32 N)
 {
     if (dataN > 0)
@@ -202,35 +150,28 @@ inline void CheckAndFixGOCaptureMinTime(GameObjectInfo const* goInfo, uint32 con
     sLog.outErrorDb("Gameobject (Entry: %u GoType: %u) has data%d=%u but minTime field value must be > 0.",
         goInfo->id, goInfo->type, N, dataN);
 
-    // prevent division through 0 exception
     const_cast<uint32&>(dataN) = 1;
 }
 
-/**
- * @brief Loads gameobject templates and validates type-specific fields.
- */
 void ObjectMgr::LoadGameobjectInfo()
 {
     SQLGameObjectLoader loader;
     loader.Load(sGOStorage);
 
-    // some checks
     for (SQLStorageBase::SQLSIterator<GameObjectInfo> itr = sGOStorage.getDataBegin<GameObjectInfo>(); itr < sGOStorage.getDataEnd<GameObjectInfo>(); ++itr)
     {
         GameObjectInfo const* goInfo = itr.getValue();
 
-        if (goInfo->size <= 0.0f)                           // prevent use too small scales
+        if (goInfo->size <= 0.0f)
         {
             ERROR_DB_STRICT_LOG("Gameobject (Entry: %u GoType: %u) have too small size=%f",
                 goInfo->id, goInfo->type, goInfo->size);
             const_cast<GameObjectInfo*>(goInfo)->size =  DEFAULT_OBJECT_SCALE;
         }
 
-        // some GO types have unused go template, check goInfo->displayId at GO spawn data loading or ignore
-
         switch (goInfo->type)
         {
-            case GAMEOBJECT_TYPE_DOOR:                      // 0
+            case GAMEOBJECT_TYPE_DOOR:
             {
                 if (goInfo->door.lockId)
                 {
@@ -239,20 +180,20 @@ void ObjectMgr::LoadGameobjectInfo()
                 CheckGONoDamageImmuneId(goInfo, goInfo->door.noDamageImmune, 3);
                 break;
             }
-            case GAMEOBJECT_TYPE_BUTTON:                    // 1
+            case GAMEOBJECT_TYPE_BUTTON:
             {
                 if (goInfo->button.lockId)
                 {
                     CheckGOLockId(goInfo, goInfo->button.lockId, 1);
                 }
-                if (goInfo->button.linkedTrapId)            // linked trap
+                if (goInfo->button.linkedTrapId)
                 {
                     CheckGOLinkedTrapId(goInfo, goInfo->button.linkedTrapId, 3);
                 }
                 CheckGONoDamageImmuneId(goInfo, goInfo->button.noDamageImmune, 4);
                 break;
             }
-            case GAMEOBJECT_TYPE_QUESTGIVER:                // 2
+            case GAMEOBJECT_TYPE_QUESTGIVER:
             {
                 if (goInfo->questgiver.lockId)
                 {
@@ -261,7 +202,7 @@ void ObjectMgr::LoadGameobjectInfo()
                 CheckGONoDamageImmuneId(goInfo, goInfo->questgiver.noDamageImmune, 5);
                 break;
             }
-            case GAMEOBJECT_TYPE_CHEST:                     // 3
+            case GAMEOBJECT_TYPE_CHEST:
             {
                 if (goInfo->chest.lockId)
                 {
@@ -270,30 +211,25 @@ void ObjectMgr::LoadGameobjectInfo()
 
                 CheckGOConsumable(goInfo, goInfo->chest.consumable, 3);
 
-                if (goInfo->chest.linkedTrapId)             // linked trap
+                if (goInfo->chest.linkedTrapId)
                 {
                     CheckGOLinkedTrapId(goInfo, goInfo->chest.linkedTrapId, 7);
                 }
                 break;
             }
-            case GAMEOBJECT_TYPE_TRAP:                      // 6
+            case GAMEOBJECT_TYPE_TRAP:
             {
                 if (goInfo->trap.lockId)
                 {
                     CheckGOLockId(goInfo, goInfo->trap.lockId, 0);
                 }
-                /** disable check for while, too many nonexistent spells
-                 *  if (goInfo->trap.spellId)                   // spell
-                 *  {
-                 *      CheckGOSpellId(goInfo,goInfo->trap.spellId,3);
-                 *  }
-                 */
+
                 break;
             }
-            case GAMEOBJECT_TYPE_CHAIR:                     // 7
+            case GAMEOBJECT_TYPE_CHAIR:
                 CheckAndFixGOChairHeightId(goInfo, goInfo->chair.height, 1);
                 break;
-            case GAMEOBJECT_TYPE_SPELL_FOCUS:               // 8
+            case GAMEOBJECT_TYPE_SPELL_FOCUS:
             {
                 if (goInfo->spellFocus.focusId)
                 {
@@ -304,13 +240,13 @@ void ObjectMgr::LoadGameobjectInfo()
                     }
                 }
 
-                if (goInfo->spellFocus.linkedTrapId)        // linked trap
+                if (goInfo->spellFocus.linkedTrapId)
                 {
                     CheckGOLinkedTrapId(goInfo, goInfo->spellFocus.linkedTrapId, 2);
                 }
                 break;
             }
-            case GAMEOBJECT_TYPE_GOOBER:                    // 10
+            case GAMEOBJECT_TYPE_GOOBER:
             {
                 if (goInfo->goober.lockId)
                 {
@@ -319,7 +255,7 @@ void ObjectMgr::LoadGameobjectInfo()
 
                 CheckGOConsumable(goInfo, goInfo->goober.consumable, 3);
 
-                if (goInfo->goober.pageId)                  // pageId
+                if (goInfo->goober.pageId)
                 {
                     if (!sPageTextStore.LookupEntry<PageText>(goInfo->goober.pageId))
                     {
@@ -328,20 +264,14 @@ void ObjectMgr::LoadGameobjectInfo()
                     }
                 }
 
-                /** disable check for while, too many nonexistent spells
-                 *  if (goInfo->goober.spellId)                 // spell
-                 *  {
-                 *      CheckGOSpellId(goInfo,goInfo->goober.spellId,10);
-                 *  }
-                 */
                 CheckGONoDamageImmuneId(goInfo, goInfo->goober.noDamageImmune, 11);
-                if (goInfo->goober.linkedTrapId)            // linked trap
+                if (goInfo->goober.linkedTrapId)
                 {
                     CheckGOLinkedTrapId(goInfo, goInfo->goober.linkedTrapId, 12);
                 }
                 break;
             }
-            case GAMEOBJECT_TYPE_AREADAMAGE:                // 12
+            case GAMEOBJECT_TYPE_AREADAMAGE:
             {
                 if (goInfo->areadamage.lockId)
                 {
@@ -349,7 +279,7 @@ void ObjectMgr::LoadGameobjectInfo()
                 }
                 break;
             }
-            case GAMEOBJECT_TYPE_CAMERA:                    // 13
+            case GAMEOBJECT_TYPE_CAMERA:
             {
                 if (goInfo->camera.lockId)
                 {
@@ -357,7 +287,7 @@ void ObjectMgr::LoadGameobjectInfo()
                 }
                 break;
             }
-            case GAMEOBJECT_TYPE_MO_TRANSPORT:              // 15
+            case GAMEOBJECT_TYPE_MO_TRANSPORT:
             {
                 if (goInfo->moTransport.taxiPathId)
                 {
@@ -369,21 +299,18 @@ void ObjectMgr::LoadGameobjectInfo()
                 }
                 break;
             }
-            case GAMEOBJECT_TYPE_SUMMONING_RITUAL:          // 18
+            case GAMEOBJECT_TYPE_SUMMONING_RITUAL:
             {
-                /** disable check for while, too many nonexistent spells
-                 *  // always must have spell
-                 *  CheckGOSpellId(goInfo,goInfo->summoningRitual.spellId,1);
-                 */
+
                 break;
             }
-            case GAMEOBJECT_TYPE_SPELLCASTER:               // 22
+            case GAMEOBJECT_TYPE_SPELLCASTER:
             {
-                // always must have spell
+
                 CheckGOSpellId(goInfo, goInfo->spellcaster.spellId, 0);
                 break;
             }
-            case GAMEOBJECT_TYPE_FLAGSTAND:                 // 24
+            case GAMEOBJECT_TYPE_FLAGSTAND:
             {
                 if (goInfo->flagstand.lockId)
                 {
@@ -392,7 +319,7 @@ void ObjectMgr::LoadGameobjectInfo()
                 CheckGONoDamageImmuneId(goInfo, goInfo->flagstand.noDamageImmune, 5);
                 break;
             }
-            case GAMEOBJECT_TYPE_FISHINGHOLE:               // 25
+            case GAMEOBJECT_TYPE_FISHINGHOLE:
             {
                 if (goInfo->fishinghole.lockId)
                 {
@@ -400,7 +327,7 @@ void ObjectMgr::LoadGameobjectInfo()
                 }
                 break;
             }
-            case GAMEOBJECT_TYPE_FLAGDROP:                  // 26
+            case GAMEOBJECT_TYPE_FLAGDROP:
             {
                 if (goInfo->flagdrop.lockId)
                 {
@@ -409,7 +336,7 @@ void ObjectMgr::LoadGameobjectInfo()
                 CheckGONoDamageImmuneId(goInfo, goInfo->flagdrop.noDamageImmune, 3);
                 break;
             }
-            case GAMEOBJECT_TYPE_CAPTURE_POINT:             // 29
+            case GAMEOBJECT_TYPE_CAPTURE_POINT:
             {
                 CheckAndFixGOCaptureMinTime(goInfo, goInfo->capturePoint.minTime, 16);
                 break;

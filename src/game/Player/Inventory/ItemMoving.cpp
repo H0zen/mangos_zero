@@ -66,7 +66,6 @@
 #include "DisableMgr.h"
 #include "ItemDestination.h"
 
-// Return stored item (if stored to stack, it can diff. from pItem). And pItem ca be deleted in this case.
 Item* Player::StoreNewItem(ItemPosCountVec const& dest, uint32 item, bool update, int32 randomPropertyId)
 {
     uint32 count = 0;
@@ -95,14 +94,6 @@ Item* Player::EquipNewItem(uint16 pos, uint32 item, bool update)
     return nullptr;
 }
 
-/**
- * @brief Equips an item into the specified destination position.
- *
- * @param pos The packed destination position.
- * @param pItem The item to equip.
- * @param update True to send world updates for the equip action.
- * @return The equipped or merged item instance.
- */
 Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
 {
     m_inventory.StartClocks(pItem);
@@ -120,7 +111,6 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
         {
             ItemPrototype const* pProto = pItem->GetProto();
 
-            // item set bonuses applied only at equip and removed at unequip, and still active for broken items
             if (pProto && pProto->ItemSet)
             {
                 AddItemsSetItem(this, pItem);
@@ -128,7 +118,6 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
 
             _ApplyItemMods(pItem, slot, true);
 
-            // Weapons and also Totem/Relic/Sigil/etc
             if (pProto && IsInCombat() && (pProto->Class == ITEM_CLASS_WEAPON || pProto->InventoryType == INVTYPE_RELIC) && Arms().ChangeTimer() == 0)
             {
                 uint32 cooldownSpell = SPELL_ID_WEAPON_SWITCH_COOLDOWN_1_5s;
@@ -182,9 +171,6 @@ void Player::RemoveItem(uint8 bag, uint8 slot, bool update)
         return;
     }
 
-    // A worn piece stops doing whatever it was doing for him before it leaves
-    // its place. A bag slot counts as worn here, which is why the bound is the
-    // end of the bag slots and not the end of the gear.
     if (Inventory::IsHisOwn(bag) && slot < INVENTORY_SLOT_BAG_END)
     {
         ItemPrototype const* pProto = pItem->GetProto();
@@ -209,7 +195,6 @@ void Player::RemoveItem(uint8 bag, uint8 slot, bool update)
     m_inventory.Take(bag, slot, update);
 }
 
-// Common operation need to remove item from inventory without delete in trade, auction, guild bank, mail....
 void Player::MoveItemFromInventory(uint8 bag, uint8 slot, bool update)
 {
     if (Item* it = GetItemByPos(bag, slot))
@@ -225,37 +210,25 @@ void Player::MoveItemFromInventory(uint8 bag, uint8 slot, bool update)
     }
 }
 
-// Common operation need to add item from inventory without delete in trade, guild bank, mail....
 void Player::MoveItemToInventory(ItemPosCountVec const& dest, Item* pItem, bool update, bool in_characterInventoryDB)
 {
-    // update quest counters
+
     m_journal.ItemGained(pItem->GetEntry(), pItem->GetCount());
 
-    // store item
     Item* pLastItem = StoreItem(dest, pItem, update);
 
-    // only set if not merged to existing stack (pItem can be deleted already but we can compare pointers any way)
     if (pLastItem == pItem)
     {
-        // update owner for last item (this can be original item with wrong owner
+
         if (pLastItem->GetOwnerGuid() != GetObjectGuid())
         {
             pLastItem->SetOwnerGuid(GetObjectGuid());
         }
 
-        // if this original item then it need create record in inventory
-        // in case trade we already have item in other player inventory
         pLastItem->SetState(in_characterInventoryDB ? ITEM_CHANGED : ITEM_NEW, this);
     }
 }
 
-/**
- * @brief Permanently destroys an item from player storage.
- *
- * @param bag The bag containing the item.
- * @param slot The slot containing the item.
- * @param update True to send inventory updates to the client.
- */
 void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
 {
     Item* pItem = m_inventory.At(bag, slot);
@@ -264,8 +237,6 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
         return;
     }
 
-    // A bag goes with what is in it. Only a worn bag can hold anything, which is
-    // also what keeps this from turning on itself when the bag is its own slot.
     if (pItem->IsBag() && pItem->IsEquipped())
     {
         for (uint8 inside = 0; inside < MAX_BAG_SIZE; ++inside)
@@ -284,7 +255,6 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
 
     m_journal.ItemLost(pItem->GetEntry(), pItem->GetCount());
 
-    // A worn piece stops doing whatever it was doing for him before it goes.
     if (Inventory::IsHisOwn(bag) && slot < INVENTORY_SLOT_BAG_END)
     {
         ItemPrototype const* pProto = pItem->GetProto();
@@ -304,23 +274,11 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
     m_inventory.Destroy(bag, slot, update);
 }
 
-/**
- * @brief Destroys up to a requested count of an item across player storage.
- *
- * @param item The item entry to destroy.
- * @param count The requested quantity to destroy.
- * @param update True to send inventory updates to the client.
- * @param unequip_check True to validate equipped items before destroying them.
- * @param delete_from_bank True to include bank storage in the search.
- * @param delete_from_buyback True to include vendor buyback slots in the search.
- * @return The number of items removed.
- */
 uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool unequip_check, bool delete_from_bank,bool delete_from_buyback)
 {
     DEBUG_LOG("STORAGE: DestroyItemCount item = %u, count = %u", item, count);
     uint32 remcount = 0;
 
-    // Search in default bagpack
     for (int i = INVENTORY_SLOT_ITEM_START; i < INVENTORY_SLOT_ITEM_END; ++i)
     {
         if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
@@ -329,7 +287,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
             {
                 if (pItem->GetCount() + remcount <= count)
                 {
-                    // all items in inventory can unequipped
+
                     remcount += pItem->GetCount();
                     DestroyItem(INVENTORY_SLOT_BAG_0, i, update);
 
@@ -350,7 +308,6 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
         }
     }
 
-    // Search in keyring slots
     for (int i = KEYRING_SLOT_START; i < KEYRING_SLOT_END; ++i)
     {
         if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
@@ -359,7 +316,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
             {
                 if (pItem->GetCount() + remcount <= count)
                 {
-                    // all keys can be unequipped
+
                     remcount += pItem->GetCount();
                     DestroyItem(INVENTORY_SLOT_BAG_0, i, update);
 
@@ -380,7 +337,6 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
         }
     }
 
-    // Search in inventory bags
     for (int i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; ++i)
     {
         if (Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, i))
@@ -391,7 +347,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                 {
                     if (pItem->GetEntry() == item && !pItem->IsInTrade())
                     {
-                        // all items in bags can be unequipped
+
                         if (pItem->GetCount() + remcount <= count)
                         {
                             remcount += pItem->GetCount();
@@ -416,7 +372,6 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
         }
     }
 
-    // Search in Equiped items
     for (int i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
     {
         if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
@@ -447,10 +402,9 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
         }
     }
 
-    // Search in bank items
     if (delete_from_bank)
     {
-        // Normal bank slots
+
         for (int i = BANK_SLOT_ITEM_START; i < BANK_SLOT_ITEM_END; ++i)
         {
             if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
@@ -459,7 +413,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                 {
                     if (pItem->GetCount() + remcount <= count)
                     {
-                        // all items in inventory can unequipped
+
                         remcount += pItem->GetCount();
                         DestroyItem(INVENTORY_SLOT_BAG_0, i, update);
 
@@ -480,7 +434,6 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
             }
         }
 
-        // Bank bagslots
         for (int i = BANK_SLOT_BAG_START; i < BANK_SLOT_BAG_END; ++i)
         {
             if (Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, i))
@@ -491,7 +444,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                     {
                         if (pItem->GetEntry() == item && !pItem->IsInTrade())
                         {
-                            // all items in bags can be unequipped
+
                             if (pItem->GetCount() + remcount <= count)
                             {
                                 remcount += pItem->GetCount();
@@ -517,7 +470,6 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
         }
     }
 
-    // Search in buyback npcs vendor tab
     if (delete_from_buyback)
     {
         for (int i = BUYBACK_SLOT_START; i < BUYBACK_SLOT_END; ++i)
@@ -528,7 +480,7 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
                 {
                     if (pItem->GetCount() + remcount <= count)
                     {
-                        // all keys can be unequipped
+
                         remcount += pItem->GetCount();
                         DestroyItem(INVENTORY_SLOT_BAG_0, i, update);
 
@@ -553,17 +505,10 @@ uint32 Player::DestroyItemCount(uint32 item, uint32 count, bool update, bool une
     return remcount;
 }
 
-/**
- * @brief Destroys items that are no longer valid in the player's current zone or map.
- *
- * @param update True to send inventory updates to the client.
- * @param new_zone The zone identifier to validate against.
- */
 void Player::DestroyZoneLimitedItem(bool update, uint32 new_zone)
 {
     DEBUG_LOG("STORAGE: DestroyZoneLimitedItem in map %u and area %u", GetMapId(), new_zone);
 
-    // in inventory
     for (int i = INVENTORY_SLOT_ITEM_START; i < INVENTORY_SLOT_ITEM_END; ++i)
     {
         if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
@@ -586,7 +531,6 @@ void Player::DestroyZoneLimitedItem(bool update, uint32 new_zone)
         }
     }
 
-    // in inventory bags
     for (int i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; ++i)
     {
         if (Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, i))
@@ -604,7 +548,6 @@ void Player::DestroyZoneLimitedItem(bool update, uint32 new_zone)
         }
     }
 
-    // in equipment and bag list
     for (int i = EQUIPMENT_SLOT_START; i < INVENTORY_SLOT_BAG_END; ++i)
     {
         if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
@@ -617,17 +560,11 @@ void Player::DestroyZoneLimitedItem(bool update, uint32 new_zone)
     }
 }
 
-/**
- * @brief Destroys conjured consumables from player storage.
- *
- * @param update True to send inventory updates to the client.
- */
 void Player::DestroyConjuredItems(bool update)
 {
-    // destroys all conjured items
+
     DEBUG_LOG("STORAGE: DestroyConjuredItems");
 
-    // in inventory
     for (int i = INVENTORY_SLOT_ITEM_START; i < INVENTORY_SLOT_ITEM_END; ++i)
     {
         if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
@@ -639,7 +576,6 @@ void Player::DestroyConjuredItems(bool update)
         }
     }
 
-    // in inventory bags
     for (int i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; ++i)
     {
         if (Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, i))
@@ -657,7 +593,6 @@ void Player::DestroyConjuredItems(bool update)
         }
     }
 
-    // in equipment and bag list
     for (int i = EQUIPMENT_SLOT_START; i < INVENTORY_SLOT_BAG_END; ++i)
     {
         if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
@@ -670,13 +605,6 @@ void Player::DestroyConjuredItems(bool update)
     }
 }
 
-/**
- * @brief Destroys or decrements a specific item instance by a requested count.
- *
- * @param pItem The item instance to modify.
- * @param count The remaining quantity to destroy; updated by the call.
- * @param update True to send inventory updates to the client.
- */
 void Player::DestroyItemCount(Item* pItem, uint32& count, bool update)
 {
     if (!pItem)
@@ -702,13 +630,6 @@ void Player::DestroyItemCount(Item* pItem, uint32& count, bool update)
     }
 }
 
-/**
- * @brief Splits a stack into a new destination position.
- *
- * @param src The packed source position.
- * @param dst The packed destination position.
- * @param count The quantity to split from the source stack.
- */
 void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
 {
     uint8 srcbag = src >> 8;
@@ -724,21 +645,19 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
         return;
     }
 
-    if (pSrcItem->HasGeneratedLoot())                       // prevent split looting item (stackable items can has only temporary loot and this meaning that loot window open)
+    if (pSrcItem->HasGeneratedLoot())
     {
-        // best error message found for attempting to split while looting
+
         SendEquipError(EQUIP_ERR_COULDNT_SPLIT_ITEMS, pSrcItem, nullptr);
         return;
     }
 
-    // not let split all items (can be only at cheating)
     if (pSrcItem->GetCount() == count)
     {
         SendEquipError(EQUIP_ERR_COULDNT_SPLIT_ITEMS, pSrcItem, nullptr);
         return;
     }
 
-    // not let split more existing items (can be only at cheating)
     if (pSrcItem->GetCount() < count)
     {
         SendEquipError(EQUIP_ERR_TRIED_TO_SPLIT_MORE_THAN_COUNT, pSrcItem, nullptr);
@@ -755,7 +674,7 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
 
     if (Inventory::IsCarried(dst))
     {
-        // change item amount before check (for unique max count check)
+
         pSrcItem->SetCount(pSrcItem->GetCount() - count);
 
         ItemPosCountVec dest;
@@ -774,7 +693,7 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
     }
     else if (Inventory::IsBanked(dst))
     {
-        // change item amount before check (for unique max count check)
+
         pSrcItem->SetCount(pSrcItem->GetCount() - count);
 
         ItemPosCountVec dest;
@@ -793,7 +712,7 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
     }
     else if (Inventory::IsWorn(dst))
     {
-        // change item amount before check (for unique max count check), provide space for splitted items
+
         pSrcItem->SetCount(pSrcItem->GetCount() - count);
 
         uint16 dest;
@@ -813,12 +732,6 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
     }
 }
 
-/**
- * @brief Moves, merges, or swaps items between two storage positions.
- *
- * @param src The packed source position.
- * @param dst The packed destination position.
- */
 void Player::SwapItem(uint16 src, uint16 dst)
 {
     uint8 const srcbag = Inventory::Container(src);
@@ -842,9 +755,6 @@ void Player::SwapItem(uint16 src, uint16 dst)
         return;
     }
 
-    // A bag may be swapped into an empty bag slot, or against another bag that
-    // is empty; the contents are weighed further down. Anything else has to be
-    // able to come off where it stands.
     if (Inventory::IsWorn(src) || Inventory::HoldsBag(src))
     {
         bool const asBag = Inventory::HoldsBag(src)
@@ -859,7 +769,6 @@ void Player::SwapItem(uint16 src, uint16 dst)
         }
     }
 
-    // A bag cannot be put inside itself.
     if (Inventory::HoldsBag(src) && srcslot == dstbag)
     {
         SendEquipError(EQUIP_ERR_NONEMPTY_BAG_OVER_OTHER_BAG, pSrcItem, pDstItem);
@@ -888,7 +797,6 @@ void Player::SwapItem(uint16 src, uint16 dst)
 
     ItemDestination to(*this, dst);
 
-    // Nothing is there: the item simply goes across.
     if (!pDstItem)
     {
         if (!to.Reachable())
@@ -914,8 +822,6 @@ void Player::SwapItem(uint16 src, uint16 dst)
         return;
     }
 
-    // The same thing is there: the two stacks join, or the one that is there is
-    // topped up to full and the rest stays behind.
     if (!pSrcItem->IsBag() && !pDstItem->IsBag())
     {
         if (!to.Reachable())
@@ -950,8 +856,6 @@ void Player::SwapItem(uint16 src, uint16 dst)
         }
     }
 
-    // Neither joining nor topping up will do, so the two change places. Both
-    // ways are weighed before either is carried out.
     ItemDestination back(*this, src);
 
     InventoryResult msg = to.Weigh(pSrcItem, true);
@@ -968,9 +872,6 @@ void Player::SwapItem(uint16 src, uint16 dst)
         return;
     }
 
-    // Two bags change places by pouring one into the other, which is only
-    // possible when the one being poured into is both empty and not hanging in a
-    // bag slot of its own.
     if (pSrcItem->IsBag() && pDstItem->IsBag() && !PourBagInto(pSrcItem, src, pDstItem, dst))
     {
         return;
@@ -985,15 +886,6 @@ void Player::SwapItem(uint16 src, uint16 dst)
     AutoUnequipOffhandIfNeed();
 }
 
-/**
- * @brief Empties one bag into the other so that two bags can change places.
- *
- * @param pSrcItem The bag being moved from src.
- * @param src The packed position it is coming from.
- * @param pDstItem The bag being moved from dst.
- * @param dst The packed position it is coming from.
- * @return False when the contents cannot be moved, having told him why.
- */
 bool Player::PourBagInto(Item* pSrcItem, uint16 src, Item* pDstItem, uint16 dst)
 {
     Bag* emptyBag = nullptr;
@@ -1010,8 +902,6 @@ bool Player::PourBagInto(Item* pSrcItem, uint16 src, Item* pDstItem, uint16 dst)
         fullBag = static_cast<Bag*>(pSrcItem);
     }
 
-    // Two bags that both hold something, or that both hang in bag slots, simply
-    // change places with what is in them.
     if (!emptyBag || !fullBag)
     {
         return true;
@@ -1063,7 +953,7 @@ bool Player::PourBagInto(Item* pSrcItem, uint16 src, Item* pDstItem, uint16 dst)
     return true;
 }
 
-void Player::SendEquipError(InventoryResult msg, Item* pItem, Item* pItem2, uint32 itemid /*= 0*/) const
+void Player::SendEquipError(InventoryResult msg, Item* pItem, Item* pItem2, uint32 itemid ) const
 {
     DEBUG_LOG("WORLD: Sent SMSG_INVENTORY_CHANGE_FAILURE (%u)", msg);
     WorldPacket data(SMSG_INVENTORY_CHANGE_FAILURE, (msg == EQUIP_ERR_CANT_EQUIP_LEVEL_I ? 22 : (msg == EQUIP_ERR_OK ? 1 : 18)));
@@ -1076,45 +966,29 @@ void Player::SendEquipError(InventoryResult msg, Item* pItem, Item* pItem2, uint
             ItemPrototype const* proto = pItem ? pItem->GetProto() : ObjectMgr::GetItemPrototype(itemid);
             data << uint32(proto ? proto->RequiredLevel : 0);
         }
-        data << (pItem ? pItem->GetObjectGuid() : ObjectGuid());
-        data << (pItem2 ? pItem2->GetObjectGuid() : ObjectGuid());
-        data << uint8(0);                                   // bag type subclass, used with EQUIP_ERR_EVENT_AUTOEQUIP_BIND_CONFIRM and EQUIP_ERR_ITEM_DOESNT_GO_INTO_BAG2
+        data << (pItem ? pItem->GetObjectGuid() : 0);
+        data << (pItem2 ? pItem2->GetObjectGuid() : 0);
+        data << uint8(0);
     }
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Sends a buy failure result to the client.
- *
- * @param msg The buy failure code.
- * @param pCreature The vendor involved in the transaction.
- * @param item The item entry that failed to purchase.
- * @param param Unused extra parameter.
- */
-void Player::SendBuyError(BuyResult msg, Creature* pCreature, uint32 item, uint32 /*param*/)
+void Player::SendBuyError(BuyResult msg, Creature* pCreature, uint32 item, uint32 )
 {
     DEBUG_LOG("WORLD: Sent SMSG_BUY_FAILED");
     WorldPacket data(SMSG_BUY_FAILED, (8 + 4 + 1));
-    data << (pCreature ? pCreature->GetObjectGuid() : ObjectGuid());
+    data << (pCreature ? pCreature->GetObjectGuid() : 0);
     data << uint32(item);
     data << uint8(msg);
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Sends a sell failure result to the client.
- *
- * @param msg The sell failure code.
- * @param pCreature The vendor involved in the transaction.
- * @param itemGuid The item GUID that failed to sell.
- * @param param Unused extra parameter.
- */
-void Player::SendSellError(SellResult msg, Creature* pCreature, ObjectGuid itemGuid, uint32 /*param*/)
+void Player::SendSellError(SellResult msg, Creature* pCreature, ObjectGuid itemGuid, uint32 )
 {
     DEBUG_LOG("WORLD: Sent SMSG_SELL_ITEM");
-    WorldPacket data(SMSG_SELL_ITEM, (8 + 8 + /*(param ? 4 : 0) +*/ 1)); // last check [ZERO]
-    data << (pCreature ? pCreature->GetObjectGuid() : ObjectGuid());
-    data << ObjectGuid(itemGuid);
+    WorldPacket data(SMSG_SELL_ITEM, (8 + 8 +  1));
+    data << (pCreature ? pCreature->GetObjectGuid() : 0);
+    data << static_cast<ObjectGuid>(itemGuid);
     data << uint8(msg);
     GetSession()->SendPacket(&data);
 }

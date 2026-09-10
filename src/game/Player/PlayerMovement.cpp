@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -70,11 +68,6 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Forces or clears rooted movement for the player.
- *
- * @param enable True to root the player; false to unroot them.
- */
 void Player::SetRoot(bool enable)
 {
     WorldPacket data(enable ? SMSG_FORCE_MOVE_ROOT : SMSG_FORCE_MOVE_UNROOT, GetPackGUID().size() + 4);
@@ -83,11 +76,6 @@ void Player::SetRoot(bool enable)
     Deliver(Audience::Around(*this).AndSubject(), &data);
 }
 
-/**
- * @brief Enables or disables water walking for the player.
- *
- * @param enable True to enable water walking; false to restore normal movement.
- */
 void Player::SetWaterWalk(bool enable)
 {
     WorldPacket data(enable ? SMSG_MOVE_WATER_WALK : SMSG_MOVE_LAND_WALK, GetPackGUID().size() + 4);
@@ -96,38 +84,14 @@ void Player::SetWaterWalk(bool enable)
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Placeholder for levitation support on this client version.
- *
- * @param enable Unused levitation state flag.
- */
-void Player::SetLevitate(bool /*enable*/)
+void Player::SetLevitate(bool )
 {
-    // TODO: check if there is something similar for 2.4.3.
-    // WorldPacket data;
-    // if (enable)
-    //    data.Initialize(SMSG_MOVE_GRAVITY_DISABLE, 12);
-    // else
-    //    data.Initialize(SMSG_MOVE_GRAVITY_ENABLE, 12);
-    //
-    // data << GetPackGUID();
-    // data << uint32(0);                                      // unk
-    // Deliver(Audience::Around(*this).AndSubject(), &data);
 
-    // data.Initialize(MSG_MOVE_GRAVITY_CHNG, 64);
-    // data << GetPackGUID();
-    // m_movementInfo.Write(data);
-    // Deliver(Audience::Around(*this), &data);
 }
 
-/**
- * @brief Enables or disables flying movement flags for the player.
- *
- * @param enable True to enable flight-related movement flags; false to clear them.
- */
 void Player::SetCanFly(bool enable)
 {
-    //     TODO: check if there is something similar for 1.12.x (99% chance there is not)
+
     if (enable)
     {
         m_movementInfo.SetMovementFlags((MovementFlags)(MOVEFLAG_LEVITATING | MOVEFLAG_SWIMMING | MOVEFLAG_CAN_FLY | MOVEFLAG_FLYING));
@@ -140,11 +104,6 @@ void Player::SetCanFly(bool enable)
     SendHeartBeat();
 }
 
-/**
- * @brief Enables or disables feather fall movement for the player.
- *
- * @param enable True to enable feather fall; false to restore normal falling.
- */
 void Player::SetFeatherFall(bool enable)
 {
     WorldPacket data;
@@ -161,18 +120,12 @@ void Player::SetFeatherFall(bool enable)
     data << uint32(0);
     Deliver(Audience::Around(*this).AndSubject(), &data);
 
-    // start fall from current height
     if (!enable)
     {
         SetFallInformation(0, Where().Z());
     }
 }
 
-/**
- * @brief Enables or disables hover movement for the player.
- *
- * @param enable True to enable hovering; false to disable it.
- */
 void Player::SetHover(bool enable)
 {
     WorldPacket data;

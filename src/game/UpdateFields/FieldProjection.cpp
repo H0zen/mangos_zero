@@ -23,15 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * Who may be told what, and what the value looks like when they are told.
- *
- * This is the one place that is allowed to know every kind of object at once,
- * so that the serializer in Object needs to know none of them. Nothing here
- * writes: a projection answers what a value looks like to one observer, and
- * leaves the object as it found it.
- */
-
 #include "FieldTable.h"
 #include "Object.h"
 #include "Creature.h"
@@ -42,12 +33,13 @@
 #include "UpdateFields.h"
 #include "SharedDefines.h"
 
+#include <vector>
+
 namespace Fields
 {
     Audience AudienceFor(Object const& object, Player const& observer)
     {
-        // Everyone who can see the object at all gets these two, and the dynamic
-        // fields are the ones rewritten per observer rather than withheld.
+
         Audience audience = VisPublic | VisDynamic;
 
         if (&object == static_cast<Object const*>(&observer))
@@ -55,8 +47,8 @@ namespace Fields
             return audience | VisPrivate | VisOwner | VisItemOwner | VisSpecial | VisParty;
         }
 
-        ObjectGuid owner;
-        if (Unit const* unit = ToUnit(&object))
+        ObjectGuid owner = 0;
+        if (Unit const* unit = static_cast<Unit const*>(&object))
         {
             owner = unit->GetCharmerOrOwnerGuid();
         }
@@ -64,7 +56,7 @@ namespace Fields
         {
             owner = static_cast<Item const&>(object).GetOwnerGuid();
         }
-        else if (GameObject const* go = ToGameObject(&object))
+        else if (GameObject const* go = static_cast<GameObject const*>(&object))
         {
             owner = go->GetOwnerGuid();
         }
@@ -74,7 +66,7 @@ namespace Fields
             audience |= VisOwner | VisItemOwner;
         }
 
-        if (Player const* other = ToPlayer(&object))
+        if (Player const* other = static_cast<Player const*>(&object))
         {
             if (observer.IsInSameGroupWith(other))
             {
@@ -82,9 +74,7 @@ namespace Fields
             }
         }
 
-        // Beast Lore and its kin: the caster, and only the caster, is shown the
-        // detail the client calls special info.
-        if (Unit const* unit = ToUnit(&object))
+        if (Unit const* unit = static_cast<Unit const*>(&object))
         {
             for (const auto* aura : unit->GetAurasByType(SPELL_AURA_EMPATHY))
             {
@@ -121,14 +111,6 @@ namespace Fields
         }
     }
 
-    /**
-     * Fields the server keeps in a float although the wire wants an integer.
-     *
-     * This is a fact about the server's storage, not about the protocol, which
-     * is why it cannot come out of the generated table: the client's descriptor
-     * says INT for every one of them. It replaces a chain of hand-written index
-     * ranges that sat in the middle of the serializer.
-     */
     static bool IsFloatBacked(uint16 index)
     {
         return (index >= UNIT_FIELD_BASEATTACKTIME && index <= UNIT_FIELD_RANGEDATTACKTIME)
@@ -151,7 +133,7 @@ namespace Fields
 
     bool ReadsRealHitPoints(ObjectGuid const& unit, ObjectGuid const& owner, ObjectGuid const& observer)
     {
-        return unit == observer || (!owner.IsEmpty() && owner == observer);
+        return unit == observer || (!(owner == 0) && owner == observer);
     }
 
     static uint32 ProjectUnit(Unit const& unit, Player& observer, uint16 index, uint32 raw)
@@ -161,8 +143,7 @@ namespace Fields
 
         switch (index)
         {
-            // Hit points are the unit's own state, so the stored slot has
-            // nothing to say and `raw` is ignored.
+
             case UNIT_FIELD_HEALTH:
                 return real ? unit.GetHealth() : HealthAsPercent(unit.GetHealth(), unit.GetMaxHealth());
 
@@ -170,21 +151,19 @@ namespace Fields
                 return real ? unit.GetMaxHealth() : (unit.GetMaxHealth() ? 100 : 0);
 
             case UNIT_FIELD_FLAGS:
-                // A game master must be able to click anything.
+
                 return observer.isGameMaster() ? (raw & ~UNIT_FLAG_NOT_SELECTABLE) : raw;
 
             default:
                 break;
         }
 
-        Creature const* creature = ToCreature(&unit);
+        Creature const* creature = static_cast<Creature const*>(&unit);
         if (!creature)
         {
             return raw;
         }
 
-        // The queries below are answers about the creature, but the accessors
-        // that give them were never made const.
         Creature* asked = const_cast<Creature*>(creature);
 
         switch (index)
@@ -209,8 +188,6 @@ namespace Fields
             {
                 uint32 value = raw;
 
-                // A body with loot left in it is lootable, whatever the stored
-                // flag says; the flag itself is the loot code's to keep.
                 if (!asked->loot.isLooted())
                 {
                     value |= UNIT_DYNFLAG_LOOTABLE;
@@ -223,11 +200,9 @@ namespace Fields
 
                 if (observer.IsTappedByMeOrMyGroup(asked))
                 {
-                    value &= ~UNIT_DYNFLAG_TAPPED;
+                    value |= UNIT_DYNFLAG_TAPPED_BY_PLAYER;
                 }
 
-                // Special info is the empathy caster's alone; the audience says
-                // who that is, so the flag follows it.
                 if ((value & UNIT_DYNFLAG_SPECIALINFO) && unit.IsAlive())
                 {
                     if (!(AudienceFor(unit, observer) & VisSpecial))
@@ -278,12 +253,12 @@ namespace Fields
             return stored < 0.0f ? 0 : uint32(stored);
         }
 
-        if (Unit const* unit = ToUnit(&object))
+        if (Unit const* unit = static_cast<Unit const*>(&object))
         {
             return ProjectUnit(*unit, observer, index, raw);
         }
 
-        if (GameObject const* go = ToGameObject(&object))
+        if (GameObject const* go = static_cast<GameObject const*>(&object))
         {
             return ProjectGameObject(*go, observer, index, raw);
         }
@@ -301,17 +276,33 @@ namespace Fields
         return index == UNIT_FIELD_HEALTH || index == UNIT_FIELD_MAXHEALTH;
     }
 
-    bool AlwaysResend(uint8 typeId, uint16 index)
+    struct Folded
     {
-        // Most observer-dependent fields need no help: they are projected on the
-        // way out, and the moments when the answer changes without the stored
-        // value changing are already announced -- a looted body calls
-        // ResendField, a widened health pool does the same.
-        //
-        // A gameobject's dynamic flags are the exception. Whether it is a quest
-        // objective is a question about the observer alone, and nothing on the
-        // object side ever moves when the answer does.
-        return typeId == TYPEID_GAMEOBJECT
-            && (index == GAMEOBJECT_DYN_FLAGS || index == GAMEOBJECT_ANIMPROGRESS);
+        std::vector<uint32> outside[MAX_TYPE_ID];
+
+        Folded()
+        {
+            for (uint8 typeId = 0; typeId < MAX_TYPE_ID; ++typeId)
+            {
+                Table const& table = For(typeId);
+                outside[typeId].assign(table.blocks, 0);
+
+                for (uint16 index = 0; index < table.count; ++index)
+                {
+                    if (LivesOutside(typeId, index))
+                    {
+                        outside[typeId][index >> 5] |= 1u << (index & 31);
+                    }
+                }
+            }
+        }
+    };
+
+    static Folded const& Masks()
+    {
+        static Folded const folded;
+        return folded;
     }
+
+    uint32 const* OutsideMask(uint8 typeId) { return Masks().outside[typeId].data(); }
 }

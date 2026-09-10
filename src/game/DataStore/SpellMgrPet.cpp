@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "SpellMgr.h"
 #include "SpellAuraDefines.h"
 #include "ObjectMgr.h"
@@ -38,16 +36,12 @@
 #include "Unit.h"
 #include "World.h"
 
-/**
- * @brief Loads spell pet aura mappings from the database.
- */
 void SpellMgr::LoadSpellPetAuras()
 {
-    mSpellPetAuraMap.clear();                               // need for reload case
+    mSpellPetAuraMap.clear();
 
     uint32 count = 0;
 
-    //                                                0      1    2
     QueryResult* result = WorldDatabase.Query("SELECT `spell`, `pet`, `aura` FROM `spell_pet_auras`");
     if (!result)
     {
@@ -121,10 +115,9 @@ void SpellMgr::LoadSpellPetAuras()
     sLog.outString();
 }
 
-/// Some checks for spells, to prevent adding deprecated/broken spells for trainers, spell book, etc
 bool SpellMgr::IsSpellValid(SpellEntry const* spellInfo, Player* pl, bool msg)
 {
-    // not exist
+
     if (!spellInfo)
     {
         return false;
@@ -132,7 +125,6 @@ bool SpellMgr::IsSpellValid(SpellEntry const* spellInfo, Player* pl, bool msg)
 
     bool need_check_reagents = false;
 
-    // check effects
     for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
         switch (spellInfo->Effect[i])
@@ -140,7 +132,6 @@ bool SpellMgr::IsSpellValid(SpellEntry const* spellInfo, Player* pl, bool msg)
             case SPELL_EFFECT_NONE:
                 continue;
 
-            // craft spell for crafting nonexistent item (break client recipes list show)
             case SPELL_EFFECT_CREATE_ITEM:
             {
                 if (!ObjectMgr::GetItemPrototype(spellInfo->EffectItemType[i]))

@@ -36,47 +36,42 @@
 
 enum ChatNotify
 {
-    CHAT_JOINED_NOTICE                = 0x00,               //+ "%s joined channel.";
-    CHAT_LEFT_NOTICE                  = 0x01,               //+ "%s left channel.";
-    // CHAT_SUSPENDED_NOTICE             = 0x01,            // "%s left channel.";
-    CHAT_YOU_JOINED_NOTICE            = 0x02,               //+ "Joined Channel: [%s]"; -- You joined
-    // CHAT_YOU_CHANGED_NOTICE           = 0x02,            // "Changed Channel: [%s]";
-    CHAT_YOU_LEFT_NOTICE              = 0x03,               //+ "Left Channel: [%s]"; -- You left
-    CHAT_WRONG_PASSWORD_NOTICE        = 0x04,               //+ "Wrong password for %s.";
-    CHAT_NOT_MEMBER_NOTICE            = 0x05,               //+ "Not on channel %s.";
-    CHAT_NOT_MODERATOR_NOTICE         = 0x06,               //+ "Not a moderator of %s.";
-    CHAT_PASSWORD_CHANGED_NOTICE      = 0x07,               //+ "[%s] Password changed by %s.";
-    CHAT_OWNER_CHANGED_NOTICE         = 0x08,               //+ "[%s] Owner changed to %s.";
-    CHAT_PLAYER_NOT_FOUND_NOTICE      = 0x09,               //+ "[%s] Player %s was not found.";
-    CHAT_NOT_OWNER_NOTICE             = 0x0A,               //+ "[%s] You are not the channel owner.";
-    CHAT_CHANNEL_OWNER_NOTICE         = 0x0B,               //+ "[%s] Channel owner is %s.";
-    CHAT_MODE_CHANGE_NOTICE           = 0x0C,               //?
-    CHAT_ANNOUNCEMENTS_ON_NOTICE      = 0x0D,               //+ "[%s] Channel announcements enabled by %s.";
-    CHAT_ANNOUNCEMENTS_OFF_NOTICE     = 0x0E,               //+ "[%s] Channel announcements disabled by %s.";
-    CHAT_MODERATION_ON_NOTICE         = 0x0F,               //+ "[%s] Channel moderation enabled by %s.";
-    CHAT_MODERATION_OFF_NOTICE        = 0x10,               //+ "[%s] Channel moderation disabled by %s.";
-    CHAT_MUTED_NOTICE                 = 0x11,               //+ "[%s] You do not have permission to speak.";
-    CHAT_PLAYER_KICKED_NOTICE         = 0x12,               //? "[%s] Player %s kicked by %s.";
-    CHAT_BANNED_NOTICE                = 0x13,               //+ "[%s] You are banned from that channel.";
-    CHAT_PLAYER_BANNED_NOTICE         = 0x14,               //? "[%s] Player %s banned by %s.";
-    CHAT_PLAYER_UNBANNED_NOTICE       = 0x15,               //? "[%s] Player %s unbanned by %s.";
-    CHAT_PLAYER_NOT_BANNED_NOTICE     = 0x16,               //+ "[%s] Player %s is not banned.";
-    CHAT_PLAYER_ALREADY_MEMBER_NOTICE = 0x17,               //+ "[%s] Player %s is already on the channel.";
-    CHAT_INVITE_NOTICE                = 0x18,               //+ "%2$s has invited you to join the channel '%1$s'.";
-    CHAT_INVITE_WRONG_FACTION_NOTICE  = 0x19,               //+ "Target is in the wrong alliance for %s.";
-    CHAT_WRONG_FACTION_NOTICE         = 0x1A,               //+ "Wrong alliance for %s.";
-    CHAT_INVALID_NAME_NOTICE          = 0x1B,               //+ "Invalid channel name";
-    CHAT_NOT_MODERATED_NOTICE         = 0x1C,               //+ "%s is not moderated";
-    CHAT_PLAYER_INVITED_NOTICE        = 0x1D,               //+ "[%s] You invited %s to join the channel";
-    CHAT_PLAYER_INVITE_BANNED_NOTICE  = 0x1E,               //+ "[%s] %s has been banned.";
-    CHAT_THROTTLED_NOTICE             = 0x1F,               //+ "[%s] The number of messages that can be sent to this channel is limited, please wait to send another message.";
+    CHAT_JOINED_NOTICE                = 0x00,
+    CHAT_LEFT_NOTICE                  = 0x01,
+
+    CHAT_YOU_JOINED_NOTICE            = 0x02,
+
+    CHAT_YOU_LEFT_NOTICE              = 0x03,
+    CHAT_WRONG_PASSWORD_NOTICE        = 0x04,
+    CHAT_NOT_MEMBER_NOTICE            = 0x05,
+    CHAT_NOT_MODERATOR_NOTICE         = 0x06,
+    CHAT_PASSWORD_CHANGED_NOTICE      = 0x07,
+    CHAT_OWNER_CHANGED_NOTICE         = 0x08,
+    CHAT_PLAYER_NOT_FOUND_NOTICE      = 0x09,
+    CHAT_NOT_OWNER_NOTICE             = 0x0A,
+    CHAT_CHANNEL_OWNER_NOTICE         = 0x0B,
+    CHAT_MODE_CHANGE_NOTICE           = 0x0C,
+    CHAT_ANNOUNCEMENTS_ON_NOTICE      = 0x0D,
+    CHAT_ANNOUNCEMENTS_OFF_NOTICE     = 0x0E,
+    CHAT_MODERATION_ON_NOTICE         = 0x0F,
+    CHAT_MODERATION_OFF_NOTICE        = 0x10,
+    CHAT_MUTED_NOTICE                 = 0x11,
+    CHAT_PLAYER_KICKED_NOTICE         = 0x12,
+    CHAT_BANNED_NOTICE                = 0x13,
+    CHAT_PLAYER_BANNED_NOTICE         = 0x14,
+    CHAT_PLAYER_UNBANNED_NOTICE       = 0x15,
+    CHAT_PLAYER_NOT_BANNED_NOTICE     = 0x16,
+    CHAT_PLAYER_ALREADY_MEMBER_NOTICE = 0x17,
+    CHAT_INVITE_NOTICE                = 0x18,
+    CHAT_INVITE_WRONG_FACTION_NOTICE  = 0x19,
+    CHAT_WRONG_FACTION_NOTICE         = 0x1A,
+    CHAT_INVALID_NAME_NOTICE          = 0x1B,
+    CHAT_NOT_MODERATED_NOTICE         = 0x1C,
+    CHAT_PLAYER_INVITED_NOTICE        = 0x1D,
+    CHAT_PLAYER_INVITE_BANNED_NOTICE  = 0x1E,
+    CHAT_THROTTLED_NOTICE             = 0x1F,
 };
 
-/**
- * These are the channel id's for the special channels that's always there, this is currently only
- * used to find the Local Defense channel as it's muted by default except for if you've got PvP rank 9
- * \see Channel::m_channelId
- */
 enum ChannelIds
 {
     CHANNEL_ID_GENERAL           = 1,
@@ -93,32 +88,28 @@ class Channel
     {
         CHANNEL_FLAG_NONE       = 0x00,
         CHANNEL_FLAG_CUSTOM     = 0x01,
-        // 0x02
+
         CHANNEL_FLAG_TRADE      = 0x04,
         CHANNEL_FLAG_NOT_LFG    = 0x08,
         CHANNEL_FLAG_GENERAL    = 0x10,
         CHANNEL_FLAG_CITY       = 0x20,
         CHANNEL_FLAG_LFG        = 0x40,
         CHANNEL_FLAG_VOICE      = 0x80
-        // General                  0x18 = 0x10 | 0x08
-        // Trade                    0x3C = 0x20 | 0x10 | 0x08 | 0x04
-        // LocalDefence             0x18 = 0x10 | 0x08
-        // GuildRecruitment         0x38 = 0x20 | 0x10 | 0x08
-        // LookingForGroup          0x50 = 0x40 | 0x10
+
     };
 
     enum ChannelDBCFlags
     {
         CHANNEL_DBC_FLAG_NONE       = 0x00000,
-        CHANNEL_DBC_FLAG_INITIAL    = 0x00001,          // General, Trade, LocalDefense, LFG
-        CHANNEL_DBC_FLAG_ZONE_DEP   = 0x00002,          // General, Trade, LocalDefense, GuildRecruitment
-        CHANNEL_DBC_FLAG_GLOBAL     = 0x00004,          // WorldDefense
-        CHANNEL_DBC_FLAG_TRADE      = 0x00008,          // Trade
-        CHANNEL_DBC_FLAG_CITY_ONLY  = 0x00010,          // Trade, GuildRecruitment
-        CHANNEL_DBC_FLAG_CITY_ONLY2 = 0x00020,          // Trade, GuildRecruitment
-        CHANNEL_DBC_FLAG_DEFENSE    = 0x10000,          // LocalDefense, WorldDefense
-        CHANNEL_DBC_FLAG_GUILD_REQ  = 0x20000,          // GuildRecruitment
-        CHANNEL_DBC_FLAG_LFG        = 0x40000           // LookingForGroup
+        CHANNEL_DBC_FLAG_INITIAL    = 0x00001,
+        CHANNEL_DBC_FLAG_ZONE_DEP   = 0x00002,
+        CHANNEL_DBC_FLAG_GLOBAL     = 0x00004,
+        CHANNEL_DBC_FLAG_TRADE      = 0x00008,
+        CHANNEL_DBC_FLAG_CITY_ONLY  = 0x00010,
+        CHANNEL_DBC_FLAG_CITY_ONLY2 = 0x00020,
+        CHANNEL_DBC_FLAG_DEFENSE    = 0x10000,
+        CHANNEL_DBC_FLAG_GUILD_REQ  = 0x20000,
+        CHANNEL_DBC_FLAG_LFG        = 0x40000
     };
 
     enum ChannelMemberFlags
@@ -130,13 +121,12 @@ class Channel
         MEMBER_FLAG_MUTED       = 0x08,
         MEMBER_FLAG_CUSTOM      = 0x10,
         MEMBER_FLAG_MIC_MUTED   = 0x20,
-        // 0x40
-        // 0x80
+
     };
 
     struct PlayerInfo
     {
-        ObjectGuid player;
+        ObjectGuid player = 0;
         uint8 flags;
 
         bool HasFlag(uint8 flag) { return flags & flag; }
@@ -224,67 +214,52 @@ class Channel
         void Invite(Player* player, const char* targetName);
         void Voice(ObjectGuid guid1, ObjectGuid guid2);
         void DeVoice(ObjectGuid guid1, ObjectGuid guid2);
-        void JoinNotify(ObjectGuid guid);                   // invisible notify
-        void LeaveNotify(ObjectGuid guid);                  // invisible notify
+        void JoinNotify(ObjectGuid guid);
+        void LeaveNotify(ObjectGuid guid);
 
-        /**
-         * This denotes the PvP rank needed to speak in local defense, the + 4 is needed because there
-         * are 4 lower levels of honor if you've been bad and killed civilians etc. So when we add 4
-         * it makes it the "real" rank 9 in the client, if we hadn't added that it would've been rank
-         * 5 in the client.
-         * \see HonorRankInfo
-         */
         static const uint8 SPEAK_IN_LOCALDEFENSE_RANK = 4 + 9;
 
-        /**
-         * This denotes the PvP rank needed to speak in world defense, see
-         * \ref Channel::SPEAK_IN_LOCALDEFENSE_RANK for more info on the 4 added.
-         */
         static const uint8 SPEAK_IN_WORLDDEFENSE_RANK = 4 + 10;
 
-        /**
-         * This creates the packet informing client that the player is not on requested \ref name channel.
-         * See also \ref MakeNotMember for non-static version.
-         */
         static void MakeNotOnPacket(WorldPacket* data, const std::string &name);
     private:
-        // initial packet data (notify type and channel name)
-        void MakeNotifyPacket(WorldPacket* data, uint8 notify_type);
-        // type specific packet data
-        void MakeJoined(WorldPacket* data, ObjectGuid guid);                    //+ 0x00
-        void MakeLeft(WorldPacket* data, ObjectGuid guid);                      //+ 0x01
-        void MakeYouJoined(WorldPacket* data);                                  //+ 0x02
-        void MakeYouLeft(WorldPacket* data);                                    //+ 0x03
-        void MakeWrongPassword(WorldPacket* data);                              //? 0x04
-        void MakeNotMember(WorldPacket* data);                                  //? 0x05
-        void MakeNotModerator(WorldPacket* data);                               //? 0x06
-        void MakePasswordChanged(WorldPacket* data, ObjectGuid guid);           //+ 0x07
-        void MakeOwnerChanged(WorldPacket* data, ObjectGuid guid);              //? 0x08
-        void MakePlayerNotFound(WorldPacket* data, const std::string& name);    //+ 0x09
-        void MakeNotOwner(WorldPacket* data);                                   //? 0x0A
-        void MakeChannelOwner(WorldPacket* data);                               //? 0x0B
-        void MakeModeChange(WorldPacket* data, ObjectGuid guid, uint8 oldflags);//+ 0x0C
-        void MakeAnnouncementsOn(WorldPacket* data, ObjectGuid guid);           //+ 0x0D
-        void MakeAnnouncementsOff(WorldPacket* data, ObjectGuid guid);          //+ 0x0E
-        void MakeModerationOn(WorldPacket* data, ObjectGuid guid);              //+ 0x0F
-        void MakeModerationOff(WorldPacket* data, ObjectGuid guid);             //+ 0x10
-        void MakeMuted(WorldPacket* data);                                      //? 0x11
-        void MakePlayerKicked(WorldPacket* data, ObjectGuid target, ObjectGuid source);//? 0x12
-        void MakeBanned(WorldPacket* data);                                     //? 0x13
-        void MakePlayerBanned(WorldPacket* data, ObjectGuid target, ObjectGuid source);//? 0x14
-        void MakePlayerUnbanned(WorldPacket* data, ObjectGuid target, ObjectGuid source);//? 0x15
-        void MakePlayerNotBanned(WorldPacket* data, const std::string& name);   //? 0x16
-        void MakePlayerAlreadyMember(WorldPacket* data, ObjectGuid guid);       //+ 0x17
-        void MakeInvite(WorldPacket* data, ObjectGuid guid);                    //? 0x18
-        void MakeInviteWrongFaction(WorldPacket* data);                         //? 0x19
-        void MakeWrongFaction(WorldPacket* data);                               //? 0x1A
-        void MakeInvalidName(WorldPacket* data);                                //? 0x1B
-        void MakeNotModerated(WorldPacket* data);                                   //? 0x1C
-        void MakePlayerInvited(WorldPacket* data, const std::string& name);     //+ 0x1D
-        void MakePlayerInviteBanned(WorldPacket* data, const std::string& name);//? 0x1E
-        void MakeThrottled(WorldPacket* data);                                  //? 0x1F
 
-        void SendToAll(WorldPacket* data, ObjectGuid guid = ObjectGuid());
+        void MakeNotifyPacket(WorldPacket* data, uint8 notify_type);
+
+        void MakeJoined(WorldPacket* data, ObjectGuid guid);
+        void MakeLeft(WorldPacket* data, ObjectGuid guid);
+        void MakeYouJoined(WorldPacket* data);
+        void MakeYouLeft(WorldPacket* data);
+        void MakeWrongPassword(WorldPacket* data);
+        void MakeNotMember(WorldPacket* data);
+        void MakeNotModerator(WorldPacket* data);
+        void MakePasswordChanged(WorldPacket* data, ObjectGuid guid);
+        void MakeOwnerChanged(WorldPacket* data, ObjectGuid guid);
+        void MakePlayerNotFound(WorldPacket* data, const std::string& name);
+        void MakeNotOwner(WorldPacket* data);
+        void MakeChannelOwner(WorldPacket* data);
+        void MakeModeChange(WorldPacket* data, ObjectGuid guid, uint8 oldflags);
+        void MakeAnnouncementsOn(WorldPacket* data, ObjectGuid guid);
+        void MakeAnnouncementsOff(WorldPacket* data, ObjectGuid guid);
+        void MakeModerationOn(WorldPacket* data, ObjectGuid guid);
+        void MakeModerationOff(WorldPacket* data, ObjectGuid guid);
+        void MakeMuted(WorldPacket* data);
+        void MakePlayerKicked(WorldPacket* data, ObjectGuid target, ObjectGuid source);
+        void MakeBanned(WorldPacket* data);
+        void MakePlayerBanned(WorldPacket* data, ObjectGuid target, ObjectGuid source);
+        void MakePlayerUnbanned(WorldPacket* data, ObjectGuid target, ObjectGuid source);
+        void MakePlayerNotBanned(WorldPacket* data, const std::string& name);
+        void MakePlayerAlreadyMember(WorldPacket* data, ObjectGuid guid);
+        void MakeInvite(WorldPacket* data, ObjectGuid guid);
+        void MakeInviteWrongFaction(WorldPacket* data);
+        void MakeWrongFaction(WorldPacket* data);
+        void MakeInvalidName(WorldPacket* data);
+        void MakeNotModerated(WorldPacket* data);
+        void MakePlayerInvited(WorldPacket* data, const std::string& name);
+        void MakePlayerInviteBanned(WorldPacket* data, const std::string& name);
+        void MakeThrottled(WorldPacket* data);
+
+        void SendToAll(WorldPacket* data, ObjectGuid guid = 0);
         void SendToOne(WorldPacket* data, ObjectGuid who);
 
         bool IsOn(ObjectGuid who) const { return m_players.find(who) != m_players.end(); }
@@ -334,7 +309,7 @@ class Channel
         std::string m_password;
         uint8       m_flags;
         uint32      m_channelId;
-        ObjectGuid  m_ownerGuid;
+        ObjectGuid  m_ownerGuid = 0;
 
         typedef     std::map<ObjectGuid, PlayerInfo> PlayerList;
         PlayerList  m_players;

@@ -184,8 +184,8 @@ struct is_uldaman : public InstanceScript
                     case TYPE_ALTAR_EVENT:
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_TEMPLE_DOOR_UPPER);
-                            DoUseDoorOrButton(GO_TEMPLE_DOOR_LOWER);
+                            DoUseDoorOrButtonByEntry(GO_TEMPLE_DOOR_UPPER);
+                            DoUseDoorOrButtonByEntry(GO_TEMPLE_DOOR_LOWER);
                         }
                         else if (uiData == IN_PROGRESS)
                         {
@@ -204,8 +204,8 @@ struct is_uldaman : public InstanceScript
                     case TYPE_ARCHAEDAS:
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_ANCIENT_VAULT);
-                            DoRespawnGameObject(GO_ANCIENT_TREASURE, HOUR);
+                            DoUseDoorOrButtonByEntry(GO_ANCIENT_VAULT);
+                            DoRespawnGameObjectByEntry(GO_ANCIENT_TREASURE, HOUR);
                         }
                         m_auiEncounter[1] = uiData;
                         break;
@@ -234,10 +234,10 @@ struct is_uldaman : public InstanceScript
                 {
                     // ToDo: check if this one is used in ACID. Otherwise it can be dropped
                     case DATA_EVENT_STARTER:
-                        m_playerGuid = ObjectGuid(uiGuid);
+                        m_playerGuid = static_cast<ObjectGuid>(uiGuid);
                         break;
                     case TYPE_SIGNAL:
-                        m_dwarfSearcher = ObjectGuid(uiGuid);
+                        m_dwarfSearcher = static_cast<ObjectGuid>(uiGuid);
                         break;
                 }
             }
@@ -259,9 +259,9 @@ struct is_uldaman : public InstanceScript
                 switch (uiData)
                 {
                     case DATA_EVENT_STARTER:
-                        return m_playerGuid.GetRawValue();
+                        return m_playerGuid;
                     case TYPE_SIGNAL:
-                        return GetClosestDwarfNotInCombat() ? GetClosestDwarfNotInCombat()->GetObjectGuid().GetRawValue() : 0;
+                        return GetClosestDwarfNotInCombat() ? GetClosestDwarfNotInCombat()->GetObjectGuid() : 0;
                 }
                 return 0;
             }
@@ -360,8 +360,8 @@ struct is_uldaman : public InstanceScript
             uint32 m_auiEncounter[MAX_ENCOUNTER];
             std::string m_strInstData;
 
-            ObjectGuid m_playerGuid;
-            ObjectGuid m_dwarfSearcher;
+            ObjectGuid m_playerGuid = 0;
+            ObjectGuid m_dwarfSearcher = 0;
 
             uint32 m_uiKeeperCooldown;
             uint32 m_uiStoneKeepersFallen;
@@ -382,11 +382,11 @@ struct event_spell_altar_boss_aggro : public MapEventScript
 
     bool OnReceived(uint32 uiEventId, Object* pSource, Object* /*pTarget*/, bool bIsStart) override
     {
-        if (bIsStart && pSource->IsPlayer())
+        if (bIsStart &&IsPlayer(pSource))
         {
             if (InstanceData* pInstance = ((Player*)pSource)->GetInstanceData())
             {
-                pInstance->SetData64(DATA_EVENT_STARTER, pSource->GetObjectGuid().GetRawValue());
+                pInstance->SetData64(DATA_EVENT_STARTER, pSource->GetObjectGuid());
                 pInstance->SetData(TYPE_SIGNAL, uiEventId);
                 //pInstance->StartEvent(uiEventId, (Player*)pSource);
                 return true;

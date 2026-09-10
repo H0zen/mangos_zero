@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Utilities/Errors.h"
 #include <algorithm>
 #include <string>
@@ -75,17 +73,11 @@
 #include "LFGMgr.h"
 #include "DisableMgr.h"
 
-/**
- * @brief Builds the current quest menu for a creature or game object.
- *
- * @param guid The GUID of the quest source.
- */
 void Player::PrepareQuestMenu(ObjectGuid guid)
 {
     QuestRelationsMapBounds rbounds;
     QuestRelationsMapBounds irbounds;
 
-    // pets also can have quests
     if (Creature* pCreature = GetMap()->GetAnyTypeCreature(guid))
     {
         rbounds = sObjectMgr.GetCreatureQuestRelationsMapBounds(pCreature->GetEntry());
@@ -93,8 +85,7 @@ void Player::PrepareQuestMenu(ObjectGuid guid)
     }
     else
     {
-        // we should obtain map pointer from GetMap() in 99% of cases. Special case
-        // only for quests which cast teleport spells on player
+
         Map* _map = IsInWorld() ? GetMap() : sMapRoster.Find(GetMapId(), GetInstanceId());
         MANGOS_ASSERT(_map);
 
@@ -163,11 +154,6 @@ void Player::PrepareQuestMenu(ObjectGuid guid)
     }
 }
 
-/**
- * @brief Sends the prepared quest dialog or quest list for a source.
- *
- * @param guid The GUID of the quest source.
- */
 void Player::SendPreparedQuest(ObjectGuid guid)
 {
     QuestMenu& questMenu = PlayerTalkClass->GetQuestMenu();
@@ -180,10 +166,9 @@ void Player::SendPreparedQuest(ObjectGuid guid)
 
     uint32 status = qmi0.m_qIcon;
 
-    // single element case
     if (questMenu.MenuItemCount() == 1)
     {
-        // Auto open -- maybe also should verify there is no greeting
+
         uint32 quest_id = qmi0.m_qId;
         Quest const* pQuest = sObjectMgr.GetQuestTemplate(quest_id);
 
@@ -197,7 +182,7 @@ void Player::SendPreparedQuest(ObjectGuid guid)
             {
                 PlayerTalkClass->SendQuestGiverRequestItems(pQuest, guid, false, true);
             }
-            // Send completable on repeatable quest if player don't have quest
+
             else if (pQuest->IsRepeatable())
             {
                 PlayerTalkClass->SendQuestGiverRequestItems(pQuest, guid, CanCompleteRepeatableQuest(pQuest), true);
@@ -208,7 +193,7 @@ void Player::SendPreparedQuest(ObjectGuid guid)
             }
         }
     }
-    // multiply entries
+
     else
     {
         QEmote qe;
@@ -216,7 +201,6 @@ void Player::SendPreparedQuest(ObjectGuid guid)
         qe._Emote = 0;
         std::string title = "";
 
-        // need pet case for some quests
         if (Creature* pCreature = GetMap()->GetAnyTypeCreature(guid))
         {
             uint32 textid = GetGossipTextId(pCreature);
@@ -224,8 +208,8 @@ void Player::SendPreparedQuest(ObjectGuid guid)
             GossipText const* gossiptext = sObjectMgr.GetGossipText(textid);
             if (!gossiptext)
             {
-                qe._Delay = 0;                              // TEXTEMOTE_MESSAGE;              // zyg: player emote
-                qe._Emote = 0;                              // TEXTEMOTE_HELLO;                // zyg: NPC emote
+                qe._Delay = 0;
+                qe._Emote = 0;
                 title.clear();
             }
             else
@@ -245,12 +229,6 @@ void Player::SendPreparedQuest(ObjectGuid guid)
     }
 }
 
-/**
- * @brief Checks whether a quest is currently active in the player's log.
- *
- * @param quest_id The quest identifier to check.
- * @return True if the quest is active; otherwise, false.
- */
 bool Player::IsActiveQuest(uint32 quest_id) const
 {
     auto itr = m_journal.All().find(quest_id);
@@ -258,13 +236,6 @@ bool Player::IsActiveQuest(uint32 quest_id) const
     return itr != m_journal.All().end() && itr->second.m_status != QUEST_STATUS_NONE;
 }
 
-/**
- * @brief Checks whether a quest is currently active with a specific completion state.
- *
- * @param quest_id The quest identifier to check.
- * @param completed_or_not The completion-state filter.
- * @return True if the quest matches the requested state; otherwise, false.
- */
 bool Player::IsCurrentQuest(uint32 quest_id, uint8 completed_or_not) const
 {
     auto itr = m_journal.All().find(quest_id);
@@ -286,13 +257,6 @@ bool Player::IsCurrentQuest(uint32 quest_id, uint8 completed_or_not) const
     }
 }
 
-/**
- * @brief Finds the next quest in a chain offered by a specific source.
- *
- * @param guid The GUID of the quest source.
- * @param pQuest The current quest in the chain.
- * @return The next quest in the chain, or null if unavailable.
- */
 Quest const* Player::GetNextQuest(ObjectGuid guid, Quest const* pQuest)
 {
     QuestRelationsMapBounds rbounds;
@@ -303,8 +267,7 @@ Quest const* Player::GetNextQuest(ObjectGuid guid, Quest const* pQuest)
     }
     else
     {
-        // we should obtain map pointer from GetMap() in 99% of cases. Special case
-        // only for quests which cast teleport spells on player
+
         Map* _map = IsInWorld() ? GetMap() : sMapRoster.Find(GetMapId(), GetInstanceId());
         MANGOS_ASSERT(_map);
 
@@ -330,11 +293,6 @@ Quest const* Player::GetNextQuest(ObjectGuid guid, Quest const* pQuest)
     return nullptr;
 }
 
-/**
- * Check if a player could see a start quest
- * Basic Quest-taking requirements: Class, Race, Skill, Quest-Line, ...
- * Check if the quest-level is not too high (related config value CONFIG_INT32_QUEST_HIGH_LEVEL_HIDE_DIFF)
- */
 bool Player::CanSeeStartQuest(Quest const* pQuest) const
 {
     if (!DisableMgr::IsDisabledFor(DISABLE_TYPE_QUEST, pQuest->GetQuestId(), this) &&
@@ -355,13 +313,6 @@ bool Player::CanSeeStartQuest(Quest const* pQuest) const
     return false;
 }
 
-/**
- * @brief Checks whether the player can accept a quest.
- *
- * @param pQuest The quest to validate.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if the quest can be taken; otherwise, false.
- */
 bool Player::CanTakeQuest(Quest const* pQuest, bool msg) const
 {
     return !DisableMgr::IsDisabledFor(DISABLE_TYPE_QUEST, pQuest->GetQuestId(), this) &&
@@ -379,13 +330,6 @@ bool Player::CanTakeQuest(Quest const* pQuest, bool msg) const
         pQuest->IsActive();
 }
 
-/**
- * @brief Checks whether the player can add a quest to the quest log.
- *
- * @param pQuest The quest to validate.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if the quest can be added; otherwise, false.
- */
 bool Player::CanAddQuest(Quest const* pQuest, bool msg) const
 {
     if (!SatisfyQuestLog(msg))
@@ -401,12 +345,6 @@ bool Player::CanAddQuest(Quest const* pQuest, bool msg) const
     return true;
 }
 
-/**
- * @brief Checks whether the player currently meets all completion requirements for a quest.
- *
- * @param quest_id The quest identifier to validate.
- * @return True if the quest can be completed; otherwise, false.
- */
 bool Player::CanCompleteQuest(uint32 quest_id) const
 {
     if (!quest_id)
@@ -416,12 +354,11 @@ bool Player::CanCompleteQuest(uint32 quest_id) const
 
     auto q_itr = m_journal.All().find(quest_id);
 
-    // some quests can be auto taken and auto completed in one step
     QuestStatus status = q_itr != m_journal.All().end() ? q_itr->second.m_status : QUEST_STATUS_NONE;
 
     if (status == QUEST_STATUS_COMPLETE)
     {
-        return false; // not allow re-complete quest
+        return false;
     }
 
     Quest const* qInfo = sObjectMgr.GetQuestTemplate(quest_id);
@@ -431,10 +368,9 @@ bool Player::CanCompleteQuest(uint32 quest_id) const
         return false;
     }
 
-    // only used for "flag" quests and not real in-game quests
     if (qInfo->HasQuestFlag(QUEST_FLAGS_AUTO_REWARDED))
     {
-        // a few checks, not all "satisfy" is needed
+
         if (SatisfyQuestPreviousQuest(qInfo, false) && SatisfyQuestLevel(qInfo, false) &&
             SatisfyQuestSkill(qInfo, false) && SatisfyQuestRace(qInfo, false) && SatisfyQuestClass(qInfo, false))
         {
@@ -443,7 +379,6 @@ bool Player::CanCompleteQuest(uint32 quest_id) const
         return false;
     }
 
-    // auto complete quest
     if (qInfo->IsAutoComplete() && CanTakeQuest(qInfo, false))
     {
         return true;
@@ -454,7 +389,6 @@ bool Player::CanCompleteQuest(uint32 quest_id) const
         return false;
     }
 
-    // incomplete quest have status data
     QuestStatusData const& q_status = q_itr->second;
 
     if (qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAG_DELIVER))
@@ -511,17 +445,9 @@ bool Player::CanCompleteQuest(uint32 quest_id) const
     return true;
 }
 
-/**
- * @brief Checks whether a repeatable quest can currently be turned in.
- *
- * @param pQuest The repeatable quest to validate.
- * @return True if the quest can be completed; otherwise, false.
- */
 bool Player::CanCompleteRepeatableQuest(Quest const* pQuest) const
 {
-    // Solve problem that player don't have the quest and try complete it.
-    // if repeatable she must be able to complete event if player don't have it.
-    // Seem that all repeatable quest are DELIVER Flag so, no need to add more.
+
     if (!CanTakeQuest(pQuest, false))
     {
         return false;
@@ -546,28 +472,19 @@ bool Player::CanCompleteRepeatableQuest(Quest const* pQuest) const
     return true;
 }
 
-/**
- * @brief Checks whether a completed quest can currently be rewarded.
- *
- * @param pQuest The quest to validate.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if the quest reward can be claimed; otherwise, false.
- */
 bool Player::CanRewardQuest(Quest const* pQuest, bool msg) const
 {
-    // not auto complete quest and not completed quest (only cheating case, then ignore without message)
+
     if (!pQuest->IsAutoComplete() && GetQuestStatus(pQuest->GetQuestId()) != QUEST_STATUS_COMPLETE)
     {
         return false;
     }
 
-    // rewarded and not repeatable quest (only cheating case, then ignore without message)
     if (GetQuestRewardStatus(pQuest->GetQuestId()))
     {
         return false;
     }
 
-    // prevent receive reward with quest items in bank
     if (pQuest->HasSpecialFlag(QUEST_SPECIAL_FLAG_DELIVER))
     {
         for (int i = 0; i < QUEST_ITEM_OBJECTIVES_COUNT; ++i)
@@ -585,7 +502,6 @@ bool Player::CanRewardQuest(Quest const* pQuest, bool msg) const
         }
     }
 
-    // prevent receive reward with low money and GetRewOrReqMoney() < 0
     if (pQuest->GetRewOrReqMoney() < 0 && GetMoney() < uint32(-pQuest->GetRewOrReqMoney()))
     {
         return false;
@@ -594,14 +510,6 @@ bool Player::CanRewardQuest(Quest const* pQuest, bool msg) const
     return true;
 }
 
-/**
- * @brief Checks whether a specific quest reward choice can be granted.
- *
- * @param pQuest The quest to validate.
- * @param reward The selected optional reward index.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if the selected reward can be granted; otherwise, false.
- */
 bool Player::CanRewardQuest(Quest const* pQuest, uint32 reward, bool msg) const
 {
     bool result;
@@ -619,7 +527,7 @@ bool Player::CanRewardQuest(Quest const* pQuest, uint32 reward, bool msg) const
         numRewards = pQuest->GetRewItemsCount();
         if (numOptionalRewards > 0)
         {
-            requiredSlots = numRewards + 1; // Only ONE optional reward can be selected
+            requiredSlots = numRewards + 1;
         }
         else
         {
@@ -649,7 +557,7 @@ bool Player::CanRewardQuest(Quest const* pQuest, uint32 reward, bool msg) const
                     }
                 }
             }
-            // We use 2586 (Gamemaster's Robes) as the item ID so that we can verify that the slots can be filled for all selected quest rewards
+
             iRes = CanStoreNewItem(0, 0, destActual, 2586, requiredSlots);
             CANT_EQUIP:
             if (iRes != EQUIP_ERR_OK)
@@ -662,11 +570,6 @@ bool Player::CanRewardQuest(Quest const* pQuest, uint32 reward, bool msg) const
     return result;
 }
 
-/**
- * @brief Sends a pet taming failure reason to the client.
- *
- * @param reason The taming failure reason code.
- */
 void Player::SendPetTameFailure(PetTameFailureReason reason)
 {
     WorldPacket data(SMSG_PET_TAME_FAILURE, 1);
@@ -674,12 +577,6 @@ void Player::SendPetTameFailure(PetTameFailureReason reason)
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Adds a quest to the player's log and initializes its tracking state.
- *
- * @param pQuest The quest to add.
- * @param questGiver The object that granted the quest.
- */
 void Player::AddQuest(Quest const* pQuest, Object* questGiver)
 {
     uint16 log_slot = m_journal.SlotOf(0);
@@ -687,10 +584,8 @@ void Player::AddQuest(Quest const* pQuest, Object* questGiver)
 
     uint32 quest_id = pQuest->GetQuestId();
 
-    // if not exist then created with set uState==NEW and rewarded=false
     QuestStatusData& questStatusData = m_journal.Of(quest_id);
 
-    // check for repeatable quests status reset
     questStatusData.m_status = QUEST_STATUS_INCOMPLETE;
     questStatusData.m_explored = false;
 
@@ -723,8 +618,7 @@ void Player::AddQuest(Quest const* pQuest, Object* questGiver)
     {
         uint32 limittime = pQuest->GetLimitTime();
 
-        // shared timed quest
-        if (questGiver && questGiver->IsPlayer())
+        if (questGiver &&IsPlayer(questGiver))
         {
             limittime = ((Player*)questGiver)->getQuestStatusMap()[quest_id].m_timer / IN_MILLISECONDS;
         }
@@ -745,7 +639,6 @@ void Player::AddQuest(Quest const* pQuest, Object* questGiver)
         questStatusData.uState = QUEST_CHANGED;
     }
 
-    // quest accept scripts
     if (questGiver)
     {
         switch (questGiver->GetTypeId())
@@ -762,17 +655,15 @@ void Player::AddQuest(Quest const* pQuest, Object* questGiver)
                 break;
         }
 
-        // starting initial DB quest script
         if (pQuest->GetQuestStartScript() != 0)
         {
             GetMap()->Scripts().Start(DBS_ON_QUEST_START, pQuest->GetQuestStartScript(), questGiver, this, SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE);
         }
     }
 
-    // remove start item if not need
-    if (questGiver && questGiver->isType(TYPEMASK_ITEM))
+    if (questGiver && IsType(questGiver, TYPEMASK_ITEM))
     {
-        // destroy not required for quest finish quest starting item
+
         bool notRequiredItem = true;
         for (int i = 0; i < QUEST_ITEM_OBJECTIVES_COUNT; ++i)
         {
@@ -798,7 +689,6 @@ void Player::AddQuest(Quest const* pQuest, Object* questGiver)
 
     m_journal.CountItemsHeld(pQuest, questStatusData);
 
-    // Some spells applied at quest activation
     uint32 zone, area;
     GetTerrain()->GetZoneAndAreaId(zone, area, Where().X(), Where().Y(), Where().Z());
     SpellAreaForAreaMapBounds saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(zone);
@@ -822,29 +712,22 @@ void Player::AddQuest(Quest const* pQuest, Object* questGiver)
 
     UpdateForQuestObjects();
 
-    if (sWorld.getConfig(CONFIG_BOOL_ENABLE_QUEST_TRACKER)) // check if Quest Tracker is enabled
+    if (sWorld.getConfig(CONFIG_BOOL_ENABLE_QUEST_TRACKER))
     {
         DEBUG_LOG("QUEST TRACKER: Quest Added.");
 
         static SqlStatementID CHAR_INS_QUEST_TRACK;
-        // prepare Quest Tracker datas
+
         SqlStatement stmt = CharacterDatabase.CreateStatement(CHAR_INS_QUEST_TRACK, "INSERT INTO `quest_tracker` (`id`, `character_guid`, `quest_accept_time`, `core_hash`, `core_revision`) VALUES (?, ?, NOW(), ?, ?)");
         stmt.addUInt32(quest_id);
         stmt.addUInt32(GetGUIDLow());
         stmt.addString(MangosVersion::Hash());
         stmt.addString(MangosVersion::Date());
 
-        // add to Quest Tracker
         stmt.Execute();
     }
 }
 
-/**
- * @brief Marks a quest as complete and updates quest tracker data.
- *
- * @param quest_id The quest identifier to complete.
- * @param status The completion status to apply.
- */
 void Player::CompleteQuest(uint32 quest_id, QuestStatus status)
 {
     if (quest_id)
@@ -866,25 +749,19 @@ void Player::CompleteQuest(uint32 quest_id, QuestStatus status)
         }
     }
 
-    if (sWorld.getConfig(CONFIG_BOOL_ENABLE_QUEST_TRACKER)) // check if Quest Tracker is enabled
+    if (sWorld.getConfig(CONFIG_BOOL_ENABLE_QUEST_TRACKER))
     {
         DEBUG_LOG("QUEST TRACKER: Quest Completed.");
         static SqlStatementID CHAR_UPD_QUEST_TRACK_COMPLETE_TIME;
-        // prepare Quest Tracker datas
+
         SqlStatement stmt = CharacterDatabase.CreateStatement(CHAR_UPD_QUEST_TRACK_COMPLETE_TIME, "UPDATE `quest_tracker` SET `quest_complete_time` = NOW() WHERE `id` = ? AND `character_guid` = ? ORDER BY `quest_accept_time` DESC LIMIT 1");
         stmt.addUInt32(quest_id);
         stmt.addUInt32(GetGUIDLow());
 
-        // add to Quest Tracker
         stmt.Execute();
     }
 }
 
-/**
- * @brief Restores a quest to the incomplete state.
- *
- * @param quest_id The quest identifier to update.
- */
 void Player::IncompleteQuest(uint32 quest_id)
 {
     if (quest_id)
@@ -899,14 +776,6 @@ void Player::IncompleteQuest(uint32 quest_id)
     }
 }
 
-/**
- * @brief Grants quest rewards, updates quest state, and triggers reward-side effects.
- *
- * @param pQuest The rewarded quest.
- * @param reward The selected optional reward index.
- * @param questGiver The object granting the reward.
- * @param announce True to send the quest reward packet to the client.
- */
 void Player::RewardQuest(Quest const* pQuest, uint32 reward, Object* questGiver, bool announce)
 {
     uint32 quest_id = pQuest->GetQuestId();
@@ -968,7 +837,6 @@ void Player::RewardQuest(Quest const* pQuest, uint32 reward, Object* questGiver,
 
     QuestStatusData& q_status = m_journal.Of(quest_id);
 
-    // Used for client inform but rewarded only in case not max level
     uint32 xp = uint32(pQuest->XPValue(this) * sWorld.getConfig(CONFIG_FLOAT_RATE_XP_QUEST));
 
     if (getLevel() < sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
@@ -980,10 +848,8 @@ void Player::RewardQuest(Quest const* pQuest, uint32 reward, Object* questGiver,
         ModifyMoney(int32(pQuest->GetRewMoneyMaxLevel() * sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_MONEY)));
     }
 
-    // Give player extra money if GetRewOrReqMoney > 0 and get ReqMoney if negative
     ModifyMoney(pQuest->GetRewOrReqMoney());
 
-    // Send reward mail
     if (uint32 mail_template_id = pQuest->GetRewMailTemplateId())
     {
         MailDraft(mail_template_id).SendMailTo(this, questGiver, MAIL_CHECK_MASK_HAS_BODY, pQuest->GetRewMailDelaySecs());
@@ -1026,7 +892,6 @@ void Player::RewardQuest(Quest const* pQuest, uint32 reward, Object* questGiver,
         GetMap()->Scripts().Start(DBS_ON_QUEST_END, pQuest->GetQuestCompleteScript(), questGiver, this, SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE);
     }
 
-    // cast spells after mark quest complete (some spells have quest completed state reqyurements in spell_area data)
     if (pQuest->GetRewSpellCast() > 0)
     {
         CastSpell(this, pQuest->GetRewSpellCast(), true);
@@ -1036,8 +901,6 @@ void Player::RewardQuest(Quest const* pQuest, uint32 reward, Object* questGiver,
         CastSpell(this, pQuest->GetRewSpell(), true);
     }
 
-    // remove auras from spells with quest reward state limitations
-    // Some spells applied at quest reward
     uint32 zone, area;
     GetTerrain()->GetZoneAndAreaId(zone, area, Where().X(), Where().Y(), Where().Z());
     SpellAreaForAreaMapBounds saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(zone);
@@ -1060,7 +923,6 @@ void Player::RewardQuest(Quest const* pQuest, uint32 reward, Object* questGiver,
     }
 }
 
-// TODO be more specific at callers about quest fail reason. Also, quest "fails" when either picking up or giving out is unsuccessful.
 void Player::FailQuest(uint32 questId)
 {
     if (Quest const* pQuest = sObjectMgr.GetQuestTemplate(questId))
@@ -1091,24 +953,15 @@ void Player::FailQuest(uint32 questId)
     }
 }
 
-/**
- * @brief Checks whether the player meets a quest's required skill threshold.
- *
- * @param qInfo The quest to validate.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if the skill requirement is met; otherwise, false.
- */
 bool Player::SatisfyQuestSkill(Quest const* qInfo, bool msg) const
 {
     uint32 skill = qInfo->GetRequiredSkill();
 
-    // skip 0 case RequiredSkill
     if (skill == 0)
     {
         return true;
     }
 
-    // check skill value
     if (GetSkillValue(skill) < qInfo->GetRequiredSkillValue())
     {
         if (msg)
@@ -1122,13 +975,6 @@ bool Player::SatisfyQuestSkill(Quest const* qInfo, bool msg) const
     return true;
 }
 
-/**
- * @brief Checks whether the player meets a quest's minimum level requirement.
- *
- * @param qInfo The quest to validate.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if the level requirement is met; otherwise, false.
- */
 bool Player::SatisfyQuestLevel(Quest const* qInfo, bool msg) const
 {
     if (getLevel() < qInfo->GetMinLevel())
@@ -1144,15 +990,9 @@ bool Player::SatisfyQuestLevel(Quest const* qInfo, bool msg) const
     return true;
 }
 
-/**
- * @brief Checks whether the player has free space in the quest log.
- *
- * @param msg True to emit failure feedback when checks fail.
- * @return True if a free quest log slot exists; otherwise, false.
- */
 bool Player::SatisfyQuestLog(bool msg) const
 {
-    // exist free slot
+
     if (m_journal.SlotOf(0) < MAX_QUEST_LOG_SIZE)
     {
         return true;
@@ -1167,16 +1007,9 @@ bool Player::SatisfyQuestLog(bool msg) const
     return false;
 }
 
-/**
- * @brief Checks whether previous-quest requirements for a quest are satisfied.
- *
- * @param qInfo The quest to validate.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if previous-quest requirements are met; otherwise, false.
- */
 bool Player::SatisfyQuestPreviousQuest(Quest const* qInfo, bool msg) const
 {
-    // No previous quest (might be first quest in a series)
+
     if (qInfo->prevQuests.empty())
     {
         return true;
@@ -1191,32 +1024,28 @@ bool Player::SatisfyQuestPreviousQuest(Quest const* qInfo, bool msg) const
 
         if (qPrevInfo && i_prevstatus != m_journal.All().end())
         {
-            // If any of the positive previous quests completed, return true
+
             if (*iter > 0 && i_prevstatus->second.m_rewarded)
             {
-                // skip one-from-all exclusive group
+
                 if (qPrevInfo->GetExclusiveGroup() >= 0)
                 {
                     return true;
                 }
 
-                // each-from-all exclusive group ( < 0)
-                // given a group with 2+ quests, and one of those has a branch that is not restricted by the group, return true
                 if (qInfo->GetPrevQuestId() != 0 && qPrevInfo->GetNextQuestId() != qInfo->GetPrevQuestId())
                 {
                     return true;
                 }
 
-                // can be start if only all quests in prev quest exclusive group completed and rewarded
                 ExclusiveQuestGroupsMapBounds bounds = sObjectMgr.GetExclusiveQuestGroupsMapBounds(qPrevInfo->GetExclusiveGroup());
 
-                MANGOS_ASSERT(bounds.first != bounds.second); // always must be found if qPrevInfo->ExclusiveGroup != 0
+                MANGOS_ASSERT(bounds.first != bounds.second);
 
                 for (ExclusiveQuestGroupsMap::const_iterator iter2 = bounds.first; iter2 != bounds.second; ++iter2)
                 {
                     uint32 exclude_Id = iter2->second;
 
-                    // skip checked quest id, only state of other quests in group is interesting
                     if (exclude_Id == prevId)
                     {
                         continue;
@@ -1224,7 +1053,6 @@ bool Player::SatisfyQuestPreviousQuest(Quest const* qInfo, bool msg) const
 
                     auto i_exstatus = m_journal.All().find(exclude_Id);
 
-                    // alternative quest from group also must be completed and rewarded(reported)
                     if (i_exstatus == m_journal.All().end() || !i_exstatus->second.m_rewarded)
                     {
                         if (msg)
@@ -1237,38 +1065,33 @@ bool Player::SatisfyQuestPreviousQuest(Quest const* qInfo, bool msg) const
                 }
                 return true;
             }
-            // If any of the negative previous quests active, return true
+
             if (*iter < 0 && IsCurrentQuest(prevId))
             {
-                // skip one-from-all exclusive group
+
                 if (qPrevInfo->GetExclusiveGroup() >= 0)
                 {
                     return true;
                 }
 
-                // each-from-all exclusive group ( < 0)
-                // given a group with 2+ quests, and one of those has a branch that is not restricted by the group, return true
                 if (qInfo->GetPrevQuestId() != 0 && qPrevInfo->GetNextQuestId() != abs(qInfo->GetPrevQuestId()))
                 {
                     return true;
                 }
 
-                // can be start if only all quests in prev quest exclusive group active
                 ExclusiveQuestGroupsMapBounds bounds = sObjectMgr.GetExclusiveQuestGroupsMapBounds(qPrevInfo->GetExclusiveGroup());
 
-                MANGOS_ASSERT(bounds.first != bounds.second); // always must be found if qPrevInfo->ExclusiveGroup != 0
+                MANGOS_ASSERT(bounds.first != bounds.second);
 
                 for (ExclusiveQuestGroupsMap::const_iterator iter2 = bounds.first; iter2 != bounds.second; ++iter2)
                 {
                     uint32 exclude_Id = iter2->second;
 
-                    // skip checked quest id, only state of other quests in group is interesting
                     if (exclude_Id == prevId)
                     {
                         continue;
                     }
 
-                    // alternative quest from group also must be active
                     if (!IsCurrentQuest(exclude_Id))
                     {
                         if (msg)
@@ -1284,8 +1107,6 @@ bool Player::SatisfyQuestPreviousQuest(Quest const* qInfo, bool msg) const
         }
     }
 
-    // Has only positive prev. quests in non-rewarded state
-    // and negative prev. quests in non-active state
     if (msg)
     {
         SendCanTakeQuestResponse(INVALIDREASON_DONT_HAVE_REQ);
@@ -1294,13 +1115,6 @@ bool Player::SatisfyQuestPreviousQuest(Quest const* qInfo, bool msg) const
     return false;
 }
 
-/**
- * @brief Checks whether the player's class can accept a quest.
- *
- * @param qInfo The quest to validate.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if the class requirement is met; otherwise, false.
- */
 bool Player::SatisfyQuestClass(Quest const* qInfo, bool msg) const
 {
     uint32 reqClass = qInfo->GetRequiredClasses();
@@ -1323,13 +1137,6 @@ bool Player::SatisfyQuestClass(Quest const* qInfo, bool msg) const
     return true;
 }
 
-/**
- * @brief Checks whether the player's race can accept a quest.
- *
- * @param qInfo The quest to validate.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if the race requirement is met; otherwise, false.
- */
 bool Player::SatisfyQuestRace(Quest const* qInfo, bool msg) const
 {
     uint32 reqraces = qInfo->GetRequiredRaces();
@@ -1352,16 +1159,9 @@ bool Player::SatisfyQuestRace(Quest const* qInfo, bool msg) const
     return true;
 }
 
-/**
- * @brief Checks whether the player's reputation meets quest requirements.
- *
- * @param qInfo The quest to validate.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if reputation requirements are met; otherwise, false.
- */
 bool Player::SatisfyQuestReputation(Quest const* qInfo, bool msg) const
 {
-    uint32 fIdMin = qInfo->GetRequiredMinRepFaction();      // Min required rep
+    uint32 fIdMin = qInfo->GetRequiredMinRepFaction();
     if (fIdMin && GetReputationMgr().GetReputation(fIdMin) < qInfo->GetRequiredMinRepValue())
     {
         if (msg)
@@ -1372,7 +1172,7 @@ bool Player::SatisfyQuestReputation(Quest const* qInfo, bool msg) const
         return false;
     }
 
-    uint32 fIdMax = qInfo->GetRequiredMaxRepFaction();      // Max required rep
+    uint32 fIdMax = qInfo->GetRequiredMaxRepFaction();
     if (fIdMax && GetReputationMgr().GetReputation(fIdMax) >= qInfo->GetRequiredMaxRepValue())
     {
         if (msg)
@@ -1386,13 +1186,6 @@ bool Player::SatisfyQuestReputation(Quest const* qInfo, bool msg) const
     return true;
 }
 
-/**
- * @brief Checks whether the quest is not already active in the player's log.
- *
- * @param qInfo The quest to validate.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if the quest status allows accepting it; otherwise, false.
- */
 bool Player::SatisfyQuestStatus(Quest const* qInfo, bool msg) const
 {
     auto itr = m_journal.All().find(qInfo->GetQuestId());
@@ -1410,13 +1203,6 @@ bool Player::SatisfyQuestStatus(Quest const* qInfo, bool msg) const
     return true;
 }
 
-/**
- * @brief Checks whether the player can accept another timed quest.
- *
- * @param qInfo The quest to validate.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if timed-quest rules allow acceptance; otherwise, false.
- */
 bool Player::SatisfyQuestTimed(Quest const* qInfo, bool msg) const
 {
     if (!m_journal.Timed().empty() && qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAG_TIMED))
@@ -1432,16 +1218,9 @@ bool Player::SatisfyQuestTimed(Quest const* qInfo, bool msg) const
     return true;
 }
 
-/**
- * @brief Checks whether exclusive-group rules allow the quest to be accepted.
- *
- * @param qInfo The quest to validate.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if exclusive-group requirements are met; otherwise, false.
- */
 bool Player::SatisfyQuestExclusiveGroup(Quest const* qInfo, bool msg) const
 {
-    // non positive exclusive group, if > 0 then can be start if any other quest in exclusive group already started/completed
+
     if (qInfo->GetExclusiveGroup() <= 0)
     {
         return true;
@@ -1449,13 +1228,12 @@ bool Player::SatisfyQuestExclusiveGroup(Quest const* qInfo, bool msg) const
 
     ExclusiveQuestGroupsMapBounds bounds = sObjectMgr.GetExclusiveQuestGroupsMapBounds(qInfo->GetExclusiveGroup());
 
-    MANGOS_ASSERT(bounds.first != bounds.second);           // must always be found if qInfo->ExclusiveGroup != 0
+    MANGOS_ASSERT(bounds.first != bounds.second);
 
     for (ExclusiveQuestGroupsMap::const_iterator iter = bounds.first; iter != bounds.second; ++iter)
     {
         uint32 exclude_Id = iter->second;
 
-        // skip checked quest id, only state of other quests in group is interesting
         if (exclude_Id == qInfo->GetQuestId())
         {
             continue;
@@ -1463,7 +1241,6 @@ bool Player::SatisfyQuestExclusiveGroup(Quest const* qInfo, bool msg) const
 
         auto i_exstatus = m_journal.All().find(exclude_Id);
 
-        // alternative quest already started or completed
         if (i_exstatus != m_journal.All().end() &&
             (i_exstatus->second.m_status == QUEST_STATUS_COMPLETE || i_exstatus->second.m_status == QUEST_STATUS_INCOMPLETE))
         {
@@ -1479,13 +1256,6 @@ bool Player::SatisfyQuestExclusiveGroup(Quest const* qInfo, bool msg) const
     return true;
 }
 
-/**
- * @brief Checks whether later quests in the chain do not block acceptance.
- *
- * @param qInfo The quest to validate.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if next-chain requirements are met; otherwise, false.
- */
 bool Player::SatisfyQuestNextChain(Quest const* qInfo, bool msg) const
 {
     if (!qInfo->GetNextQuestInChain())
@@ -1493,7 +1263,6 @@ bool Player::SatisfyQuestNextChain(Quest const* qInfo, bool msg) const
         return true;
     }
 
-    // next quest in chain already started or completed
     auto itr = m_journal.All().find(qInfo->GetNextQuestInChain());
     if (itr != m_journal.All().end() &&
         (itr->second.m_status == QUEST_STATUS_COMPLETE || itr->second.m_status == QUEST_STATUS_INCOMPLETE))
@@ -1506,22 +1275,12 @@ bool Player::SatisfyQuestNextChain(Quest const* qInfo, bool msg) const
         return false;
     }
 
-    // check for all quests further up the chain
-    // only necessary if there are quest chains with more than one quest that can be skipped
-    // return SatisfyQuestNextChain( qInfo->GetNextQuestInChain(), msg );
     return true;
 }
 
-/**
- * @brief Checks whether previous-chain quests do not block acceptance.
- *
- * @param qInfo The quest to validate.
- * @param msg True to emit failure feedback when checks fail.
- * @return True if previous-chain requirements are met; otherwise, false.
- */
 bool Player::SatisfyQuestPrevChain(Quest const* qInfo, bool msg) const
 {
-    // No previous quest in chain
+
     if (qInfo->prevChainQuests.empty())
     {
         return true;
@@ -1531,7 +1290,6 @@ bool Player::SatisfyQuestPrevChain(Quest const* qInfo, bool msg) const
     {
         uint32 prevId = *iter;
 
-        // If any of the previous quests in chain active, return false
         if (IsCurrentQuest(prevId))
         {
             if (msg)
@@ -1542,37 +1300,24 @@ bool Player::SatisfyQuestPrevChain(Quest const* qInfo, bool msg) const
             return false;
         }
 
-        // check for all quests further down the chain
-        // only necessary if there are quest chains with more than one quest that can be skipped
-        // if ( !SatisfyQuestPrevChain( prevId, msg ) )
-        //    return false;
     }
 
-    // No previous quest in chain active
     return true;
 }
 
-/**
- * @brief Checks whether required quest source items can be granted to the player.
- *
- * @param pQuest The quest whose source item is being evaluated.
- * @param dest Optional output describing where the item can be stored.
- * @return True if the source item can be granted or is not needed; otherwise, false.
- */
 bool Player::CanGiveQuestSourceItemIfNeed(Quest const* pQuest, ItemPosCountVec* dest) const
 {
     if (uint32 srcitem = pQuest->GetSrcItemId())
     {
         uint32 count = pQuest->GetSrcItemCount();
 
-        // player already have max amount required item (including bank), just report success
         uint32 has_count = GetItemCount(srcitem, true);
         if (has_count >= count)
         {
             return true;
         }
 
-        count -= has_count;                                 // real need amount
+        count -= has_count;
 
         InventoryResult msg;
         if (!dest)
@@ -1599,11 +1344,6 @@ bool Player::CanGiveQuestSourceItemIfNeed(Quest const* pQuest, ItemPosCountVec* 
     return true;
 }
 
-/**
- * @brief Grants quest source items required when a quest is accepted.
- *
- * @param pQuest The quest whose source item should be granted.
- */
 void Player::GiveQuestSourceItemIfNeed(Quest const* pQuest)
 {
     ItemPosCountVec dest;
@@ -1620,13 +1360,6 @@ void Player::GiveQuestSourceItemIfNeed(Quest const* pQuest)
     }
 }
 
-/**
- * @brief Removes a quest source item when the quest flow requires it.
- *
- * @param quest_id The quest identifier whose source item should be removed.
- * @param msg True to emit failure feedback when removal is not possible.
- * @return True if the source item was removed or not needed; otherwise, false.
- */
 bool Player::TakeQuestSourceItem(uint32 quest_id, bool msg)
 {
     Quest const* qInfo = sObjectMgr.GetQuestTemplate(quest_id);
@@ -1641,8 +1374,6 @@ bool Player::TakeQuestSourceItem(uint32 quest_id, bool msg)
                 count = 1;
             }
 
-            // exist one case when destroy source quest item not possible:
-            // non un-equippable item (equipped non-empty bag, for example)
             InventoryResult res = CanUnequipItems(srcitem, count);
             if (res != EQUIP_ERR_OK)
             {
@@ -1659,18 +1390,12 @@ bool Player::TakeQuestSourceItem(uint32 quest_id, bool msg)
     return true;
 }
 
-/**
- * @brief Checks whether a quest reward has already been claimed.
- *
- * @param quest_id The quest identifier to query.
- * @return True if the quest reward is marked as claimed; otherwise, false.
- */
 bool Player::GetQuestRewardStatus(uint32 quest_id) const
 {
     Quest const* qInfo = sObjectMgr.GetQuestTemplate(quest_id);
     if (qInfo)
     {
-        // for repeatable quests: rewarded field is set after first reward only to prevent getting XP more than once
+
         auto itr = m_journal.All().find(quest_id);
         if (itr != m_journal.All().end() && itr->second.m_status != QUEST_STATUS_NONE &&
             !qInfo->IsRepeatable())
@@ -1683,12 +1408,6 @@ bool Player::GetQuestRewardStatus(uint32 quest_id) const
     return false;
 }
 
-/**
- * @brief Gets the player's current status for a quest.
- *
- * @param quest_id The quest identifier to query.
- * @return The current quest status.
- */
 QuestStatus Player::GetQuestStatus(uint32 quest_id) const
 {
     if (quest_id)
@@ -1706,12 +1425,6 @@ QuestStatus Player::GetQuestStatus(uint32 quest_id) const
     return QUEST_STATUS_NONE;
 }
 
-/**
- * @brief Checks whether a quest can currently be shared with other players.
- *
- * @param quest_id The quest identifier to query.
- * @return True if the quest is active and sharable; otherwise, false.
- */
 bool Player::CanShareQuest(uint32 quest_id) const
 {
     if (Quest const* qInfo = sObjectMgr.GetQuestTemplate(quest_id))
@@ -1724,12 +1437,6 @@ bool Player::CanShareQuest(uint32 quest_id) const
     return false;
 }
 
-/**
- * @brief Updates the stored status for a quest and refreshes quest world objects.
- *
- * @param quest_id The quest identifier to update.
- * @param status The new quest status.
- */
 void Player::SetQuestStatus(uint32 quest_id, QuestStatus status)
 {
     if (sObjectMgr.GetQuestTemplate(quest_id))
@@ -1747,12 +1454,6 @@ void Player::SetQuestStatus(uint32 quest_id, QuestStatus status)
     UpdateForQuestObjects();
 }
 
-/**
- * @brief Sends the quest reward summary packet to the client.
- *
- * @param pQuest The rewarded quest.
- * @param XP The experience amount shown in the reward packet.
- */
 void Player::SendQuestReward(Quest const* pQuest, uint32 XP)
 {
     uint32 questid = pQuest->GetQuestId();
@@ -1771,7 +1472,7 @@ void Player::SendQuestReward(Quest const* pQuest, uint32 XP)
         data << uint32(0);
         data << uint32(pQuest->GetRewOrReqMoney() + int32(pQuest->GetRewMoneyMaxLevel() * sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_MONEY)));
     }
-    data << uint32(pQuest->GetRewItemsCount());             // max is 5
+    data << uint32(pQuest->GetRewItemsCount());
 
     for (uint32 i = 0; i < pQuest->GetRewItemsCount(); ++i)
     {
@@ -1787,11 +1488,6 @@ void Player::SendQuestReward(Quest const* pQuest, uint32 XP)
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Sends a quest failure update to the client.
- *
- * @param quest_id The failed quest identifier.
- */
 void Player::SendQuestFailed(uint32 quest_id)
 {
     if (quest_id)
@@ -1803,11 +1499,6 @@ void Player::SendQuestFailed(uint32 quest_id)
     }
 }
 
-/**
- * @brief Sends a timed quest failure update to the client.
- *
- * @param quest_id The failed timed quest identifier.
- */
 void Player::SendQuestTimerFailed(uint32 quest_id)
 {
     if (quest_id)
@@ -1819,11 +1510,6 @@ void Player::SendQuestTimerFailed(uint32 quest_id)
     }
 }
 
-/**
- * @brief Sends a quest acceptance failure reason to the client.
- *
- * @param msg The invalid-reason code to report.
- */
 void Player::SendCanTakeQuestResponse(uint32 msg) const
 {
     WorldPacket data(SMSG_QUESTGIVER_QUEST_INVALID, 4);
@@ -1832,12 +1518,6 @@ void Player::SendCanTakeQuestResponse(uint32 msg) const
     DEBUG_LOG("WORLD: Sent SMSG_QUESTGIVER_QUEST_INVALID");
 }
 
-/**
- * @brief Sends a quest-share acceptance confirmation prompt to another player.
- *
- * @param pQuest The shared quest.
- * @param pReceiver The player receiving the confirmation prompt.
- */
 void Player::SendQuestConfirmAccept(const Quest* pQuest, Player* pReceiver)
 {
     if (pReceiver)
@@ -1856,27 +1536,18 @@ void Player::SendQuestConfirmAccept(const Quest* pQuest, Player* pReceiver)
     }
 }
 
-/**
- * @brief Sends the result of a quest share push to the client.
- *
- * @param pPlayer The player targeted by the share attempt.
- * @param msg The quest share result code.
- */
 void Player::SendPushToPartyResponse(Player* pPlayer, uint8 msg)
 {
     if (pPlayer)
     {
         WorldPacket data(MSG_QUEST_PUSH_RESULT, (8 + 1));
         data << pPlayer->GetObjectGuid();
-        data << uint8(msg);                   // enum QuestShareMessages
+        data << uint8(msg);
         GetSession()->SendPacket(&data);
         DEBUG_LOG("WORLD: Sent MSG_QUEST_PUSH_RESULT");
     }
 }
 
-/**
- * @brief Refreshes visible quest-related world objects for the player.
- */
 void Player::UpdateForQuestObjects()
 {
     if (m_clientGUIDs.empty())
@@ -1886,11 +1557,11 @@ void Player::UpdateForQuestObjects()
 
     for (GuidSet::const_iterator itr = m_clientGUIDs.begin(); itr != m_clientGUIDs.end(); ++itr)
     {
-        if (itr->IsGameObject())
+        if (GuidHigh(*itr) == HIGHGUID_GAMEOBJECT)
         {
             if (GameObject* obj = GetMap()->GetGameObject(*itr))
             {
-                obj->SendCreateUpdateToPlayer(this); //[-ZERO] we must send create packet because of GAMEOBJECT_FLAGS change (not dynamic) - probably incorrect
+                obj->SendCreateUpdateToPlayer(this);
             }
         }
     }

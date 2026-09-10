@@ -23,34 +23,9 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file GameObject.h
- * @brief Game object (GO) declarations and template structures.
- *
- * This file defines the GameObject class which represents static or interactive objects
- * in the game world. Game objects include doors, buttons, chests, traps, banners, chairs,
- * and various interactive environmental elements.
- *
- * Key functionality includes:
- * - Interactive object state management (opened/closed, activated/deactivated)
- * - Loot container mechanics
- * - Trap and spell effect triggers
- * - Capture point and control zone mechanics
- * - Door and transport system integration
- * - AI-driven game object behavior
- * - Animation and state synchronization
- * - Custom model and animation support
- *
- * The file also contains GameObjectInfo struct which stores template data for all
- * game object types, with type-specific field unions for different GO behaviors.
- *
- * @see GameObject for the main game object implementation
- * @see GameObjectInfo for template data structure
- * @see GameObjectAI for behavior control
- */
-
 #pragma once
 
+#include "Loot/Spoilable.h"
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"
 #include <ctime>
@@ -70,354 +45,312 @@
 #include "Utilities/EventProcessor.h"
 #include <memory>
 
-// GCC have alternative #pragma pack(N) syntax and old gcc version not support pack(push,N), also any gcc version not support it at some platform
 #if defined( __GNUC__ )
 #pragma pack(1)
 #else
 #pragma pack(push,1)
 #endif
 
+class Map;
 class GameObjectAI;
 
-/// @brief Game object template structure.
-///
-/// Contains static configuration data for all game object instances loaded from
-/// the `gameobject_template` DBC and database. Each game object type has different
-/// data requirements, stored in the `data` union with type-specific nested structures.
-///
-/// The data union is indexed by the `type` field and contains configuration for:
-/// - DOOR: Door mechanics (locks, auto-close)
-/// - BUTTON: Buttons with linked traps
-/// - QUESTGIVER: Quest and gossip NPCs (game objects)
-/// - CHEST: Treasure and loot containers
-/// - GENERIC: Generic interactive objects
-/// - TRAP: Harmful triggered areas
-/// - CHAIR: Sitting objects with slots
-/// - SPELL_FOCUS: Focus objects for spellcasting
-/// - TEXT: Readable text objects
-/// - GOOBER: Complex interactive objects
-/// - TRANSPORT: Fixed transport (elevators, etc.)
-/// - AREADAMAGE: Damage zones
-/// - CAMERA: Camera trigger points
-/// - MAPOBJECT: Generic map objects
-/// - MO_TRANSPORT: Moving transport (ships, zeppelins)
-/// - DUELFLAG: Duel flag placement
-/// - FISHINGNODE: Fishing pool
-/// - SUMMONING_RITUAL: Summoning circle
-/// - MAILBOX: Mail access point
-/// - AUCTIONHOUSE: Auction house access
-/// - GUARDPOST: Guard post structures
-/// - SPELLCASTER: Spell casting object
-/// - MEETINGSTONE: Dungeon meeting stones
-///
-/// @note Template data is read from DBC at server startup and is static
 struct GameObjectInfo
 {
-    uint32  id;          ///> Game object entry ID (unique identifier)
-    uint32  type;        ///> Game object type (enum GameObjectTypes)
-    uint32  displayId;   ///> Display model ID
-    char*   name;        ///> Game object name
-    uint32  faction;     ///> Faction ID (determines PvP rules and attacking)
-    uint32  flags;       ///> Flags (enum GameObjectFlags)
-    float   size;        ///> Display scale factor
-    union                ///> Type-specific data union (different GO types have different data fields)
+    uint32  id;
+    uint32  type;
+    uint32  displayId;
+    char*   name;
+    uint32  faction;
+    uint32  flags;
+    float   size;
+    union
     {
-        // 0 GAMEOBJECT_TYPE_DOOR
+
         struct
         {
-            uint32 startOpen;                               // 0 used client side to determine GO_ACTIVATED means open/closed
-            uint32 lockId;                                  // 1 -> Lock.dbc
-            uint32 autoCloseTime;                           // 2 secs till autoclose = autoCloseTime / 0x10000
-            uint32 noDamageImmune;                          // 3 break opening whenever you recieve damage?
-            uint32 openTextID;                              // 4 can be used to replace castBarCaption?
-            uint32 closeTextID;                             // 5
+            uint32 startOpen;
+            uint32 lockId;
+            uint32 autoCloseTime;
+            uint32 noDamageImmune;
+            uint32 openTextID;
+            uint32 closeTextID;
         } door;
-        // 1 GAMEOBJECT_TYPE_BUTTON
+
         struct
         {
-            uint32 startOpen;                               // 0
-            uint32 lockId;                                  // 1 -> Lock.dbc
-            uint32 autoCloseTime;                           // 2 secs till autoclose = autoCloseTime / 0x10000
-            uint32 linkedTrapId;                            // 3
-            uint32 noDamageImmune;                          // 4 isBattlegroundObject
-            uint32 large;                                   // 5
-            uint32 openTextID;                              // 6 can be used to replace castBarCaption?
-            uint32 closeTextID;                             // 7
-            uint32 losOK;                                   // 8
+            uint32 startOpen;
+            uint32 lockId;
+            uint32 autoCloseTime;
+            uint32 linkedTrapId;
+            uint32 noDamageImmune;
+            uint32 large;
+            uint32 openTextID;
+            uint32 closeTextID;
+            uint32 losOK;
         } button;
-        // 2 GAMEOBJECT_TYPE_QUESTGIVER
+
         struct
         {
-            uint32 lockId;                                  // 0 -> Lock.dbc
-            uint32 questList;                               // 1
-            uint32 pageMaterial;                            // 2
-            uint32 gossipID;                                // 3
-            uint32 customAnim;                              // 4
-            uint32 noDamageImmune;                          // 5
-            uint32 openTextID;                              // 6 can be used to replace castBarCaption?
-            uint32 losOK;                                   // 7
-            uint32 allowMounted;                            // 8
-            uint32 large;                                   // 9
+            uint32 lockId;
+            uint32 questList;
+            uint32 pageMaterial;
+            uint32 gossipID;
+            uint32 customAnim;
+            uint32 noDamageImmune;
+            uint32 openTextID;
+            uint32 losOK;
+            uint32 allowMounted;
+            uint32 large;
         } questgiver;
-        // 3 GAMEOBJECT_TYPE_CHEST
+
         struct
         {
-            uint32 lockId;                                  // 0 -> Lock.dbc
-            uint32 lootId;                                  // 1
-            uint32 chestRestockTime;                        // 2
-            uint32 consumable;                              // 3
-            uint32 minSuccessOpens;                         // 4
-            uint32 maxSuccessOpens;                         // 5
-            uint32 eventId;                                 // 6 lootedEvent
-            uint32 linkedTrapId;                            // 7
-            uint32 questId;                                 // 8 quest that lights the chest up while it is in progress
-            uint32 level;                                   // 9
-            uint32 losOK;                                   // 10
-            uint32 leaveLoot;                               // 11
-            uint32 notInCombat;                             // 12
-            uint32 logLoot;                                 // 13
-            uint32 openTextID;                              // 14 can be used to replace castBarCaption?
-            uint32 groupLootRules;                          // 15
+            uint32 lockId;
+            uint32 lootId;
+            uint32 chestRestockTime;
+            uint32 consumable;
+            uint32 minSuccessOpens;
+            uint32 maxSuccessOpens;
+            uint32 eventId;
+            uint32 linkedTrapId;
+            uint32 questId;
+            uint32 level;
+            uint32 losOK;
+            uint32 leaveLoot;
+            uint32 notInCombat;
+            uint32 logLoot;
+            uint32 openTextID;
+            uint32 groupLootRules;
         } chest;
-        // 4 GAMEOBJECT_TYPE_BINDER - empty
-        // 5 GAMEOBJECT_TYPE_GENERIC
+
         struct
         {
-            uint32 floatingTooltip;                         // 0
-            uint32 highlight;                               // 1
-            uint32 serverOnly;                              // 2
-            uint32 large;                                   // 3
-            uint32 floatOnWater;                            // 4
-            uint32 questID;                                 // 5
+            uint32 floatingTooltip;
+            uint32 highlight;
+            uint32 serverOnly;
+            uint32 large;
+            uint32 floatOnWater;
+            uint32 questID;
         } _generic;
-        // 6 GAMEOBJECT_TYPE_TRAP
+
         struct
         {
-            uint32 lockId;                                  // 0 -> Lock.dbc
-            uint32 level;                                   // 1
-            uint32 radius;                                  // 2 radius for trap activation
-            uint32 spellId;                                 // 3
-            uint32 charges;                                 // 4 need respawn (if > 0)
-            uint32 cooldown;                                // 5 time in secs
-            uint32 autoCloseTime;                           //6 secs till autoclose = autoCloseTime / IN_MILLISECONDS (previous was 0x10000)
-            uint32 startDelay;                              // 7
-            uint32 serverOnly;                              // 8
-            uint32 stealthed;                               // 9
-            uint32 large;                                   // 10
-            uint32 stealthAffected;                         // 11
-            uint32 openTextID;                              // 12 can be used to replace castBarCaption?
-            uint32 closeTextID;                             // 13
+            uint32 lockId;
+            uint32 level;
+            uint32 radius;
+            uint32 spellId;
+            uint32 charges;
+            uint32 cooldown;
+            uint32 autoCloseTime;
+            uint32 startDelay;
+            uint32 serverOnly;
+            uint32 stealthed;
+            uint32 large;
+            uint32 stealthAffected;
+            uint32 openTextID;
+            uint32 closeTextID;
         } trap;
-        // 7 GAMEOBJECT_TYPE_CHAIR
+
         struct
         {
-            uint32 slots;                                   // 0
-            uint32 height;                                  // 1
-            uint32 onlyCreatorUse;                          // 2
+            uint32 slots;
+            uint32 height;
+            uint32 onlyCreatorUse;
         } chair;
-        // 8 GAMEOBJECT_TYPE_SPELL_FOCUS
+
         struct
         {
-            uint32 focusId;                                 // 0
-            uint32 dist;                                    // 1
-            uint32 linkedTrapId;                            // 2
-            uint32 serverOnly;                              // 3
-            uint32 questID;                                 // 4
-            uint32 large;                                   // 5
+            uint32 focusId;
+            uint32 dist;
+            uint32 linkedTrapId;
+            uint32 serverOnly;
+            uint32 questID;
+            uint32 large;
         } spellFocus;
-        // 9 GAMEOBJECT_TYPE_TEXT
+
         struct
         {
-            uint32 pageID;                                  // 0
-            uint32 language;                                // 1
-            uint32 pageMaterial;                            // 2
-            uint32 allowMounted;                            // 3
+            uint32 pageID;
+            uint32 language;
+            uint32 pageMaterial;
+            uint32 allowMounted;
         } text;
-        // 10 GAMEOBJECT_TYPE_GOOBER
+
         struct
         {
-            uint32 lockId;                                  // 0 -> Lock.dbc
-            uint32 questId;                                 // 1
-            uint32 eventId;                                 // 2
-            uint32 autoCloseTime;                           //3 secs till autoclose = autoCloseTime / IN_MILLISECONDS (previous was 0x10000)
-            uint32 customAnim;                              // 4
-            uint32 consumable;                              // 5
-            uint32 cooldown;                                // 6
-            uint32 pageId;                                  // 7
-            uint32 language;                                // 8
-            uint32 pageMaterial;                            // 9
-            uint32 spellId;                                 // 10
-            uint32 noDamageImmune;                          // 11
-            uint32 linkedTrapId;                            // 12
-            uint32 large;                                   // 13
-            uint32 openTextID;                              // 14 can be used to replace castBarCaption?
-            uint32 closeTextID;                             // 15
-            uint32 losOK;                                   // 16 isBattlegroundObject
-            uint32 allowMounted;                            // 17
-            uint32 floatingTooltip;                         // 18
-            uint32 gossipID;                                // 19
+            uint32 lockId;
+            uint32 questId;
+            uint32 eventId;
+            uint32 autoCloseTime;
+            uint32 customAnim;
+            uint32 consumable;
+            uint32 cooldown;
+            uint32 pageId;
+            uint32 language;
+            uint32 pageMaterial;
+            uint32 spellId;
+            uint32 noDamageImmune;
+            uint32 linkedTrapId;
+            uint32 large;
+            uint32 openTextID;
+            uint32 closeTextID;
+            uint32 losOK;
+            uint32 allowMounted;
+            uint32 floatingTooltip;
+            uint32 gossipID;
         } goober;
-        // 11 GAMEOBJECT_TYPE_TRANSPORT
-        // A lift or a tram. The client's own type table declares no data fields at all for
-        // this type: the whole motion comes out of TransportAnimation.dbc, keyed by the
-        // display id. The three below are database columns. Nothing reads pause or
-        // startOpen, and autoCloseTime is only reachable down the door and goober paths,
-        // which a lift never takes.
+
         struct
         {
-            uint32 pause;                                   // 0
-            uint32 startOpen;                               // 1
-            uint32 autoCloseTime;                           // 2 secs till autoclose = autoCloseTime / 0x10000
+            uint32 pause;
+            uint32 startOpen;
+            uint32 autoCloseTime;
         } transport;
-        // 12 GAMEOBJECT_TYPE_AREADAMAGE
+
         struct
         {
-            uint32 lockId;                                  // 0
-            uint32 radius;                                  // 1
-            uint32 damageMin;                               // 2
-            uint32 damageMax;                               // 3
-            uint32 damageSchool;                            // 4
-            uint32 autoCloseTime;                           //5 secs till autoclose = autoCloseTime / IN_MILLISECONDS (previous was 0x10000)
-            uint32 openTextID;                              // 6
-            uint32 closeTextID;                             // 7
+            uint32 lockId;
+            uint32 radius;
+            uint32 damageMin;
+            uint32 damageMax;
+            uint32 damageSchool;
+            uint32 autoCloseTime;
+            uint32 openTextID;
+            uint32 closeTextID;
         } areadamage;
-        // 13 GAMEOBJECT_TYPE_CAMERA
+
         struct
         {
-            uint32 lockId;                                  // 0 -> Lock.dbc
-            uint32 cinematicId;                             // 1
-            uint32 eventID;                                 // 2
-            uint32 openTextID;                              // 3 can be used to replace castBarCaption?
+            uint32 lockId;
+            uint32 cinematicId;
+            uint32 eventID;
+            uint32 openTextID;
         } camera;
-        // 14 GAMEOBJECT_TYPE_MAPOBJECT - empty
-        // 15 GAMEOBJECT_TYPE_MO_TRANSPORT
+
         struct
         {
-            uint32 taxiPathId;                              // 0
-            uint32 moveSpeed;                               // 1
-            uint32 accelRate;                               // 2
-            uint32 startEventID;                            // 3
-            uint32 stopEventID;                             // 4
-            uint32 transportPhysics;                        // 5
-            uint32 mapID;                                   // 6
+            uint32 taxiPathId;
+            uint32 moveSpeed;
+            uint32 accelRate;
+            uint32 startEventID;
+            uint32 stopEventID;
+            uint32 transportPhysics;
+            uint32 mapID;
         } moTransport;
-        // 16 GAMEOBJECT_TYPE_DUELFLAG - empty
-        // 17 GAMEOBJECT_TYPE_FISHINGNODE
+
         struct
         {
-            uint32 _data0;                                  // 0
-            uint32 lootId;                                  // 1
+            uint32 _data0;
+            uint32 lootId;
         } fishnode;
-        // 18 GAMEOBJECT_TYPE_SUMMONING_RITUAL
+
         struct
         {
-            uint32 reqParticipants;                         // 0
-            uint32 spellId;                                 // 1
-            uint32 animSpell;                               // 2
-            uint32 ritualPersistent;                        // 3
-            uint32 casterTargetSpell;                       // 4
-            uint32 casterTargetSpellTargets;                // 5
-            uint32 castersGrouped;                          // 6
-            uint32 ritualNoTargetCheck;                     // 7
+            uint32 reqParticipants;
+            uint32 spellId;
+            uint32 animSpell;
+            uint32 ritualPersistent;
+            uint32 casterTargetSpell;
+            uint32 casterTargetSpellTargets;
+            uint32 castersGrouped;
+            uint32 ritualNoTargetCheck;
         } summoningRitual;
-        // 19 GAMEOBJECT_TYPE_MAILBOX - empty
-        // 20 GAMEOBJECT_TYPE_AUCTIONHOUSE
+
         struct
         {
-            uint32 actionHouseID;                           // 0
+            uint32 actionHouseID;
         } auctionhouse;
-        // 21 GAMEOBJECT_TYPE_GUARDPOST
+
         struct
         {
-            uint32 creatureID;                              // 0
-            uint32 charges;                                 // 1
+            uint32 creatureID;
+            uint32 charges;
         } guardpost;
-        // 22 GAMEOBJECT_TYPE_SPELLCASTER
+
         struct
         {
-            uint32 spellId;                                 // 0
-            uint32 charges;                                 // 1
-            uint32 partyOnly;                               // 2
+            uint32 spellId;
+            uint32 charges;
+            uint32 partyOnly;
         } spellcaster;
-        // 23 GAMEOBJECT_TYPE_MEETINGSTONE
+
         struct
         {
-            uint32 minLevel;                                // 0
-            uint32 maxLevel;                                // 1
-            uint32 areaID;                                  // 2
+            uint32 minLevel;
+            uint32 maxLevel;
+            uint32 areaID;
         } meetingstone;
-        // 24 GAMEOBJECT_TYPE_FLAGSTAND
+
         struct
         {
-            uint32 lockId;                                  // 0
-            uint32 pickupSpell;                             // 1
-            uint32 radius;                                  // 2
-            uint32 returnAura;                              // 3
-            uint32 returnSpell;                             // 4
-            uint32 noDamageImmune;                          // 5
-            uint32 openTextID;                              // 6
-            uint32 losOK;                                   // 7
+            uint32 lockId;
+            uint32 pickupSpell;
+            uint32 radius;
+            uint32 returnAura;
+            uint32 returnSpell;
+            uint32 noDamageImmune;
+            uint32 openTextID;
+            uint32 losOK;
         } flagstand;
-        // 25 GAMEOBJECT_TYPE_FISHINGHOLE
+
         struct
         {
-            uint32 radius;                                  // 0 how close bobber must land for sending loot
-            uint32 lootId;                                  // 1
-            uint32 minSuccessOpens;                         // 2
-            uint32 maxSuccessOpens;                         // 3
-            uint32 lockId;                                  // 4 -> Lock.dbc; possibly 1628 for all?
+            uint32 radius;
+            uint32 lootId;
+            uint32 minSuccessOpens;
+            uint32 maxSuccessOpens;
+            uint32 lockId;
         } fishinghole;
-        // 26 GAMEOBJECT_TYPE_FLAGDROP
+
         struct
         {
-            uint32 lockId;                                  // 0
-            uint32 eventID;                                 // 1
-            uint32 pickupSpell;                             // 2
-            uint32 noDamageImmune;                          // 3
-            uint32 openTextID;                              // 4
+            uint32 lockId;
+            uint32 eventID;
+            uint32 pickupSpell;
+            uint32 noDamageImmune;
+            uint32 openTextID;
         } flagdrop;
-        // 27 GAMEOBJECT_TYPE_MINI_GAME
+
         struct
         {
-            uint32 gameType;                                // 0
+            uint32 gameType;
         } miniGame;
-        // 29 GAMEOBJECT_TYPE_CAPTURE_POINT
+
         struct
         {
-            uint32 radius;                                  // 0
-            uint32 spell;                                   // 1
-            uint32 worldState1;                             // 2
-            uint32 worldState2;                             // 3
-            uint32 winEventID1;                             // 4
-            uint32 winEventID2;                             // 5
-            uint32 contestedEventID1;                       // 6
-            uint32 contestedEventID2;                       // 7
-            uint32 progressEventID1;                        // 8
-            uint32 progressEventID2;                        // 9
-            uint32 neutralEventID1;                         // 10
-            uint32 neutralEventID2;                         // 11
-            uint32 neutralPercent;                          // 12
-            uint32 worldState3;                             // 13
-            uint32 minSuperiority;                          // 14
-            uint32 maxSuperiority;                          // 15
-            uint32 minTime;                                 // 16
-            uint32 maxTime;                                 // 17
-            uint32 large;                                   // 18
-            uint32 highlight;                               // 19
+            uint32 radius;
+            uint32 spell;
+            uint32 worldState1;
+            uint32 worldState2;
+            uint32 winEventID1;
+            uint32 winEventID2;
+            uint32 contestedEventID1;
+            uint32 contestedEventID2;
+            uint32 progressEventID1;
+            uint32 progressEventID2;
+            uint32 neutralEventID1;
+            uint32 neutralEventID2;
+            uint32 neutralPercent;
+            uint32 worldState3;
+            uint32 minSuperiority;
+            uint32 maxSuperiority;
+            uint32 minTime;
+            uint32 maxTime;
+            uint32 large;
+            uint32 highlight;
         } capturePoint;
-        // 30 GAMEOBJECT_TYPE_AURA_GENERATOR
+
         struct
         {
-            uint32 startOpen;                               // 0
-            uint32 radius;                                  // 1
-            uint32 auraID1;                                 // 2
-            uint32 conditionID1;                            // 3
-            uint32 auraID2;                                 // 4
-            uint32 conditionID2;                            // 5
-            uint32 serverOnly;                              // 6
+            uint32 startOpen;
+            uint32 radius;
+            uint32 auraID1;
+            uint32 conditionID1;
+            uint32 auraID2;
+            uint32 conditionID2;
+            uint32 serverOnly;
         } auraGenerator;
 
-        // not use for specific field access (only for output with loop by all filed), also this determinate max union size
         struct
         {
             uint32 data[24];
@@ -426,9 +359,7 @@ struct GameObjectInfo
 
     uint32 MinMoneyLoot;
     uint32 MaxMoneyLoot;
-    //uint32 ScriptId;
 
-    // helpers
     bool IsDespawnAtAction() const
     {
         switch (type)
@@ -458,7 +389,7 @@ struct GameObjectInfo
         }
     }
 
-    bool GetDespawnPossibility() const                      // despawn at targeting of cast?
+    bool GetDespawnPossibility() const
     {
         switch (type)
         {
@@ -472,7 +403,7 @@ struct GameObjectInfo
         }
     }
 
-    uint32 GetCharges() const                               // despawn at uses amount
+    uint32 GetCharges() const
     {
         switch (type)
         {
@@ -483,7 +414,7 @@ struct GameObjectInfo
         }
     }
 
-    uint32 GetCooldown() const                              // not triggering at detection target or use until coolodwn expire
+    uint32 GetCooldown() const
     {
         switch (type)
         {
@@ -531,8 +462,6 @@ struct GameObjectInfo
         }
     }
 
-    // Placed for the server's own use: the client is never told about it and has no
-    // model for it. Only these three kinds are ever marked that way.
     bool IsServerOnly() const
     {
         switch (type)
@@ -544,9 +473,6 @@ struct GameObjectInfo
         }
     }
 
-    // The quest whose being in progress lights this object up for the player.
-    // Only these four types carry one, and they are exactly the types
-    // ObjectMgr::LoadGameObjectForQuests walks.
     uint32 GetQuestId() const
     {
         switch (type)
@@ -570,7 +496,6 @@ struct GameObjectInfo
     }
 };
 
-// GCC have alternative #pragma pack() syntax and old gcc version not support pack(pop), also any gcc version not support it at some platform
 #if defined( __GNUC__ )
 #pragma pack()
 #else
@@ -582,42 +507,36 @@ struct GameObjectLocale
     std::vector<std::string> Name;
 };
 
-// client side GO show states
 enum GOState
 {
-    GO_STATE_ACTIVE             = 0x00,                     // show in world as used and not reset (closed door open)
-    GO_STATE_READY              = 0x01,                     // show in world as ready (closed door close)
-    GO_STATE_ACTIVE_ALTERNATIVE = 0x02,                     // show in world as used in alt way and not reset (closed door open by cannon fire)
+    GO_STATE_ACTIVE             = 0x00,
+    GO_STATE_READY              = 0x01,
+    GO_STATE_ACTIVE_ALTERNATIVE = 0x02,
 };
 
 #define MAX_GO_STATE              3
 
-// from `gameobject`
 struct GameObjectData
 {
-    uint32 id;                                              // entry in gameobject_template
+    uint32 id;
     uint32 mapid;
     float posX;
     float posY;
     float posZ;
     float orientation;
-    float rotation0;                                        // i component of rotation quaternion
-    float rotation1;                                        // j
-    float rotation2;                                        // k
-    float rotation3;                                        // w
+    float rotation0;
+    float rotation1;
+    float rotation2;
+    float rotation3;
     int32  spawntimesecs;
     uint32 animprogress;
     GOState go_state;
 };
 
-// For containers:  [GO_NOT_READY]->GO_READY (close)->GO_ACTIVATED (open) ->GO_JUST_DEACTIVATED->GO_READY        -> ...
-// For bobber:      [GO_NOT_READY]->GO_READY (close)->GO_ACTIVATED (open) ->GO_JUST_DEACTIVATED-><deleted>
-// For door(closed):[GO_NOT_READY]->GO_READY (close)->GO_ACTIVATED (open) ->GO_JUST_DEACTIVATED->GO_READY(close) -> ...
-// For door(open):  [GO_NOT_READY]->GO_READY (open) ->GO_ACTIVATED (close)->GO_JUST_DEACTIVATED->GO_READY(open)  -> ...
 enum LootState
 {
     GO_NOT_READY = 0,
-    GO_READY,                                               // can be ready but despawned, and then not possible activate until spawn
+    GO_READY,
     GO_ACTIVATED,
     GO_JUST_DEACTIVATED
 };
@@ -632,12 +551,11 @@ namespace Geometry
 
 struct GameObjectDisplayInfoEntry;
 
-// 5 sec for bobber catch
 #define FISHING_BOBBER_READY_TIME 5
 
-#define GO_ANIMPROGRESS_DEFAULT 100                         // in 3.x 0xFF
+#define GO_ANIMPROGRESS_DEFAULT 100
 
-class GameObject : public Occupant
+class GameObject : public Occupant, public Spoilable
 {
 
     public:
@@ -656,33 +574,24 @@ class GameObject : public Occupant
         GameObjectInfo const* GetGOInfo() const { return m_goInfo; }
         void SetGOInfo(GameObjectInfo const* pg);
 
-        /// What this kind of object does. Never null once the template is set.
         GameObjectBehaviour& Behaves() const { return *m_behaviour; }
 
-        /// Its behaviour if it is of that kind, and null if it is not. This is how
-        /// anything outside reaches state that only one kind of object has.
         template <typename Kind>
         Kind* Behaves() const { return dynamic_cast<Kind*>(m_behaviour.get()); }
 
-        /// A lift or a tram, which the client animates from TransportAnimation.dbc.
         bool IsLift() const { return GetGoType() == GAMEOBJECT_TYPE_TRANSPORT; }
 
-        /// How far into its loop a lift stands now. Everyone is told the same
-        /// number, so every client draws the platform in the same place.
         uint32 LiftPhase() const;
 
-        /// A lift or a vessel: something that carries players and moves itself on the client.
         bool IsMovingPlatform() const;
 
-        bool HasStaticDBSpawnData() const;                  // listed in `gameobject` table and have fixed in DB guid
+        bool HasStaticDBSpawnData() const;
 
-        // rotation methods
         void GetQuaternion(Geometry::Quat& q) const;
         void SetQuaternion(Geometry::Quat const& q);
 
         void SetDisplayId(uint32 model_id);
 
-        // overwrite Occupant function for proper name localization
         const char* GetNameForLocaleIdx(int32 locale_idx) const override;
 
         void SaveToDB();
@@ -692,7 +601,7 @@ class GameObject : public Occupant
 
         void SetOwnerGuid(ObjectGuid ownerGuid)
         {
-            m_spawn.Permanent(false);                       // anything with an owner only goes away
+            m_spawn.Permanent(false);
             SetGuidValue(OBJECT_FIELD_CREATED_BY, ownerGuid);
         }
         ObjectGuid const& GetOwnerGuid() const { return GetGuidValue(OBJECT_FIELD_CREATED_BY); }
@@ -700,17 +609,16 @@ class GameObject : public Occupant
 
         bool IsControlledByPlayer() const override
         {
-            return GetOwnerGuid().IsPlayer();
+            return (GetOwnerGuid() != 0 && GuidHigh(GetOwnerGuid()) == HIGHGUID_PLAYER);
         }
 
         void SetSpellId(uint32 id)
         {
-            m_spawn.Permanent(false);                       // anything summoned only goes away
+            m_spawn.Permanent(false);
             m_spellId = id;
         }
         uint32 GetSpellId() const { return m_spellId;}
 
-        /// When it comes or goes, and which of the two it is.
         SpawnClock& Clock() { return m_spawn; }
         SpawnClock const& Clock() const { return m_spawn; }
 
@@ -726,7 +634,6 @@ class GameObject : public Occupant
         void Refresh();
         void Delete();
 
-        // Functions spawn/remove gameobject with DB guid in all loaded map copies (if point grid loaded in map)
         static void AddToRemoveListInMaps(uint32 db_guid, GameObjectData const* data);
         static void SpawnInMaps(uint32 db_guid, GameObjectData const* data);
 
@@ -734,8 +641,6 @@ class GameObject : public Occupant
         void SetGoType(GameobjectTypes type) { SetUInt32Value(GAMEOBJECT_TYPE_ID, type); }
         GOState GetGoState() const { return GOState(GetUInt32Value(GAMEOBJECT_STATE)); }
 
-        /// The position the object also carries in its own fields, which the
-        /// client reads rather than the movement block.
         float GetGoPositionX() const { return GetFloatValue(GAMEOBJECT_POS_X); }
         float GetGoPositionY() const { return GetFloatValue(GAMEOBJECT_POS_Y); }
         float GetGoPositionZ() const { return GetFloatValue(GAMEOBJECT_POS_Z); }
@@ -746,12 +651,9 @@ class GameObject : public Occupant
             SetFloatValue(GAMEOBJECT_POS_Y, y);
             SetFloatValue(GAMEOBJECT_POS_Z, z);
         }
-        /// The yaw the client turns the model by. A lift is turned by this and by
-        /// nothing else; its quaternion only steers the path it slides along.
+
         void SetGoFacing(float facing) { SetFloatValue(GAMEOBJECT_FACING, facing); }
 
-        /// What the client may do with this object: whether it is locked, in
-        /// use, or refuses interaction at all.
         bool HasGoFlag(uint32 flag) const { return HasFlag(GAMEOBJECT_FLAGS, flag); }
         void SetGoFlag(uint32 flag) { SetFlag(GAMEOBJECT_FLAGS, flag); }
         void RemoveGoFlag(uint32 flag) { RemoveFlag(GAMEOBJECT_FLAGS, flag); }
@@ -769,79 +671,63 @@ class GameObject : public Occupant
         void SendGameObjectCustomAnim(uint32 animId = 0);
         void SendGameObjectReset();
 
-        float ComputeBoundingRadius() const override;     // overwrite Occupant version
+        float ComputeBoundingRadius() const override;
 
         void Use(Unit* user);
 
     private:
-        /// What using an object comes to: one spell, cast by someone, and whether
-        /// its cost is waived. A spell of nothing means the use was its own reward.
 
-        // The two halves of the sparkle that need more than the template's quest id.
         bool HasQuestBusinessWith(Player* seeker) const;
         bool HoldsQuestLootFor(Player* seeker) const;
 
-        // Why a trap may be seen from closer than everything else is.
         bool IsTrapHidingFrom(Player const* watcher) const;
         TrapWatcher WatchedBy(Player const* watcher) const;
 
     public:
 
-        /// Roll for what this vein has come up as, if it is one at all.
         void RollIfMineralVein();
 
         LootState getLootState() const { return m_lootState; }
 
-        /// It cannot be used again before this moment.
         time_t UsableAt() const { return m_usableAt; }
         void UsableAt(time_t when) { m_usableAt = when; }
 
-        /// It shuts itself at this moment; zero while it stays as it is.
         time_t ClosesAt() const { return m_closesAt; }
         void ClosesAt(time_t when) { m_closesAt = when; }
         void SetLootState(LootState s);
 
-        /// Forget everyone who has used it, whatever the kind was counting.
         void ClearAllUsesData();
 
         void SaveRespawnTime();
 
-        // Loot System
         Loot loot;
 
         Loot* Spoils() override { return &loot; }
 
-        /// His own -- a fishing bobber is looted from wherever it landed -- or a fishing
-        /// hole, which is likewise reached at a rod's length; anything else, at arm's reach.
         bool OpenableBy(Player const& who) const override;
         bool FillSpoilsFor(Player& who, LootType& how, PermissionTypes& permission) override;
-        /// Who may take what is on this body, and whether a roll is running.
+
         LootClaim& Claim() { return m_claim; }
         LootClaim const& Claim() const { return m_claim; }
 
-
         bool OffersQuest(uint32 quest_id) const;
         bool TakesQuest(uint32 quest_id) const;
-        /// Whether the client should draw the quest sparkle on it for this player.
+
         bool ActivateToQuest(Player* seeker) const;
         void UseDoorOrButton(uint32 time_to_restore = 0, bool alternative = false);
-        // 0 = use `gameobject`.`spawntimesecs`
-        void ResetDoorOrButton();
 
+        void ResetDoorOrButton();
 
         void SummonLinkedTrapIfAny();
         void TriggerLinkedGameObject(Unit* target);
 
         bool IsVisibleForInState(Player const* u, Occupant const* viewPoint, bool inVisibleList) const override;
 
-        bool IsCollisionEnabled() const;                    // Check if a go should collide. Like if a door is closed
+        bool IsCollisionEnabled() const;
 
         GameObject* LookupFishingHoleAround(float range);
 
-
-        /// The bar two sides push at each other, and who is standing by it.
-
-        float GetInteractionDistance() const;              // Get the maximum distance for a GO to interact with
+        float GetInteractionDistance() const;
 
         uint32 GetScriptId();
 
@@ -860,17 +746,13 @@ class GameObject : public Occupant
         uint32      m_spellId;
         SpawnClock  m_spawn;
         LootState   m_lootState;
-        time_t      m_usableAt;                             // not to be used again before this moment
-        time_t      m_closesAt;                             // shuts itself at this moment; 0 when it stays as it is
-
+        time_t      m_usableAt;
+        time_t      m_closesAt;
 
         GameObjectInfo const* m_goInfo;
 
-        // Loot System
         LootClaim m_claim;
 
-
-        /// One per object, made from its template and never chosen again.
         std::unique_ptr<GameObjectBehaviour> m_behaviour;
 
         bool m_AI_locked;
@@ -879,8 +761,8 @@ class GameObject : public Occupant
 
     private:
         void SwitchDoorOrButton(bool activate, bool alternative = false);
-        void UpdateModel();                                 // updates model in case displayId were changed
-        void UpdateCollisionState() const;                  // updates state in Map's dynamic collision tree
+        void UpdateModel();
+        void UpdateCollisionState() const;
 
         GridReference<GameObject> m_gridRef;
 };

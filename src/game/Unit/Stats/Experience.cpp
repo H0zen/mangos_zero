@@ -32,7 +32,7 @@ xp::Quarry xp::QuarryOf(Unit const& victim)
     Quarry quarry;
     quarry.level = victim.getLevel();
 
-    Creature const* beast = victim.IsCreature() ? static_cast<Creature const*>(&victim) : nullptr;
+    Creature const* beast = IsCreature(&victim) ? static_cast<Creature const*>(&victim) : nullptr;
     if (!beast)
     {
         return quarry;
@@ -40,8 +40,6 @@ xp::Quarry xp::QuarryOf(Unit const& victim)
 
     quarry.elite = beast->IsElite();
 
-    // A totem is a piece of furniture, a pet belongs to somebody, and a row may say outright
-    // that killing this thing teaches nobody anything.
     quarry.worthNothing = beast->IsTotem()
                           || beast->IsPet()
                           || (beast->GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_NO_XP_AT_KILL) != 0;

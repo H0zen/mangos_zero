@@ -256,12 +256,12 @@ struct spell_go_black_dragon_egg : public SpellScript
     {
         if (uiSpellId == SPELL_DESTROY_EGG && uiEffIndex == EFFECT_INDEX_1)
         {
-            if (!ToGameObject(pGOTarget)->isSpawned())
+            if (!static_cast<GameObject*>(pGOTarget)->isSpawned())
             {
                 return true;
             }
 
-            if (ScriptedInstance* pInstance = static_cast<ScriptedInstance*>(ToGameObject(pGOTarget)->GetInstanceData()))
+            if (ScriptedInstance* pInstance = static_cast<ScriptedInstance*>(static_cast<GameObject*>(pGOTarget)->GetInstanceData()))
             {
                 if (urand(0, 1))
                 {
@@ -280,7 +280,7 @@ struct spell_go_black_dragon_egg : public SpellScript
                 }
 
                 // Store the eggs which are destroyed, in order to count them for the second phase
-                pInstance->SetData64(DATA_DRAGON_EGG, pGOTarget->GetObjectGuid().GetRawValue());
+                pInstance->SetData64(DATA_DRAGON_EGG, pGOTarget->GetObjectGuid());
             }
 
             return true;

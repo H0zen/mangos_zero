@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks when a hero is renamed.
 namespace characters
 {
     void CharRename(WorldSession& session, WorldPacket& packet);

@@ -97,7 +97,7 @@ struct boss_majordomo : public CreatureScript
         uint32 m_uiAegisTimer;
         uint32 m_uiSpeechTimer;
 
-        ObjectGuid m_ragnarosGuid;
+        ObjectGuid m_ragnarosGuid = 0;
         bool m_bHasEncounterFinished;
         uint8 m_uiAddsKilled;
         uint8 m_uiSpeech;
@@ -128,7 +128,7 @@ struct boss_majordomo : public CreatureScript
 
         void Aggro(Unit* pWho) override
         {
-            if (pWho->IsCreature() && pWho->GetEntry() == NPC_RAGNAROS)
+            if (IsCreature(pWho) && pWho->GetEntry() == NPC_RAGNAROS)
             {
                 return;
             }
@@ -220,7 +220,7 @@ struct boss_majordomo : public CreatureScript
 
         void JustDied(Unit* pKiller) override
         {
-            if (pKiller->IsCreature() && pKiller->GetEntry() == NPC_RAGNAROS)
+            if (IsCreature(pKiller) && pKiller->GetEntry() == NPC_RAGNAROS)
             {
                 DoScriptText(SAY_ARRIVAL4_MAJ, m_creature);
             }
@@ -540,8 +540,8 @@ struct spell_boss_majordomo : public SpellScript
             return false;
         }
 
-        ToCreature(pCreatureTarget)->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
-        ToCreature(pCreatureTarget)->NearTeleportTo(m_aMajordomoLocations[1].m_fX, m_aMajordomoLocations[1].m_fY, m_aMajordomoLocations[1].m_fZ, m_aMajordomoLocations[1].m_fO, true);
+        static_cast<Creature*>(pCreatureTarget)->SetNpcFlag(UNIT_NPC_FLAG_GOSSIP);
+        static_cast<Creature*>(pCreatureTarget)->NearTeleportTo(m_aMajordomoLocations[1].m_fX, m_aMajordomoLocations[1].m_fY, m_aMajordomoLocations[1].m_fZ, m_aMajordomoLocations[1].m_fO, true);
         // TODO - some visibility update?
         return true;
     }

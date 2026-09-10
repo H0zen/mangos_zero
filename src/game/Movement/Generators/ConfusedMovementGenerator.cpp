@@ -30,13 +30,12 @@
 
 namespace
 {
-    /// How far from the spot it was confused at a unit may stagger.
+
     constexpr float STAGGER_RADIUS = 10.0f;
 
     constexpr uint32 STAGGER_INTERVAL_MIN = 800;
     constexpr uint32 STAGGER_INTERVAL_MAX = 1500;
 
-    /// Retry delay after a lurch that could not be routed or placed.
     constexpr uint32 RETRY_DELAY = 50;
 }
 
@@ -44,11 +43,6 @@ void ConfusedMovementGenerator::Initialize(Unit& owner)
 {
     owner.addUnitState(UNIT_STAT_CONFUSED);
 
-    // The stagger is anchored to wherever the unit stood when it lost its wits — read
-    // through the frame, because for a boarded unit GetPosition() returns the world cache
-    // (an estimate of a pose the server does not know), while RandomPoint below will be
-    // handed this anchor as a DECK offset. Mixing the two would anchor the stagger to a
-    // point somewhere out at sea.
     m_anchor = Motion::FrameFor(owner).MoverPosition(owner);
 
     m_staggerTime.Reset(0);
@@ -82,7 +76,7 @@ void ConfusedMovementGenerator::Reset(Unit& owner)
 void ConfusedMovementGenerator::Interrupt(Unit& owner)
 {
     owner.InterruptMoving();
-    // The confused state itself outlives the generator being suspended.
+
     owner.clearUnitState(UNIT_STAT_CONFUSED_MOVE);
     m_haveLurch = false;
     ResetLeg();
@@ -92,8 +86,6 @@ void ConfusedMovementGenerator::Finalize(Unit& owner)
 {
     owner.clearUnitState(UNIT_STAT_CONFUSED | UNIT_STAT_CONFUSED_MOVE);
 
-    // A unit that moves itself is left where it stands with its client told to stop; a
-    // creature's spline is simply abandoned to whatever generator takes over.
     if (owner.MovesItself())
     {
         owner.StopMoving(true);
@@ -104,7 +96,7 @@ Motion::MoveIntent ConfusedMovementGenerator::Intent(Unit& owner,
                                                      Motion::MoveStatus const& status,
                                                      uint32 diff)
 {
-    // Ignore while any OTHER no-reaction state applies (stunned, rooted, ...).
+
     if (owner.hasUnitState(UNIT_STAT_CAN_NOT_REACT & ~UNIT_STAT_CONFUSED))
     {
         return Motion::MoveIntent::Hold();
@@ -118,8 +110,6 @@ Motion::MoveIntent ConfusedMovementGenerator::Intent(Unit& owner,
         m_staggerTime.Reset(RETRY_DELAY);
     }
 
-    // The timer runs even mid-leg, which is the point: when it fires early the new
-    // destination supersedes the one being walked to and the leg is cut off part-way.
     m_staggerTime.Update(diff);
     if (!m_staggerTime.Passed())
     {

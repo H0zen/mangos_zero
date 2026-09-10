@@ -23,33 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Group.h
- * @brief Player group/raid management and coordination.
- *
- * This file defines the Group class which manages collections of players in groups
- * (up to 5 members) or raids (up to 40 members). Groups provide coordinated features including:
- *
- * - Member management (joining, leaving, kicking)
- * - Loot distribution and roll systems
- * - Experience and reputation sharing
- * - Group-wide spell effects and auras
- * - Raid target markers
- * - Dungeon and raid lockout management
- * - Battleground and arena participation
- * - Group chat and communication
- * - Summoning mechanics
- * - Offline player tracking
- * - Group role assignment (tank, healer, damage)
- *
- * Groups can be of different types: normal group, raid, raid sub-group, or battleground group.
- * Various loot methods are supported: free-for-all, round-robin, master loot, group loot, and need-before-greed.
- *
- * @see Group for the main group implementation
- * @see GroupReference for member references
- * @see LootMgr for loot management
- */
-
 #pragma once
 
 #include <unordered_map>
@@ -84,9 +57,6 @@ class Unit;
 #define MAX_RAID_SUBGROUPS (MAX_RAID_SIZE / MAX_GROUP_SIZE)
 #define TARGET_ICON_COUNT 8
 
-/// @brief Loot distribution method enumeration.
-///
-/// Determines how loot is distributed among group members.
 enum LootMethod
 {
     FREE_FOR_ALL      = 0,
@@ -96,59 +66,43 @@ enum LootMethod
     NEED_BEFORE_GREED = 4
 };
 
-/// @brief Group removal method enumeration.
-///
-/// Indicates why a player was removed from the group.
 enum RemoveMethod
 {
     GROUP_LEAVE            = 0,
     GROUP_KICK             = 1
 };
 
-/// @brief Group join/invite method enumeration.
-///
-/// Indicates how a player joined the group.
 enum InviteMethod
 {
     GROUP_JOIN             = 0,
     GROUP_LFG              = 1
 };
 
-/// @brief Loot roll vote enumeration.
-///
-/// Represents a player's vote during loot distribution rolls.
 enum RollVote
 {
     ROLL_PASS              = 0,
     ROLL_NEED              = 1,
     ROLL_GREED             = 2,
 
-    // other not send by client
     MAX_ROLL_FROM_CLIENT   = 3,
 
-    ROLL_NOT_EMITED_YET    = 3,                             // send to client
-    ROLL_NOT_VALID         = 4                              // not send to client
+    ROLL_NOT_EMITED_YET    = 3,
+    ROLL_NOT_VALID         = 4
 };
 
-/// @brief Group member online status flags.
-///
-/// Bit flags indicating the online status and state of group members.
 enum GroupMemberOnlineStatus
 {
     MEMBER_STATUS_OFFLINE   = 0x0000,
-    MEMBER_STATUS_ONLINE    = 0x0001,                       // Lua_UnitIsConnected
-    MEMBER_STATUS_PVP       = 0x0002,                       // Lua_UnitIsPVP
-    MEMBER_STATUS_DEAD      = 0x0004,                       // Lua_UnitIsDead
-    MEMBER_STATUS_GHOST     = 0x0008,                       // Lua_UnitIsGhost
-    MEMBER_STATUS_PVP_FFA   = 0x0010,                       // Lua_UnitIsPVPFreeForAll
-    MEMBER_STATUS_UNK3      = 0x0020,                       // used in calls from Lua_GetPlayerMapPosition/Lua_GetBattlefieldFlagPosition
-    MEMBER_STATUS_AFK       = 0x0040,                       // Lua_UnitIsAFK
-    MEMBER_STATUS_DND       = 0x0080,                       // Lua_UnitIsDND
+    MEMBER_STATUS_ONLINE    = 0x0001,
+    MEMBER_STATUS_PVP       = 0x0002,
+    MEMBER_STATUS_DEAD      = 0x0004,
+    MEMBER_STATUS_GHOST     = 0x0008,
+    MEMBER_STATUS_PVP_FFA   = 0x0010,
+    MEMBER_STATUS_UNK3      = 0x0020,
+    MEMBER_STATUS_AFK       = 0x0040,
+    MEMBER_STATUS_DND       = 0x0080,
 };
 
-/// @brief Group type enumeration.
-///
-/// Defines the type and size category of a group.
 enum GroupType
 {
     GROUPTYPE_NORMAL = 0,
@@ -157,37 +111,37 @@ enum GroupType
 
 enum GroupUpdateFlags
 {
-    GROUP_UPDATE_FLAG_NONE              = 0x00000000,       // nothing
-    GROUP_UPDATE_FLAG_STATUS            = 0x00000001,       // uint8, enum GroupMemberOnlineStatus
-    GROUP_UPDATE_FLAG_CUR_HP            = 0x00000002,       // uint16
-    GROUP_UPDATE_FLAG_MAX_HP            = 0x00000004,       // uint16
-    GROUP_UPDATE_FLAG_POWER_TYPE        = 0x00000008,       // uint8, enum Powers
-    GROUP_UPDATE_FLAG_CUR_POWER         = 0x00000010,       // uint16
-    GROUP_UPDATE_FLAG_MAX_POWER         = 0x00000020,       // uint16
-    GROUP_UPDATE_FLAG_LEVEL             = 0x00000040,       // uint16
-    GROUP_UPDATE_FLAG_ZONE              = 0x00000080,       // uint16
-    GROUP_UPDATE_FLAG_POSITION          = 0x00000100,       // uint16, uint16
-    GROUP_UPDATE_FLAG_AURAS             = 0x00000200,       // uint32 mask, for each bit set uint16 spellid
-    GROUP_UPDATE_FLAG_AURAS_2           = 0x00000400,       // uint16 above mask continuation, giving max total of 48 auras possible
-    GROUP_UPDATE_FLAG_PET_GUID          = 0x00000800,       // uint64 pet guid
-    GROUP_UPDATE_FLAG_PET_NAME          = 0x00001000,       // pet name, nullptr terminated string
-    GROUP_UPDATE_FLAG_PET_MODEL_ID      = 0x00002000,       // uint16, model id
-    GROUP_UPDATE_FLAG_PET_CUR_HP        = 0x00004000,       // uint16 pet cur health
-    GROUP_UPDATE_FLAG_PET_MAX_HP        = 0x00008000,       // uint16 pet max health
-    GROUP_UPDATE_FLAG_PET_POWER_TYPE    = 0x00010000,       // uint8 pet power type
-    GROUP_UPDATE_FLAG_PET_CUR_POWER     = 0x00020000,       // uint16 pet cur power
-    GROUP_UPDATE_FLAG_PET_MAX_POWER     = 0x00040000,       // uint16 pet max power
-    GROUP_UPDATE_FLAG_PET_AURAS         = 0x00080000,       // uint32 mask, for each bit set uint16 spellid, pet auras...
-    GROUP_UPDATE_FLAG_PET_AURAS_2       = 0x00100000,       // uint16 above mask continuation, giving max total of 48 auras possible
-    GROUP_UPDATE_MODE_OFFLINE           = 0x10000000,       //
+    GROUP_UPDATE_FLAG_NONE              = 0x00000000,
+    GROUP_UPDATE_FLAG_STATUS            = 0x00000001,
+    GROUP_UPDATE_FLAG_CUR_HP            = 0x00000002,
+    GROUP_UPDATE_FLAG_MAX_HP            = 0x00000004,
+    GROUP_UPDATE_FLAG_POWER_TYPE        = 0x00000008,
+    GROUP_UPDATE_FLAG_CUR_POWER         = 0x00000010,
+    GROUP_UPDATE_FLAG_MAX_POWER         = 0x00000020,
+    GROUP_UPDATE_FLAG_LEVEL             = 0x00000040,
+    GROUP_UPDATE_FLAG_ZONE              = 0x00000080,
+    GROUP_UPDATE_FLAG_POSITION          = 0x00000100,
+    GROUP_UPDATE_FLAG_AURAS             = 0x00000200,
+    GROUP_UPDATE_FLAG_AURAS_2           = 0x00000400,
+    GROUP_UPDATE_FLAG_PET_GUID          = 0x00000800,
+    GROUP_UPDATE_FLAG_PET_NAME          = 0x00001000,
+    GROUP_UPDATE_FLAG_PET_MODEL_ID      = 0x00002000,
+    GROUP_UPDATE_FLAG_PET_CUR_HP        = 0x00004000,
+    GROUP_UPDATE_FLAG_PET_MAX_HP        = 0x00008000,
+    GROUP_UPDATE_FLAG_PET_POWER_TYPE    = 0x00010000,
+    GROUP_UPDATE_FLAG_PET_CUR_POWER     = 0x00020000,
+    GROUP_UPDATE_FLAG_PET_MAX_POWER     = 0x00040000,
+    GROUP_UPDATE_FLAG_PET_AURAS         = 0x00080000,
+    GROUP_UPDATE_FLAG_PET_AURAS_2       = 0x00100000,
+    GROUP_UPDATE_MODE_OFFLINE           = 0x10000000,
 
     GROUP_UPDATE_PLAYER                 = 0x000007FF,
-    GROUP_UPDATE_PET                    = 0x001FF800,       // all pet flags
-    GROUP_UPDATE_FULL                   = 0x001FFFFF,       // all known flags with data
+    GROUP_UPDATE_PET                    = 0x001FF800,
+    GROUP_UPDATE_FULL                   = 0x001FFFFF,
 };
 
 #define GROUP_UPDATE_FLAGS_COUNT          21
-//                                                     bit number: 0, 1, 2, 3, 4, 5, 6, 7, 8,    9,   10,11, 12,13,14,15,16,17,18,   19,   20
+
 static const uint8 GroupUpdateLength[GROUP_UPDATE_FLAGS_COUNT] = { 1, 2, 2, 1, 2, 2, 2, 2, 4, 4+32, 2+16, 8, 10, 2, 2, 2, 1, 2, 2, 4+32, 2+16};
 
 class Roll : public LootValidatorRef
@@ -208,11 +162,11 @@ class Roll : public LootValidatorRef
         }
         void targetObjectBuildLink() override;
 
-        ObjectGuid lootedTargetGUID;
+        ObjectGuid lootedTargetGUID = 0;
         uint32 itemid;
         int32  itemRandomPropId;
         typedef std::unordered_map<ObjectGuid, RollVote> PlayerVote;
-        PlayerVote playerVote;                              // vote position correspond with player position (in group)
+        PlayerVote playerVote;
         uint8 totalPlayersRolling;
         uint8 totalNeed;
         uint8 totalGreed;
@@ -220,27 +174,21 @@ class Roll : public LootValidatorRef
         uint8 itemSlot;
 };
 
-/** request member stats checken **/
-
-/** todo: uninvite people that not accepted invite **/
 class Group
 {
     public:
-        /**
-         * Struct MemberSlot
-         * Represent a member of a group with some of its caracteristics
-         */
+
         struct MemberSlot
         {
-            /* GUID of the player. */
-            ObjectGuid  guid;
-            /* Name of the player. */
+
+            ObjectGuid  guid = 0;
+
             std::string name;
-            /* Group of the player. */
+
             uint8       group;
-            /* Indicates whether the player is assistant. */
+
             bool        assistant;
-            /* The time when the player has joined the group. */
+
             time_t        joinTime;
         };
         typedef std::list<MemberSlot> MemberSlotList;
@@ -255,7 +203,6 @@ class Group
         Group();
         ~Group();
 
-        // group manipulation methods
         bool   Create(ObjectGuid guid, const char* name);
         bool   LoadGroupFromDB(Field* fields);
         bool   LoadMemberFromDB(uint32 guidLow, uint8 subgroup, bool assistant);
@@ -264,7 +211,7 @@ class Group
         void   RemoveAllInvites();
         bool   AddLeaderInvite(Player* player);
         bool   AddMember(ObjectGuid guid, const char* name, uint8 joinMethod = GROUP_JOIN);
-        uint32 RemoveMember(ObjectGuid guid, uint8 removeMethod); // method: 0=just remove, 1=kick
+        uint32 RemoveMember(ObjectGuid guid, uint8 removeMethod);
         void   ChangeLeader(ObjectGuid guid);
         void   SetLootMethod(LootMethod method)
         {
@@ -281,7 +228,6 @@ class Group
         }
         void   Disband(bool hideDestroy = false);
 
-        // properties accessories
         uint32 GetId() const
         {
             return m_Id;
@@ -323,7 +269,6 @@ class Group
             return m_lootThreshold;
         }
 
-        // member manipulation methods
         bool IsMember(ObjectGuid guid) const
         {
             return _getMemberCSlot(guid) != m_memberSlots.end();
@@ -341,7 +286,7 @@ class Group
                     return itr->guid;
                 }
             }
-            return ObjectGuid();
+            return 0;
         }
         bool IsAssistant(ObjectGuid guid) const
         {
@@ -363,11 +308,6 @@ class Group
 
         bool SameSubGroup(Player const* member1, Player const* member2) const;
 
-        /**
-         * Returns the joined time of a member if it exist.
-         * \param guid GUID of the player to look for.
-         * \return time_t representing the joined time for that player or nullptr if it doesn't exist.
-         */
         time_t GetMemberSlotJoinedTime(ObjectGuid guid)
         {
             member_citerator mslot = _getMemberCSlot(guid);
@@ -400,7 +340,6 @@ class Group
             return mslot->group;
         }
 
-        // some additional raid methods
         void ConvertToRaid();
 
         void SetBattlegroundGroup(BattleGround* bg)
@@ -464,16 +403,12 @@ class Group
         void SendUpdate();
         void SendUpdateToPlayer(Player* pPlayer);
         void UpdatePlayerOutOfRange(Player* pPlayer);
-        // ignore: GUID of player that will be ignored
-        void BroadcastPacket(WorldPacket* packet, bool ignorePlayersInBGRaid, int group = -1, ObjectGuid ignore = ObjectGuid());
+
+        void BroadcastPacket(WorldPacket* packet, bool ignorePlayersInBGRaid, int group = -1, ObjectGuid ignore = 0);
         void BroadcastReadyCheck(WorldPacket* packet);
         void OfflineReadyCheck();
 
         void RewardGroupAtKill(Unit* pVictim, Player* player_tap);
-
-        /*********************************************************/
-        /***                   LFG SYSTEM                      ***/
-        /*********************************************************/
 
         void SetLFGAreaId(uint32 areaId) { m_LFGAreaId = areaId; }
         uint32 GetLFGAreaId()            { return m_LFGAreaId;   }
@@ -495,10 +430,6 @@ class Group
             return false;
         }
 
-        /*********************************************************/
-        /***                   LOOT SYSTEM                     ***/
-        /*********************************************************/
-
         void SendLootStartRoll(uint32 CountDown, const Roll& r);
         void SendLootRoll(ObjectGuid const& targetGuid, uint8 rollNumber, uint8 rollType, const Roll& r);
         void SendLootRollWon(ObjectGuid const& targetGuid, uint8 rollNumber, RollVote rollType, const Roll& r);
@@ -510,29 +441,21 @@ class Group
         void StartLootRoll(Occupant* lootTarget, LootMethod method, Loot* loot, uint8 itemSlot);
         void EndRoll();
 
-        /**
-         * function that returns whether the roll is done for this group for the given creature and the given item.
-         * \param Creature pointer to the creature which has dropped some loots.
-         * \param Item pointer to the item to check.
-         * \return bool true if the roll is done, false otherwise.
-         */
         bool IsRollDoneForItem(Occupant * pObject, const LootItem * pItem);
 
         void LinkMember(GroupReference* pRef)
         {
             m_memberMgr.insertFirst(pRef);
         }
-        void DelinkMember(GroupReference* /*pRef*/) {}
+        void DelinkMember(GroupReference* ) {}
 
-        /// The dungeons the group is held to.
         GroupBinds& Binds() { return m_binds; }
         GroupBinds const& Binds() const { return m_binds; }
-
 
     protected:
         bool _addMember(ObjectGuid guid, const char* name, bool isAssistant = false);
         bool _addMember(ObjectGuid guid, const char* name, bool isAssistant, uint8 group);
-        bool _removeMember(ObjectGuid guid);                // returns true if leader has changed
+        bool _removeMember(ObjectGuid guid);
         void _setLeader(ObjectGuid guid);
 
         void _removeRolls(ObjectGuid guid);
@@ -546,7 +469,7 @@ class Group
 
         void _initRaidSubGroupsCounter()
         {
-            // Sub group counters initialization
+
             if (!m_subGroupsCounts)
             {
                 m_subGroupsCounts = new uint8[MAX_RAID_SUBGROUPS];
@@ -600,23 +523,23 @@ class Group
             }
         }
 
-        void CountTheRoll(Rolls::iterator& roll);           // iterator update to next, in CountRollVote if true
+        void CountTheRoll(Rolls::iterator& roll);
         bool CountRollVote(ObjectGuid const& playerGUID, Rolls::iterator& roll, RollVote vote);
 
-        uint32              m_Id;                           // 0 for not created or BG groups
+        uint32              m_Id;
         MemberSlotList      m_memberSlots;
         GroupRefManager     m_memberMgr;
         InvitesList         m_invitees;
-        ObjectGuid          m_leaderGuid;
+        ObjectGuid          m_leaderGuid = 0;
         std::string         m_leaderName;
-        ObjectGuid          m_mainTankGuid;
-        ObjectGuid          m_mainAssistantGuid;
+        ObjectGuid          m_mainTankGuid = 0;
+        ObjectGuid          m_mainAssistantGuid = 0;
         GroupType           m_groupType;
         BattleGround*       m_bgGroup;
-        ObjectGuid          m_targetIcons[TARGET_ICON_COUNT];
+        ObjectGuid          m_targetIcons[TARGET_ICON_COUNT] = {};
         LootMethod          m_lootMethod;
         ItemQualities       m_lootThreshold;
-        ObjectGuid          m_looterGuid;
+        ObjectGuid          m_looterGuid = 0;
         Rolls               RollId;
         GroupBinds          m_binds;
         uint8*              m_subGroupsCounts;

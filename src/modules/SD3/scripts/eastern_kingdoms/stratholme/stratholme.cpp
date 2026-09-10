@@ -204,20 +204,20 @@ struct mob_restless_soul : public CreatureScript
     {
         mob_restless_soulAI(Creature* pCreature) : ScriptedAI(pCreature) {}
 
-        ObjectGuid m_taggerGuid;
+        ObjectGuid m_taggerGuid = 0;
         uint32 m_uiDieTimer;
         bool m_bIsTagged;
 
         void Reset() override
         {
-            m_taggerGuid.Clear();
+            m_taggerGuid = 0;
             m_uiDieTimer = 5000;
             m_bIsTagged = false;
         }
 
         void SpellHit(Unit* pCaster, const SpellEntry* pSpell) override
         {
-            if (pCaster->IsPlayer())
+            if (IsPlayer(pCaster))
             {
                 if (!m_bIsTagged && SD3_SpellId(pSpell) == SPELL_EGAN_BLASTER && ((Player*)pCaster)->GetQuestStatus(QUEST_RESTLESS_SOUL) == QUEST_STATUS_INCOMPLETE)
                 {

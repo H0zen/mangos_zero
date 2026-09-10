@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Reaction.h"
 #include "Player.h"
 #include "Language.h"
@@ -74,11 +72,6 @@
 #include "Corpse.h"
 #include "SpoilsHolder.h"
 
-/**
- * @brief Converts the player's battleground corpse into lootable bones after insignia removal.
- *
- * @param looterPlr The player removing the insignia.
- */
 void Player::RemovedInsignia(Player* looterPlr)
 {
     if (!Battle().Id())
@@ -86,7 +79,6 @@ void Player::RemovedInsignia(Player* looterPlr)
         return;
     }
 
-    // If not released spirit, do it !
     if (m_deathTimer > 0)
     {
         m_deathTimer = 0;
@@ -100,29 +92,19 @@ void Player::RemovedInsignia(Player* looterPlr)
         return;
     }
 
-    // We have to convert player corpse to bones, not to be able to resurrect there
-    // SpawnCorpseBones isn't handy, 'cos it saves player while he in BG
     Corpse* bones = sCorpseManager.ConvertCorpseForPlayer(GetObjectGuid(), true);
     if (!bones)
     {
         return;
     }
 
-    // Now we must make bones lootable, and send player loot
     bones->SetCorpseDynFlag(CORPSE_DYNFLAG_LOOTABLE);
 
-    // We store the level of our player in the gold field
-    // We retrieve this information at Player::SendLoot()
     bones->loot.gold = getLevel();
     bones->lootRecipient = looterPlr;
     looterPlr->SendLoot(bones->GetObjectGuid(), LOOT_INSIGNIA);
 }
 
-/**
- * @brief Sends a loot release response for a loot object.
- *
- * @param guid The GUID of the released loot source.
- */
 void Player::SendLootRelease(ObjectGuid guid)
 {
     WorldPacket data(SMSG_LOOT_RELEASE_RESPONSE, (8 + 1));
@@ -131,12 +113,6 @@ void Player::SendLootRelease(ObjectGuid guid)
     SendDirectMessage(&data);
 }
 
-/**
- * @brief Opens and sends loot contents for a supported loot source.
- *
- * @param guid The GUID of the loot source.
- * @param loot_type The requested loot interaction type.
- */
 void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 {
     if (ObjectGuid lootGuid = GetLootGuid())
@@ -148,10 +124,10 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 
     DEBUG_LOG("Player::SendLoot");
 
-    Object* holder = spoils::Holder(*this, guid);
+    Spoilable* holder = spoils::Holder(*this, guid);
     if (!holder)
     {
-        sLog.outError("%s is unsupported for looting.", guid.GetString().c_str());
+        sLog.outError("%s is unsupported for looting.", GuidString(guid).c_str());
         return;
     }
 
@@ -165,11 +141,8 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 
     SetLootGuid(guid);
 
-    // need know for proper finish item loots (internal pre-switch loot type set in different from 3.x code version)
-    // in fact this meaning that it send same loot types for interesting cases like 3.x version code (skip pre-3.x client loot type limitaitons)
     loot->loot_type = loot_type;
 
-    // LOOT_SKINNING, LOOT_PROSPECTING, LOOT_INSIGNIA and LOOT_FISHINGHOLE unsupported by client
     switch (loot_type)
     {
         case LOOT_SKINNING:     loot_type = LOOT_PICKPOCKETING; break;
@@ -179,38 +152,29 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
         default: break;
     }
 
-    WorldPacket data(SMSG_LOOT_RESPONSE, (9 + 50));         // we guess size
-    data << ObjectGuid(guid);
+    WorldPacket data(SMSG_LOOT_RESPONSE, (9 + 50));
+    data << static_cast<ObjectGuid>(guid);
     data << uint8(loot_type);
     data << LootView(*loot, this, permission);
     SendDirectMessage(&data);
 
-    // add 'this' player as one of the players that are looting 'loot'
     if (permission != NONE_PERMISSION)
     {
         loot->AddLooter(GetObjectGuid());
     }
 
-    if (loot_type == LOOT_CORPSE && !guid.IsItem())
+    if (loot_type == LOOT_CORPSE && !(GuidHigh(guid) == HIGHGUID_ITEM))
     {
         SetUnitFlag(UNIT_FLAG_LOOTING);
     }
 }
 
-/**
- * @brief Notifies the client that money was removed from the current loot.
- */
 void Player::SendNotifyLootMoneyRemoved()
 {
     WorldPacket data(SMSG_LOOT_CLEAR_MONEY, 0);
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Notifies the client that a loot slot was removed.
- *
- * @param lootSlot The loot slot index that was removed.
- */
 void Player::SendNotifyLootItemRemoved(uint8 lootSlot)
 {
     WorldPacket data(SMSG_LOOT_REMOVED, 1);

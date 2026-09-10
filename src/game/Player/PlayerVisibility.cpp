@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <set>
 #include "Reaction.h"
 #include "Metrics/ServerMetrics.h"
@@ -74,44 +72,34 @@
 #include <cmath>
 #include "Corpse.h"
 
-/**
- * @brief Checks whether this player should be visible to another player in grid range.
- *
- * @param pl The observing player.
- * @return True if this player should be visible; otherwise, false.
- */
 bool Player::IsVisibleInGridForPlayer(Player* pl) const
 {
-    // gamemaster in GM mode see all, including ghosts
+
     if (pl->isGameMaster() && GetSession()->GetSecurity() <= pl->GetSession()->GetSecurity())
     {
         return true;
     }
 
-    // player see dead player/ghost from own group/raid
     if (IsInSameRaidWith(pl))
     {
         return true;
     }
 
-    // Live player see live player or dead player with not realized corpse
     if (pl->IsAlive() || pl->m_deathTimer > 0)
     {
         return IsAlive() || m_deathTimer > 0;
     }
 
-    // Ghost see other friendly ghosts, that's for sure
     if (!(IsAlive() || m_deathTimer > 0) && IsFriendly(*this, *pl))
     {
         return true;
     }
 
-    // Dead player see live players near own corpse
     if (IsAlive())
     {
         if (Corpse* corpse = pl->GetCorpse())
         {
-            // 20 - aggro distance for same level, 25 - max additional distance if player level less that creature level
+
             if (InReach(*corpse, *this, (20 + 25) * sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_AGGRO)))
             {
                 return true;
@@ -119,16 +107,9 @@ bool Player::IsVisibleInGridForPlayer(Player* pl) const
         }
     }
 
-    // and not see any other
     return false;
 }
 
-/**
- * @brief Checks whether this player should appear in global player visibility contexts.
- *
- * @param u The player attempting to see this player.
- * @return True if this player is globally visible; otherwise, false.
- */
 bool Player::IsVisibleGloballyFor(Player* u) const
 {
     if (!u)
@@ -136,43 +117,32 @@ bool Player::IsVisibleGloballyFor(Player* u) const
         return false;
     }
 
-    // Always can see self
     if (u == this)
     {
         return true;
     }
 
-    // Visible units, always are visible for all players
     if (GetVisibility() == VISIBILITY_ON)
     {
         return true;
     }
 
-    // GMs are visible for higher gms (or players are visible for gms)
     if (u->GetSession()->GetSecurity() > SEC_PLAYER)
     {
         return GetSession()->GetSecurity() <= u->GetSession()->GetSecurity();
     }
 
-    // non faction visibility non-breakable for non-GMs
     if (GetVisibility() == VISIBILITY_OFF)
     {
         return false;
     }
 
-    // non-gm stealth/invisibility not hide from global player lists
     return true;
 }
 
-/**
- * @brief Performs cleanup before an object is removed from a player's visibility.
- *
- * @param o The world object about to be hidden.
- * @param p The player losing visibility of the object.
- */
 inline void BeforeVisibilityDestroy(Occupant* o, Player* p)
 {
-    if (Creature* t = ToCreature(o))
+    if (Creature* t = static_cast<Creature*>(o))
     {
         if (p->GetPetGuid() == t->GetObjectGuid() && t->IsPet())
         {
@@ -181,20 +151,10 @@ inline void BeforeVisibilityDestroy(Occupant* o, Player* p)
     }
 }
 
-/**
- * @brief Updates visibility of a single world object for the player.
- *
- * @param viewPoint The viewpoint used for visibility checks.
- * @param target The target object whose visibility is being updated.
- */
 void Player::Remember(Occupant* target)
 {
-    // A ship, a zeppelin or a lift goes in the OTHER ledger. The client draws it from its
-    // own animation data and must never be told it went out of range, so it is kept away
-    // from the set the sweep eliminates from -- but it is still written down, or the next
-    // sweep sends it a fresh create and the phase in that block jerks the platform back
-    // under whoever is standing on it.
-    GameObject* platform = ToGameObject(target);
+
+    GameObject* platform = static_cast<GameObject*>(target);
     if (platform && platform->IsMovingPlatform())
     {
         m_clientPlatforms.insert(platform->GetObjectGuid());
@@ -212,7 +172,7 @@ void Player::UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target)
         {
             ObjectGuid t_guid = target->GetObjectGuid();
 
-            if (target->IsCreature())
+            if (IsCreature(target))
             {
                 BeforeVisibilityDestroy(target, this);
             }
@@ -220,7 +180,7 @@ void Player::UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target)
             target->DestroyForPlayer(this);
             m_clientGUIDs.erase(t_guid);
 
-            DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "UpdateVisibilityOf(2p): %s out of range for player %u. Distance = %f", t_guid.GetString().c_str(), GetGUIDLow(), Where().DistanceTo(target->Where()));
+            DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "UpdateVisibilityOf(2p): %s out of range for player %u. Distance = %f", GuidString(t_guid).c_str(), GetGUIDLow(), Where().DistanceTo(target->Where()));
         }
     }
     else
@@ -232,9 +192,7 @@ void Player::UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target)
 
             DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "UpdateVisibilityOf(2p): %s is visible now for player %u. Distance = %f", target->GetGuidStr().c_str(), GetGUIDLow(), Where().DistanceTo(target->Where()));
 
-            // target aura duration for caster show only if target exist at caster client
-            // send data at target visibility change (adding to client)
-            if (target != this && target->isType(TYPEMASK_UNIT))
+            if (target != this && IsType(target, TYPEMASK_UNIT))
             {
                 SendAuraDurationsForTarget((Unit*)target);
             }
@@ -242,7 +200,6 @@ void Player::UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target)
     }
 }
 
-//4 params version (4p)
 void Player::UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target, UpdateData& data, std::set<Occupant*>& visibleNow)
 {
     if (HaveAtClient(target))
@@ -257,7 +214,7 @@ void Player::UpdateVisibilityOf(Occupant const* viewPoint, Occupant* target, Upd
             m_clientGUIDs.erase(t_guid);
             metrics::Server().sightDestroys.Add();
 
-            DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "UpdateVisibilityOf(4p): %s is out of range for %s. Distance = %f", t_guid.GetString().c_str(), GetGuidStr().c_str(), Where().DistanceTo(target->Where()));
+            DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "UpdateVisibilityOf(4p): %s is out of range for %s. Distance = %f", GuidString(t_guid).c_str(), GetGuidStr().c_str(), Where().DistanceTo(target->Where()));
         }
     }
     else

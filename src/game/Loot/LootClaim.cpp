@@ -35,13 +35,11 @@ bool LootClaim::StakedBy(Unit* taker)
 {
     if (!taker)
     {
-        m_takerGuid.Clear();
+        m_takerGuid = 0;
         m_groupId = 0;
         return false;
     }
 
-    // A creature nobody drives stakes nothing, which is how one beast killing
-    // another leaves the body to whichever player comes upon it.
     Player* player = taker->GetCharmerOrOwnerPlayerOrPlayerItself();
     if (!player)
     {
@@ -73,7 +71,6 @@ Player* LootClaim::Entitled() const
     Group* group = HoldingGroup();
     Player* player = Taker();
 
-    // No group holds it, so it is the taker's alone, present or not.
     if (!group)
     {
         return player;

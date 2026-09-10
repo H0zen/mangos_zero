@@ -19,25 +19,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @file DisableMgr.cpp
- * @brief Content disabling system for server management
- *
- * This file implements the DisableMgr namespace which allows server
- * administrators to disable specific game content through database
- * configuration. Supports disabling:
- * - Spells (cast or learned)
- * - Quests (available or completable)
- * - Maps/Instances (entry restriction)
- * - Battlegrounds
- * - Outdoor PvP areas
- * - Vendors (specific items)
- * - GameObjects (use interaction)
- *
- * Configuration is loaded from `disables` table with flags controlling
- * the exact nature of the disable (e.g., disable casting vs learning).
- */
-
 #include "Utilities/Errors.h"
 #include <map>
 #include <set>
@@ -56,65 +37,24 @@ namespace DisableMgr
     namespace
     {
 
-        /**
-         * @struct DisableData
-         * @brief Stores disable configuration for a single entry
-         *
-         * Contains flags controlling the disable behavior and optional
-         * parameter sets for conditional disables (e.g., spell disabled
-         * only in specific maps or areas).
-         */
         struct DisableData
         {
-            uint8 flags;                                            ///< Disable behavior flags
-            std::set<uint32> params[2];                             ///< Optional data (map IDs, area IDs, etc.)
+            uint8 flags;
+            std::set<uint32> params[2];
         };
 
-        /**
-         * @typedef DisableTypeMap
-         * @brief Map of entry IDs to disable data for a specific type
-         */
         typedef std::map<uint32, DisableData> DisableTypeMap;
 
-        /**
-         * @typedef DisableMap
-         * @brief Global disable storage by source type
-         *
-         * Top-level map organizing disables by category (spells, quests, maps, etc.)
-         */
         typedef std::map<DisableType, DisableTypeMap> DisableMap;
 
-        /**
-         * @var m_DisableMap
-         * @brief Global disable data storage
-         *
-         * Maps disable types to their respective entry maps. Loaded from
-         * `disables` database table during server startup.
-         */
         DisableMap m_DisableMap;
     }
 
-    /**
-     * @def CONTINUE
-     * @brief Helper macro for early loop continuation
-     *
-     * Cleans up allocated DisableData if present, then continues to next iteration.
-     */
 #define CONTINUE if (newData) delete data; continue
 
-    /**
-     * @brief Load all disable entries from database
-     *
-     * Reads the `disables` table and populates m_DisableMap with configured
-     * disable entries. Validates that referenced entries exist in DBC/data.
-     *
-     * Supports reload - clears existing data before loading.
-     *
-     * @note Called during server startup and on .reload disables command
-     */
     void LoadDisables()
     {
-        // reload case
+
         for (DisableMap::iterator itr = m_DisableMap.begin(); itr != m_DisableMap.end(); ++itr)
         {
             itr->second.clear();
@@ -188,7 +128,7 @@ namespace DisableMgr
                     }
 
                     break;
-                // checked later
+
                 case DISABLE_TYPE_QUEST:
                     break;
                 case DISABLE_TYPE_MAP:
@@ -211,7 +151,7 @@ namespace DisableMgr
                             }
                             break;
                         case MAP_BATTLEGROUND:
-                            //case MAP_ARENA: [-ZERO]
+
                             ERROR_DB_STRICT_LOG("Battleground map %u specified to be disabled in map case, skipped.", entry);
                             CONTINUE;
                     }
@@ -244,15 +184,7 @@ namespace DisableMgr
                         ERROR_DB_STRICT_LOG("Disable flags specified for outdoor PvP %u, useless data.", entry);
                     }
                     break;
-                /**   case DISABLE_TYPE_ACHIEVEMENT_CRITERIA:   [-ZERO]
-                 *    if (!sAchievementMgr->GetAchievementCriteria(entry))
-                 *    {
-                 *        ERROR_DB_STRICT_LOG("sql.sql", "Achievement Criteria entry %u from `disables` doesn't exist in dbc, skipped.", entry);
-                 *        continue;
-                 *    }
-                 *    if (flags)
-                 *        ERROR_DB_STRICT_LOG("sql.sql", "Disable flags specified for Achievement Criteria %u, useless data.", entry);
-                 *    break; */
+
                 case DISABLE_TYPE_VMAP:
                 {
                     MapEntry const* mapEntry = sMapStore.LookupEntry(entry);
@@ -294,12 +226,7 @@ namespace DisableMgr
                                 sLog.outDebug("LoS disabled for battleground map %u.", entry);
                             }
                             break;
-                        //case MAP_ARENA: [-ZERO]
-                        //    if (flags & COLLISION_DISABLE_HEIGHT)
-                        //        TC_LOG_INFO("misc", "Height disabled for arena map %u.", entry);
-                        //    if (flags & COLLISION_DISABLE_LOS)
-                        //        TC_LOG_INFO("misc", "LoS disabled for arena map %u.", entry);
-                        //    break;
+
                         default:
                             break;
                     }
@@ -325,9 +252,7 @@ namespace DisableMgr
                         case MAP_BATTLEGROUND:
                             sLog.outDebug("Pathfinding disabled for battleground map %u.", entry);
                             break;
-                        //case MAP_ARENA: [-ZERO]
-                        //    TC_LOG_INFO("misc", "Pathfinding disabled for arena map %u.", entry);
-                        //    break;
+
                         default:
                             break;
                     }
@@ -363,9 +288,6 @@ namespace DisableMgr
         sLog.outString(">> Loaded %u disables", total_count);
     }
 
-    /**
-     * @brief Validates quest disable entries against loaded quest templates.
-     */
     void CheckQuestDisables()
     {
         uint32 count = m_DisableMap[DISABLE_TYPE_QUEST].size();
@@ -375,7 +297,6 @@ namespace DisableMgr
             return;
         }
 
-        // check only quests, rest already done at startup
         for (DisableTypeMap::iterator itr = m_DisableMap[DISABLE_TYPE_QUEST].begin(); itr != m_DisableMap[DISABLE_TYPE_QUEST].end();)
         {
             const uint32 entry = itr->first;
@@ -395,16 +316,6 @@ namespace DisableMgr
         sLog.outString(">> Checked %u quest disables", count);
     }
 
-    /**
-     * @brief Checks whether a feature entry is disabled for the given runtime context.
-     *
-     * @param type The disable category.
-     * @param entry The entry identifier to test.
-     * @param unit The contextual unit, when applicable.
-     * @param flags Additional disable flags to test.
-     * @param adData Additional lookup data such as spawn guid.
-     * @return true if the entry is disabled in the provided context; otherwise false.
-     */
     bool IsDisabledFor(DisableType type, uint32 entry, Unit const* unit, uint8 flags, uint32 adData)
     {
         MANGOS_ASSERT(type < MAX_DISABLE_TYPES);
@@ -414,7 +325,7 @@ namespace DisableMgr
         }
 
         DisableTypeMap::iterator itr = m_DisableMap[type].find(entry);
-        if (itr == m_DisableMap[type].end())    // not disabled
+        if (itr == m_DisableMap[type].end())
         {
             return false;
         }
@@ -426,23 +337,21 @@ namespace DisableMgr
                 uint8 spellFlags = itr->second.flags;
                 if (unit)
                 {
-                    if ((spellFlags & SPELL_DISABLE_PLAYER && unit->IsPlayer()) ||
-                        (unit->IsCreature() && ((ToCreature(unit)->IsPet() && spellFlags & SPELL_DISABLE_PET) || spellFlags & SPELL_DISABLE_CREATURE)))
+                    if ((spellFlags & SPELL_DISABLE_PLAYER &&IsPlayer(unit)) || (IsCreature(unit) && ((static_cast<Creature const*>(unit)->IsPet() && spellFlags & SPELL_DISABLE_PET) || spellFlags & SPELL_DISABLE_CREATURE)))
                     {
                         if (spellFlags & SPELL_DISABLE_MAP)
                         {
                             std::set<uint32> const& mapIds = itr->second.params[0];
                             if (mapIds.find(unit->GetMapId()) != mapIds.end())
                             {
-                                return true;                                        // Spell is disabled on current map
+                                return true;
                             }
 
                             if (!(spellFlags & SPELL_DISABLE_AREA))
                             {
-                                return false;                                       // Spell is disabled on another map, but not this one, return false
+                                return false;
                             }
 
-                            // Spell is disabled in an area, but not explicitly our current mapId. Continue processing.
                         }
 
                         if (spellFlags & SPELL_DISABLE_AREA)
@@ -450,19 +359,19 @@ namespace DisableMgr
                             std::set<uint32> const& areaIds = itr->second.params[1];
                             if (areaIds.find(unit->GetTerrain()->GetAreaId(unit->Where().X(), unit->Where().Y(), unit->Where().Z())) != areaIds.end())
                             {
-                                return true;                                        // Spell is disabled in this area
+                                return true;
                             }
-                            return false;                                           // Spell is disabled in another area, but not this one, return false
+                            return false;
                         }
                         else
                         {
-                            return true;                                            // Spell disabled for all maps
+                            return true;
                         }
                     }
 
                     return false;
                 }
-                else if (spellFlags & SPELL_DISABLE_DEPRECATED_SPELL)    // call not from spellcast
+                else if (spellFlags & SPELL_DISABLE_DEPRECATED_SPELL)
                 {
                     return true;
                 }
@@ -474,31 +383,9 @@ namespace DisableMgr
                 break;
             }
             case DISABLE_TYPE_MAP:
-                if (/*Player const* player = */ToPlayer(unit))
+                if (static_cast<Player const*>(unit))
                 {
-                    /** [-ZERO]
-                     * MapEntry const* mapEntry = sMapStore.LookupEntry(entry);
-                     * if (mapEntry->IsDungeon())
-                     * {
-                     *     uint8 disabledModes = itr->second.flags;
-                     *     Difficulty targetDifficulty = player->GetDifficulty(mapEntry->IsRaid());
-                     *     GetDownscaledMapDifficultyData(entry, targetDifficulty);
-                     *     switch (targetDifficulty)
-                     *     {
-                     *         case DUNGEON_DIFFICULTY_NORMAL:
-                     *             return (disabledModes & DUNGEON_STATUSFLAG_NORMAL) != 0;
-                     *         case DUNGEON_DIFFICULTY_HEROIC:
-                     *             return (disabledModes & DUNGEON_STATUSFLAG_HEROIC) != 0;
-                     *         case RAID_DIFFICULTY_10MAN_HEROIC:
-                     *             return (disabledModes & RAID_STATUSFLAG_10MAN_HEROIC) != 0;
-                     *         case RAID_DIFFICULTY_25MAN_HEROIC:
-                     *             return (disabledModes & RAID_STATUSFLAG_25MAN_HEROIC) != 0;
-                     *     }
-                     * }
-                     * }
-                     * else if (mapEntry->map_type == MAP_COMMON)
-                     * {
-                     */
+
                     return true;
                 }
                 return false;
@@ -507,7 +394,7 @@ namespace DisableMgr
                 {
                     return true;
                 }
-                if (Player const* player = ToPlayer(unit))
+                if (Player const* player = static_cast<Player const*>(unit))
                 {
                     return !player->isGameMaster();
                 }
@@ -530,27 +417,14 @@ namespace DisableMgr
         return false;
     }
 
-    /**
-     * @brief Checks whether VMAP processing is disabled for a specific entry and flag set.
-     *
-     * @param entry The map or model entry.
-     * @param flags The VMAP disable flags.
-     * @return true if VMAP is disabled; otherwise false.
-     */
     bool IsVMAPDisabledFor(uint32 entry, uint8 flags)
     {
         return IsDisabledFor(DISABLE_TYPE_VMAP, entry, nullptr, flags);
     }
 
-    /**
-     * @brief Checks whether mmap pathfinding is enabled for a map.
-     *
-     * @param mapId The map identifier.
-     * @return true if pathfinding is enabled; otherwise false.
-     */
     bool IsPathfindingEnabled(uint32 mapId)
     {
         return sWorld.getConfig(CONFIG_BOOL_MMAP_ENABLED) &&
             !IsDisabledFor(DISABLE_TYPE_MMAP, mapId);
     }
-} // Namespace
+}

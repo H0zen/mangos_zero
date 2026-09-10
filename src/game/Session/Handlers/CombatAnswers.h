@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about striking someone.
 namespace combat
 {
     void AttackSwing(Player& who, WorldPacket& packet);

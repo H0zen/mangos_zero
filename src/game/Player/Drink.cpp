@@ -27,7 +27,6 @@
 
 #include "Player.h"
 
-/// A step of sobering, and the beat it comes on.
 namespace
 {
     uint16 const SOBERS_BY = 256;
@@ -59,7 +58,6 @@ void Drink::Amount(uint16 amount)
     m_amount = amount;
     m_owner.SetDrunkAndGender(m_amount, m_owner.getGender());
 
-    // past drunk he makes out what only a drunk man can see
     if (NameOf(m_amount) >= DRUNKEN_DRUNK)
     {
         m_owner.SeesInvisibility(6, true);

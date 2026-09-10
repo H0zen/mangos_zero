@@ -23,34 +23,14 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file CastAndAuraCommands.cpp
- * @brief Implementation of spell casting and aura management chat commands.
- *
- * This file contains chat command handlers for spell and aura operations including:
- * - Spell casting on players and creatures
- * - Aura application and removal
- * - Spell effect testing and debugging
- */
-
 #include <string>
 #include "Chat.h"
 #include "Language.h"
 #include "SpellAuras.h"
 #include "SpellMgr.h"
 
-/**********************************************************************
- CommandTable : castCommandTable
- ***********************************************************************/
-
 bool AddAuraToPlayer(const SpellEntry* spellInfo, Unit* target, Occupant* caster);
 
-/**
- * @brief Handler for HandleCastCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleCastCommand(char* args)
 {
     if (!*args)
@@ -67,7 +47,6 @@ bool ChatHandler::HandleCastCommand(char* args)
         return false;
     }
 
-    // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r or Htalent form
     uint32 spell = ExtractSpellIdFromLink(&args);
     if (!spell)
     {
@@ -97,7 +76,7 @@ bool ChatHandler::HandleCastCommand(char* args)
     }
 
     bool triggered = ExtractLiteralArg(&args, "triggered") != nullptr;
-    if (!triggered && *args)                                // can be fail also at syntax error
+    if (!triggered && *args)
     {
         return false;
     }
@@ -107,12 +86,6 @@ bool ChatHandler::HandleCastCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleCastBackCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleCastBackCommand(char* args)
 {
     Creature* caster = getSelectedCreature();
@@ -124,8 +97,6 @@ bool ChatHandler::HandleCastBackCommand(char* args)
         return false;
     }
 
-    // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r
-    // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r or Htalent form
     uint32 spell = ExtractSpellIdFromLink(&args);
     if (!spell || !sSpellStore.LookupEntry(spell))
     {
@@ -133,7 +104,7 @@ bool ChatHandler::HandleCastBackCommand(char* args)
     }
 
     bool triggered = ExtractLiteralArg(&args, "triggered") != nullptr;
-    if (!triggered && *args)                                // can be fail also at syntax error
+    if (!triggered && *args)
     {
         return false;
     }
@@ -145,12 +116,6 @@ bool ChatHandler::HandleCastBackCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleCastDistCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleCastDistCommand(char* args)
 {
     if (!*args)
@@ -158,7 +123,6 @@ bool ChatHandler::HandleCastDistCommand(char* args)
         return false;
     }
 
-    // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r or Htalent form
     uint32 spell = ExtractSpellIdFromLink(&args);
     if (!spell)
     {
@@ -185,7 +149,7 @@ bool ChatHandler::HandleCastDistCommand(char* args)
     }
 
     bool triggered = ExtractLiteralArg(&args, "triggered") != nullptr;
-    if (!triggered && *args)                                // can be fail also at syntax error
+    if (!triggered && *args)
     {
         return false;
     }
@@ -197,12 +161,6 @@ bool ChatHandler::HandleCastDistCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleCastTargetCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleCastTargetCommand(char* args)
 {
     Creature* caster = getSelectedCreature();
@@ -221,7 +179,6 @@ bool ChatHandler::HandleCastTargetCommand(char* args)
         return false;
     }
 
-    // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r or Htalent form
     uint32 spell = ExtractSpellIdFromLink(&args);
     if (!spell || !sSpellStore.LookupEntry(spell))
     {
@@ -229,7 +186,7 @@ bool ChatHandler::HandleCastTargetCommand(char* args)
     }
 
     bool triggered = ExtractLiteralArg(&args, "triggered") != nullptr;
-    if (!triggered && *args)                                // can be fail also at syntax error
+    if (!triggered && *args)
     {
         return false;
     }
@@ -241,12 +198,6 @@ bool ChatHandler::HandleCastTargetCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleCastSelfCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleCastSelfCommand(char* args)
 {
     if (!*args)
@@ -263,7 +214,6 @@ bool ChatHandler::HandleCastSelfCommand(char* args)
         return false;
     }
 
-    // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r or Htalent form
     uint32 spell = ExtractSpellIdFromLink(&args);
     if (!spell)
     {
@@ -284,7 +234,7 @@ bool ChatHandler::HandleCastSelfCommand(char* args)
     }
 
     bool triggered = ExtractLiteralArg(&args, "triggered") != nullptr;
-    if (!triggered && *args)                                // can be fail also at syntax error
+    if (!triggered && *args)
     {
         return false;
     }
@@ -294,12 +244,6 @@ bool ChatHandler::HandleCastSelfCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleAuraCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleAuraCommand(char* args)
 {
     Unit* target = getSelectedUnit();
@@ -310,7 +254,6 @@ bool ChatHandler::HandleAuraCommand(char* args)
         return false;
     }
 
-    // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r or Htalent form
     uint32 spellID = ExtractSpellIdFromLink(&args);
 
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellID);
@@ -330,12 +273,6 @@ bool ChatHandler::HandleAuraCommand(char* args)
     return AddAuraToPlayer(spellInfo, target, m_session->GetPlayer());
 }
 
-/**
- * @brief Handler for HandleUnAuraCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleUnAuraCommand(char* args)
 {
     Unit* target = getSelectedUnit();
@@ -353,7 +290,6 @@ bool ChatHandler::HandleUnAuraCommand(char* args)
         return true;
     }
 
-    // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r or Htalent form
     uint32 spellID = ExtractSpellIdFromLink(&args);
     if (!spellID)
     {
@@ -365,15 +301,9 @@ bool ChatHandler::HandleUnAuraCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleAuraGroupCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleAuraGroupCommand(char* args)
 {
-    // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r or Htalent form
+
     uint32 spellID = ExtractSpellIdFromLink(&args);
 
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellID);
@@ -396,7 +326,7 @@ bool ChatHandler::HandleAuraGroupCommand(char* args)
 
     if (rawTarget)
     {
-        if (rawTarget->IsCreature())
+        if (IsCreature(rawTarget))
         {
             SendSysMessage(LANG_NO_CHAR_SELECTED);
             SetSentErrorMessage(true);
@@ -430,12 +360,11 @@ bool ChatHandler::HandleAuraGroupCommand(char* args)
     }
     else
     {
-        // Apply to all members of the group
+
         for (GroupReference* itr = grp->GetFirstMember(); itr != nullptr; itr = itr->next())
         {
             Player* pl = itr->getSource();
 
-            //Skip if player is not found
             if (!pl || !pl->GetSession())
             {
                 continue;
@@ -443,7 +372,6 @@ bool ChatHandler::HandleAuraGroupCommand(char* args)
 
             std::string nameLink = GetNameLink(pl);
 
-            //skip if player is dead
             if (pl->IsDead())
             {
                 PSendSysMessage(LANG_COMMAND_AURAGROUP_CANNOT_APPLY_AURA_PLAYER_IS_DEAD, nameLink.c_str());
@@ -459,15 +387,9 @@ bool ChatHandler::HandleAuraGroupCommand(char* args)
     }
 }
 
-/**
- * @brief Handler for HandleUnAuraGroupCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleUnAuraGroupCommand(char* args)
 {
-    // Must have args : spellId or "all"
+
     if (!*args)
     {
         return false;
@@ -492,13 +414,12 @@ bool ChatHandler::HandleUnAuraGroupCommand(char* args)
         }
     }
 
-    // Now remove the aura(s)
     Unit* rawTarget = getSelectedUnit();
     Player* playerTarget;
 
     if (rawTarget)
     {
-        if (rawTarget->IsCreature())
+        if (IsCreature(rawTarget))
         {
             SendSysMessage(LANG_NO_CHAR_SELECTED);
             SetSentErrorMessage(true);
@@ -518,7 +439,6 @@ bool ChatHandler::HandleUnAuraGroupCommand(char* args)
     {
         std::string nameLink = GetNameLink(playerTarget);
 
-        //security : avoid to remove ghost form if player is dead
         if (playerTarget->IsDead())
         {
             PSendSysMessage(LANG_COMMAND_AURAGROUP_CANNOT_UNAURA_DEAD_PLAYER, nameLink.c_str());
@@ -542,7 +462,7 @@ bool ChatHandler::HandleUnAuraGroupCommand(char* args)
     }
     else
     {
-        // Apply to all members of the group
+
         for (GroupReference* itr = grp->GetFirstMember(); itr != nullptr; itr = itr->next())
         {
             Player* pl = itr->getSource();

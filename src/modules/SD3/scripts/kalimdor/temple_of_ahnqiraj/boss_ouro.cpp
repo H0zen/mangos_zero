@@ -97,7 +97,7 @@ struct boss_ouro : public CreatureScript
         bool m_bEnraged;
         bool m_bSubmerged;
 
-        ObjectGuid m_ouroTriggerGuid;
+        ObjectGuid m_ouroTriggerGuid = 0;
 
         void Reset() override
         {
@@ -322,7 +322,7 @@ struct npc_ouro_spawner : public CreatureScript
         void MoveInLineOfSight(Unit* pWho) override
         {
             // Spawn Ouro on LoS check
-            if (!m_bHasSummoned && pWho->IsPlayer() && !((Player*)pWho)->isGameMaster() && InReach(*m_creature, *pWho, 50.0f))
+            if (!m_bHasSummoned &&IsPlayer(pWho) && !((Player*)pWho)->isGameMaster() && InReach(*m_creature, *pWho, 50.0f))
             {
 
                 if (DoCastSpellIfCan(m_creature, SPELL_SUMMON_OURO, CAST_TRIGGERED) == CAST_OK)

@@ -33,8 +33,7 @@ namespace combat
 {
     namespace
     {
-        /// The core keeps chances in hundredths of a percent; the accessors hand
-        /// back percentages.
+
         int32 ToBasisPoints(float percent)
         {
             return static_cast<int32>(percent * 100.f);
@@ -42,7 +41,7 @@ namespace combat
 
         const Creature* AsCreature(const Unit& unit)
         {
-            return unit.IsCreature()
+            return IsCreature(&unit)
                        ? static_cast<const Creature*>(&unit)
                        : nullptr;
         }
@@ -54,7 +53,7 @@ namespace combat
         Combatant c;
         c.guid = attacker.GetObjectGuid();
         c.level = attacker.getLevel();
-        c.isPlayer = attacker.IsPlayer();
+        c.isPlayer = IsPlayer(&attacker);
         c.classId = static_cast<uint8>(attacker.getClass());
         c.health = static_cast<int32>(attacker.GetHealth());
 
@@ -69,8 +68,6 @@ namespace combat
             c.isPet = creature->IsPet();
             c.isEvading = creature->IsInEvadeMode();
 
-            // A creature crushes unless its template forbids it. A player never
-            // does, whatever the flag says.
             const auto* info = creature->GetCreatureInfo();
             c.canCrush = info && !(info->ExtraFlags & CREATURE_FLAG_EXTRA_NO_CRUSH);
         }
@@ -84,9 +81,6 @@ namespace combat
         c.guid = caster;
         c.level = level ? level : 1;
 
-        // Everything else stays at its default: no weapon, no class, no auras,
-        // and no melee. A gameobject casts and nothing more, so the melee table
-        // is never reached with one of these on the attacking side.
         return c;
     }
 
@@ -95,7 +89,7 @@ namespace combat
         Combatant c;
         c.guid = victim.GetObjectGuid();
         c.level = victim.getLevel();
-        c.isPlayer = victim.IsPlayer();
+        c.isPlayer = IsPlayer(&victim);
         c.classId = static_cast<uint8>(victim.getClass());
         c.health = static_cast<int32>(victim.GetHealth());
         c.isSitting = !victim.IsStandState();
@@ -128,15 +122,10 @@ namespace combat
 
         Defences d;
 
-        // Spell data and the unit accessors speak in masks. A blow has one
-        // school, so widening it happens here, at the seam, and the core below
-        // never sees a mask it would have to narrow again.
         const auto asMask = static_cast<SpellSchoolMask>(SchoolSet(school).ToMask());
 
         d.immune = mutableVictim.IsImmuneToDamage(asMask);
 
-        // An attacker's target-resistance aura reduces what the victim has,
-        // which is why both sides are read here rather than in the victim alone.
         d.armour = static_cast<int32>(victim.GetArmor()) +
                    mutableAttacker.GetTotalAuraModifierByMiscMask(
                        SPELL_AURA_MOD_TARGET_RESISTANCE, SPELL_SCHOOL_MASK_NORMAL);
@@ -175,8 +164,6 @@ namespace combat
             d.absorbers.push_back(shield);
         }
 
-        // After the free shields, and in that order: a mage's mana is spent only
-        // once whatever costs nothing has already been used up.
         for (const Aura* aura : victim.GetAurasByType(SPELL_AURA_MANA_SHIELD))
         {
             const auto* mod = aura->GetModifier();

@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about the instances he is bound to.
 namespace instances
 {
     void ResetInstances(Player& who, WorldPacket& packet);

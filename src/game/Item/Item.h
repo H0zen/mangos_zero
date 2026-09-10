@@ -23,36 +23,9 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Item.h
- * @brief Item class definition and inventory/equipment structures.
- *
- * This file defines the Item class which represents items in player inventories,
- * equipped items, bank items, and world-drop loot items.
- *
- * Key functionality includes:
- * - Item creation and deletion
- * - Item ownership and container management
- * - Equipment slot validation
- * - Enchantment and modification storage
- * - Item locking and trade safety
- * - Item expiration and decay
- * - Inventory space management
- * - Durability tracking
- * - Gem socket management
- * - Item-bound state tracking (soul-bound, account-bound, etc.)
- *
- * The file also contains item-related enumerations and structures including
- * InventoryResult for error codes, ItemSetEffect for set bonuses, and various
- * utility functions for item validation.
- *
- * @see Item for the main item implementation
- * @see ItemPrototype for item template data
- * @see Bag for container-specific item implementation
- */
-
 #pragma once
 
+#include "Loot/Spoilable.h"
 #include "Platform/Define.h"
 #include <string>
 #include "Object.h"
@@ -65,10 +38,6 @@ class Field;
 class QueryResult;
 class Unit;
 
-/// @brief Item set effect structure.
-///
-/// Stores the spells granted by item set bonuses when a player equips
-/// a certain number of items from a specific item set.
 struct ItemSetEffect
 {
     uint32 setid;
@@ -76,80 +45,76 @@ struct ItemSetEffect
     SpellEntry const* spells[8];
 };
 
-/// @brief Item inventory/equipment result enumeration.
-///
-/// Error codes returned when attempting to equip, move, or use items.
-/// Maps to client-side error messages and UI feedback.
 enum InventoryResult
 {
     EQUIP_ERR_OK                                 = 0,
-    EQUIP_ERR_CANT_EQUIP_LEVEL_I                 = 1,       // ERR_CANT_EQUIP_LEVEL_I
-    EQUIP_ERR_CANT_EQUIP_SKILL                   = 2,       // ERR_CANT_EQUIP_SKILL
-    EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT             = 3,       // ERR_WRONG_SLOT
-    EQUIP_ERR_BAG_FULL                           = 4,       // ERR_BAG_FULL
-    EQUIP_ERR_NONEMPTY_BAG_OVER_OTHER_BAG        = 5,       // ERR_BAG_IN_BAG
-    EQUIP_ERR_CANT_TRADE_EQUIP_BAGS              = 6,       // ERR_TRADE_EQUIPPED_BAG
-    EQUIP_ERR_ONLY_AMMO_CAN_GO_HERE              = 7,       // ERR_AMMO_ONLY
-    EQUIP_ERR_NO_REQUIRED_PROFICIENCY            = 8,       // ERR_PROFICIENCY_NEEDED
-    EQUIP_ERR_NO_EQUIPMENT_SLOT_AVAILABLE        = 9,       // ERR_NO_SLOT_AVAILABLE
-    EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM        = 10,      // ERR_CANT_EQUIP_EVER
-    EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM2       = 11,      // ERR_CANT_EQUIP_EVER
-    EQUIP_ERR_NO_EQUIPMENT_SLOT_AVAILABLE2       = 12,      // ERR_NO_SLOT_AVAILABLE
-    EQUIP_ERR_CANT_EQUIP_WITH_TWOHANDED          = 13,      // ERR_2HANDED_EQUIPPED
-    EQUIP_ERR_CANT_DUAL_WIELD                    = 14,      // ERR_2HSKILLNOTFOUND
-    EQUIP_ERR_ITEM_DOESNT_GO_INTO_BAG            = 15,      // ERR_WRONG_BAG_TYPE
-    EQUIP_ERR_ITEM_DOESNT_GO_INTO_BAG2           = 16,      // ERR_WRONG_BAG_TYPE
-    EQUIP_ERR_CANT_CARRY_MORE_OF_THIS            = 17,      // ERR_ITEM_MAX_COUNT
-    EQUIP_ERR_NO_EQUIPMENT_SLOT_AVAILABLE3       = 18,      // ERR_NO_SLOT_AVAILABLE
-    EQUIP_ERR_ITEM_CANT_STACK                    = 19,      // ERR_CANT_STACK
-    EQUIP_ERR_ITEM_CANT_BE_EQUIPPED              = 20,      // ERR_NOT_EQUIPPABLE
-    EQUIP_ERR_ITEMS_CANT_BE_SWAPPED              = 21,      // ERR_CANT_SWAP
-    EQUIP_ERR_SLOT_IS_EMPTY                      = 22,      // ERR_SLOT_EMPTY
-    EQUIP_ERR_ITEM_NOT_FOUND                     = 23,      // ERR_ITEM_NOT_FOUND
-    EQUIP_ERR_CANT_DROP_SOULBOUND                = 24,      // ERR_DROP_BOUND_ITEM
-    EQUIP_ERR_OUT_OF_RANGE                       = 25,      // ERR_OUT_OF_RANGE
-    EQUIP_ERR_TRIED_TO_SPLIT_MORE_THAN_COUNT     = 26,      // ERR_TOO_FEW_TO_SPLIT
-    EQUIP_ERR_COULDNT_SPLIT_ITEMS                = 27,      // ERR_SPLIT_FAILED
-    EQUIP_ERR_MISSING_REAGENT                    = 28,      // ERR_SPELL_FAILED_REAGENTS_GENERIC
-    EQUIP_ERR_NOT_ENOUGH_MONEY                   = 29,      // ERR_NOT_ENOUGH_MONEY
-    EQUIP_ERR_NOT_A_BAG                          = 30,      // ERR_NOT_A_BAG
-    EQUIP_ERR_CAN_ONLY_DO_WITH_EMPTY_BAGS        = 31,      // ERR_DESTROY_NONEMPTY_BAG
-    EQUIP_ERR_DONT_OWN_THAT_ITEM                 = 32,      // ERR_NOT_OWNER
-    EQUIP_ERR_CAN_EQUIP_ONLY1_QUIVER             = 33,      // ERR_ONLY_ONE_QUIVER
-    EQUIP_ERR_MUST_PURCHASE_THAT_BAG_SLOT        = 34,      // ERR_NO_BANK_SLOT
-    EQUIP_ERR_TOO_FAR_AWAY_FROM_BANK             = 35,      // ERR_NO_BANK_HERE
-    EQUIP_ERR_ITEM_LOCKED                        = 36,      // ERR_ITEM_LOCKED
-    EQUIP_ERR_YOU_ARE_STUNNED                    = 37,      // ERR_GENERIC_STUNNED
-    EQUIP_ERR_YOU_ARE_DEAD                       = 38,      // ERR_PLAYER_DEAD
-    EQUIP_ERR_CANT_DO_RIGHT_NOW                  = 39,      // ERR_CLIENT_LOCKED_OUT
-    EQUIP_ERR_INT_BAG_ERROR                      = 40,      // ERR_INTERNAL_BAG_ERROR
-    EQUIP_ERR_CAN_EQUIP_ONLY1_BOLT               = 41,      // ERR_ONLY_ONE_BOLT
-    EQUIP_ERR_CAN_EQUIP_ONLY1_AMMOPOUCH          = 42,      // ERR_ONLY_ONE_AMMO
-    EQUIP_ERR_STACKABLE_CANT_BE_WRAPPED          = 43,      // ERR_CANT_WRAP_STACKABLE
-    EQUIP_ERR_EQUIPPED_CANT_BE_WRAPPED           = 44,      // ERR_CANT_WRAP_EQUIPPED
-    EQUIP_ERR_WRAPPED_CANT_BE_WRAPPED            = 45,      // ERR_CANT_WRAP_WRAPPED
-    EQUIP_ERR_BOUND_CANT_BE_WRAPPED              = 46,      // ERR_CANT_WRAP_BOUND
-    EQUIP_ERR_UNIQUE_CANT_BE_WRAPPED             = 47,      // ERR_CANT_WRAP_UNIQUE
-    EQUIP_ERR_BAGS_CANT_BE_WRAPPED               = 48,      // ERR_CANT_WRAP_BAGS
-    EQUIP_ERR_ALREADY_LOOTED                     = 49,      // ERR_LOOT_GONE
-    EQUIP_ERR_INVENTORY_FULL                     = 50,      // ERR_INV_FULL
-    EQUIP_ERR_BANK_FULL                          = 51,      // ERR_BAG_FULL
-    EQUIP_ERR_ITEM_IS_CURRENTLY_SOLD_OUT         = 52,      // ERR_VENDOR_SOLD_OUT
-    EQUIP_ERR_BAG_FULL3                          = 53,      // ERR_BAG_FULL
-    EQUIP_ERR_ITEM_NOT_FOUND2                    = 54,      // ERR_ITEM_NOT_FOUND
-    EQUIP_ERR_ITEM_CANT_STACK2                   = 55,      // ERR_CANT_STACK
-    EQUIP_ERR_BAG_FULL4                          = 56,      // ERR_BAG_FULL
-    EQUIP_ERR_ITEM_SOLD_OUT                      = 57,      // ERR_VENDOR_SOLD_OUT
-    EQUIP_ERR_OBJECT_IS_BUSY                     = 58,      // ERR_OBJECT_IS_BUSY
-    EQUIP_ERR_NONE                               = 59,      // ERR_CANT_BE_DISENCHANTED
-    EQUIP_ERR_NOT_IN_COMBAT                      = 60,      // ERR_NOT_IN_COMBAT
-    EQUIP_ERR_NOT_WHILE_DISARMED                 = 61,      // ERR_NOT_WHILE_DISARMED
-    EQUIP_ERR_BAG_FULL6                          = 62,      // ERR_BAG_FULL
-    EQUIP_ERR_CANT_EQUIP_RANK                    = 63,      // ERR_CANT_EQUIP_RANK
-    EQUIP_ERR_CANT_EQUIP_REPUTATION              = 64,      // ERR_CANT_EQUIP_REPUTATION
-    EQUIP_ERR_TOO_MANY_SPECIAL_BAGS              = 65,      // ERR_TOO_MANY_SPECIAL_BAGS
-    EQUIP_ERR_LOOT_CANT_LOOT_THAT_NOW            = 66,      // ERR_LOOT_CANT_LOOT_THAT_NOW
-    // any greater values show as "bag full"
+    EQUIP_ERR_CANT_EQUIP_LEVEL_I                 = 1,
+    EQUIP_ERR_CANT_EQUIP_SKILL                   = 2,
+    EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT             = 3,
+    EQUIP_ERR_BAG_FULL                           = 4,
+    EQUIP_ERR_NONEMPTY_BAG_OVER_OTHER_BAG        = 5,
+    EQUIP_ERR_CANT_TRADE_EQUIP_BAGS              = 6,
+    EQUIP_ERR_ONLY_AMMO_CAN_GO_HERE              = 7,
+    EQUIP_ERR_NO_REQUIRED_PROFICIENCY            = 8,
+    EQUIP_ERR_NO_EQUIPMENT_SLOT_AVAILABLE        = 9,
+    EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM        = 10,
+    EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM2       = 11,
+    EQUIP_ERR_NO_EQUIPMENT_SLOT_AVAILABLE2       = 12,
+    EQUIP_ERR_CANT_EQUIP_WITH_TWOHANDED          = 13,
+    EQUIP_ERR_CANT_DUAL_WIELD                    = 14,
+    EQUIP_ERR_ITEM_DOESNT_GO_INTO_BAG            = 15,
+    EQUIP_ERR_ITEM_DOESNT_GO_INTO_BAG2           = 16,
+    EQUIP_ERR_CANT_CARRY_MORE_OF_THIS            = 17,
+    EQUIP_ERR_NO_EQUIPMENT_SLOT_AVAILABLE3       = 18,
+    EQUIP_ERR_ITEM_CANT_STACK                    = 19,
+    EQUIP_ERR_ITEM_CANT_BE_EQUIPPED              = 20,
+    EQUIP_ERR_ITEMS_CANT_BE_SWAPPED              = 21,
+    EQUIP_ERR_SLOT_IS_EMPTY                      = 22,
+    EQUIP_ERR_ITEM_NOT_FOUND                     = 23,
+    EQUIP_ERR_CANT_DROP_SOULBOUND                = 24,
+    EQUIP_ERR_OUT_OF_RANGE                       = 25,
+    EQUIP_ERR_TRIED_TO_SPLIT_MORE_THAN_COUNT     = 26,
+    EQUIP_ERR_COULDNT_SPLIT_ITEMS                = 27,
+    EQUIP_ERR_MISSING_REAGENT                    = 28,
+    EQUIP_ERR_NOT_ENOUGH_MONEY                   = 29,
+    EQUIP_ERR_NOT_A_BAG                          = 30,
+    EQUIP_ERR_CAN_ONLY_DO_WITH_EMPTY_BAGS        = 31,
+    EQUIP_ERR_DONT_OWN_THAT_ITEM                 = 32,
+    EQUIP_ERR_CAN_EQUIP_ONLY1_QUIVER             = 33,
+    EQUIP_ERR_MUST_PURCHASE_THAT_BAG_SLOT        = 34,
+    EQUIP_ERR_TOO_FAR_AWAY_FROM_BANK             = 35,
+    EQUIP_ERR_ITEM_LOCKED                        = 36,
+    EQUIP_ERR_YOU_ARE_STUNNED                    = 37,
+    EQUIP_ERR_YOU_ARE_DEAD                       = 38,
+    EQUIP_ERR_CANT_DO_RIGHT_NOW                  = 39,
+    EQUIP_ERR_INT_BAG_ERROR                      = 40,
+    EQUIP_ERR_CAN_EQUIP_ONLY1_BOLT               = 41,
+    EQUIP_ERR_CAN_EQUIP_ONLY1_AMMOPOUCH          = 42,
+    EQUIP_ERR_STACKABLE_CANT_BE_WRAPPED          = 43,
+    EQUIP_ERR_EQUIPPED_CANT_BE_WRAPPED           = 44,
+    EQUIP_ERR_WRAPPED_CANT_BE_WRAPPED            = 45,
+    EQUIP_ERR_BOUND_CANT_BE_WRAPPED              = 46,
+    EQUIP_ERR_UNIQUE_CANT_BE_WRAPPED             = 47,
+    EQUIP_ERR_BAGS_CANT_BE_WRAPPED               = 48,
+    EQUIP_ERR_ALREADY_LOOTED                     = 49,
+    EQUIP_ERR_INVENTORY_FULL                     = 50,
+    EQUIP_ERR_BANK_FULL                          = 51,
+    EQUIP_ERR_ITEM_IS_CURRENTLY_SOLD_OUT         = 52,
+    EQUIP_ERR_BAG_FULL3                          = 53,
+    EQUIP_ERR_ITEM_NOT_FOUND2                    = 54,
+    EQUIP_ERR_ITEM_CANT_STACK2                   = 55,
+    EQUIP_ERR_BAG_FULL4                          = 56,
+    EQUIP_ERR_ITEM_SOLD_OUT                      = 57,
+    EQUIP_ERR_OBJECT_IS_BUSY                     = 58,
+    EQUIP_ERR_NONE                               = 59,
+    EQUIP_ERR_NOT_IN_COMBAT                      = 60,
+    EQUIP_ERR_NOT_WHILE_DISARMED                 = 61,
+    EQUIP_ERR_BAG_FULL6                          = 62,
+    EQUIP_ERR_CANT_EQUIP_RANK                    = 63,
+    EQUIP_ERR_CANT_EQUIP_REPUTATION              = 64,
+    EQUIP_ERR_TOO_MANY_SPECIAL_BAGS              = 65,
+    EQUIP_ERR_LOOT_CANT_LOOT_THAT_NOW            = 66,
+
 };
 
 enum BuyResult
@@ -168,23 +133,22 @@ enum BuyResult
 enum SellResult
 {
     SELL_ERR_CANT_FIND_ITEM                      = 1,
-    SELL_ERR_CANT_SELL_ITEM                      = 2,       // merchant doesn't like that item
-    SELL_ERR_CANT_FIND_VENDOR                    = 3,       // merchant doesn't like you
-    SELL_ERR_YOU_DONT_OWN_THAT_ITEM              = 4,       // you don't own that item
-    SELL_ERR_UNK                                 = 5,       // nothing appears...
-    SELL_ERR_ONLY_EMPTY_BAG                      = 6        // can only do with empty bags
+    SELL_ERR_CANT_SELL_ITEM                      = 2,
+    SELL_ERR_CANT_FIND_VENDOR                    = 3,
+    SELL_ERR_YOU_DONT_OWN_THAT_ITEM              = 4,
+    SELL_ERR_UNK                                 = 5,
+    SELL_ERR_ONLY_EMPTY_BAG                      = 6
 };
 
-// -1 from client enchantment slot number
 enum EnchantmentSlot
 {
     PERM_ENCHANTMENT_SLOT           = 0,
     TEMP_ENCHANTMENT_SLOT           = 1,
     MAX_INSPECTED_ENCHANTMENT_SLOT  = 2,
 
-    PROP_ENCHANTMENT_SLOT_0     = 3,                        // used with RandomSuffix
-    PROP_ENCHANTMENT_SLOT_1     = 4,                        // used with RandomSuffix
-    PROP_ENCHANTMENT_SLOT_2     = 5,                        // used with RandomSuffix
+    PROP_ENCHANTMENT_SLOT_0     = 3,
+    PROP_ENCHANTMENT_SLOT_1     = 4,
+    PROP_ENCHANTMENT_SLOT_2     = 5,
     PROP_ENCHANTMENT_SLOT_3     = 6,
     MAX_ENCHANTMENT_SLOT        = 7
 };
@@ -195,7 +159,7 @@ enum EnchantmentOffset
 {
     ENCHANTMENT_ID_OFFSET       = 0,
     ENCHANTMENT_DURATION_OFFSET = 1,
-    ENCHANTMENT_CHARGES_OFFSET  = 2                         // now here not only charges, but something new in wotlk
+    ENCHANTMENT_CHARGES_OFFSET  = 2
 };
 
 #define MAX_ENCHANTMENT_OFFSET    3
@@ -218,27 +182,26 @@ enum ItemUpdateState
 
 enum ItemLootUpdateState
 {
-    ITEM_LOOT_NONE                                = 0,      // loot not generated
-    ITEM_LOOT_TEMPORARY                           = 1,      // generated loot is temporary (will deleted at loot window close)
+    ITEM_LOOT_NONE                                = 0,
+    ITEM_LOOT_TEMPORARY                           = 1,
     ITEM_LOOT_UNCHANGED                           = 2,
     ITEM_LOOT_CHANGED                             = 3,
     ITEM_LOOT_NEW                                 = 4,
     ITEM_LOOT_REMOVED                             = 5
 };
 
-// masks for ITEM_FIELD_FLAGS field
 enum ItemDynFlags
 {
-    ITEM_DYNFLAG_BINDED                       = 0x00000001, // set in game at binding
+    ITEM_DYNFLAG_BINDED                       = 0x00000001,
     ITEM_DYNFLAG_UNK1                         = 0x00000002,
-    ITEM_DYNFLAG_UNLOCKED                     = 0x00000004, // have meaning only for item with proto->LockId, if not set show as "Locked, req. lockpicking N"
-    ITEM_DYNFLAG_WRAPPED                      = 0x00000008, // mark item as wrapped into wrapper container
-    ITEM_DYNFLAG_UNK4                         = 0x00000010, // can't repeat old note: appears red icon (like when item durability==0)
+    ITEM_DYNFLAG_UNLOCKED                     = 0x00000004,
+    ITEM_DYNFLAG_WRAPPED                      = 0x00000008,
+    ITEM_DYNFLAG_UNK4                         = 0x00000010,
     ITEM_DYNFLAG_UNK5                         = 0x00000020,
-    ITEM_DYNFLAG_UNK6                         = 0x00000040, // ? old note: usable
+    ITEM_DYNFLAG_UNK6                         = 0x00000040,
     ITEM_DYNFLAG_UNK7                         = 0x00000080,
     ITEM_DYNFLAG_UNK8                         = 0x00000100,
-    ITEM_DYNFLAG_READABLE                     = 0x00000200, // can be open for read, it or item proto pagetText make show "Right click to read"
+    ITEM_DYNFLAG_READABLE                     = 0x00000200,
     ITEM_DYNFLAG_UNK10                        = 0x00000400,
     ITEM_DYNFLAG_UNK11                        = 0x00000800,
     ITEM_DYNFLAG_UNK12                        = 0x00001000,
@@ -263,16 +226,12 @@ struct ItemRequiredTarget
     ItemRequiredTargetType m_uiType;
     uint32 m_uiTargetEntry;
 
-    // helpers
     bool IsFitToRequirements(Unit* pUnitTarget) const;
 };
 
-/**
- * Checks whether an item template can be placed inside a bag template.
- */
 bool ItemCanGoIntoBag(ItemPrototype const* proto, ItemPrototype const* pBagProto);
 
-class Item : public Object
+class Item : public Object, public Spoilable
 {
     public:
         static Item* CreateItem(uint32 item, uint32 count, Player const* player = nullptr, uint32 randomPropertyId = 0);
@@ -292,7 +251,6 @@ class Item : public Object
         void SetBinding(bool val) { ApplyItemFlag(ITEM_DYNFLAG_BINDED, val); }
         bool IsSoulBound() const { return HasItemFlag(ITEM_DYNFLAG_BINDED); }
 
-        /// Bound, wrapped as a gift, unlocked.
         bool HasItemFlag(uint32 flag) const { return HasFlag(ITEM_FIELD_FLAGS, flag); }
         void SetItemFlag(uint32 flag) { SetFlag(ITEM_FIELD_FLAGS, flag); }
         void RemoveItemFlag(uint32 flag) { RemoveFlag(ITEM_FIELD_FLAGS, flag); }
@@ -300,8 +258,6 @@ class Item : public Object
         uint32 GetItemFlags() const { return GetUInt32Value(ITEM_FIELD_FLAGS); }
         void SetAllItemFlags(uint32 flags) { SetUInt32Value(ITEM_FIELD_FLAGS, flags); }
 
-        /// Who made it, and who wrapped it. The second is set only while the
-        /// item is a gift and is what the recipient is shown.
         ObjectGuid const& GetCreatorGuid() const { return GetGuidValue(ITEM_FIELD_CREATOR); }
         void SetCreatorGuid(ObjectGuid const& guid) { SetGuidValue(ITEM_FIELD_CREATOR, guid); }
         ObjectGuid const& GetGiftCreatorGuid() const { return GetGuidValue(ITEM_FIELD_GIFTCREATOR); }
@@ -309,7 +265,7 @@ class Item : public Object
         bool IsBindedNotWith(Player const* player) const;
         bool IsBoundByEnchant() const;
         virtual void SaveToDB();
-        virtual bool LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid = ObjectGuid());
+        virtual bool LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid = 0);
         virtual void DeleteFromDB();
         void DeleteFromInventoryDB();
         void LoadLootFromDB(Field* fields);
@@ -361,7 +317,6 @@ class Item : public Object
         uint32 GetSkill();
         uint32 GetSpell();
 
-        // RandomPropertyId (signed but stored as unsigned)
         int32 GetItemRandomPropertyId() const { return GetInt32Value(ITEM_FIELD_RANDOM_PROPERTIES_ID); }
         uint32 GetItemSuffixFactor() const { return GetUInt32Value(ITEM_FIELD_PROPERTY_SEED); }
         void SetItemRandomProperties(int32 randomPropId);
@@ -378,27 +333,16 @@ class Item : public Object
         void SetText(std::string const& text) { m_text = text; }
 
         void SendTimeUpdate(Player* owner);
-        /**
-         * @brief Spend elapsed time off this item's clock.
-         *
-         * The clock is a field the client reads, so it lives in the mirror rather than in a
-         * Lifespan of its own. What becomes of an item whose time is up is the holder's to
-         * decide, which is why this only reports it.
-         *
-         * @return true once the clock is out.
-         */
+
         bool SpendDuration(uint32 elapsed, Player* holder);
 
-        // spell charges (signed but stored as unsigned)
-        int32 GetSpellCharges(uint8 index/*0..5*/ = 0) const { return GetInt32Value(ITEM_FIELD_SPELL_CHARGES + index); }
-        void SetSpellCharges(uint8 index/*0..5*/, int32 value) { SetInt32Value(ITEM_FIELD_SPELL_CHARGES + index, value); }
+        int32 GetSpellCharges(uint8 index = 0) const { return GetInt32Value(ITEM_FIELD_SPELL_CHARGES + index); }
+        void SetSpellCharges(uint8 index, int32 value) { SetInt32Value(ITEM_FIELD_SPELL_CHARGES + index, value); }
 
         Loot loot;
 
         Loot* Spoils() override { return &loot; }
 
-        /// It is in his own bags by the time he is asking, so the only question left is
-        /// whether the contents have been rolled yet.
         bool OpenableBy(Player const& who) const override { return HasGeneratedLoot(); }
         bool FillSpoilsFor(Player& who, LootType& how, PermissionTypes& permission) override;
 
@@ -408,10 +352,9 @@ class Item : public Object
 
         bool HasSavedLoot() const { return m_lootState != ITEM_LOOT_NONE && m_lootState != ITEM_LOOT_NEW && m_lootState != ITEM_LOOT_TEMPORARY; }
 
-        // Update States
         ItemUpdateState GetState() const { return uState; }
         void SetState(ItemUpdateState state, Player* forplayer = nullptr);
-        void FSetState(ItemUpdateState state)               // forced
+        void FSetState(ItemUpdateState state)
         {
             uState = state;
         }
@@ -430,6 +373,6 @@ class Item : public Object
         uint8 m_slot;
         Bag* m_container;
         ItemUpdateState uState;
-        bool mb_in_trade;                                   // true if item is currently in trade-window
+        bool mb_in_trade;
         ItemLootUpdateState m_lootState;
 };

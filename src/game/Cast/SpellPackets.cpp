@@ -23,29 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Spell.cpp
- * @brief Spell casting and effect implementation
- *
- * This file implements the Spell class which handles spell casting:
- * - Spell validation and casting requirements
- * - Spell effect execution (damage, healing, summon, etc.)
- * - Spell targeting and area effects
- * - Spell cooldowns and resource costs
- * - Spell interruption and pushback
- * - Spell aura application
- * - Spell hit/miss calculations
- *
- * Spells are the primary combat mechanic in WoW, encompassing
- * abilities, talents, and item effects.
- *
- * @see Spell for the spell class
- * @see SpellAura for spell auras
- * @see SpellMgr for spell management
- */
-
-
-
 #include "Spell.h"
 #include "Database/DatabaseEnv.h"
 #include "WorldPacket.h"
@@ -77,14 +54,9 @@
 #include "Corpse.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Sends the cast result for this spell to the appropriate receiver.
- *
- * @param result The cast result code.
- */
 void Spell::SendCastResult(SpellCastResult result)
 {
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         if (((Creature*)m_caster)->AI())
         {
@@ -93,12 +65,11 @@ void Spell::SendCastResult(SpellCastResult result)
         return;
     }
 
-    if (((Player*)m_caster)->GetSession()->PlayerLoading()) // don't send cast results at loading time
+    if (((Player*)m_caster)->GetSession()->PlayerLoading())
     {
         return;
     }
 
-    // Reseting emote state for case not handled by the client.
     if (result == SPELL_FAILED_CHEST_IN_USE)
     {
         SendInterrupted(result);
@@ -107,13 +78,6 @@ void Spell::SendCastResult(SpellCastResult result)
     SendCastResult((Player*)m_caster, m_spellInfo, result);
 }
 
-/**
- * @brief Sends a cast result packet for a specific player and spell.
- *
- * @param caster The player receiving the result.
- * @param spellInfo The spell being reported.
- * @param result The cast result code.
- */
 void Spell::SendCastResult(Player* caster, SpellEntry const* spellInfo, SpellCastResult result)
 {
     WorldPacket data(SMSG_CAST_FAILED, (4 + 1 + 1));
@@ -121,8 +85,8 @@ void Spell::SendCastResult(Player* caster, SpellEntry const* spellInfo, SpellCas
 
     if (result != SPELL_CAST_OK)
     {
-        data << uint8(2); // status = fail
-        data << uint8(!(cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive) ? result : SPELL_FAILED_DONT_REPORT); // do not report failed passive spells
+        data << uint8(2);
+        data << uint8(!(cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive) ? result : SPELL_FAILED_DONT_REPORT);
         switch (result)
         {
             case SPELL_FAILED_REQUIRES_SPELL_FOCUS:
@@ -147,9 +111,6 @@ void Spell::SendCastResult(Player* caster, SpellEntry const* spellInfo, SpellCas
     caster->GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Sends the spell start packet for visible casts.
- */
 void Spell::SendSpellStart()
 {
     if (!IsNeedSendToClient())
@@ -176,13 +137,13 @@ void Spell::SendSpellStart()
     }
 
     data << m_caster->GetPackGUID();
-    data << uint32(m_spellInfo->ID);                        // spellId
-    data << uint16(castFlags);                              // cast flags
-    data << uint32(m_timer);                                // delay?
+    data << uint32(m_spellInfo->ID);
+    data << uint16(castFlags);
+    data << uint32(m_timer);
 
     data << m_targets;
 
-    if (castFlags & CAST_FLAG_AMMO)                         // projectile info
+    if (castFlags & CAST_FLAG_AMMO)
     {
         WriteAmmoToPacket(&data);
     }
@@ -190,12 +151,9 @@ void Spell::SendSpellStart()
     Deliver(Audience::Around(*m_caster).AndSubject(), &data);
 }
 
-/**
- * @brief Sends the spell go packet for visible casts.
- */
 void Spell::SendSpellGo()
 {
-    // not send invisible spell casting
+
     if (!IsNeedSendToClient())
     {
         return;
@@ -206,10 +164,10 @@ void Spell::SendSpellGo()
     uint32 castFlags = CAST_FLAG_UNKNOWN9;
     if (IsRangedSpell())
     {
-        castFlags |= CAST_FLAG_AMMO;                         // arrows/bullets visual
+        castFlags |= CAST_FLAG_AMMO;
     }
 
-    WorldPacket data(SMSG_SPELL_GO, 53);                    // guess size
+    WorldPacket data(SMSG_SPELL_GO, 53);
 
     if (m_CastItem)
     {
@@ -221,14 +179,14 @@ void Spell::SendSpellGo()
     }
 
     data << m_caster->GetPackGUID();
-    data << uint32(m_spellInfo->ID);                        // spellId
-    data << uint16(castFlags);                              // cast flags
+    data << uint32(m_spellInfo->ID);
+    data << uint16(castFlags);
 
     WriteSpellGoTargets(&data);
 
     data << m_targets;
 
-    if (castFlags & CAST_FLAG_AMMO)                         // projectile info
+    if (castFlags & CAST_FLAG_AMMO)
     {
         WriteAmmoToPacket(&data);
     }
@@ -236,17 +194,12 @@ void Spell::SendSpellGo()
     Deliver(Audience::Around(*m_caster).AndSubject(), &data);
 }
 
-/**
- * @brief Writes projectile display and inventory type data into a packet.
- *
- * @param data The packet being populated.
- */
 void Spell::WriteAmmoToPacket(WorldPacket* data)
 {
     uint32 ammoInventoryType = 0;
     uint32 ammoDisplayID = 0;
 
-    if (m_caster->IsPlayer())
+    if (IsPlayer(m_caster))
     {
         Item* pItem = ((Player*)m_caster)->GetWeaponForAttack(RANGED_ATTACK);
         if (pItem)
@@ -275,7 +228,7 @@ void Spell::WriteAmmoToPacket(WorldPacket* data)
     {
         for (uint8 i = 0; i < MAX_VIRTUAL_ITEM_SLOT; ++i)
         {
-            // see Creature::SetVirtualItem for structure data
+
             if (uint32 item_class = m_caster->GetVirtualItemInfo(i, VIRTUAL_ITEM_INFO_0_OFFSET_CLASS))
             {
                 if (item_class == ITEM_CLASS_WEAPON)
@@ -288,11 +241,11 @@ void Spell::WriteAmmoToPacket(WorldPacket* data)
                             break;
                         case ITEM_SUBCLASS_WEAPON_BOW:
                         case ITEM_SUBCLASS_WEAPON_CROSSBOW:
-                            ammoDisplayID = 5996;           // is this need fixing?
+                            ammoDisplayID = 5996;
                             ammoInventoryType = INVTYPE_AMMO;
                             break;
                         case ITEM_SUBCLASS_WEAPON_GUN:
-                            ammoDisplayID = 5998;           // is this need fixing?
+                            ammoDisplayID = 5998;
                             ammoInventoryType = INVTYPE_AMMO;
                             break;
                     }
@@ -310,28 +263,21 @@ void Spell::WriteAmmoToPacket(WorldPacket* data)
     *data << uint32(ammoInventoryType);
 }
 
-/**
- * @brief Writes spell target guids into the spell-go packet and updates alive-target tracking.
- *
- * @param data The packet being populated.
- */
 void Spell::WriteSpellGoTargets(WorldPacket* data)
 {
-    // This function also fill data for channeled spells:
-    // m_needAliveTargetMask req for stop channeling if one target die
-    // Always hits on GO and expected all targets for Units
+
     *data << (uint8)(m_roster.Units().size() + m_roster.Objects().size());
 
     for (auto& enrolled : m_roster.Units())
     {
-        *data << enrolled.guid;                          // in 1.12.1 expected all targets
+        *data << enrolled.guid;
 
-        if (enrolled.slots == 0)                          // No effect apply - all immuned add state
+        if (enrolled.slots == 0)
         {
-            // possibly SPELL_MISS_IMMUNE2 for this??
+
             enrolled.verdict = SPELL_MISS_IMMUNE2;
         }
-        else if (enrolled.verdict == SPELL_MISS_NONE)    // Add only hits
+        else if (enrolled.verdict == SPELL_MISS_NONE)
         {
             m_needAliveTargetMask |= enrolled.slots;
         }
@@ -339,41 +285,37 @@ void Spell::WriteSpellGoTargets(WorldPacket* data)
 
     for (const auto& enrolled : m_roster.Objects())
     {
-        *data << enrolled.guid;                          // Always hits
+        *data << enrolled.guid;
     }
 
-    *data << uint8(0);                                      // unknown, not miss
+    *data << uint8(0);
 
-    // Reset m_needAliveTargetMask for non channeled spell
     if (!(Recipe().Starts() == cast::Start::Channelled))
     {
         m_needAliveTargetMask = 0;
     }
 }
 
-/**
- * @brief Sends the spell log execute packet for special client-side effect logging.
- */
 void Spell::SendLogExecute()
 {
 
-    WorldPacket data(SMSG_SPELLLOGEXECUTE, (8 + 4 + 4 + (4 + 4 + 8)));  // estimate size
+    WorldPacket data(SMSG_SPELLLOGEXECUTE, (8 + 4 + 4 + (4 + 4 + 8)));
 
     data << m_caster->GetPackGUID();
     data << uint32(m_spellInfo->ID);
 
     size_t efcount_pos = data.wpos();
     int32 effectCount = 0;
-    data << uint32(effectCount);                    // count1 (effect count) if <=0, SMSG ignored
+    data << uint32(effectCount);
 
     size_t starteff_pos = data.wpos();
     for (uint32 i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
-        data << uint32(Recipe().At(static_cast<uint8>(i)).verb);     // spell effect
-        data << uint32(1);                          // count2 placeholder (target count)
+        data << uint32(Recipe().At(static_cast<uint8>(i)).verb);
+        data << uint32(1);
 
         bool hasSpecial = true;
-        {   // this block may be iterated (target count) times
+        {
             switch (Recipe().At(static_cast<uint8>(i)).verb)
             {
                 case SPELL_EFFECT_POWER_DRAIN:
@@ -384,21 +326,21 @@ void Spell::SendLogExecute()
                     break;
                 case SPELL_EFFECT_ADD_EXTRA_ATTACKS:
                     data << m_targets.getUnitTargetGuid();
-                    data << uint32(0);                      // count?
+                    data << uint32(0);
                     break;
                 case SPELL_EFFECT_INTERRUPT_CAST:
                     data << m_targets.getUnitTargetGuid();
-                    data << uint32(0);                      // spellid being interrupted
+                    data << uint32(0);
                     break;
                 case SPELL_EFFECT_DURABILITY_DAMAGE:
                     data << m_targets.getUnitTargetGuid();
                     data << uint32(0);
-                    data << uint32(0);                      // if both -1, a separate handling
+                    data << uint32(0);
                     break;
-                case SPELL_EFFECT_CREATE_ITEM:              // here target is not the item but SELF
+                case SPELL_EFFECT_CREATE_ITEM:
                     data << uint32(Recipe().At(static_cast<uint8>(i)).itemType);
                     break;
-                case SPELL_EFFECT_FEED_PET:                 // here we may get both SELF and item targets
+                case SPELL_EFFECT_FEED_PET:
                     data << m_targets.getItemTargetEntry();
                     break;
                 case SPELL_EFFECT_RESURRECT:
@@ -413,10 +355,10 @@ void Spell::SendLogExecute()
                 case SPELL_EFFECT_SKIN_PLAYER_CORPSE:
                 case SPELL_EFFECT_MODIFY_THREAT_PERCENT:
                 case SPELL_EFFECT_126:
-                case SPELL_EFFECT_DISMISS_PET:              // case is handled separately but has the same input
-                case SPELL_EFFECT_OPEN_LOCK:                // 2 cases are handled separately but have the same input
+                case SPELL_EFFECT_DISMISS_PET:
+                case SPELL_EFFECT_OPEN_LOCK:
                 case SPELL_EFFECT_OPEN_LOCK_ITEM:
-                case SPELL_EFFECT_INSTAKILL:                // separate. Also self instakill will not be logged by client
+                case SPELL_EFFECT_INSTAKILL:
                     if (ObjectGuid guid = GetPrefilledOrUnitTargetGuid(SpellEffectIndex(i)))
                     {
                         data << guid;
@@ -432,8 +374,8 @@ void Spell::SendLogExecute()
                     break;
                 case SPELL_EFFECT_DUMMY:
                     break;
-                default:                                    // including SPELL_EFFECT_DUMMY w/separate handling
-                    hasSpecial = false;                     // prevent duplicate logging for spells logged w/o target
+                default:
+                    hasSpecial = false;
                     break;
             }
         }
@@ -447,7 +389,7 @@ void Spell::SendLogExecute()
             data.wpos(starteff_pos);
         }
     }
-    if (!effectCount)                                   // no effect with special handling
+    if (!effectCount)
     {
         effectCount = 1;
         data << uint32(Recipe().At(EFFECT_INDEX_0).verb);
@@ -458,14 +400,9 @@ void Spell::SendLogExecute()
     Deliver(Audience::Around(*m_caster).AndSubject(), &data);
 }
 
-/**
- * @brief Sends interruption packets for the current spell cast.
- *
- * @param result The interruption result code.
- */
 void Spell::SendInterrupted(SpellCastResult result)
 {
-    Player *casterPlayer = ToPlayer(m_caster);
+    Player *casterPlayer = static_cast<Player*>(m_caster);
 
     if (casterPlayer)
     {
@@ -489,21 +426,16 @@ void Spell::SendInterrupted(SpellCastResult result)
     }
 }
 
-/**
- * @brief Sends channel progress updates and clears channel state when ending.
- *
- * @param time The remaining channel time.
- */
 void Spell::SendChannelUpdate(uint32 time)
 {
     if (time == 0)
     {
-        // Reset farsight for some possessing auras of possessed summoned (as they might work with different aura types)
-        if (Recipe().Says().farsight && m_caster->IsPlayer() && m_caster->GetCharmGuid() &&
+
+        if (Recipe().Says().farsight &&IsPlayer(m_caster) && m_caster->GetCharmGuid() &&
             !IsSpellHaveAura(m_spellInfo, SPELL_AURA_MOD_POSSESS) && !IsSpellHaveAura(m_spellInfo, SPELL_AURA_MOD_POSSESS_PET))
         {
             Player* player = (Player*)m_caster;
-            // These Auras are applied to self, so get the possessed first
+
             Unit* possessed = player->GetCharm();
 
             player->SetCharm(nullptr);
@@ -519,11 +451,9 @@ void Spell::SendChannelUpdate(uint32 time)
             {
                 possessed->clearUnitState(UNIT_STAT_CONTROLLED);
                 possessed->RemoveUnitFlag(UNIT_FLAG_POSSESSED);
-                possessed->SetCharmerGuid(ObjectGuid());
-                // TODO - Requires more specials for target?
+                possessed->SetCharmerGuid(0);
 
-                // Some possessed might want to despawn?
-                if (possessed->GetUInt32Value(UNIT_CREATED_BY_SPELL) == m_spellInfo->ID && possessed->IsCreature())
+                if (possessed->GetUInt32Value(UNIT_CREATED_BY_SPELL) == m_spellInfo->ID &&IsCreature(possessed))
                 {
                     ((Creature*)possessed)->ForcedDespawn();
                 }
@@ -533,7 +463,7 @@ void Spell::SendChannelUpdate(uint32 time)
         m_caster->RemoveAurasCastBy(m_spellInfo->ID, m_caster->GetObjectGuid());
 
         ObjectGuid target_guid = m_caster->GetChannelObjectGuid();
-        if (target_guid != m_caster->GetObjectGuid() && target_guid.IsUnit())
+        if (target_guid != m_caster->GetObjectGuid() && (GuidHigh(target_guid) == HIGHGUID_UNIT || GuidHigh(target_guid) == HIGHGUID_PET || GuidHigh(target_guid) == HIGHGUID_PLAYER))
         {
             if (Unit* target = ObjectLookup::GetUnit(*m_caster, target_guid))
             {
@@ -541,17 +471,16 @@ void Spell::SendChannelUpdate(uint32 time)
             }
         }
 
-        // Only finish channeling when latest channeled spell finishes
         if (m_caster->GetUInt32Value(UNIT_CHANNEL_SPELL) != m_spellInfo->ID)
         {
             return;
         }
 
-        m_caster->SetChannelObjectGuid(ObjectGuid());
+        m_caster->SetChannelObjectGuid(0);
         m_caster->SetUInt32Value(UNIT_CHANNEL_SPELL, 0);
     }
 
-    if (m_caster->IsPlayer())
+    if (IsPlayer(m_caster))
     {
         WorldPacket data(MSG_CHANNEL_UPDATE, 4);
         data << uint32(time);
@@ -559,21 +488,15 @@ void Spell::SendChannelUpdate(uint32 time)
     }
 }
 
-/**
- * @brief Starts channeling visuals and channel state for the spell.
- *
- * @param duration The channel duration in milliseconds.
- */
 void Spell::SendChannelStart(uint32 duration)
 {
     Occupant* target = nullptr;
 
-    // select dynobject created by first effect if any
     if (Recipe().At(EFFECT_INDEX_0).verb == SPELL_EFFECT_PERSISTENT_AREA_AURA)
     {
         target = m_caster->Conjured().AreaOf(m_spellInfo->ID, EFFECT_INDEX_0);
     }
-    // select first not resisted target from target list for _0_ effect
+
     else if (!m_roster.Units().empty())
     {
         for (const auto& enrolled : m_roster.Units())
@@ -598,7 +521,7 @@ void Spell::SendChannelStart(uint32 duration)
         }
     }
 
-    if (m_caster->IsPlayer())
+    if (IsPlayer(m_caster))
     {
         WorldPacket data(MSG_CHANNEL_START, (4 + 4));
         data << uint32(m_spellInfo->ID);
@@ -616,17 +539,10 @@ void Spell::SendChannelStart(uint32 duration)
     m_caster->SetUInt32Value(UNIT_CHANNEL_SPELL, m_spellInfo->ID);
 }
 
-/**
- * @brief Sends a resurrection request to the target player.
- *
- * @param target The player being offered resurrection.
- */
 void Spell::SendResurrectRequest(Player* target)
 {
-    // Both players and NPCs can resurrect using spells - have a look at creature 28487 for example
-    // However, the packet structure differs slightly
 
-    const char* sentName = m_caster->IsPlayer() ? "" : m_caster->GetNameForLocaleIdx(target->GetSession()->GetSessionDbLocaleIndex());
+    const char* sentName =IsPlayer(m_caster) ? "" : m_caster->GetNameForLocaleIdx(target->GetSession()->GetSessionDbLocaleIndex());
 
     WorldPacket data(SMSG_RESURRECT_REQUEST, (8 + 4 + strlen(sentName) + 1 + 1 + 1));
     data << m_caster->GetObjectGuid();
@@ -634,7 +550,7 @@ void Spell::SendResurrectRequest(Player* target)
 
     data << sentName;
     data << uint8(m_caster->isSpiritHealer());
-    // override delay sent with SMSG_CORPSE_RECLAIM_DELAY, set instant resurrection for spells with this attribute
+
     data << uint8(!Recipe().Says().ignoresResurrectionTimer);
     target->GetSession()->SendPacket(&data);
 }

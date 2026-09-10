@@ -107,7 +107,7 @@ struct npc_eris_havenfire : public CreatureScript
         uint8 m_uiKillCounter;
         uint8 m_uiSaveCounter;
 
-        ObjectGuid m_playerGuid;
+        ObjectGuid m_playerGuid = 0;
         GuidList m_lSummonedGuidList;
 
         void Reset() override
@@ -119,7 +119,7 @@ struct npc_eris_havenfire : public CreatureScript
             m_uiKillCounter = 0;
             m_uiSaveCounter = 0;
 
-            m_playerGuid.Clear();
+            m_playerGuid = 0;
             m_lSummonedGuidList.clear();
             m_creature->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
         }
@@ -312,7 +312,7 @@ struct npc_eris_havenfire : public CreatureScript
         {
             for (GuidList::const_iterator itr = m_lSummonedGuidList.begin(); itr != m_lSummonedGuidList.end(); ++itr)
             {
-                if (bIsEventEnd && ((*itr).GetEntry() == NPC_INJURED_PEASANT || (*itr).GetEntry() == NPC_PLAGUED_PEASANT))
+                if (bIsEventEnd && (GuidEntry(*itr) == NPC_INJURED_PEASANT || GuidEntry(*itr) == NPC_PLAGUED_PEASANT))
                 {
                     continue;
                 }

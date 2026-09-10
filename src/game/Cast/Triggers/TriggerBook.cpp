@@ -35,7 +35,7 @@ namespace cast
 {
     bool Suits(const Trigger& row, const Circumstance& how)
     {
-        // a row that names the unit the spell landed on cannot be drawn without one
+
         if ((row.castBy == 1 || row.castOn == 1 || (row.needs & NEED_A_TARGET) != 0) && !how.hasTarget)
         {
             return false;

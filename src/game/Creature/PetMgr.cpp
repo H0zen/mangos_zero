@@ -52,7 +52,7 @@ void PetMgr::Remove(PetSaveMode mode)
 void PetMgr::RemoveActionBar()
 {
     WorldPacket data(SMSG_PET_SPELLS, 8);
-    data << ObjectGuid();
+    data << static_cast<uint64>(0);
     m_owner->SendDirectMessage(&data);
 }
 
@@ -79,7 +79,6 @@ void PetMgr::ResummonTemporaryUnsummonedIfAny()
         return;
     }
 
-    // not resummon in not appropriate state
     if (m_owner->IsPetNeedBeTemporaryUnsummoned())
     {
         return;

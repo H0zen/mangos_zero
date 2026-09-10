@@ -23,22 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file BattleGround.cpp
- * @brief Core implementation of the battleground system.
- *
- * This file contains the implementation of the BattleGround base class, which provides:
- * - Battleground state management (waiting, in-progress, finished)
- * - Player management (joining, leaving, tracking)
- * - Event handling and broadcasting
- * - Reward distribution and scoring
- * - World state synchronization
- * - Team management and raid groups
- * - Creature and game object spawning
- */
-
-
-
 #include "Utilities/PackedValues.h"
 #include "BattleGround.h"
 #include "Object.h"
@@ -58,55 +42,40 @@
 #include "GridNotifiersImpl.h"
 #include "Chat.h"
 
-/**
- * @brief Closes a door in the battleground.
- *
- * @param guid The GUID of the door to close.
- */
 void BattleGround::DoorClose(ObjectGuid guid)
 {
     GameObject* obj = GetBgMap()->GetGameObject(guid);
     if (obj)
     {
-        // if doors are open, close it
+
         if (obj->getLootState() == GO_ACTIVATED && obj->GetGoState() != GO_STATE_READY)
         {
-            // change state to allow door to be closed
+
             obj->SetLootState(GO_READY);
             obj->UseDoorOrButton(RESPAWN_ONE_DAY);
         }
     }
     else
     {
-        sLog.outError("BattleGround: Door %s not found (can not close doors)", guid.GetString().c_str());
+        sLog.outError("BattleGround: Door %s not found (can not close doors)", GuidString(guid).c_str());
     }
 }
 
-/**
- * @brief Opens a door in the battleground.
- *
- * @param guid The GUID of the door to open.
- */
 void BattleGround::DoorOpen(ObjectGuid guid)
 {
     GameObject* obj = GetBgMap()->GetGameObject(guid);
     if (obj)
     {
-        // change state to be sure they will be opened
+
         obj->SetLootState(GO_READY);
         obj->UseDoorOrButton(RESPAWN_ONE_DAY);
     }
     else
     {
-        sLog.outError("BattleGround: Door %s not found! - doors will be closed.", guid.GetString().c_str());
+        sLog.outError("BattleGround: Door %s not found! - doors will be closed.", GuidString(guid).c_str());
     }
 }
 
-/**
- * @brief Handles the loading of a creature from the database.
- *
- * @param creature The creature being loaded.
- */
 void BattleGround::OnObjectDBLoad(Creature* creature)
 {
     const BattleGroundEventIdx eventId = sBattleGroundMgr.GetCreatureEventIndex(creature->GetGUIDLow());
@@ -121,13 +90,6 @@ void BattleGround::OnObjectDBLoad(Creature* creature)
     }
 }
 
-/**
- * @brief Gets the GUID of a single creature for a specific event.
- *
- * @param event1 The first event identifier.
- * @param event2 The second event identifier.
- * @returns The GUID of the creature.
- */
 ObjectGuid BattleGround::GetSingleCreatureGuid(uint8 event1, uint8 event2)
 {
     GuidVector::const_iterator itr = m_EventObjects[MAKE_PAIR32(event1, event2)].creatures.begin();
@@ -135,14 +97,9 @@ ObjectGuid BattleGround::GetSingleCreatureGuid(uint8 event1, uint8 event2)
     {
         return *itr;
     }
-    return ObjectGuid();
+    return 0;
 }
 
-/**
- * @brief Handles the loading of a game object from the database.
- *
- * @param obj The game object being loaded.
- */
 void BattleGround::OnObjectDBLoad(GameObject* obj)
 {
     const BattleGroundEventIdx eventId = sBattleGroundMgr.GetGameObjectEventIndex(obj->GetGUIDLow());
@@ -157,7 +114,7 @@ void BattleGround::OnObjectDBLoad(GameObject* obj)
     }
     else
     {
-        // it's possible, that doors aren't spawned anymore (wsg)
+
         if (GetStatus() >= STATUS_IN_PROGRESS && IsDoor(eventId.event1, eventId.event2))
         {
             DoorOpen(obj->GetObjectGuid());
@@ -165,13 +122,6 @@ void BattleGround::OnObjectDBLoad(GameObject* obj)
     }
 }
 
-/**
- * @brief Determines whether the specified event is a door event.
- *
- * @param event1 The first event identifier.
- * @param event2 The second event identifier.
- * @returns True if the event is a door event, false otherwise.
- */
 bool BattleGround::IsDoor(uint8 event1, uint8 event2)
 {
     if (event1 == BG_EVENT_DOOR)
@@ -186,20 +136,14 @@ bool BattleGround::IsDoor(uint8 event1, uint8 event2)
     return false;
 }
 
-/**
- * @brief Opens a door event in the battleground.
- *
- * @param event1 The first event identifier.
- * @param event2 The second event identifier.
- */
-void BattleGround::OpenDoorEvent(uint8 event1, uint8 event2 /*=0*/)
+void BattleGround::OpenDoorEvent(uint8 event1, uint8 event2 )
 {
     if (!IsDoor(event1, event2))
     {
         sLog.outError("BattleGround:OpenDoorEvent this is no door event1:%u event2:%u", event1, event2);
         return;
     }
-    if (!IsActiveEvent(event1, event2))                 // maybe already despawned (eye)
+    if (!IsActiveEvent(event1, event2))
     {
         sLog.outError("BattleGround:OpenDoorEvent this event isn't active event1:%u event2:%u", event1, event2);
         return;
@@ -211,17 +155,9 @@ void BattleGround::OpenDoorEvent(uint8 event1, uint8 event2 /*=0*/)
     }
 }
 
-/**
- * @brief Spawns or despawns an event in the battleground.
- *
- * @param event1 The first event identifier.
- * @param event2 The second event identifier.
- * @param spawn Whether to spawn or despawn the event.
- */
 void BattleGround::SpawnEvent(uint8 event1, uint8 event2, bool spawn)
 {
-    // stop if we want to spawn something which was already spawned
-    // or despawn something which was already despawned
+
     if (event2 == BG_EVENT_NONE || (spawn && m_ActiveEvents[event1] == event2) ||
         (!spawn && m_ActiveEvents[event1] != event2))
     {
@@ -230,13 +166,13 @@ void BattleGround::SpawnEvent(uint8 event1, uint8 event2, bool spawn)
 
     if (spawn)
     {
-        // if event gets spawned, the current active event must get despawned
+
         SpawnEvent(event1, m_ActiveEvents[event1], false);
-        m_ActiveEvents[event1] = event2;                    // set this event to active
+        m_ActiveEvents[event1] = event2;
     }
     else
     {
-        m_ActiveEvents[event1] = BG_EVENT_NONE;             // no event active if event2 gets despawned
+        m_ActiveEvents[event1] = BG_EVENT_NONE;
     }
 
     GuidVector::const_iterator itr = m_EventObjects[MAKE_PAIR32(event1, event2)].creatures.begin();
@@ -252,12 +188,6 @@ void BattleGround::SpawnEvent(uint8 event1, uint8 event2, bool spawn)
     }
 }
 
-/**
- * @brief Spawns a game object in the battleground.
- *
- * @param guid The GUID of the game object to spawn.
- * @param respawntime The respawn time of the game object.
- */
 void BattleGround::SpawnBGObject(ObjectGuid guid, uint32 respawntime)
 {
     Map* map = GetBgMap();
@@ -270,7 +200,7 @@ void BattleGround::SpawnBGObject(ObjectGuid guid, uint32 respawntime)
 
     if (respawntime == 0)
     {
-        // we need to change state from GO_JUST_DEACTIVATED to GO_READY in case battleground is starting again
+
         if (obj->getLootState() == GO_JUST_DEACTIVATED)
         {
             obj->SetLootState(GO_READY);
@@ -286,12 +216,6 @@ void BattleGround::SpawnBGObject(ObjectGuid guid, uint32 respawntime)
     }
 }
 
-/**
- * @brief Spawns a creature in the battleground.
- *
- * @param guid The GUID of the creature to spawn.
- * @param respawntime The respawn time of the creature.
- */
 void BattleGround::SpawnBGCreature(ObjectGuid guid, uint32 respawntime)
 {
     Map* map = GetBgMap();

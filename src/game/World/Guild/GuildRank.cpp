@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <string>
 #include "Guild.h"
 #include "GuildMgr.h"
@@ -41,12 +39,6 @@
 #include "Language.h"
 #include "World.h"
 
-/**
- * @brief Creates and persists a new guild rank.
- *
- * @param name_ The rank name.
- * @param rights The rights mask for the new rank.
- */
 void Guild::CreateRank(std::string name_, uint32 rights)
 {
     if (m_Ranks.size() >= GUILD_RANKS_MAX_COUNT)
@@ -54,51 +46,33 @@ void Guild::CreateRank(std::string name_, uint32 rights)
         return;
     }
 
-    // ranks are sequence 0,1,2,... where 0 means guildmaster
     uint32 new_rank_id = m_Ranks.size();
 
     AddRank(name_, rights);
 
-    // name now can be used for encoding to DB
     CharacterDatabase.escape_string(name_);
     CharacterDatabase.PExecute("INSERT INTO `guild_rank` (`guildid`,`rid`,`rname`,`rights`) VALUES ('%u', '%u', '%s', '%u')", m_Id, new_rank_id, name_.c_str(), rights);
 }
 
-/**
- * @brief Adds a rank to the in-memory rank list.
- *
- * @param name_ The rank name.
- * @param rights The rights mask.
- */
 void Guild::AddRank(const std::string& name_, uint32 rights)
 {
     m_Ranks.push_back(RankInfo(name_, rights));
 }
 
-/**
- * @brief Deletes the lowest guild rank if allowed.
- */
 void Guild::DelRank()
 {
-    // client won't allow to have less than GUILD_RANKS_MIN_COUNT ranks in guild
+
     if (m_Ranks.size() <= GUILD_RANKS_MIN_COUNT)
     {
         return;
     }
 
-    // delete lowest guild_rank
     uint32 rank = GetLowestRank();
     CharacterDatabase.PExecute("DELETE FROM `guild_rank` WHERE `rid`>='%u' AND `guildid`='%u'", rank, m_Id);
 
     m_Ranks.pop_back();
 }
 
-/**
- * @brief Gets the name of a guild rank.
- *
- * @param rankId The rank identifier.
- * @return The rank name, or a placeholder if the rank is invalid.
- */
 std::string Guild::GetRankName(uint32 rankId)
 {
     if (rankId >= m_Ranks.size())
@@ -109,12 +83,6 @@ std::string Guild::GetRankName(uint32 rankId)
     return m_Ranks[rankId].Name;
 }
 
-/**
- * @brief Gets the rights mask for a guild rank.
- *
- * @param rankId The rank identifier.
- * @return The rights mask for the rank.
- */
 uint32 Guild::GetRankRights(uint32 rankId)
 {
     if (rankId >= m_Ranks.size())
@@ -125,12 +93,6 @@ uint32 Guild::GetRankRights(uint32 rankId)
     return m_Ranks[rankId].Rights;
 }
 
-/**
- * @brief Renames a guild rank.
- *
- * @param rankId The rank identifier.
- * @param name_ The new rank name.
- */
 void Guild::SetRankName(uint32 rankId, std::string name_)
 {
     if (rankId >= m_Ranks.size())
@@ -140,17 +102,10 @@ void Guild::SetRankName(uint32 rankId, std::string name_)
 
     m_Ranks[rankId].Name = name_;
 
-    // name now can be used for encoding to DB
     CharacterDatabase.escape_string(name_);
     CharacterDatabase.PExecute("UPDATE `guild_rank` SET `rname`='%s' WHERE `rid`='%u' AND `guildid`='%u'", name_.c_str(), rankId, m_Id);
 }
 
-/**
- * @brief Updates the rights mask for a guild rank.
- *
- * @param rankId The rank identifier.
- * @param rights The new rights mask.
- */
 void Guild::SetRankRights(uint32 rankId, uint32 rights)
 {
     if (rankId >= m_Ranks.size())

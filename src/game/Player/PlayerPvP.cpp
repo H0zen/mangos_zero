@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -70,12 +68,6 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Sets or clears the player's PvP state with timeout-aware handling.
- *
- * @param state True to enable PvP; false to disable it.
- * @param ovrride True to bypass the delayed PvP timeout behavior.
- */
 void Player::UpdatePvP(bool state, bool ovrride)
 {
     if (!state || ovrride)

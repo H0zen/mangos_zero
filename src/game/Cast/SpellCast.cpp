@@ -23,29 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Spell.cpp
- * @brief Spell casting and effect implementation
- *
- * This file implements the Spell class which handles spell casting:
- * - Spell validation and casting requirements
- * - Spell effect execution (damage, healing, summon, etc.)
- * - Spell targeting and area effects
- * - Spell cooldowns and resource costs
- * - Spell interruption and pushback
- * - Spell aura application
- * - Spell hit/miss calculations
- *
- * Spells are the primary combat mechanic in WoW, encompassing
- * abilities, talents, and item effects.
- *
- * @see Spell for the spell class
- * @see SpellAura for spell auras
- * @see SpellMgr for spell management
- */
-
-
-
 #include "Spell.h"
 #include "Database/DatabaseEnv.h"
 #include "WorldPacket.h"
@@ -76,9 +53,6 @@
 #include "DisableMgr.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Cancels the spell and sends the appropriate interruption notifications.
- */
 void Spell::cancel()
 {
     if (m_spellState == SPELL_STATE_FINISHED)
@@ -86,7 +60,6 @@ void Spell::cancel()
         return;
     }
 
-    // channeled spells don't display interrupted message even if they are interrupted, possible other cases with no "Interrupted" message
     bool sendInterrupt = Recipe().Starts() == cast::Start::Channelled ? false : true;
 
     m_autoRepeat = false;
@@ -95,7 +68,6 @@ void Spell::cancel()
         case SPELL_STATE_PREPARING:
             CancelGlobalCooldown();
 
-            //(no break)
         case SPELL_STATE_DELAYED:
         {
             SendInterrupted(SPELL_FAILED_INTERRUPTED);
@@ -140,11 +112,6 @@ void Spell::cancel()
     m_caster->Conjured().RemoveObjects(m_spellInfo->ID, true);
 }
 
-/**
- * @brief Executes the spell cast after preparation has completed.
- *
- * @param skipCheck True to skip the second cast-condition validation.
- */
 void Spell::cast(bool skipCheck)
 {
     SetExecutedCurrently(true);
@@ -166,10 +133,8 @@ void Spell::cast(bool skipCheck)
         return;
     }
 
-    // update pointers base at GUIDs to prevent access to already nonexistent object
     UpdatePointers();
 
-    // cancel at lost main target unit
     if (!m_targets.getUnitTarget() && m_targets.getUnitTargetGuid() && m_targets.getUnitTargetGuid() != m_caster->GetObjectGuid())
     {
         cancel();
@@ -178,7 +143,7 @@ void Spell::cast(bool skipCheck)
         return;
     }
 
-    if (!m_caster->IsPlayer() && m_targets.getUnitTarget() && m_targets.getUnitTarget() != m_caster)
+    if (!IsPlayer(m_caster) && m_targets.getUnitTarget() && m_targets.getUnitTarget() != m_caster)
     {
         m_caster->SetInFront(m_targets.getUnitTarget());
     }
@@ -194,7 +159,6 @@ void Spell::cast(bool skipCheck)
         return;
     }
 
-    // triggered cast called from Spell::prepare where it was already checked
     if (!skipCheck)
     {
         castResult = CheckCast(false);
@@ -209,27 +173,26 @@ void Spell::cast(bool skipCheck)
         }
     }
 
-    // different triggered (for caster) and pre-cast (casted before apply effect to each target) cases
     switch (m_spellInfo->SpellClassSet)
     {
         case SPELLFAMILY_GENERIC:
         {
-            // Bandages
+
             if (m_spellInfo->Mechanic == MECHANIC_BANDAGE)
             {
                 AddPrecastSpell(SPELL_ID_RECENTLY_BANDAGED);
             }
-            // Divine Shield, Divine Protection (Blessing of Protection in paladin switch case)
+
             else if (m_spellInfo->Mechanic == MECHANIC_INVULNERABILITY)
             {
-                AddPrecastSpell(25771);                      // Forbearance
+                AddPrecastSpell(25771);
             }
             break;
         }
         case SPELLFAMILY_ROGUE:
         {
-            // exit stealth on sap when improved sap is not skilled
-            if (m_spellInfo->SpellClassMask & UI64LIT(0x00000080) && m_caster->IsPlayer() && (!m_caster->GetAura(14076, SpellEffectIndex(0)) && !m_caster->GetAura(14094, SpellEffectIndex(0)) && !m_caster->GetAura(14095, SpellEffectIndex(0))))
+
+            if (m_spellInfo->SpellClassMask & UI64LIT(0x00000080) &&IsPlayer(m_caster) && (!m_caster->GetAura(14076, SpellEffectIndex(0)) && !m_caster->GetAura(14094, SpellEffectIndex(0)) && !m_caster->GetAura(14095, SpellEffectIndex(0))))
             {
                 m_caster->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
             }
@@ -241,31 +204,31 @@ void Spell::cast(bool skipCheck)
         }
         case SPELLFAMILY_PRIEST:
         {
-            // Power Word: Shield
+
             if (m_spellInfo->SpellClassSet == SPELLFAMILY_PRIEST && m_spellInfo->SpellClassMask & UI64LIT(0x0000000000000001))
             {
-                AddPrecastSpell(6788);                      // Weakened Soul
+                AddPrecastSpell(6788);
             }
 
             switch (m_spellInfo->ID)
             {
-                case 15237: AddTriggeredSpell(23455); break;// Holy Nova, rank 1
-                case 15430: AddTriggeredSpell(23458); break;// Holy Nova, rank 2
-                case 15431: AddTriggeredSpell(23459); break;// Holy Nova, rank 3
-                case 27799: AddTriggeredSpell(27803); break;// Holy Nova, rank 4
-                case 27800: AddTriggeredSpell(27804); break;// Holy Nova, rank 5
-                case 27801: AddTriggeredSpell(27805); break;// Holy Nova, rank 6
-                case 25331: AddTriggeredSpell(25329); break;// Holy Nova, rank 7
+                case 15237: AddTriggeredSpell(23455); break;
+                case 15430: AddTriggeredSpell(23458); break;
+                case 15431: AddTriggeredSpell(23459); break;
+                case 27799: AddTriggeredSpell(27803); break;
+                case 27800: AddTriggeredSpell(27804); break;
+                case 27801: AddTriggeredSpell(27805); break;
+                case 25331: AddTriggeredSpell(25329); break;
                 default: break;
             }
             break;
         }
         case SPELLFAMILY_PALADIN:
         {
-            // Blessing of Protection (Divine Shield, Divine Protection in generic switch case)
+
             if (m_spellInfo->Mechanic == MECHANIC_INVULNERABILITY && m_spellInfo->ID != 25771)
             {
-                AddPrecastSpell(25771);                      // Forbearance
+                AddPrecastSpell(25771);
             }
             break;
         }
@@ -273,13 +236,11 @@ void Spell::cast(bool skipCheck)
             break;
     }
 
-    // As of patch 1.10.0, Arcane Power will replace Power Infusion
     if (m_spellInfo->ID == 12042)
     {
         m_targets.getUnitTarget()->RemoveAuras(10060);
     }
 
-    // Linked spells (precast chain)
     SpellLinkedSet linkedSet = sSpellMgr.GetSpellLinked(m_spellInfo->ID, SPELL_LINKED_TYPE_PRECAST);
     if (linkedSet.size() > 0)
     {
@@ -289,7 +250,6 @@ void Spell::cast(bool skipCheck)
         }
     }
 
-    // Linked spells (triggered chain)
     linkedSet.clear();
     linkedSet = sSpellMgr.GetSpellLinked(m_spellInfo->ID, SPELL_LINKED_TYPE_TRIGGERED);
     if (linkedSet.size() > 0)
@@ -300,54 +260,46 @@ void Spell::cast(bool skipCheck)
         }
     }
 
-    // traded items have trade slot instead of guid in m_itemTargetGUID
-    // set to real guid to be sent later to the client
     m_targets.updateTradeSlotItem();
-
 
     FillTargetMap();
 
-    if (m_spellState == SPELL_STATE_FINISHED)               // stop cast if spell marked as finish somewhere in FillTargetMap
+    if (m_spellState == SPELL_STATE_FINISHED)
     {
         m_caster->DecreaseCastCounter();
         SetExecutedCurrently(false);
         return;
     }
 
-    // CAST SPELL
     SendSpellCooldown();
 
     TakePower();
-    TakeReagents();                                         // we must remove reagents before HandleEffects to allow place crafted item in same slot
+    TakeReagents();
     TakeAmmo();
 
     SendCastResult(castResult);
-    SendSpellGo();                                          // we must send smsg_spell_go packet before m_castItem delete in TakeCastItem()...
+    SendSpellGo();
 
     InitializeDamageMultipliers();
 
-    // Okay, everything is prepared. Now we need to distinguish between immediate and evented delayed spells
     float speed = m_spellInfo->Speed == 0.0f && m_triggeredBySpellInfo ? m_triggeredBySpellInfo->Speed : m_spellInfo->Speed;
     if (speed > 0.0f)
     {
-        // Remove used for cast item if need (it can be already nullptr after TakeReagents call
-        // in case delayed spell remove item at cast delay start
+
         TakeCastItem();
 
-        // fill initial spell damage from caster for delayed casted spells
         for (auto& enrolled : m_roster.Units())
         {
             HandleDelayedSpellLaunch(&enrolled);
         }
 
-        // Okay, maps created, now prepare flags
         m_immediateHandled = false;
         m_spellState = SPELL_STATE_DELAYED;
         SetDelayStart(0);
     }
     else
     {
-        // Immediate spell, no big deal
+
         handle_immediate();
     }
 
@@ -355,15 +307,11 @@ void Spell::cast(bool skipCheck)
     SetExecutedCurrently(false);
 }
 
-/**
- * @brief Handles the full execution path for an immediate spell.
- */
 void Spell::handle_immediate()
 {
-    // process immediate effects (items, ground, etc.) also initialize some variables
+
     _handle_immediate_phase();
 
-    // start channeling if applicable (after _handle_immediate_phase for get persistent effect dynamic object for channel target
     if (Recipe().Starts() == cast::Start::Channelled && m_duration)
     {
         m_spellState = SPELL_STATE_CASTING;
@@ -380,24 +328,16 @@ void Spell::handle_immediate()
         DoAllEffectOnTarget(&enrolled);
     }
 
-    // spell is finished, perform some last features of the spell here
     _handle_finish_phase();
 
-    // Remove used for cast item if need (it can be already nullptr after TakeReagents call
     TakeCastItem();
 
     if (m_spellState != SPELL_STATE_CASTING)
     {
-        finish(true);                                        // successfully finish spell cast (not last in case autorepeat or channel spell)
+        finish(true);
     }
 }
 
-/**
- * @brief Processes delayed spell impacts that are due at the current offset.
- *
- * @param t_offset The elapsed delay offset in milliseconds.
- * @return The next pending delay time, or zero when finished.
- */
 uint64 Spell::handle_delayed(uint64 t_offset)
 {
     uint64 next_time = 0;
@@ -408,7 +348,6 @@ uint64 Spell::handle_delayed(uint64 t_offset)
         m_immediateHandled = true;
     }
 
-    // now recheck units targeting correctness (need before any effects apply to prevent adding immunity at first effect not allow apply second spell effect and similar cases)
     for (auto& enrolled : m_roster.Units())
     {
         if (!enrolled.served)
@@ -424,7 +363,6 @@ uint64 Spell::handle_delayed(uint64 t_offset)
         }
     }
 
-    // now recheck gameobject targeting correctness
     for (auto& enrolled : m_roster.Objects())
     {
         if (!enrolled.served)
@@ -439,30 +377,26 @@ uint64 Spell::handle_delayed(uint64 t_offset)
             }
         }
     }
-    // All targets passed - need finish phase
+
     if (next_time == 0)
     {
-        // spell is finished, perform some last features of the spell here
+
         _handle_finish_phase();
 
-        finish(true);                                       // successfully finish spell cast
+        finish(true);
 
-        // return zero, spell is finished now
         return 0;
     }
     else
     {
-        // spell is unfinished, return next execution time
+
         return next_time;
     }
 }
 
-/**
- * @brief Performs the immediate pre-impact phase shared by instant and delayed spells.
- */
 void Spell::_handle_immediate_phase()
 {
-    // handle some immediate features of the spell here
+
     HandleThreatSpells();
 
     m_needSpellLog = IsNeedSendToClient();
@@ -470,36 +404,31 @@ void Spell::_handle_immediate_phase()
     {
         const SpellEffectIndex j = SpellEffectIndex(operation.slot);
 
-        // apply Send Event effect to ground in case empty target lists
         if (operation.verb == SPELL_EFFECT_SEND_EVENT && !m_roster.ServesSlot(operation.slot))
         {
             HandleEffects(nullptr, nullptr, nullptr, j);
             continue;
         }
 
-        // Don't do spell log, if is school damage spell
         if (operation.verb == SPELL_EFFECT_SCHOOL_DAMAGE)
         {
             m_needSpellLog = false;
         }
     }
 
-    // initialize Diminishing Returns Data
     m_diminishLevel = unit::Fade::Full;
     m_diminishGroup = DIMINISHING_NONE;
 
-    // process items
     for (auto& enrolled : m_roster.Items())
     {
         DoAllEffectOnTarget(&enrolled);
     }
 
-    // process ground
     for (const auto& operation : Recipe().Does())
     {
-        // persistent area auras target only the ground
+
         if (operation.verb == SPELL_EFFECT_PERSISTENT_AREA_AURA ||
-            //summon a gameobject at the spell's destination xyz
+
             (operation.verb == SPELL_EFFECT_TRANS_DOOR && operation.targetA == TARGET_AREAEFFECT_GO_AROUND_DEST))
         {
             HandleEffects(nullptr, nullptr, nullptr, SpellEffectIndex(operation.slot));
@@ -507,12 +436,9 @@ void Spell::_handle_immediate_phase()
     }
 }
 
-/**
- * @brief Performs post-impact finishing logic before the spell completes.
- */
 void Spell::_handle_finish_phase()
 {
-    // spell log
+
     if (m_needSpellLog)
     {
         SendLogExecute();
@@ -522,11 +448,11 @@ void Spell::_handle_finish_phase()
     {
         switch (m_spellInfo->ID)
         {
-            // on next swing
+
             case 15494:
             case 18797:
             case 21919:
-            case 20178: // paladin reckoning proc
+            case 20178:
                 break;
             default:
                 if (Unit* victim = m_caster->getVictim())
@@ -535,26 +461,22 @@ void Spell::_handle_finish_phase()
                 }
                 else
                 {
-                    m_caster->m_extraAttacks = 0;   // do not allow to accumulate instant extra attacks
+                    m_caster->m_extraAttacks = 0;
                 }
                 break;
         }
     }
 }
 
-/**
- * @brief Applies and sends cooldown data for player casts when appropriate.
- */
 void Spell::SendSpellCooldown()
 {
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return;
     }
 
     Player* _player = (Player*)m_caster;
 
-    // (1) have infinity cooldown but set at aura apply, (2) passive cooldown at triggering
     if (Recipe().Says().spentWhileActive || Recipe().Says().passive)
     {
         return;
@@ -563,30 +485,24 @@ void Spell::SendSpellCooldown()
     _player->AddSpellAndCategoryCooldowns(m_spellInfo, m_CastItem ? m_CastItem->GetEntry() : 0, this);
 }
 
-/**
- * @brief Updates the spell state machine during preparation or channeling.
- *
- * @param difftime The elapsed update time in milliseconds.
- */
 void Spell::update(uint32 difftime)
 {
-    // update pointers based at it's GUIDs
+
     UpdatePointers();
 
-    if (!m_targets.getUnitTargetGuid().IsEmpty() && !m_targets.getUnitTarget())
+    if (!(m_targets.getUnitTargetGuid() == 0) && !m_targets.getUnitTarget())
     {
         cancel();
         return;
     }
 
-    // check for target going invisiblity/fake death
     if (Unit* target = m_targets.getUnitTarget())
     {
         if (!target->IsVisibleForOrDetect(m_caster, m_caster, true) || target->HasAuraType(SPELL_AURA_FEIGN_DEATH))
         {
             if (m_caster->GetTargetGuid() == target->GetObjectGuid())
             {
-                m_caster->SetTargetGuid(ObjectGuid());
+                m_caster->SetTargetGuid(0);
             }
             cancel();
             return;
@@ -603,17 +519,16 @@ void Spell::update(uint32 difftime)
         }
     }
 
-    // check if the player or unit caster has moved before the spell finished (exclude casting on vehicles)
-    if (((m_caster->IsPlayer() || m_caster->IsCreature()) && m_timer != 0) &&
+    if ( (IsPlayer(m_caster) || IsCreature(m_caster)) && m_timer != 0 &&
         (m_castPositionX != m_caster->Where().X() || m_castPositionY != m_caster->Where().Y() || m_castPositionZ != m_caster->Where().Z()) &&
         (Recipe().At(EFFECT_INDEX_0).verb != SPELL_EFFECT_STUCK || !m_caster->m_movementInfo.HasMovementFlag(MOVEFLAG_FALLINGFAR)))
     {
-        // always cancel for channeled spells
+
         if (m_spellState == SPELL_STATE_CASTING)
         {
             cancel();
         }
-        // don't cancel for melee, autorepeat, triggered and instant spells
+
         else if (!IsNextMeleeSwingSpell() && !IsAutoRepeat() && !m_IsTriggeredSpell && (m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_MOVEMENT))
         {
             cancel();
@@ -646,28 +561,26 @@ void Spell::update(uint32 difftime)
         {
             if (m_timer > 0)
             {
-                if (m_caster->IsPlayer() || m_caster->IsCreature())
+                if (IsPlayer(m_caster) ||IsCreature(m_caster))
                 {
-                    // check if player has jumped before the channeling finished
+
                     if (m_caster->m_movementInfo.HasMovementFlag(MOVEFLAG_FALLING))
                     {
                         cancel();
                     }
 
-                    // check for incapacitating player states
                     if (m_caster->hasUnitState(UNIT_STAT_CAN_NOT_REACT))
                     {
-                        // certain channel spells are not interrupted
+
                         if (!Recipe().Says().channels && !Recipe().Says().survivesIncapacity)
                         {
                             cancel();
                         }
                     }
 
-                    // check if player has turned if flag is set
                     if (m_spellInfo->ChannelInterruptFlags & CHANNEL_FLAG_TURNING && m_castOrientation != m_caster->Where().Facing())
                     {
-                        if (m_caster->IsPlayer())
+                        if (IsPlayer(m_caster))
                         {
                             if (static_cast<Player*>(m_caster)->GetMover()->GetObjectGuid() == m_caster->GetObjectGuid())
                             {
@@ -681,7 +594,6 @@ void Spell::update(uint32 difftime)
                     }
                 }
 
-                // check if there are alive targets left
                 if (!IsAliveUnitPresentInTargetList())
                 {
                     SendChannelUpdate(0);
@@ -702,16 +614,13 @@ void Spell::update(uint32 difftime)
             {
                 SendChannelUpdate(0);
 
-                // channeled spell processed independently for quest targeting
-                // cast at creature (or GO) quest objectives update at successful cast channel finished
-                // ignore autorepeat/melee casts for speed (not exist quest for spells (hm... )
                 if (!IsAutoRepeat() && !IsNextMeleeSwingSpell())
                 {
                     if (Player* p = m_caster->GetCharmerOrOwnerPlayerOrPlayerItself())
                     {
                         for (const auto& enrolled : m_roster.Units())
                         {
-                            if (!enrolled.guid.IsCreature())
+                            if (!(GuidHigh(enrolled.guid) == HIGHGUID_UNIT))
                             {
                                 continue;
                             }
@@ -749,11 +658,6 @@ void Spell::update(uint32 difftime)
     }
 }
 
-/**
- * @brief Finalizes the spell and performs successful-completion side effects.
- *
- * @param ok True when the spell completed successfully; false otherwise.
- */
 void Spell::finish(bool ok)
 {
     if (!m_caster)
@@ -766,10 +670,9 @@ void Spell::finish(bool ok)
         return;
     }
 
-    // remove/restore spell mods before m_spellState update
     if (Player* modOwner = m_caster->GetSpellModOwner())
     {
-        if (ok || m_spellState != SPELL_STATE_PREPARING)    // fail after start channeling or throw to target not affect spell mods
+        if (ok || m_spellState != SPELL_STATE_PREPARING)
         {
             modOwner->SpellMods().Spent(this);
         }
@@ -781,13 +684,11 @@ void Spell::finish(bool ok)
 
     m_spellState = SPELL_STATE_FINISHED;
 
-    // other code related only to successfully finished spells
     if (!ok)
     {
         return;
     }
 
-    // handle SPELL_AURA_ADD_TARGET_TRIGGER auras
     const auto targetTriggers = m_caster->GetAurasByType(SPELL_AURA_ADD_TARGET_TRIGGER);
     for (auto* aura : targetTriggers)
     {
@@ -799,13 +700,13 @@ void Spell::finish(bool ok)
         {
             if (enrolled.verdict == SPELL_MISS_NONE)
             {
-                // check m_caster->GetGUID() let load auras at login and speedup most often case
+
                 Unit* unit = m_caster->GetObjectGuid() == enrolled.guid ? m_caster : ObjectLookup::GetUnit(*m_caster, enrolled.guid);
                 if (unit && unit->IsAlive())
                 {
                     SpellEntry const* auraSpellInfo = aura->GetSpellProto();
                     SpellEffectIndex auraSpellIdx = aura->GetEffIndex();
-                    // Calculate chance at that moment (can be depend for example from combo points)
+
                     int32 auraBasePoints = aura->GetBasePoints();
                     int32 chance = m_caster->CalculateSpellDamage(unit, cast::RecipeOf(*auraSpellInfo), cast::RecipeOf(*auraSpellInfo).At(static_cast<uint8>(auraSpellIdx)), &auraBasePoints);
                     if (roll_chance_i(chance))
@@ -817,7 +718,6 @@ void Spell::finish(bool ok)
         }
     }
 
-    // Heal caster for all health leech from all targets
     if (m_healthLeech)
     {
         m_caster->DealHeal(m_caster, uint32(m_healthLeech), m_spellInfo);
@@ -832,13 +732,9 @@ void Spell::finish(bool ok)
         }
     }
 
-    /** if (IsRangedAttackResetSpell())
-     *      m_caster->resetAttackTimer(RANGED_ATTACK); */
-
-    // Clear combo at finish state
-    if (m_caster->IsPlayer() && NeedsComboPoints(m_spellInfo))
+    if (IsPlayer(m_caster) && NeedsComboPoints(m_spellInfo))
     {
-        // Not drop combopoints if negative spell and if any miss on enemy exist
+
         bool needDrop = true;
         if (!Recipe().IsPositive())
         {
@@ -857,13 +753,11 @@ void Spell::finish(bool ok)
         }
     }
 
-    // call triggered spell only at successful cast (after clear combo points -> for add some if need)
     if (!m_TriggerSpells.empty())
     {
         CastTriggerSpells();
     }
 
-    // Stop Attack for some spells
     if (Recipe().Says().stopsAttack)
     {
         m_caster->AttackStop();
@@ -871,16 +765,12 @@ void Spell::finish(bool ok)
 
 }
 
-/**
- * @brief Consumes ammunition or durability for ranged attacks.
- */
 void Spell::TakeAmmo()
 {
-    if (Recipe().Swings() == RANGED_ATTACK && m_caster->IsPlayer())
+    if (Recipe().Swings() == RANGED_ATTACK &&IsPlayer(m_caster))
     {
         Item* pItem = ((Player*)m_caster)->GetWeaponForAttack(RANGED_ATTACK, true, false);
 
-        // wands don't have ammo
         if (!pItem || pItem->GetProto()->SubClass == ITEM_SUBCLASS_WEAPON_WAND)
         {
             return;
@@ -890,12 +780,12 @@ void Spell::TakeAmmo()
         {
             if (pItem->GetMaxStackCount() == 1)
             {
-                // decrease durability for non-stackable throw weapon
+
                 ((Player*)m_caster)->DurabilityPointLossForEquipSlot(EQUIPMENT_SLOT_RANGED);
             }
             else
             {
-                // decrease items amount for stackable throw weapon
+
                 uint32 count = 1;
                 ((Player*)m_caster)->DestroyItemCount(pItem, count, true);
             }

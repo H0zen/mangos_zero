@@ -161,7 +161,7 @@ struct is_blackwing_lair : public InstanceScript
                 if (pCreature->GetEntry() == NPC_GRETHOK_CONTROLLER)
                 {
                     // Allow orb to be used
-                    DoToggleGameObjectFlags(GO_ORB_OF_DOMINATION, GO_FLAG_NO_INTERACT, false);
+                    DoToggleGameObjectFlagsByEntry(GO_ORB_OF_DOMINATION, GO_FLAG_NO_INTERACT, false);
 
                     if (Creature* pOrbTrigger = GetSingleCreatureFromStorage(NPC_BLACKWING_ORB_TRIGGER))
                     {
@@ -178,18 +178,18 @@ struct is_blackwing_lair : public InstanceScript
                         m_auiEncounter[uiType] = uiData;
                         if (uiData != SPECIAL)
                         {
-                            DoUseDoorOrButton(GO_DOOR_RAZORGORE_ENTER);
+                            DoUseDoorOrButtonByEntry(GO_DOOR_RAZORGORE_ENTER);
                         }
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_DOOR_RAZORGORE_EXIT);
+                            DoUseDoorOrButtonByEntry(GO_DOOR_RAZORGORE_EXIT);
                         }
                         else if (uiData == FAIL)
                         {
                             m_uiResetTimer = 30000;
 
                             // Reset the Orb of Domination and the eggs
-                            DoToggleGameObjectFlags(GO_ORB_OF_DOMINATION, GO_FLAG_NO_INTERACT, true);
+                            DoToggleGameObjectFlagsByEntry(GO_ORB_OF_DOMINATION, GO_FLAG_NO_INTERACT, true);
 
                             // Reset defenders
                             for (GuidList::const_iterator itr = m_lDefendersGuids.begin(); itr != m_lDefendersGuids.end(); ++itr)
@@ -209,18 +209,18 @@ struct is_blackwing_lair : public InstanceScript
                         // Prevent the players from running back to the first room; use if the encounter is not special
                         if (uiData != SPECIAL)
                         {
-                            DoUseDoorOrButton(GO_DOOR_RAZORGORE_EXIT);
+                            DoUseDoorOrButtonByEntry(GO_DOOR_RAZORGORE_EXIT);
                         }
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_DOOR_VAELASTRASZ);
+                            DoUseDoorOrButtonByEntry(GO_DOOR_VAELASTRASZ);
                         }
                         break;
                     case TYPE_LASHLAYER:
                         m_auiEncounter[uiType] = uiData;
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_DOOR_LASHLAYER);
+                            DoUseDoorOrButtonByEntry(GO_DOOR_LASHLAYER);
                         }
                         break;
                     case TYPE_FIREMAW:
@@ -232,7 +232,7 @@ struct is_blackwing_lair : public InstanceScript
                         m_auiEncounter[uiType] = uiData;
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_DOOR_CHROMAGGUS_EXIT);
+                            DoUseDoorOrButtonByEntry(GO_DOOR_CHROMAGGUS_EXIT);
                         }
                         break;
                     case TYPE_NEFARIAN:
@@ -262,7 +262,7 @@ struct is_blackwing_lair : public InstanceScript
                             break;
                         }
                         m_auiEncounter[uiType] = uiData;
-                        DoUseDoorOrButton(GO_DOOR_NEFARIAN);
+                        DoUseDoorOrButtonByEntry(GO_DOOR_NEFARIAN);
                         // Cleanup the drakonid bones
                         if (uiData == FAIL)
                         {
@@ -309,7 +309,7 @@ struct is_blackwing_lair : public InstanceScript
             {
                 if (uiData == DATA_DRAGON_EGG)
                 {
-                    if (GameObject* pEgg = instance->GetGameObject(ObjectGuid(uiGuid)))
+                    if (GameObject* pEgg = instance->GetGameObject(static_cast<ObjectGuid>(uiGuid)))
                     {
                         m_lUsedEggsGuids.push_back(pEgg->GetObjectGuid());
                     }
@@ -318,7 +318,7 @@ struct is_blackwing_lair : public InstanceScript
                     if (m_lUsedEggsGuids.size() == m_lDragonEggsGuids.size())
                     {
                         SetData(TYPE_RAZORGORE, SPECIAL);
-                        DoToggleGameObjectFlags(GO_ORB_OF_DOMINATION, GO_FLAG_NO_INTERACT, true);
+                        DoToggleGameObjectFlagsByEntry(GO_ORB_OF_DOMINATION, GO_FLAG_NO_INTERACT, true);
 
                         // Emote for the start of the second phase
                         if (Creature* pTrigger = GetSingleCreatureFromStorage(NPC_NEFARIANS_TROOPS))

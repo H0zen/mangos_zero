@@ -35,13 +35,13 @@ TEST_CASE("raising: an offer with nobody behind it does not stand")
 
     CHECK_FALSE(offer.Stands());
     CHECK_FALSE(offer.MovesHim());
-    CHECK(offer.StandsFrom(ObjectGuid()));
+    CHECK(offer.StandsFrom(0));
 }
 
 TEST_CASE("raising: an offer stands only for the one who made it")
 {
-    ObjectGuid const healer(HIGHGUID_PLAYER, uint32(7));
-    ObjectGuid const someoneElse(HIGHGUID_PLAYER, uint32(8));
+    ObjectGuid const healer = MakeGuid(HIGHGUID_PLAYER, uint32(7));
+    ObjectGuid const someoneElse = MakeGuid(HIGHGUID_PLAYER, uint32(8));
 
     ResurrectOffer offer;
     offer.from = healer;
@@ -54,12 +54,12 @@ TEST_CASE("raising: an offer stands only for the one who made it")
 TEST_CASE("raising: only an offer from a player moves him before he is raised")
 {
     ResurrectOffer byPlayer;
-    byPlayer.from = ObjectGuid(HIGHGUID_PLAYER, uint32(7));
+    byPlayer.from = MakeGuid(HIGHGUID_PLAYER, uint32(7));
     CHECK(byPlayer.MovesHim());
 
     // A spell raising him where he lies names no player, so nothing is moved.
     ResurrectOffer bySpell;
-    bySpell.from = ObjectGuid(HIGHGUID_UNIT, uint32(300), uint32(9));
+    bySpell.from = MakeGuid(HIGHGUID_UNIT, uint32(300), uint32(9));
     CHECK(bySpell.Stands());
     CHECK_FALSE(bySpell.MovesHim());
 }
@@ -67,7 +67,7 @@ TEST_CASE("raising: only an offer from a player moves him before he is raised")
 TEST_CASE("raising: withdrawing leaves nothing behind")
 {
     ResurrectOffer offer;
-    offer.from = ObjectGuid(HIGHGUID_PLAYER, uint32(7));
+    offer.from = MakeGuid(HIGHGUID_PLAYER, uint32(7));
     offer.at = Geometry::Placement::Somewhere(1, Geometry::Vector3(10.0f, 20.0f, 30.0f));
     offer.health = 500;
     offer.mana = 300;

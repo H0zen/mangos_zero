@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
 #include "Policies/Singleton.h"
@@ -59,17 +57,14 @@
 #include "CellImpl.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Loads gameobject spawn records and validates their database data.
- */
 void ObjectMgr::LoadGameObjects()
 {
     QueryResult* result = WorldDatabase.Query(
-        //                        0                    1                  2                   3                          4                          5             6
+
             "SELECT `gameobject`.`guid`, `gameobject`.`id`, `gameobject`.`map`, `gameobject`.`position_x`, `gameobject`.`position_y`, `gameobject`.`position_z`, `gameobject`.`orientation`, "
-        //                 7                         8                         9                         10                        11                            12              13
+
             "`gameobject`.`rotation0`, `gameobject`.`rotation1`, `gameobject`.`rotation2`, `gameobject`.`rotation3`, `gameobject`.`spawntimesecs`, `gameobject`.`animprogress`, `gameobject`.`state`, "
-        //                            14                         15                                       16
+
             "`game_event_gameobject`.`event`, `pool_gameobject`.`pool_entry`, `pool_gameobject_template`.`pool_entry` "
             "FROM `gameobject` "
             "LEFT OUTER JOIN `game_event_gameobject` ON `gameobject`.`guid` = `game_event_gameobject`.`guid` "
@@ -182,7 +177,7 @@ void ObjectMgr::LoadGameObjects()
             continue;
         }
 
-        if (gameEvent == 0 && GuidPoolId == 0 && EntryPoolId == 0) // if not this is to be managed by GameEvent System or Pool system
+        if (gameEvent == 0 && GuidPoolId == 0 && EntryPoolId == 0)
         {
             AddGameobjectToGrid(guid, &data);
         }
@@ -195,12 +190,6 @@ void ObjectMgr::LoadGameObjects()
     sLog.outString(">> Loaded %zu gameobjects", mGameObjectDataMap.size());
 }
 
-/**
- * @brief Adds a gameobject spawn GUID to the grid lookup for its map cell.
- *
- * @param guid The gameobject spawn GUID.
- * @param data The gameobject spawn data.
- */
 void ObjectMgr::AddGameobjectToGrid(uint32 guid, GameObjectData const* data)
 {
     CellPair cell_pair = MaNGOS::ComputeCellPair(data->posX, data->posY);
@@ -210,12 +199,6 @@ void ObjectMgr::AddGameobjectToGrid(uint32 guid, GameObjectData const* data)
     cell_guids.gameobjects.insert(guid);
 }
 
-/**
- * @brief Removes a gameobject spawn GUID from the grid lookup for its map cell.
- *
- * @param guid The gameobject spawn GUID.
- * @param data The gameobject spawn data.
- */
 void ObjectMgr::RemoveGameobjectFromGrid(uint32 guid, GameObjectData const* data)
 {
     CellPair cell_pair = MaNGOS::ComputeCellPair(data->posX, data->posY);

@@ -23,11 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file MapUpdater.cpp
- * @brief Implementation of the parallel map-update worker pool.
- */
-
 #include "MapUpdater.h"
 #include "Map.h"
 #include "Utilities/Timer.h"
@@ -38,9 +33,6 @@
 #include <mutex>
 #include <thread>
 
-/// A map tick that runs longer than this is counted as an overrun. The
-/// simulation aims at fifty milliseconds; anything past it has eaten into the
-/// next one.
 static const uint32 MAP_TICK_BUDGET_MS = 50;
 
 MapUpdater::MapUpdater()
@@ -83,8 +75,6 @@ int MapUpdater::deactivate()
 
     sLog.outString("[shutdown] MapUpdater::deactivate: draining pending map updates (pending=%zu)", m_pending);
 
-    // Drain first: a map must not be left half-updated, and Map::Update touches world
-    // state that is torn down right after this returns.
     wait();
 
     sLog.outString("[shutdown] MapUpdater::deactivate: pending drained; joining worker threads");
@@ -152,8 +142,6 @@ void MapUpdater::workerLoop()
 
             m_taskAdded.wait(guard, [this] { return m_stop || !m_tasks.empty(); });
 
-            // Only retire once the queue is genuinely empty, so a stop racing with a
-            // still-queued tick cannot drop that map's update on the floor.
             if (m_tasks.empty())
             {
                 if (m_stop)
@@ -177,8 +165,6 @@ void MapUpdater::workerLoop()
             --m_pending;
         }
 
-        // Outside the lock: wait() only ever cares about the count reaching zero, and
-        // notifying while holding the mutex would just make the waiter block again.
         m_taskDone.notify_all();
     }
 }

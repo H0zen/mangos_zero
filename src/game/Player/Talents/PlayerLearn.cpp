@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -70,62 +68,48 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Resets the player's learned spells and restores default and quest rewards.
- */
 void Player::resetSpells()
 {
-    // not need after this call
+
     if (HasAtLoginFlag(AT_LOGIN_RESET_SPELLS))
     {
         RemoveAtLoginFlag(AT_LOGIN_RESET_SPELLS, true);
     }
 
-    // make full copy of map (spells removed and marked as deleted at another spell remove
-    // and we can't use original map for safe iterative with visit each spell at loop end
     PlayerSpellMap smap = GetSpellMap();
 
     for (PlayerSpellMap::const_iterator iter = smap.begin(); iter != smap.end(); ++iter)
     {
-        removeSpell(iter->first, false, false); // only iter->first can be accessed, object by iter->second can be deleted already
+        removeSpell(iter->first, false, false);
     }
 
     learnDefaultSpells();
     learnQuestRewardedSpells();
 }
 
-/**
- * @brief Teaches the player's default race and class spells.
- */
 void Player::learnDefaultSpells()
 {
-    // learn default race/class spells
+
     PlayerInfo const* info = sObjectMgr.GetPlayerInfo(getRace(), getClass());
     for (PlayerCreateInfoSpells::const_iterator itr = info->spell.begin(); itr != info->spell.end(); ++itr)
     {
         uint32 tspell = *itr;
         DEBUG_LOG("PLAYER (Class: %u Race: %u): Adding initial spell, id = %u", uint32(getClass()), uint32(getRace()), tspell);
-        if (!IsInWorld())                                   // will send in INITIAL_SPELLS in list anyway at map add
+        if (!IsInWorld())
         {
             addSpell(tspell, true, true, true, false);
         }
-        else                                                // but send in normal spell in game learn case
+        else
         {
             learnSpell(tspell, true);
         }
     }
 }
 
-/**
- * @brief Teaches a quest reward spell if the quest grants a learnable spell.
- *
- * @param quest The rewarded quest to inspect.
- */
 void Player::learnQuestRewardedSpells(Quest const* quest)
 {
     uint32 spell_id = quest->GetRewSpellCast();
 
-    // skip quests without rewarded spell
     if (!spell_id)
     {
         return;
@@ -137,7 +121,6 @@ void Player::learnQuestRewardedSpells(Quest const* quest)
         return;
     }
 
-    // check learned spells state
     bool found = false;
     for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
@@ -148,17 +131,15 @@ void Player::learnQuestRewardedSpells(Quest const* quest)
         }
     }
 
-    // skip quests with not teaching spell or already known spell
     if (!found)
     {
         return;
     }
 
-    // prevent learn non first rank unknown profession and second specialization for same profession)
     uint32 learned_0 = spellInfo->EffectTriggerSpell[EFFECT_INDEX_0];
     if (sSpellMgr.GetSpellRank(learned_0) > 1 && !HasSpell(learned_0))
     {
-        // not have first rank learned (unlearned prof?)
+
         uint32 first_spell = sSpellMgr.GetFirstSpellInChain(learned_0);
         if (!HasSpell(first_spell))
         {
@@ -171,10 +152,9 @@ void Player::learnQuestRewardedSpells(Quest const* quest)
             return;
         }
 
-        // specialization
         if (learnedInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_TRADE_SKILL && learnedInfo->Effect[EFFECT_INDEX_1] == 0)
         {
-            // search other specialization for same prof
+
             for (PlayerSpellMap::const_iterator itr = m_spells.begin(); itr != m_spells.end(); ++itr)
             {
                 if (itr->second.state == PLAYERSPELL_REMOVED || itr->first == learned_0)
@@ -188,19 +168,16 @@ void Player::learnQuestRewardedSpells(Quest const* quest)
                     return;
                 }
 
-                // compare only specializations
                 if (itrInfo->Effect[EFFECT_INDEX_0] != SPELL_EFFECT_TRADE_SKILL || itrInfo->Effect[EFFECT_INDEX_1] != 0)
                 {
                     continue;
                 }
 
-                // compare same chain spells
                 if (sSpellMgr.GetFirstSpellInChain(itr->first) != first_spell)
                 {
                     continue;
                 }
 
-                // now we have 2 specialization, learn possible only if found is lesser specialization rank
                 if (!sSpellMgr.IsHighRankOfSpell(learned_0, itr->first))
                 {
                     return;
@@ -212,15 +189,12 @@ void Player::learnQuestRewardedSpells(Quest const* quest)
     CastSpell(this, spell_id, true);
 }
 
-/**
- * @brief Reapplies all quest reward spells from previously rewarded quests.
- */
 void Player::learnQuestRewardedSpells()
 {
-    // learn spells received from quest completing
+
     for (auto itr = m_journal.All().begin(); itr != m_journal.All().end(); ++itr)
     {
-        // skip no rewarded quests
+
         if (!itr->second.m_rewarded)
         {
             continue;
@@ -236,12 +210,6 @@ void Player::learnQuestRewardedSpells()
     }
 }
 
-/**
- * @brief Learns or removes spells unlocked by a profession or skill value.
- *
- * @param skill_id The skill line identifier.
- * @param skill_value The current skill value.
- */
 void Player::learnSkillRewardedSpells(uint32 skill_id, uint32 skill_value)
 {
     uint32 raceMask  = getRaceMask();
@@ -253,12 +221,12 @@ void Player::learnSkillRewardedSpells(uint32 skill_id, uint32 skill_value)
         {
             continue;
         }
-        // Check race if set
+
         if (pAbility->RaceMask && !(pAbility->RaceMask & raceMask))
         {
             continue;
         }
-        // Check class if set
+
         if (pAbility->ClassMask && !(pAbility->ClassMask & classMask))
         {
             continue;
@@ -266,12 +234,12 @@ void Player::learnSkillRewardedSpells(uint32 skill_id, uint32 skill_value)
 
         if (sSpellStore.LookupEntry(pAbility->Spell))
         {
-            // need unlearn spell
+
             if (skill_value < pAbility->MinSkillLineRank)
             {
                 removeSpell(pAbility->Spell);
             }
-            // need learn
+
             else if (!IsInWorld())
             {
                 addSpell(pAbility->Spell, true, true, true, false);

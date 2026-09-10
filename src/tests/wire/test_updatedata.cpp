@@ -152,7 +152,7 @@ TEST_CASE("A fresh UpdateData carries no data and no flag")
 TEST_CASE("An out-of-range guid alone is enough to build a packet")
 {
     UpdateData data;
-    data.AddOutOfRangeGUID(ObjectGuid(HIGHGUID_UNIT, static_cast<uint32>(1), static_cast<uint32>(42)));
+    data.AddOutOfRangeGUID(MakeGuid(HIGHGUID_UNIT, static_cast<uint32>(1), static_cast<uint32>(42)));
 
     CHECK(data.HasData());
 
@@ -170,7 +170,7 @@ TEST_CASE("The out-of-range section comes before the ordinary blocks")
     // so its type byte sits at offset 5 with the filler blocks after it.
     UpdateData data;
     AddBlock(data, 0xAB);
-    data.AddOutOfRangeGUID(ObjectGuid(HIGHGUID_UNIT, static_cast<uint32>(1), static_cast<uint32>(42)));
+    data.AddOutOfRangeGUID(MakeGuid(HIGHGUID_UNIT, static_cast<uint32>(1), static_cast<uint32>(42)));
 
     WorldPacket packet;
     REQUIRE(data.BuildPacket(&packet));

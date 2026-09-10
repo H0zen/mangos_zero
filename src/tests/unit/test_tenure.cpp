@@ -212,13 +212,13 @@ TEST_CASE("tenure: a granted term starts full and knows who granted it")
     CHECK(held.Rule() == TEMPSPAWN_MANUAL_DESPAWN);
     CHECK(held.Left() == 0);
 
-    held.SummonedBy(ObjectGuid(HIGHGUID_UNIT, uint32(42), uint32(7)));
+    held.SummonedBy(MakeGuid(HIGHGUID_UNIT, uint32(42), uint32(7)));
     held.Grant(TEMPSPAWN_TIMED_DESPAWN, TERM);
 
     CHECK(held.Bounded());
     CHECK(held.Left() == TERM);
     CHECK(held.Granted() == TERM);
-    CHECK(held.Summoner().GetCounter() == 7);
+    CHECK(GuidCounter(held.Summoner()) == 7);
 }
 
 TEST_CASE("tenure: a term of nought is no term at all")

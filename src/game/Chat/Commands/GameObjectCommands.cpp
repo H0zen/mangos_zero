@@ -23,17 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file GameObjectCommands.cpp
- * @brief Implementation of game object manipulation chat commands.
- *
- * This file contains chat command handlers for game objects including:
- * - Game object spawning and removal
- * - Game object property modification
- * - Game object state control
- * - Game object database management
- */
-
 #include <cmath>
 #include <sstream>
 #include <string>
@@ -46,15 +35,9 @@
 #include "Geometry/Quat.h"
 #include "ObjectLookup.h"
 
-/**
- * @brief Handler for HandleGameObjectDeleteCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGameObjectDeleteCommand(char* args)
 {
-    // number or [name] Shift-click form |color|Hgameobject:go_guid|h[name]|h|r
+
     uint32 lowguid;
     if (!ExtractUint32KeyFromLink(&args, "Hgameobject", lowguid))
     {
@@ -68,7 +51,6 @@ bool ChatHandler::HandleGameObjectDeleteCommand(char* args)
 
     GameObject* obj = nullptr;
 
-    // by DB guid
     if (GameObjectData const* go_data = sObjectMgr.GetGOData(lowguid))
     {
         obj = GetGameObjectWithGuid(lowguid, go_data->id);
@@ -84,9 +66,9 @@ bool ChatHandler::HandleGameObjectDeleteCommand(char* args)
     if (ObjectGuid ownerGuid = obj->GetOwnerGuid())
     {
         Unit* owner = ObjectLookup::GetUnit(*m_session->GetPlayer(), ownerGuid);
-        if (!owner || !ownerGuid.IsPlayer())
+        if (!owner || !(ownerGuid != 0 && GuidHigh(ownerGuid) == HIGHGUID_PLAYER))
         {
-            PSendSysMessage(LANG_COMMAND_DELOBJREFERCREATURE, obj->GetGUIDLow(), ownerGuid.GetString().c_str());
+            PSendSysMessage(LANG_COMMAND_DELOBJREFERCREATURE, obj->GetGUIDLow(), GuidString(ownerGuid).c_str());
             SetSentErrorMessage(true);
             return false;
         }
@@ -94,7 +76,7 @@ bool ChatHandler::HandleGameObjectDeleteCommand(char* args)
         owner->Conjured().RemoveObject(obj, false);
     }
 
-    obj->SetRespawnTime(0);                                 // not save respawn time
+    obj->SetRespawnTime(0);
     obj->Delete();
     obj->DeleteFromDB();
 
@@ -103,15 +85,9 @@ bool ChatHandler::HandleGameObjectDeleteCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGameObjectTurnCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGameObjectTurnCommand(char* args)
 {
-    // number or [name] Shift-click form |color|Hgameobject:go_id|h[name]|h|r
+
     uint32 lowguid;
     if (!ExtractUint32KeyFromLink(&args, "Hgameobject", lowguid))
     {
@@ -125,7 +101,6 @@ bool ChatHandler::HandleGameObjectTurnCommand(char* args)
 
     GameObject* obj = nullptr;
 
-    // by DB guid
     if (GameObjectData const* go_data = sObjectMgr.GetGOData(lowguid))
     {
         obj = GetGameObjectWithGuid(lowguid, go_data->id);
@@ -144,26 +119,19 @@ bool ChatHandler::HandleGameObjectTurnCommand(char* args)
         return false;
     }
 
-    // ok, let's rotate the GO around Z axis
-    // we first get the original rotation quaternion
-    // then we'll create a rotation quat describing the rotation around Z
     Geometry::Quat original_rot;
     obj->GetQuaternion(original_rot);
 
-    // the rotation amount around Z-axis
     float deltaO = o - Geometry::YawOf(original_rot);
 
-    // multiplying 2 quaternions gives the final rotation
-    // quaternion multiplication is not commutative!
     Geometry::Quat final_rot = Geometry::Quat(0.0f, 0.0f, sin(deltaO / 2), cos(deltaO / 2)) * original_rot;
 
-    // quaternion multiplication gives a non-unit quat
     final_rot.unitize();
 
     Map* map = obj->GetMap();
-    map->Remove(obj, false); //mandatory to remove GO model from m_dyn_tree
+    map->Remove(obj, false);
 
-    obj->SetQuaternion(final_rot); // this will update internal model rotation matrices
+    obj->SetQuaternion(final_rot);
     obj->Place().MoveTo(obj->Where().X(), obj->Where().Y(), obj->Where().Z(), Geometry::YawOf(final_rot));
 
     map->Add(obj);
@@ -176,15 +144,9 @@ bool ChatHandler::HandleGameObjectTurnCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGameObjectMoveCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGameObjectMoveCommand(char* args)
 {
-    // number or [name] Shift-click form |color|Hgameobject:go_guid|h[name]|h|r
+
     uint32 lowguid;
     if (!ExtractUint32KeyFromLink(&args, "Hgameobject", lowguid))
     {
@@ -198,7 +160,6 @@ bool ChatHandler::HandleGameObjectMoveCommand(char* args)
 
     GameObject* obj = nullptr;
 
-    // by DB guid
     if (GameObjectData const* go_data = sObjectMgr.GetGOData(lowguid))
     {
         obj = GetGameObjectWithGuid(lowguid, go_data->id);
@@ -267,15 +228,9 @@ bool ChatHandler::HandleGameObjectMoveCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGameObjectAddCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGameObjectAddCommand(char* args)
 {
-    // number or [name] Shift-click form |color|Hgameobject_entry:go_id|h[name]|h|r
+
     uint32 id;
     if (!ExtractUint32KeyFromLink(&args, "Hgameobject_entry", id))
     {
@@ -303,7 +258,7 @@ bool ChatHandler::HandleGameObjectAddCommand(char* args)
 
     if (gInfo->displayId && !sGameObjectDisplayInfoStore.LookupEntry(gInfo->displayId))
     {
-        // report to DB errors log as in loading case
+
         sLog.outErrorDb("Gameobject (Entry %u GoType: %u) have invalid displayId (%u), not spawned.", id, gInfo->type, gInfo->displayId);
         PSendSysMessage(LANG_GAMEOBJECT_HAVE_INVALID_DATA, id);
         SetSentErrorMessage(true);
@@ -317,7 +272,6 @@ bool ChatHandler::HandleGameObjectAddCommand(char* args)
     float o = float(plr->Where().Facing());
     Map* map = plr->GetMap();
 
-    // used guids from specially reserved range (can be 0 if no free values)
     uint32 db_lowGUID = sMint.StaticGameObjectGuid();
     if (!db_lowGUID)
     {
@@ -338,10 +292,8 @@ bool ChatHandler::HandleGameObjectAddCommand(char* args)
         pGameObj->SetRespawnTime(spawntimeSecs);
     }
 
-    // fill the gameobject data and save to the db
     pGameObj->SaveToDB(map->GetId());
 
-    // this will generate a new guid if the object is in an instance
     if (!pGameObj->LoadFromDB(db_lowGUID, map))
     {
         delete pGameObj;
@@ -358,12 +310,6 @@ bool ChatHandler::HandleGameObjectAddCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGameObjectAnimationCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGameObjectAnimationCommand(char* args)
 {
     uint32 lowguid;
@@ -399,12 +345,6 @@ bool ChatHandler::HandleGameObjectAnimationCommand(char* args)
     return false;
 }
 
-/**
- * @brief Handler for HandleGameObjectLootstateCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGameObjectLootstateCommand(char* args)
 {
     uint32 lowguid;
@@ -433,19 +373,13 @@ bool ChatHandler::HandleGameObjectLootstateCommand(char* args)
         }
         else
         {
-            go->SetLootState(LootState(type));  // no check for max value of "type" is intended here
+            go->SetLootState(LootState(type));
         }
         return true;
     }
     return false;
 }
 
-/**
- * @brief Handler for HandleGameObjectStateCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGameObjectStateCommand(char* args)
 {
     uint32 lowguid;
@@ -474,19 +408,13 @@ bool ChatHandler::HandleGameObjectStateCommand(char* args)
         }
         else
         {
-            go->SetGoState(GOState(type));  // no check for max value of "type" is intended here
+            go->SetGoState(GOState(type));
         }
         return true;
     }
     return false;
 }
 
-/**
- * @brief Handler for HandleGameObjectNearCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGameObjectNearCommand(char* args)
 {
     float distance;
@@ -536,12 +464,6 @@ bool ChatHandler::HandleGameObjectNearCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGameObjectTargetCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGameObjectTargetCommand(char* args)
 {
     Player* pl = m_session->GetPlayer();
@@ -549,7 +471,7 @@ bool ChatHandler::HandleGameObjectTargetCommand(char* args)
     GameEventMgr::ActiveEvents const& activeEventsList = sGameEventMgr.GetActiveEventList();
     if (*args)
     {
-        // number or [name] Shift-click form |color|Hgameobject_entry:go_id|h[name]|h|r
+
         char* cId = ExtractKeyFromLink(&args, "Hgameobject_entry");
         if (!cId)
         {
@@ -652,7 +574,7 @@ bool ChatHandler::HandleGameObjectTargetCommand(char* args)
         return false;
     }
 
-    GameObject* target = m_session->GetPlayer()->GetMap()->GetGameObject(ObjectGuid(HIGHGUID_GAMEOBJECT, id, lowguid));
+    GameObject* target = m_session->GetPlayer()->GetMap()->GetGameObject(MakeGuid(HIGHGUID_GAMEOBJECT, id, lowguid));
 
     PSendSysMessage(LANG_GAMEOBJECT_DETAIL, lowguid, goI->name, lowguid, id, x, y, z, mapid, o);
 

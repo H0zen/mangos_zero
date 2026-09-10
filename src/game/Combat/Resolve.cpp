@@ -35,7 +35,7 @@ namespace combat
 {
     namespace
     {
-        /// Armour takes a share of a physical blow, capped at three quarters.
+
         int32 AfterArmour(int32 amount, int32 armour, uint32 attackerLevel)
         {
             if (amount <= 0)
@@ -53,12 +53,9 @@ namespace combat
 
             const int32 reduced = static_cast<int32>(static_cast<float>(amount) - static_cast<float>(amount) * share);
 
-            // A blow that connects always leaves a mark.
             return reduced > 1 ? reduced : 1;
         }
 
-        /// The share of a magical blow the victim shrugs off, capped at three
-        /// quarters, and drawn in the same four-band pattern the client uses.
         int32 AfterResistance(int32 amount, int32 resistance, uint32 attackerLevel,
                               uint32 roll, int32& resisted)
         {
@@ -71,8 +68,7 @@ namespace combat
             float average = static_cast<float>(resistance) * (0.15f / static_cast<float>(attackerLevel ? attackerLevel : 1));
             average = std::max(0.f, std::min(0.75f, average));
 
-            // Four bands around the average, as the client rolls it.
-            const uint32 band = (roll % 10000u) / 2500u;   // 0..3
+            const uint32 band = (roll % 10000u) / 2500u;
             const float portion = std::max(0.f, std::min(1.f, average + 0.25f * static_cast<float>(band) - 0.375f));
 
             resisted = static_cast<int32>(static_cast<float>(amount) * portion);
@@ -87,8 +83,6 @@ namespace combat
             return amount - resisted;
         }
 
-        /// The 1.12 glancing band: how much of the blow survives, from the skill
-        /// gap and the attacker's class.
         float GlancingSurvival(const Combatant& attacker, const Combatant& victim,
                                float band)
         {
@@ -130,14 +124,6 @@ namespace combat
             return low + std::max(0.f, std::min(1.f, band)) * (high - low);
         }
 
-        /**
-         * @brief What the strike's amplifiers do to the blow.
-         *
-         * Crit and crushing make it larger, glancing and a block make it
-         * smaller. All four are the same kind of thing -- a landing that changed
-         * size -- which is why they sit together and none of them decides
-         * whether the blow connected.
-         */
         int32 AfterStrike(const Strike& strike, int32 amount, const Combatant& attacker,
                           const Combatant& victim, const Defences& defences,
                           float glanceBand, int32& blocked)
@@ -167,13 +153,6 @@ namespace combat
             return amount;
         }
 
-        /**
-         * @brief Decide what the shields covering this school take.
-         *
-         * A shield that charges mana stops nothing once the mana is gone, so the
-         * budget is carried down the list: two mana shields draw from the same
-         * pool, and the second only works with what the first left.
-         */
         void PlanAbsorption(const Defences& defences, School school,
                             int32& amount, Outcome& out)
         {
@@ -215,8 +194,6 @@ namespace combat
 
                 share.amount = taken;
 
-                // Exhausted when the blow used the shield up, not merely when the
-                // mana ran short: a mage out of mana still has the shield.
                 share.exhausted = taken >= shield.remaining;
 
                 amount -= share.amount;
@@ -225,7 +202,6 @@ namespace combat
             }
         }
 
-        /// Move part of what is left onto whoever shares the victim's pain.
         void PlanSplits(const Defences& defences, int32& amount, Outcome& out)
         {
             for (const Splitter& splitter : defences.splitters)
@@ -273,7 +249,6 @@ namespace combat
                                  attacker.critChance, blow.canCrit, roll);
             }
 
-            // A tick and a fall neither miss nor crit; they simply land.
             Strike strike;
             if (victim.isEvading)
             {
@@ -288,7 +263,6 @@ namespace combat
     {
         PlanAbsorption(defences, school, amount, out);
 
-        // Damage you do to yourself has nobody to share it with.
         if (!selfInflicted)
         {
             PlanSplits(defences, amount, out);
@@ -326,8 +300,6 @@ namespace combat
         int32 amount = AfterStrike(out.strike, blow.amount, attacker, victim,
                                    defences, rolls.glanceBand, out.blocked);
 
-        // The shield stopped the whole blow. The client has a word for that and
-        // shows it instead of a number, so the ending says so too.
         if (amount <= 0 && out.strike.blocked)
         {
             out.strike.result = Result::Blocked;
@@ -356,8 +328,6 @@ namespace combat
             amount = 0;
         }
 
-        // Nothing reached health and a shield is why: again, a word rather than
-        // a number.
         if (amount == 0 && out.absorbed > 0 && out.splits.empty())
         {
             out.strike.result = Result::Absorbed;

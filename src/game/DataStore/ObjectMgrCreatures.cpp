@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -67,15 +65,12 @@
 struct SQLCreatureLoader : public SQLStorageLoaderBase<SQLCreatureLoader, SQLStorage>
 {
     template<class D>
-        void convert_from_str(uint32 /*field_pos*/, char const* src, D& dst)
+        void convert_from_str(uint32 , char const* src, D& dst)
     {
         dst = D(sScriptMgr.GetScriptId(src));
     }
 };
 
-/**
- * @brief Loads creature template definitions and validates related data.
- */
 void ObjectMgr::LoadCreatureTemplates()
 {
     SQLCreatureLoader loader;
@@ -83,7 +78,7 @@ void ObjectMgr::LoadCreatureTemplates()
 
     sLog.outString(">> Loaded %u creature definitions", sCreatureStorage.GetRecordCount());
     sLog.outString();
-    // check data correctness
+
     for (uint32 i = 1; i < sCreatureStorage.GetMaxEntry(); ++i)
     {
         CreatureInfo const* cInfo = sCreatureStorage.LookupEntry<CreatureInfo>(i);
@@ -116,7 +111,6 @@ void ObjectMgr::LoadCreatureTemplates()
             }
         }
 
-        // used later for scale
         CreatureDisplayInfoEntry const* displayScaleEntry = nullptr;
 
         for (int j = 0; j < MAX_CREATURE_MODEL; ++j)
@@ -171,7 +165,6 @@ void ObjectMgr::LoadCreatureTemplates()
             const_cast<CreatureInfo*>(cInfo)->MaxLevel = uint32(DEFAULT_MAX_CREATURE_LEVEL);
         }
 
-        // use below code for 0-checks for unit_class
         if (!cInfo->UnitClass || (((1 << (cInfo->UnitClass - 1)) & CLASSMASK_ALL_CREATURES) == 0))
         {
             sLog.outErrorDb("Creature (Entry: %u) has invalid `UnitClass(%u)` in creature_template", cInfo->Entry, cInfo->UnitClass);
@@ -214,7 +207,6 @@ void ObjectMgr::LoadCreatureTemplates()
             const_cast<CreatureInfo*>(cInfo)->CreatureType = CREATURE_TYPE_HUMANOID;
         }
 
-        // must exist or used hidden but used in data horse case
         if (cInfo->Family && !sCreatureFamilyStore.LookupEntry(cInfo->Family) && cInfo->Family != CREATURE_FAMILY_HORSE_CUSTOM)
         {
             sLog.outErrorDb("Creature (Entry: %u) has invalid creature family (%u) in `family`", cInfo->Entry, cInfo->Family);
@@ -242,7 +234,7 @@ void ObjectMgr::LoadCreatureTemplates()
             const_cast<CreatureInfo*>(cInfo)->MovementType = IDLE_MOTION_TYPE;
         }
 
-        if (cInfo->EquipmentTemplateId > 0)                         // 0 no equipment
+        if (cInfo->EquipmentTemplateId > 0)
         {
             if (!GetEquipmentInfo(cInfo->EquipmentTemplateId) && !GetEquipmentInfoRaw(cInfo->EquipmentTemplateId))
             {
@@ -259,7 +251,6 @@ void ObjectMgr::LoadCreatureTemplates()
             }
         }
 
-        /// if not set custom creature scale then load scale from CreatureDisplayInfo.dbc
         if (cInfo->Scale <= 0.0f)
         {
             if (displayScaleEntry)
@@ -277,16 +268,9 @@ void ObjectMgr::LoadCreatureTemplates()
     sLog.outString();
 }
 
-/**
- * @brief Converts serialized creature addon aura text into stored spell ids.
- *
- * @param addon The addon record being converted.
- * @param table The source table name.
- * @param guidEntryStr The identifier label used in log output.
- */
 void ObjectMgr::ConvertCreatureAddonAuras(CreatureDataAddon* addon, char const* table, char const* guidEntryStr)
 {
-    // Now add the auras, format "spell1 spell2 ..."
+
     char* p, *s;
     std::vector<int> val;
     s = p = (char*)reinterpret_cast<char const*>(addon->auras);
@@ -306,18 +290,15 @@ void ObjectMgr::ConvertCreatureAddonAuras(CreatureDataAddon* addon, char const* 
             val.push_back(atoi(s));
         }
 
-        // free char* loaded memory
         delete[](char*)reinterpret_cast<char const*>(addon->auras);
     }
 
-    // empty list
     if (val.empty())
     {
         addon->auras = nullptr;
         return;
     }
 
-    // replace by new structures array
     const_cast<uint32*&>(addon->auras) = new uint32[val.size() + 1];
 
     uint32 i = 0;
@@ -333,14 +314,12 @@ void ObjectMgr::ConvertCreatureAddonAuras(CreatureDataAddon* addon, char const* 
             continue;
         }
 
-        // Must be Aura, but also allow dummy/script effect spells, as they are used sometimes to select a random aura or similar
         if (!IsSpellAppliesAura(AdditionalSpellInfo) && !AdditionalSpellInfo->HasSpellEffect(SPELL_EFFECT_DUMMY) && !AdditionalSpellInfo->HasSpellEffect(SPELL_EFFECT_SCRIPT_EFFECT) && !AdditionalSpellInfo->HasSpellEffect(SPELL_EFFECT_TRIGGER_SPELL))
         {
             sLog.outErrorDb("Creature (%s: %u) has spell %u defined in `auras` field in `%s, but spell doesn't apply an aura`.", guidEntryStr, addon->guidOrEntry, cAura, table);
             continue;
         }
 
-        // TODO: Remove LogFilter check after more research
         if (!sLog.HasLogFilter(LOG_FILTER_DB_STRICTED_CHECK) && !IsOnlySelfTargeting(AdditionalSpellInfo))
         {
             sLog.outErrorDb("Creature (%s: %u) has spell %u defined in `auras` field in `%s, but spell is no self-only spell`.", guidEntryStr, addon->guidOrEntry, cAura, table);
@@ -356,22 +335,13 @@ void ObjectMgr::ConvertCreatureAddonAuras(CreatureDataAddon* addon, char const* 
         ++i;
     }
 
-    // fill terminator element (after last added)
     const_cast<uint32&>(addon->auras[i]) = 0;
 }
 
-/**
- * @brief Loads creature addon records from a storage and validates their fields.
- *
- * @param creatureaddons The addon storage to load.
- * @param entryName The entry label used in log output.
- * @param comment The descriptive text used in the load summary.
- */
 void ObjectMgr::LoadCreatureAddons(SQLStorage& creatureaddons, char const* entryName, char const* comment)
 {
     creatureaddons.Load();
 
-    // check data correctness and convert 'auras'
     for (uint32 i = 1; i < creatureaddons.GetMaxEntry(); ++i)
     {
         CreatureDataAddon const* addon = creatureaddons.LookupEntry<CreatureDataAddon>(i);
@@ -406,14 +376,10 @@ void ObjectMgr::LoadCreatureAddons(SQLStorage& creatureaddons, char const* entry
     sLog.outString(">> Loaded %u %s", creatureaddons.GetRecordCount(), comment);
 }
 
-/**
- * @brief Loads creature template and spawn addon records.
- */
 void ObjectMgr::LoadCreatureAddons()
 {
     LoadCreatureAddons(sCreatureInfoAddonStorage, "Entry", "creature template addons");
 
-    // check entry ids
     for (uint32 i = 1; i < sCreatureInfoAddonStorage.GetMaxEntry(); ++i)
     {
         if (CreatureDataAddon const* addon = sCreatureInfoAddonStorage.LookupEntry<CreatureDataAddon>(i))
@@ -427,7 +393,6 @@ void ObjectMgr::LoadCreatureAddons()
 
     LoadCreatureAddons(sCreatureDataAddonStorage, "GUID", "creature addons");
 
-    // check entry ids
     for (uint32 i = 1; i < sCreatureDataAddonStorage.GetMaxEntry(); ++i)
     {
         if (CreatureDataAddon const* addon = sCreatureDataAddonStorage.LookupEntry<CreatureDataAddon>(i))
@@ -440,12 +405,9 @@ void ObjectMgr::LoadCreatureAddons()
     }
 }
 
-/**
- * @brief Loads creature class and level base stat data.
- */
 void ObjectMgr::LoadCreatureClassLvlStats()
 {
-    // initialize data array
+
     memset(&m_creatureClassLvlStats, 0, sizeof(m_creatureClassLvlStats));
 
     std::string queryStr = "SELECT `Class`, `Level`, `BaseMana`, `BaseMeleeAttackPower`, `BaseRangedAttackPower`, `BaseArmor`, `BaseHealthExp0`, `BaseDamageExp0` "
@@ -504,13 +466,6 @@ void ObjectMgr::LoadCreatureClassLvlStats()
     sLog.outString();
 }
 
-/**
- * @brief Gets base class-level stats for a creature level and class.
- *
- * @param level The creature level.
- * @param unitClass The creature unit class.
- * @return The matching stats record, or null if unavailable.
- */
 CreatureClassLvlStats const* ObjectMgr::GetCreatureClassLvlStats(uint32 level, uint32 unitClass) const
 {
     CreatureClassLvlStats const* cCLS = &m_creatureClassLvlStats[level][classToIndex[unitClass]];
@@ -523,9 +478,6 @@ CreatureClassLvlStats const* ObjectMgr::GetCreatureClassLvlStats(uint32 level, u
     return nullptr;
 }
 
-/**
- * @brief Loads creature equipment templates in current and deprecated formats.
- */
 void ObjectMgr::LoadEquipmentTemplates()
 {
     sEquipmentStorage.Load(true);
@@ -593,12 +545,6 @@ void ObjectMgr::LoadEquipmentTemplates()
     sLog.outString();
 }
 
-/**
- * @brief Gets a creature model info record, optionally swapping to the other gender.
- *
- * @param display_id The creature display id.
- * @return The selected model info, or null if none exists.
- */
 CreatureModelInfo const* ObjectMgr::GetCreatureModelRandomGender(uint32 display_id) const
 {
     CreatureModelInfo const* minfo = GetCreatureModelInfo(display_id);
@@ -607,14 +553,13 @@ CreatureModelInfo const* ObjectMgr::GetCreatureModelRandomGender(uint32 display_
         return nullptr;
     }
 
-    // If a model for another gender exists, 50% chance to use it
     if (minfo->modelid_other_gender != 0 && urand(0, 1) == 0)
     {
         CreatureModelInfo const* minfo_tmp = GetCreatureModelInfo(minfo->modelid_other_gender);
         if (!minfo_tmp)
         {
             sLog.outErrorDb("Model (Entry: %u) has modelid_other_gender %u not found in table `creature_model_info`. ", minfo->modelid, minfo->modelid_other_gender);
-            return minfo;                                   // not fatal, just use the previous one
+            return minfo;
         }
         else
         {
@@ -627,14 +572,10 @@ CreatureModelInfo const* ObjectMgr::GetCreatureModelRandomGender(uint32 display_
     }
 }
 
-/**
- * @brief Loads creature model info records and validates playable race models.
- */
 void ObjectMgr::LoadCreatureModelInfo()
 {
     sCreatureModelStorage.Load();
 
-    // post processing
     for (uint32 i = 1; i < sCreatureModelStorage.GetMaxEntry(); ++i)
     {
         CreatureModelInfo const* minfo = sCreatureModelStorage.LookupEntry<CreatureModelInfo>(i);
@@ -683,7 +624,6 @@ void ObjectMgr::LoadCreatureModelInfo()
         }
     }
 
-    // character races expected have model info data in table
     for (uint32 race = 1; race < sChrRacesStore.GetNumRows(); ++race)
     {
         ChrRacesEntry const* raceEntry = sChrRacesStore.LookupEntry(race);
@@ -760,20 +700,17 @@ void ObjectMgr::LoadCreatureModelInfo()
     sLog.outString();
 }
 
-/**
- * @brief Loads creature spawn records and validates their database data.
- */
 void ObjectMgr::LoadCreatures()
 {
     uint32 count = 0;
     QueryResult* result = WorldDatabase.Query(
-        //                      0                  1     2      3
+
             "SELECT `creature`.`guid`, `creature`.`id`, `map`, `modelid`,"
-        //    4               5             6             7             8              9                10           11
+
             "`equipment_id`, `position_x`, `position_y`, `position_z`, `orientation`, `spawntimesecs`, `spawndist`, `currentwaypoint`,"
-        //    12           13         14            15              16
+
             "`curhealth`, `curmana`, `DeathState`, `MovementType`, `event`,"
-        //                    17                                     18
+
             "`pool_creature`.`pool_entry`, `pool_creature_template`.`pool_entry` "
             "FROM `creature` "
             "LEFT OUTER JOIN `game_event_creature` ON `creature`.`guid` = `game_event_creature`.`guid` "
@@ -788,8 +725,6 @@ void ObjectMgr::LoadCreatures()
         sLog.outString();
         return;
     }
-
-    // build single time for check creature data
 
     BarGoLink bar(result->GetRowCount());
 
@@ -854,7 +789,7 @@ void ObjectMgr::LoadCreatures()
             data.modelid_override = 0;
         }
 
-        if (data.equipmentId > 0)                           // -1 no equipment, 0 use default
+        if (data.equipmentId > 0)
         {
             if (!GetEquipmentInfo(data.equipmentId) && !GetEquipmentInfoRaw(data.equipmentId))
             {
@@ -915,7 +850,7 @@ void ObjectMgr::LoadCreatures()
             }
         }
 
-        if (gameEvent == 0 && GuidPoolId == 0 && EntryPoolId == 0) // if not this is to be managed by GameEvent System or Pool system
+        if (gameEvent == 0 && GuidPoolId == 0 && EntryPoolId == 0)
         {
             AddCreatureToGrid(guid, &data);
 
@@ -958,12 +893,6 @@ void ObjectMgr::LoadCreatures()
     sLog.outString();
 }
 
-/**
- * @brief Adds a creature spawn GUID to the grid lookup for its map cell.
- *
- * @param guid The creature spawn GUID.
- * @param data The creature spawn data.
- */
 void ObjectMgr::AddCreatureToGrid(uint32 guid, CreatureData const* data)
 {
     CellPair cell_pair = MaNGOS::ComputeCellPair(data->posX, data->posY);
@@ -973,12 +902,6 @@ void ObjectMgr::AddCreatureToGrid(uint32 guid, CreatureData const* data)
     cell_guids.creatures.insert(guid);
 }
 
-/**
- * @brief Removes a creature spawn GUID from the grid lookup for its map cell.
- *
- * @param guid The creature spawn GUID.
- * @param data The creature spawn data.
- */
 void ObjectMgr::RemoveCreatureFromGrid(uint32 guid, CreatureData const* data)
 {
     CellPair cell_pair = MaNGOS::ComputeCellPair(data->posX, data->posY);

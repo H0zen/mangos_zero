@@ -27,19 +27,9 @@
 
 #include "Platform/Define.h"
 
-/**
- * The chance that doing something teaches you a little more of it.
- *
- * A recipe or a node is coloured by how far above your skill it is, and the colour is the
- * whole of the answer: an orange one nearly always teaches, a grey one nearly never. The
- * four chances are what a server chooses; everything here is arithmetic over them.
- *
- * Chances are in tenths of a percent, which is why every one of them is multiplied by ten:
- * a configured 25 means a quarter of the time.
- */
 namespace skill
 {
-    /// What a server pays for each colour, in whole percent.
+
     struct Chances
     {
         uint32 orange = 0;
@@ -48,12 +38,6 @@ namespace skill
         uint32 grey = 0;
     };
 
-    /**
-     * @brief The chance of learning from one attempt, in tenths of a percent.
-     *
-     * The three levels are where the colours change, counted in skill points: at or above
-     * `grey` nothing more is learnt to speak of, below `yellow` it is orange.
-     */
     inline int32 ChanceAt(uint32 skillValue, uint32 greyLevel, uint32 greenLevel,
                           uint32 yellowLevel, Chances const& paid)
     {
@@ -75,13 +59,6 @@ namespace skill
         return int32(paid.orange * 10);
     }
 
-    /**
-     * @brief What skinning and mining pay at a high skill.
-     *
-     * Both fall off as the skill rises, halving every `steps` points: nothing under the
-     * first step, half over it, a quarter over the second. A step of nothing turns the
-     * falling off off altogether.
-     */
     inline int32 Thinned(int32 chance, uint32 skillValue, uint32 steps)
     {
         if (steps == 0)
@@ -92,8 +69,6 @@ namespace skill
         return chance >> (skillValue / steps);
     }
 
-    /// The chance of learning from a cast of the rod, which needs no colour: it rises to
-    /// seventy-five and falls away after it.
     inline int32 FishingChance(uint32 skillValue)
     {
         return (skillValue < 75 ? 100 : 2500 / int32(skillValue - 50)) * 10;

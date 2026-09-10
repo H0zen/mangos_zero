@@ -23,17 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file LookupCommands.cpp
- * @brief Implementation of lookup and search chat commands.
- *
- * This file contains chat command handlers for searching game data including:
- * - Item lookup by name or ID
- * - NPC lookup
- * - Quest lookup
- * - Spell and ability lookup
- */
-
 #include "Common/Locales.h"
 #include <sstream>
 #include <string>
@@ -44,12 +33,6 @@
 #include "World.h"
 #include "SQLStorages.h"
 
-/**
- * @brief Handler for LookupPlayerSearchCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::LookupPlayerSearchCommand(QueryResult* result, uint32* limit)
 {
     if (!result)
@@ -79,7 +62,6 @@ bool ChatHandler::LookupPlayerSearchCommand(QueryResult* result, uint32* limit)
         uint32 acc_id = fields[0].GetUInt32();
         std::string acc_name = fields[1].GetCppString();
 
-        ///- Get the characters for account id
         QueryResult* chars = CharacterDatabase.PQuery("SELECT `guid`, `name`, `race`, `class`, `level` FROM `characters` WHERE `account` = %u", acc_id);
         if (chars)
         {
@@ -98,7 +80,7 @@ bool ChatHandler::LookupPlayerSearchCommand(QueryResult* result, uint32* limit)
 
     delete result;
 
-    if (*limit == limit_original)                           // empty accounts only
+    if (*limit == limit_original)
     {
         PSendSysMessage(LANG_NO_PLAYERS_FOUND);
         SetSentErrorMessage(true);
@@ -108,14 +90,7 @@ bool ChatHandler::LookupPlayerSearchCommand(QueryResult* result, uint32* limit)
     return true;
 }
 
-/**
- * @brief Displays a localized quest summary line.
- *
- * @param questId The quest identifier to display.
- * @param loc_idx The locale index used for localized strings.
- * @param target Optional player used to show quest progress status.
- */
-void ChatHandler::ShowQuestListHelper(uint32 questId, int32 loc_idx, Player* target /*= nullptr*/)
+void ChatHandler::ShowQuestListHelper(uint32 questId, int32 loc_idx, Player* target )
 {
     Quest const* qinfo = sObjectMgr.GetQuestTemplate(questId);
     if (!qinfo)
@@ -159,14 +134,7 @@ void ChatHandler::ShowQuestListHelper(uint32 questId, int32 loc_idx, Player* tar
     }
 }
 
-/**
- * @brief Displays a localized item summary line.
- *
- * @param itemId The item identifier to display.
- * @param loc_idx The locale index used for localized strings.
- * @param target Optional player used to evaluate item usability.
- */
-void ChatHandler::ShowItemListHelper(uint32 itemId, int loc_idx, Player* target /*=nullptr*/)
+void ChatHandler::ShowItemListHelper(uint32 itemId, int loc_idx, Player* target )
 {
     ItemPrototype const* itemProto = sItemStorage.LookupEntry<ItemPrototype >(itemId);
     if (!itemProto)
@@ -197,12 +165,6 @@ void ChatHandler::ShowItemListHelper(uint32 itemId, int loc_idx, Player* target 
     }
 }
 
-/**
- * @brief Handler for HandleLookupAreaCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupAreaCommand(char* args)
 {
     if (!*args)
@@ -218,12 +180,10 @@ bool ChatHandler::HandleLookupAreaCommand(char* args)
         return false;
     }
 
-    uint32 counter = 0;                                     // Counter for figure out that we found smth.
+    uint32 counter = 0;
 
-    // converting string that we try to find to lower case
     wstrToLower(wnamepart);
 
-    // Search in AreaTable.dbc
     for (uint32 areaid = 0; areaid <= sAreaStore.GetNumRows(); ++areaid)
     {
         AreaTableEntry const* areaEntry = sAreaStore.LookupEntry(areaid);
@@ -261,7 +221,7 @@ bool ChatHandler::HandleLookupAreaCommand(char* args)
 
             if (loc < MAX_LOCALE)
             {
-                // send area in "id - [name]" format
+
                 std::ostringstream ss;
                 if (m_session)
                 {
@@ -279,7 +239,7 @@ bool ChatHandler::HandleLookupAreaCommand(char* args)
         }
     }
 
-    if (counter == 0)                                      // if counter == 0 then we found nth
+    if (counter == 0)
     {
         SendSysMessage(LANG_COMMAND_NOAREAFOUND);
     }
@@ -287,12 +247,6 @@ bool ChatHandler::HandleLookupAreaCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleLookupTeleCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupTeleCommand(char* args)
 {
     std::string namepart = args;
@@ -303,7 +257,6 @@ bool ChatHandler::HandleLookupTeleCommand(char* args)
         return false;
     }
 
-    // converting string that we try to find to lower case
     wstrToLower(wnamepart);
 
     std::ostringstream reply;
@@ -340,12 +293,6 @@ bool ChatHandler::HandleLookupTeleCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleLookupFactionCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupFactionCommand(char* args)
 {
     if (!*args)
@@ -353,7 +300,6 @@ bool ChatHandler::HandleLookupFactionCommand(char* args)
         return false;
     }
 
-    // Can be nullptr at console call
     Player* target = getSelectedPlayer();
 
     std::string namepart = args;
@@ -364,10 +310,9 @@ bool ChatHandler::HandleLookupFactionCommand(char* args)
         return false;
     }
 
-    // converting string that we try to find to lower case
     wstrToLower(wnamepart);
 
-    uint32 counter = 0;                                     // Counter for figure out that we found smth.
+    uint32 counter = 0;
 
     for (uint32 id = 0; id < sFactionStore.GetNumRows(); ++id)
     {
@@ -413,19 +358,13 @@ bool ChatHandler::HandleLookupFactionCommand(char* args)
         }
     }
 
-    if (counter == 0)                                       // if counter == 0 then we found nth
+    if (counter == 0)
     {
         SendSysMessage(LANG_COMMAND_FACTION_NOTFOUND);
     }
     return true;
 }
 
-/**
- * @brief Handler for HandleLookupEventCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupEventCommand(char* args)
 {
     if (!*args)
@@ -436,7 +375,6 @@ bool ChatHandler::HandleLookupEventCommand(char* args)
     std::string namepart = args;
     std::wstring wnamepart;
 
-    // converting string that we try to find to lower case
     if (!Utf8toWStr(namepart, wnamepart))
     {
         return false;
@@ -488,12 +426,6 @@ bool ChatHandler::HandleLookupEventCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleLookupAccountEmailCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupAccountEmailCommand(char* args)
 {
     char* emailStr = ExtractQuotedOrLiteralArg(&args);
@@ -510,18 +442,12 @@ bool ChatHandler::HandleLookupAccountEmailCommand(char* args)
 
     std::string email = emailStr;
     LoginDatabase.escape_string(email);
-    //                                                 0   1         2        3        4
+
     QueryResult* result = LoginDatabase.PQuery("SELECT `id`, `username`, `last_ip`, `gmlevel`, `expansion` FROM `account` WHERE `email` " _LIKE_ " " _CONCAT3_("'%%'", "'%s'", "'%%'"), email.c_str());
 
     return ShowAccountListHelper(result, &limit);
 }
 
-/**
- * @brief Handler for HandleLookupAccountIpCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupAccountIpCommand(char* args)
 {
     char* ipStr = ExtractQuotedOrLiteralArg(&args);
@@ -539,18 +465,11 @@ bool ChatHandler::HandleLookupAccountIpCommand(char* args)
     std::string ip = ipStr;
     LoginDatabase.escape_string(ip);
 
-    //                                                 0   1         2        3        4
     QueryResult* result = LoginDatabase.PQuery("SELECT `id`, `username`, `last_ip`, `gmlevel`, `expansion` FROM `account` WHERE `last_ip` " _LIKE_ " " _CONCAT3_("'%%'", "'%s'", "'%%'"), ip.c_str());
 
     return ShowAccountListHelper(result, &limit);
 }
 
-/**
- * @brief Handler for HandleLookupAccountNameCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupAccountNameCommand(char* args)
 {
     char* accountStr = ExtractQuotedOrLiteralArg(&args);
@@ -572,18 +491,12 @@ bool ChatHandler::HandleLookupAccountNameCommand(char* args)
     }
 
     LoginDatabase.escape_string(account);
-    //                                                  0     1           2          3          4
+
     QueryResult* result = LoginDatabase.PQuery("SELECT `id`, `username`, `last_ip`, `gmlevel`, `expansion` FROM `account` WHERE `username` " _LIKE_ " " _CONCAT3_("'%%'", "'%s'", "'%%'"), account.c_str());
 
     return ShowAccountListHelper(result, &limit);
 }
 
-/**
- * @brief Handler for ShowAccountListHelper command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::ShowAccountListHelper(QueryResult* result, uint32* limit, bool title, bool error)
 {
     if (!result)
@@ -595,18 +508,16 @@ bool ChatHandler::ShowAccountListHelper(QueryResult* result, uint32* limit, bool
         return true;
     }
 
-    ///- Display the list of account/characters online
-    if (!m_session && title)                                // not output header for online case
+    if (!m_session && title)
     {
         SendSysMessage(LANG_ACCOUNT_LIST_BAR);
         SendSysMessage(LANG_ACCOUNT_LIST_HEADER);
         SendSysMessage(LANG_ACCOUNT_LIST_BAR);
     }
 
-    ///- Circle through accounts
     do
     {
-        // check limit
+
         if (limit)
         {
             if (*limit == 0)
@@ -638,7 +549,7 @@ bool ChatHandler::ShowAccountListHelper(QueryResult* result, uint32* limit, bool
 
     delete result;
 
-    if (!m_session)                                         // not output header for online case
+    if (!m_session)
     {
         SendSysMessage(LANG_ACCOUNT_LIST_BAR);
     }
@@ -646,12 +557,6 @@ bool ChatHandler::ShowAccountListHelper(QueryResult* result, uint32* limit, bool
     return true;
 }
 
-/**
- * @brief Handler for HandleLookupPlayerIpCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupPlayerIpCommand(char* args)
 {
     char* ipStr = ExtractQuotedOrLiteralArg(&args);
@@ -674,12 +579,6 @@ bool ChatHandler::HandleLookupPlayerIpCommand(char* args)
     return LookupPlayerSearchCommand(result, &limit);
 }
 
-/**
- * @brief Handler for HandleLookupPlayerAccountCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupPlayerAccountCommand(char* args)
 {
     char* accountStr = ExtractQuotedOrLiteralArg(&args);
@@ -707,12 +606,6 @@ bool ChatHandler::HandleLookupPlayerAccountCommand(char* args)
     return LookupPlayerSearchCommand(result, &limit);
 }
 
-/**
- * @brief Handler for HandleLookupPlayerEmailCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupPlayerEmailCommand(char* args)
 {
     char* emailStr = ExtractQuotedOrLiteralArg(&args);
@@ -735,12 +628,6 @@ bool ChatHandler::HandleLookupPlayerEmailCommand(char* args)
     return LookupPlayerSearchCommand(result, &limit);
 }
 
-/**
- * @brief Handler for HandleLookupPoolCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupPoolCommand(char* args)
 {
     if (!*args)
@@ -753,7 +640,6 @@ bool ChatHandler::HandleLookupPoolCommand(char* args)
 
     uint32 counter = 0;
 
-    // spawn pools for expected map or for not initialized shared pools state for non-instanceable maps
     for (uint16 pool_id = 0; pool_id < sPoolMgr.GetMaxPoolId(); ++pool_id)
     {
         PoolTemplateData const& pool_template = sPoolMgr.GetPoolTemplate(pool_id);
@@ -778,12 +664,6 @@ bool ChatHandler::HandleLookupPoolCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleLookupItemCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupItemCommand(char* args)
 {
     if (!*args)
@@ -794,7 +674,6 @@ bool ChatHandler::HandleLookupItemCommand(char* args)
     std::string namepart = args;
     std::wstring wnamepart;
 
-    // converting string that we try to find to lower case
     if (!Utf8toWStr(namepart, wnamepart))
     {
         return false;
@@ -806,7 +685,6 @@ bool ChatHandler::HandleLookupItemCommand(char* args)
 
     uint32 counter = 0;
 
-    // Search in `item_template`
     for (uint32 id = 0; id < sItemStorage.GetMaxEntry(); ++id)
     {
         ItemPrototype const* pProto = sItemStorage.LookupEntry<ItemPrototype >(id);
@@ -817,7 +695,7 @@ bool ChatHandler::HandleLookupItemCommand(char* args)
 
         int loc_idx = GetSessionDbLocaleIndex();
 
-        std::string name;                                   // "" for let later only single time check default locale name directly
+        std::string name;
         sObjectMgr.GetItemLocaleStrings(id, loc_idx, &name);
         if ((name.empty() || !Utf8FitTo(name, wnamepart)) && !Utf8FitTo(pProto->Name1, wnamepart))
         {
@@ -836,12 +714,6 @@ bool ChatHandler::HandleLookupItemCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleLookupItemSetCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupItemSetCommand(char* args)
 {
     if (!*args)
@@ -857,12 +729,10 @@ bool ChatHandler::HandleLookupItemSetCommand(char* args)
         return false;
     }
 
-    // converting string that we try to find to lower case
     wstrToLower(wnamepart);
 
-    uint32 counter = 0;                                     // Counter for figure out that we found smth.
+    uint32 counter = 0;
 
-    // Search in ItemSet.dbc
     for (uint32 id = 0; id < sItemSetStore.GetNumRows(); ++id)
     {
         ItemSetEntry const* set = sItemSetStore.LookupEntry(id);
@@ -900,7 +770,7 @@ bool ChatHandler::HandleLookupItemSetCommand(char* args)
 
             if (loc < MAX_LOCALE)
             {
-                // send item set in "id - [namedlink locale]" format
+
                 if (m_session)
                 {
                     PSendSysMessage(LANG_ITEMSET_LIST_CHAT, id, id, name.c_str(), localeNames[loc]);
@@ -913,19 +783,13 @@ bool ChatHandler::HandleLookupItemSetCommand(char* args)
             }
         }
     }
-    if (counter == 0)                                       // if counter == 0 then we found nth
+    if (counter == 0)
     {
         SendSysMessage(LANG_COMMAND_NOITEMSETFOUND);
     }
     return true;
 }
 
-/**
- * @brief Handler for HandleLookupSkillCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupSkillCommand(char* args)
 {
     if (!*args)
@@ -933,7 +797,6 @@ bool ChatHandler::HandleLookupSkillCommand(char* args)
         return false;
     }
 
-    // can be nullptr in console call
     Player* target = getSelectedPlayer();
 
     std::string namepart = args;
@@ -944,12 +807,10 @@ bool ChatHandler::HandleLookupSkillCommand(char* args)
         return false;
     }
 
-    // converting string that we try to find to lower case
     wstrToLower(wnamepart);
 
-    uint32 counter = 0;                                     // Counter for figure out that we found smth.
+    uint32 counter = 0;
 
-    // Search in SkillLine.dbc
     for (uint32 id = 0; id < sSkillLineStore.GetNumRows(); ++id)
     {
         SkillLineEntry const* skillInfo = sSkillLineStore.LookupEntry(id);
@@ -1001,7 +862,6 @@ bool ChatHandler::HandleLookupSkillCommand(char* args)
                     snprintf(valStr, 50, valFormat, curValue, maxValue, permValue, tempValue);
                 }
 
-                // send skill in "id - [namedlink locale]" format
                 if (m_session)
                 {
                     PSendSysMessage(LANG_SKILL_LIST_CHAT, id, id, name.c_str(), localeNames[loc], knownStr, valStr);
@@ -1015,19 +875,13 @@ bool ChatHandler::HandleLookupSkillCommand(char* args)
             }
         }
     }
-    if (counter == 0)                                       // if counter == 0 then we found nth
+    if (counter == 0)
     {
         SendSysMessage(LANG_COMMAND_NOSKILLFOUND);
     }
     return true;
 }
 
-/**
- * @brief Handler for HandleLookupSpellCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupSpellCommand(char* args)
 {
     if (!*args)
@@ -1035,7 +889,6 @@ bool ChatHandler::HandleLookupSpellCommand(char* args)
         return false;
     }
 
-    // can be nullptr at console call
     Player* target = getSelectedPlayer();
 
     std::string namepart = args;
@@ -1046,12 +899,10 @@ bool ChatHandler::HandleLookupSpellCommand(char* args)
         return false;
     }
 
-    // converting string that we try to find to lower case
     wstrToLower(wnamepart);
 
-    uint32 counter = 0;                                     // Counter for figure out that we found smth.
+    uint32 counter = 0;
 
-    // Search in Spell.dbc
     for (uint32 id = 0; id < sSpellStore.GetNumRows(); ++id)
     {
         SpellEntry const* spellInfo = sSpellStore.LookupEntry(id);
@@ -1094,19 +945,13 @@ bool ChatHandler::HandleLookupSpellCommand(char* args)
             }
         }
     }
-    if (counter == 0)                                       // if counter == 0 then we found nth
+    if (counter == 0)
     {
         SendSysMessage(LANG_COMMAND_NOSPELLFOUND);
     }
     return true;
 }
 
-/**
- * @brief Handler for HandleLookupQuestCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupQuestCommand(char* args)
 {
     if (!*args)
@@ -1114,13 +959,11 @@ bool ChatHandler::HandleLookupQuestCommand(char* args)
         return false;
     }
 
-    // can be nullptr at console call
     Player* target = getSelectedPlayer();
 
     std::string namepart = args;
     std::wstring wnamepart;
 
-    // converting string that we try to find to lower case
     if (!Utf8toWStr(namepart, wnamepart))
     {
         return false;
@@ -1137,7 +980,7 @@ bool ChatHandler::HandleLookupQuestCommand(char* args)
     {
         Quest* qinfo = iter->second;
 
-        std::string title;                                  // "" for avoid repeating check default locale
+        std::string title;
         sObjectMgr.GetQuestLocaleStrings(qinfo->GetQuestId(), loc_idx, &title);
 
         if ((title.empty() || !Utf8FitTo(title, wnamepart)) && !Utf8FitTo(qinfo->GetTitle(), wnamepart))
@@ -1157,12 +1000,6 @@ bool ChatHandler::HandleLookupQuestCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleLookupCreatureCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupCreatureCommand(char* args)
 {
     if (!*args)
@@ -1173,7 +1010,6 @@ bool ChatHandler::HandleLookupCreatureCommand(char* args)
     std::string namepart = args;
     std::wstring wnamepart;
 
-    // converting string that we try to find to lower case
     if (!Utf8toWStr(namepart, wnamepart))
     {
         return false;
@@ -1193,7 +1029,7 @@ bool ChatHandler::HandleLookupCreatureCommand(char* args)
 
         int loc_idx = GetSessionDbLocaleIndex();
 
-        char const* name = "";                              // "" for avoid repeating check for default locale
+        char const* name = "";
         sObjectMgr.GetCreatureLocaleStrings(id, loc_idx, &name);
         if (!*name || !Utf8FitTo(name, wnamepart))
         {
@@ -1224,12 +1060,6 @@ bool ChatHandler::HandleLookupCreatureCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleLookupObjectCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupObjectCommand(char* args)
 {
     if (!*args)
@@ -1240,7 +1070,6 @@ bool ChatHandler::HandleLookupObjectCommand(char* args)
     std::string namepart = args;
     std::wstring wnamepart;
 
-    // converting string that we try to find to lower case
     if (!Utf8toWStr(namepart, wnamepart))
     {
         return false;
@@ -1307,12 +1136,6 @@ bool ChatHandler::HandleLookupObjectCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleLookupTaxiNodeCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLookupTaxiNodeCommand(char* args)
 {
     if (!*args)
@@ -1328,12 +1151,10 @@ bool ChatHandler::HandleLookupTaxiNodeCommand(char* args)
         return false;
     }
 
-    // converting string that we try to find to lower case
     wstrToLower(wnamepart);
 
-    uint32 counter = 0;                                     // Counter for figure out that we found smth.
+    uint32 counter = 0;
 
-    // Search in TaxiNodes.dbc
     for (uint32 id = 0; id < sTaxiNodesStore.GetNumRows(); ++id)
     {
         TaxiNodesEntry const* nodeEntry = sTaxiNodesStore.LookupEntry(id);
@@ -1371,7 +1192,7 @@ bool ChatHandler::HandleLookupTaxiNodeCommand(char* args)
 
             if (loc < MAX_LOCALE)
             {
-                // send taxinode in "id - [name] (Map:m X:x Y:y Z:z)" format
+
                 if (m_session)
                 {
                     PSendSysMessage(LANG_TAXINODE_ENTRY_LIST_CHAT, id, id, name.c_str(), localeNames[loc],
@@ -1386,7 +1207,7 @@ bool ChatHandler::HandleLookupTaxiNodeCommand(char* args)
             }
         }
     }
-    if (counter == 0)                                       // if counter == 0 then we found nth
+    if (counter == 0)
     {
         SendSysMessage(LANG_COMMAND_NOTAXINODEFOUND);
     }

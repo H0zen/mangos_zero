@@ -116,8 +116,8 @@ TEST_CASE("capture point: it knows who walked in and who walked out")
 {
     CapturePoint point;
 
-    ObjectGuid const one(HIGHGUID_PLAYER, uint32(1));
-    ObjectGuid const two(HIGHGUID_PLAYER, uint32(2));
+    ObjectGuid const one = MakeGuid(HIGHGUID_PLAYER, uint32(1));
+    ObjectGuid const two = MakeGuid(HIGHGUID_PLAYER, uint32(2));
 
     CHECK(point.IsDeserted());
 

@@ -37,12 +37,12 @@ TEST_CASE("user tally: uses and users are counted apart")
 {
     UserTally tally;
 
-    ObjectGuid const one(HIGHGUID_PLAYER, uint32(1));
-    ObjectGuid const two(HIGHGUID_PLAYER, uint32(2));
+    ObjectGuid const one = MakeGuid(HIGHGUID_PLAYER, uint32(1));
+    ObjectGuid const two = MakeGuid(HIGHGUID_PLAYER, uint32(2));
 
     CHECK(tally.Uses() == 0);
     CHECK(tally.Distinct() == 0);
-    CHECK(tally.First().IsEmpty());
+    CHECK(tally.First() == 0);
 
     tally.UsedBy(one);
     tally.UsedBy(one);
@@ -59,8 +59,8 @@ TEST_CASE("user tally: the first one through is kept, and only the first")
 {
     UserTally tally;
 
-    ObjectGuid const opener(HIGHGUID_PLAYER, uint32(7));
-    ObjectGuid const latecomer(HIGHGUID_PLAYER, uint32(9));
+    ObjectGuid const opener = MakeGuid(HIGHGUID_PLAYER, uint32(7));
+    ObjectGuid const latecomer = MakeGuid(HIGHGUID_PLAYER, uint32(9));
 
     tally.UsedBy(opener);
     tally.UsedBy(latecomer);
@@ -79,23 +79,23 @@ TEST_CASE("user tally: a use by nobody in particular still counts")
 
     CHECK(tally.Uses() == 2);
     CHECK(tally.Distinct() == 0);
-    CHECK(tally.First().IsEmpty());
+    CHECK(tally.First() == 0);
 }
 
 TEST_CASE("user tally: forgetting leaves it as good as untouched")
 {
     UserTally tally;
 
-    tally.UsedBy(ObjectGuid(HIGHGUID_PLAYER, uint32(3)));
+    tally.UsedBy(MakeGuid(HIGHGUID_PLAYER, uint32(3)));
     tally.Used();
     tally.Forget();
 
     CHECK(tally.Uses() == 0);
     CHECK(tally.Distinct() == 0);
-    CHECK(tally.First().IsEmpty());
+    CHECK(tally.First() == 0);
 
     // And it takes a new first user afterwards.
-    ObjectGuid const next(HIGHGUID_PLAYER, uint32(4));
+    ObjectGuid const next = MakeGuid(HIGHGUID_PLAYER, uint32(4));
     tally.UsedBy(next);
     CHECK(tally.First() == next);
 }

@@ -29,26 +29,9 @@
 
 #include <algorithm>
 
-/**
- * The numbers a creature fights with, worked out and nothing else.
- *
- * Nothing here reads a unit or writes a field. What a creature's armour comes to
- * given its modifiers is a question with an answer, and the answer does not
- * depend on there being a creature to ask -- which is what lets it be checked.
- *
- * A creature is the simple case, and worth reading first: most of its numbers are
- * its modifiers folded, with no stat to derive them from. Only the swing is
- * really computed, and only because attack power feeds into it.
- */
 namespace stats
 {
-    /**
-     * @brief What a creature's rank multiplies its numbers by.
-     *
-     * A rank is a statement about how hard the thing is meant to be, and a server says how
-     * much harder by three numbers. They are read from the configuration and handed in;
-     * nothing here knows where they came from.
-     */
+
     struct RankRates
     {
         float health = 1.0f;
@@ -56,12 +39,6 @@ namespace stats
         float spellDamage = 1.0f;
     };
 
-    /**
-     * @brief The level a creature spawns at.
-     *
-     * A template names a band. A spawn either forces a level or takes one from the band,
-     * and `roll` is that draw -- passed in, so the answer can be checked without a die.
-     */
     inline uint32 CreatureLevel(uint32 minLevel, uint32 maxLevel, uint32 forced, uint32 roll)
     {
         if (forced != 0)
@@ -77,14 +54,12 @@ namespace stats
         return roll;
     }
 
-    /// What a creature is made of before its rank is applied.
     struct Vitals
     {
         uint32 health = 1;
         uint32 mana = 0;
     };
 
-    /// From the class-and-level table, which is scaled by the template's own multipliers.
     inline Vitals VitalsFromTable(uint32 baseHealth, uint32 baseMana,
                                   float healthMultiplier, float powerMultiplier)
     {
@@ -95,12 +70,6 @@ namespace stats
         return made;
     }
 
-    /**
-     * @brief From the template's own band, read at the level the creature came out at.
-     *
-     * The band is given by its ends whichever way round the row states them, and the level
-     * decides how far along it this creature sits. A band of one level sits at its start.
-     */
     inline Vitals VitalsFromBand(uint32 healthAtOneEnd, uint32 healthAtOther,
                                  uint32 manaAtOneEnd, uint32 manaAtOther,
                                  uint32 level, uint32 minLevel, uint32 maxLevel)
@@ -121,7 +90,6 @@ namespace stats
         return made;
     }
 
-    /// Nothing alive has less than one point of health, whatever the rate says.
     inline uint32 ScaledHealth(uint32 health, float rate)
     {
         const uint32 scaled = uint32(health * rate);
@@ -129,19 +97,6 @@ namespace stats
         return scaled < 1 ? 1 : scaled;
     }
 
-    /**
-     * @brief How far off a creature notices somebody.
-     *
-     * Twenty yards against an equal, a yard more for every level the viewer is below it, a
-     * yard less for every level above -- and no more than twenty-five levels' worth either
-     * way, so a level 30 and a level 5 are noticed at the same distance by a level 60.
-     * Never closer than five yards, which is where a fight happens anyway.
-     *
-     * Detection yards are what the two sides' auras add between them, and they only count
-     * while the creature is low enough for the client to bother: five levels under the cap.
-     * The rate is what this server multiplies the whole answer by, and a rate of nothing
-     * means a creature notices nobody.
-     */
     inline float NoticeRange(uint32 creatureLevel, uint32 viewerLevel, float detectionYards,
                              uint32 maxPlayerLevel, float rate)
     {
@@ -171,13 +126,6 @@ namespace stats
         return yards * rate;
     }
 
-    /**
-     * @brief What a fall costs, as a share of everything the faller has.
-     *
-     * Nothing under about fifteen yards: the formula resolves to nought there, which is why
-     * a short drop is free. Feather fall and its kin take yards off the drop before it is
-     * measured, so a long enough fall with enough of them still costs nothing.
-     */
     inline float FallShare(float yards, float yardsForgiven)
     {
         const float share = 0.018f * (yards - yardsForgiven) - 0.2426f;
@@ -185,46 +133,28 @@ namespace stats
         return share > 0.0f ? share : 0.0f;
     }
 
-    /// The damage itself, at the rate this server charges for falling.
     inline uint32 FallDamage(float yards, float yardsForgiven, uint32 fullHealth, float rate)
     {
         return uint32(FallShare(yards, yardsForgiven) * float(fullHealth) * rate);
     }
 
-    /// What a creature stops with a shield it does not carry. It has no shield
-    /// and no shield value in its row, so the game answers from its size.
     inline uint32 CreatureShieldBlock(uint32 level, float strength)
     {
         return level / 2 + uint32(strength / 20.0f);
     }
 
-    /// Armour, health, a school's resistance, a pool of power: the fold, no more.
     inline float Simple(Modifiers const& mods) { return mods.Folded(); }
 
-    /// What a swing does, at its least and its most.
     struct Swing
     {
         float least = 0.0f;
         float most = 0.0f;
     };
 
-    /**
-     * @brief The damage one of a creature's weapons does.
-     *
-     * @param mods The weapon's own four modifiers.
-     * @param weaponLeast The weapon's own low roll.
-     * @param weaponMost The weapon's own high roll.
-     * @param attackPowerGained How much attack power it has above what its
-     *        template was written with. Only the difference counts: the template's
-     *        damage already includes the attack power the template gave it.
-     * @param perSecond How much of a second one swing is worth, which is how
-     *        attack power becomes damage.
-     * @param damageMultiplier The template's own multiplier over the whole thing.
-     */
     inline Swing CreatureSwing(Modifiers const& mods, float weaponLeast, float weaponMost,
                                float attackPowerGained, float perSecond, float damageMultiplier)
     {
-        // Fourteen is what a point of attack power is worth over a second.
+
         float const fromPower = attackPowerGained * perSecond / 14.0f;
         float const base = mods.baseValue + fromPower;
 
@@ -237,7 +167,6 @@ namespace stats
         return swing;
     }
 
-    /// What the attack power fields are set to: a base, a flat addition, and a share.
     struct AttackPower
     {
         int32 base = 0;

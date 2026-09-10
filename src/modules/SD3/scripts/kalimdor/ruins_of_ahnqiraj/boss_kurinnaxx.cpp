@@ -62,7 +62,7 @@ struct boss_kurinnaxx : public CreatureScript
         uint32 m_uiTrapTriggerTimer;
         bool m_bEnraged;
 
-        ObjectGuid m_sandtrapGuid;
+        ObjectGuid m_sandtrapGuid = 0;
 
         void Reset() override
         {

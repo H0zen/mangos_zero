@@ -30,11 +30,6 @@
 #include <map>
 #include <utility>
 
-/**
- * Records the map id serialized for each character by the most recent
- * SMSG_CHAR_ENUM. Login compares against this wire-facing snapshot, rather
- * than a fresh database read, to detect movement since the screen was shown.
- */
 class CharacterEnumMapSnapshot
 {
     public:
@@ -55,11 +50,6 @@ class CharacterEnumMapSnapshot
         MapByGuid m_maps;
 };
 
-/**
- * One-shot gate for SMSG_LOGIN_VERIFY_WORLD. An unchanged character-screen
- * destination omits the initial packet, while an admission failure can still
- * claim the fallback send without risking a duplicate.
- */
 class LoginVerifyDeliveryState
 {
     public:

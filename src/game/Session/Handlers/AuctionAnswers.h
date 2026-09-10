@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks at an auction house.
 namespace auctions
 {
     void AuctionHello(Player& who, WorldPacket& packet);

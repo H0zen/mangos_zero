@@ -55,8 +55,6 @@ Map* InstanceLedger::OpenFor(Player& player, uint32 mapId)
         return nullptr;
     }
 
-    // A battleground copy is cast when the match is made, long before anyone walks in, so
-    // here it is only ever looked up. His stay names it; without one he has no business here.
     if (entry->IsBattleGround())
     {
         const uint32 match = player.Battle().Id();
@@ -82,8 +80,7 @@ Map* InstanceLedger::OpenFor(Player& player, uint32 mapId)
     }
     else
     {
-        // Nothing binds him and nobody in his group has been inside: the first time this
-        // dungeon exists for him is now.
+
         copy = MintId();
     }
 

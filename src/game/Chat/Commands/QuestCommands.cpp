@@ -23,27 +23,11 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file QuestCommands.cpp
- * @brief Implementation of quest management chat commands.
- *
- * This file contains chat command handlers for quest operations including:
- * - Quest adding and removal
- * - Quest completion
- * - Quest status management
- */
-
 #include "Chat.h"
 #include "ObjectMgr.h"
 #include "World.h"
 #include "SQLStorages.h"
 
-/**
- * @brief Adds a quest to the selected player.
- *
- * @param args Command arguments: quest_id.
- * @returns True if the quest was added successfully, false otherwise.
- */
 bool ChatHandler::HandleQuestAddCommand(char* args)
 {
     Player* player = getSelectedPlayer();
@@ -54,8 +38,6 @@ bool ChatHandler::HandleQuestAddCommand(char* args)
         return false;
     }
 
-    // .addquest #entry'
-    // number or [name] Shift-click form |color|Hquest:quest_id:quest_level|h[name]|h|r
     uint32 entry;
     if (!ExtractUint32KeyFromLink(&args, "Hquest", entry))
     {
@@ -70,7 +52,6 @@ bool ChatHandler::HandleQuestAddCommand(char* args)
         return false;
     }
 
-    // check item starting quest (it can work incorrectly if added without item in inventory)
     for (uint32 id = 0; id < sItemStorage.GetMaxEntry(); ++id)
     {
         ItemPrototype const* pProto = sItemStorage.LookupEntry<ItemPrototype>(id);
@@ -87,7 +68,6 @@ bool ChatHandler::HandleQuestAddCommand(char* args)
         }
     }
 
-    // ok, normal (creature/GO starting) quest
     if (player->CanAddQuest(pQuest, true))
     {
         player->AddQuest(pQuest, nullptr);
@@ -101,12 +81,6 @@ bool ChatHandler::HandleQuestAddCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleQuestRemoveCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleQuestRemoveCommand(char* args)
 {
     Player* player = getSelectedPlayer();
@@ -117,8 +91,6 @@ bool ChatHandler::HandleQuestRemoveCommand(char* args)
         return false;
     }
 
-    // .removequest #entry'
-    // number or [name] Shift-click form |color|Hquest:quest_id:quest_level|h[name]|h|r
     uint32 entry;
     if (!ExtractUint32KeyFromLink(&args, "Hquest", entry))
     {
@@ -134,7 +106,6 @@ bool ChatHandler::HandleQuestRemoveCommand(char* args)
         return false;
     }
 
-    // remove all quest entries for 'entry' from quest log
     for (uint8 slot = 0; slot < MAX_QUEST_LOG_SIZE; ++slot)
     {
         uint32 quest = player->GetQuestSlotQuestId(slot);
@@ -142,27 +113,18 @@ bool ChatHandler::HandleQuestRemoveCommand(char* args)
         {
             player->SetQuestSlot(slot, 0);
 
-            // we ignore unequippable quest items in this case, its' still be equipped
             player->TakeQuestSourceItem(quest, false);
         }
     }
 
-    // set quest status to not started (will updated in DB at next save)
     player->SetQuestStatus(entry, QUEST_STATUS_NONE);
 
-    // reset rewarded for restart repeatable quest
     player->getQuestStatusMap()[entry].m_rewarded = false;
 
     SendSysMessage(LANG_COMMAND_QUEST_REMOVED);
     return true;
 }
 
-/**
- * @brief Handler for HandleQuestCompleteCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleQuestCompleteCommand(char* args)
 {
     Player* player = getSelectedPlayer();
@@ -173,8 +135,6 @@ bool ChatHandler::HandleQuestCompleteCommand(char* args)
         return false;
     }
 
-    // .quest complete #entry
-    // number or [name] Shift-click form |color|Hquest:quest_id:quest_level|h[name]|h|r
     uint32 entry;
     if (!ExtractUint32KeyFromLink(&args, "Hquest", entry))
     {
@@ -183,7 +143,6 @@ bool ChatHandler::HandleQuestCompleteCommand(char* args)
 
     Quest const* pQuest = sObjectMgr.GetQuestTemplate(entry);
 
-    // If player doesn't have the quest
     if (!pQuest || player->GetQuestStatus(entry) == QUEST_STATUS_NONE)
     {
         PSendSysMessage(LANG_COMMAND_QUEST_NOTFOUND, entry);
@@ -191,7 +150,6 @@ bool ChatHandler::HandleQuestCompleteCommand(char* args)
         return false;
     }
 
-    // Add quest items for quests that require items
     for (uint8 x = 0; x < QUEST_ITEM_OBJECTIVES_COUNT; ++x)
     {
         uint32 id = pQuest->ReqItemId[x];
@@ -212,7 +170,6 @@ bool ChatHandler::HandleQuestCompleteCommand(char* args)
         }
     }
 
-    // All creature/GO slain/casted (not required, but otherwise it will display "Creature slain 0/10")
     for (uint8 i = 0; i < QUEST_OBJECTIVES_COUNT; ++i)
     {
         int32 creature = pQuest->ReqCreatureOrGOId[i];
@@ -222,7 +179,7 @@ bool ChatHandler::HandleQuestCompleteCommand(char* args)
         {
             for (uint16 z = 0; z < creaturecount; ++z)
             {
-                player->Journal().CastCredited(creature, ObjectGuid(), spell_id);
+                player->Journal().CastCredited(creature, 0, spell_id);
             }
         }
         else if (creature > 0)
@@ -231,7 +188,7 @@ bool ChatHandler::HandleQuestCompleteCommand(char* args)
             {
                 for (uint16 z = 0; z < creaturecount; ++z)
                 {
-                    player->Journal().CreatureKilled(cInfo, ObjectGuid());
+                    player->Journal().CreatureKilled(cInfo, 0);
                 }
             }
         }
@@ -239,12 +196,11 @@ bool ChatHandler::HandleQuestCompleteCommand(char* args)
         {
             for (uint16 z = 0; z < creaturecount; ++z)
             {
-                player->Journal().CastCredited(-creature, ObjectGuid(), 0);
+                player->Journal().CastCredited(-creature, 0, 0);
             }
         }
     }
 
-    // If the quest requires reputation to complete
     if (uint32 repFaction = pQuest->GetRepObjectiveFaction())
     {
         uint32 repValue = pQuest->GetRepObjectiveValue();
@@ -258,23 +214,21 @@ bool ChatHandler::HandleQuestCompleteCommand(char* args)
         }
     }
 
-    // If the quest requires money
     int32 ReqOrRewMoney = pQuest->GetRewOrReqMoney();
     if (ReqOrRewMoney < 0)
     {
         player->ModifyMoney(-ReqOrRewMoney);
     }
 
-    if (sWorld.getConfig(CONFIG_BOOL_ENABLE_QUEST_TRACKER)) // check if Quest Tracker is enabled
+    if (sWorld.getConfig(CONFIG_BOOL_ENABLE_QUEST_TRACKER))
     {
         DEBUG_LOG("QUEST TRACKER: Quest Completed by GM.");
         static SqlStatementID CHAR_UPD_QUEST_TRACK_GM_COMPLETE;
-        // prepare Quest Tracker datas
+
         SqlStatement stmt = CharacterDatabase.CreateStatement(CHAR_UPD_QUEST_TRACK_GM_COMPLETE, "UPDATE `quest_tracker` SET `completed_by_gm` = 1 WHERE `id` = ? AND `character_guid` = ? ORDER BY `quest_accept_time` DESC LIMIT 1");
         stmt.addUInt32(pQuest->GetQuestId());
         stmt.addUInt32(player->GetGUIDLow());
 
-        // add to Quest Tracker
         stmt.Execute();
     }
 

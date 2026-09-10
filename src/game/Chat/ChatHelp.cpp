@@ -23,27 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Chat.cpp
- * @brief Chat system implementation
- *
- * This file implements the chat system including:
- * - Message formatting and color codes
- * - Shift-link parsing (item, spell, quest links)
- * - Channel message routing
- * - Whisper, say, yell, emote handling
- * - GM command parsing and execution
- * - Language filtering
- *
- * The chat system supports various message types with different
- * visibility ranges and formatting requirements.
- *
- * @see ChatHandler for command handling
- * @see Channel for channel chat
- */
-
-
-
 #include <string>
 #include "Chat.h"
 #include "Language.h"
@@ -64,19 +43,12 @@
 #include "PoolManager.h"
 #include "GameEventMgr.h"
 
-/**
- * @brief Displays the available subcommands for a command table.
- *
- * @param table The subcommand table to display.
- * @param cmd The parent command name.
- * @return true if any subcommands were shown; otherwise false.
- */
 bool ChatHandler::ShowHelpForSubCommands(ChatCommand* table, char const* cmd)
 {
     std::string list;
     for (uint32 i = 0; table[i].Name != nullptr; ++i)
     {
-        // must be available (ignore handler existence for show command with possible available subcommands
+
         if (!isAvailable(table[i]))
         {
             continue;
@@ -117,13 +89,6 @@ bool ChatHandler::ShowHelpForSubCommands(ChatCommand* table, char const* cmd)
     return true;
 }
 
-/**
- * @brief Displays help text and subcommands for a command path.
- *
- * @param table The command table to search.
- * @param cmd The command path to resolve.
- * @return true if help content was shown; otherwise false.
- */
 bool ChatHandler::ShowHelpForCommand(ChatCommand* table, const char* cmd)
 {
     char const* oldCmd = cmd;
@@ -139,7 +104,7 @@ bool ChatHandler::ShowHelpForCommand(ChatCommand* table, const char* cmd)
     {
         case CHAT_COMMAND_OK:
         {
-            // for "" subcommand use parent command if any for subcommands list output
+
             if (strlen(command->Name) == 0 && parentCommand)
             {
                 showCommand = parentCommand;
@@ -157,7 +122,7 @@ bool ChatHandler::ShowHelpForCommand(ChatCommand* table, const char* cmd)
             childCommands = showCommand->ChildCommands;
             break;
         case CHAT_COMMAND_UNKNOWN:
-            // not show command list at error in first level command find fail
+
             childCommands = table != getCommandTable() || strlen(oldCmd) == 0 ? table : nullptr;
             command = nullptr;
             break;
@@ -167,7 +132,6 @@ bool ChatHandler::ShowHelpForCommand(ChatCommand* table, const char* cmd)
     {
         std::string helpText = command->Help;
 
-        // Attemp to localize help text if not in CLI mode
         if (m_session)
         {
             int loc_idx = m_session->GetSessionDbLocaleIndex();

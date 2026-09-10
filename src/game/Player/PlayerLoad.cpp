@@ -83,14 +83,6 @@
 #include "Corpse.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-// corpse reclaim times
-
-
-/**
- * @brief Loads battleground return and participation data from the database.
- *
- * @param result The query result containing battleground data.
- */
 void Player::_LoadBGData(QueryResult* result)
 {
     if (!result)
@@ -98,40 +90,28 @@ void Player::_LoadBGData(QueryResult* result)
         return;
     }
 
-    // Expecting only one row
     Field* fields = result->Fetch();
-    /* bgInstanceID, bgTeam, x, y, z, o, map */
+
     Battle().FromRow(fields[0].GetUInt32(),
                      Team(fields[1].GetUInt32()),
                      Geometry::Placement::Somewhere(
-                         fields[6].GetUInt32(),                 // Map
-                         Geometry::Vector3(fields[2].GetFloat(),  // X
-                                           fields[3].GetFloat(),  // Y
-                                           fields[4].GetFloat()), // Z
-                         fields[5].GetFloat()));                // Orientation
+                         fields[6].GetUInt32(),
+                         Geometry::Vector3(fields[2].GetFloat(),
+                                           fields[3].GetFloat(),
+                                           fields[4].GetFloat()),
+                         fields[5].GetFloat()));
 
     delete result;
 }
 
 bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 {
-    //        0     1        2     3     4      5       6      7   8      9            10            11
-    // SELECT guid, account, name, race, class, gender, level, xp, money, playerBytes, playerBytes2, playerFlags,
-    // 12          13          14          15   16           17        18         19         20         21          22           23                 24
-    // position_x, position_y, position_z, map, orientation, taximask, cinematic, totaltime, leveltime, rest_bonus, logout_time, is_logout_resting, resettalents_cost,
-    // 25                 26       27       28       29       30         31           32            33        34    35      36                 37
-    // resettalents_time, trans_x, trans_y, trans_z, trans_o, transguid, extra_flags, stable_slots, at_login, zone, online, death_expire_time, taxi_path,
-    // 38                  39              40                   41                        42
-    // honor_highest_rank, honor_standing, stored_honor_rating, stored_dishonorablekills, stored_honorable_kills,
-    // 43               44
-    // watchedFaction,  drunk,
-    // 45      46      47      48      49      50      51             52              53      54          55
-    // health, power1, power2, power3, power4, power5, exploredZones, equipmentCache, ammoId, actionBars, createdDate  FROM characters WHERE guid = '%u'", GUID_LOPART(m_guid));
+
     QueryResult* result = holder->GetResult(PLAYER_LOGIN_QUERY_LOADFROM);
 
     if (!result)
     {
-        sLog.outError("%s not found in table `characters`, can't load. ", guid.GetString().c_str());
+        sLog.outError("%s not found in table `characters`, can't load. ", GuidString(guid).c_str());
         return false;
     }
 
@@ -139,47 +119,41 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     uint32 dbAccountId = fields[1].GetUInt32();
 
-    // check if the character's account in the db and the logged in account match.
-    // player should be able to load/delete character only with correct account!
     if (dbAccountId != GetSession()->GetAccountId())
     {
         sLog.outError("%s loading from wrong account (is: %u, should be: %u)",
-            guid.GetString().c_str(), GetSession()->GetAccountId(), dbAccountId);
+            GuidString(guid).c_str(), GetSession()->GetAccountId(), dbAccountId);
         delete result;
         return false;
     }
 
-    Object::_Create(guid.GetCounter(), 0, HIGHGUID_PLAYER);
+    Object::_Create(GuidCounter(guid), 0, HIGHGUID_PLAYER);
     m_inventory.Saves().Belongs(GetObjectGuid());
 
     m_name = fields[2].GetCppString();
 
-    // check name limitations
     if (ObjectMgr::CheckPlayerName(m_name) != CHAR_NAME_SUCCESS ||
         (GetSession()->GetSecurity() == SEC_PLAYER && sObjectMgr.IsReservedName(m_name)))
     {
         delete result;
         CharacterDatabase.PExecute("UPDATE `characters` SET `at_login` = `at_login` | '%u' WHERE `guid` ='%u'",
-            uint32(AT_LOGIN_RENAME), guid.GetCounter());
+            uint32(AT_LOGIN_RENAME), GuidCounter(guid));
         return false;
     }
 
-    // overwrite possible wrong/corrupted guid
     SetGuidValue(OBJECT_FIELD_GUID, guid);
 
-    // overwrite some data fields
-    SetRace(fields[3].GetUInt8()); // race
-    SetClass(fields[4].GetUInt8()); // class
+    SetRace(fields[3].GetUInt8());
+    SetClass(fields[4].GetUInt8());
 
-    uint8 gender = fields[5].GetUInt8() & 0x01;             // allowed only 1 bit values male/female cases (for fit drunk gender part)
-    SetGender(gender);            // gender
+    uint8 gender = fields[5].GetUInt8() & 0x01;
+    SetGender(gender);
 
-    // check if race/class combination is valid
     PlayerInfo const* info = sObjectMgr.GetPlayerInfo(getRace(), getClass());
     if (!info)
     {
         DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_STATS, "Player (GUID: %u) has wrong race/class (%u/%u), can't be loaded.",
-            guid.GetCounter(), getRace(), getClass());
+            GuidCounter(guid), getRace(), getClass());
         return false;
     }
 
@@ -188,7 +162,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     LoadFields(fields[51].GetString(), PLAYER_EXPLORED_ZONES_1, PLAYER_EXPLORED_ZONES_SIZE);
 
-    InitDisplayIds();                                       // model, scale and model data
+    InitDisplayIds();
 
     uint32 money = fields[8].GetUInt32();
     if (money > MAX_MONEY_AMOUNT)
@@ -209,10 +183,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     SetUInt32Value(PLAYER_AMMO_ID, fields[53].GetUInt32());
 
-    // Action bars state
     SetActionBars(fields[54].GetUInt8());
 
-    // cleanup inventory related item value fields (its will be filled correctly in _LoadInventory)
     for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
     {
         delete m_inventory.Own(slot);
@@ -222,29 +194,20 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_STATS, "Load Basic value of player %s is: ", m_name.c_str());
     outDebugStatsValues();
 
-    // Need to call it to initialize m_team (m_team can be calculated from race)
-    // Other way is to saves m_team into characters table.
     setFactionForRace(getRace());
     SetCharm(nullptr);
 
-    // load home bind and check in same time class/race pair, it used later for restore broken positions
     if (!_LoadHomeBind(holder->GetResult(PLAYER_LOGIN_QUERY_LOADHOMEBIND)))
     {
         return false;
     }
 
-    InitPrimaryProfessions();                               // to max set before any spell loaded
+    InitPrimaryProfessions();
 
-    // init saved position, and fix it later if problematic
     uint32 transGUID = fields[30].GetUInt32();
     Place().MoveTo(fields[12].GetFloat(), fields[13].GetFloat(), fields[14].GetFloat(), fields[16].GetFloat());
     SetLocationMapId(fields[15].GetUInt32());
 
-    // AND TELL THE MOVEMENT STATE. The placement is where the server says he is; the create
-    // block the client receives is written from m_movementInfo, whose pose is the CLIENT's
-    // last claim -- which for someone who has just logged in is nothing at all. Leave it and
-    // he is placed at the map origin, in the air, under the ground, and falls until he
-    // drowns. Seed it here: the server speaking first, before the client has anything to say.
     m_movementInfo.ChangePosition(Where().X(), Where().Y(), Where().Z(),
                                   Where().Facing());
 
@@ -265,7 +228,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     if (!IsPlaceable(*this))
     {
         sLog.outError("%s have invalid coordinates (X: %f Y: %f Z: %f O: %f). Teleport to default race/class locations.",
-            guid.GetString().c_str(), Where().X(), Where().Y(), Where().Z(), Where().Facing());
+            GuidString(guid).c_str(), Where().X(), Where().Y(), Where().Z(), Where().Facing());
         RelocateToHomebind();
 
         transGUID = 0;
@@ -275,7 +238,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     _LoadBGData(holder->GetResult(PLAYER_LOGIN_QUERY_LOADBGDATA));
 
-    if (Battle().InOne())                                   // saved in BattleGround
+    if (Battle().InOne())
     {
         BattleGround* currentBg = sBattleGroundMgr.GetBattleGround(Battle().Id(), BATTLEGROUND_TYPE_NONE);
 
@@ -288,7 +251,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
             Battle().KindIsKnown(currentBg->GetTypeID());
 
-            // join player to battleground group
             currentBg->EventPlayerLoggedIn(this);
             currentBg->AddOrSetPlayerToCorrectBgGroup(this, GetObjectGuid(), Battle().SideAsSet());
 
@@ -296,58 +258,52 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         }
         else
         {
-            // leave bg
+
             if (player_at_bg)
             {
                 currentBg->RemovePlayerAtLeave(GetObjectGuid(), false, true);
             }
 
-            // move to bg enter point
             const Geometry::Placement& _loc = Battle().CameFrom();
             SetLocationMapId(_loc.MapId());
             Place().MoveTo(_loc.X(), _loc.Y(), _loc.Z(), _loc.Facing());
 
-            // We are not in BG anymore
             Battle().In(0, BATTLEGROUND_TYPE_NONE);
-            // remove outdated DB data in DB
+
             _SaveBGData();
         }
     }
     else
     {
         MapEntry const* mapEntry = sMapStore.LookupEntry(GetMapId());
-        // if server restart after player save in BG or area
-        // player can have current coordinates in to BG map, fix this
+
         if (!mapEntry || mapEntry->IsBattleGround())
         {
             const Geometry::Placement& _loc = Battle().CameFrom();
             SetLocationMapId(_loc.MapId());
             Place().MoveTo(_loc.X(), _loc.Y(), _loc.Z(), _loc.Facing());
 
-            // We are not in BG anymore
             Battle().In(0, BATTLEGROUND_TYPE_NONE);
-            // remove outdated DB data in DB
+
             _SaveBGData();
         }
     }
 
     if (transGUID != 0)
     {
-        m_movementInfo.SetTransportData(ObjectGuid(HIGHGUID_MO_TRANSPORT, transGUID), fields[26].GetFloat(), fields[27].GetFloat(), fields[28].GetFloat(), fields[29].GetFloat(), 0);
+        m_movementInfo.SetTransportData(MakeGuid(HIGHGUID_MO_TRANSPORT, transGUID), fields[26].GetFloat(), fields[27].GetFloat(), fields[28].GetFloat(), fields[29].GetFloat(), 0);
 
         Position const* transportPosition = m_movementInfo.GetTransportPos();
 
         if (!MaNGOS::IsValidMapCoord(Where().X() + transportPosition->x, Where().Y() + transportPosition->y,
             Where().Z() + transportPosition->z, Where().Facing() + transportPosition->o) ||
-            // The saved place on the deck map, bounded the same way and symmetrically:
-            // the old test read the positive side only, so a character who logged out
-            // forward of the mast was sent to his homebind.
+
             std::fabs(transportPosition->x) > MAX_DECK_EXTENT ||
             std::fabs(transportPosition->y) > MAX_DECK_EXTENT ||
             std::fabs(transportPosition->z) > MAX_DECK_EXTENT)
         {
             sLog.outError("%s have invalid transport coordinates (X: %f Y: %f Z: %f O: %f). Teleport to default race/class locations.",
-                guid.GetString().c_str(), Where().X() + transportPosition->x, Where().Y() + transportPosition->y,
+                GuidString(guid).c_str(), Where().X() + transportPosition->x, Where().Y() + transportPosition->y,
                 Where().Z() + transportPosition->z, Where().Facing() + transportPosition->o);
 
             RelocateToHomebind();
@@ -364,11 +320,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         {
             m_transport = aboard;
 
-            // He logs in on the map the ship SAILS, at her waypoint estimate, because
-            // that is the only thing the client can be told: it has no terrain for her
-            // own map and dies looking for the WDT. This world position is coarse and
-            // temporary -- it names the right grid, nothing more. He is moved aboard
-            // once he is in the world and holds the vessel, by BoardingMap()->Add.
             SetLocationMapId(m_transport->GetMapId());
             Place().MoveTo(m_transport->Where().X(), m_transport->Where().Y(),
                            m_transport->Where().Z(), m_transport->Where().Facing());
@@ -377,7 +328,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         if (!m_transport)
         {
             sLog.outError("%s have problems with transport guid (%u). Teleport to default race/class locations.",
-                guid.GetString().c_str(), transGUID);
+                GuidString(guid).c_str(), transGUID);
 
             RelocateToHomebind();
 
@@ -387,13 +338,10 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         }
     }
 
-    // his own holds are read above; his group's are read when the group is
     DungeonPersistentState* state = Binds().CopyForHimOrHisGroup(GetMapId());
 
-    // load the player's map here if it's not already loaded
     SetMap(sMapFoundry.OpenFor(*this, GetMapId()));
 
-    // if the player is in an instance and it has been reset in the meantime teleport him to the entrance
     if (GetInstanceId() && !state)
     {
         AreaTrigger const* at = sObjectMgr.GetMapEntranceTrigger(GetMapId());
@@ -401,7 +349,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         {
             Place().MoveTo(at->target_X, at->target_Y, at->target_Z, at->target_Orientation);
 
-            // Update group members' positions in DB so they also appear at the entrance
             if (Group* group = GetGroup())
             {
                 uint32 zoneId = sTerrainMgr.GetZoneId(GetMapId(), at->target_X, at->target_Y, at->target_Z);
@@ -416,7 +363,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
                         {
                             guidList << ',';
                         }
-                        guidList << itr->guid.GetCounter();
+                        guidList << GuidCounter(itr->guid);
                         first = false;
                     }
                 }
@@ -444,11 +391,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     time_t now = time(nullptr);
     time_t logoutTime = time_t(fields[22].GetUInt64());
 
-    // since last logout (in seconds)
     uint32 time_diff = uint32(now - logoutTime);
 
-    // set value, including drunk invisibility detection
-    // calculate sobering. after 15 minutes logged out, the player will be sober again
     float soberFactor;
     if (time_diff > 15 * MINUTE)
     {
@@ -468,7 +412,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     m_resetTalentsCost = fields[24].GetUInt32();
     m_resetTalentsTime = time_t(fields[25].GetUInt64());
 
-    // reserve some flags
     uint32 old_safe_flags = GetPlayerFlags() & (PLAYER_FLAGS_HIDE_CLOAK | PLAYER_FLAGS_HIDE_HELM);
 
     if (HasPlayerFlag(PLAYER_FLAGS_GM))
@@ -476,7 +419,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         SetAllPlayerFlags(0 | old_safe_flags);
     }
 
-    m_taxi.LoadTaxiMask(fields[17].GetString());            // must be before InitTaxiNodesForLevel
+    m_taxi.LoadTaxiMask(fields[17].GetString());
 
     uint32 extraflags = fields[31].GetUInt32();
 
@@ -492,38 +435,29 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     std::string taxi_nodes = fields[37].GetCppString();
 
-    // clear channel spell data (if saved at channel spell casting)
-    SetChannelObjectGuid(ObjectGuid());
+    SetChannelObjectGuid(0);
     SetUInt32Value(UNIT_CHANNEL_SPELL, 0);
 
-    // clear charm/summon related fields
     SetCharm(nullptr);
     SetPet(nullptr);
-    SetTargetGuid(ObjectGuid());
-    SetCharmerGuid(ObjectGuid());
-    SetOwnerGuid(ObjectGuid());
-    SetCreatorGuid(ObjectGuid());
+    SetTargetGuid(0);
+    SetCharmerGuid(0);
+    SetOwnerGuid(0);
+    SetCreatorGuid(0);
 
-    // reset some aura modifiers before aura apply
-
-    SetGuidValue(PLAYER_FARSIGHT, ObjectGuid());
+    SetGuidValue(PLAYER_FARSIGHT, 0);
     SetUInt32Value(PLAYER_TRACK_CREATURES, 0);
     SetUInt32Value(PLAYER_TRACK_RESOURCES, 0);
 
-    // cleanup aura list explicitly before skill load where some spells can be applied
     RemoveAllAuras();
 
-    // make sure the unit is considered out of combat for proper loading
     ClearInCombat();
 
-    // make sure the unit is considered not in duel for proper loading
-    SetDuelArbiterGuid(ObjectGuid());
+    SetDuelArbiterGuid(0);
     SetUInt32Value(PLAYER_DUEL_TEAM, 0);
 
-    // reset stats before loading any modifiers
     InitStatsForLevel();
 
-    // rest bonus can only be calculated after InitStatsForLevel()
     Resting().Bonus(fields[21].GetFloat());
 
     if (time_diff > 0)
@@ -531,19 +465,14 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         Resting().Bonus(Resting().Bonus() + Resting().Over(time_diff, true, (fields[23].GetInt32() > 0)));
     }
 
-    // load skills after InitStatsForLevel because it triggering aura apply also
     _LoadSkills(holder->GetResult(PLAYER_LOGIN_QUERY_LOADSKILLS));
 
-    // apply original stats mods before spell loading or item equipment that call before equip _RemoveStatsMods()
-
-    // Mail
     _LoadMails(holder->GetResult(PLAYER_LOGIN_QUERY_LOADMAILS));
     _LoadMailedItems(holder->GetResult(PLAYER_LOGIN_QUERY_LOADMAILEDITEMS));
     Post().Recount();
 
     _LoadAuras(holder->GetResult(PLAYER_LOGIN_QUERY_LOADAURAS), time_diff);
 
-    // add ghost flag (must be after aura load: PLAYER_FLAGS_GHOST set in aura)
     if (HasPlayerFlag(PLAYER_FLAGS_GHOST))
     {
         m_deathState = DEAD;
@@ -551,20 +480,16 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     _LoadSpells(holder->GetResult(PLAYER_LOGIN_QUERY_LOADSPELLS));
 
-    // after spell load
     InitTalentForLevel();
     learnDefaultSpells();
 
-    // after spell load, learn rewarded spell if need also
     _LoadQuestStatus(holder->GetResult(PLAYER_LOGIN_QUERY_LOADQUESTSTATUS));
 
-    // must be before inventory (some items required reputation check)
     m_reputationMgr.LoadFromDB(holder->GetResult(PLAYER_LOGIN_QUERY_LOADREPUTATION));
 
     _LoadInventory(holder->GetResult(PLAYER_LOGIN_QUERY_LOADINVENTORY), time_diff);
     _LoadItemLoot(holder->GetResult(PLAYER_LOGIN_QUERY_LOADITEMLOOT));
 
-    // update items with duration and realtime
     m_inventory.RunClocks(time_diff, true);
 
     _LoadActions(holder->GetResult(PLAYER_LOGIN_QUERY_LOADACTIONS));
@@ -573,66 +498,56 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     if (!m_taxi.LoadTaxiDestinationsFromString(taxi_nodes, GetTeam()))
     {
-        // problems with taxi path loading
+
         TaxiNodesEntry const* nodeEntry = nullptr;
         if (uint32 node_id = m_taxi.GetTaxiSource())
         {
             nodeEntry = sTaxiNodesStore.LookupEntry(node_id);
         }
 
-        if (!nodeEntry)                                     // don't know taxi start node, to homebind
+        if (!nodeEntry)
         {
             sLog.outError("Character %u have wrong data in taxi destination list, teleport to homebind.", GetGUIDLow());
             RelocateToHomebind();
         }
-        else                                                // have start node, to it
+        else
         {
             sLog.outError("Character %u have too short taxi destination list, teleport to original node.", GetGUIDLow());
             SetLocationMapId(nodeEntry->map_id);
             Place().MoveTo(nodeEntry->x, nodeEntry->y, nodeEntry->z, 0.0f);
         }
 
-        // we can be relocated from taxi and still have an outdated Map pointer!
-        // so we need to get a new Map pointer!
         SetMap(sMapFoundry.OpenFor(*this, GetMapId()));
-        SaveRecallPosition();                           // save as recall also to prevent recall and fall from sky
+        SaveRecallPosition();
 
         m_taxi.ClearTaxiDestinations();
     }
 
     if (uint32 node_id = m_taxi.GetTaxiSource())
     {
-        // save source node as recall coord to prevent recall and fall from sky
+
         TaxiNodesEntry const* nodeEntry = sTaxiNodesStore.LookupEntry(node_id);
-        MANGOS_ASSERT(nodeEntry);                           // checked in m_taxi.LoadTaxiDestinationsFromString
+        MANGOS_ASSERT(nodeEntry);
         m_recall = Geometry::Placement::Somewhere(nodeEntry->map_id,
                                                   Geometry::Vector3(nodeEntry->x, nodeEntry->y, nodeEntry->z));
 
-        // flight will started later
     }
 
-    // has to be called after last Relocate() in Player::LoadFromDB
     SetFallInformation(0, Where().Z());
 
-    // Same reason, and this is the LAST relocate: homebind, taxi and areatrigger rescues
-    // above all moved him after the seed near the DB read.
     m_movementInfo.ChangePosition(Where().X(), Where().Y(), Where().Z(),
                                   Where().Facing());
 
     _LoadSpellCooldowns(holder->GetResult(PLAYER_LOGIN_QUERY_LOADSPELLCOOLDOWNS));
 
-    // Spell code allow apply any auras to dead character in load time in aura/spell/item loading
-    // Do now before stats re-calculation cleanup for ghost state unexpected auras
     if (!IsAlive())
     {
         RemoveAllAurasOnDeath();
     }
 
-    // apply all stat bonuses from items and auras
     Tallied().Ready(true);
     Sheet().Everything();
 
-    // restore remembered power/health values (but not more max values)
     uint32 savedhealth = fields[45].GetUInt32();
     SetHealth(savedhealth > GetMaxHealth() ? GetMaxHealth() : savedhealth);
     for (uint32 i = 0; i < MAX_POWERS; ++i)
@@ -647,18 +562,16 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_STATS, "The value of player %s after load item and aura is: ", m_name.c_str());
     outDebugStatsValues();
 
-    // all fields read
     delete result;
 
-    // GM state
     if (GetSession()->GetSecurity() > SEC_PLAYER)
     {
         switch (sWorld.getConfig(CONFIG_UINT32_GM_LOGIN_STATE))
         {
             default:
-            case 0:                      break;             // disable
-            case 1: SetGameMaster(true); break;             // enable
-            case 2:                                         // save state
+            case 0:                      break;
+            case 1: SetGameMaster(true); break;
+            case 2:
                 if (extraflags & PLAYER_EXTRA_GM_ON)
                 {
                     SetGameMaster(true);
@@ -669,9 +582,9 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         switch (sWorld.getConfig(CONFIG_UINT32_GM_VISIBLE_STATE))
         {
             default:
-            case 0: SetGMVisible(false); break;             // invisible
-            case 1:                      break;             // visible
-            case 2:                                         // save state
+            case 0: SetGMVisible(false); break;
+            case 1:                      break;
+            case 2:
                 if (extraflags & PLAYER_EXTRA_GM_INVISIBLE)
                 {
                     SetGMVisible(false);
@@ -682,9 +595,9 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         switch (sWorld.getConfig(CONFIG_UINT32_GM_ACCEPT_TICKETS))
         {
             default:
-            case 0:                        break;           // disable
-            case 1: SetAcceptTicket(true); break;           // enable
-            case 2:                                         // save state
+            case 0:                        break;
+            case 1: SetAcceptTicket(true); break;
+            case 2:
                 if (extraflags & PLAYER_EXTRA_GM_ACCEPT_TICKETS)
                 {
                     SetAcceptTicket(true);
@@ -695,9 +608,9 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         switch (sWorld.getConfig(CONFIG_UINT32_GM_CHAT))
         {
             default:
-            case 0:                  break;                 // disable
-            case 1: SetGMChat(true); break;                 // enable
-            case 2:                                         // save state
+            case 0:                  break;
+            case 1: SetGMChat(true); break;
+            case 2:
                 if (extraflags & PLAYER_EXTRA_GM_CHAT)
                 {
                     SetGMChat(true);
@@ -708,9 +621,9 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
         switch (sWorld.getConfig(CONFIG_UINT32_GM_WISPERING_TO))
         {
             default:
-            case 0:                          break;         // disable
-            case 1: SetAcceptWhispers(true); break;         // enable
-            case 2:                                         // save state
+            case 0:                          break;
+            case 1: SetAcceptWhispers(true); break;
+            case 2:
                 if (extraflags & PLAYER_EXTRA_ACCEPT_WHISPERS)
                 {
                     SetAcceptWhispers(true);
@@ -722,118 +635,97 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     return true;
 }
 
-/**
- * @brief Checks whether the player is currently allowed to loot a creature.
- *
- * @param creature The creature to test.
- * @return True if the player may loot the creature; otherwise, false.
- */
 bool Player::isAllowedToLoot(Creature* creature)
 {
-    /* Nobody tapped the monster (kill either solo or mostly by another NPC) */
+
     if (!creature->HasDynFlag(UNIT_DYNFLAG_TAPPED) || !creature->Taking().EnoughPlayerDamage())
     {
         return false;
     }
 
-    /* If we there is a loot recipient, assign it to recipient */
     if (Player* recipient = creature->Claim().Entitled())
     {
-        /* See if we're in a group */
+
         if (Group* plr_group = recipient->GetGroup())
         {
-            /* Recipient is in a group... but is it ours? */
+
             if (Group* my_group = GetGroup())
             {
-                /* Check groups are the same */
+
                 if (plr_group != my_group)
                 {
-                    return false; // Cheater, deny loot
+                    return false;
                 }
             }
             else
             {
-                return false; // We're not in a group, probably cheater
+                return false;
             }
 
-            /* If the player has joined the group after the creature has been killed, doesn't show up. */
             if (creature->GetKilledTime() < plr_group->GetMemberSlotJoinedTime(GetObjectGuid()))
             {
                 return false;
             }
 
-            /* We're in a group, get the loot type */
             switch (plr_group->GetLootMethod())
             {
-                /* Free for all or Master Loot let everyone loot it */
+
                 case MASTER_LOOT:
                 case FREE_FOR_ALL:
                     return true;
 
-                /** These 3 systems all use the same kind of check to display loot,
-                 *  which is what we're doing here. Threshold checks are done elsewhere. */
                 case GROUP_LOOT:
                 case ROUND_ROBIN:
                 case NEED_BEFORE_GREED:
                 {
                     uint32 loot_id = creature->GetCreatureInfo()->LootId;
 
-                    /* Checking there's some loot defined. */
                     bool hasLoot = loot_id;
-                    /* Checking if the creature may drop any quest loot for us. */
+
                     bool hasSharedLoot = LootTemplates_Creature.HaveSharedQuestLootForPlayer(loot_id, this);
-                    /* Checking if there's any starting quest item available for this player. */
+
                     bool hasStartingQuestLoot = LootTemplates_Creature.HaveStartingQuestLootForPlayer(loot_id,  this);
 
-                    /* If there's no loot, we return false. */
                     if (!hasLoot)
                     {
                         return false;
                     }
-                    /** This is set to true after the looter (chosen below) has closed their loot window
-                     * If this is true, allow everyone else in the group to loot the corpse */
+
                     else if (creature->Taking().Opened())
                     {
                         return true;
                     }
-                    /* If the assigned looter's GUID is equal to ours */
+
                     else if (creature->Taking().AssignedTo() == GetGUIDLow())
                     {
                         return true;
                     }
-                    /* If the creature already has an assigned looter and that looter isn't us */
+
                     else if (creature->Taking().AssignedTo() != 0 && !hasSharedLoot && !hasStartingQuestLoot)
                     {
                         return false;
                     }
 
-                    /* If we've reached here, there is only one exclusive, undecided looter */
-
-                    /* This is the player that will be given permission to loot */
                     Player* final_looter = recipient;
 
-                    /* Iterate through the valid party members */
                     Group::MemberSlotList slots = plr_group->GetMemberSlots();
 
                     for (Group::MemberSlotList::iterator itr = slots.begin(); itr != slots.end(); ++itr)
                     {
-                        /* Get the player data */
+
                         if (Player* grp_plr = sObjectMgr.GetPlayer(itr->guid))
                         {
-                            /* Player is disconnected */
+
                             if (!grp_plr->IsInWorld())
                             {
                                 continue;
                             }
 
-                            /* Player is too far from the creature. */
                             if (!grp_plr->Where().WithinDist(creature->Where(), sWorld.getConfig(CONFIG_FLOAT_GROUP_XP_DISTANCE), false))
                             {
                                 continue;
                             }
 
-                            /** Check if the last time the player looted is less than the current final looter
-                             * If the value is lower, it means it happened longer ago */
                             if (final_looter->lastTimeLooted > grp_plr->lastTimeLooted)
                             {
                                 final_looter = grp_plr;
@@ -841,29 +733,26 @@ bool Player::isAllowedToLoot(Creature* creature)
                         }
                     }
 
-                    /* We have our looter, update their loot time */
                     final_looter->lastTimeLooted = time(nullptr);
 
-                    /* Update the creature with the looter that has been assigned to them */
                     creature->Taking().AssignedTo(final_looter->GetGUIDLow());
                     final_looter->GetGroup()->SetLooterGuid(final_looter->GetObjectGuid());
 
-                    /* Finally, return if we are the assigned looter */
                     return (final_looter->GetGUIDLow() == GetGUIDLow() || hasSharedLoot || hasStartingQuestLoot);
                 }
                 default:
-                    // Something went wrong, avoid crash
+
                     return false;
             }
         }
-        /* We're not in a group, check to make sure we're the recipient (prevent cheaters) */
+
         else if (recipient == this)
         {
             return true;
         }
     }
     else
-        // prevent other players from looting if the recipient got disconnected
+
     {
         return !creature->Claim().IsClaimed();
     }
@@ -871,16 +760,9 @@ bool Player::isAllowedToLoot(Creature* creature)
     return false;
 }
 
-/**
- * @brief Loads action bar bindings from the database.
- *
- * @param result The query result containing action bindings.
- */
 void Player::_LoadActions(QueryResult* result)
 {
     m_actionButtons.clear();
-
-    // QueryResult *result = CharacterDatabase.PQuery("SELECT `button`,`action`,`type` FROM `character_action` WHERE `guid` = '%u' ORDER BY `button`",GetGUIDLow());
 
     if (result)
     {
@@ -900,7 +782,6 @@ void Player::_LoadActions(QueryResult* result)
             {
                 sLog.outError("  ...at loading, and will deleted in DB also");
 
-                // Will deleted in DB at next save (it can create data until save but marked as deleted)
                 m_actionButtons[button].uState = ACTIONBUTTON_DELETED;
             }
         }
@@ -910,30 +791,20 @@ void Player::_LoadActions(QueryResult* result)
     }
 }
 
-/**
- * @brief Loads saved auras from the database and restores their remaining durations.
- *
- * @param result The query result containing aura data.
- * @param timediff The elapsed offline time used to age aura durations.
- */
 void Player::_LoadAuras(QueryResult* result, uint32 timediff)
 {
-    // RemoveAllAuras(); -- some spells casted before aura load, for example in LoadSkills, aura list explicitly cleaned early
 
-    // all aura related fields
     for (int i = UNIT_FIELD_AURA; i <= UNIT_FIELD_AURASTATE; ++i)
     {
         SetUInt32Value(i, 0);
     }
-
-    // QueryResult *result = CharacterDatabase.PQuery("SELECT `caster_guid`,`item_guid`,`spell`,`stackcount`,`remaincharges`,`basepoints0`,`basepoints1`,`basepoints2`,`periodictime0`,`periodictime1`,`periodictime2`,`maxduration`,`remaintime`,`effIndexMask` FROM `character_aura` WHERE `guid` = '%u'",GetGUIDLow());
 
     if (result)
     {
         do
         {
             Field* fields = result->Fetch();
-            ObjectGuid caster_guid = ObjectGuid(fields[0].GetUInt64());
+            ObjectGuid caster_guid = static_cast<ObjectGuid>(fields[0].GetUInt64());
             uint32 item_lowguid = fields[1].GetUInt32();
             uint32 spellid = fields[2].GetUInt32();
             uint32 stackcount = fields[3].GetUInt32();
@@ -968,7 +839,6 @@ void Player::_LoadAuras(QueryResult* result, uint32 timediff)
                 remaintime -= timediff * IN_MILLISECONDS;
             }
 
-            // prevent wrong values of remaincharges
             if (spellproto->ProcCharges == 0)
             {
                 remaincharges = 0;
@@ -988,7 +858,7 @@ void Player::_LoadAuras(QueryResult* result, uint32 timediff)
             }
 
             SpellAuraHolder* holder = CreateSpellAuraHolder(spellproto, this, nullptr);
-            holder->SetLoadedState(caster_guid, ObjectGuid(HIGHGUID_ITEM, item_lowguid), stackcount, remaincharges, maxduration, remaintime);
+            holder->SetLoadedState(caster_guid, MakeGuid(HIGHGUID_ITEM, item_lowguid), stackcount, remaincharges, maxduration, remaintime);
 
             for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
             {
@@ -1009,7 +879,7 @@ void Player::_LoadAuras(QueryResult* result, uint32 timediff)
 
             if (!holder->IsEmptyHolder())
             {
-                // reset stolen single target auras
+
                 if (caster_guid != GetObjectGuid() && holder->GetTrackedAuraType() == TRACK_AURA_TYPE_SINGLE_TARGET)
                 {
                     holder->SetTrackedAuraType(TRACK_AURA_TYPE_NOT_TRACKED);
@@ -1033,9 +903,6 @@ void Player::_LoadAuras(QueryResult* result, uint32 timediff)
     }
 }
 
-/**
- * @brief Restores corpse state for a dead player or cleans it up for a living one.
- */
 void Player::LoadCorpse()
 {
     if (IsAlive())
@@ -1050,26 +917,16 @@ void Player::LoadCorpse()
         }
         else
         {
-            // Prevent Dead Player login without corpse
+
             ResurrectPlayer(0.5f);
         }
     }
 }
 
-/**
- * @brief Loads inventory, bank, and equipped items from the database.
- *
- * @param result The query result containing item inventory rows.
- * @param timediff The elapsed offline time used for time-sensitive item checks.
- */
 void Player::_LoadInventory(QueryResult* result, uint32 timediff)
 {
-    // QueryResult *result = CharacterDatabase.PQuery("SELECT `data`,`bag`,`slot`,`item`,`item_template` FROM `character_inventory` JOIN `item_instance` ON `character_inventory`.`item` = `item_instance`.`guid` WHERE `character_inventory`.`guid` = '%u' ORDER BY `bag`,`slot`", GetGUIDLow());
-    std::map<uint32, Bag*> bagMap;                          // fast guid lookup for bags
-    // NOTE: the "order by `bag`" is important because it makes sure
-    // the bagMap is filled before items in the bags are loaded
-    // NOTE2: the "order by `slot`" is needed because mainhand weapons are (wrongly?)
-    // expected to be equipped before offhand items (TODO: fixme)
+
+    std::map<uint32, Bag*> bagMap;
 
     uint32 zone = GetTerrain()->GetZoneId(Where().X(), Where().Y(), Where().Z());
 
@@ -1077,7 +934,6 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
     {
         std::list<Item*> problematicItems;
 
-        // prevent items from being added to the queue when stored
         m_inventory.Saves().Shut(true);
         do
         {
@@ -1104,31 +960,28 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
                 sLog.outError("Player::_LoadInventory: Player %s has broken item (id: #%u) in inventory, deleted.", GetName(), item_id);
                 CharacterDatabase.PExecute("DELETE FROM `character_inventory` WHERE `item` = '%u'", item_lowguid);
                 item->FSetState(ITEM_REMOVED);
-                item->SaveToDB();                           // it also deletes item object !
+                item->SaveToDB();
                 continue;
             }
 
-            // not allow have in alive state item limited to another map/zone
             if (IsAlive() && item->IsLimitedToAnotherMapOrZone(GetMapId(), zone))
             {
                 CharacterDatabase.PExecute("DELETE FROM `character_inventory` WHERE `item` = '%u'", item_lowguid);
                 item->FSetState(ITEM_REMOVED);
-                item->SaveToDB();                           // it also deletes item object !
+                item->SaveToDB();
                 continue;
             }
 
-            // "Conjured items disappear if you are logged out for more than 15 minutes"
             if (timediff > 15 * MINUTE && (item->GetProto()->Flags & ITEM_FLAG_CONJURED))
             {
                 CharacterDatabase.PExecute("DELETE FROM `character_inventory` WHERE `item` = '%u'", item_lowguid);
                 item->FSetState(ITEM_REMOVED);
-                item->SaveToDB();                           // it also deletes item object !
+                item->SaveToDB();
                 continue;
             }
 
             bool success = true;
 
-            // the item/bag is not in a bag
             if (!bag_guid)
             {
                 item->SetContainer(nullptr);
@@ -1173,18 +1026,18 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
 
                 if (success)
                 {
-                    // store bags that may contain items in them
+
                     if (item->IsBag() && Inventory::HoldsBag(item->GetPos()))
                     {
                         bagMap[item_lowguid] = (Bag*)item;
                     }
                 }
             }
-            // the item/bag in a bag
+
             else
             {
                 item->SetSlot(NULL_SLOT);
-                // the item is in a bag, find the bag
+
                 std::map<uint32, Bag*>::const_iterator itr = bagMap.find(bag_guid);
                 if (itr != bagMap.end() && slot < itr->second->GetBagSize())
                 {
@@ -1204,12 +1057,10 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
                 }
             }
 
-            // item's state may have changed after stored
             if (success)
             {
                 item->SetState(ITEM_UNCHANGED, this);
 
-                // restore container unchanged state also
                 if (item->GetContainer())
                 {
                     item->GetContainer()->SetState(ITEM_UNCHANGED, this);
@@ -1227,12 +1078,11 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
         delete result;
         m_inventory.Saves().Shut(false);
 
-        // send by mail problematic items
         while (!problematicItems.empty())
         {
             std::string subject = "Item could not be loaded to inventory.";
             std::string content = GetSession()->GetMangosString(LANG_NOT_EQUIPPED_ITEM);
-            // fill mail
+
             MailDraft draft(subject,"");
             draft.SetSubjectAndBody(subject,content);
             for (int i = 0; !problematicItems.empty() && i < MAX_MAIL_ITEMS; ++i)
@@ -1247,18 +1097,11 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
         }
     }
 
-    // if (IsAlive())
     _ApplyAllItemMods();
 }
 
-/**
- * @brief Loads persisted item loot contents for the player's items.
- *
- * @param result The query result containing saved item loot rows.
- */
 void Player::_LoadItemLoot(QueryResult* result)
 {
-    // QueryResult *result = CharacterDatabase.PQuery("SELECT `guid`,`itemid`,`amount`,`property` FROM `item_loot` WHERE `guid` = '%u'", GetGUIDLow());
 
     if (result)
     {
@@ -1267,7 +1110,7 @@ void Player::_LoadItemLoot(QueryResult* result)
             Field* fields = result->Fetch();
             uint32 item_guid   = fields[0].GetUInt32();
 
-            Item* item = GetItemByGuid(ObjectGuid(HIGHGUID_ITEM, item_guid));
+            Item* item = GetItemByGuid(MakeGuid(HIGHGUID_ITEM, item_guid));
 
             if (!item)
             {
@@ -1284,12 +1127,9 @@ void Player::_LoadItemLoot(QueryResult* result)
     }
 }
 
-// load mailed item which should receive current player
 void Player::_LoadMailedItems(QueryResult* result)
 {
-    // data needs to be at first place for Item::LoadFromDB
-    //         0     1     2        3          4
-    // "SELECT data, text, mail_id, item_guid, item_template FROM mail_items JOIN item_instance ON item_guid = guid WHERE receiver = '%u'", GUID_LOPART(m_guid)
+
     if (!result)
     {
         return;
@@ -1326,7 +1166,7 @@ void Player::_LoadMailedItems(QueryResult* result)
             sLog.outError("Player::_LoadMailedItems - Item in mail (%u) doesn't exist !!!! - item guid: %u, deleted from mail", mail->messageID, item_guid_low);
             CharacterDatabase.PExecute("DELETE FROM `mail_items` WHERE `item_guid` = '%u'", item_guid_low);
             item->FSetState(ITEM_REMOVED);
-            item->SaveToDB();                               // it also deletes item object !
+            item->SaveToDB();
             continue;
         }
 
@@ -1337,16 +1177,10 @@ void Player::_LoadMailedItems(QueryResult* result)
     delete result;
 }
 
-/**
- * @brief Loads the player's mailbox headers from the database.
- *
- * @param result The query result containing mail records.
- */
 void Player::_LoadMails(QueryResult* result)
 {
     Post().Letters().clear();
-    //        0  1           2      3        4       5    6           7            8     9   10      11         12             13
-    //"SELECT id,messageType,sender,receiver,subject,body,expire_time,deliver_time,money,cod,checked,stationery,mailTemplateId,has_items FROM mail WHERE receiver = '%u' ORDER BY id DESC", GetGUIDLow()
+
     if (!result)
     {
         return;
@@ -1359,7 +1193,7 @@ void Player::_LoadMails(QueryResult* result)
         m->messageID = fields[0].GetUInt32();
         m->messageType = fields[1].GetUInt8();
         m->sender = fields[2].GetUInt32();
-        m->receiverGuid = ObjectGuid(HIGHGUID_PLAYER, fields[3].GetUInt32());
+        m->receiverGuid = MakeGuid(HIGHGUID_PLAYER, fields[3].GetUInt32());
         m->subject = fields[4].GetCppString();
         m->body = fields[5].GetCppString();
         m->expire_time = (time_t)fields[6].GetUInt64();
@@ -1369,7 +1203,7 @@ void Player::_LoadMails(QueryResult* result)
         m->checked = fields[10].GetUInt32();
         m->stationery = fields[11].GetUInt8();
         m->mailTemplateId = fields[12].GetInt16();
-        m->has_items = fields[13].GetBool();                // true, if mail have items or mail have template and items generated (maybe none)
+        m->has_items = fields[13].GetBool();
 
         if (m->mailTemplateId && !sMailTemplateStore.LookupEntry(m->mailTemplateId))
         {
@@ -1390,13 +1224,9 @@ void Player::_LoadMails(QueryResult* result)
     delete result;
 }
 
-/**
- * @brief Loads the player's currently active pet from the database when possible.
- */
 void Player::LoadPet()
 {
-    // fixme: the pet should still be loaded if the player is not in world
-    // just not added to the map
+
     if (IsInWorld())
     {
         Pet* pet = new Pet;
@@ -1407,19 +1237,11 @@ void Player::LoadPet()
     }
 }
 
-/**
- * @brief Loads quest status records and rebuilds the in-memory quest log state.
- *
- * @param result The query result containing quest status rows.
- */
 void Player::_LoadQuestStatus(QueryResult* result)
 {
     m_journal.Clear();
 
     uint32 slot = 0;
-
-    ////                                                       0        1         2           3           4        5            6            7            8            9             10            11            12
-    // QueryResult *result = CharacterDatabase.PQuery("SELECT `quest`, `status`, `rewarded`, `explored`, `timer`, `mobcount1`, `mobcount2`, `mobcount3`, `mobcount4`, `itemcount1`, `itemcount2`, `itemcount3`, `itemcount4` FROM `character_queststatus` WHERE `guid` = '%u'", GetGUIDLow());
 
     if (result)
     {
@@ -1428,11 +1250,11 @@ void Player::_LoadQuestStatus(QueryResult* result)
             Field* fields = result->Fetch();
 
             uint32 quest_id = fields[0].GetUInt32();
-            // used to be new, no delete?
+
             Quest const* pQuest = sObjectMgr.GetQuestTemplate(quest_id);
             if (pQuest)
             {
-                // find or create
+
                 QuestStatusData& questStatusData = m_journal.Of(quest_id);
 
                 uint32 qstatus = fields[1].GetUInt32();
@@ -1480,7 +1302,6 @@ void Player::_LoadQuestStatus(QueryResult* result)
 
                 questStatusData.uState = QUEST_UNCHANGED;
 
-                // add to quest log
                 if (slot < MAX_QUEST_LOG_SIZE &&
                     ((questStatusData.m_status == QUEST_STATUS_INCOMPLETE ||
                     questStatusData.m_status == QUEST_STATUS_COMPLETE ||
@@ -1516,7 +1337,7 @@ void Player::_LoadQuestStatus(QueryResult* result)
 
                 if (questStatusData.m_rewarded)
                 {
-                    // learn rewarded spell if unknown
+
                     learnQuestRewardedSpells(pQuest);
                 }
 
@@ -1528,21 +1349,14 @@ void Player::_LoadQuestStatus(QueryResult* result)
         delete result;
     }
 
-    // clear quest log tail
     for (uint16 i = slot; i < MAX_QUEST_LOG_SIZE; ++i)
     {
         SetQuestSlot(i, 0);
     }
 }
 
-/**
- * @brief Loads known spells from the database.
- *
- * @param result The query result containing learned spell rows.
- */
 void Player::_LoadSpells(QueryResult* result)
 {
-    // QueryResult *result = CharacterDatabase.PQuery("SELECT `spell`,`active`,`disabled` FROM `character_spell` WHERE `guid` = '%u'",GetGUIDLow());
 
     if (result)
     {
@@ -1560,14 +1374,9 @@ void Player::_LoadSpells(QueryResult* result)
     }
 }
 
-/**
- * @brief Loads the player's current group membership from the database.
- *
- * @param result The query result containing the group identifier.
- */
 void Player::_LoadGroup(QueryResult* result)
 {
-    // QueryResult *result = CharacterDatabase.PQuery("SELECT `groupId` FROM `group_member` WHERE `memberGuid`='%u'", GetGUIDLow());
+
     if (result)
     {
         uint32 groupId = (*result)[0].GetUInt32();
@@ -1581,7 +1390,6 @@ void Player::_LoadGroup(QueryResult* result)
     }
 }
 
-/// convert the player's binds to the group
 void Player::ConvertInstancesToGroup(Player* player, Group* group, ObjectGuid player_guid)
 {
     bool has_binds = false;
@@ -1598,9 +1406,6 @@ void Player::ConvertInstancesToGroup(Player* player, Group* group, ObjectGuid pl
 
     MANGOS_ASSERT(player_guid);
 
-    // copy all binds to the group, when changing leader it's assumed the character
-    // will not have any solo binds
-
     if (player)
     {
         DungeonHolds& held = player->Binds().All();
@@ -1613,10 +1418,9 @@ void Player::ConvertInstancesToGroup(Player* player, Group* group, ObjectGuid pl
                 group->Binds().BindTo(itr->second.state, itr->second.permanent, true);
             }
 
-            // a permanent hold is not given up
             if (!itr->second.permanent)
             {
-                // increments itr in call
+
                 player->Binds().Release(itr, true);
                 has_solo = true;
             }
@@ -1627,27 +1431,19 @@ void Player::ConvertInstancesToGroup(Player* player, Group* group, ObjectGuid pl
         }
     }
 
-    uint32 player_lowguid = player_guid.GetCounter();
+    uint32 player_lowguid = GuidCounter(player_guid);
 
-    // if the player's not online we don't know what binds it has
     if (!player || !group || has_binds)
     {
         CharacterDatabase.PExecute("INSERT INTO `group_instance` SELECT `guid`, `instance`, `permanent` FROM `character_instance` WHERE `guid` = '%u'", player_lowguid);
     }
 
-    // the following should not get executed when changing leaders
     if (!player || has_solo)
     {
         CharacterDatabase.PExecute("DELETE FROM `character_instance` WHERE `guid` = '%u' AND `permanent` = 0", player_lowguid);
     }
 }
 
-/**
- * @brief Loads and validates the player's home bind location.
- *
- * @param result The query result containing home bind data.
- * @return True if a valid home bind was loaded or defaulted successfully; otherwise, false.
- */
 bool Player::_LoadHomeBind(QueryResult* result)
 {
     PlayerInfo const* info = sObjectMgr.GetPlayerInfo(getRace(), getClass());
@@ -1658,7 +1454,7 @@ bool Player::_LoadHomeBind(QueryResult* result)
     }
 
     bool ok = false;
-    // QueryResult *result = CharacterDatabase.PQuery("SELECT `map`,`zone`,`position_x`,`position_y`,`position_z` FROM `character_homebind` WHERE `guid` = '%u'", GUID_LOPART(playerGuid));
+
     if (result)
     {
         Field* fields = result->Fetch();
@@ -1668,7 +1464,6 @@ bool Player::_LoadHomeBind(QueryResult* result)
 
         MapEntry const* bindMapEntry = sMapStore.LookupEntry(Home().MapId());
 
-        // accept saved data only for valid position (and non instanceable), and accessable
         if (MapCoords::Valid(Home().MapId(), Home().X(), Home().Y(), Home().Z()) &&
             !bindMapEntry->Instanceable())
         {

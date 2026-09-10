@@ -47,12 +47,9 @@ namespace synthetic
 {
     namespace
     {
-        /// Far above any account a realm would hand out, so a synthetic session
-        /// can never be mistaken for somebody's.
+
         const uint32 SYNTHETIC_ACCOUNT_BASE = 0x7F000000;
 
-        /// How fast a bot walks its circle, in radians per second. Slow enough
-        /// that it keeps crossing cells rather than spinning inside one.
         const float BOT_ANGULAR_SPEED = 0.6f;
 
         const float BOT_ORBIT_RADIUS = 8.f;
@@ -93,20 +90,11 @@ namespace synthetic
 
             Player* bot = new Player(session);
 
-            // The order below follows WorldSession::HandlePlayerLogin, because
-            // anything it does before the map sees the player is something the
-            // player is expected to already have. The movement generator stack
-            // is the first of those: Unit::Update walks it every tick and
-            // asserts that it is not empty, so a player who never got one dies
-            // on the first tick after being added.
             bot->GetMotionMaster()->Initialize();
 
             char name[16];
             std::snprintf(name, sizeof(name), "Synth%u", i);
 
-            // A human warrior: the race and class matter only in that they must
-            // exist, and a melee class keeps the bot out of the spell paths
-            // while movement is what is being measured.
             const uint32 lowGuid = sMint.PlayerGuids().Next();
             if (!bot->Create(lowGuid, name, RACE_HUMAN, CLASS_WARRIOR, GENDER_MALE,
                              0, 0, 0, 0, 0, 0))
@@ -117,10 +105,8 @@ namespace synthetic
                 break;
             }
 
-            // Scattered, so they do not all land in one cell -- a crowd in a
-            // single cell is a case the grid never actually sees.
             const float spread = radius > 0.f ? radius : 1.f;
-            const float a = static_cast<float>(i) * 2.399963f;            // golden angle, an even scatter
+            const float a = static_cast<float>(i) * 2.399963f;
             const float r = spread * std::sqrt(static_cast<float>(i + 1) / static_cast<float>(count));
             const float px = x + r * std::cos(a);
             const float py = y + r * std::sin(a);
@@ -134,14 +120,9 @@ namespace synthetic
                 break;
             }
 
-            // SetMap is what puts the map id on the object; the pose is set
-            // after, so it is measured in the frame the map names.
             bot->SetMap(map);
             bot->Place().MoveTo(px, py, z, 0.f);
 
-            // Before the map, as in login: adding a player reaches back through
-            // his session, and a session that does not know its player yet is a
-            // null waiting to be dereferenced.
             session->SetPlayer(bot);
 
             if (!map->Add(bot))
@@ -153,11 +134,6 @@ namespace synthetic
                 break;
             }
 
-            // The registry is how everything else finds a player by guid: the
-            // name query answers from it, and so does the driver below. Without
-            // it a bot is a body with no identity -- the client asks who it is,
-            // the lookup falls through to a character row that does not exist,
-            // and it renders as Unknown.
             sPlayerRegistry.Add(bot);
 
             sWorld.AddSession(session);
@@ -185,11 +161,7 @@ namespace synthetic
 
         for (Bot& bot : m_bots)
         {
-            // A synthetic character has no life outside the run, so it is taken
-            // out directly instead of being logged out: a logout persists the
-            // character, announces it to friends and guild, and expects a body
-            // of loaded state that was never built here. Map::Remove does the
-            // whole retirement -- cleanup, unlink, deregister, delete.
+
             if (Player* player = sObjectMgr.GetPlayer(bot.guid, false))
             {
                 if (Map* map = player->GetMap())
@@ -200,8 +172,7 @@ namespace synthetic
 
             if (bot.session)
             {
-                // With no player left on it the session's logout is a no-op,
-                // which is the point: nothing of this reaches the database.
+
                 bot.session->SetPlayer(nullptr);
                 bot.session->KickPlayer();
             }
@@ -239,16 +210,11 @@ namespace synthetic
             const float px = bot.homeX + BOT_ORBIT_RADIUS * std::cos(bot.angle);
             const float py = bot.homeY + BOT_ORBIT_RADIUS * std::sin(bot.angle);
 
-            // Exactly the bytes a 1.12 client sends, which is a MovementInfo and
-            // nothing before it. The guid belongs to the RELAY the server writes
-            // on the way out, not to what comes in; putting one here shifts every
-            // field by six bytes, the position reads as nonsense, and the whole
-            // packet is dropped by the coordinate check without a word.
             WorldPacket* move = new WorldPacket(MSG_MOVE_HEARTBEAT, 32);
             *move << static_cast<uint32>(MOVEFLAG_FORWARD);
             *move << static_cast<uint32>(getMSTime());
             *move << static_cast<float>(px) << static_cast<float>(py) << static_cast<float>(bot.homeZ) << static_cast<float>(bot.angle);
-            *move << static_cast<uint32>(0);                  // fall time
+            *move << static_cast<uint32>(0);
 
             bot.session->QueuePacket(move);
         }

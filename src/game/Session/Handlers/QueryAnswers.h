@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks to fill in a name or a template it lacks.
 namespace queries
 {
     void NameQuery(WorldSession& session, WorldPacket& packet);

@@ -444,7 +444,7 @@ struct boss_onyxia : public CreatureScript
                         DoScriptText(SAY_PHASE_2_TRANS, m_creature);
                         SetCombatMovement(false);
                         m_creature->GetMotionMaster()->MoveIdle();
-                        m_creature->SetTargetGuid(ObjectGuid());
+                        m_creature->SetTargetGuid(0);
 
                         float fGroundZ = m_creature->GetMap()->GetHeight(aMoveData[POINT_ID_SOUTH].fX, aMoveData[POINT_ID_SOUTH].fY, aMoveData[POINT_ID_SOUTH].fZ);
                         m_creature->GetMotionMaster()->MovePoint(POINT_ID_LIFTOFF, aMoveData[POINT_ID_SOUTH].fX, aMoveData[POINT_ID_SOUTH].fY, fGroundZ);

@@ -23,16 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file PlayerAndCreatureCommands.cpp
- * @brief Implementation of player and creature interaction chat commands.
- *
- * This file contains chat command handlers for interactions including:
- * - Player and creature following
- * - Movement commands
- * - Unit state management
- */
-
 #include "Chat.h"
 #include "ObjectMgr.h"
 #include "PathFinder.h"
@@ -41,13 +31,7 @@
 #include "FollowerReference.h"
 #include "Geometry/Vector3.h"
 
-/**
- * @brief Handler for HandleDeMorphCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleDeMorphCommand(char* /*args*/)
+bool ChatHandler::HandleDeMorphCommand(char* )
 {
     Unit* target = getSelectedUnit();
     if (!target)
@@ -55,8 +39,7 @@ bool ChatHandler::HandleDeMorphCommand(char* /*args*/)
         target = m_session->GetPlayer();
     }
 
-    // check online security
-    else if (target->IsPlayer() && HasLowerSecurity((Player*)target))
+    else if (IsPlayer(target) && HasLowerSecurity((Player*)target))
     {
         return false;
     }
@@ -66,12 +49,6 @@ bool ChatHandler::HandleDeMorphCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyMorphCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyMorphCommand(char* args)
 {
     if (!*args)
@@ -95,8 +72,7 @@ bool ChatHandler::HandleModifyMorphCommand(char* args)
         target = m_session->GetPlayer();
     }
 
-    // check online security
-    else if (target->IsPlayer() && HasLowerSecurity((Player*)target))
+    else if (IsPlayer(target) && HasLowerSecurity((Player*)target))
     {
         return false;
     }
@@ -106,12 +82,6 @@ bool ChatHandler::HandleModifyMorphCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDamageCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleDamageCommand(char* args)
 {
     if (!*args)
@@ -146,10 +116,8 @@ bool ChatHandler::HandleDamageCommand(char* args)
 
     uint32 damage = damage_int;
 
-    // For console, use target as damage dealer; for in-game, use session player
     Player* player = m_session ? m_session->GetPlayer() : nullptr;
 
-    // flat melee damage without resistance/etc reduction
     if (!*args)
     {
         if (player)
@@ -162,7 +130,7 @@ bool ChatHandler::HandleDamageCommand(char* args)
         }
         else
         {
-            // Console: target damages itself (environmental-style)
+
             target->DealDamage(target, damage, nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);
         }
         return true;
@@ -186,7 +154,6 @@ bool ChatHandler::HandleDamageCommand(char* args)
         damage = player->CalcArmorReducedDamage(target, damage);
     }
 
-    // melee damage by specific school
     if (!*args)
     {
         uint32 absorb = 0;
@@ -209,13 +176,12 @@ bool ChatHandler::HandleDamageCommand(char* args)
         }
         else
         {
-            // Console: simplified damage without player-specific calculations
+
             target->DealDamage(target, damage, nullptr, DIRECT_DAMAGE, schoolmask, nullptr, false);
         }
         return true;
     }
 
-    // non-melee damage
     uint32 spellid = ExtractSpellIdFromLink(&args);
     if (!spellid || !sSpellStore.LookupEntry(spellid))
     {
@@ -228,7 +194,7 @@ bool ChatHandler::HandleDamageCommand(char* args)
     }
     else
     {
-        // Console: spell damage not supported without a caster
+
         SendSysMessage("Spell damage requires an in-game player.");
         SetSentErrorMessage(true);
         return false;
@@ -237,13 +203,7 @@ bool ChatHandler::HandleDamageCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDieCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleDieCommand(char* /*args*/)
+bool ChatHandler::HandleDieCommand(char* )
 {
     Unit* target = getSelectedUnit();
 
@@ -254,9 +214,9 @@ bool ChatHandler::HandleDieCommand(char* /*args*/)
         return false;
     }
 
-    if (target->IsPlayer())
+    if (IsPlayer(target))
     {
-        if (HasLowerSecurity((Player*)target, ObjectGuid(), false))
+        if (HasLowerSecurity((Player*)target, 0, false))
         {
             return false;
         }
@@ -266,12 +226,12 @@ bool ChatHandler::HandleDieCommand(char* /*args*/)
     {
         if (m_session)
         {
-            // In-game: player deals the damage
+
             m_session->GetPlayer()->DealDamage(target, target->GetHealth(), nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);
         }
         else
         {
-            // Console: use environmental/direct kill
+
             target->DealDamage(target, target->GetHealth(), nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);
         }
     }
@@ -279,13 +239,7 @@ bool ChatHandler::HandleDieCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleMovegensCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleMovegensCommand(char* /*args*/)
+bool ChatHandler::HandleMovegensCommand(char* )
 {
     Unit* unit = getSelectedUnit();
     if (!unit)
@@ -295,7 +249,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
         return false;
     }
 
-    PSendSysMessage(LANG_MOVEGENS_LIST, (unit->IsPlayer() ? "Player" : "Creature"), unit->GetGUIDLow());
+    PSendSysMessage(LANG_MOVEGENS_LIST, (IsPlayer(unit) ? "Player" : "Creature"), unit->GetGUIDLow());
 
     MotionMaster* mm = unit->GetMotionMaster();
     float x, y, z;
@@ -312,7 +266,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
             case CHASE_MOTION_TYPE:
             {
                 Unit* target;
-                if (unit->IsPlayer())
+                if (IsPlayer(unit))
                 {
                     target = static_cast<ChaseMovementGenerator const*>(*itr)->GetTarget();
                 }
@@ -325,7 +279,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
                 {
                     SendSysMessage(LANG_MOVEGENS_CHASE_NULL);
                 }
-                else if (target->IsPlayer())
+                else if (IsPlayer(target))
                 {
                     PSendSysMessage(LANG_MOVEGENS_CHASE_PLAYER, target->GetName(), target->GetGUIDLow());
                 }
@@ -338,7 +292,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
             case FOLLOW_MOTION_TYPE:
             {
                 Unit* target;
-                if (unit->IsPlayer())
+                if (IsPlayer(unit))
                 {
                     target = static_cast<FollowMovementGenerator const*>(*itr)->GetTarget();
                 }
@@ -351,7 +305,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
                 {
                     SendSysMessage(LANG_MOVEGENS_FOLLOW_NULL);
                 }
-                else if (target->IsPlayer())
+                else if (IsPlayer(target))
                 {
                     PSendSysMessage(LANG_MOVEGENS_FOLLOW_PLAYER, target->GetName(), target->GetGUIDLow());
                 }
@@ -362,7 +316,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
                 break;
             }
             case HOME_MOTION_TYPE:
-                if (unit->IsCreature())
+                if (IsCreature(unit))
                 {
                     PSendSysMessage(LANG_MOVEGENS_HOME_CREATURE, x, y, z);
                 }
@@ -388,13 +342,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleSetViewCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleSetViewCommand(char* /*args*/)
+bool ChatHandler::HandleSetViewCommand(char* )
 {
     if (Unit* unit = getSelectedUnit())
     {

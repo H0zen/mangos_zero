@@ -88,7 +88,6 @@ bool SpellModifiers::Affects(SpellEntry const* spellInfo, SpellModifier* mod, Sp
         return false;
     }
 
-    // spent, but held until the spell that spent it has finished
     if (mod->charges == -1 && mod->lastAffected)
     {
         if (spell)
@@ -123,7 +122,7 @@ void SpellModifiers::Spent(Spell const* spell)
 
             if (mod && mod->charges == -1 && (mod->lastAffected == spell || mod->lastAffected == nullptr))
             {
-                // taking the aura off calls back into Add, which edits the list
+
                 m_owner.RemoveAuras(mod->spellId);
 
                 if (m_byNumber[number].empty())

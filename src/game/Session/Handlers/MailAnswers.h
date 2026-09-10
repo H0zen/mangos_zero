@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks at a mailbox.
 namespace mail
 {
     void SendMail(WorldSession& session, WorldPacket& packet);

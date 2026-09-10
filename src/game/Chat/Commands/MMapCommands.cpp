@@ -23,25 +23,15 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file MMapCommands.cpp
- * @brief Implementation of movement map and pathfinding chat commands.
- *
- * This file contains chat command handlers for MMap operations including:
- * - Movement map testing and validation
- * - Pathfinding debugging
- * - Path generation and verification
- */
-
 #include <list>
 #include "Summoning.h"
 #include "Chat.h"
 #include "ObjectMgr.h"
 #include "World.h"
 #include "MoveMap.h"
-#include "PathFinder.h" // for mmap manager
+#include "PathFinder.h"
 #include "GridNotifiers.h"
-#include "GridNotifiersImpl.h"          // for mmap manager
+#include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 #include "Movement/Spline/MoveSplineInit.h"
 #include "GameTime.h"
@@ -49,12 +39,6 @@
 #include <map>
 #include <typeinfo>
 
-/**
- * @brief Handler for HandleMmapPathCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleMmapPathCommand(char* args)
 {
     if (!MMAP::MMapFactory::createOrGetMMapManager()->GetNavMesh(m_session->GetPlayer()->GetMapId()))
@@ -65,7 +49,6 @@ bool ChatHandler::HandleMmapPathCommand(char* args)
 
     PSendSysMessage("mmap path:");
 
-    // units
     Player* player = m_session->GetPlayer();
     Unit* target = getSelectedUnit();
     if (!player || !target)
@@ -119,13 +102,11 @@ bool ChatHandler::HandleMmapPathCommand(char* args)
         originUnit = player;
     }
 
-    // unit locations
     float x, y, z;
     x = destinationUnit->Where().X();
     y = destinationUnit->Where().Y();
     z = destinationUnit->Where().Z();
 
-    // path
     PathFinder path(originUnit);
     path.setUseStrightPath(useStraightPath);
     path.calculate(x, y, z);
@@ -164,17 +145,10 @@ bool ChatHandler::HandleMmapPathCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleMmapLocCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleMmapLocCommand(char* /*args*/)
+bool ChatHandler::HandleMmapLocCommand(char* )
 {
     PSendSysMessage("mmap tileloc:");
 
-    // grid tile location
     Player* player = m_session->GetPlayer();
 
     int32 gx = 32 - player->Where().X() / SIZE_OF_GRIDS;
@@ -183,7 +157,6 @@ bool ChatHandler::HandleMmapLocCommand(char* /*args*/)
     PSendSysMessage("%04u%02i%02i.mmtile", player->GetMapId(), gy, gx);
     PSendSysMessage("gridloc [%i,%i]", gx, gy);
 
-    // calculate navmesh tile location
     const dtNavMesh* navmesh = MMAP::MMapFactory::createOrGetMMapManager()->GetNavMesh(player->GetMapId());
     const dtNavMeshQuery* navmeshquery = MMAP::MMapFactory::createOrGetMMapManager()->GetNavMeshQuery(player->GetMapId(), player->GetInstanceId());
     if (!navmesh || !navmeshquery)
@@ -206,7 +179,6 @@ bool ChatHandler::HandleMmapLocCommand(char* /*args*/)
 
     PSendSysMessage("Calc   [%02i,%02i]", tilex, tiley);
 
-    // navmesh poly -> navmesh tile location
     dtQueryFilter filter = dtQueryFilter();
     dtPolyRef polyRef = INVALID_POLYREF;
     navmeshquery->findNearestPoly(location, extents, &filter, &polyRef, nullptr);
@@ -233,13 +205,7 @@ bool ChatHandler::HandleMmapLocCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleMmapLoadedTilesCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleMmapLoadedTilesCommand(char* /*args*/)
+bool ChatHandler::HandleMmapLoadedTilesCommand(char* )
 {
     uint32 mapid = m_session->GetPlayer()->GetMapId();
 
@@ -267,13 +233,7 @@ bool ChatHandler::HandleMmapLoadedTilesCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleMmapStatsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleMmapStatsCommand(char* /*args*/)
+bool ChatHandler::HandleMmapStatsCommand(char* )
 {
     PSendSysMessage("mmap stats:");
     PSendSysMessage("  global mmap pathfinding is %sabled", sWorld.getConfig(CONFIG_BOOL_MMAP_ENABLED) ? "en" : "dis");
@@ -322,12 +282,6 @@ bool ChatHandler::HandleMmapStatsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleMmap command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleMmap(char* args)
 {
     bool on;
@@ -352,12 +306,6 @@ bool ChatHandler::HandleMmap(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleMmapTestArea command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleMmapTestArea(char* args)
 {
     float radius = 40.0f;
@@ -366,7 +314,7 @@ bool ChatHandler::HandleMmapTestArea(char* args)
     std::list<Creature*> creatureList;
     MaNGOS::AnyUnitInObjectRangeCheck go_check(m_session->GetPlayer(), radius);
     MaNGOS::CreatureListSearcher<MaNGOS::AnyUnitInObjectRangeCheck> go_search(creatureList, go_check);
-    // Get Creatures
+
     Cell::VisitGridObjects(m_session->GetPlayer(), go_search, radius);
 
     if (!creatureList.empty())
@@ -398,12 +346,6 @@ bool ChatHandler::HandleMmapTestArea(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleMmapTestHeight command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleMmapTestHeight(char* args)
 {
     float radius = 0.0f;
@@ -421,7 +363,7 @@ bool ChatHandler::HandleMmapTestHeight(char* args)
         unit = player;
     }
 
-    if (unit->IsCreature())
+    if (IsCreature(unit))
     {
         if (radius < 0.1f)
         {
@@ -430,7 +372,7 @@ bool ChatHandler::HandleMmapTestHeight(char* args)
     }
     else
     {
-        if (!unit->IsPlayer())
+        if (!IsPlayer(unit))
         {
             PSendSysMessage(LANG_SELECT_CHAR_OR_CREATURE);
             return false;

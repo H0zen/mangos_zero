@@ -23,27 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file AddonHandler.cpp
- * @brief Client addon information handler
- *
- * This file handles the client addon list sent during connection.
- * The client sends a compressed list of installed addons with their
- * CRC checksums. The server responds with SMSG_ADDON_INFO to indicate
- * which addons are "standard" (Blizzard-approved) vs "custom".
- *
- * Process:
- * 1. Client sends CMSG_ADDON_INFO with zlib-compressed addon list
- * 2. Server decompresses and parses addon names and CRCs
- * 3. Server responds with SMSG_ADDON_INFO for each addon
- *
- * The tdata array contains a standard response payload that marks
- * addons as "Blizzard addons" (CRC 0x1c776d01).
- *
- * @note This implementation does not enforce addon restrictions,
- * it only classifies them for the client's information.
- */
-
 #include <string>
 #include <zlib.h>
 #include "AddonHandler.h"
@@ -52,46 +31,14 @@
 #include "Log.h"
 #include "Policies/Singleton.h"
 
-
-/**
- * @brief Construct AddonHandler singleton
- *
- * Initializes the addon handler. No database operations
- * are performed during construction.
- */
 AddonHandler::AddonHandler()
 {
 }
 
-/**
- * @brief Destroy AddonHandler singleton
- *
- * Cleans up any allocated resources. Currently a no-op.
- */
 AddonHandler::~AddonHandler()
 {
 }
 
-/**
- * @brief Build addon info response packet
- * @param Source Incoming packet with compressed addon data (CMSG_ADDON_INFO)
- * @param Target Outgoing packet to build (SMSG_ADDON_INFO)
- * @return true on success, false on decompression/parsing error
- *
- * Decompresses the client's addon list and builds the server's response.
- * For each addon, the server indicates:
- * - Standard addon (Blizzard official) - uses hardcoded CRC
- * - Custom addon (user-installed) - marked with special flag
- *
- * The tdata array contains a 256-byte signature/payload that marks
- * addons as "standard" when appended to the response.
- *
- * Validation:
- * - Packet must have at least 4 bytes for size field
- * - Size field must be non-zero
- * - Size must not exceed 0xFFFFF (1MB)
- * - ZLIB decompression must succeed
- */
 bool AddonHandler::BuildAddonPacket(WorldPacket* Source, WorldPacket* Target)
 {
     ByteBuffer AddOnPacked;
@@ -99,14 +46,6 @@ bool AddonHandler::BuildAddonPacket(WorldPacket* Source, WorldPacket* Target)
     uint32 CurrentPosition;
     uint32 TempValue;
 
-    /**
-     * @var tdata
-     * @brief Standard addon signature payload
-     *
-     * This 256-byte array is sent in the addon response to mark
-     * addons as "Blizzard standard" (CRC 0x1c776d01).
-     * Contains cryptographic/signature data for addon validation.
-     */
     unsigned char tdata[256] =
     {
         0xC3, 0x5B, 0x50, 0x84, 0xB9, 0x3E, 0x32, 0x42, 0x8C, 0xD0, 0xC7, 0x48, 0xFA, 0x0E, 0x5D, 0x54,
@@ -127,15 +66,13 @@ bool AddonHandler::BuildAddonPacket(WorldPacket* Source, WorldPacket* Target)
         0x0D, 0x36, 0xEA, 0x01, 0xE0, 0xAA, 0x91, 0x20, 0x54, 0xF0, 0x72, 0xD8, 0x1E, 0xC7, 0x89, 0xD2
     };
 
-    // broken addon packet, can't be received from real client
     if (Source->rpos() + 4 > Source->size())
     {
         return false;
     }
 
-    *Source >> TempValue;                                   // get real size of the packed structure
+    *Source >> TempValue;
 
-    // empty addon packet, nothing process, can't be received from real client
     if (!TempValue)
     {
         return false;
@@ -147,11 +84,11 @@ bool AddonHandler::BuildAddonPacket(WorldPacket* Source, WorldPacket* Target)
         return false;
     }
 
-    AddonRealSize = TempValue;                              // temp value because ZLIB only excepts uLongf
+    AddonRealSize = TempValue;
 
-    CurrentPosition = Source->rpos();                       // get the position of the pointer in the structure
+    CurrentPosition = Source->rpos();
 
-    AddOnPacked.resize(AddonRealSize);                      // resize target for zlib action
+    AddOnPacked.resize(AddonRealSize);
 
     if (uncompress(const_cast<uint8*>(AddOnPacked.contents()), &AddonRealSize, const_cast<uint8*>((*Source).contents() + CurrentPosition), (*Source).size() - CurrentPosition) == Z_OK)
     {
@@ -167,15 +104,13 @@ bool AddonHandler::BuildAddonPacket(WorldPacket* Source, WorldPacket* Target)
 
             AddOnPacked >> crc >> unk7 >> unk6;
 
-            // sLog.outDebug("ADDON: Name:%s CRC:%x Unknown1 :%x Unknown2 :%x", AddonNames.c_str(), crc, unk7, unk6);
-
             *Target << (uint8)2;
 
             uint8 unk1 = 1;
             *Target << (uint8)unk1;
             if (unk1)
             {
-                uint8 unk2 = crc != UI64LIT(0x1c776d01);    // If addon is Standard addon CRC
+                uint8 unk2 = crc != UI64LIT(0x1c776d01);
                 *Target << (uint8)unk2;
                 if (unk2)
                 {
@@ -189,7 +124,7 @@ bool AddonHandler::BuildAddonPacket(WorldPacket* Source, WorldPacket* Target)
             *Target << (uint8)unk3;
             if (unk3)
             {
-                // String, 256
+
             }
         }
     }
@@ -200,80 +135,3 @@ bool AddonHandler::BuildAddonPacket(WorldPacket* Source, WorldPacket* Target)
     }
     return true;
 }
-
-/* Code use in 1.10.2 when client not ignore ban state sended for addons. Saved for reference if client switch to use server ban state information
-void AddonHandler::BuildAddonPacket(WorldPacket* Source, WorldPacket* Target, uint32 Packetoffset)
-{
-    ByteBuffer AddOnPacked;
-    uLongf AddonRealSize;
-    uint32 CurrentPosition;
-    uint32 TempValue;
-
-    *Source >> TempValue;                                   // get real size of the packed structure
-
-    AddonRealSize = TempValue;                              // temp value becouse ZLIB only excepts uLongf
-
-    CurrentPosition = Source->rpos();                       // get the position of the pointer in the structure
-
-    AddOnPacked.resize(AddonRealSize);                      // resize target for zlib action
-
-    if (!uncompress((uint8*)AddOnPacked.contents(), &AddonRealSize, (uint8*)(*Source).contents() + CurrentPosition, (*Source).size() - CurrentPosition)!= Z_OK)
-    {
-        bool* AddonAllowed = new bool;                      // handle addon check and enable-ing
-
-        uint32 Unknown1;
-        uint8 Unknown0;
-
-        AddOnPacked >> Unknown0;
-        AddOnPacked >> Unknown1;
-
-        Target->Initialize(SMSG_ADDON_INFO);
-
-        uint32 i = 5;                                       // offset for addon extraction
-        while (i != AddOnPacked.size())
-        {
-            std::string AddonNames;
-            AddOns* Addonstr = new AddOns;
-            uint8 unk6;
-            uint64 CRCCHECK;
-            AddOnPacked >> AddonNames >> CRCCHECK >> unk6;
-
-            // sLog.outDebug("ADDON:    Name:%s CRC:%x Unknown:%x",AddonNames.c_str(), CRCCHECK,unk6);
-
-            Addonstr->Name = AddonNames;
-            Addonstr->CRC = CRCCHECK;
-
-            // if not allowed but unknown added to list
-            if (GetAddonStatus(Addonstr, AddonAllowed))     // If addon is new
-            {
-                Addonstr->Enabled = m_Addon_Default;        // by default new addons are set from Config file
-                *AddonAllowed = m_Addon_Default;            // Set addon allowed on default value
-                _AddAddon(Addonstr);
-                sLog.outDetail("Found new Addon, Name:%s CRC:%x Unknown:%x",AddonNames.c_str(), CRCCHECK, unk6);
-            }
-
-            if (CRCCHECK == UI64LIT(0x4C1C776D01))          // If addon is Standard addon CRC
-            {
-                // value's standard Addons
-                *Target << uint8(0) << uint8(2) << uint8(1) << uint8(0) << uint32(0);
-            }
-            else if (*AddonAllowed)                         // if addon is Custom addons
-            // value's enable addon
-            *Target << uint8(0x00) << uint8(0x01) << uint8(0x00) << uint8(0x01);
-            else
-                // value's disable addom
-            *Target << uint8(0x00) << uint8(0x0) << uint8(0x00) << uint8(0x0);
-
-            i += AddonNames.size() + 10;
-        }
-        *Target << uint8(0x0);
-
-        // delete mem allocation
-        delete AddonAllowed;
-    }
-    else
-    {
-        // handle uncompress error
-    }
-}
-*/

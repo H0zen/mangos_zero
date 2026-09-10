@@ -31,173 +31,93 @@
 class Map;
 class Occupant;
 
-/**
- * @brief Cell area structure
- */
 struct CellArea
 {
 
-    /**
-     * @brief Default constructor
-     */
     CellArea() {}
 
-    /**
-     * @brief Constructor with bounds
-     * @param low Low bound
-     * @param high High bound
-     */
     CellArea(CellPair low, CellPair high) : low_bound(low), high_bound(high) {}
 
-    /**
-     * @brief Check if empty
-     * @return True if empty
-     */
     bool operator!() const { return low_bound == high_bound; }
 
-    /**
-     * @brief Resize borders
-     * @param begin_cell Begin cell output
-     * @param end_cell End cell output
-     */
     void ResizeBorders(CellPair& begin_cell, CellPair& end_cell) const
     {
         begin_cell = low_bound;
         end_cell = high_bound;
     }
 
-    CellPair low_bound; ///< Low bound
-    CellPair high_bound; ///< High bound
+    CellPair low_bound;
+    CellPair high_bound;
 };
 
-/**
- * @brief Cell structure
- */
 struct Cell
 {
 
-    /**
-     * @brief Default constructor
-     */
     Cell()
     {
         data.All = 0;
     }
 
-    /**
-     * @brief Copy constructor
-     * @param cell Source cell
-     */
     Cell(const Cell& cell)
     {
         data.All = cell.data.All;
     }
 
-    /**
-     * @brief Constructor from cell pair
-     * @param p Cell pair
-     */
     explicit Cell(CellPair const& p);
 
-    /**
-     * @brief Compute coordinates
-     * @param x X-coordinate output
-     * @param y Y-coordinate output
-     */
     void Compute(uint32& x, uint32& y) const
     {
         x = data.Part.grid_x * MAX_NUMBER_OF_CELLS + data.Part.cell_x;
         y = data.Part.grid_y * MAX_NUMBER_OF_CELLS + data.Part.cell_y;
     }
 
-    /**
-     * @brief Check if different cell
-     * @param cell Cell to compare
-     * @return True if different cell
-     */
     bool DiffCell(const Cell& cell) const
     {
         return(data.Part.cell_x != cell.data.Part.cell_x ||
             data.Part.cell_y != cell.data.Part.cell_y);
     }
 
-    /**
-     * @brief Check if different grid
-     * @param cell Cell to compare
-     * @return True if different grid
-     */
     bool DiffGrid(const Cell& cell) const
     {
         return(data.Part.grid_x != cell.data.Part.grid_x ||
             data.Part.grid_y != cell.data.Part.grid_y);
     }
 
-    /**
-     * @brief Get cell X coordinate
-     * @return Cell X
-     */
     uint32 CellX() const
     {
         return data.Part.cell_x;
     }
 
-    /**
-     * @brief Get cell Y coordinate
-     * @return Cell Y
-     */
     uint32 CellY() const
     {
         return data.Part.cell_y;
     }
 
-    /**
-     * @brief Get grid X coordinate
-     * @return Grid X
-     */
     uint32 GridX() const
     {
         return data.Part.grid_x;
     }
 
-    /**
-     * @brief Get grid Y coordinate
-     * @return Grid Y
-     */
     uint32 GridY() const
     {
         return data.Part.grid_y;
     }
 
-    /**
-     * @brief Check if no create flag is set
-     * @return True if no create
-     */
     bool NoCreate() const
     {
         return data.Part.nocreate;
     }
 
-    /**
-     * @brief Set no create flag
-     */
     void SetNoCreate()
     {
         data.Part.nocreate = 1;
     }
 
-    /**
-     * @brief Get grid pair
-     * @return Grid pair
-     */
     GridPair gridPair() const
     {
         return GridPair(GridX(), GridY());
     }
 
-    /**
-     * @brief Get cell pair
-     * @return Cell pair
-     */
     CellPair cellPair() const
     {
         return CellPair(
@@ -205,32 +125,17 @@ struct Cell
             data.Part.grid_y * MAX_NUMBER_OF_CELLS + data.Part.cell_y);
     }
 
-    /**
-     * @brief Assignment operator
-     * @param cell Source cell
-     * @return Reference to this cell
-     */
     Cell& operator=(const Cell& cell)
     {
         data.All = cell.data.All;
         return *this;
     }
 
-    /**
-     * @brief Equality operator
-     * @param cell Cell to compare
-     * @return True if equal
-     */
     bool operator==(const Cell& cell) const
     {
         return (data.All == cell.data.All);
     }
 
-    /**
-     * @brief Inequality operator
-     * @param cell Cell to compare
-     * @return True if not equal
-     */
     bool operator!=(const Cell& cell) const
     {
         return !operator==(cell);
@@ -258,13 +163,9 @@ struct Cell
     template<class T> static void VisitWorldObjects(const Occupant* obj, T& visitor, float radius, bool dont_load = true);
     template<class T> static void VisitAllObjects(const Occupant* obj, T& visitor, float radius, bool dont_load = true);
 
-    /// Everything in the one grid a point falls in, with no radius anywhere in it.
-    /// A grid is the unit of membership: a thing is in it or it is not, and how far
-    /// from the point it stands does not enter the question.
     template<class T> static void VisitWorldObjectsInGrid(float x, float y, Map* map, T& visitor, bool dont_load = true);
     template<class T> static void VisitAllObjectsInGrid(float x, float y, Map* map, T& visitor, bool dont_load = true);
 
-    /// The grid a point falls in, as the pair of grid coordinates that name it.
     static void GridOf(float x, float y, uint32& gridX, uint32& gridY);
 
     template<class T> static void VisitGridObjects(float x, float y, Map* map, T& visitor, float radius, bool dont_load = true);

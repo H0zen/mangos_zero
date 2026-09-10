@@ -54,7 +54,7 @@ namespace
         c.classId = CLASS_WARRIOR;
         c.weaponSkill = 300;
         c.maxSkillForLevel = 300;
-        c.guid = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(1));
+        c.guid = MakeGuid(HIGHGUID_PLAYER, static_cast<uint32>(1));
         return c;
     }
 
@@ -65,15 +65,15 @@ namespace
         c.defenceSkill = 300;
         c.maxDefenceForLevel = 300;
         c.health = health;
-        c.guid = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
+        c.guid = MakeGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
         return c;
     }
 
     Blow Swing(int32 base)
     {
         Blow a;
-        a.attacker = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(1));
-        a.victim = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
+        a.attacker = MakeGuid(HIGHGUID_PLAYER, static_cast<uint32>(1));
+        a.victim = MakeGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
         a.delivery = Delivery::MeleeMain;
         a.school = combat::School::Physical;
         a.amount = base;
@@ -83,7 +83,7 @@ namespace
     Absorber ManaShield(int32 remaining, float multiplier)
     {
         Absorber shield;
-        shield.caster = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
+        shield.caster = MakeGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
         shield.spellId = 1463;
         shield.remaining = remaining;
         shield.manaMultiplier = multiplier;
@@ -188,7 +188,7 @@ TEST_CASE("A free shield is spent before a mana shield is charged for")
     d.mana = 1000;
 
     Absorber ward;
-    ward.caster = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
+    ward.caster = MakeGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
     ward.spellId = 17;
     ward.remaining = 60;
     d.absorbers.push_back(ward);
@@ -213,7 +213,7 @@ TEST_CASE("Damage you do to yourself is not split onto anyone")
 {
     Defences d;
     combat::Splitter splitter;
-    splitter.target = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(9));
+    splitter.target = MakeGuid(HIGHGUID_PLAYER, static_cast<uint32>(9));
     splitter.fraction = 0.5f;
     d.splitters.push_back(splitter);
 
@@ -234,7 +234,7 @@ TEST_CASE("Damage from somebody else still splits")
 {
     Defences d;
     combat::Splitter splitter;
-    splitter.target = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(9));
+    splitter.target = MakeGuid(HIGHGUID_PLAYER, static_cast<uint32>(9));
     splitter.fraction = 0.5f;
     d.splitters.push_back(splitter);
 

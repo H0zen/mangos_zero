@@ -36,39 +36,30 @@ public:
     CinematicFlyover(Player* player, uint8 raceId);
     ~CinematicFlyover();
 
-    /**
-     * Begin the flyover (summon body + bind camera). Called when the client
-     * enters the cinematic on the first CMSG_NEXT_CINEMATIC_CAMERA. Guarded:
-     * a no-op unless the flyover was armed at login and has not already begun.
-     */
     void Begin();
 
-    /// Update tick - called from Player::Update
     void Update(uint32 updateDiff);
 
-    /// Stop the flyover and clean up (idempotent)
     void Stop();
 
-    /// Check if flyover is active
     bool IsActive() const { return m_active; }
 
 private:
-    /// Resolve body from GUID (returns nullptr if body no longer exists)
+
     Creature* ResolveBody() const;
 
-    /// Interpolate route position at the given route time (ms)
     bool InterpolatePosition(uint32 atMs, float& x, float& y, float& z, float& o);
 
     Player* m_player;
     const CinematicFlyoverRoute* m_route;
-    Map* m_viewerMap;       // map the broadcast-radius viewer was registered on
-    float m_viewerRadius;   // radius it was registered with (for paired removal)
-    ObjectGuid m_bodyGuid;
+    Map* m_viewerMap;
+    float m_viewerRadius;
+    ObjectGuid m_bodyGuid = 0;
     uint32 m_bodyEntry;
     uint32 m_elapsedMs;
     uint32 m_updateTimer;
     uint32 m_timeoutMs;
-    bool m_armed;       // validated at login; waiting for the client to enter the cinematic
-    bool m_begun;       // Begin() has run (guards repeated CMSG_NEXT_CINEMATIC_CAMERA)
-    bool m_active;      // body summoned and camera bound
+    bool m_armed;
+    bool m_begun;
+    bool m_active;
 };

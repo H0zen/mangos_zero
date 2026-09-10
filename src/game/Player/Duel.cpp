@@ -112,8 +112,8 @@ void Duel::Complete(DuelCompleteType type)
 
     if (type != DUEL_INTERRUPTED)
     {
-        data.Initialize(SMSG_DUEL_WINNER, (1 + 20));        // we guess size
-        data << uint8(type == DUEL_WON ? 0 : 1);            // 0 = just won; 1 = fled
+        data.Initialize(SMSG_DUEL_WINNER, (1 + 20));
+        data << uint8(type == DUEL_WON ? 0 : 1);
         data << other->GetName();
         data << m_owner.GetName();
         Deliver(Audience::Around(m_owner).AndSubject(), &data);
@@ -121,7 +121,7 @@ void Duel::Complete(DuelCompleteType type)
 
     if (type == DUEL_FLED)
     {
-        // on the same side, or neither of them open to attack, they stop swinging
+
         if (m_initiator->GetTeam() == other->GetTeam())
         {
             m_initiator->AttackStop();
@@ -145,11 +145,9 @@ void Duel::Complete(DuelCompleteType type)
         m_initiator->Conjured().RemoveObject(flag, true);
     }
 
-    // everything harmful either man laid on the other since it began comes off
     Strip(*other, m_owner.GetObjectGuid());
     Strip(m_owner, other->GetObjectGuid());
 
-    // combo points held on the other man, or on his beast, are dropped
     if (m_owner.GetComboTargetGuid() == other->GetObjectGuid() ||
         m_owner.GetComboTargetGuid() == other->GetPetGuid())
     {
@@ -162,9 +160,9 @@ void Duel::Complete(DuelCompleteType type)
         other->ClearComboPoints();
     }
 
-    m_owner.SetDuelArbiterGuid(ObjectGuid());
+    m_owner.SetDuelArbiterGuid(0);
     m_owner.SetUInt32Value(PLAYER_DUEL_TEAM, 0);
-    other->SetDuelArbiterGuid(ObjectGuid());
+    other->SetDuelArbiterGuid(0);
     other->SetUInt32Value(PLAYER_DUEL_TEAM, 0);
 
     other->Duelling().Forget();

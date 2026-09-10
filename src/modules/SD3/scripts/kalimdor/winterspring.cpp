@@ -172,11 +172,11 @@ struct npc_ranshalla : public CreatureScript
 
         uint32 m_uiDelayTimer;
 
-        ObjectGuid m_firstPriestessGuid;
-        ObjectGuid m_secondPriestessGuid;
-        ObjectGuid m_guardEluneGuid;
-        ObjectGuid m_voiceEluneGuid;
-        ObjectGuid m_altarGuid;
+        ObjectGuid m_firstPriestessGuid = 0;
+        ObjectGuid m_secondPriestessGuid = 0;
+        ObjectGuid m_guardEluneGuid = 0;
+        ObjectGuid m_voiceEluneGuid = 0;
+        ObjectGuid m_altarGuid = 0;
 
         void Reset() override
         {
@@ -598,7 +598,7 @@ struct npc_artorius_the_doombringer : public CreatureScript
         uint32 m_uiTransformEmote_Timer;
         bool m_bTransform;
 
-        ObjectGuid m_hunterGuid;
+        ObjectGuid m_hunterGuid = 0;
         uint32 m_uiDemonic_Doom_Timer;
         uint32 m_uiDemonic_Frenzy_Timer;
         uint32 m_uiDespawn_Timer;
@@ -630,7 +630,7 @@ struct npc_artorius_the_doombringer : public CreatureScript
                         m_uiDespawn_Timer = 20 * MINUTE * IN_MILLISECONDS;
                     }
 
-                    m_hunterGuid.Clear();
+                    m_hunterGuid = 0;
                     m_uiDemonic_Doom_Timer = 7500;
                     m_uiDemonic_Frenzy_Timer = urand(5000, 8000);
                     break;
@@ -656,7 +656,7 @@ struct npc_artorius_the_doombringer : public CreatureScript
         /** Artorius the Doombringer */
         void Aggro(Unit* pWho) override
         {
-            if (pWho->getClass() == CLASS_HUNTER && (m_hunterGuid.IsEmpty() || m_hunterGuid == pWho->GetObjectGuid()))
+            if (pWho->getClass() == CLASS_HUNTER && ((m_hunterGuid == 0) || m_hunterGuid == pWho->GetObjectGuid()))
             {
                 m_hunterGuid = pWho->GetObjectGuid();
             }

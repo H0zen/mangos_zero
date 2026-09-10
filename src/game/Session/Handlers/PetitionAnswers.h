@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about a charter being signed.
 namespace petitions
 {
     void PetitionBuy(WorldSession& session, WorldPacket& packet);

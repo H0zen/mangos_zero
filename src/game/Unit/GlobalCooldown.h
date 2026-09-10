@@ -31,13 +31,6 @@
 
 struct SpellEntry;
 
-/**
- * The pause after a spell before the next one may be started.
- *
- * Kept per category rather than per spell, and kept by whoever is doing the
- * casting: a player has one, and so does the bar a charmed unit is driven from.
- */
-
 struct GlobalCooldown
 {
     explicit GlobalCooldown(uint32 _dur = 0, uint32 _time = 0) : duration(_dur), cast_time(_time) {}
@@ -46,9 +39,9 @@ struct GlobalCooldown
     uint32 cast_time;
 };
 
-typedef std::unordered_map < uint32 /*category*/, GlobalCooldown > GlobalCooldownList;
+typedef std::unordered_map < uint32 , GlobalCooldown > GlobalCooldownList;
 
-class GlobalCooldownMgr                                     // Shared by Player and CharmInfo
+class GlobalCooldownMgr
 {
     public:
         GlobalCooldownMgr() {}

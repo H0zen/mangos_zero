@@ -23,28 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file World.cpp
- * @brief Core world server implementation
- *
- * This file implements the World class, which is the central hub of the
- * MaNGOS game server. It manages:
- * - Server configuration and settings
- * - Game time and world updates
- * - Player sessions and limits
- * - All game systems initialization (maps, spells, quests, etc.)
- * - Server shutdown and restart procedures
- * - In-game announcements and events
- * - Various utility functions for the game world
- *
- * The World class is a singleton accessed via sWorld, and runs the main
- * server loop that processes all game logic.
- *
- * @ingroup world
- */
-
-
-
 #include <cmath>
 #include <string>
 #include "World.h"
@@ -102,7 +80,6 @@
 #include <sstream>
 #include "Corpse.h"
 
-/// Initialize config values
 void World::LoadConfigSettings(bool reload)
 {
     if (reload)
@@ -114,7 +91,6 @@ void World::LoadConfigSettings(bool reload)
         }
     }
 
-    ///- Read the version of the configuration file and warn the user in case of emptiness or mismatch
     uint32 confVersion = sConfig.GetIntDefault("ConfVersion", 0);
     if (!confVersion)
     {
@@ -137,11 +113,9 @@ void World::LoadConfigSettings(bool reload)
         }
     }
 
-    ///- Read the player limit and the Message of the day from the config file
     SetPlayerLimit(sConfig.GetIntDefault("PlayerLimit", DEFAULT_PLAYER_LIMIT), true);
     SetMotd(sConfig.GetStringDefault("Motd", "Welcome to the Massive Network Game Object Server."));
 
-    ///- Read all rates from the config file
     setConfigPos(CONFIG_FLOAT_RATE_HEALTH, "Rate.Health", 1.0f);
     setConfigPos(CONFIG_FLOAT_RATE_POWER_MANA, "Rate.Mana", 1.0f);
     setConfig(CONFIG_FLOAT_RATE_POWER_RAGE_INCOME, "Rate.Rage.Income", 1.0f);
@@ -219,7 +193,6 @@ void World::LoadConfigSettings(bool reload)
     setConfigPos(CONFIG_FLOAT_CREATURE_FAMILY_ASSISTANCE_RADIUS,      "CreatureFamilyAssistanceRadius",     10.0f);
     setConfigPos(CONFIG_FLOAT_CREATURE_FAMILY_FLEE_ASSISTANCE_RADIUS, "CreatureFamilyFleeAssistanceRadius", 30.0f);
 
-    ///- Read other configuration items from the config file
     setConfigMinMax(CONFIG_UINT32_COMPRESSION, "Compression", 1, 1, 9);
     setConfig(CONFIG_BOOL_ADDON_CHANNEL, "AddonChannel", true);
     setConfig(CONFIG_BOOL_CLEAN_CHARACTER_DB, "CleanCharacterDB", true);
@@ -312,7 +285,6 @@ void World::LoadConfigSettings(bool reload)
 
     setConfig(CONFIG_BOOL_AUTOPOOLING_MINING_ENABLE, "Autopooling.Mining.Enable", false);
 
-    // must be after CONFIG_UINT32_CHARACTERS_PER_REALM
     setConfigMin(CONFIG_UINT32_CHARACTERS_PER_ACCOUNT, "CharactersPerAccount", 50, getConfig(CONFIG_UINT32_CHARACTERS_PER_REALM));
 
     setConfigMinMax(CONFIG_UINT32_SKIP_CINEMATICS, "SkipCinematics", 0, 0, 2);
@@ -500,8 +472,6 @@ void World::LoadConfigSettings(bool reload)
 
     setConfig(CONFIG_BOOL_ENABLE_QUEST_TRACKER,        "QuestTracker.Enable", 0);
 
-
-    // Recommended Or New Flag
     setConfig(CONFIG_BOOL_REALM_RECOMMENDED_OR_NEW_ENABLED, "Realm.RecommendedOrNew.Enabled", false);
     setConfig(CONFIG_BOOL_REALM_RECOMMENDED_OR_NEW, "Realm.RecommendedOrNew", false);
 
@@ -524,7 +494,6 @@ void World::LoadConfigSettings(bool reload)
         m_VisibleObjectGreyDistance = MAX_VISIBILITY_DISTANCE;
     }
 
-    // visibility on continents
     m_MaxVisibleDistanceOnContinents      = sConfig.GetFloatDefault("Visibility.Distance.Continents",     DEFAULT_VISIBILITY_DISTANCE);
     if (m_MaxVisibleDistanceOnContinents < 45 * getConfig(CONFIG_FLOAT_RATE_CREATURE_AGGRO))
     {
@@ -537,7 +506,6 @@ void World::LoadConfigSettings(bool reload)
         m_MaxVisibleDistanceOnContinents = MAX_VISIBILITY_DISTANCE - m_VisibleUnitGreyDistance;
     }
 
-    // visibility in instances
     m_MaxVisibleDistanceInInstances        = sConfig.GetFloatDefault("Visibility.Distance.Instances",       DEFAULT_VISIBILITY_INSTANCE);
     if (m_MaxVisibleDistanceInInstances < 45 * getConfig(CONFIG_FLOAT_RATE_CREATURE_AGGRO))
     {
@@ -550,7 +518,6 @@ void World::LoadConfigSettings(bool reload)
         m_MaxVisibleDistanceInInstances = MAX_VISIBILITY_DISTANCE - m_VisibleUnitGreyDistance;
     }
 
-    // visibility in BG/Arenas
     m_MaxVisibleDistanceInBGArenas        = sConfig.GetFloatDefault("Visibility.Distance.BGArenas",       DEFAULT_VISIBILITY_BGARENAS);
     if (m_MaxVisibleDistanceInBGArenas < 45 * getConfig(CONFIG_FLOAT_RATE_CREATURE_AGGRO))
     {
@@ -570,7 +537,6 @@ void World::LoadConfigSettings(bool reload)
         m_MaxVisibleDistanceInFlight = MAX_VISIBILITY_DISTANCE - m_VisibleObjectGreyDistance;
     }
 
-    ///- Load the CharDelete related config options
     setConfigMinMax(CONFIG_UINT32_CHARDELETE_METHOD, "CharDelete.Method", 0, 0, 1);
     setConfigMinMax(CONFIG_UINT32_CHARDELETE_MIN_LEVEL, "CharDelete.MinLevel", 0, 0, getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL));
     setConfig(CONFIG_UINT32_CHARDELETE_KEEP_DAYS, "CharDelete.KeepDays", 30);
@@ -584,15 +550,13 @@ void World::LoadConfigSettings(bool reload)
         setConfig(CONFIG_UINT32_GUID_RESERVE_SIZE_GAMEOBJECT, "GuidReserveSize.GameObject", 100);
     }
 
-    ///- Read the "Data" directory from the config file
     std::string dataPath = sConfig.GetStringDefault("DataDir", "./");
 
-    // for empty string use current dir as for absent case
     if (dataPath.empty())
     {
         dataPath = "./";
     }
-    // normalize dir path to path/ or path\ form
+
     else if (dataPath.at(dataPath.length() - 1) != '/' && dataPath.at(dataPath.length() - 1) != '\\')
     {
         dataPath.append("/");
@@ -612,10 +576,7 @@ void World::LoadConfigSettings(bool reload)
     }
 
     setConfig(CONFIG_BOOL_VMAP_INDOOR_CHECK, "vmap.enableIndoorCheck", true);
-    // vmap.enableLOS and vmap.enableHeight are gone rather than ignored. A fused tile
-    // carries terrain and collision in one file, so there is nothing left that could be
-    // switched off independently -- and a config key that silently does nothing is worse
-    // than one that is absent.
+
     LineOfSightExemptions::Load(sConfig.GetStringDefault("vmap.ignoreSpellIds", ""));
 
     sLog.outString("WORLD: Terrain tiles directory is: %stiles", m_dataPath.c_str());
@@ -628,9 +589,6 @@ void World::LoadConfigSettings(bool reload)
     sLog.outString();
 }
 
-/**
- * @brief Loads the current world database version string.
- */
 void World::LoadDBVersion()
 {
     QueryResult* result = WorldDatabase.Query("SELECT `version`, `structure`, `content` FROM `db_version` ORDER BY `version` DESC, `structure` DESC, `content` DESC LIMIT 1");
@@ -656,13 +614,6 @@ void World::LoadDBVersion()
     }
 }
 
-/**
- * @brief Loads an unsigned integer config value and clamps it against negativity.
- *
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- */
 void World::setConfig(eConfigUInt32Values index, char const* fieldname, uint32 defvalue)
 {
     setConfig(index, sConfig.GetIntDefault(fieldname, defvalue));
@@ -673,49 +624,21 @@ void World::setConfig(eConfigUInt32Values index, char const* fieldname, uint32 d
     }
 }
 
-/**
- * @brief Loads a signed integer config value.
- *
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- */
 void World::setConfig(eConfigInt32Values index, char const* fieldname, int32 defvalue)
 {
     setConfig(index, sConfig.GetIntDefault(fieldname, defvalue));
 }
 
-/**
- * @brief Loads a floating-point config value.
- *
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- */
 void World::setConfig(eConfigFloatValues index, char const* fieldname, float defvalue)
 {
     setConfig(index, sConfig.GetFloatDefault(fieldname, defvalue));
 }
 
-/**
- * @brief Loads a boolean config value.
- *
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- */
 void World::setConfig(eConfigBoolValues index, char const* fieldname, bool defvalue)
 {
     setConfig(index, sConfig.GetBoolDefault(fieldname, defvalue));
 }
 
-/**
- * @brief Loads a positive floating-point config value.
- *
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- */
 void World::setConfigPos(eConfigFloatValues index, char const* fieldname, float defvalue)
 {
     setConfig(index, fieldname, defvalue);
@@ -726,14 +649,6 @@ void World::setConfigPos(eConfigFloatValues index, char const* fieldname, float 
     }
 }
 
-/**
- * @brief Loads an unsigned integer config value with a minimum bound.
- *
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- * @param minvalue The minimum allowed value.
- */
 void World::setConfigMin(eConfigUInt32Values index, char const* fieldname, uint32 defvalue, uint32 minvalue)
 {
     setConfig(index, fieldname, defvalue);
@@ -744,14 +659,6 @@ void World::setConfigMin(eConfigUInt32Values index, char const* fieldname, uint3
     }
 }
 
-/**
- * @brief Loads a signed integer config value with a minimum bound.
- *
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- * @param minvalue The minimum allowed value.
- */
 void World::setConfigMin(eConfigInt32Values index, char const* fieldname, int32 defvalue, int32 minvalue)
 {
     setConfig(index, fieldname, defvalue);
@@ -762,14 +669,6 @@ void World::setConfigMin(eConfigInt32Values index, char const* fieldname, int32 
     }
 }
 
-/**
- * @brief Loads a floating-point config value with a minimum bound.
- *
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- * @param minvalue The minimum allowed value.
- */
 void World::setConfigMin(eConfigFloatValues index, char const* fieldname, float defvalue, float minvalue)
 {
     setConfig(index, fieldname, defvalue);
@@ -780,15 +679,6 @@ void World::setConfigMin(eConfigFloatValues index, char const* fieldname, float 
     }
 }
 
-/**
- * @brief Loads an unsigned integer config value with minimum and maximum bounds.
- *
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- * @param minvalue The minimum allowed value.
- * @param maxvalue The maximum allowed value.
- */
 void World::setConfigMinMax(eConfigUInt32Values index, char const* fieldname, uint32 defvalue, uint32 minvalue, uint32 maxvalue)
 {
     setConfig(index, fieldname, defvalue);
@@ -804,15 +694,6 @@ void World::setConfigMinMax(eConfigUInt32Values index, char const* fieldname, ui
     }
 }
 
-/**
- * @brief Loads a signed integer config value with minimum and maximum bounds.
- *
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- * @param minvalue The minimum allowed value.
- * @param maxvalue The maximum allowed value.
- */
 void World::setConfigMinMax(eConfigInt32Values index, char const* fieldname, int32 defvalue, int32 minvalue, int32 maxvalue)
 {
     setConfig(index, fieldname, defvalue);
@@ -828,15 +709,6 @@ void World::setConfigMinMax(eConfigInt32Values index, char const* fieldname, int
     }
 }
 
-/**
- * @brief Loads a floating-point config value with minimum and maximum bounds.
- *
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- * @param minvalue The minimum allowed value.
- * @param maxvalue The maximum allowed value.
- */
 void World::setConfigMinMax(eConfigFloatValues index, char const* fieldname, float defvalue, float minvalue, float maxvalue)
 {
     setConfig(index, fieldname, defvalue);
@@ -852,15 +724,6 @@ void World::setConfigMinMax(eConfigFloatValues index, char const* fieldname, flo
     }
 }
 
-/**
- * @brief Rejects reloading a uint32 config value when live reload is not supported.
- *
- * @param reload Whether this is a config reload operation.
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- * @return true if normal loading may continue; otherwise false.
- */
 bool World::configNoReload(bool reload, eConfigUInt32Values index, char const* fieldname, uint32 defvalue)
 {
     if (!reload)
@@ -877,15 +740,6 @@ bool World::configNoReload(bool reload, eConfigUInt32Values index, char const* f
     return false;
 }
 
-/**
- * @brief Rejects reloading an int32 config value when live reload is not supported.
- *
- * @param reload Whether this is a config reload operation.
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- * @return true if normal loading may continue; otherwise false.
- */
 bool World::configNoReload(bool reload, eConfigInt32Values index, char const* fieldname, int32 defvalue)
 {
     if (!reload)
@@ -902,15 +756,6 @@ bool World::configNoReload(bool reload, eConfigInt32Values index, char const* fi
     return false;
 }
 
-/**
- * @brief Rejects reloading a float config value when live reload is not supported.
- *
- * @param reload Whether this is a config reload operation.
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- * @return true if normal loading may continue; otherwise false.
- */
 bool World::configNoReload(bool reload, eConfigFloatValues index, char const* fieldname, float defvalue)
 {
     if (!reload)
@@ -927,15 +772,6 @@ bool World::configNoReload(bool reload, eConfigFloatValues index, char const* fi
     return false;
 }
 
-/**
- * @brief Rejects reloading a bool config value when live reload is not supported.
- *
- * @param reload Whether this is a config reload operation.
- * @param index The config slot.
- * @param fieldname The configuration key.
- * @param defvalue The default value.
- * @return true if normal loading may continue; otherwise false.
- */
 bool World::configNoReload(bool reload, eConfigBoolValues index, char const* fieldname, bool defvalue)
 {
     if (!reload)

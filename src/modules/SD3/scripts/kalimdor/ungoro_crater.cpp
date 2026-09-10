@@ -91,7 +91,7 @@ struct npc_ame01 : public CreatureScript
 
         void Aggro(Unit* pWho) override
         {
-            if (pWho->IsPlayer())
+            if (IsPlayer(pWho))
             {
                 return;
             }
@@ -421,7 +421,7 @@ struct npc_precious_the_devourerAI : public ScriptedAI
 {
     explicit npc_precious_the_devourerAI(Creature* pCreature) : ScriptedAI(pCreature) { Reset(); }
 
-    ObjectGuid m_simoneGuid;
+    ObjectGuid m_simoneGuid = 0;
     uint32 m_uiSplitCheck_Timer;
 
     void Reset() override
@@ -507,9 +507,9 @@ struct npc_simone_the_seductressAI : public ScriptedAI
         Reset();
     }
 
-    ObjectGuid m_hunterGuid;
-    ObjectGuid m_simoneGuid;
-    ObjectGuid m_preciousGuid;
+    ObjectGuid m_hunterGuid = 0;
+    ObjectGuid m_simoneGuid = 0;
+    ObjectGuid m_preciousGuid = 0;
 
     uint32 m_uiTemptressKiss_Timer;
     uint32 m_uiLightingBolt_Timer;
@@ -522,7 +522,7 @@ struct npc_simone_the_seductressAI : public ScriptedAI
     {
         m_creature->SetVisibility(VISIBILITY_ON);
 
-        m_hunterGuid.Clear();
+        m_hunterGuid = 0;
 
         m_uiTemptressKiss_Timer = urand(3000, 6000);
         m_uiLightingBolt_Timer = urand(3000, 6000);
@@ -587,7 +587,7 @@ struct npc_simone_the_seductressAI : public ScriptedAI
             }
         }
 
-        if (pWho && (pWho->getClass() == CLASS_HUNTER && (m_hunterGuid.IsEmpty() || m_hunterGuid == pWho->GetObjectGuid())))
+        if (pWho && (pWho->getClass() == CLASS_HUNTER && ((m_hunterGuid == 0) || m_hunterGuid == pWho->GetObjectGuid())))
         {
             m_hunterGuid = pWho->GetObjectGuid();
         }
@@ -783,7 +783,7 @@ struct npc_simone_the_inconspicuousAI : public ScriptedAI
     uint32 m_uiTransformEmote_Timer;
     bool m_bTransform;
 
-    ObjectGuid m_playerGuid;
+    ObjectGuid m_playerGuid = 0;
 
     void Reset() override
     {

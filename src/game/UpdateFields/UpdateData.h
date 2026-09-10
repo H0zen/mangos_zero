@@ -40,7 +40,6 @@ enum ObjectUpdateType
     UPDATETYPE_NEAR_OBJECTS         = 5
 };
 
-// checked for 1.12.1
 enum ObjectUpdateFlags
 {
     UPDATEFLAG_NONE                 = 0x0000,
@@ -65,9 +64,6 @@ class UpdateData
             ++m_blockCount;
         }
 
-        /// Record that a block in this packet is a global transport's. The wire
-        /// flag is a property of the whole packet, so it is the OR over the
-        /// blocks that went in, never a decision made at the call to BuildPacket.
         void MarkTransport()
         {
             m_hasTransport = true;
@@ -98,11 +94,6 @@ class UpdateData
         void Compress(void* dst, uint32* dst_size, void* src, int src_size);
 };
 
-/**
- * Accumulates every create block for initial login into one update packet.
- * Transport presence is retained for the Classic packet header, and the
- * single-use flush state prevents a partial second initial world.
- */
 class InitialWorldUpdateBatch
 {
     public:

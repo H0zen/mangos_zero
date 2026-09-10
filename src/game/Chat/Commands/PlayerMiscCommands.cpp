@@ -23,16 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file PlayerMiscCommands.cpp
- * @brief Implementation of miscellaneous player manipulation chat commands.
- *
- * This file contains chat command handlers for player operations including:
- * - Player item management
- * - Player property modification
- * - Player state control
- */
-
 #include <string>
 #include "Chat.h"
 #include "ObjectMgr.h"
@@ -40,43 +30,25 @@
 #include "Mail.h"
 #include "PlayerRegistry.h"
 
-/**********************************************************************
- CommandTable : commandTable
- ***********************************************************************/
 enum
 {
     EARTH_STONE_ITEM = 6948,
 };
 
-/**
- * @brief Handler for HandleBankCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleBankCommand(char* /*args*/)
+bool ChatHandler::HandleBankCommand(char* )
 {
     m_session->SendShowBank(m_session->GetPlayer()->GetObjectGuid());
 
     return true;
 }
 
-/**
- * @brief Handler for HandleStableCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleStableCommand(char* /*args*/)
+bool ChatHandler::HandleStableCommand(char* )
 {
     m_session->SendStablePet(m_session->GetPlayer()->GetObjectGuid());
 
     return true;
 }
 
-/**********************************************************************
- CommandTable : resetCommandTable
- ***********************************************************************/
 static bool HandleResetStatsOrLevelHelper(Player* player)
 {
     ChrClassesEntry const* cEntry = sChrClassesStore.LookupEntry(player->getClass());
@@ -88,7 +60,6 @@ static bool HandleResetStatsOrLevelHelper(Player* player)
 
     uint8 powertype = cEntry->DisplayPower;
 
-    // reset m_form if no aura
     if (!player->HasAuraType(SPELL_AURA_MOD_SHAPESHIFT))
     {
         player->SetShapeshiftForm(FORM_NONE);
@@ -101,7 +72,6 @@ static bool HandleResetStatsOrLevelHelper(Player* player)
 
     player->SetPowerKind(Powers(powertype));
 
-    // reset only if player not in some form;
     if (player->GetShapeshiftForm() == FORM_NONE)
     {
         player->InitDisplayIds();
@@ -109,19 +79,11 @@ static bool HandleResetStatsOrLevelHelper(Player* player)
 
     player->SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
 
-    //-1 is default value
     player->SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, -1);
 
-    // player->SetUInt32Value(PLAYER_FIELD_BYTES, 0xEEE00000 );
     return true;
 }
 
-/**
- * @brief Handler for HandleResetLevelCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleResetLevelCommand(char* args)
 {
     Player* target;
@@ -135,7 +97,6 @@ bool ChatHandler::HandleResetLevelCommand(char* args)
         return false;
     }
 
-    // set starting level
     uint32 start_level = sWorld.getConfig(CONFIG_UINT32_START_PLAYER_LEVEL);
 
     target->SetLevel(start_level);
@@ -144,7 +105,6 @@ bool ChatHandler::HandleResetLevelCommand(char* args)
     target->InitTalentForLevel();
     target->SetUInt32Value(PLAYER_XP, 0);
 
-    // reset level for pet
     if (Pet* pet = target->GetPet())
     {
         pet->SynchronizeLevelWithOwner();
@@ -153,12 +113,6 @@ bool ChatHandler::HandleResetLevelCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleResetStatsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleResetStatsCommand(char* args)
 {
     Player* target;
@@ -178,16 +132,10 @@ bool ChatHandler::HandleResetStatsCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleResetSpellsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleResetSpellsCommand(char* args)
 {
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     std::string target_name;
     if (!ExtractPlayerTarget(&args, &target, &target_guid, &target_name))
     {
@@ -206,23 +154,17 @@ bool ChatHandler::HandleResetSpellsCommand(char* args)
     }
     else
     {
-        CharacterDatabase.PExecute("UPDATE `characters` SET `at_login` = `at_login` | '%u' WHERE `guid` = '%u'", uint32(AT_LOGIN_RESET_SPELLS), target_guid.GetCounter());
+        CharacterDatabase.PExecute("UPDATE `characters` SET `at_login` = `at_login` | '%u' WHERE `guid` = '%u'", uint32(AT_LOGIN_RESET_SPELLS), GuidCounter(target_guid));
         PSendSysMessage(LANG_RESET_SPELLS_OFFLINE, target_name.c_str());
     }
 
     return true;
 }
 
-/**
- * @brief Handler for HandleResetTalentsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleResetTalentsCommand(char* args)
 {
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     std::string target_name;
     if (!ExtractPlayerTarget(&args, &target, &target_guid, &target_name))
     {
@@ -243,7 +185,7 @@ bool ChatHandler::HandleResetTalentsCommand(char* args)
     else if (target_guid)
     {
         uint32 at_flags = AT_LOGIN_RESET_TALENTS;
-        CharacterDatabase.PExecute("UPDATE `characters` SET `at_login` = `at_login` | '%u' WHERE `guid` = '%u'", at_flags, target_guid.GetCounter());
+        CharacterDatabase.PExecute("UPDATE `characters` SET `at_login` = `at_login` | '%u' WHERE `guid` = '%u'", at_flags, GuidCounter(target_guid));
         std::string nameLink = playerLink(target_name);
         PSendSysMessage(LANG_RESET_TALENTS_OFFLINE, nameLink.c_str());
         return true;
@@ -254,12 +196,6 @@ bool ChatHandler::HandleResetTalentsCommand(char* args)
     return false;
 }
 
-/**
- * @brief Handler for HandleResetAllCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleResetAllCommand(char* args)
 {
     if (!*args)
@@ -271,7 +207,6 @@ bool ChatHandler::HandleResetAllCommand(char* args)
 
     AtLoginFlags atLogin;
 
-    // Command specially created as single command to prevent using short case names
     if (casename == "spells")
     {
         atLogin = AT_LOGIN_RESET_SPELLS;
@@ -302,12 +237,6 @@ bool ChatHandler::HandleResetAllCommand(char* args)
     return true;
 }
 
-/**
- * @brief Parses reset-items command arguments into an option bitmask.
- *
- * @param args The raw command argument string.
- * @return int The parsed reset-items option bitmask.
- */
 int GetResetItemsBitMask(char* args)
 {
     int optionsBitMask = RESET_ITEMS_COMMAND_FLAG_OPTION_NONE;
@@ -342,11 +271,9 @@ int GetResetItemsBitMask(char* args)
         return optionsBitMask;
     }
 
-    // now handle "all" or "allbags"
-    // Make all yhen try to test allbags
     if (strncmp(args, RESET_ITEMS_COMMAND_ARG_OPTION_ALL, strlen(RESET_ITEMS_COMMAND_ARG_OPTION_ALL)) == 0)
     {
-        // here we have at least "all" but the string is perhaps greater and indicats "allbags"
+
         optionsBitMask |= RESET_ITEMS_COMMAND_FLAG_OPTION_ALL;
 
         if (strlen(args) > strlen(RESET_ITEMS_COMMAND_ARG_OPTION_ALL))
@@ -367,12 +294,6 @@ int GetResetItemsBitMask(char* args)
     return optionsBitMask;
 }
 
-/**
- * @brief Handler for HandleResetItemsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleResetItemsCommand(char* args)
 {
     if (!*args)
@@ -380,7 +301,6 @@ bool ChatHandler::HandleResetItemsCommand(char* args)
         return false;
     }
 
-    // Define all boolean by analysing args
     int optionBitMask = GetResetItemsBitMask(args);
 
     if (optionBitMask == RESET_ITEMS_COMMAND_FLAG_OPTION_NONE)
@@ -388,7 +308,6 @@ bool ChatHandler::HandleResetItemsCommand(char* args)
         return false;
     }
 
-    // Get Select player Or if no selection, use Current player
     Player * player = getSelectedPlayer();
 
     if (!player)
@@ -396,7 +315,6 @@ bool ChatHandler::HandleResetItemsCommand(char* args)
         player = m_session->GetPlayer();
     }
 
-    // Do not change swicth order because it can lead to non-empty bag deletion
     BITMASK_AND_SWITCH(optionBitMask)
     {
         case RESET_ITEMS_COMMAND_FLAG_OPTION_EQUIPED:
@@ -408,7 +326,7 @@ bool ChatHandler::HandleResetItemsCommand(char* args)
                 {
                     if (pItem->GetEntry() == EARTH_STONE_ITEM)
                     {
-                        // Do not delete earthstone
+
                         continue;
                     }
                     player->DestroyItem(INVENTORY_SLOT_BAG_0, i, true);
@@ -423,14 +341,14 @@ bool ChatHandler::HandleResetItemsCommand(char* args)
         case RESET_ITEMS_COMMAND_FLAG_OPTION_BAGS:
         {
             uint32 count = 0;
-            // default bagpack :
+
             for (int i = INVENTORY_SLOT_ITEM_START; i < INVENTORY_SLOT_ITEM_END; ++i)
             {
                 if (Item* pItem = player->GetItemByPos(INVENTORY_SLOT_BAG_0, i))
                 {
                     if (pItem->GetEntry() == EARTH_STONE_ITEM)
                     {
-                        // Do not delete earthstone
+
                         continue;
                     }
                     player->DestroyItem(INVENTORY_SLOT_BAG_0, i, true);
@@ -438,7 +356,6 @@ bool ChatHandler::HandleResetItemsCommand(char* args)
                 }
             }
 
-            // bagslots
             for (int i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; ++i)
             {
                 if (Bag* pBag = (Bag*)player->GetItemByPos(INVENTORY_SLOT_BAG_0, i))
@@ -449,7 +366,7 @@ bool ChatHandler::HandleResetItemsCommand(char* args)
                         {
                             if (pItem->GetEntry() == EARTH_STONE_ITEM)
                             {
-                                // Do not delete earthstone
+
                                 continue;
                             }
                             player->DestroyItem(i, j, true);
@@ -465,14 +382,14 @@ bool ChatHandler::HandleResetItemsCommand(char* args)
         case RESET_ITEMS_COMMAND_FLAG_OPTION_BANK:
         {
             uint32 count = 0;
-            // Normal bank slot
+
             for (int i = BANK_SLOT_ITEM_START; i < BANK_SLOT_ITEM_END; ++i)
             {
                 if (Item* pItem = player->GetItemByPos(INVENTORY_SLOT_BAG_0, i))
                 {
                     if (pItem->GetEntry() == EARTH_STONE_ITEM)
                     {
-                        // Do not delete earthstone
+
                         continue;
                     }
                     player->DestroyItem(INVENTORY_SLOT_BAG_0, i, true);
@@ -480,7 +397,6 @@ bool ChatHandler::HandleResetItemsCommand(char* args)
                 }
             }
 
-            // Bak bagslots
             for (int i = BANK_SLOT_BAG_START; i < BANK_SLOT_BAG_END; ++i)
             {
                 if (Bag* pBag = (Bag*)player->GetItemByPos(INVENTORY_SLOT_BAG_0, i))
@@ -491,7 +407,7 @@ bool ChatHandler::HandleResetItemsCommand(char* args)
                         {
                             if (pItem->GetEntry() == EARTH_STONE_ITEM)
                             {
-                                // Do not delete earthstone
+
                                 continue;
                             }
                             player->DestroyItem(i, j, true);
@@ -514,7 +430,7 @@ bool ChatHandler::HandleResetItemsCommand(char* args)
                 {
                     if (pItem->GetEntry() == EARTH_STONE_ITEM)
                     {
-                        // Do not delete earthstone
+
                         continue;
                     }
                     player->DestroyItem(INVENTORY_SLOT_BAG_0, i, true);
@@ -535,7 +451,7 @@ bool ChatHandler::HandleResetItemsCommand(char* args)
                 {
                     if (pItem->GetEntry() == EARTH_STONE_ITEM)
                     {
-                        // Do not delete earthstone
+
                         continue;
                     }
                     player->DestroyItem(INVENTORY_SLOT_BAG_0, i, true);
@@ -548,13 +464,11 @@ bool ChatHandler::HandleResetItemsCommand(char* args)
             break;
         }
 
-        // Perhaps check if we have deleted earthstone if, so then re-add it
     }
 
-    // Since bitmaskorepation is "AND" we have to manually test the last cases
     if (optionBitMask == RESET_ITEMS_COMMAND_FLAG_OPTION_ALL)
     {
-        // Just text display
+
         PSendSysMessage(LANG_COMMAND_RESET_ITEMS_ALL, player->GetName());
     }
 
@@ -571,30 +485,23 @@ bool ChatHandler::HandleResetItemsCommand(char* args)
         }
 
         uint32 bankBagscount = 0;
-        // Bak bagslots
+
         for (int i = BANK_SLOT_BAG_START; i < BANK_SLOT_BAG_END; ++i)
         {
             if (Bag* pBag = (Bag*)player->GetItemByPos(INVENTORY_SLOT_BAG_0, i))
             {
-                // prevent no empty ?
+
                 player->DestroyItem(INVENTORY_SLOT_BAG_0, i, true);
                 ++bankBagscount;
             }
         }
 
-        // Just text display
         PSendSysMessage(LANG_COMMAND_RESET_ITEMS_ALLBAGS, equipedBagsCount, bankBagscount,player->GetName());
     }
 
     return true;
 }
 
-/**
- * @brief Parses reset-mail command arguments into an option bitmask.
- *
- * @param args The raw command argument string.
- * @return int The parsed reset-mail option bitmask.
- */
 int GetResetMailBitMask(char* args)
 {
     int optionBitMask = RESET_MAIL_COMMAND_FLAG_OPTION_NONE;
@@ -616,7 +523,6 @@ int GetResetMailBitMask(char* args)
         return optionBitMask;
     }
 
-    //Specific case for "from XXX"
     if (strncmp(args, RESET_MAIL_COMMAND_ARG_OPTION_FROM, strlen(RESET_MAIL_COMMAND_ARG_OPTION_FROM)) == 0)
     {
         optionBitMask |= RESET_MAIL_COMMAND_FLAG_OPTION_FROM;
@@ -632,30 +538,12 @@ int GetResetMailBitMask(char* args)
     return optionBitMask;
 }
 
-/**
- HandleResetMailCommand
- Default behaviour :
- -------------------
- - delete checked mails (even if its is GM stationery and if it contains items in it, but not deleted COD)
-
- Options :
- ---------
- - cod : delete only cod mail (even if it is unchecked)
- TODO -> to improve => return cod to sender instead of delete
- - gm : delete only GM stationery emails (even if it is unchecked)
- - all : delete all mails (even if it is unchecked)
- - from XXXX : delete all mails from specific sender in the slected player mailbox, name or guid
- TODO  -> to improve, if unchecked return letter to sender to inform it was not read and purged by GM for tech. reason.
-
- TODO : future => handle reset mail for Offline char ?
- */
 bool ChatHandler::HandleResetMailCommand(char* args)
 {
     char* firstArg = ExtractArg(&args);
 
     int optionBitMask = GetResetMailBitMask(firstArg);
 
-    // Get Select player Or if no selection, use Current player
     Player* player = getSelectedPlayer();
 
     if (!player)
@@ -668,18 +556,15 @@ bool ChatHandler::HandleResetMailCommand(char* args)
     uint8 deletedCODMailCount = 0;
     uint8 deletedFromMailCount = 0;
 
-    // Special chack if amil delete "from"
-    // in order to retrieve player
     uint32 senderGuid = -1;
     std::string from_sender_name;
 
     if (optionBitMask & RESET_MAIL_COMMAND_FLAG_OPTION_FROM)
     {
-        // Check if arg after "from" is player guid or playerName and if so check guid
-        // Extract Uint32 from remaining arg text
+
         uint32  playerGuid = 0;
         Player* sender;
-        ObjectGuid from_sender_guid;
+        ObjectGuid from_sender_guid = 0;
 
         if (!ExtractPlayerTarget(&args, &sender, &from_sender_guid, &from_sender_name))
         {
@@ -692,12 +577,11 @@ bool ChatHandler::HandleResetMailCommand(char* args)
 
     for (PlayerMails::iterator itr = player->Post().begin(); itr != player->Post().end(); ++itr)
     {
-        // Flag the mail as "deleted"
+
         Mail* m = (*itr);
 
         bool deleteMail = false;
 
-        // DO not use the swith because it begins at 1
         if (optionBitMask == RESET_MAIL_COMMAND_FLAG_OPTION_NONE)
         {
             if (m->checked && !m->COD && m->state != MAIL_STATE_DELETED)
@@ -753,14 +637,13 @@ bool ChatHandler::HandleResetMailCommand(char* args)
         player->Post().Changed(true);
     }
 
-    // Notification
     Player * gm = m_session->GetPlayer();
 
     BITMASK_AND_SWITCH(optionBitMask)
     {
         case RESET_MAIL_COMMAND_FLAG_OPTION_NONE:
         {
-            // Nothing specific to display
+
             break;
         }
 

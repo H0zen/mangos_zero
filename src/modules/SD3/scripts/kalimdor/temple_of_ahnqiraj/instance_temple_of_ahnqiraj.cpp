@@ -144,7 +144,7 @@ struct is_temple_of_ahnqiraj : public InstanceScript
                         m_auiEncounter[uiType] = uiData;
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_SKERAM_GATE);
+                            DoUseDoorOrButtonByEntry(GO_SKERAM_GATE);
                         }
                         break;
                     case TYPE_BUG_TRIO:
@@ -179,10 +179,10 @@ struct is_temple_of_ahnqiraj : public InstanceScript
                         }
 
                         m_auiEncounter[uiType] = uiData;
-                        DoUseDoorOrButton(GO_TWINS_ENTER_DOOR);
+                        DoUseDoorOrButtonByEntry(GO_TWINS_ENTER_DOOR);
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_TWINS_EXIT_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_TWINS_EXIT_DOOR);
                         }
                         break;
                     case TYPE_OURO:

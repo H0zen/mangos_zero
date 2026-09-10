@@ -34,102 +34,50 @@ class Unit;
 class Creature;
 class Player;
 
-/**
- * @brief The strategy behind a unit's movement. One is active at a time — the top
- *        of the MotionMaster's stack.
- *
- * Everything here speaks Unit. There is no Player/Creature template and no
- * curiously-recurring base: the handful of places where the two owner types really
- * do behave differently are a `GetTypeId()` check inside the one function that
- * cares, which is both shorter and easier to follow than a type parameter threaded
- * through the whole hierarchy.
- */
 class MovementGenerator
 {
     public:
         virtual ~MovementGenerator() = default;
 
-        /// Called before the generator is pushed onto the motion stack.
-        ///
-        /// NOTE: it runs BEFORE the push, so `owner.GetMotionMaster()->top()` here
-        /// is still the generator being replaced. HomeMovementGenerator depends on
-        /// that to ask it where "home" is; anything else that needs the outgoing
-        /// generator must likewise capture it now, not on the first tick.
         virtual void Initialize(Unit& owner) = 0;
 
-        /// Called after the generator is removed from the motion stack.
         virtual void Finalize(Unit& owner) = 0;
 
-        /// Called before losing top position (a new generator is being pushed above).
         virtual void Interrupt(Unit& owner) = 0;
 
-        /// Called after regaining top position (the generator above was removed).
         virtual void Reset(Unit& owner) = 0;
 
-        /// One tick. Returning false asks the MotionMaster to pop this generator.
         virtual bool Update(Unit& owner, uint32 diff) = 0;
 
         virtual MovementGeneratorType GetMovementGeneratorType() const = 0;
 
-        /// The owner's speed changed, so any leg in flight is paced wrong.
         virtual void unitSpeedChanged() {}
 
-        /// Where the owner should be sent when it evades, if this generator knows
-        /// (a patroller resumes where combat pulled it off its path). False when it
-        /// has no opinion and the caller should fall back to the spawn point.
-        virtual bool GetResetPosition(Unit& /*owner*/, float& /*x*/, float& /*y*/,
-                                      float& /*z*/, float& /*o*/) const
+        virtual bool GetResetPosition(Unit& , float& , float& ,
+                                      float& , float& ) const
         {
             return false;
         }
 
-        /// False once a route to the goal only got partway there.
         virtual bool IsReachable() const { return true; }
 
-        /// True when this generator lays only legs the router actually routed.
-        ///
-        /// Exists because a routed leg and an ordinary point leg both report
-        /// POINT_MOTION_TYPE, so a caller cannot otherwise tell whether the leg in flight
-        /// is the one it asked for. Suppressing a re-issue on type alone would let an
-        /// ordinary spline stand in for a routed one and defeat MOVE_REQUIRE_ROUTE, which
-        /// exists precisely to stop a bot cutting through geometry.
         virtual bool IsRoutedLeg() const { return false; }
 
-        /// Still the top generator? Call after anything that may have re-entered the
-        /// motion stack (an AI hook, a script).
         bool IsActive(Unit& owner);
 };
 
-/**
- * @brief SelectableMovement is a factory holder for movement generators.
- */
 struct SelectableMovement : public FactoryHolder<MovementGenerator, MovementGeneratorType>
 {
-    /**
-     * @brief Constructor for SelectableMovement.
-     * @param mgt Type of the movement generator.
-     */
+
     SelectableMovement(MovementGeneratorType mgt) : FactoryHolder<MovementGenerator, MovementGeneratorType>(mgt) {}
 };
 
-/**
- * @brief Template class for movement generator factories.
- * @tparam REAL_MOVEMENT Type of the real movement generator.
- */
 template<class REAL_MOVEMENT>
 struct MovementGeneratorFactory : public SelectableMovement
 {
-    /**
-     * @brief Constructor for MovementGeneratorFactory.
-     * @param mgt Type of the movement generator.
-     */
+
     MovementGeneratorFactory(MovementGeneratorType mgt) : SelectableMovement(mgt) {}
 
-    /**
-     * @brief Creates a new movement generator.
-     * @param data Pointer to the creature the generator will drive.
-     * @return Pointer to the created movement generator.
-     */
     MovementGenerator* Create(void* data) const override;
 };
 

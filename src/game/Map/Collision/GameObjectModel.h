@@ -25,10 +25,6 @@
 
 #pragma once
 
-// One game object's collidable body: a shared model, a placement, and the world box it
-// occupies. The geometry itself is held once per display id by GoModelStore -- a keep's
-// gate appears hundreds of times over and is stored once.
-
 #include "Platform/Define.h"
 #include "terrain/Column.hpp"
 #include "terrain/ICollisionModel.hpp"
@@ -49,10 +45,6 @@ class GameObjectModel
 
         static GameObjectModel* Create(const GameObject* pGo);
 
-        // A body with no GameObject behind it: the pose is given rather than read.
-        // The owner is only ever a source of position, rotation and scale, so nothing
-        // else in this class needs one -- which is also what makes it testable without
-        // standing up a world.
         static GameObjectModel* CreateStandalone(
             std::shared_ptr<const world::terrain::ICollisionModel> model,
             const Geometry::Transform& xf, uint32 phaseMask);
@@ -66,20 +58,12 @@ class GameObjectModel
         void SetCollidable(bool enabled) { m_collidable = enabled; }
         void SetPhaseMask(uint32 phaseMask = 0) { m_phaseMask = phaseMask; }
 
-        // Re-derives the placement and the world box from the owner's current pose.
-        // Defined in GameObjectModelOwner.cpp -- the only part of this class that knows
-        // what a GameObject is.
         void UpdatePose();
 
-        // Sets the placement directly and re-derives the world box.
         void SetPose(const Geometry::Transform& xf);
 
-        // Nearest hit of the world segment a->b as a fraction of it, or a value above 1
-        // when this body does not block. The ray is pulled into model space rather than
-        // the geometry pushed into world space.
         float SegmentHitFraction(const Geometry::Vector3& a, const Geometry::Vector3& b) const;
 
-        // Appends every surface of this body crossing the window over (x,y).
         void AddSurfaces(float x, float y, float zTop, float zBottom,
                          world::terrain::Column& out) const;
 
@@ -98,8 +82,6 @@ class GameObjectModel
         Geometry::Transform m_xf;
         Geometry::Aabb m_bounds;
 
-        // Which grid cells this body is filed under, and a stamp so one query visits it
-        // once however many cells it spans. Owned by DynamicCollision.
         std::vector<uint32_t> m_cells;
         mutable uint32_t m_epoch = 0;
 };

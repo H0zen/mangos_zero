@@ -112,7 +112,7 @@ struct npc_bartleby : public CreatureScript
             {
                 uiDamage = 0;
 
-                if (pDoneBy->IsPlayer())
+                if (IsPlayer(pDoneBy))
                 {
                     ((Player*)pDoneBy)->Journal().Explored(QUEST_BEAT);
                 }
@@ -179,7 +179,7 @@ struct npc_dashel_stonefist : public CreatureScript
             {
                 uiDamage = 0;
 
-                if (pDoneBy->IsPlayer())
+                if (IsPlayer(pDoneBy))
                 {
                     ((Player*)pDoneBy)->Journal().Explored(QUEST_MISSING_DIPLO_PT8);
                 }
@@ -311,8 +311,8 @@ struct npc_squire_rowe : public CreatureScript
 
         bool m_bIsEventInProgress;
 
-        ObjectGuid m_windsorGuid;
-        ObjectGuid m_horseGuid;
+        ObjectGuid m_windsorGuid = 0;
+        ObjectGuid m_horseGuid = 0;
 
         void JustSummoned(Creature* pSummoned) override
         {
@@ -334,7 +334,7 @@ struct npc_squire_rowe : public CreatureScript
         {
             if (pSummoned->GetEntry() == NPC_WINDSOR)
             {
-                m_windsorGuid.Clear();
+                m_windsorGuid = 0;
                 m_bIsEventInProgress = false;
             }
         }
@@ -672,8 +672,8 @@ struct npc_reginald_windsor : public CreatureScript
         bool m_bIsKeepReady;
         bool m_bCanGuardSalute;
 
-        ObjectGuid m_playerGuid;
-        ObjectGuid m_guardsGuid[MAX_ROYAL_GUARDS];
+        ObjectGuid m_playerGuid = 0;
+        ObjectGuid m_guardsGuid[MAX_ROYAL_GUARDS] = {};
 
         GuidList m_lRoyalGuardsGuidList;
         GuidSet m_sGuardsSalutedGuidSet;

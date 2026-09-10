@@ -31,20 +31,19 @@
 
 bool StartsQuest(Object const& object, uint32 questId)
 {
-    if (Creature const* creature = ToCreature(&object))
+    if (Creature const* creature = static_cast<Creature const*>(&object))
     {
         return creature->OffersQuest(questId);
     }
 
-    if (GameObject const* go = ToGameObject(&object))
+    if (GameObject const* go = static_cast<GameObject const*>(&object))
     {
         return go->OffersQuest(questId);
     }
 
     if (object.GetTypeId() == TYPEID_ITEM || object.GetTypeId() == TYPEID_CONTAINER)
     {
-        // An item starts exactly one quest, named in its prototype, and takes
-        // none back.
+
         return static_cast<Item const&>(object).GetProto()->StartQuest == questId;
     }
 
@@ -53,12 +52,12 @@ bool StartsQuest(Object const& object, uint32 questId)
 
 bool EndsQuest(Object const& object, uint32 questId)
 {
-    if (Creature const* creature = ToCreature(&object))
+    if (Creature const* creature = static_cast<Creature const*>(&object))
     {
         return creature->TakesQuest(questId);
     }
 
-    if (GameObject const* go = ToGameObject(&object))
+    if (GameObject const* go = static_cast<GameObject const*>(&object))
     {
         return go->TakesQuest(questId);
     }
@@ -68,12 +67,12 @@ bool EndsQuest(Object const& object, uint32 questId)
 
 LootClaim* ClaimOn(Occupant& holder)
 {
-    if (Creature* creature = ToCreature(&holder))
+    if (Creature* creature = static_cast<Creature*>(&holder))
     {
         return &creature->Claim();
     }
 
-    if (GameObject* go = ToGameObject(&holder))
+    if (GameObject* go = static_cast<GameObject*>(&holder))
     {
         return &go->Claim();
     }
@@ -83,11 +82,11 @@ LootClaim* ClaimOn(Occupant& holder)
 
 void SaveRespawnTime(Occupant& what)
 {
-    if (Creature* creature = ToCreature(&what))
+    if (Creature* creature = static_cast<Creature*>(&what))
     {
         npcs::SaveRespawnTime(*creature);
     }
-    else if (GameObject* go = ToGameObject(&what))
+    else if (GameObject* go = static_cast<GameObject*>(&what))
     {
         go->SaveRespawnTime();
     }

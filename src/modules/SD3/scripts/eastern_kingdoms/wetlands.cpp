@@ -81,7 +81,7 @@ struct npc_tapoke_slim_jahn : public CreatureScript
     struct npc_tapoke_slim_jahnAI : public npc_escortAI, private DialogueHelper
     {
         npc_tapoke_slim_jahnAI(Creature* pCreature) : m_bFriendSummoned(false), m_bEventComplete(false),
-            friendGUID(ObjectGuid()), npc_escortAI(pCreature), DialogueHelper(aDiplomatDialogue)
+            friendGUID(0), npc_escortAI(pCreature), DialogueHelper(aDiplomatDialogue)
         {
         }
 
@@ -89,7 +89,7 @@ struct npc_tapoke_slim_jahn : public CreatureScript
         {
             if (!HasEscortState(STATE_ESCORT_ESCORTING))
             {
-                friendGUID.Clear();
+                friendGUID = 0;
                 m_bFriendSummoned = false;
                 m_bEventComplete = false;
             }
@@ -205,7 +205,7 @@ struct npc_tapoke_slim_jahn : public CreatureScript
         void ReceiveAIEvent(AIEventType eventType, Creature* /*pSender*/, Unit* pInvoker, uint32 uiMiscValue) override
         {
             // start escort
-            if (eventType == AI_EVENT_START_ESCORT && pInvoker->IsPlayer())
+            if (eventType == AI_EVENT_START_ESCORT &&IsPlayer(pInvoker))
             {
                 Start(false, (Player*)pInvoker, GetQuestTemplateStore(uiMiscValue), true);
             }
@@ -250,7 +250,7 @@ struct npc_tapoke_slim_jahn : public CreatureScript
         }
 
         private:
-            ObjectGuid friendGUID;
+            ObjectGuid friendGUID = 0;
             bool m_bFriendSummoned;
             bool m_bEventComplete;
     };

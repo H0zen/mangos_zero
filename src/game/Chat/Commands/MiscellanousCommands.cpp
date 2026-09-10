@@ -23,28 +23,12 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file MiscellanousCommands.cpp
- * @brief Implementation of miscellaneous utility chat commands.
- *
- * This file contains chat command handlers for various utilities including:
- * - Help and command information
- * - Player dumping and restoration
- * - Misc administrative operations
- */
-
 #include <string>
 #include "Chat.h"
 #include "ObjectMgr.h"
 #include "World.h"
 #include "PlayerDump.h"
 
-/**
- * @brief Handler for HandleHelpCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleHelpCommand(char* args)
 {
     if (!*args)
@@ -63,25 +47,13 @@ bool ChatHandler::HandleHelpCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleCommandsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleCommandsCommand(char* /*args*/)
+bool ChatHandler::HandleCommandsCommand(char* )
 {
     ShowHelpForCommand(getCommandTable(), "");
     return true;
 }
 
-/**
- * @brief Handler for HandleGUIDCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleGUIDCommand(char* /*args*/)
+bool ChatHandler::HandleGUIDCommand(char* )
 {
     ObjectGuid guid = m_session->GetPlayer()->GetSelectionGuid();
 
@@ -92,16 +64,10 @@ bool ChatHandler::HandleGUIDCommand(char* /*args*/)
         return false;
     }
 
-    PSendSysMessage(LANG_OBJECT_GUID, guid.GetString().c_str());
+    PSendSysMessage(LANG_OBJECT_GUID, GuidString(guid).c_str());
     return true;
 }
 
-/**
- * @brief Handler for HandleLoadScriptsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLoadScriptsCommand(char* args)
 {
     if (!*args)
@@ -129,12 +95,6 @@ bool ChatHandler::HandleLoadScriptsCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandlePDumpLoadCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandlePDumpLoadCommand(char* args)
 {
     char* file = ExtractQuotedOrLiteralArg(&args);
@@ -158,7 +118,7 @@ bool ChatHandler::HandlePDumpLoadCommand(char* args)
     if (name_str)
     {
         name = name_str;
-        // normalize the name if specified and check if it exists
+
         if (!normalizePlayerName(name))
         {
             PSendSysMessage(LANG_INVALID_CHARACTER_NAME);
@@ -187,7 +147,7 @@ bool ChatHandler::HandlePDumpLoadCommand(char* args)
                 return false;
             }
 
-            ObjectGuid guid = ObjectGuid(HIGHGUID_PLAYER, lowguid);
+            ObjectGuid guid = MakeGuid(HIGHGUID_PLAYER, lowguid);
 
             if (sObjectMgr.GetPlayerAccountIdByGUID(guid))
             {
@@ -224,12 +184,6 @@ bool ChatHandler::HandlePDumpLoadCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandlePDumpWriteCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandlePDumpWriteCommand(char* args)
 {
     if (!*args)
@@ -246,8 +200,8 @@ bool ChatHandler::HandlePDumpWriteCommand(char* args)
     char* p2 = ExtractLiteralArg(&args);
 
     uint32 lowguid;
-    ObjectGuid guid;
-    // character name can't start from number
+    ObjectGuid guid = 0;
+
     if (!ExtractUInt32(&p2, lowguid))
     {
         std::string name = ExtractPlayerNameFromLink(&p2);
@@ -266,11 +220,11 @@ bool ChatHandler::HandlePDumpWriteCommand(char* args)
             return false;
         }
 
-        lowguid = guid.GetCounter();
+        lowguid = GuidCounter(guid);
     }
     else
     {
-        guid = ObjectGuid(HIGHGUID_PLAYER, lowguid);
+        guid = MakeGuid(HIGHGUID_PLAYER, lowguid);
     }
 
     if (!sObjectMgr.GetPlayerAccountIdByGUID(guid))

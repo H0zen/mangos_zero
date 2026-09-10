@@ -23,36 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file MovementHandler.cpp
- * @brief Movement opcode handlers
- *
- * This file handles movement-related opcodes including:
- * - MSG_MOVE_WORLDPORT_ACK: Acknowledge map teleport
- * - MSG_MOVE_TELEPORT_ACK: Acknowledge teleport
- * - MSG_MOVE_HEARTBEAT: Movement heartbeat
- * - MSG_MOVE_SET_FACING: Set facing direction
- * - MSG_MOVE_JUMP: Jump
- * - MSG_MOVE_START_FORWARD: Start moving forward
- * - MSG_MOVE_START_BACKWARD: Start moving backward
- * - MSG_MOVE_STOP: Stop movement
- * - MSG_MOVE_START_STRAFE_LEFT: Start strafing left
- * - MSG_MOVE_START_STRAFE_RIGHT: Start strafing right
- * - MSG_MOVE_START_PITCH_UP: Start pitching up
- * - MSG_MOVE_START_PITCH_DOWN: Start pitching down
- * - MSG_MOVE_SET_RUN_MODE: Set run mode
- * - MSG_MOVE_SET_WALK_MODE: Set walk mode
- * - MSG_MOVE_FALL_LAND: Land after fall
- * - MSG_MOVE_START_SWIM: Start swimming
- * - MSG_MOVE_STOP_SWIM: Stop swimming
- * - MSG_MOVE_SPLASH: Water splash
- * - MSG_MOVE_ASCEND: Ascend (flying)
- * - MSG_MOVE_DESCEND: Descend (flying)
- *
- * Movement packets are validated and synchronized with the server's
- * authoritative position to prevent cheating.
- */
-
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"
 #include <ctime>
@@ -76,53 +46,40 @@
 
 #define MOVEMENT_PACKET_TIME_DELAY 300
 
-/**
- * @brief Handles the packet-based worldport acknowledgement.
- *
- * @param recv_data The received opcode packet.
- */
-void movement::MoveWorldportAck(WorldSession& session, WorldPacket& /*recv_data*/)
+void movement::MoveWorldportAck(WorldSession& session, WorldPacket& )
 {
     DEBUG_LOG("WORLD: got MSG_MOVE_WORLDPORT_ACK.");
     session.HandleMoveWorldportAckOpcode();
 }
 
-/**
- * @brief Finalizes a far teleport after the client acknowledges worldport.
- */
 void WorldSession::HandleMoveWorldportAckOpcode()
 {
-    // ignore unexpected far teleports
+
     if (!GetPlayer()->IsBeingTeleportedFar())
     {
         return;
     }
 
-    // get start teleport coordinates (will used later in fail case)
     Geometry::Placement const old_loc = GetPlayer()->Where();
 
-    // get the teleport destination
     Geometry::Placement& loc = GetPlayer()->GetTeleportDest();
 
-    // possible errors in the coordinate validity check (only cheating case possible)
     if (!MapCoords::Valid(loc.MapId(), loc.X(), loc.Y(), loc.Z(), loc.Facing()))
     {
         sLog.outError("WorldSession::HandleMoveWorldportAckOpcode: %s was teleported far to a not valid location "
             "(map:%u, x:%f, y:%f, z:%f) We port him to his homebind instead..",
             GetPlayer()->GetGuidStr().c_str(), loc.MapId(), loc.X(), loc.Y(), loc.Z());
-        // stop teleportation else we would try this again and again in LogoutPlayer...
+
         GetPlayer()->SetSemaphoreTeleportFar(false);
-        // and teleport the player to a valid place
+
         GetPlayer()->TeleportToHomebind();
         return;
     }
 
-    // get the destination map entry, not the current one, this will fix homebind and reset greeting
     MapEntry const* mEntry = sMapStore.LookupEntry(loc.MapId());
 
     Map* map = nullptr;
 
-    // prevent crash at attempt landing to not existed battleground instance
     if (mEntry->IsBattleGround())
     {
         if (GetPlayer()->Battle().Id())
@@ -138,7 +95,6 @@ void WorldSession::HandleMoveWorldportAckOpcode()
 
             GetPlayer()->SetSemaphoreTeleportFar(false);
 
-            // Teleport to previous place, if can not be ported back TP to homebind place
             if (!GetPlayer()->TeleportTo(old_loc))
             {
                 DETAIL_LOG("WorldSession::HandleMoveWorldportAckOpcode: %s can not be ported to his previous place, teleporting him to his homebind place...",
@@ -151,7 +107,6 @@ void WorldSession::HandleMoveWorldportAckOpcode()
 
     InstanceTemplate const* mInstance = ObjectMgr::GetInstanceTemplate(loc.MapId());
 
-    // reset instance validity, except if going to an instance inside an instance
     if (!GetPlayer()->Binds().StillWelcome() && !mInstance)
     {
         GetPlayer()->Binds().StillWelcome(true);
@@ -159,7 +114,6 @@ void WorldSession::HandleMoveWorldportAckOpcode()
 
     GetPlayer()->SetSemaphoreTeleportFar(false);
 
-    // relocate the player to the teleport destination
     if (!map)
     {
         map = sMapFoundry.OpenFor(*GetPlayer(), loc.MapId());
@@ -168,34 +122,20 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     GetPlayer()->SetMap(map);
     GetPlayer()->Place().MoveTo(loc.X(), loc.Y(), loc.Z(), loc.Facing());
 
-    // And the movement state, which is what the packets on the far side are written from.
-    // Without it the client arrives on the new map holding the pose it had on the old one:
-    // `.tele menethil` from a deck put a player on Eastern Kingdoms still carrying the
-    // ship's Icecrown position, down to the hull's own facing.
     GetPlayer()->m_movementInfo.ChangePosition(loc.X(), loc.Y(),
                                                loc.Z(), loc.Facing());
 
-    // The client threw away every object it had when it left the old map, so the set of
-    // "things he already has" is now a lie in the one direction that hurts: anything still
-    // listed here will be skipped by UpdateVisibilityOf and never sent again. That
-    // includes the vessel he is standing on, which exists on both sides of the seam and so
-    // keeps its guid across it.
     GetPlayer()->m_clientGUIDs.clear();
     GetPlayer()->m_clientPlatforms.clear();
 
     GetPlayer()->SendInitialPacketsBeforeAddToMap();
-    // the CanEnter checks are done in TeleporTo but conditions may change
-    // while the player is in transit, for example the map may get full
-    // Aboard, this is HER map, not the one just named in SMSG_NEW_WORLD -- see
-    // Player::BoardingMap. The client is loading the world map she sails and never learns
-    // the other one exists.
+
     if (!GetPlayer()->BoardingMap()->Add(GetPlayer()))
     {
         DETAIL_LOG("WorldSession::HandleMoveWorldportAckOpcode: %s was teleported far but couldn't be added to map "
             " (map:%u, x:%f, y:%f, z:%f) Trying to port him to his previous place..",
             GetPlayer()->GetGuidStr().c_str(), loc.MapId(), loc.X(), loc.Y(), loc.Z());
 
-        // Teleport to previous place, if can not be ported back TP to homebind place
         if (!GetPlayer()->TeleportTo(old_loc))
         {
             DETAIL_LOG("WorldSession::HandleMoveWorldportAckOpcode: %s can not be ported to his previous place, teleporting him to his homebind place...",
@@ -205,19 +145,17 @@ void WorldSession::HandleMoveWorldportAckOpcode()
         return;
     }
 
-    // battleground state prepare (in case join to BG), at relogin/tele player not invited
-    // only add to bg group and object, if the player was invited (else he entered through command)
     if (_player->Battle().InOne())
     {
-        // cleanup setting if outdated
+
         if (!mEntry->IsBattleGround())
         {
-            // We're not in BG
+
             _player->Battle().In(0, BATTLEGROUND_TYPE_NONE);
-            // reset destination bg team
+
             _player->Battle().Side(TEAM_NONE);
         }
-        // join to bg case
+
         else if (BattleGround* bg = _player->Battle().Ground())
         {
             if (_player->Queues().CalledToInstance(_player->Battle().Id()))
@@ -229,18 +167,16 @@ void WorldSession::HandleMoveWorldportAckOpcode()
 
     GetPlayer()->SendInitialPacketsAfterAddToMap();
 
-    // flight fast teleport case
     if (GetPlayer()->GetMotionMaster()->GetCurrentMovementGeneratorType() == FLIGHT_MOTION_TYPE)
     {
         if (!_player->Battle().InOne())
         {
-            // short preparations to continue flight
+
             FlightPathMovementGenerator* flight = (FlightPathMovementGenerator*)(GetPlayer()->GetMotionMaster()->top());
             flight->Reset(*GetPlayer());
             return;
         }
 
-        // battleground state prepare, stop flight
         GetPlayer()->GetMotionMaster()->MovementExpired();
         GetPlayer()->m_taxi.ClearTaxiDestinations();
     }
@@ -254,45 +190,36 @@ void WorldSession::HandleMoveWorldportAckOpcode()
         }
     }
 
-    // mount allow check
     if (!mEntry->IsMountAllowed())
     {
         _player->RemoveAurasOfType(SPELL_AURA_MOUNTED);
     }
 
-    // honorless target
     if (GetPlayer()->pvpInfo.inHostileArea)
     {
         GetPlayer()->CastSpell(GetPlayer(), 2479, true);
     }
 
-    // resummon pet
     GetPlayer()->ResummonPetTemporaryUnSummonedIfAny();
 
-    // lets process all delayed operations on successful teleport
     GetPlayer()->ProcessDelayedOperations();
 }
 
-/**
- * @brief Finalizes a near teleport after the client acknowledges it.
- *
- * @param recv_data The received opcode packet.
- */
 void movement::MoveTeleportAck(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("MSG_MOVE_TELEPORT_ACK");
 
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
 
     recv_data >> guid;
 
     uint32 counter, time;
     recv_data >> counter >> time;
-    DEBUG_LOG("Guid: %s", guid.GetString().c_str());
+    DEBUG_LOG("Guid: %s", GuidString(guid).c_str());
     DEBUG_LOG("Counter %u, time %u", counter, time / IN_MILLISECONDS);
 
     Unit* mover = who.GetMover();
-    Player* plMover = mover->IsPlayer() ? (Player*)mover : nullptr;
+    Player* plMover =IsPlayer(mover) ? (Player*)mover : nullptr;
 
     if (!plMover || !plMover->IsBeingTeleportedNear())
     {
@@ -316,28 +243,20 @@ void movement::MoveTeleportAck(Player& who, WorldPacket& recv_data)
     plMover->GetTerrain()->GetZoneAndAreaId(newzone, newarea, plMover->Where().X(), plMover->Where().Y(), plMover->Where().Z());
     plMover->UpdateZone(newzone, newarea);
 
-    // new zone
     if (old_zone != newzone)
     {
-        // honorless target
+
         if (plMover->pvpInfo.inHostileArea)
         {
             plMover->CastSpell(plMover, 2479, true);
         }
     }
 
-    // resummon pet
     who.ResummonPetTemporaryUnSummonedIfAny();
 
-    // lets process all delayed operations on successful teleport
     who.ProcessDelayedOperations();
 }
 
-/**
- * @brief Processes standard client movement updates.
- *
- * @param recv_data The received opcode packet.
- */
 void movement::MovementOpcodes(WorldSession& session, WorldPacket& recv_data)
 {
     uint16 opcode = recv_data.GetOpcode();
@@ -348,32 +267,27 @@ void movement::MovementOpcodes(WorldSession& session, WorldPacket& recv_data)
     }
 
     Unit* mover = session.GetPlayer()->GetMover();
-    Player* plMover = mover->IsPlayer() ? (Player*)mover : nullptr;
+    Player* plMover =IsPlayer(mover) ? (Player*)mover : nullptr;
 
-    // ignore, waiting processing in WorldSession::HandleMoveWorldportAckOpcode and WorldSession::HandleMoveTeleportAck
     if (plMover && plMover->IsBeingTeleported())
     {
-        recv_data.rpos(recv_data.wpos());                   // prevent warnings spam
+        recv_data.rpos(recv_data.wpos());
         return;
     }
 
-    /* extract packet */
     MovementInfo movementInfo;
     movementInfo.Read(recv_data);
-    /*----------------*/
 
     if (!Verify(*session.GetPlayer(), movementInfo))
     {
         return;
     }
 
-    // fall damage generation (ignore in flight case that can be triggered also at lags in moment teleportation to another map).
     if (opcode == MSG_MOVE_FALL_LAND && plMover && !plMover->IsTaxiFlying())
     {
         plMover->HandleFall(movementInfo);
     }
 
-    /* process position-change */
     Relocate(*session.GetPlayer(), movementInfo);
 
     if (plMover)
@@ -382,39 +296,30 @@ void movement::MovementOpcodes(WorldSession& session, WorldPacket& recv_data)
     }
 
     WorldPacket data(opcode, uint16(recv_data.size() + 2));
-    data << mover->GetPackGUID();             // write guid
-    movementInfo.Write(data);                               // write data
+    data << mover->GetPackGUID();
+    movementInfo.Write(data);
     Deliver(Audience::Around(*mover).Except(session.GetPlayer()), &data);
 }
 
-/**
- * @brief Verifies client acknowledgement packets for forced speed changes.
- *
- * @param recv_data The received opcode packet.
- */
 void movement::ForceSpeedChangeAckOpcodes(Player& who, WorldPacket& recv_data)
 {
     uint16 opcode = recv_data.GetOpcode();
     DEBUG_LOG("WORLD: Received %s (%u, 0x%X) opcode", LookupOpcodeName(recv_data.GetOpcode()), opcode, opcode);
 
-    /* extract packet */
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
     MovementInfo movementInfo;
     float  newspeed;
 
     recv_data >> guid;
-    recv_data >> Unused<uint32>();                          // counter or moveEvent
+    recv_data >> Unused<uint32>();
     recv_data >> movementInfo;
     recv_data >> newspeed;
 
-    // now can skip not our packet
     if (who.GetObjectGuid() != guid)
     {
         return;
     }
 
-    // client ACK send one packet for mounted/run case and need skip all except last from its
-    // in other cases anti-cheat check can be fail in false case
     UnitMoveType move_type;
     UnitMoveType force_move_type;
 
@@ -433,8 +338,6 @@ void movement::ForceSpeedChangeAckOpcodes(Player& who, WorldPacket& recv_data)
             return;
     }
 
-    /** skip all forced speed changes except last and unexpected
-     *  in run/mounted case used one ACK and it must be skipped.m_forced_speed_changes[MOVE_RUN} store both. */
     if (who.m_forced_speed_changes[force_move_type] > 0)
     {
         --who.m_forced_speed_changes[force_move_type];
@@ -446,13 +349,13 @@ void movement::ForceSpeedChangeAckOpcodes(Player& who, WorldPacket& recv_data)
 
     if (!who.GetTransport() && fabs(who.Pacing().At(move_type) - newspeed) > 0.01f)
     {
-        if (who.Pacing().At(move_type) > newspeed)        // must be greater - just correct
+        if (who.Pacing().At(move_type) > newspeed)
         {
             sLog.outError("%sSpeedChange player %s is NOT correct (must be %f instead %f), force set to correct value",
                 move_type_name[move_type], who.GetName(), who.Pacing().At(move_type), newspeed);
             who.Pacing().SetRate(move_type, who.Pacing().RateOf(move_type), true);
         }
-        else                                                // must be lesser - cheating
+        else
         {
             BASIC_LOG("Player %s from account id %u kicked for incorrect speed (must be %f instead %f)",
                 who.GetName(), who.GetSession()->GetAccountId(), who.Pacing().At(move_type), newspeed);
@@ -461,37 +364,27 @@ void movement::ForceSpeedChangeAckOpcodes(Player& who, WorldPacket& recv_data)
     }
 }
 
-/**
- * @brief Validates the active mover guid reported by the client.
- *
- * @param recv_data The received opcode packet.
- */
 void movement::SetActiveMover(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_SET_ACTIVE_MOVER");
 
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
     recv_data >> guid;
 
     if (who.GetMover()->GetObjectGuid() != guid)
     {
         sLog.outError("HandleSetActiveMoverOpcode: incorrect mover guid: mover is %s and should be %s",
-            who.GetMover()->GetGuidStr().c_str(), guid.GetString().c_str());
+            who.GetMover()->GetGuidStr().c_str(), GuidString(guid).c_str());
         return;
     }
 }
 
-/**
- * @brief Stores movement info sent for a non-active mover.
- *
- * @param recv_data The received opcode packet.
- */
 void movement::MoveNotActiveMover(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_MOVE_NOT_ACTIVE_MOVER");
     recv_data.hexlike();
 
-    ObjectGuid old_mover_guid;
+    ObjectGuid old_mover_guid = 0;
     MovementInfo mi;
 
     recv_data >> old_mover_guid;
@@ -504,23 +397,17 @@ void movement::MoveNotActiveMover(Player& who, WorldPacket& recv_data)
             sLog.outError("HandleMoveNotActiveMover: incorrect mover guid: mover is %s and should be %s instead of %s",
                 who.GetMover()->GetGuidStr().c_str(),
                 who.GetGuidStr().c_str(),
-                old_mover_guid.GetString().c_str());
+                GuidString(old_mover_guid).c_str());
         }
-        recv_data.rpos(recv_data.wpos());                   // prevent warnings spam
+        recv_data.rpos(recv_data.wpos());
         return;
     }
 
     who.m_movementInfo = mi;
 }
 
-/**
- * @brief Broadcasts the player's mount special animation.
- *
- * @param recvdata The received opcode packet.
- */
-void movement::MountSpecialAnim(Player& who, WorldPacket& /*recvdata*/)
+void movement::MountSpecialAnim(Player& who, WorldPacket& )
 {
-    // DEBUG_LOG("WORLD: Received opcode CMSG_MOUNTSPECIAL_ANIM");
 
     WorldPacket data(SMSG_MOUNTSPECIAL_ANIM, 8);
     data << who.GetObjectGuid();
@@ -528,33 +415,26 @@ void movement::MountSpecialAnim(Player& who, WorldPacket& /*recvdata*/)
     Deliver(Audience::Around(who), &data);
 }
 
-/**
- * @brief Handles knockback acknowledgement movement updates.
- *
- * @param recv_data The received opcode packet.
- */
 void movement::MoveKnockBackAck(WorldSession& session, WorldPacket& recv_data)
 {
     DEBUG_LOG("CMSG_MOVE_KNOCK_BACK_ACK");
 
     Unit* mover = session.GetPlayer()->GetMover();
-    Player* plMover = mover->IsPlayer() ? (Player*)mover : nullptr;
+    Player* plMover =IsPlayer(mover) ? (Player*)mover : nullptr;
 
-    // ignore, waiting processing in WorldSession::HandleMoveWorldportAckOpcode and WorldSession::HandleMoveTeleportAck
     if (plMover && plMover->IsBeingTeleported())
     {
-        recv_data.rpos(recv_data.wpos());                   // prevent warnings spam
+        recv_data.rpos(recv_data.wpos());
         return;
     }
 
-    ObjectGuid guid;
-    MovementInfo movementInfo;                              // Sent in addition to knockback data
+    ObjectGuid guid = 0;
+    MovementInfo movementInfo;
 
     recv_data >> guid;
-    recv_data >> Unused<uint32>(); // Always set to zero?
+    recv_data >> Unused<uint32>();
     recv_data >> movementInfo;
 
-    /* Make sure input is valid */
     if (!Verify(*session.GetPlayer(), movementInfo, guid))
     {
         return;
@@ -572,13 +452,6 @@ void movement::MoveKnockBackAck(WorldSession& session, WorldPacket& recv_data)
     Deliver(Audience::Around(*mover).Except(session.GetPlayer()), &data);
 }
 
-/**
- * @brief Sends a knockback packet to the client.
- *
- * @param angle The horizontal knockback angle.
- * @param horizontalSpeed The horizontal speed component.
- * @param verticalSpeed The vertical speed component.
- */
 void WorldSession::SendKnockBack(float angle, float horizontalSpeed, float verticalSpeed)
 {
     float vsin = sin(angle);
@@ -586,53 +459,38 @@ void WorldSession::SendKnockBack(float angle, float horizontalSpeed, float verti
 
     WorldPacket data(SMSG_MOVE_KNOCK_BACK, 9 + 4 + 4 + 4 + 4 + 4);
     data << GetPlayer()->GetPackGUID();
-    data << uint32(0);                                  // Sequence
-    data << float(vcos);                                // x direction
-    data << float(vsin);                                // y direction
-    data << float(horizontalSpeed);                     // Horizontal speed
-    data << float(-verticalSpeed);                      // Z Movement speed (vertical)
+    data << uint32(0);
+    data << float(vcos);
+    data << float(vsin);
+    data << float(horizontalSpeed);
+    data << float(-verticalSpeed);
     SendPacket(&data);
 }
 
-/**
- * @brief Handles hover movement acknowledgement packets.
- *
- * @param recv_data The received opcode packet.
- */
 void movement::MoveHoverAck(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("CMSG_MOVE_HOVER_ACK");
 
     MovementInfo movementInfo;
 
-    recv_data >> Unused<uint64>();                          // guid
-    recv_data >> Unused<uint32>();                          // unk
+    recv_data >> Unused<uint64>();
+    recv_data >> Unused<uint32>();
     recv_data >> movementInfo;
-    recv_data >> Unused<uint32>();                          // unk2
+    recv_data >> Unused<uint32>();
 }
 
-/**
- * @brief Handles water-walk acknowledgement packets.
- *
- * @param recv_data The received opcode packet.
- */
 void movement::MoveWaterWalkAck(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("CMSG_MOVE_WATER_WALK_ACK");
 
     MovementInfo movementInfo;
 
-    recv_data.read_skip<uint64>();                          // guid
-    recv_data.read_skip<uint32>();                          // unk
+    recv_data.read_skip<uint64>();
+    recv_data.read_skip<uint32>();
     recv_data >> movementInfo;
-    recv_data >> Unused<uint32>();                          // unk2
+    recv_data >> Unused<uint32>();
 }
 
-/**
- * @brief Handles the client's response to a summon request.
- *
- * @param recv_data The received opcode packet.
- */
 void movement::SummonResponse(Player& who, WorldPacket& recv_data)
 {
     if (!who.IsAlive() || who.IsInCombat())
@@ -640,36 +498,24 @@ void movement::SummonResponse(Player& who, WorldPacket& recv_data)
         return;
     }
 
-    ObjectGuid summonerGuid;
+    ObjectGuid summonerGuid = 0;
     recv_data >> summonerGuid;
 
     who.SummonIfPossible(true);
 }
 
-/**
- * @brief Logs client-reported skipped movement time.
- *
- * @param recv_data The received opcode packet.
- */
 void movement::MoveTimeSkipped(Player& who, WorldPacket& recv_data)
 {
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
     uint32 time_skipped;
     recv_data >> guid;
     recv_data >> time_skipped;
-    DEBUG_LOG("WORLD: Received opcode CMSG_MOVE_TIME_SKIPPED for %s, time_skipped: %u", guid.GetString().c_str(), time_skipped);
+    DEBUG_LOG("WORLD: Received opcode CMSG_MOVE_TIME_SKIPPED for %s, time_skipped: %u", GuidString(guid).c_str(), time_skipped);
 }
 
-/**
- * @brief Verifies movement data for a specific mover guid.
- *
- * @param movementInfo The movement state to validate.
- * @param guid The expected mover guid.
- * @return true if the movement data is valid; otherwise false.
- */
 bool movement::Verify(Player& who, MovementInfo const& movementInfo, ObjectGuid const& guid)
 {
-    // ignore wrong guid (player attempt cheating own session for not own guid possible...)
+
     if (guid != who.GetMover()->GetObjectGuid())
     {
         return false;
@@ -678,13 +524,7 @@ bool movement::Verify(Player& who, MovementInfo const& movementInfo, ObjectGuid 
     return Verify(who, movementInfo);
 }
 
-/**
- * @brief Verifies movement coordinates and transport offsets.
- *
- * @param movementInfo The movement state to validate.
- * @return true if the movement data is valid; otherwise false.
- */
-bool movement::Verify(Player& /*who*/, MovementInfo const& movementInfo)
+bool movement::Verify(Player& , MovementInfo const& movementInfo)
 {
     if (!MaNGOS::IsValidMapCoord(movementInfo.GetPos()->x, movementInfo.GetPos()->y, movementInfo.GetPos()->z, movementInfo.GetPos()->o))
     {
@@ -693,8 +533,7 @@ bool movement::Verify(Player& /*who*/, MovementInfo const& movementInfo)
 
     if (movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
     {
-        // transports size limited
-        // (also received at zeppelin/lift leave by some reason with t_* as absolute in continent coordinates, can be safely skipped)
+
         if (movementInfo.GetTransportPos()->x > 50 || movementInfo.GetTransportPos()->y > 50 || movementInfo.GetTransportPos()->z > 100)
         {
             return false;
@@ -710,44 +549,27 @@ bool movement::Verify(Player& /*who*/, MovementInfo const& movementInfo)
     return true;
 }
 
-/**
- * @brief Applies validated movement info to the current mover.
- *
- * @param movementInfo The movement state to apply.
- */
 void movement::Relocate(Player& who, MovementInfo& movementInfo)
 {
-    //uint32 mstime = GameTime::GetGameTimeMS();
-    //if (m_clientTimeDelay == 0)
-    //    m_clientTimeDelay = mstime - movementInfo.GetTime();
 
-    //movementInfo.UpdateTime(movementInfo.GetTime() + m_clientTimeDelay + MOVEMENT_PACKET_TIME_DELAY);
     movementInfo.UpdateTime(movementInfo.GetTime() + who.GetSession()->GetLatency());
 
     Unit* mover = who.GetMover();
 
-    if (Player* plMover = mover->IsPlayer() ? (Player*)mover : nullptr)
+    if (Player* plMover =IsPlayer(mover) ? (Player*)mover : nullptr)
     {
-        // BEFORE the transport branch, and the ordering is the whole of it.
-        // TransportMap::Add reads the passenger's OWN m_movementInfo for his deck offset; the
-        // assignment used to sit below this branch, so on the first ONTRANSPORT packet Add read
-        // the PREVIOUS one -- which carries no transport data -- and stood him on the hull
-        // origin. His minions were then drawn beside (0, 0, 0): a yard off the keel and six
-        // metres under the deck, which is what "the pet comes up through the walls" was.
+
         plMover->m_movementInfo = movementInfo;
 
         if (movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
         {
             if (!plMover->GetTransport())
             {
-                // elevators also cause the client to send MOVEFLAG_ONTRANSPORT - just unmount if the guid names a vessel
+
                 if (Transport* named = sFleet.ByGuid(movementInfo.GetTransportGuid()))
                 {
                     plMover->SetTransport(named);
 
-                    // He walked aboard, so his client already has the vessel and is
-                    // rendering the map she sails; moving him onto her own map is safe
-                    // at once. Nothing tells the client -- it never learns that id.
                     if (TransportMap* hull = named->AsMap())
                     {
                         hull->Embark(plMover);
@@ -755,17 +577,9 @@ void movement::Relocate(Player& who, MovementInfo& movementInfo)
                 }
             }
         }
-        else if (plMover->GetTransport())               // if we were on a transport, leave
+        else if (plMover->GetTransport())
         {
-            // He walked ashore, and his own client just told us where: that world point is
-            // better than anything we could derive from a hull whose pose we only estimate.
-            //
-            // BUT ONLY IF IT IS NEXT TO THE SHIP. Nobody steps off a vessel onto another
-            // continent, and the number in this field is not always his: while he is aboard
-            // we tell him his world position is (0, 0, 0), and he echoes it straight back.
-            // Drop the flag for one packet -- the client does, on arrival, before it has
-            // resolved the hull -- and that zero is read as a destination. (0, 0, 0) on map
-            // 0 is the middle of Lordamere Lake, which is exactly where people landed.
+
             if (TransportMap* hull = plMover->GetTransport()->AsMap())
             {
                 Transport* vessel = plMover->GetTransport();
@@ -784,8 +598,7 @@ void movement::Relocate(Player& who, MovementInfo& movementInfo)
                 }
                 else
                 {
-                    // Not a step ashore at all. Put him down on the ship's own coarse pose:
-                    // wrong by a hull's length at worst, instead of by a continent.
+
                     hull->Disembark(plMover, vessel->Where().X(), vessel->Where().Y(),
                                     vessel->Where().Z(), vessel->Where().Facing());
                 }
@@ -796,13 +609,10 @@ void movement::Relocate(Player& who, MovementInfo& movementInfo)
 
         if (movementInfo.HasMovementFlag(MOVEFLAG_SWIMMING) != plMover->IsInWater())
         {
-            // now client not include swimming flag in case jumping under water
+
             plMover->Dangers().InWater(!plMover->IsInWater() || plMover->GetMap()->GetTerrain()->IsUnderWater(movementInfo.GetPos()->x, movementInfo.GetPos()->y, movementInfo.GetPos()->z));
         }
 
-        // Aboard, the deck offset IS his position: it is what the client computed against
-        // the hull it is drawing, and the world pair in the same packet describes a place
-        // on a map he is no longer filed under. Ashore, the two are the same packet field.
         if (plMover->GetTransport() && plMover->GetMap()->AsTransport())
         {
             const Position* offset = movementInfo.GetTransportPos();
@@ -814,13 +624,8 @@ void movement::Relocate(Player& who, MovementInfo& movementInfo)
         }
         plMover->m_movementInfo = movementInfo;
 
-        // Event-driven, straight off this packet: it carries the whole transport state, and
-        // the pet is linked to the player, so mirror it onto his minions -- put them on a
-        // type-11 lift he has stepped onto, keep them at his heel as it rises, take them off
-        // when he leaves. No polling; the pet moves exactly when its master reports moving.
         plMover->UpdateLiftMinions();
 
-        /* Movement should cancel looting */
         if (ObjectGuid lootGUID = plMover->GetLootGuid())
         {
             plMover->SendLootRelease(lootGUID);
@@ -831,27 +636,23 @@ void movement::Relocate(Player& who, MovementInfo& movementInfo)
             if (plMover->Battle().Ground() &&
                 plMover->Battle().Ground()->HandlePlayerUnderMap(&who))
             {
-                // do nothing, the handle already did if returned true
+
             }
             else
             {
-                // NOTE: this is actually called many times while falling
-                // even after the player has been teleported away
-                // TODO: discard movement packets after the player is rooted
+
                 if (plMover->IsAlive())
                 {
                     plMover->Dangers().Harm(DAMAGE_FALL_TO_VOID, plMover->GetMaxHealth());
-                    // pl can be alive if GM/etc
+
                     if (!plMover->IsAlive())
                     {
-                        // change the death state to CORPSE to prevent the death timer from
-                        // starting in the next player update
+
                         plMover->KillPlayer();
                         plMover->BuildPlayerRepop();
                     }
                 }
 
-                // cancel the death timer here if started
                 plMover->RepopAtGraveyard();
 
                 plMover->ResurrectPlayer(0.5f);
@@ -859,7 +660,7 @@ void movement::Relocate(Player& who, MovementInfo& movementInfo)
             }
         }
     }
-    else                                                    // creature charmed
+    else
     {
         if (mover->IsInWorld())
         {

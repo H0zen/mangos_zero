@@ -21,17 +21,6 @@
 
 class Unit;
 
-/**
- * How fast a unit goes, walking, running, swimming and turning.
- *
- * The client is told a multiple of the ordinary pace for each, never the yards
- * a second, so what is kept here is that multiple. Six of them, one to a way of
- * moving, and all six are sent when a unit first comes into view.
- *
- * A change of pace travels: everything the unit controls -- its pet, its
- * guardians, whatever it has charmed -- reckons its own pace again, because a
- * hasted master drags a haste-less pet behind him otherwise.
- */
 class Pace
 {
     public:
@@ -42,20 +31,12 @@ class Pace
         Pace(Pace const&) = delete;
         Pace& operator=(Pace const&) = delete;
 
-        /// Works out that pace afresh from the auras it carries, the shape it is
-        /// in and the row it was spawned from. `forced` makes the client accept
-        /// the answer rather than merely being told of it.
         virtual void Reckon(UnitMoveType how, bool forced, float ratio = 1.0f);
 
-        /// Yards a second: the multiple against the ordinary pace for that way
-        /// of moving.
         float At(UnitMoveType how) const;
 
-        /// The multiple itself.
         float RateOf(UnitMoveType how) const { return m_rate[how]; }
 
-        /// Sets the multiple, tells everyone who can see it, and passes the
-        /// change on to everything the unit controls.
         void SetRate(UnitMoveType how, float rate, bool forced = false);
 
     protected:
@@ -67,13 +48,6 @@ class Pace
         float m_rate[MAX_MOVE_TYPE];
 };
 
-/**
- * How fast a hunter's or a warlock's pet goes.
- *
- * A pet owned by a character does not reckon its pace on its own: it keeps up
- * with its master, and only its own haste and slow auras move it off that. A
- * pet nobody owns is an ordinary creature and reckons the ordinary way.
- */
 class PetPace : public Pace
 {
     public:

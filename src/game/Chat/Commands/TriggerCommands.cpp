@@ -23,27 +23,10 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file TriggerCommands.cpp
- * @brief Implementation of area trigger management chat commands.
- *
- * This file contains chat command handlers for trigger operations including:
- * - Area trigger listing and information
- * - Trigger data modification
- * - Trigger testing
- */
-
 #include "Chat.h"
 #include "ObjectMgr.h"
 
-/**
- * @brief Helper function to display trigger target information.
- *
- * @param id The trigger ID.
- * @param at Pointer to the area trigger data.
- * @param subpart Whether this is a sub-part of the trigger.
- */
-void ChatHandler::ShowTriggerTargetListHelper(uint32 id, AreaTrigger const* at, bool subpart /*= false*/)
+void ChatHandler::ShowTriggerTargetListHelper(uint32 id, AreaTrigger const* at, bool subpart )
 {
     if (m_session)
     {
@@ -68,11 +51,6 @@ void ChatHandler::ShowTriggerTargetListHelper(uint32 id, AreaTrigger const* at, 
     }
 }
 
-/**
- * @brief Displays summary information for an area trigger entry.
- *
- * @param atEntry The area trigger entry to display.
- */
 void ChatHandler::ShowTriggerListHelper(AreaTriggerEntry const* atEntry)
 {
     char const* tavern = sObjectMgr.IsTavernAreaTrigger(atEntry->ID) ? GetMangosString(LANG_TRIGGER_TAVERN) : "";
@@ -99,19 +77,12 @@ void ChatHandler::ShowTriggerListHelper(AreaTriggerEntry const* atEntry)
     }
 }
 
-/**
- * @brief Handler for HandleTriggerCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleTriggerCommand(char* args)
 {
     AreaTriggerEntry const* atEntry = nullptr;
 
     Player* pl = m_session ? m_session->GetPlayer() : nullptr;
 
-    // select by args
     if (*args)
     {
         uint32 atId;
@@ -134,7 +105,7 @@ bool ChatHandler::HandleTriggerCommand(char* args)
             return false;
         }
     }
-    // find nearest
+
     else
     {
         if (!m_session)
@@ -144,7 +115,6 @@ bool ChatHandler::HandleTriggerCommand(char* args)
 
         float dist2 = MAP_SIZE * MAP_SIZE;
 
-        // Search triggers
         for (uint32 id = 0; id < sAreaTriggerStore.GetNumRows(); ++id)
         {
             AreaTriggerEntry const* atTestEntry = sAreaTriggerStore.LookupEntry(id);
@@ -199,19 +169,12 @@ bool ChatHandler::HandleTriggerCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleTriggerActiveCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleTriggerActiveCommand(char* /*args*/)
+bool ChatHandler::HandleTriggerActiveCommand(char* )
 {
-    uint32 counter = 0;                                     // Counter for figure out that we found smth.
+    uint32 counter = 0;
 
     Player* pl = m_session->GetPlayer();
 
-    // Search in AreaTable.dbc
     for (uint32 id = 0; id < sAreaTriggerStore.GetNumRows(); ++id)
     {
         AreaTriggerEntry const* atEntry = sAreaTriggerStore.LookupEntry(id);
@@ -230,7 +193,7 @@ bool ChatHandler::HandleTriggerActiveCommand(char* /*args*/)
         ++counter;
     }
 
-    if (counter == 0)                                      // if counter == 0 then we found nth
+    if (counter == 0)
     {
         SendSysMessage(LANG_COMMAND_NOTRIGGERFOUND);
     }
@@ -238,21 +201,14 @@ bool ChatHandler::HandleTriggerActiveCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleTriggerNearCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleTriggerNearCommand(char* args)
 {
     float distance = (!*args) ? 10.0f : (float)atof(args);
     float dist2 = distance * distance;
-    uint32 counter = 0;                                     // Counter for figure out that we found smth.
+    uint32 counter = 0;
 
     Player* pl = m_session->GetPlayer();
 
-    // Search triggers
     for (uint32 id = 0; id < sAreaTriggerStore.GetNumRows(); ++id)
     {
         AreaTriggerEntry const* atEntry = sAreaTriggerStore.LookupEntry(id);
@@ -279,7 +235,6 @@ bool ChatHandler::HandleTriggerNearCommand(char* args)
         ++counter;
     }
 
-    // Search trigger targets
     for (uint32 id = 0; id < sAreaTriggerStore.GetNumRows(); ++id)
     {
         AreaTriggerEntry const* atEntry = sAreaTriggerStore.LookupEntry(id);
@@ -312,7 +267,7 @@ bool ChatHandler::HandleTriggerNearCommand(char* args)
         ++counter;
     }
 
-    if (counter == 0)                                      // if counter == 0 then we found nth
+    if (counter == 0)
     {
         SendSysMessage(LANG_COMMAND_NOTRIGGERFOUND);
     }

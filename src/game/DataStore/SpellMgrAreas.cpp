@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "SpellMgr.h"
 #include "SpellAuraDefines.h"
 #include "ObjectMgr.h"
@@ -38,17 +36,13 @@
 #include "Unit.h"
 #include "World.h"
 
-/**
- * @brief Loads spell area requirement records from the database.
- */
 void SpellMgr::LoadSpellAreas()
 {
-    mSpellAreaMap.clear();                                  // need for reload case
+    mSpellAreaMap.clear();
     mSpellAreaForAuraMap.clear();
 
     uint32 count = 0;
 
-    //                                                0      1     2            3                   4          5             6           7         8       9
     QueryResult* result = WorldDatabase.Query("SELECT `spell`, `area`, `quest_start`, `quest_start_active`, `quest_end`, `condition_id`, `aura_spell`, `racemask`, `gender`, `autocast` FROM `spell_area`");
 
     if (!result)
@@ -117,7 +111,6 @@ void SpellMgr::LoadSpellAreas()
                     continue;
                 }
 
-                // duplicate by requirements
                 ok = false;
                 break;
             }
@@ -201,7 +194,6 @@ void SpellMgr::LoadSpellAreas()
                 continue;
             }
 
-            // not allow autocast chains by auraSpell field (but allow use as alternative if not present)
             if (spellArea.autocast && spellArea.auraSpell > 0)
             {
                 bool chain = false;
@@ -241,13 +233,11 @@ void SpellMgr::LoadSpellAreas()
 
         SpellArea const* sa = &mSpellAreaMap.insert(SpellAreaMap::value_type(spell, spellArea))->second;
 
-        // for search by current zone/subzone at zone/subzone change
         if (spellArea.areaId)
         {
             mSpellAreaForAreaMap.insert(SpellAreaForAreaMap::value_type(spellArea.areaId, sa));
         }
 
-        // for search at aura apply
         if (spellArea.auraSpell)
         {
             mSpellAreaForAuraMap.insert(SpellAreaForAuraMap::value_type(abs(spellArea.auraSpell), sa));
@@ -263,19 +253,9 @@ void SpellMgr::LoadSpellAreas()
     sLog.outString();
 }
 
-/**
- * @brief Checks whether a spell is allowed in a given location.
- *
- * @param spellInfo The spell entry to validate.
- * @param map_id The current map identifier.
- * @param zone_id The current zone identifier.
- * @param area_id The current area identifier.
- * @param player The player attempting the cast, if any.
- * @return The spell cast failure code, or SPELL_CAST_OK when allowed.
- */
 SpellCastResult SpellMgr::GetSpellAllowedInLocationError(SpellEntry const* spellInfo, uint32 map_id, uint32 zone_id, uint32 area_id, Player const* player)
 {
-    // DB base check (if non empty then must fit at least single for allow)
+
     SpellAreaMapBounds saBounds = GetSpellAreaMapBounds(spellInfo->ID);
     if (saBounds.first != saBounds.second)
     {
@@ -289,9 +269,6 @@ SpellCastResult SpellMgr::GetSpellAllowedInLocationError(SpellEntry const* spell
         return SPELL_FAILED_REQUIRES_AREA;
     }
 
-    // bg spell checks
-
-    // Spell casted only on battleground
     if (spellInfo->HasAttribute(SPELL_ATTR_EX3_BATTLEGROUND))
     {
         if (!player || !player->Battle().InOne())
@@ -302,9 +279,9 @@ SpellCastResult SpellMgr::GetSpellAllowedInLocationError(SpellEntry const* spell
 
     switch (spellInfo->ID)
     {
-        // a trinket in alterac valley allows to teleport to the boss
-        case 22564:                                         // recall
-        case 22563:                                         // recall
+
+        case 22564:
+        case 22563:
         {
             if (!player)
             {
@@ -314,16 +291,16 @@ SpellCastResult SpellMgr::GetSpellAllowedInLocationError(SpellEntry const* spell
             return map_id == 30 && bg &&
                 bg->GetStatus() != STATUS_WAIT_JOIN ? SPELL_CAST_OK : SPELL_FAILED_REQUIRES_AREA;
         }
-        case 23333:                                         // Warsong Flag
-        case 23335:                                         // Silverwing Flag
+        case 23333:
+        case 23335:
             return map_id == 489 && player && player->Battle().InOne() ? SPELL_CAST_OK : SPELL_FAILED_REQUIRES_AREA;
-        case 2584:                                          // Waiting to Resurrect
+        case 2584:
         {
             return player && player->Battle().InOne() ? SPELL_CAST_OK : SPELL_FAILED_ONLY_BATTLEGROUNDS;
         }
-        case 22011:                                         // Spirit Heal Channel
-        case 22012:                                         // Spirit Heal
-        case 24171:                                         // Resurrection Impact Visual
+        case 22011:
+        case 22012:
+        case 24171:
         {
             MapEntry const* mapEntry = sMapStore.LookupEntry(map_id);
             if (!mapEntry)
@@ -337,9 +314,6 @@ SpellCastResult SpellMgr::GetSpellAllowedInLocationError(SpellEntry const* spell
     return SPELL_CAST_OK;
 }
 
-/**
- * @brief Builds the skill-line ability multimap from DBC data.
- */
 void SpellMgr::LoadSkillLineAbilityMap()
 {
     mSkillLineAbilityMap.clear();
@@ -364,9 +338,6 @@ void SpellMgr::LoadSkillLineAbilityMap()
     sLog.outString();
 }
 
-/**
- * @brief Builds the skill race/class requirement multimap from DBC data.
- */
 void SpellMgr::LoadSkillRaceClassInfoMap()
 {
     mSkillRaceClassInfoMap.clear();
@@ -383,7 +354,6 @@ void SpellMgr::LoadSkillRaceClassInfoMap()
             continue;
         }
 
-        // not all skills really listed in ability skills list
         if (!sSkillLineStore.LookupEntry(skillRCInfo->SkillID))
         {
             continue;

@@ -32,8 +32,7 @@
 
 DungeonBinds::~DungeonBinds()
 {
-    // Whether the copies or their holders are taken down first is undefined, so
-    // each copy is told he is gone rather than left with a dangling name.
+
     for (auto& held : m_held)
     {
         held.second.state->RemovePlayer(&m_owner);
@@ -58,9 +57,6 @@ void DungeonBinds::Load(QueryResult* result)
         uint32 mapId = fields[2].GetUInt32();
         uint32 instanceId = fields[0].GetUInt32();
         time_t resetTime = static_cast<time_t>(fields[3].GetUInt64());
-        // the reset time of an ordinary copy is only written when the copy is
-        // unloaded, so what is read here may be stale -- but then the copy is
-        // loaded and this value goes unused
 
         MapEntry const* mapEntry = sMapStore.LookupEntry(mapId);
         if (!mapEntry || !mapEntry->IsDungeon())
@@ -80,7 +76,6 @@ void DungeonBinds::Load(QueryResult* result)
             continue;
         }
 
-        // a temporary hold is always a solo one, so its copy can always reset
         DungeonPersistentState* state = static_cast<DungeonPersistentState*>(
             sMapPersistentStateMgr.AddPersistentState(mapEntry, instanceId, resetTime, !permanent, true));
         if (state)
@@ -95,7 +90,6 @@ void DungeonBinds::Load(QueryResult* result)
 
 void DungeonBinds::Reset(InstanceResetMethod method)
 {
-    // method can be INSTANCE_RESET_ALL, INSTANCE_RESET_GROUP_JOIN
 
     for (DungeonHolds::iterator itr = m_held.begin(); itr != m_held.end();)
     {
@@ -107,7 +101,6 @@ void DungeonBinds::Reset(InstanceResetMethod method)
             continue;
         }
 
-        // resetting them all reaches ordinary dungeons only, never a raid
         if (method == INSTANCE_RESET_ALL && entry->InstanceType == MAP_RAID)
         {
             ++itr;
@@ -122,7 +115,6 @@ void DungeonBinds::Reset(InstanceResetMethod method)
             }
         }
 
-        // a copy he holds alone has nobody inside it to be told
         if (method == INSTANCE_RESET_ALL)
         {
             m_owner.SendResetInstanceSuccess(state->GetMapId());
@@ -131,7 +123,6 @@ void DungeonBinds::Reset(InstanceResetMethod method)
         state->DeleteFromDB();
         m_held.erase(itr++);
 
-        // this drops the copy from the manager unless someone else still holds it
         state->RemovePlayer(&m_owner);
     }
 }
@@ -161,7 +152,7 @@ void DungeonBinds::Release(DungeonHolds::iterator& itr, bool unload)
             m_owner.GetGUIDLow(), itr->second.state->GetInstanceId());
     }
 
-    itr->second.state->RemovePlayer(&m_owner);              // the copy can go here
+    itr->second.state->RemovePlayer(&m_owner);
     m_held.erase(itr++);
 }
 
@@ -175,7 +166,7 @@ DungeonHold* DungeonBinds::BindTo(DungeonPersistentState* state, bool permanent,
     DungeonHold& hold = m_held[state->GetMapId()];
     if (hold.state)
     {
-        // the group killed a boss, so a temporary hold becomes permanent
+
         if (!load && (permanent != hold.permanent || state != hold.state))
         {
             CharacterDatabase.PExecute("UPDATE `character_instance` SET `instance` = '%u', `permanent` = '%u' WHERE `guid` = '%u' AND `instance` = '%u'",
@@ -225,8 +216,6 @@ DungeonPersistentState* DungeonBinds::CopyForHimOrHisGroup(uint32 mapId)
     DungeonHold* hold = To(mapId);
     DungeonPersistentState* state = hold ? hold->state : nullptr;
 
-    // a permanent hold of his own comes first; failing that, his group's, and
-    // only then the temporary one he took alone
     if (!hold || !hold->permanent)
     {
         if (Group* group = m_owner.GetGroup())
@@ -248,7 +237,7 @@ void DungeonBinds::TellRaidInfo()
     WorldPacket data(SMSG_RAID_INSTANCE_INFO, 4);
 
     size_t p_counter = data.wpos();
-    data << uint32(counter);                                // placeholder
+    data << uint32(counter);
 
     for (auto const& held : m_held)
     {
@@ -273,7 +262,7 @@ void DungeonBinds::TellSaved()
     bool hasBeenSaved = false;
     for (auto const& held : m_held)
     {
-        if (held.second.permanent)                          // only permanent holds are sent
+        if (held.second.permanent)
         {
             hasBeenSaved = true;
             break;

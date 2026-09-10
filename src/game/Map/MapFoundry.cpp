@@ -51,8 +51,7 @@ void MapFoundry::SetGridCleanUpDelay(uint32 ms)
 
 Map* MapFoundry::OpenWorld(uint32 mapId)
 {
-    // A deck belongs to its vessel and is cast with her in hand. Asked for by id alone, the
-    // most that can be given is the one already open.
+
     if (Transport::IsVesselMapId(mapId))
     {
         return sMapRoster.Find(mapId);
@@ -108,7 +107,6 @@ Map* MapFoundry::Shared(uint32 mapId, Transport* vessel)
 
     sLivingWorld.PinActiveGrids(*cast);
 
-    // A map everybody shares always has its saved state waiting for it.
     cast->CreateInstanceData(true);
 
     return cast;
@@ -150,7 +148,6 @@ BattleGroundMap* MapFoundry::CastBattleGround(uint32 mapId, uint32 instanceId, B
     cast->SetBG(bg);
     bg->SetBgMap(cast);
 
-    // A battleground never outlives the match, so there is nothing saved to load.
     cast->CreateInstanceData(false);
 
     return cast;

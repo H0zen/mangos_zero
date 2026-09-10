@@ -304,7 +304,7 @@ struct boss_eye_of_cthun : public CreatureScript
                         if (DoCastSpellIfCan(m_creature, SPELL_ROTATE_TRIGGER) == CAST_OK)
                         {
                             // Remove the target focus but allow the boss to face the current victim
-                            m_creature->SetTargetGuid(ObjectGuid());
+                            m_creature->SetTargetGuid(0);
                             m_creature->SetFacingToObject(m_creature->getVictim());
 
                             // Switch to Dark Glare phase
@@ -418,7 +418,7 @@ struct boss_cthun : public CreatureScript
         GuidList m_lEyeTentaclesList;
         GuidList m_lPlayersInStomachList;
 
-        ObjectGuid m_stomachEnterTargetGuid;
+        ObjectGuid m_stomachEnterTargetGuid = 0;
 
         void Reset() override
         {
@@ -564,7 +564,7 @@ struct boss_cthun : public CreatureScript
         {
             if (eventType == AI_EVENT_CUSTOM_A && pSender == m_creature)
             {
-                DoRemovePlayerFromStomach(ToPlayer(pInvoker));
+                DoRemovePlayerFromStomach(static_cast<Player*>(pInvoker));
             }
         }
 
@@ -701,7 +701,7 @@ struct boss_cthun : public CreatureScript
                                 m_lPlayersInStomachList.push_back(pPlayer->GetObjectGuid());
                             }
 
-                            m_stomachEnterTargetGuid.Clear();
+                            m_stomachEnterTargetGuid = 0;
                             m_uiStomachEnterTimer = 0;
                         }
                         else

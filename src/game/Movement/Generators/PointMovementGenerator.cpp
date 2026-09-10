@@ -42,7 +42,6 @@ void PointMovementGenerator::Initialize(Unit& owner)
     owner.StopMoving();
     owner.addUnitState(UNIT_STAT_ROAMING | UNIT_STAT_ROAMING_MOVE);
 
-    // The leg itself is laid on the first tick, by the driver.
     ResetLeg();
 }
 
@@ -62,8 +61,6 @@ void PointMovementGenerator::Finalize(Unit& owner)
 {
     owner.clearUnitState(UNIT_STAT_ROAMING | UNIT_STAT_ROAMING_MOVE);
 
-    // Only a leg that ran to completion counts as reaching the point; one cut short by
-    // an interrupt does not.
     if (owner.movespline->Finalized())
     {
         MovementInform(owner);
@@ -74,8 +71,6 @@ void RoutedPointMovementGenerator::Finalize(Unit& owner)
 {
     owner.clearUnitState(UNIT_STAT_ROAMING | UNIT_STAT_ROAMING_MOVE);
 
-    // Same rule as the base, plus the one this generator adds: a leg the router refused was
-    // never laid, so reaching the point is not something that happened. See the header.
     if (m_arrived && owner.movespline->Finalized())
     {
         MovementInform(owner);
@@ -85,8 +80,7 @@ void RoutedPointMovementGenerator::Finalize(Unit& owner)
 Motion::MoveIntent RoutedPointMovementGenerator::Intent(Unit& owner, Motion::MoveStatus const& status,
                                                         uint32 diff)
 {
-    // Arrival is latched here rather than refusal, and the proximity test rejects a mover that
-    // was frozen partway rather than actually arriving. See the header for both reasons.
+
     if (status.arrived &&
         owner.Where().DistanceTo(Geometry::Vector3(m_dest.x, m_dest.y, m_dest.z)) < 10.0f)
     {
@@ -98,7 +92,7 @@ Motion::MoveIntent RoutedPointMovementGenerator::Intent(Unit& owner, Motion::Mov
 
 void PointMovementGenerator::MovementInform(Unit& owner) const
 {
-    if (!owner.IsCreature())
+    if (!IsCreature(&owner))
     {
         return;
     }
@@ -116,7 +110,7 @@ void PointMovementGenerator::MovementInform(Unit& owner) const
     }
 
     const ObjectGuid summonerGuid = static_cast<TemporarySummon&>(creature).GetSummonerGuid();
-    if (!summonerGuid.IsCreature())
+    if (!(GuidHigh(summonerGuid) == HIGHGUID_UNIT))
     {
         return;
     }
@@ -132,7 +126,7 @@ void PointMovementGenerator::MovementInform(Unit& owner) const
 
 Motion::MoveIntent PointMovementGenerator::Intent(Unit& owner,
                                                   Motion::MoveStatus const& status,
-                                                  uint32 /*diff*/)
+                                                  uint32 )
 {
     if (owner.hasUnitState(UNIT_STAT_CAN_NOT_MOVE))
     {
@@ -140,8 +134,6 @@ Motion::MoveIntent PointMovementGenerator::Intent(Unit& owner,
         return Motion::MoveIntent::Hold();
     }
 
-    // Arrived, or there was no way to get there at all: either way this one-shot is
-    // over and the generator beneath it takes back over. Finalize fires the AI inform.
     if (status.arrived || status.blocked)
     {
         return Motion::MoveIntent::Done();
@@ -149,14 +141,6 @@ Motion::MoveIntent PointMovementGenerator::Intent(Unit& owner,
 
     owner.addUnitState(UNIT_STAT_ROAMING | UNIT_STAT_ROAMING_MOVE);
 
-    // m_dest arrived from a script, an AI or a spell effect, and those speak WORLD
-    // coordinates — they always will, since that is the only kind the database and the
-    // script API have. Read straight as a goal it would be taken for a deck offset by a
-    // boarded unit. Converted here, not in the constructor, because the conversion must
-    // survive a Reset() and must be re-done if the frame beneath us ever changes.
-    //
-    // FromWorld is the identity in the world frame, so this costs nothing for everyone
-    // who is not standing on a boat.
     const Motion::Vector3 goal = Motion::FrameFor(owner).FromWorld(owner, m_dest);
 
     return Motion::MoveIntent::Move(goal, LegFlags());
@@ -177,19 +161,17 @@ void AssistanceMovementGenerator::Finalize(Unit& owner)
     }
 }
 
-Motion::MoveIntent EffectMovementGenerator::Intent(Unit& /*owner*/,
+Motion::MoveIntent EffectMovementGenerator::Intent(Unit& ,
                                                    Motion::MoveStatus const& status,
-                                                   uint32 /*diff*/)
+                                                   uint32 )
 {
-    // Note this is `traveling`, not `arrived`: the spline was launched by the effect,
-    // not by us, so if it was never running at all we must pop immediately rather than
-    // wait for an arrival edge that will never come.
+
     return status.traveling ? Motion::MoveIntent::Hold() : Motion::MoveIntent::Done();
 }
 
 void EffectMovementGenerator::Finalize(Unit& owner)
 {
-    if (!owner.IsCreature())
+    if (!IsCreature(&owner))
     {
         return;
     }
@@ -201,7 +183,6 @@ void EffectMovementGenerator::Finalize(Unit& owner)
         creature.AI()->MovementInform(EFFECT_MOTION_TYPE, m_id);
     }
 
-    // Restore the previous movement, since we have no proper state system for it.
     if (!owner.IsAlive() ||
         owner.hasUnitState(UNIT_STAT_CONFUSED | UNIT_STAT_FLEEING | UNIT_STAT_NO_COMBAT_MOVEMENT))
     {

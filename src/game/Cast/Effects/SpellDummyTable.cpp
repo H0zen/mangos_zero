@@ -23,15 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SpellDummyTable.cpp
- * @brief Throwing the spell that `spell_dummy` names.
- *
- * A spell whose whole doing is to throw another spell is a row in a table, not
- * a case in a switch. This gathers what the table may ask about the cast, keeps
- * the rows that suit it, draws one by weight and throws it.
- */
-
 #include "Spell.h"
 #include "Cast/Triggers/TriggerBook.h"
 #include "Item.h"
@@ -39,14 +30,7 @@
 #include "Unit.h"
 #include "Utilities/Util.h"
 
-/**
- * @brief Throws whatever `spell_dummy` says this spell throws.
- *
- * @param operation The slot being run.
- * @return True when the table knows this spell, whether or not this particular
- *         cast met any row; false when it says nothing about it.
- */
-bool Spell::ThrowWhatTheTableNames(const cast::Operation& /*operation*/)
+bool Spell::ThrowWhatTheTableNames(const cast::Operation& )
 {
     const std::vector<cast::Trigger>* rows = cast::Triggers().Of(m_spellInfo->ID);
     if (rows == nullptr)
@@ -55,15 +39,15 @@ bool Spell::ThrowWhatTheTableNames(const cast::Operation& /*operation*/)
     }
 
     cast::Circumstance how;
-    how.casterIsPlayer = m_caster->IsPlayer();
+    how.casterIsPlayer =IsPlayer(m_caster);
     how.hasTarget = unitTarget != nullptr;
     how.fromItem = m_CastItem != nullptr;
     how.casterGender = m_caster->getGender() == GENDER_MALE ? 1 : 2;
 
     if (unitTarget != nullptr)
     {
-        how.targetIsPlayer = unitTarget->IsPlayer();
-        how.targetIsCreature = unitTarget->IsCreature();
+        how.targetIsPlayer =IsPlayer(unitTarget);
+        how.targetIsCreature =IsCreature(unitTarget);
         how.targetUsesMana = unitTarget->GetPowerType() == POWER_MANA;
         how.targetGender = unitTarget->getGender() == GENDER_MALE ? 1 : 2;
     }
@@ -76,8 +60,6 @@ bool Spell::ThrowWhatTheTableNames(const cast::Operation& /*operation*/)
             continue;
         }
 
-        // whether the one it would land on already carries a forbidden aura is
-        // asked of the world, so it is asked here rather than in the arithmetic
         const Unit* whoCatches = row.castOn == 1 ? unitTarget : m_caster;
         if (row.noAura != 0 && whoCatches != nullptr && whoCatches->HasAura(row.noAura))
         {
@@ -90,8 +72,7 @@ bool Spell::ThrowWhatTheTableNames(const cast::Operation& /*operation*/)
     const uint32 total = cast::TotalWeight(eligible);
     if (total == 0)
     {
-        // the table knows this spell and this cast suits none of its rows; that
-        // is an answer, not a gap for anything else to fill
+
         return true;
     }
 

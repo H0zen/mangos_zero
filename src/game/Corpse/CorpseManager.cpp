@@ -38,10 +38,9 @@
 #include <ctime>
 #include <forward_list>
 
-
 CorpseManager::~CorpseManager()
 {
-    // The owner index is the one that owns the corpse objects themselves.
+
     m_byOwner.WithExclusive([](MaNGOS::ConcurrentRegistry<ObjectGuid, Corpse>::MapType& map)
     {
         for (auto& itr : map)
@@ -52,8 +51,6 @@ CorpseManager::~CorpseManager()
         map.clear();
     });
 }
-
-// --- lookup -----------------------------------------------------------------
 
 Corpse* CorpseManager::Find(ObjectGuid corpseGuid) const
 {
@@ -82,8 +79,6 @@ Corpse* CorpseManager::FindForPlayer(ObjectGuid playerGuid) const
     return corpse;
 }
 
-// --- registry ---------------------------------------------------------------
-
 void CorpseManager::AddObject(Corpse* corpse)
 {
     m_corpses.Insert(corpse->GetObjectGuid(), corpse);
@@ -94,8 +89,6 @@ void CorpseManager::RemoveObject(Corpse* corpse)
     m_corpses.Remove(corpse->GetObjectGuid());
 }
 
-// --- lifecycle --------------------------------------------------------------
-
 void CorpseManager::RecordCell(Corpse* corpse)
 {
     const CellPair cellPair =
@@ -104,7 +97,7 @@ void CorpseManager::RecordCell(Corpse* corpse)
         (cellPair.y_coord * TOTAL_NUMBER_OF_CELLS_PER_MAP) + cellPair.x_coord;
 
     sObjectMgr.AddCorpseCellData(corpse->GetMapId(), cellId,
-                                 corpse->GetOwnerGuid().GetCounter(),
+                                 GuidCounter(corpse->GetOwnerGuid()),
                                  corpse->GetInstanceId());
 }
 
@@ -116,7 +109,7 @@ void CorpseManager::ForgetCell(Corpse* corpse)
         (cellPair.y_coord * TOTAL_NUMBER_OF_CELLS_PER_MAP) + cellPair.x_coord;
 
     sObjectMgr.DeleteCorpseCellData(corpse->GetMapId(), cellId,
-                                    corpse->GetObjectGuid().GetCounter());
+                                    GuidCounter(corpse->GetObjectGuid()));
 }
 
 void CorpseManager::Add(Corpse* corpse)
@@ -131,8 +124,6 @@ void CorpseManager::Remove(Corpse* corpse)
 {
     MANGOS_ASSERT(corpse && corpse->GetType() != CORPSE_BONES);
 
-    // Only touch the cell data if we were actually tracking this corpse, which
-    // is what the old code's find-then-bail guard was for.
     if (!m_byOwner.Find(corpse->GetOwnerGuid()))
     {
         return;
@@ -152,7 +143,6 @@ void CorpseManager::AddCorpsesToGrid(GridPair const& gridpair, GridType& grid, M
             return;
         }
 
-        // On an instanceable map take only the corpses belonging to this instance.
         if (map->Instanceable())
         {
             if (corpse->GetInstanceId() == map->GetInstanceId())
@@ -172,8 +162,7 @@ Corpse* CorpseManager::ConvertCorpseForPlayer(ObjectGuid playerGuid, bool insign
     Corpse* corpse = FindForPlayer(playerGuid);
     if (!corpse)
     {
-        // Called from several places that cannot know whether a corpse exists;
-        // absence is normal, not an error.
+
         return nullptr;
     }
 
@@ -181,8 +170,6 @@ Corpse* CorpseManager::ConvertCorpseForPlayer(ObjectGuid playerGuid, bool insign
 
     Remove(corpse);
 
-    // Drop the resurrectable corpse from the grid, but never load the map just
-    // to do so.
     Map* map = sMapRoster.Find(corpse->GetMapId(), corpse->GetInstanceId());
     if (map)
     {
@@ -193,8 +180,6 @@ Corpse* CorpseManager::ConvertCorpseForPlayer(ObjectGuid playerGuid, bool insign
 
     Corpse* bones = nullptr;
 
-    // Bones appear only where the grid is actually loaded. Insignia handling
-    // overrides the configuration switch.
     const bool bonesAllowed = insignia
         || (map && map->IsBattleGround()
                 ? sWorld.getConfig(CONFIG_BOOL_DEATH_BONES_BG)
@@ -206,8 +191,6 @@ Corpse* CorpseManager::ConvertCorpseForPlayer(ObjectGuid playerGuid, bool insign
         bones = new Corpse;
         bones->Create(corpse->GetGUIDLow());
 
-        // Copy every field except the GUID and object type, which the new object
-        // has already set for itself.
         for (int i = 3; i < CORPSE_END; ++i)
         {
             bones->SetUInt32Value(i, corpse->GetUInt32Value(i));
@@ -215,9 +198,9 @@ Corpse* CorpseManager::ConvertCorpseForPlayer(ObjectGuid playerGuid, bool insign
 
         bones->SetGrid(corpse->GetGrid());
         bones->Place().MoveTo(corpse->Where().X(), corpse->Where().Y(), corpse->Where().Z(), corpse->Where().Facing());
-        // 1.12 has no phasing, so there is no mask to carry over to the bones.
+
         bones->SetUInt32Value(CORPSE_FIELD_FLAGS, CORPSE_FLAG_UNK2 | CORPSE_FLAG_BONES);
-        bones->SetGuidValue(CORPSE_FIELD_OWNER, ObjectGuid());
+        bones->SetGuidValue(CORPSE_FIELD_OWNER, 0);
 
         for (int i = 0; i < EQUIPMENT_SLOT_END; ++i)
         {
@@ -230,7 +213,6 @@ Corpse* CorpseManager::ConvertCorpseForPlayer(ObjectGuid playerGuid, bool insign
         map->Add(bones);
     }
 
-    // Every reference to the corpse is gone by this point.
     delete corpse;
 
     return bones;
@@ -240,9 +222,6 @@ void CorpseManager::RemoveOldCorpses()
 {
     const time_t now = time(nullptr);
 
-    // Collect first, convert after: ConvertCorpseForPlayer mutates the very index
-    // being walked, and doing that under the container's shared lock would both
-    // deadlock and invalidate the iteration.
     std::forward_list<ObjectGuid> expired;
 
     m_byOwner.ForEach([&now, &expired](Corpse* corpse)

@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about the beast that follows him.
 namespace pets
 {
     void PetAction(Player& who, WorldPacket& packet);

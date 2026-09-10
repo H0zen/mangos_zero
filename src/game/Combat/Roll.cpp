@@ -29,14 +29,12 @@ namespace combat
 {
     namespace
     {
-        /// Skill above the victim's cap shifts every avoidance band down by
-        /// 0.04% per point.
+
         int32 SkillBonus(const Combatant& attacker, const Combatant& victim)
         {
             return 4 * (attacker.weaponSkill - victim.maxDefenceForLevel);
         }
 
-        /// Defence beyond a level's cap counts for nothing.
         int32 CappedDefence(const Combatant& victim)
         {
             return victim.defenceSkill > victim.maxDefenceForLevel
@@ -71,15 +69,12 @@ namespace combat
             return Ending(Result::Missed);
         }
 
-        // A player who is not on his feet is hit critically by anything that can
-        // crit at all, before any avoidance is considered.
         if (victim.isPlayer && victim.isSitting && attacker.critChance > 0)
         {
             strike.crit = true;
             return strike;
         }
 
-        // Only players lose their dodge to an attacker behind them.
         if (!victim.isPlayer || !fromBehind)
         {
             int32 dodge = victim.dodgeChance;
@@ -89,7 +84,6 @@ namespace combat
             }
         }
 
-        // Nothing is parried or blocked from behind, by anyone.
         if (!fromBehind && victim.canParry && victim.parryChance > 0)
         {
             const int32 parry = victim.parryChance - skillBonus;
@@ -99,9 +93,6 @@ namespace combat
             }
         }
 
-        // A player or pet swinging up at a higher-level creature glances, up to
-        // forty percent of the time. Abilities do not glance, and neither does a
-        // ranged shot -- the caller marks both.
         if (!isAbility && (attacker.isPlayer || attacker.isPet) &&
             !victim.isPlayer && !victim.isPet && attacker.level < victim.level)
         {
@@ -126,8 +117,7 @@ namespace combat
             int32 block = victim.blockChance;
             if (block > 0 && (block -= skillBonus) > 0 && r < (sum += block))
             {
-                // The blow still lands; the shield's value comes off it, and
-                // whether anything survives that is decided in Resolve.
+
                 strike.blocked = true;
                 return strike;
             }
@@ -139,14 +129,12 @@ namespace combat
             return strike;
         }
 
-        // A creature three levels up, or fifteen weapon skill above the victim's
-        // defence, can crush. Auto-attacks only.
         if (attacker.canCrush && !attacker.isPlayer && !attacker.isPet && !isAbility)
         {
             const int32 lacking = attacker.maxSkillForLevel - CappedDefence(victim);
             if (lacking >= 15)
             {
-                // Two percent per lacking point, starting at fifteen.
+
                 const int32 crush = lacking * 200 - 1500;
                 if (r < (sum += crush))
                 {

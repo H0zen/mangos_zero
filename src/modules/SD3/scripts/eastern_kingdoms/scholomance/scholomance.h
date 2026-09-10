@@ -92,7 +92,7 @@ struct GandlingEventData
 {
     GandlingEventData() : m_bIsActive(false) {}
     bool m_bIsActive;
-    ObjectGuid m_doorGuid;
+    ObjectGuid m_doorGuid = 0;
     std::set<uint32> m_sAddGuids;
 };
 

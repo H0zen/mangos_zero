@@ -36,8 +36,6 @@ namespace MapCoords
     {
         MapEntry const* entry = sMapStore.LookupEntry(mapId);
 
-        // A dungeon row with no instance template is a map that cannot be entered: the
-        // template carries the party size, the reset rule and the ghost entrance.
         return entry && (!entry->IsDungeon() || ObjectMgr::GetInstanceTemplate(mapId));
     }
 

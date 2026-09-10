@@ -23,16 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file MailCommands.cpp
- * @brief Implementation of mail system management chat commands.
- *
- * This file contains chat command handlers for mail operations including:
- * - Mail sending and receiving
- * - Mass mail operations
- * - Mail attachment management
- */
-
 #include <string>
 #include <list>
 #include "Chat.h"
@@ -40,12 +30,6 @@
 #include "Mail.h"
 #include "MassMailMgr.h"
 
-/**
- * @brief Handler for HandleSendMailCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleSendMailCommand(char* args)
 {
     if (!*args)
@@ -53,9 +37,8 @@ bool ChatHandler::HandleSendMailCommand(char* args)
         return false;
     }
 
-    // format: name "subject text" "mail text"
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     std::string target_name;
     if (!ExtractPlayerTarget(&args, &target, &target_guid, &target_name))
     {
@@ -64,21 +47,19 @@ bool ChatHandler::HandleSendMailCommand(char* args)
 
     MailDraft draft;
 
-    // Subject and content should not be empty :
     if (!*args)
     {
         return false;
     }
     else
     {
-        // fill draft
+
         if (!HandleSendMailHelper(draft, args))
         {
             return false;
         }
     }
 
-    // GM mail
     MailSender sender(MAIL_NORMAL, m_session ? m_session->GetPlayer()->GetGUIDLow() : (uint32)0, MAIL_STATIONERY_GM);
 
     draft.SendMailTo(MailReceiver(target, target_guid), sender);
@@ -88,15 +69,9 @@ bool ChatHandler::HandleSendMailCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleSendMailHelper command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleSendMailHelper(MailDraft& draft, char* args)
 {
-    // format: "subject text" "mail text"
+
     char* msgSubject = ExtractQuotedArg(&args);
     if (!msgSubject)
     {
@@ -109,21 +84,14 @@ bool ChatHandler::HandleSendMailHelper(MailDraft& draft, char* args)
         return false;
     }
 
-    // msgSubject, msgText isn't NUL after prev. check
     draft.SetSubjectAndBody(msgSubject, msgText);
 
     return true;
 }
 
-/**
- * @brief Handler for HandleSendMassMailCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleSendMassMailCommand(char* args)
 {
-    // format: raceMask "subject text" "mail text"
+
     uint32 raceMask = 0;
     char const* name = nullptr;
 
@@ -132,17 +100,14 @@ bool ChatHandler::HandleSendMassMailCommand(char* args)
         return false;
     }
 
-    // need dynamic object because it trasfered to mass mailer
     MailDraft* draft = new MailDraft;
 
-    // fill mail
     if (!HandleSendMailHelper(*draft, args))
     {
         delete draft;
         return false;
     }
 
-    // GM mail
     MailSender sender(MAIL_NORMAL, (uint32)0, MAIL_STATIONERY_GM);
 
     sMassMailMgr.AddMassMailTask(draft, sender, raceMask);
@@ -151,15 +116,9 @@ bool ChatHandler::HandleSendMassMailCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleSendItemsHelper command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleSendItemsHelper(MailDraft& draft, char* args)
 {
-    // format: "subject text" "mail text" item1[:count1][:enchant1] item2[:count2][:enchant2] ... item12[:count12][:enchant12]
+
     char* msgSubject = ExtractQuotedArg(&args);
     if (!msgSubject)
     {
@@ -172,26 +131,23 @@ bool ChatHandler::HandleSendItemsHelper(MailDraft& draft, char* args)
         return false;
     }
 
-    // extract items
     typedef std::tuple<uint32, uint32, uint32> ItemToSend;
     typedef std::list< ItemToSend > ItemsToSend;
     ItemsToSend items;
 
-    // get from tail next item str
     while (char* itemStr = ExtractArg(&args))
     {
-        // parse item str
+
         uint32 item_id = 0;
         uint32 item_count = 1;
         uint32 item_enchant_id = 0;
 
-        // Try with item1[:count1][:enchant1] format
         if (sscanf(itemStr, "%u:%u:%u", &item_id, &item_count, &item_enchant_id) == 0)
         {
-            // Try perhaps with item1[:count1]
+
             if (sscanf(itemStr, "%u:%u", &item_id, &item_count) == 0)
             {
-                // Try at least with item1 - if not a integer >0 then => error
+
                 if (sscanf(itemStr, "%u", &item_id) == 0)
                 {
                     return false;
@@ -240,7 +196,6 @@ bool ChatHandler::HandleSendItemsHelper(MailDraft& draft, char* args)
         }
     }
 
-    // fill mail
     draft.SetSubjectAndBody(msgSubject, msgText);
 
     for (ItemsToSend::iterator itr = items.begin(); itr != items.end(); ++itr)
@@ -254,7 +209,7 @@ bool ChatHandler::HandleSendItemsHelper(MailDraft& draft, char* args)
             {
                 item->SetEnchantment(PERM_ENCHANTMENT_SLOT, item_enchant_id, 0, 0);
             }
-            item->SaveToDB();                               // save for prevent lost at next mail load, if send fail then item will deleted
+            item->SaveToDB();
             draft.AddItem(item);
         }
     }
@@ -262,17 +217,11 @@ bool ChatHandler::HandleSendItemsHelper(MailDraft& draft, char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleSendItemsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleSendItemsCommand(char* args)
 {
-    // format: "subject text" "mail text" item1[:count1][:enchant1] item2[:count2][:enchant2] ... item12[:count12][:enchant12]
+
     Player* receiver;
-    ObjectGuid receiver_guid;
+    ObjectGuid receiver_guid = 0;
     std::string receiver_name;
     if (!ExtractPlayerTarget(&args, &receiver, &receiver_guid, &receiver_name))
     {
@@ -281,7 +230,6 @@ bool ChatHandler::HandleSendItemsCommand(char* args)
 
     MailDraft draft;
 
-    // fill mail
     if (!HandleSendItemsHelper(draft, args))
     {
         return false;
@@ -296,15 +244,8 @@ bool ChatHandler::HandleSendItemsCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleSendMassItemsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleSendMassItemsCommand(char* args)
 {
-    // format: racemask "subject text" "mail text" item1[:count1] item2[:count2] ... item12[:count12]
 
     uint32 raceMask = 0;
     char const* name = nullptr;
@@ -314,10 +255,8 @@ bool ChatHandler::HandleSendMassItemsCommand(char* args)
         return false;
     }
 
-    // need dynamic object because it trasfered to mass mailer
     MailDraft* draft = new MailDraft;
 
-    // fill mail
     if (!HandleSendItemsHelper(*draft, args))
     {
         delete draft;
@@ -332,15 +271,8 @@ bool ChatHandler::HandleSendMassItemsCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleSendMoneyHelper command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleSendMoneyHelper(MailDraft& draft, char* args)
 {
-    /// format: "subject text" "mail text" money
 
     char* msgSubject = ExtractQuotedArg(&args);
     if (!msgSubject)
@@ -365,24 +297,16 @@ bool ChatHandler::HandleSendMoneyHelper(MailDraft& draft, char* args)
         return false;
     }
 
-    // msgSubject, msgText isn't NUL after prev. check
     draft.SetSubjectAndBody(msgSubject, msgText).SetMoney(money);
 
     return true;
 }
 
-/**
- * @brief Handler for HandleSendMoneyCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleSendMoneyCommand(char* args)
 {
-    /// format: name "subject text" "mail text" money
 
     Player* receiver;
-    ObjectGuid receiver_guid;
+    ObjectGuid receiver_guid = 0;
     std::string receiver_name;
     if (!ExtractPlayerTarget(&args, &receiver, &receiver_guid, &receiver_name))
     {
@@ -391,7 +315,6 @@ bool ChatHandler::HandleSendMoneyCommand(char* args)
 
     MailDraft draft;
 
-    // fill mail
     if (!HandleSendMoneyHelper(draft, args))
     {
         return false;
@@ -406,15 +329,8 @@ bool ChatHandler::HandleSendMoneyCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleSendMassMoneyCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleSendMassMoneyCommand(char* args)
 {
-    /// format: raceMask "subject text" "mail text" money
 
     uint32 raceMask = 0;
     char const* name = nullptr;
@@ -424,17 +340,14 @@ bool ChatHandler::HandleSendMassMoneyCommand(char* args)
         return false;
     }
 
-    // need dynamic object because it trasfered to mass mailer
     MailDraft* draft = new MailDraft;
 
-    // fill mail
     if (!HandleSendMoneyHelper(*draft, args))
     {
         delete draft;
         return false;
     }
 
-    // from console show nonexistent sender
     MailSender sender(MAIL_NORMAL, (uint32)0, MAIL_STATIONERY_GM);
 
     sMassMailMgr.AddMassMailTask(draft, sender, raceMask);

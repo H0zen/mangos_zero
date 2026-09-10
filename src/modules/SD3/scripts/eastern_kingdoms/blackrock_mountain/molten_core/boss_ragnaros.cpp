@@ -117,7 +117,7 @@ struct boss_ragnaros : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (!pVictim->IsPlayer())
+            if (!IsPlayer(pVictim))
             {
                 return;
             }
@@ -140,7 +140,7 @@ struct boss_ragnaros : public CreatureScript
 
         void Aggro(Unit* pWho) override
         {
-            if (pWho->IsCreature() && pWho->GetEntry() == NPC_MAJORDOMO)
+            if (IsCreature(pWho) && pWho->GetEntry() == NPC_MAJORDOMO)
             {
                 return;
             }
@@ -204,7 +204,7 @@ struct boss_ragnaros : public CreatureScript
         void SpellHitTarget(Unit* pTarget, const SpellEntry* pSpell) override
         {
             // As Majordomo is now killed, the last timer (until attacking) must be handled with ragnaros script
-            if (SD3_SpellId(pSpell) == SPELL_ELEMENTAL_FIRE_KILL && pTarget->IsCreature() && pTarget->GetEntry() == NPC_MAJORDOMO)
+            if (SD3_SpellId(pSpell) == SPELL_ELEMENTAL_FIRE_KILL &&IsCreature(pTarget) && pTarget->GetEntry() == NPC_MAJORDOMO)
             {
                 m_uiEnterCombatTimer = 10000;
             }

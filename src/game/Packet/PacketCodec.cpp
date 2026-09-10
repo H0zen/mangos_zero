@@ -54,7 +54,7 @@ namespace proto
 
         while (offset < len)
         {
-            // ---- Phase 1: collect and decode the fixed-size header -------------
+
             if (!m_haveHeader)
             {
                 const size_t want = CLIENT_HEADER_SIZE - m_headerFill;
@@ -66,28 +66,20 @@ namespace proto
 
                 if (m_headerFill < CLIENT_HEADER_SIZE)
                 {
-                    return DecodeStatus::Ok; // header still incomplete
+                    return DecodeStatus::Ok;
                 }
 
-                // Decrypt exactly once, now that all six bytes are in hand. Doing
-                // it per-fragment would corrupt the stream cipher's keystream.
                 if (m_decryptor)
                 {
                     m_decryptor(m_header, CLIENT_HEADER_SIZE);
                 }
 
-                // Read the fields out byte by byte rather than casting the buffer
-                // to a packed struct: the size is big-endian and the opcode little-
-                // endian, so a struct needs a byte-swap dance anyway, and the cast
-                // itself is an aliasing violation on a char buffer.
                 const uint32 size = (uint32(m_header[0]) << 8) | uint32(m_header[1]);
                 const uint32 cmd  =  uint32(m_header[2])
                                   | (uint32(m_header[3]) << 8)
                                   | (uint32(m_header[4]) << 16)
                                   | (uint32(m_header[5]) << 24);
 
-                // `size` counts the four opcode bytes, so anything below that is
-                // impossible and would underflow the payload length below.
                 if (size < 4 || size > MAX_CLIENT_PACKET_SIZE
                     || cmd > MAX_CLIENT_PACKET_SIZE)
                 {
@@ -102,13 +94,12 @@ namespace proto
                 m_payload.reserve(m_payloadNeeded);
             }
 
-            // ---- Phase 2: collect the payload ---------------------------------
             if (m_payloadNeeded > 0)
             {
                 const size_t take = std::min(size_t(m_payloadNeeded), len - offset);
                 if (take == 0)
                 {
-                    return DecodeStatus::Ok; // need more bytes
+                    return DecodeStatus::Ok;
                 }
 
                 m_payload.insert(m_payload.end(), data + offset, data + offset + take);
@@ -117,11 +108,10 @@ namespace proto
 
                 if (m_payloadNeeded > 0)
                 {
-                    return DecodeStatus::Ok; // payload still incomplete
+                    return DecodeStatus::Ok;
                 }
             }
 
-            // ---- Phase 3: emit and reset for the next packet ------------------
             WorldPacket packet(m_opcode, m_payload.size());
             if (!m_payload.empty())
             {
@@ -140,13 +130,9 @@ namespace proto
     std::vector<uint8> PacketCodec::Encode(const WorldPacket& packet,
                                            const HeaderEncryptor& encryptor)
     {
-        // The size field counts the two opcode bytes along with the payload.
+
         const uint32 size = uint32(packet.size()) + 2;
 
-        // THE SERVER HEADER IS EXPANSION-SPECIFIC. The three-byte size, marked by
-        // 0x80 in the first byte, arrives in WotLK. A 1.12 or 2.4.3 client reads a
-        // fixed four-byte header, so meeting a five-byte one desynchronises the
-        // stream permanently -- it is not a packet it can skip.
         const bool large = false;
         (void)large;
 
@@ -173,8 +159,6 @@ namespace proto
         wire.reserve(headerLen + packet.size());
         wire.insert(wire.end(), header, header + headerLen);
 
-        // contents() is only safe on a non-empty buffer; many packets are pure
-        // opcodes with no payload at all.
         if (!packet.empty())
         {
             wire.insert(wire.end(), packet.contents(),

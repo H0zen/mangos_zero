@@ -59,7 +59,7 @@ struct boss_baroness_anastari : public CreatureScript
         uint32 m_uiPossessTimer;
         uint32 m_uiPossessEndTimer;
 
-        ObjectGuid m_possessedPlayer;
+        ObjectGuid m_possessedPlayer = 0;
 
         void Reset() override
         {

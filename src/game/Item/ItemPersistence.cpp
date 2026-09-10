@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <sstream>
 #include <string>
 #include "Item.h"
@@ -35,14 +33,6 @@
 #include "ItemEnchantmentMgr.h"
 #include "SQLStorages.h"
 
-/**
- * @brief Initializes a new item with prototype and owner data.
- *
- * @param guidlow The low GUID for the item.
- * @param itemid The item entry identifier.
- * @param owner The initial owner.
- * @return true if creation succeeded; otherwise, false.
- */
 bool Item::Create(uint32 guidlow, uint32 itemid, Player const* owner)
 {
     Object::_Create(guidlow, 0, HIGHGUID_ITEM);
@@ -50,8 +40,8 @@ bool Item::Create(uint32 guidlow, uint32 itemid, Player const* owner)
     SetEntry(itemid);
     SetObjectScale(DEFAULT_OBJECT_SCALE);
 
-    SetGuidValue(ITEM_FIELD_OWNER, owner ? owner->GetObjectGuid() : ObjectGuid());
-    SetGuidValue(ITEM_FIELD_CONTAINED, ObjectGuid());
+    SetGuidValue(ITEM_FIELD_OWNER, owner ? owner->GetObjectGuid() : 0);
+    SetGuidValue(ITEM_FIELD_CONTAINED, 0);
 
     ItemPrototype const* itemProto = ObjectMgr::GetItemPrototype(itemid);
     if (!itemProto)
@@ -73,11 +63,6 @@ bool Item::Create(uint32 guidlow, uint32 itemid, Player const* owner)
     return true;
 }
 
-/**
- * @brief Checks whether this item is a bag that still contains items.
- *
- * @return true if the item is a non-empty bag; otherwise, false.
- */
 bool Item::IsNotEmptyBag() const
 {
     if (Bag const* bag = ToBag())
@@ -87,9 +72,6 @@ bool Item::IsNotEmptyBag() const
     return false;
 }
 
-/**
- * @brief Persists the item instance and saved loot state to the database.
- */
 void Item::SaveToDB()
 {
     uint32 guid = GetGUIDLow();
@@ -104,7 +86,7 @@ void Item::SaveToDB()
             stmt.PExecute(guid);
 
             stmt = CharacterDatabase.CreateStatement(insItem, "INSERT INTO `item_instance` (`guid`,`owner_guid`,`data`,`text`) VALUES (?, ?, ?, ?)");
-            stmt.PExecute(guid, GetOwnerGuid().GetCounter(), SaveFields(0, GetValuesCount()).c_str(), m_text.c_str());
+            stmt.PExecute(guid, GuidCounter(GetOwnerGuid()), SaveFields(0, GetValuesCount()).c_str(), m_text.c_str());
         } break;
         case ITEM_CHANGED:
         {
@@ -115,12 +97,12 @@ void Item::SaveToDB()
 
             SqlStatement stmt = CharacterDatabase.CreateStatement(updInstance, "UPDATE `item_instance` SET `data` = ?, `owner_guid` = ?, `text` = ? WHERE `guid` = ?");
 
-            stmt.PExecute(SaveFields(0, GetValuesCount()).c_str(), GetOwnerGuid().GetCounter(), m_text.c_str(), guid);
+            stmt.PExecute(SaveFields(0, GetValuesCount()).c_str(), GuidCounter(GetOwnerGuid()), m_text.c_str(), guid);
 
             if (HasItemFlag(ITEM_DYNFLAG_WRAPPED))
             {
                 stmt = CharacterDatabase.CreateStatement(updGifts, "UPDATE `character_gifts` SET `guid` = ? WHERE `item_guid` = ?");
-                stmt.PExecute(GetOwnerGuid().GetCounter(), GetGUIDLow());
+                stmt.PExecute(GuidCounter(GetOwnerGuid()), GetGUIDLow());
             }
         } break;
         case ITEM_REMOVED:
@@ -166,7 +148,6 @@ void Item::SaveToDB()
             static SqlStatementID saveGold ;
             static SqlStatementID saveLoot ;
 
-            // save money as 0 itemid data
             if (loot.gold)
             {
                 SqlStatement stmt = CharacterDatabase.CreateStatement(saveGold, "INSERT INTO `item_loot` (`guid`,`owner_guid`,`itemid`,`amount`,`property`) VALUES (?, ?, 0, ?, 0)");
@@ -175,7 +156,6 @@ void Item::SaveToDB()
 
             SqlStatement stmt = CharacterDatabase.CreateStatement(saveLoot, "INSERT INTO `item_loot` (`guid`,`owner_guid`,`itemid`,`amount`,`property`) VALUES (?, ?, ?, ?, ?)");
 
-            // save items and quest items (at load its all will added as normal, but this not important for item loot case)
             for (size_t i = 0; i < loot.GetMaxSlotInLootFor(owner); ++i)
             {
                 QuestItem* qitem = nullptr;
@@ -186,7 +166,6 @@ void Item::SaveToDB()
                     continue;
                 }
 
-                // questitems use the blocked field for other purposes
                 if (!qitem && item->is_blocked)
                 {
                     continue;
@@ -211,18 +190,9 @@ void Item::SaveToDB()
     SetState(ITEM_UNCHANGED);
 }
 
-/**
- * @brief Loads an item instance from database fields.
- *
- * @param guidLow The low GUID of the item.
- * @param fields The database row fields.
- * @param ownerGuid The expected owner GUID.
- * @return true if the item loaded successfully; otherwise, false.
- */
 bool Item::LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid)
 {
-    // create item before any checks for store correct guid
-    // and allow use "FSetState(ITEM_REMOVED); SaveToDB();" for deleting item from DB
+
     Object::_Create(guidLow, 0, HIGHGUID_ITEM);
 
     if (!LoadFields(fields[0].GetString(), 0, GetValuesCount()))
@@ -233,10 +203,9 @@ bool Item::LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid)
 
     SetText(fields[1].GetCppString());
 
-    bool need_save = false;                                 // need explicit save data at load fixes
+    bool need_save = false;
 
-    // overwrite possible wrong/corrupted guid
-    ObjectGuid new_item_guid = ObjectGuid(HIGHGUID_ITEM, guidLow);
+    ObjectGuid new_item_guid = MakeGuid(HIGHGUID_ITEM, guidLow);
     if (GetGuidValue(OBJECT_FIELD_GUID) != new_item_guid)
     {
         SetGuidValue(OBJECT_FIELD_GUID, new_item_guid);
@@ -249,7 +218,6 @@ bool Item::LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid)
         return false;
     }
 
-    // update max durability (and durability) if need
     if (proto->MaxDurability != GetUInt32Value(ITEM_FIELD_MAXDURABILITY))
     {
         SetUInt32Value(ITEM_FIELD_MAXDURABILITY, proto->MaxDurability);
@@ -261,31 +229,27 @@ bool Item::LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid)
         need_save = true;
     }
 
-    // Remove bind flag for items vs NO_BIND set
     if (IsSoulBound() && proto->Bonding == NO_BIND)
     {
         ApplyItemFlag(ITEM_DYNFLAG_BINDED, false);
         need_save = true;
     }
 
-    // update duration if need, and remove if not need
     if ((proto->Duration == 0) != (GetUInt32Value(ITEM_FIELD_DURATION) == 0))
     {
         SetUInt32Value(ITEM_FIELD_DURATION, proto->Duration);
         need_save = true;
     }
 
-    // set correct owner
     if (ownerGuid && GetOwnerGuid() != ownerGuid)
     {
         SetOwnerGuid(ownerGuid);
         need_save = true;
     }
 
-    // set correct wrapped state
     if (HasItemFlag(ITEM_DYNFLAG_WRAPPED))
     {
-        // wrapped item must be wrapper (used version that not stackable)
+
         if (!(proto->Flags & ITEM_FLAG_WRAPPER) || GetMaxStackCount() > 1)
         {
             RemoveItemFlag(ITEM_DYNFLAG_WRAPPED);
@@ -293,20 +257,19 @@ bool Item::LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid)
 
             static SqlStatementID delGifts ;
 
-            // also cleanup for sure gift table
             SqlStatement stmt = CharacterDatabase.CreateStatement(delGifts, "DELETE FROM `character_gifts` WHERE `item_guid` = ?");
             stmt.PExecute(GetGUIDLow());
         }
     }
 
-    if (need_save)                                          // normal item changed state set not work at loading
+    if (need_save)
     {
         static SqlStatementID updItem ;
 
         SqlStatement stmt = CharacterDatabase.CreateStatement(updItem, "UPDATE `item_instance` SET `data` = ?, `owner_guid` = ? WHERE `guid` = ?");
 
         stmt.addString(SaveFields(0, GetValuesCount()));
-        stmt.addUInt32(GetOwnerGuid().GetCounter());
+        stmt.addUInt32(GuidCounter(GetOwnerGuid()));
         stmt.addUInt32(guidLow);
         stmt.Execute();
     }
@@ -314,18 +277,12 @@ bool Item::LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid)
     return true;
 }
 
-/**
- * @brief Loads persisted item loot data from the database.
- *
- * @param fields The loot database row fields.
- */
 void Item::LoadLootFromDB(Field* fields)
 {
     uint32 item_id     = fields[1].GetUInt32();
     uint32 item_amount = fields[2].GetUInt32();
     int32  item_propid = fields[3].GetInt32();
 
-    // money value special case
     if (item_id == 0)
     {
         loot.gold = item_amount;
@@ -333,13 +290,12 @@ void Item::LoadLootFromDB(Field* fields)
         return;
     }
 
-    // normal item case
     ItemPrototype const* proto = ObjectMgr::GetItemPrototype(item_id);
 
     if (!proto)
     {
         CharacterDatabase.PExecute("DELETE FROM `item_loot` WHERE `guid` = '%u' AND `itemid` = '%u'", GetGUIDLow(), item_id);
-        sLog.outError("Item::LoadLootFromDB: %s has an unknown item (id: #%u) in item_loot, deleted.", GetOwnerGuid().GetString().c_str(), item_id);
+        sLog.outError("Item::LoadLootFromDB: %s has an unknown item (id: #%u) in item_loot, deleted.", GuidString(GetOwnerGuid()).c_str(), item_id);
         return;
     }
 
@@ -349,9 +305,6 @@ void Item::LoadLootFromDB(Field* fields)
     SetLootState(ITEM_LOOT_UNCHANGED);
 }
 
-/**
- * @brief Deletes the item instance record from the database.
- */
 void Item::DeleteFromDB()
 {
     static SqlStatementID delItem ;
@@ -360,9 +313,6 @@ void Item::DeleteFromDB()
     stmt.PExecute(GetGUIDLow());
 }
 
-/**
- * @brief Deletes the character inventory link for this item.
- */
 void Item::DeleteFromInventoryDB()
 {
     static SqlStatementID delInv ;

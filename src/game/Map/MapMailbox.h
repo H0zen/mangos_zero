@@ -35,29 +35,16 @@
 
 class WorldSession;
 
-/**
- * @brief The packets one map owes its own tick.
- *
- * Filled in the serial phase, where World::UpdateSessions routes each map-bound
- * opcode here. Emptied in the parallel phase by the owning map alone. The phases
- * do not overlap, which is why there is no mutex.
- *
- * A posted packet is not a promise that it runs: the serial phase continues
- * after the post and may teleport the player, log him out or destroy him, so
- * each entry carries the guid it was posted for and the drain re-checks it.
- */
 class MapMailbox
 {
     public:
 
         struct Entry
         {
-            /// Valid for the tick: sessions die only in the serial phase,
-            /// which has finished before any map drains.
+
             WorldSession* session = nullptr;
 
-            /// Who the packet was posted for. Re-checked at the drain.
-            ObjectGuid player;
+            ObjectGuid player = 0;
 
             std::unique_ptr<WorldPacket> packet;
         };
@@ -67,18 +54,14 @@ class MapMailbox
         MapMailbox(const MapMailbox&) = delete;
         MapMailbox& operator=(const MapMailbox&) = delete;
 
-        /// Serial phase only.
         void Post(WorldSession* session, ObjectGuid player,
                   std::unique_ptr<WorldPacket> packet)
         {
-            // Posting mid-drain would read and write this queue from the
-            // parallel phase, which is what the phase boundary stands in for.
+
             MANGOS_ASSERT(!m_draining);
             m_pending.push_back(Entry{ session, player, std::move(packet) });
         }
 
-        /// Parallel phase only. Hands over the tick's packets and leaves the
-        /// mailbox empty, so a later post queues for the next tick.
         std::vector<Entry> Take()
         {
             m_draining = true;

@@ -23,26 +23,10 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/// \addtogroup u2w
-/// @{
-/// \file
-
 #pragma once
 
 #include "Platform/Define.h"
 
-/**
- * This is a list of Opcodes that are known for the client/server communication, it is used
- * to tell the server to do something or the client to do something. Every opcode is handled
- * in some way, and you can find what functions handle what opcode in the implementation of
- * \ref Opcodes::BuildOpcodeList
- *
- * To send messages the following functions can be used: \ref Broadcast,
- * \ref BroadcastExcept, \ref BroadcastWithin
- *
- * \see WorldPacket
- * \todo Replace the Pack GUID part with a packed GUID, ie: it's shorter than usual?
- */
 enum OpcodesList
 {
     MSG_NULL_ACTION                                 = 0x000,
@@ -481,7 +465,7 @@ enum OpcodesList
     SMSG_TRAINER_LIST                               = 0x1B1,
     CMSG_TRAINER_BUY_SPELL                          = 0x1B2,
     SMSG_TRAINER_BUY_SUCCEEDED                      = 0x1B3,
-    SMSG_TRAINER_BUY_FAILED                         = 0x1B4,// uint64, uint32, uint32 (0...2)
+    SMSG_TRAINER_BUY_FAILED                         = 0x1B4,
     CMSG_BINDER_ACTIVATE                            = 0x1B5,
     SMSG_PLAYERBINDERROR                            = 0x1B6,
     CMSG_BANKER_ACTIVATE                            = 0x1B7,
@@ -515,7 +499,7 @@ enum OpcodesList
     CMSG_WRAP_ITEM                                  = 0x1D3,
     SMSG_LEVELUP_INFO                               = 0x1D4,
     MSG_MINIMAP_PING                                = 0x1D5,
-    SMSG_RESISTLOG                                  = 0x1D6,// GUID, GUID, int32, float, float, int32, int32
+    SMSG_RESISTLOG                                  = 0x1D6,
     SMSG_ENCHANTMENTLOG                             = 0x1D7,
     CMSG_SET_SKILL_CHEAT                            = 0x1D8,
     SMSG_START_MIRROR_TIMER                         = 0x1D9,
@@ -703,7 +687,7 @@ enum OpcodesList
     CMSG_GROUP_ASSISTANT_LEADER                     = 0x28F,
     CMSG_BUYBACK_ITEM                               = 0x290,
     SMSG_SERVER_MESSAGE                             = 0x291,
-    CMSG_MEETINGSTONE_JOIN                          = 0x292,// lua: SetSavedInstanceExtend
+    CMSG_MEETINGSTONE_JOIN                          = 0x292,
     CMSG_MEETINGSTONE_LEAVE                         = 0x293,
     CMSG_MEETINGSTONE_CHEAT                         = 0x294,
     SMSG_MEETINGSTONE_SETQUEUE                      = 0x295,
@@ -872,13 +856,13 @@ enum OpcodesList
     SMSG_CHARACTER_PROFILE_REALM_CONNECTED          = 0x339,
     SMSG_DEFENSE_MESSAGE                            = 0x33A,
     MSG_GM_RESETINSTANCELIMIT                       = 0x33C,
-    // SMSG_MOTD                                       = 0x33D,
+
     SMSG_MOVE_SET_FLIGHT                            = 0x33E,
     SMSG_MOVE_UNSET_FLIGHT                          = 0x33F,
     CMSG_MOVE_FLIGHT_ACK                            = 0x340,
     MSG_MOVE_START_SWIM_CHEAT                       = 0x341,
     MSG_MOVE_STOP_SWIM_CHEAT                        = 0x342,
-    // [-ZERO] Last existed in 1.12.1 opcode, maybe some renumbering from other side
+
     CMSG_CANCEL_MOUNT_AURA                          = 0x375,
     CMSG_CANCEL_TEMP_ENCHANTMENT                    = 0x379,
     CMSG_MAELSTROM_INVALIDATE_CACHE                 = 0x387,
@@ -954,156 +938,4 @@ enum OpcodesList
     SMSG_SUMMON_CANCEL                              = 0x423
 };
 
-// Don't forget to change this value and add opcode metadata to OpcodeTable.cpp when you add a new opcode!
 #define NUM_MSG_TYPES 0x424
-
-/**
- * \var OpcodesList::SMSG_PERIODICAURALOG
- * This opcode is used to send data for the combat log when you receive either periodic damage or
- * buffs from a \ref Aura in some way, ie  you gain 10 life every second, you increase your regen
- * of power or something along those lines. The data that needs to be sent is a little different
- * depending on the \ref Modifier for the \ref Aura, what should always be included though is:
- * - The victims Pack GUID (see \ref Object::GetPackGUID)
- * - The casting \ref Player s Pack GUID (see \ref Object::GetPackGUID)
- * - The spellid for the \ref Aura (see \ref Aura::GetId) as a \ref uint32
- * - A 1 as a \ref uint32 this is the count of something (what)
- * - The id of the aura see \ref Modifier::m_auraname as a \ref uint32
- *
- * Now comes different parts depending on what value the \ref Modifier::m_auraname has, if it
- * is \ref AuraType::SPELL_AURA_PERIODIC_DAMAGE or
- * \ref AuraType::SPELL_AURA_PERIODIC_DAMAGE_PERCENT then this is sent:
- * - Damage done as a \ref uint32 from \ref SpellPeriodicAuraLogInfo::damage
- * - The \ref SpellSchools of the \ref SpellEntry for the \ref Aura as a \ref uint32 (see
- * \ref SpellEntry::School)
- * - How much that was absorbed as a \ref uint32
- * - How mcuh that was resisted as a \ref uint32
- *
- * If the \ref Modifier::m_auraname has one of the values of:
- * \ref AuraType::SPELL_AURA_PERIODIC_HEAL or \ref AuraType::SPELL_AURA_OBS_MOD_HEALTH then
- * this should be sent:
- * - Damage/healing (in this case) done as a \ref uint32
- *
- * If the \ref Modifier::m_auraname has one of the values of:
- * \ref AuraType::SPELL_AURA_OBS_MOD_MANA or \ref AuraType::SPELL_AURA_PERIODIC_ENERGIZE then
- * this should be sent:
- * - The \ref Modifier::m_miscvalue as a \ref uint32, in this case it's a power type from the
- * \ref Powers
- * - The damage/mana earned (in this case) as a \ref uint32
- *
- * If the \ref Modifier::m_auraname has one of the values of:
- * \ref AuraType::SPELL_AURA_PERIODIC_MANA_LEECH then this should be sent:
- * - The \ref Modifier::m_miscvalue as a \ref uint32, in this case it's a power type from the
- * \ref Powers
- * - The damage/amount of mana drained (in this case) as a \ref uint32
- * - The gain multiplier as a \ref float from the which probably increases how much power was
- * drained
- *
- * To not create this packet and send it all the time you need it you can use
- * \ref Unit::SendPeriodicAuraLog
- *
- * Also, this should be sent with \ref Broadcast so that all nearby (in
- * the same \ref Cell) \ref Player s get the information. To do this with an \ref Aura
- * one could use \ref Aura::GetTarget and then use the \ref Broadcast
- * \todo Is it actually for the combat log?
- * \todo Is it in the same \ref Cell?
- * \todo What is the count that is sent as a uint32?
- * \todo Document the multiplier in some way?
- */
-
-/**
- * \var OpcodesList::SMSG_SPELLNONMELEEDAMAGELOG
- * This opcode is used to send data for the combat log when you damage someone with a non melee
- * spell, ie frostbolt.
- * The data that needs to be sent is the following in the same order:
- * - The victims Pack GUID (see \ref Object::GetPackGUID)
- * - The \ref Player s Pack GUID (see \ref Object::GetPackGUID)
- * - Id of the spell that was used as a \ref uint32
- * - The amount of damage that was done (not including resisted damage etc) as a \ref uint32
- * - The \ref SpellSchoolMask of the \ref Spell as a \ref uint8, should be from the representation
- * in \ref SpellSchools though, to do this one can use \ref GetFirstSchoolInMask
- * - The amount of absorbed damage as a \ref uint32
- * - The amount of resisted damage as a \ref uint32
- * - A \ref uint8 which if it is 1 shows the spell name for the client, ie: "%s's ranged shot
- * hit %s for %d damage" (taken from source) and if it's 0 no message is shown
- * - A \ref uint8 value that seems to be unused
- * - The amount of blocked damage as a \ref uint32
- * - The \ref HitInfo as a \ref uint32 which tells what happened it would seem
- * - A \ref uint8 that's usually 0 and is used as a flag to use extended data (taken from source)
- *
- * To not create this packet and send it all the time you need it you can use
- * \ref Unit::SendSpellNonMeleeDamageLog
- *
- * Also, this should be sent with \ref Broadcast so that all nearby (in
- * the same \ref Cell) \ref Player s get the information.
- * \todo Is it actually for the combat log?
- * \todo Is it in the same \ref Cell?
- */
-
-/**
- * \var OpcodesList::SMSG_SPELLENERGIZELOG
- * This opcode is used to send data for the combat log when you gain energy in some way.
- * The data that needs to be sent is the following in the same order:
- * - The victims Pack GUID (see \ref Object::GetPackGUID)
- * - The \ref Player s Pack GUID (see \ref Object::GetPackGUID)
- * - the spellid as a \ref uint32
- * - the powertype as a \ref uint32, see \ref Powers for the available power types
- * - the damage or in this case gain as a \ref uint32
- *
- * To not create this packet and send it all the time you need it you can use
- * \ref Unit::SendEnergizeSpellLog
- * Also, this should be sent with \ref Broadcast so that all nearby (in
- * the same \ref Cell) \ref Player s get the information.
- * \todo Is it actually for the combat log?
- * \todo Is it in the same \ref Cell?
- */
-
-/**
- * \var OpcodesList::SMSG_SPELLHEALLOG
- * This opcode is used to send data for the combat log when healing is done. The data
- * that needs to be sent is the following in the same order:
- * - The victims Pack GUID (see \ref Object::GetPackGUID)
- * - The \ref Player s Pack GUID (see \ref Object::GetPackGUID)
- * - The spellid as a \ref uint32
- * - The damage/healing done as a \ref uint32
- * - If it was critical or not as a \ref uint8 (1 meaning critical, 0 meaning normal)
- * - And a \ref uint8 with the value 0 which doesn't seem to be used in the client
- *
- * To not create this packet and send it all the time you need it you can use
- * \ref Unit::SendHealSpellLog
- * Also, this should be sent with \ref Broadcast so that all nearby (in
- * the same \ref Cell) \ref Player s get the information.
- * \todo Is it actually for the combat log?
- * \todo Is it in the same \ref Cell?
- */
-
-/**
- * \var OpcodesList::SMSG_ATTACKERSTATEUPDATE
- * This opcode is used to send information about a recent hit, who it hit, how
- * much damage it did and so forth. See the \ref CalcDamageInfo structure for more
- * info on what will be sent. The data that needs to be sent is the following in
- * the same order:
- * - The \ref CalcDamageInfo::HitInfo as a \ref uint32
- * - The \ref Unit s Pack GUID (see \ref Object::GetPackGUID)
- * - The targets Pack GUID (see \ref Object::GetPackGUID)
- * - The full damage that was done as a \ref uint32
- * - A 1 as a \ref uint8, this acts as the subdamage count (could it be higher?)
- * - A \ref uint32 of \code{.cpp} GetFirstSchoolInMask(damageInfo->damageSchoolMask) \endcode
- * Need to find out what this does
- * - A float representation of the damage (seen as sub damage from comments)
- * - A \ref uint32 representation of the same damage
- * - A \ref uint32 representation of how much was absorbed (see \ref CalcDamageInfo::absorb)
- * - A \ref uint32 representation of how much was resisted (see \ref CalcDamageInfo::resist)
- * - The targets state as a \ref uint32 (see \ref CalcDamageInfo::TargetState)
- * - If the absorbed part is zero add a 0 as an \ref uint32 otherwise add a -1 as an \ref uint32
- * - The spell id as a \ref uint32 if a spell was used, although in
- * \ref Unit::SendAttackStateUpdate it is always 0.
- * - The blocked amount as a \ref uint32 (see \ref CalcDamageInfo::blocked_amount) this is
- * normally \ref HitInfo::HITINFO_NOACTION according to comments in \ref Unit::SendAttackStateUpdate
- *
- * It appears this should also be sent with \ref Broadcast to that all nearby (in
- * the same \ref Cell) \ref Player s can get take part of the info
- * \see VictimState
- * \todo Is this correct? Is it really about a recent hit?
- */
-
-/// @}

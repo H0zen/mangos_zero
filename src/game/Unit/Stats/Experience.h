@@ -29,18 +29,9 @@
 
 class Unit;
 
-/**
- * What a kill is worth, worked out and nothing else.
- *
- * Everything above `QuarryOf` is a function of numbers: a level, another level, a rate. It
- * reads no unit and no configuration, which is what lets the curve be checked against the
- * client's own tables without a world to check it in.
- *
- * `QuarryOf` is the one line that crosses: it reads a victim and answers with values.
- */
 namespace xp
 {
-    /// The level below which a victim is worth nothing at all.
+
     inline uint32 GreyLevel(uint32 level)
     {
         if (level <= 5)
@@ -53,8 +44,6 @@ namespace xp
             return level - 5 - level / 10;
         }
 
-        // Sixty is named on its own because the curve below it would give 47, and the game
-        // greys at 51.
         if (level == 60)
         {
             return 51;
@@ -63,8 +52,6 @@ namespace xp
         return level - 1 - level / 5;
     }
 
-    /// How far below a killer a victim may be before it is worth nothing. The bands widen
-    /// with level, which is why a level 10 kill greys out faster than a level 50 one.
     inline uint32 ZeroDifference(uint32 level)
     {
         if (level < 8)  { return 5; }
@@ -82,7 +69,6 @@ namespace xp
         return 17;
     }
 
-    /// The colour the client draws a victim's level in, which is the same judgement.
     enum class Colour
     {
         Red,
@@ -117,12 +103,6 @@ namespace xp
         return Colour::Grey;
     }
 
-    /**
-     * @brief The experience a victim of that level is worth before anything is applied.
-     *
-     * Above the killer's level the reward rises with the gap and stops rising after four
-     * levels. Below it, the reward falls away to nothing at the grey line.
-     */
     inline uint32 BaseFromKill(uint32 killerLevel, uint32 victimLevel)
     {
         const uint32 base = 45;
@@ -148,19 +128,15 @@ namespace xp
         return 0;
     }
 
-    /// What was killed, in the terms the reward is worked out from.
     struct Quarry
     {
         uint32 level = 1;
 
-        /// An elite is worth twice an ordinary thing of its level.
         bool elite = false;
 
-        /// A totem, a pet, and anything its row marks as giving nothing.
         bool worthNothing = false;
     };
 
-    /// The whole reward for one kill, at the rate this server pays.
     inline uint32 FromKill(uint32 killerLevel, Quarry const& quarry, float rate)
     {
         if (quarry.worthNothing)
@@ -182,12 +158,11 @@ namespace xp
         return uint32(gained * rate);
     }
 
-    /// How a party's share rises with its size. A raid shares evenly, for now.
     inline float GroupShare(uint32 count, bool isRaid)
     {
         if (isRaid)
         {
-            // FIX ME: must apply decrease modifiers dependent from raid size
+
             return 1.0f;
         }
 
@@ -203,6 +178,5 @@ namespace xp
         }
     }
 
-    /// Read a victim into the values above. The one function here that touches the world.
     Quarry QuarryOf(Unit const& victim);
 }

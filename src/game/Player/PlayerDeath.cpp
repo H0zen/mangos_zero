@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Utilities/Errors.h"
 #include "Player.h"
 #include "Reclaim.h"
@@ -76,39 +74,25 @@
 #include <cmath>
 #include "Corpse.h"
 
-// corpse reclaim times
-
-
-
-/** Preconditions:
- *  - a resurrectable corpse must not be loaded for the player (only bones)
- *  - the player must be in world
- */
 void Player::BuildPlayerRepop()
 {
     if (getRace() == RACE_NIGHTELF)
     {
-        CastSpell(this, 20584, true); // auras SPELL_AURA_INCREASE_SPEED(+speed in wisp form), SPELL_AURA_INCREASE_SWIM_SPEED(+swim speed in wisp form), SPELL_AURA_TRANSFORM (to wisp form)
+        CastSpell(this, 20584, true);
     }
-    CastSpell(this, 8326, true);                            // auras SPELL_AURA_GHOST, SPELL_AURA_INCREASE_SPEED(why?), SPELL_AURA_INCREASE_SWIM_SPEED(why?)
+    CastSpell(this, 8326, true);
 
-    // the player can not have a corpse already, only bones which are not returned by GetCorpse
     if (GetCorpse())
     {
         sLog.outError("BuildPlayerRepop: player %s(%d) already has a corpse", GetName(), GetGUIDLow());
         MANGOS_ASSERT(false);
     }
 
-    // NO BODY IS EVER LEFT ON A SHIP. She is a map that sails away, and her grids are pinned
-    // for as long as the server runs, so a corpse aboard is one nobody can walk back to and
-    // nothing will ever unload. Retail agrees: dying on a transport releases you to the
-    // nearest port, alive. RepopAtGraveyard -- which always follows this call -- resurrects
-    // him and finds that port from the vessel's own position.
     Corpse* corpse = nullptr;
 
     if (!GetMap()->AsTransport())
     {
-        // create a corpse and place it at the player's location
+
         corpse = CreateCorpse();
         if (!corpse)
         {
@@ -118,7 +102,6 @@ void Player::BuildPlayerRepop()
         GetMap()->Add(corpse);
     }
 
-    // convert player body to ghost
     SetHealth(1);
 
     SetWaterWalk(true);
@@ -127,47 +110,36 @@ void Player::BuildPlayerRepop()
         SetRoot(false);
     }
 
-    // BG - remove insignia related
     RemoveUnitFlag(UNIT_FLAG_SKINNABLE);
 
     SendCorpseReclaimDelay();
 
-    // to prevent cheating. nullptr when he died aboard a vessel: no corpse is left on a deck
-    // that sails away from it, and RepopAtGraveyard revives him at the port instead.
     if (corpse)
     {
         corpse->ResetGhostTime();
     }
 
-    StopMirrorTimers();                                     // disable timers(bars)
+    StopMirrorTimers();
 
-    // set and clear other
     SetBearing(UNIT_BYTE1_FLAG_ALWAYS_STAND);
 }
 
-/**
- * @brief Restores the player to life and reapplies post-resurrection effects.
- *
- * @param restore_percent The fraction of health and resources to restore.
- * @param applySickness True to apply resurrection sickness when appropriate.
- */
 void Player::ResurrectPlayer(float restore_percent, bool applySickness)
 {
-    // remove death flag + set aura
+
     SetBearing(0x00);
 
     SetDeathState(ALIVE);
 
     if (getRace() == RACE_NIGHTELF)
     {
-        RemoveAuras(20584); // speed bonuses
+        RemoveAuras(20584);
     }
-    RemoveAuras(8326);                            // SPELL_AURA_GHOST
+    RemoveAuras(8326);
 
     SetWaterWalk(false);
     SetRoot(false);
 
-    // set health/powers (0- will be set in caller)
     if (restore_percent > 0.0f)
     {
         SetHealth(uint32(GetMaxHealth()*restore_percent));
@@ -176,36 +148,28 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
         SetPower(POWER_ENERGY, uint32(GetMaxPower(POWER_ENERGY)*restore_percent));
     }
 
-    // trigger update zone for alive state zone updates
     uint32 newzone, newarea;
     GetTerrain()->GetZoneAndAreaId(newzone, newarea, Where().X(), Where().Y(), Where().Z());
     UpdateZone(newzone, newarea);
 
     m_deathTimer = 0;
 
-    // update visibility of world around viewpoint
     m_camera.UpdateVisibilityForOwner();
-    // update visibility of player for nearby cameras
-    UpdateObjectVisibility();
 
+    UpdateObjectVisibility();
 
     if (!applySickness)
     {
         return;
     }
 
-    // Characters from level 1-10 are not affected by resurrection sickness.
-    // Characters from level 11-19 will suffer from one minute of sickness
-    // for each level they are above 10.
-    // Characters level 20 and up suffer from ten minutes of sickness.
     int32 startLevel = sWorld.getConfig(CONFIG_INT32_DEATH_SICKNESS_LEVEL);
 
     if (int32(getLevel()) >= startLevel)
     {
-        // set resurrection sickness
+
         CastSpell(this, SPELL_ID_PASSIVE_RESURRECTION_SICKNESS, true);
 
-        // not full duration
         if (int32(getLevel()) < startLevel + 9)
         {
             int32 delta = (int32(getLevel()) - startLevel + 1) * MINUTE;
@@ -219,40 +183,27 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
     }
 }
 
-/**
- * @brief Transitions the player into the corpse state after death.
- */
 void Player::KillPlayer()
 {
     SetRoot(true);
 
-    StopMirrorTimers();                                     // disable timers(bars)
+    StopMirrorTimers();
 
     SetDeathState(CORPSE);
-    // SetFlag( UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_IN_PVP );
 
     SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
     ShowReleaseTimer(!sMapStore.LookupEntry(GetMapId())->Instanceable());
 
-    // 6 minutes until repop at graveyard
     m_deathTimer = 6 * MINUTE * IN_MILLISECONDS;
 
-    UpdateCorpseReclaimDelay();                             // dependent at use SetDeathPvP() call before kill
+    UpdateCorpseReclaimDelay();
 
-    // don't create corpse at this moment, player might be falling
-
-    // update visibility
     UpdateObjectVisibility();
 }
 
-/**
- * @brief Creates a corpse object for the player's current death state.
- *
- * @return The created corpse, or null if creation failed.
- */
 Corpse* Player::CreateCorpse()
 {
-    // prevent existence 2 corpse for player
+
     SpawnCorpseBones();
 
     Corpse* corpse = new Corpse((m_ExtraFlags & PLAYER_EXTRA_PVP_DEATH) ? CORPSE_RESURRECTABLE_PVP : CORPSE_RESURRECTABLE_PVE);
@@ -290,7 +241,7 @@ Corpse* Player::CreateCorpse()
     }
     if (Battle().InOne())
     {
-        flags |= CORPSE_FLAG_LOOTABLE; // to be able to remove insignia
+        flags |= CORPSE_FLAG_LOOTABLE;
     }
     corpse->SetUInt32Value(CORPSE_FIELD_FLAGS, flags);
 
@@ -313,59 +264,38 @@ Corpse* Player::CreateCorpse()
         }
     }
 
-    // we not need saved corpses for BG/arenas
     if (!GetMap()->IsBattleGround())
     {
         corpse->SaveToDB();
     }
 
-    // register for player, but not show
     sCorpseManager.Add(corpse);
     return corpse;
 }
 
-/**
- * @brief Converts an existing corpse into bones and persists the ghost state if needed.
- */
 void Player::SpawnCorpseBones()
 {
     if (sCorpseManager.ConvertCorpseForPlayer(GetObjectGuid()))
     {
-        if (!GetSession()->PlayerLogoutWithSave())          // at logout we will already store the player
+        if (!GetSession()->PlayerLogoutWithSave())
         {
-            SaveToDB(); // prevent loading as ghost without corpse
+            SaveToDB();
         }
     }
 }
 
-/**
- * @brief Gets the player's current corpse object.
- *
- * @return The player's corpse, or null if none exists.
- */
 Corpse* Player::GetCorpse() const
 {
     return sCorpseManager.FindForPlayer(GetObjectGuid());
 }
 
-/**
- * @brief Moves the player to the nearest valid graveyard.
- */
 void Player::RepopAtGraveyard()
 {
-    // note: this can be called also when the player is alive
-    // for example from WorldSession::HandleMovementOpcodes
 
-    // THE ANCHOR, not the placement. Aboard, this is the map the ship sails and her own
-    // waypoint estimate: a hull carries no area table, so asking the map underfoot yields
-    // zone 0, and a graveyard is ashore in any case.
     uint32 graveMap;
     float graveX, graveY, graveZ;
     GetWorldAnchor(graveMap, graveX, graveY, graveZ);
 
-    // A ship that has sailed is unreachable as a ghost: there is no walking back to a body
-    // aboard one, so he is revived on the spot and put ashore at the nearest port below.
-    // No corpse was left there -- see BuildPlayerRepop.
     if (!IsAlive() && GetMap()->AsTransport())
     {
         ResurrectPlayer(0.5f);
@@ -374,7 +304,6 @@ void Player::RepopAtGraveyard()
 
     WorldSafeLocsEntry const* ClosestGrave = nullptr;
 
-    // Special handle for battleground maps
     if (BattleGround* bg = Battle().Ground())
     {
         ClosestGrave = bg->GetClosestGraveYard(this);
@@ -384,11 +313,8 @@ void Player::RepopAtGraveyard()
         ClosestGrave = sObjectMgr.GetClosestGraveYard(graveX, graveY, graveZ, graveMap, GetTeam());
     }
 
-    // stop countdown until repop
     m_deathTimer = 0;
 
-    // if no grave found, stay at the current location
-    // and don't show spirit healer location
     if (ClosestGrave)
     {
         bool updateVisibility = IsInWorld() && GetMapId() == ClosestGrave->map_id;
@@ -400,13 +326,6 @@ void Player::RepopAtGraveyard()
     }
 }
 
-/**
- * @brief Gets the current corpse reclaim delay for PvE or PvP death.
- *
- * @param pvp True for PvP death rules; false for PvE death rules.
- * @return The reclaim delay in seconds.
- */
-/// Which deaths this server makes climb the ladder.
 static reclaim::Climbs LadderClimbedOn()
 {
     reclaim::Climbs which;
@@ -426,9 +345,6 @@ uint32 Player::GetCorpseReclaimDelay(bool pvp) const
     return reclaim::Wait(reclaim::Rung(time(nullptr), m_deathExpireTime));
 }
 
-/**
- * @brief Advances the corpse reclaim delay escalation after death.
- */
 void Player::UpdateCorpseReclaimDelay()
 {
     const bool pvp = m_ExtraFlags & PLAYER_EXTRA_PVP_DEATH;
@@ -441,11 +357,6 @@ void Player::UpdateCorpseReclaimDelay()
     m_deathExpireTime = reclaim::Climbed(time(nullptr), m_deathExpireTime);
 }
 
-/**
- * @brief Sends the current corpse reclaim delay to the client.
- *
- * @param load True when restoring the delay from saved corpse state.
- */
 void Player::SendCorpseReclaimDelay(bool load)
 {
     Corpse* corpse = GetCorpse();
@@ -464,8 +375,6 @@ void Player::SendCorpseReclaimDelay(bool load)
 
         bool pvp = corpse->GetType() == CORPSE_RESURRECTABLE_PVP;
 
-        // The rung is read from when the body was left, not from now: what he is told must
-        // be the wait that was set on him when he died.
         const uint32 rung = reclaim::Climbing(pvp, LadderClimbedOn())
                           ? reclaim::Rung(corpse->GetGhostTime(), m_deathExpireTime)
                           : 0;
@@ -485,7 +394,6 @@ void Player::SendCorpseReclaimDelay(bool load)
         delay = GetCorpseReclaimDelay(corpse->GetType() == CORPSE_RESURRECTABLE_PVP);
     }
 
-    //! corpse reclaim delay 30 * 1000ms or longer at often deaths
     WorldPacket data(SMSG_CORPSE_RECLAIM_DELAY, 4);
     data << uint32(delay * IN_MILLISECONDS);
     GetSession()->SendPacket(&data);

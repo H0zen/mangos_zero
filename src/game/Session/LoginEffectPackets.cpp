@@ -32,7 +32,7 @@ WorldPacket LoginEffectPackets::BuildCastResult()
 {
     WorldPacket packet(SMSG_CAST_FAILED, 5);
     packet << uint32(SpellId);
-    packet << uint8(0);                                     // successful cast result
+    packet << uint8(0);
     return packet;
 }
 
@@ -42,9 +42,9 @@ WorldPacket LoginEffectPackets::BuildStart(uint64 casterGuid)
     packet.appendPackGUID(casterGuid);
     packet.appendPackGUID(casterGuid);
     packet << uint32(SpellId);
-    packet << uint16(2);                                    // CAST_FLAG_UNKNOWN2
-    packet << uint32(0);                                    // zero cast time
-    packet << uint16(0);                                    // TARGET_FLAG_SELF
+    packet << uint16(2);
+    packet << uint32(0);
+    packet << uint16(0);
     return packet;
 }
 
@@ -54,11 +54,11 @@ WorldPacket LoginEffectPackets::BuildGo(uint64 casterGuid)
     packet.appendPackGUID(casterGuid);
     packet.appendPackGUID(casterGuid);
     packet << uint32(SpellId);
-    packet << uint16(256);                                  // CAST_FLAG_UNKNOWN9
-    packet << uint8(1);                                     // one successful hit
-    packet << uint64(casterGuid);                           // hit target
-    packet << uint8(0);                                     // no miss records
-    packet << uint16(2);                                    // TARGET_FLAG_UNIT
-    packet << uint8(0);                                     // empty packed target GUID
+    packet << uint16(256);
+    packet << uint8(1);
+    packet << uint64(casterGuid);
+    packet << uint8(0);
+    packet << uint16(2);
+    packet << uint8(0);
     return packet;
 }

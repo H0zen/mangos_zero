@@ -33,12 +33,6 @@
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 
-/**
- * @brief Determines whether TotemAI can control the given creature.
- *
- * @param creature The creature being evaluated.
- * @return The AI selection priority for totem creatures.
- */
 int TotemAI::Permissible(const Creature* creature)
 {
     if (creature->IsTotem())
@@ -49,41 +43,20 @@ int TotemAI::Permissible(const Creature* creature)
     return PERMIT_BASE_NO;
 }
 
-/**
- * @brief Initializes a totem AI instance.
- *
- * @param c The creature controlled by this AI.
- */
 TotemAI::TotemAI(Creature* c) : CreatureAI(c)
 {
 }
 
-/**
- * @brief Ignores line-of-sight events for totems.
- *
- * @param The unit entering line of sight.
- */
 void TotemAI::MoveInLineOfSight(Unit*)
 {
 }
 
-/**
- * @brief Stops totem combat when entering evade mode.
- */
 void TotemAI::EnterEvadeMode()
 {
     m_creature->CombatStop(true);
 }
 
-/**
- * @brief Updates active totem behavior.
- *
- * Searches for a valid hostile target within spell range and casts the totem's
- * configured spell when possible.
- *
- * @param diff The elapsed time since the last update in milliseconds.
- */
-void TotemAI::UpdateAI(const uint32 /*diff*/)
+void TotemAI::UpdateAI(const uint32 )
 {
     if (getTotem().GetTotemType() != TOTEM_ACTIVE)
     {
@@ -95,23 +68,17 @@ void TotemAI::UpdateAI(const uint32 /*diff*/)
         return;
     }
 
-    // Search spell
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(getTotem().GetSpell());
     if (!spellInfo)
     {
         return;
     }
 
-    // Get spell rangy
     SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(spellInfo->RangeIndex);
     float max_range = GetSpellMaxRange(srange);
 
-    // SPELLMOD_RANGE not applied in this place just because nonexistent range mods for attacking totems
-
-    // pointer to appropriate target if found any
     Unit* victim = m_creature->GetMap()->GetUnit(i_victimGuid);
 
-    // Search victim if no, not attackable, or out of range, or friendly (possible in case duel end)
     if (!victim ||
         !victim->IsTargetableForAttack() || !InReach(*m_creature, *victim, max_range) ||
         IsFriendly(*m_creature, *victim) || !victim->IsVisibleForOrDetect(m_creature, m_creature, false))
@@ -123,47 +90,29 @@ void TotemAI::UpdateAI(const uint32 /*diff*/)
         Cell::VisitAllObjects(m_creature, checker, max_range);
     }
 
-    // If have target
     if (victim)
     {
-        // remember
+
         i_victimGuid = victim->GetObjectGuid();
 
-        // attack
-        m_creature->SetInFront(victim);                     // client change orientation by self
+        m_creature->SetInFront(victim);
         m_creature->CastSpell(victim, getTotem().GetSpell(), false);
     }
     else
     {
-        i_victimGuid.Clear();
+        i_victimGuid = 0;
     }
 }
 
-/**
- * @brief Totems do not use generic visibility checks in this AI.
- *
- * @param The unit being tested.
- * @return false.
- */
 bool TotemAI::IsVisible(Unit*) const
 {
     return false;
 }
 
-/**
- * @brief Ignores direct attack start requests for totems.
- *
- * @param The target unit.
- */
 void TotemAI::AttackStart(Unit*)
 {
 }
 
-/**
- * @brief Retrieves the controlled creature as a totem.
- *
- * @return Reference to the controlled totem.
- */
 Totem& TotemAI::getTotem()
 {
     return static_cast<Totem&>(*m_creature);

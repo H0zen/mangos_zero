@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -70,15 +68,9 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Sends an instance reset warning message to the client.
- *
- * @param mapid The map identifier being reset.
- * @param time The remaining time until reset in seconds.
- */
 void Player::SendInstanceResetWarning(uint32 mapid, uint32 time)
 {
-    // type of warning, based on the time remaining until reset
+
     uint32 type;
     if (time > 3600)
     {

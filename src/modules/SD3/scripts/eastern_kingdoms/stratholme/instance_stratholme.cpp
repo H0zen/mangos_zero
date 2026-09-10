@@ -64,8 +64,8 @@ static const EventLocation aTimmyLocation[] =
 
 struct ZigguratStore
 {
-    ObjectGuid m_doorGuid;
-    ObjectGuid m_crystalGuid;
+    ObjectGuid m_doorGuid = 0;
+    ObjectGuid m_crystalGuid = 0;
     GuidList m_lZigguratAcolyteGuid;
 };
 
@@ -265,7 +265,7 @@ struct is_stratholme : public InstanceScript
                             if (m_auiEncounter[uiType] != SPECIAL && m_auiEncounter[uiType] != DONE)
                             {
                                 m_uiSlaugtherSquareTimer = 20000;       // TODO - unknown, also possible that this is not the very correct place..
-                                DoUseDoorOrButton(GO_PORT_GAUNTLET);
+                                DoUseDoorOrButtonByEntry(GO_PORT_GAUNTLET);
                             }
 
                             uint32 uiCount = m_sAbomnationGUID.size();
@@ -291,7 +291,7 @@ struct is_stratholme : public InstanceScript
                             {
                                 // Old Comment: a bit itchy, it should close GO_ZIGGURAT_DOOR_4 door after 10 secs, but it doesn't. skipping it for now.
                                 // However looks like that this door is no more closed
-                                DoUseDoorOrButton(GO_ZIGGURAT_DOOR_4);
+                                DoUseDoorOrButtonByEntry(GO_ZIGGURAT_DOOR_4);
 
                                 // No more handling of Abominations
                                 m_uiSlaugtherSquareTimer = 0;
@@ -315,12 +315,12 @@ struct is_stratholme : public InstanceScript
                         // After fail aggroing Ramstein means wipe on Ramstein, so close door again
                         if (uiData == IN_PROGRESS && m_auiEncounter[uiType] == FAIL)
                         {
-                            DoUseDoorOrButton(GO_PORT_GAUNTLET);
+                            DoUseDoorOrButtonByEntry(GO_PORT_GAUNTLET);
                         }
                         if (uiData == DONE)
                         {
                             // Open side gate and start summoning skeletons
-                            DoUseDoorOrButton(GO_PORT_SLAUGHTER_GATE);
+                            DoUseDoorOrButtonByEntry(GO_PORT_SLAUGHTER_GATE);
                             // use this timer as a bool just to start summoning
                             m_uiMindlessSummonTimer = 500;
                             m_uiMindlessCount = 0;
@@ -348,7 +348,7 @@ struct is_stratholme : public InstanceScript
                         // Open Door again and stop Abomination
                         if (uiData == FAIL && m_auiEncounter[uiType] != FAIL)
                         {
-                            DoUseDoorOrButton(GO_PORT_GAUNTLET);
+                            DoUseDoorOrButtonByEntry(GO_PORT_GAUNTLET);
                             m_uiSlaugtherSquareTimer = 0;
 
                             // Let already moving Abominations stop
@@ -371,7 +371,7 @@ struct is_stratholme : public InstanceScript
                             // Close Slaughterhouse door if needed
                             if (m_auiEncounter[uiType] == FAIL)
                             {
-                                DoUseDoorOrButton(GO_PORT_GAUNTLET);
+                                DoUseDoorOrButtonByEntry(GO_PORT_GAUNTLET);
                             }
                         }
                         if (uiData == DONE)
@@ -407,17 +407,17 @@ struct is_stratholme : public InstanceScript
                                 if (Creature* pYsida = GetSingleCreatureFromStorage(NPC_YSIDA))
                                 {
                                     DoScriptText(SAY_EPILOGUE, pYsida);
-                                    DoUseDoorOrButton(GO_YSIDA_CAGE);
+                                    DoUseDoorOrButtonByEntry(GO_YSIDA_CAGE);
                                     pYsida->GetMotionMaster()->MovePoint(0, aStratholmeLocation[8].m_fX, aStratholmeLocation[8].m_fY, aStratholmeLocation[8].m_fZ, aStratholmeLocation[8].m_fO);
                                 }
                             }
 
                             // Open Slaughterhouse door again
-                            DoUseDoorOrButton(GO_PORT_GAUNTLET);
+                            DoUseDoorOrButtonByEntry(GO_PORT_GAUNTLET);
                         }
                         if (uiData == FAIL)
                         {
-                            DoUseDoorOrButton(GO_PORT_GAUNTLET);
+                            DoUseDoorOrButtonByEntry(GO_PORT_GAUNTLET);
                         }
 
                         m_auiEncounter[uiType] = uiData;
@@ -447,12 +447,12 @@ struct is_stratholme : public InstanceScript
                         // Restart after failure, close Gauntlet
                         if (uiData == IN_PROGRESS && m_auiEncounter[uiType] == FAIL)
                         {
-                            DoUseDoorOrButton(GO_PORT_GAUNTLET);
+                            DoUseDoorOrButtonByEntry(GO_PORT_GAUNTLET);
                         }
                         // Wipe case - open gauntlet
                         if (uiData == FAIL)
                         {
-                            DoUseDoorOrButton(GO_PORT_GAUNTLET);
+                            DoUseDoorOrButtonByEntry(GO_PORT_GAUNTLET);
                         }
                         if (uiData == DONE)
                         {
@@ -460,7 +460,7 @@ struct is_stratholme : public InstanceScript
                             {
                                 DoScriptText(SAY_UNDEAD_DEFEAT, pBaron);
                             }
-                            DoUseDoorOrButton(GO_ZIGGURAT_DOOR_5);
+                            DoUseDoorOrButtonByEntry(GO_ZIGGURAT_DOOR_5);
                         }
                         m_auiEncounter[uiType] = uiData;
 
@@ -785,7 +785,7 @@ struct is_stratholme : public InstanceScript
                             if (Creature* pYsida = GetSingleCreatureFromStorage(NPC_YSIDA))
                             {
                                 pYsida->GetMotionMaster()->MovePoint(0, aStratholmeLocation[8].m_fX, aStratholmeLocation[8].m_fY, aStratholmeLocation[8].m_fZ, aStratholmeLocation[8].m_fO);
-                                DoUseDoorOrButton(GO_YSIDA_CAGE);
+                                DoUseDoorOrButtonByEntry(GO_YSIDA_CAGE);
                             }
                             DoOrSimulateScriptTextForThisInstance(SAY_ANNOUNCE_RUN_FAIL, NPC_BARON);
 
@@ -926,8 +926,8 @@ struct is_stratholme : public InstanceScript
                 {
                     DoOrSimulateScriptTextForThisInstance(SAY_ANNOUNCE_RIVENDARE, NPC_BARON);
 
-                    DoUseDoorOrButton(GO_PORT_GAUNTLET);
-                    DoUseDoorOrButton(GO_PORT_SLAUGTHER);
+                    DoUseDoorOrButtonByEntry(GO_PORT_GAUNTLET);
+                    DoUseDoorOrButtonByEntry(GO_PORT_SLAUGTHER);
 
                     debug_log("SD3: Instance Stratholme: Open slaughter square.");
 

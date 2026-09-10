@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <string>
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
@@ -58,12 +56,9 @@
 #include "DisableMgr.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Loads saved game teleport locations.
- */
 void ObjectMgr::LoadGameTele()
 {
-    m_GameTeleMap.clear();                                  // for reload case
+    m_GameTeleMap.clear();
 
     uint32 count = 0;
     QueryResult* result = WorldDatabase.Query("SELECT `id`, `position_x`, `position_y`, `position_z`, `orientation`, `map`, `name` FROM `game_tele`");
@@ -121,25 +116,17 @@ void ObjectMgr::LoadGameTele()
     sLog.outString();
 }
 
-/**
- * @brief Finds a game teleport by exact or partial name.
- *
- * @param name The teleport name to search for.
- * @return The matching teleport, or null if none matches.
- */
 GameTele const* ObjectMgr::GetGameTele(const std::string& name) const
 {
-    // explicit name case
+
     std::wstring wname;
     if (!Utf8toWStr(name, wname))
     {
         return nullptr;
     }
 
-    // converting string that we try to find to lower case
     wstrToLower(wname);
 
-    // Alternative first GameTele what contains wnameLow as substring in case no GameTele location found
     const GameTele* alt = nullptr;
     for (GameTeleMap::const_iterator itr = m_GameTeleMap.begin(); itr != m_GameTeleMap.end(); ++itr)
     {
@@ -155,15 +142,9 @@ GameTele const* ObjectMgr::GetGameTele(const std::string& name) const
     return alt;
 }
 
-/**
- * @brief Adds a new game teleport and stores it in the database.
- *
- * @param tele The teleport data to add.
- * @return true if the teleport was stored successfully; otherwise, false.
- */
 bool ObjectMgr::AddGameTele(GameTele& tele)
 {
-    // find max id
+
     uint32 new_id = 0;
     for (GameTeleMap::const_iterator itr = m_GameTeleMap.begin(); itr != m_GameTeleMap.end(); ++itr)
     {
@@ -173,7 +154,6 @@ bool ObjectMgr::AddGameTele(GameTele& tele)
         }
     }
 
-    // use next
     ++new_id;
 
     if (!Utf8toWStr(tele.name, tele.wnameLow))
@@ -194,22 +174,15 @@ bool ObjectMgr::AddGameTele(GameTele& tele)
         tele.orientation, tele.mapId, safeName.c_str());
 }
 
-/**
- * @brief Deletes a game teleport by name.
- *
- * @param name The teleport name.
- * @return true if a teleport was removed; otherwise, false.
- */
 bool ObjectMgr::DeleteGameTele(const std::string& name)
 {
-    // explicit name case
+
     std::wstring wname;
     if (!Utf8toWStr(name, wname))
     {
         return false;
     }
 
-    // converting string that we try to find to lower case
     wstrToLower(wname);
 
     for (GameTeleMap::iterator itr = m_GameTeleMap.begin(); itr != m_GameTeleMap.end(); ++itr)

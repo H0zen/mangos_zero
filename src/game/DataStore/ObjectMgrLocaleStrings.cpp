@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <string>
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
@@ -57,14 +55,6 @@
 #include "DisableMgr.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Gets localized creature name and subname strings for a locale index.
- *
- * @param entry The creature entry id.
- * @param loc_idx The internal locale index.
- * @param namePtr Receives the localized name if available.
- * @param subnamePtr Receives the localized subname if available.
- */
 void ObjectMgr::GetCreatureLocaleStrings(uint32 entry, int32 loc_idx, char const** namePtr, char const** subnamePtr) const
 {
     if (loc_idx >= 0)
@@ -84,14 +74,6 @@ void ObjectMgr::GetCreatureLocaleStrings(uint32 entry, int32 loc_idx, char const
     }
 }
 
-/**
- * @brief Gets localized item name and description strings for a locale index.
- *
- * @param entry The item entry id.
- * @param loc_idx The internal locale index.
- * @param namePtr Receives the localized item name if available.
- * @param descriptionPtr Receives the localized description if available.
- */
 void ObjectMgr::GetItemLocaleStrings(uint32 entry, int32 loc_idx, std::string* namePtr, std::string* descriptionPtr) const
 {
     if (loc_idx >= 0)
@@ -111,13 +93,6 @@ void ObjectMgr::GetItemLocaleStrings(uint32 entry, int32 loc_idx, std::string* n
     }
 }
 
-/**
- * @brief Gets the localized quest title for a locale index.
- *
- * @param entry The quest entry id.
- * @param loc_idx The internal locale index.
- * @param titlePtr Receives the localized title if available.
- */
 void ObjectMgr::GetQuestLocaleStrings(uint32 entry, int32 loc_idx, std::string* titlePtr) const
 {
     if (loc_idx >= 0)
@@ -132,14 +107,6 @@ void ObjectMgr::GetQuestLocaleStrings(uint32 entry, int32 loc_idx, std::string* 
     }
 }
 
-/**
- * @brief Gets all localized npc text option strings for a locale index.
- *
- * @param entry The npc text entry id.
- * @param loc_idx The internal locale index.
- * @param text0_Ptr Receives the first text column array if available.
- * @param text1_Ptr Receives the second text column array if available.
- */
 void ObjectMgr::GetNpcTextLocaleStringsAll(uint32 entry, int32 loc_idx, ObjectMgr::NpcTextArray* text0_Ptr, ObjectMgr::NpcTextArray* text1_Ptr) const
 {
     if (loc_idx >= 0)
@@ -171,14 +138,6 @@ void ObjectMgr::GetNpcTextLocaleStringsAll(uint32 entry, int32 loc_idx, ObjectMg
     }
 }
 
-/**
- * @brief Gets the first localized npc text option pair for a locale index.
- *
- * @param entry The npc text entry id.
- * @param loc_idx The internal locale index.
- * @param text0_0_Ptr Receives the first localized text string.
- * @param text1_0_Ptr Receives the second localized text string.
- */
 void ObjectMgr::GetNpcTextLocaleStrings0(uint32 entry, int32 loc_idx, std::string* text0_0_Ptr, std::string* text1_0_Ptr) const
 {
     if (loc_idx >= 0)

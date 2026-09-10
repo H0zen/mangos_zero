@@ -29,8 +29,7 @@
 #include "ItemPrototype.h"
 #include "Item.h"
 
-// Maximum 28 Slots ( (CONTAINER_END - CONTAINER_FIELD_SLOT_1)/2
-#define MAX_BAG_SIZE ((CONTAINER_END - CONTAINER_FIELD_SLOT_1)/2)                                     // 1.12
+#define MAX_BAG_SIZE ((CONTAINER_END - CONTAINER_FIELD_SLOT_1)/2)
 
 class Bag : public Item
 {
@@ -56,19 +55,16 @@ class Bag : public Item
         uint32 GetFreeSlots() const;
         uint32 GetBagSize() const { return GetUInt32Value(CONTAINER_FIELD_NUM_SLOTS); }
 
-        // DB operations
-        // overwrite virtual Item::SaveToDB
         void SaveToDB() override;
-        // overwrite virtual Item::LoadFromDB
-        bool LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid = ObjectGuid()) override;
-        // overwrite virtual Item::DeleteFromDB
+
+        bool LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid = 0) override;
+
         void DeleteFromDB() override;
 
         void BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) const override;
 
     protected:
 
-        // Bag Storage space
         Item* m_bagslot[MAX_BAG_SIZE];
 };
 

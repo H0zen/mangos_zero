@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about friends and people he ignores.
 namespace social
 {
     void AddFriend(WorldSession& session, WorldPacket& packet);

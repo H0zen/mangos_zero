@@ -21,11 +21,8 @@
 #include "Pet.h"
 #include "PetNumbers.h"
 
-/// The one pet whose attack power is not doubled.
 static uint32 const ENTRY_IMP = 416;
 
-// The pure part mirrors HappinessState by value, so the two are held together
-// here rather than by anyone remembering.
 static_assert(stats::PET_UNHAPPY == UNHAPPY && stats::PET_CONTENT == CONTENT &&
               stats::PET_HAPPY == HAPPY, "the pet moods have drifted apart");
 
@@ -87,7 +84,7 @@ void PetSheet::MaxHealth()
 
 void PetSheet::MaxPower(Powers power)
 {
-    // Only mana grows from a stat, and only from intellect gained since creation.
+
     float const gained = power == POWER_MANA
                              ? m_owner.GetStat(STAT_INTELLECT) - m_owner.Tallied().Made(STAT_INTELLECT)
                              : 0.0f;
@@ -99,7 +96,7 @@ void PetSheet::MaxPower(Powers power)
 
 void PetSheet::AttackPower(bool ranged)
 {
-    // No pet holds a bow.
+
     if (ranged)
     {
         return;
@@ -112,7 +109,6 @@ void PetSheet::AttackPower(bool ranged)
     stats::AttackPower const power = stats::CreatureAttackPower(m_owner.Tallied().Of(UNIT_MOD_ATTACK_POWER));
     m_owner.SetAttackPower(false, power.base, power.added, power.share);
 
-    // what it swings for follows from what it swings with
     Swing(BASE_ATTACK);
 }
 
@@ -130,7 +126,6 @@ void PetSheet::Swing(WeaponAttackType attType)
         m_owner.GetTotalAttackPowerValue(attType),
         float(m_owner.GetAttackTime(BASE_ATTACK)) / 1000.0f);
 
-    // A hunter's pet hits as well as it feels.
     if (m_owner.getPetType() == HUNTER_PET)
     {
         float const mood = stats::HappinessScale(m_owner.GetHappinessState());

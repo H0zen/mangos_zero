@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Standing.h"
 #include "Stats/Experience.h"
@@ -72,26 +70,18 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Gets the player's current reputation rank with a faction.
- *
- * @param faction The faction identifier to query.
- * @return The current reputation rank.
- */
 ReputationRank Player::GetReputationRank(uint32 faction) const
 {
     FactionEntry const* factionEntry = sFactionStore.LookupEntry(faction);
     return GetReputationMgr().GetRank(factionEntry);
 }
 
-// Calculate total reputation percent player gain with quest/creature level
 int32 Player::CalculateReputationGain(ReputationSource source, int32 rep, int32 faction, uint32 creatureOrQuestLevel, bool noAuraBonus)
 {
     float percent = 100.0f;
 
     float repMod = noAuraBonus ? 0.0f : (float)GetTotalAuraModifier(SPELL_AURA_MOD_REPUTATION_GAIN);
 
-    // faction specific auras only seem to apply to kills
     if (source == REPUTATION_SOURCE_KILL)
     {
         repMod += GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_FACTION_REPUTATION_GAIN, faction);
@@ -99,7 +89,6 @@ int32 Player::CalculateReputationGain(ReputationSource source, int32 rep, int32 
 
     percent += rep > 0 ? repMod : -repMod;
 
-    // What this server pays, read in one place.
     standing::Rates paid;
     paid.lowLevelKill = sWorld.getConfig(CONFIG_FLOAT_RATE_REPUTATION_LOWLEVEL_KILL);
     paid.lowLevelQuest = sWorld.getConfig(CONFIG_FLOAT_RATE_REPUTATION_LOWLEVEL_QUEST);
@@ -114,7 +103,6 @@ int32 Player::CalculateReputationGain(ReputationSource source, int32 rep, int32 
         default: break;
     }
 
-    // What the faction's own row says about this kind of deed.
     standing::FactionRate ofFaction;
     if (const RepRewardRate* repData = sObjectMgr.GetRepRewardRate(faction))
     {
@@ -132,10 +120,9 @@ int32 Player::CalculateReputationGain(ReputationSource source, int32 rep, int32 
     return standing::Gained(rep, percent, beneathHim, lowLevel, ofFaction, paid.overall);
 }
 
-// Calculates how many reputation points player gains in victim's enemy factions
 void Player::RewardReputation(Unit* pVictim, float rate)
 {
-    if (!pVictim || pVictim->IsPlayer())
+    if (!pVictim ||IsPlayer(pVictim))
     {
         return;
     }
@@ -145,7 +132,6 @@ void Player::RewardReputation(Unit* pVictim, float rate)
         return;
     }
 
-    // used current difficulty creature entry instead normal version (GetEntry())
     ReputationOnKillEntry const* Rep = sObjectMgr.GetReputationOnKillEntry(((Creature*)pVictim)->GetEntry());
 
     if (!Rep)
@@ -164,7 +150,6 @@ void Player::RewardReputation(Unit* pVictim, float rate)
             GetReputationMgr().ModifyReputation(factionEntry1, donerep1);
         }
 
-        // Wiki: Team factions value divided by 2
         if (factionEntry1 && Rep->is_teamaward1)
         {
             FactionEntry const* team1_factionEntry = sFactionStore.LookupEntry(factionEntry1->ParentFactionID);
@@ -186,7 +171,6 @@ void Player::RewardReputation(Unit* pVictim, float rate)
             GetReputationMgr().ModifyReputation(factionEntry2, donerep2);
         }
 
-        // Wiki: Team factions value divided by 2
         if (factionEntry2 && Rep->is_teamaward2)
         {
             FactionEntry const* team2_factionEntry = sFactionStore.LookupEntry(factionEntry2->ParentFactionID);
@@ -198,10 +182,9 @@ void Player::RewardReputation(Unit* pVictim, float rate)
     }
 }
 
-// Calculate how many reputation points player gain with the quest
 void Player::RewardReputation(Quest const* pQuest)
 {
-    // quest reputation reward/loss
+
     for (int i = 0; i < QUEST_REPUTATIONS_COUNT; ++i)
     {
         if (!pQuest->RewRepFaction[i])
@@ -220,5 +203,4 @@ void Player::RewardReputation(Quest const* pQuest)
         }
     }
 
-    // TODO: implement reputation spillover
 }

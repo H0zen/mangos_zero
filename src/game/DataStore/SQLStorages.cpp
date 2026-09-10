@@ -23,59 +23,8 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SQLStorages.cpp
- * @brief SQL database storage format definitions
- *
- * This file defines the format strings and storage objects for loading
- * static game data from the database. Format strings specify the binary
- * layout of each record for the SQLStorage system.
- *
- * Format string characters (from DBCFileLoader.h):
- * - 'x' / 'X' / 'F' / 'p' = ignore/default (4/1/float/pointer bytes)
- * - 's' = char* (string)
- * - 'f' = float
- * - 'i' = uint32
- * - 'b' = uint8
- * - 'd' = sorted field (not included in output)
- * - 'n' = sorted field (parsed to data)
- * - 'l' = boolean
- *
- * Storage types:
- * - SQLStorage: Array-based indexed storage (continuous IDs)
- * - SQLHashStorage: Hash map based (sparse IDs)
- * - SQLMultiStorage: Multi-map (duplicate keys allowed)
- *
- * @see SQLStorage for the storage container
- * @see SQLStorages.h for the extern declarations
- */
-
 #include "SQLStorages.h"
 
-/**
- * @section Format String Definitions
- *
- * Each format string defines the field layout for a database table.
- * The strings are processed by SQLStorage to convert SQL rows to binary records.
- */
-//
-// taken from DBCFileLoader.h
-//
-// enum FieldFormat
-// {
-//     DBC_FF_NA = 'x',                                        // ignore/ default, 4 byte size, in Source String means field is ignored, in Dest String means field is filled with default value
-//     DBC_FF_NA_BYTE = 'X',                                   // ignore/ default, 1 byte size, see above
-//     DBC_FF_NA_FLOAT = 'F',                                  // ignore/ default,  float size, see above
-//     DBC_FF_NA_POINTER = 'p',                                // fill default value into dest, pointer size, Use this only with static data (otherwise mem-leak)
-//     DBC_FF_STRING = 's',                                    // char*
-//     DBC_FF_FLOAT = 'f',                                     // float
-//     DBC_FF_INT = 'i',                                       // uint32
-//     DBC_FF_BYTE = 'b',                                      // uint8
-//     DBC_FF_SORT = 'd',                                      // sorted by this field, field is not included
-//     DBC_FF_IND = 'n',                                       // the same,but parsed to data
-//     DBC_FF_LOGIC = 'l'                                      // Logical (boolean)
-// };
-//
 const char CreatureInfosrcfmt[] = "issiiiiiiiifiiiiliiiiiffiiffffffiiiiffffiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiis";
 const char CreatureInfodstfmt[] = "issiiiiiiiifiiiiliiiiiffiiffffffiiiiffffiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiis";
 const char CreatureDataAddonInfofmt[] = "iiibbiis";

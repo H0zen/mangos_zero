@@ -61,7 +61,7 @@ struct is_wailing_caverns : public InstanceScript
                 if (pPlayer->GetQuestStatus(QUEST_FORTUNE_AWAITS) == QUEST_STATUS_COMPLETE &&
                     !pPlayer->GetQuestRewardStatus(QUEST_FORTUNE_AWAITS))
                 {
-                    DoRespawnGameObject(GO_MYSTERIOUS_CHEST, HOUR);
+                    DoRespawnGameObjectByEntry(GO_MYSTERIOUS_CHEST, HOUR);
                 }
             }
 

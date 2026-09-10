@@ -23,23 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file LFGHandler.cpp
- * @brief Looking For Group (Meeting Stone) opcode handlers
- *
- * This file handles player interactions with meeting stones (LFG system).
- * Meeting stones allow players/groups to queue for dungeons and be matched
- * with other players automatically.
- *
- * Opcodes handled:
- * - CMSG_MEETINGSTONE_JOIN: Join LFG queue at a meeting stone
- * - CMSG_MEETINGSTONE_LEAVE: Leave LFG queue
- * - CMSG_MEETINGSTONE_INFO: Request current queue status
- *
- * @see LFGMgr for the queue management implementation
- * @see LFGQueue for matching algorithm
- */
-
 #include <set>
 #include <string>
 #include "Platform/Define.h"
@@ -59,30 +42,14 @@
 #include "LFGHandler.h"
 #include "LFGMgr.h"
 
-
-/**
- * @brief Handle meeting stone join request (CMSG_MEETINGSTONE_JOIN)
- * @param recv_data World packet containing meeting stone GameObject GUID
- *
- * Player attempts to join the LFG queue at a meeting stone.
- * Requirements:
- * - Player must not be in remote control state
- * - Target must be a valid meeting stone GameObject
- * - If in group, player must be leader
- * - Cannot be in a raid group
- * - Group must not be full
- *
- * On success, adds player/group to LFGMgr queue for the stone's area.
- */
 void meetingstones::MeetingStoneJoin(Player& who, WorldPacket& recv_data)
 {
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
 
     recv_data >> guid;
 
-    DEBUG_LOG("WORLD: Recvd CMSG_MEETINGSTONE_JOIN Message guid: %s", guid.GetString().c_str());
+    DEBUG_LOG("WORLD: Recvd CMSG_MEETINGSTONE_JOIN Message guid: %s", GuidString(guid).c_str());
 
-    // ignore for remote control state
     if (!who.IsSelfMover())
     {
         return;
@@ -95,7 +62,6 @@ void meetingstones::MeetingStoneJoin(Player& who, WorldPacket& recv_data)
         return;
     }
 
-    // Never expect this opcode for some type GO's
     if (obj->GetGoType() != GAMEOBJECT_TYPE_MEETINGSTONE)
     {
         sLog.outError("HandleMeetingStoneJoinOpcode: CMSG_MEETINGSTONE_JOIN for not allowed GameObject type %u (Entry %u), didn't expect this to happen.", obj->GetGoType(), obj->GetEntry());
@@ -126,20 +92,10 @@ void meetingstones::MeetingStoneJoin(Player& who, WorldPacket& recv_data)
 
     GameObjectInfo const* gInfo = ObjectMgr::GetGameObjectInfo(obj->GetEntry());
 
-
     sLFGMgr.AddToQueue(&who, gInfo->meetingstone.areaID);
 }
 
-/**
- * @brief Handle meeting stone leave request (CMSG_MEETINGSTONE_LEAVE)
- * @param recv_data World packet (empty)
- *
- * Player leaves the LFG queue. Behavior depends on group status:
- * - In group as leader: Removes entire group from queue
- * - In group as member: Personal leave notification only
- * - Solo player: Removes from queue
- */
-void meetingstones::MeetingStoneLeave(Player& who, WorldPacket& /*recv_data*/)
+void meetingstones::MeetingStoneLeave(Player& who, WorldPacket& )
 {
     DEBUG_LOG("WORLD: Recvd CMSG_MEETINGSTONE_LEAVE");
     if (Group *grp = who.GetGroup())
@@ -159,19 +115,7 @@ void meetingstones::MeetingStoneLeave(Player& who, WorldPacket& /*recv_data*/)
     }
 }
 
-/**
- * @brief Handle meeting stone info request (CMSG_MEETING_STONE_INFO)
- * @param recv_data World packet (empty)
- *
- * Player requests current LFG queue status. Used after login or
- * when reopening the meeting stone UI.
- *
- * Responses:
- * - In group in LFG: Sends area ID and JOINED_QUEUE status
- * - In group not in LFG: Sends empty queue status
- * - Solo player: Attempts to restore offline queue status
- */
-void WorldSession::HandleMeetingStoneInfoOpcode(WorldPacket & /*recv_data*/)
+void WorldSession::HandleMeetingStoneInfoOpcode(WorldPacket & )
 {
     DEBUG_LOG("WORLD: Received CMSG_MEETING_STONE_INFO");
 
@@ -192,13 +136,6 @@ void WorldSession::HandleMeetingStoneInfoOpcode(WorldPacket & /*recv_data*/)
     }
 }
 
-/**
- * @brief Send meeting stone failure response
- * @param status Failure reason code (MEETINGSTONE_FAIL_*)
- *
- * Sends SMSG_MEETINGSTONE_JOINFAILED to indicate why a join attempt failed.
- * Common reasons: not leader, raid group, group full.
- */
 void WorldSession::SendMeetingstoneFailed(uint8 status)
 {
     WorldPacket data(SMSG_MEETINGSTONE_JOINFAILED, 1);
@@ -206,14 +143,6 @@ void WorldSession::SendMeetingstoneFailed(uint8 status)
     SendPacket(&data);
 }
 
-/**
- * @brief Send meeting stone queue status
- * @param areaid Area/dungeon ID in queue (0 if not in queue)
- * @param status Queue status (MEETINGSTONE_STATUS_*)
- *
- * Sends SMSG_MEETINGSTONE_SETQUEUE to update client's queue status UI.
- * Called when joining, leaving, or restoring queue status.
- */
 void WorldSession::SendMeetingstoneSetqueue(uint32 areaid, uint8 status)
 {
     WorldPacket data(SMSG_MEETINGSTONE_SETQUEUE, 5);

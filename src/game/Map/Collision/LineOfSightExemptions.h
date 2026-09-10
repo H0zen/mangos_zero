@@ -25,12 +25,6 @@
 
 #pragma once
 
-// Spells configured to skip the line-of-sight check (vmap.ignoreSpellIds).
-//
-// This used to live on VMapFactory, which had nothing to do with spells and was reached
-// only because it happened to be linked. The list is a game rule, so it lives with the
-// game; the collision engine never hears about it.
-
 #include "Platform/Define.h"
 
 #include <string>
@@ -38,7 +32,7 @@
 
 namespace LineOfSightExemptions
 {
-    /// Replaces the set from a comma-separated list of spell ids.
+
     void Load(const std::string& spellIds);
 
     bool Has(uint32 spellId);

@@ -23,29 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file ScriptMgr.cpp
- * @brief Script system manager implementation
- *
- * This file implements ScriptMgr which manages all game scripts:
- * - Creature AI scripts
- * - GameObject scripts
- * - Item scripts
- * - Area trigger scripts
- * - Spell scripts
- * - Quest scripts
- * - Instance scripts
- *
- * Scripts are loaded from script libraries and provide hooks for
- * customizing game behavior. The script manager routes events to
- * the appropriate script handlers.
- *
- * @see ScriptMgr for the manager class
- * @see ScriptedInstance for instance script base
- */
-
-
-
 #include <set>
 #include <mutex>
 #include "ScriptMgr.h"
@@ -69,14 +46,8 @@
 #include "LFGMgr.h"
 #ifdef ENABLE_SD3
 #include "system/ScriptDevMgr.h"
-#endif /* ENABLE_SD3 */
+#endif
 
-/**
- * @brief Returns the script chain map for a database script type.
- *
- * @param type The database script type.
- * @return ScriptChainMap const* The corresponding script chain map, or nullptr for unsupported types.
- */
 ScriptChainMap const* ScriptMgr::GetScriptChainMap(DBScriptType type)
 {
     std::lock_guard<std::mutex> _guard(m_lock);
@@ -88,10 +59,6 @@ ScriptChainMap const* ScriptMgr::GetScriptChainMap(DBScriptType type)
     return nullptr;
 }
 
-// /////////////////////////////////////////////////////////
-//              DB SCRIPTS (loaders of static data)
-// /////////////////////////////////////////////////////////
-// returns priority (0 == can not start script)
 uint8 GetSpellStartDBScriptPriority(SpellEntry const* spellinfo, SpellEffectIndex effIdx)
 {
     if (spellinfo->Effect[effIdx] == SPELL_EFFECT_SCRIPT_EFFECT)
@@ -104,23 +71,19 @@ uint8 GetSpellStartDBScriptPriority(SpellEntry const* spellinfo, SpellEffectInde
         return 9;
     }
 
-    // NonExisting triggered spells can also start DB-Spell-Scripts
     if (spellinfo->Effect[effIdx] == SPELL_EFFECT_TRIGGER_SPELL && !sSpellStore.LookupEntry(spellinfo->EffectTriggerSpell[effIdx]))
     {
         return 5;
     }
 
-    // NonExisting trigger missile spells can also start DB-Spell-Scripts
     if (spellinfo->Effect[effIdx] == SPELL_EFFECT_TRIGGER_MISSILE && !sSpellStore.LookupEntry(spellinfo->EffectTriggerSpell[effIdx]))
     {
         return 4;
     }
 
-    // Can not start script
     return 0;
 }
 
-// Priorize: SCRIPT_EFFECT before DUMMY before Non-Existing triggered spell, for same priority the first effect with the priority triggers
 bool ScriptMgr::CanSpellEffectStartDBScript(SpellEntry const* spellinfo, SpellEffectIndex effIdx)
 {
     uint8 priority = GetSpellStartDBScriptPriority(spellinfo, effIdx);
@@ -132,15 +95,15 @@ bool ScriptMgr::CanSpellEffectStartDBScript(SpellEntry const* spellinfo, SpellEf
     for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
         uint8 currentPriority = GetSpellStartDBScriptPriority(spellinfo, SpellEffectIndex(i));
-        if (currentPriority < priority)                     // lower priority, continue checking
+        if (currentPriority < priority)
         {
             continue;
         }
-        if (currentPriority > priority)                     // take other index with higher priority
+        if (currentPriority > priority)
         {
             return false;
         }
-        if (i < effIdx)                                     // same priority at lower index
+        if (i < effIdx)
         {
             return false;
         }
@@ -149,21 +112,15 @@ bool ScriptMgr::CanSpellEffectStartDBScript(SpellEntry const* spellinfo, SpellEf
     return true;
 }
 
-/**
- * @brief Loads and validates raw db_script records for a specific script type.
- *
- * @param type The database script type to load.
- */
 void ScriptMgr::LoadScripts(DBScriptType type)
 {
-    if (IsScriptScheduled())                                // function don't must be called in time scripts use.
+    if (IsScriptScheduled())
     {
         return;
     }
 
-    m_dbScripts[type].clear();                                 // need for reload support
+    m_dbScripts[type].clear();
 
-    //                                                 0   1      2        3         4          5            6              7           8        9         10        11        12 13 14 15
     QueryResult* result = WorldDatabase.PQuery("SELECT `id`, `delay`, `command`, `datalong`, `datalong2`, `buddy_entry`, `search_radius`, `data_flags`, `dataint`, `dataint2`, `dataint3`, `dataint4`, `x`, `y`, `z`, `o` FROM `db_scripts` WHERE `script_type` = %d ORDER BY `script_guid` ASC", type);
 
     uint32 count = 0;
@@ -203,7 +160,6 @@ void ScriptMgr::LoadScripts(DBScriptType type)
         tmp.z            = fields[14].GetFloat();
         tmp.o            = fields[15].GetFloat();
 
-        // generic command args check
         if (tmp.buddyEntry && !(tmp.data_flags & SCRIPT_FLAG_BUDDY_BY_GUID))
         {
             if (tmp.IsCreatureBuddy() && !ObjectMgr::GetCreatureTemplate(tmp.buddyEntry))
@@ -223,7 +179,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
             }
         }
 
-        if (tmp.data_flags)                                 // Check flags
+        if (tmp.data_flags)
         {
             if (tmp.data_flags & ~MAX_SCRIPT_FLAG_VALID)
             {
@@ -240,7 +196,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 sLog.outErrorDb("Table `db_scripts [type = %d]` has buddy required in data_flags %u in command %u for script id %u, but no buddy defined, skipping.", type, tmp.data_flags, tmp.command, tmp.id);
                 continue;
             }
-            if (tmp.data_flags & SCRIPT_FLAG_BUDDY_BY_GUID) // Check guid
+            if (tmp.data_flags & SCRIPT_FLAG_BUDDY_BY_GUID)
             {
                 if (tmp.IsCreatureBuddy())
                 {
@@ -275,7 +231,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
 
         switch (tmp.command)
         {
-            case SCRIPT_COMMAND_TALK:                       // 0
+            case SCRIPT_COMMAND_TALK:
             {
                 if (tmp.textId[0] == 0)
                 {
@@ -292,10 +248,9 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                     }
                 }
 
-                // if (!GetMangosStringLocale(tmp.dataint)) will be checked after db_script_string loading
                 break;
             }
-            case SCRIPT_COMMAND_EMOTE:                      // 1
+            case SCRIPT_COMMAND_EMOTE:
             {
                 if (!sEmotesStore.LookupEntry(tmp.emote.emoteId))
                 {
@@ -312,12 +267,12 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_FIELD_SET:                  // 2
-            case SCRIPT_COMMAND_MOVE_TO:                    // 3
-            case SCRIPT_COMMAND_FLAG_SET:                   // 4
-            case SCRIPT_COMMAND_FLAG_REMOVE:                // 5
+            case SCRIPT_COMMAND_FIELD_SET:
+            case SCRIPT_COMMAND_MOVE_TO:
+            case SCRIPT_COMMAND_FLAG_SET:
+            case SCRIPT_COMMAND_FLAG_REMOVE:
                 break;
-            case SCRIPT_COMMAND_TELEPORT_TO:                // 6
+            case SCRIPT_COMMAND_TELEPORT_TO:
             {
                 if (!sMapStore.LookupEntry(tmp.teleportTo.mapId))
                 {
@@ -332,7 +287,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_QUEST_EXPLORED:             // 7
+            case SCRIPT_COMMAND_QUEST_EXPLORED:
             {
                 Quest const* quest = sObjectMgr.GetQuestTemplate(tmp.questExplored.questId);
                 if (!quest)
@@ -345,10 +300,8 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 {
                     sLog.outErrorDb("Table `db_scripts [type = %d]` has quest (ID: %u) in SCRIPT_COMMAND_QUEST_EXPLORED in `datalong` for script id %u, but quest not have flag QUEST_SPECIAL_FLAG_EXPLORATION_OR_EVENT in quest flags. Script command or quest flags wrong. Quest modified to require objective.", type, tmp.questExplored.questId, tmp.id);
 
-                    // this will prevent quest completing without objective
                     const_cast<Quest*>(quest)->SetSpecialFlag(QUEST_SPECIAL_FLAG_EXPLORATION_OR_EVENT);
 
-                    // continue; - quest objective requirement set and command can be allowed
                 }
 
                 if (float(tmp.questExplored.distance) > DEFAULT_VISIBILITY_DISTANCE)
@@ -374,7 +327,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
 
                 break;
             }
-            case SCRIPT_COMMAND_KILL_CREDIT:                // 8
+            case SCRIPT_COMMAND_KILL_CREDIT:
             {
                 if (tmp.killCredit.creatureEntry && !ObjectMgr::GetCreatureTemplate(tmp.killCredit.creatureEntry))
                 {
@@ -383,7 +336,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_RESPAWN_GO:                 // 9
+            case SCRIPT_COMMAND_RESPAWN_GO:
             {
                 uint32 goEntry;
                 if (!tmp.GetGOGuid())
@@ -422,7 +375,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_TEMP_SUMMON_CREATURE:       // 10
+            case SCRIPT_COMMAND_TEMP_SUMMON_CREATURE:
             {
                 if (!MaNGOS::IsValidMapCoord(tmp.x, tmp.y, tmp.z, tmp.o))
                 {
@@ -437,8 +390,8 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_OPEN_DOOR:                  // 11
-            case SCRIPT_COMMAND_CLOSE_DOOR:                 // 12
+            case SCRIPT_COMMAND_OPEN_DOOR:
+            case SCRIPT_COMMAND_CLOSE_DOOR:
             {
                 uint32 goEntry;
                 if (!tmp.GetGOGuid())
@@ -476,9 +429,9 @@ void ScriptMgr::LoadScripts(DBScriptType type)
 
                 break;
             }
-            case SCRIPT_COMMAND_ACTIVATE_OBJECT:            // 13
+            case SCRIPT_COMMAND_ACTIVATE_OBJECT:
                 break;
-            case SCRIPT_COMMAND_REMOVE_AURA:                // 14
+            case SCRIPT_COMMAND_REMOVE_AURA:
             {
                 if (!sSpellStore.LookupEntry(tmp.removeAura.spellId))
                 {
@@ -488,7 +441,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_CAST_SPELL:                 // 15
+            case SCRIPT_COMMAND_CAST_SPELL:
             {
                 if (!sSpellStore.LookupEntry(tmp.castSpell.spellId))
                 {
@@ -512,7 +465,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_PLAY_SOUND:                 // 16
+            case SCRIPT_COMMAND_PLAY_SOUND:
             {
                 if (!sSoundEntriesStore.LookupEntry(tmp.playSound.soundId))
                 {
@@ -520,7 +473,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                         type, tmp.playSound.soundId, tmp.id);
                     continue;
                 }
-                // bitmask: 0/1=target-player, 0/2=with distance dependent, 0/4=map wide, 0/8=zone wide
+
                 if (tmp.playSound.flags & ~(1 | 2 | 4 | 8))
                 {
                     sLog.outErrorDb("Table `db_scripts [type = %d]` using unsupported sound flags (datalong2: %u) in SCRIPT_COMMAND_PLAY_SOUND for script id %u, unsupported flags will be ignored", type, tmp.playSound.flags, tmp.id);
@@ -531,7 +484,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_CREATE_ITEM:                // 17
+            case SCRIPT_COMMAND_CREATE_ITEM:
             {
                 if (!ObjectMgr::GetItemPrototype(tmp.createItem.itemEntry))
                 {
@@ -547,18 +500,18 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_DESPAWN_SELF:               // 18
+            case SCRIPT_COMMAND_DESPAWN_SELF:
             {
-                // for later, we might consider despawn by database guid, and define in datalong2 as option to despawn self.
+
                 break;
             }
-            case SCRIPT_COMMAND_PLAY_MOVIE:                 // 19
+            case SCRIPT_COMMAND_PLAY_MOVIE:
             {
                 sLog.outErrorDb("Table `db_scripts [type = %d]` use unsupported SCRIPT_COMMAND_PLAY_MOVIE for script id %u",
                     type, tmp.id);
                 continue;
             }
-            case SCRIPT_COMMAND_MOVEMENT:                   // 20
+            case SCRIPT_COMMAND_MOVEMENT:
             {
                 if (tmp.movement.movementType >= MAX_DB_MOTION_TYPE)
                 {
@@ -569,11 +522,11 @@ void ScriptMgr::LoadScripts(DBScriptType type)
 
                 break;
             }
-            case SCRIPT_COMMAND_SET_ACTIVEOBJECT:           // 21
+            case SCRIPT_COMMAND_SET_ACTIVEOBJECT:
             {
                 break;
             }
-            case SCRIPT_COMMAND_SET_FACTION:                // 22
+            case SCRIPT_COMMAND_SET_FACTION:
             {
                 if (tmp.faction.factionId && !sFactionTemplateStore.LookupEntry(tmp.faction.factionId))
                 {
@@ -583,7 +536,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
 
                 break;
             }
-            case SCRIPT_COMMAND_MORPH_TO_ENTRY_OR_MODEL:    // 23
+            case SCRIPT_COMMAND_MORPH_TO_ENTRY_OR_MODEL:
             {
                 if (tmp.data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL)
                 {
@@ -604,7 +557,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
 
                 break;
             }
-            case SCRIPT_COMMAND_MOUNT_TO_ENTRY_OR_MODEL:    // 24
+            case SCRIPT_COMMAND_MOUNT_TO_ENTRY_OR_MODEL:
             {
                 if (tmp.data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL)
                 {
@@ -625,20 +578,20 @@ void ScriptMgr::LoadScripts(DBScriptType type)
 
                 break;
             }
-            case SCRIPT_COMMAND_SET_RUN:                    // 25
-            case SCRIPT_COMMAND_ATTACK_START:               // 26
+            case SCRIPT_COMMAND_SET_RUN:
+            case SCRIPT_COMMAND_ATTACK_START:
             {
                 break;
             }
-            case SCRIPT_COMMAND_GO_LOCK_STATE:              // 27
+            case SCRIPT_COMMAND_GO_LOCK_STATE:
             {
-                // lock(0x01) and unlock(0x02) together
+
                 if (((tmp.goLockState.lockState & 0x01) && (tmp.goLockState.lockState & 0x02)) ||
-                    // non-interact (0x4) and interact (0x08) together
+
                     ((tmp.goLockState.lockState & 0x04) && (tmp.goLockState.lockState & 0x08)) ||
-                    // no setting
+
                     !tmp.goLockState.lockState ||
-                    // invalid number
+
                     tmp.goLockState.lockState >= 0x10)
                 {
                     sLog.outErrorDb("Table `db_scripts [type = %d]` has invalid lock state (datalong = %u) in SCRIPT_COMMAND_GO_LOCK_STATE for script id %u.", type, tmp.goLockState.lockState, tmp.id);
@@ -646,7 +599,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_STAND_STATE:                // 28
+            case SCRIPT_COMMAND_STAND_STATE:
             {
                 if (tmp.standState.stand_state >= MAX_UNIT_STAND_STATE)
                 {
@@ -655,18 +608,18 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_MODIFY_NPC_FLAGS:           // 29
+            case SCRIPT_COMMAND_MODIFY_NPC_FLAGS:
             {
                 break;
             }
-            case SCRIPT_COMMAND_SEND_TAXI_PATH:             // 30
+            case SCRIPT_COMMAND_SEND_TAXI_PATH:
             {
                 if (!sTaxiPathStore.LookupEntry(tmp.sendTaxiPath.taxiPathId))
                 {
                     sLog.outErrorDb("Table `db_scripts [type = %d]` has datalong = %u in SCRIPT_COMMAND_SEND_TAXI_PATH for script id %u, but this taxi path does not exist.", type, tmp.sendTaxiPath.taxiPathId, tmp.id);
                     continue;
                 }
-                // Check if this taxi path can be triggered with a spell
+
                 if (!sLog.HasLogFilter(LOG_FILTER_DB_STRICTED_CHECK))
                 {
                     uint32 taxiSpell = 0;
@@ -693,7 +646,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_TERMINATE_SCRIPT:           // 31
+            case SCRIPT_COMMAND_TERMINATE_SCRIPT:
             {
                 if (tmp.terminateScript.npcEntry && !ObjectMgr::GetCreatureTemplate(tmp.terminateScript.npcEntry))
                 {
@@ -702,16 +655,16 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_PAUSE_WAYPOINTS:            // 32
+            case SCRIPT_COMMAND_PAUSE_WAYPOINTS:
             {
                 break;
             }
-            case SCRIPT_COMMAND_JOIN_LFG:                   // 33
+            case SCRIPT_COMMAND_JOIN_LFG:
             {
-                //Only currently used in Zero
+
                 break;
             }
-            case SCRIPT_COMMAND_TERMINATE_COND:             // 34
+            case SCRIPT_COMMAND_TERMINATE_COND:
             {
                 if (!sConditionStorage.LookupEntry<PlayerCondition>(tmp.terminateCond.conditionId))
                 {
@@ -725,7 +678,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_SEND_AI_EVENT_AROUND:       // 35
+            case SCRIPT_COMMAND_SEND_AI_EVENT_AROUND:
             {
                 if (tmp.sendAIEvent.eventType >= MAXIMAL_AI_EVENT_EVENTAI)
                 {
@@ -734,11 +687,11 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_TURN_TO:                    // 36
+            case SCRIPT_COMMAND_TURN_TO:
             {
                 break;
             }
-            case SCRIPT_COMMAND_MOVE_DYNAMIC:               // 37
+            case SCRIPT_COMMAND_MOVE_DYNAMIC:
             {
                 if (tmp.moveDynamic.maxDist < tmp.moveDynamic.minDist)
                 {
@@ -747,7 +700,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_SEND_MAIL:                  // 38
+            case SCRIPT_COMMAND_SEND_MAIL:
             {
                 if (!sMailTemplateStore.LookupEntry(tmp.sendMail.mailTemplateId))
                 {
@@ -761,7 +714,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_CHANGE_ENTRY:              // 39
+            case SCRIPT_COMMAND_CHANGE_ENTRY:
             {
                 if (tmp.changeEntry.creatureEntry && !ObjectMgr::GetCreatureTemplate(tmp.changeEntry.creatureEntry))
                 {
@@ -770,7 +723,7 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_DESPAWN_GO:                   // 40
+            case SCRIPT_COMMAND_DESPAWN_GO:
             {
                 if (!tmp.despawnGo.goGuid)
                 {
@@ -787,11 +740,11 @@ void ScriptMgr::LoadScripts(DBScriptType type)
 
                 break;
             }
-            case SCRIPT_COMMAND_RESPAWN:                      // 41
+            case SCRIPT_COMMAND_RESPAWN:
             {
                 break;
             }
-            case SCRIPT_COMMAND_SET_EQUIPMENT_SLOTS:          // 42
+            case SCRIPT_COMMAND_SET_EQUIPMENT_SLOTS:
             {
                 if (tmp.textId[0] < 0 || tmp.textId[1] < 0 || tmp.textId[2] < 0)
                 {
@@ -800,11 +753,11 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_RESET_GO:                     // 43
+            case SCRIPT_COMMAND_RESET_GO:
             {
                 break;
             }
-            case SCRIPT_COMMAND_UPDATE_TEMPLATE:              // 44
+            case SCRIPT_COMMAND_UPDATE_TEMPLATE:
             {
                 if (tmp.updateTemplate.entry && !ObjectMgr::GetCreatureTemplate(tmp.updateTemplate.entry))
                 {
@@ -819,11 +772,11 @@ void ScriptMgr::LoadScripts(DBScriptType type)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_XP_USER:                      // 53
+            case SCRIPT_COMMAND_XP_USER:
             {
                 break;
             }
-            case SCRIPT_COMMAND_SET_FLY:                      // 59
+            case SCRIPT_COMMAND_SET_FLY:
             {
                 break;
             }
@@ -851,14 +804,9 @@ void ScriptMgr::LoadScripts(DBScriptType type)
     sLog.outString();
 }
 
-/**
- * @brief Loads db scripts for a type and validates that their script ids refer to existing objects.
- *
- * @param t The database script type to load.
- */
 void ScriptMgr::LoadDbScripts(DBScriptType t)
 {
-    std::set<uint32> eventIds;                              // Store possible event ids
+    std::set<uint32> eventIds;
 
     if (t == DBS_ON_EVENT)
     {
@@ -900,7 +848,6 @@ void ScriptMgr::LoadDbScripts(DBScriptType t)
                     continue;
                 }
 
-                // check for correct spellEffect
                 bool found = false;
                 for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
                 {
@@ -945,9 +892,6 @@ void ScriptMgr::LoadDbScripts(DBScriptType t)
     }
 }
 
-/**
- * @brief Loads db_script_string records and checks their usage from scripts and waypoints.
- */
 void ScriptMgr::LoadDbScriptStrings()
 {
     sObjectMgr.LoadMangosStrings(WorldDatabase, "db_script_string", MIN_DB_SCRIPT_STRING_ID, MAX_DB_SCRIPT_STRING_ID, true);
@@ -971,11 +915,6 @@ void ScriptMgr::LoadDbScriptStrings()
     }
 }
 
-/**
- * @brief Validates script text ids referenced by db scripts and removes used ids from the provided set.
- *
- * @param ids The set of loaded string ids that will be trimmed as usages are found.
- */
 void ScriptMgr::CheckScriptTexts(std::set<int32>& ids)
 {
     for (int t = DBS_START; t < DBS_END; ++t)

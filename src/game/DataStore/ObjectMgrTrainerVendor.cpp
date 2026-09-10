@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <set>
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
@@ -58,17 +56,10 @@
 #include "DisableMgr.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Loads trainer spell data from a database table.
- *
- * @param tableName The source table name.
- * @param isTemplates true when loading trainer templates instead of direct trainer entries.
- */
 void ObjectMgr::LoadTrainers(char const* tableName, bool isTemplates)
 {
     CacheTrainerSpellMap& trainerList = isTemplates ? m_mCacheTrainerTemplateSpellMap : m_mCacheTrainerSpellMap;
 
-    // For reload case
     for (CacheTrainerSpellMap::iterator itr = trainerList.begin(); itr != trainerList.end(); ++itr)
     {
         itr->second.Clear();
@@ -209,14 +200,10 @@ void ObjectMgr::LoadTrainers(char const* tableName, bool isTemplates)
     sLog.outString();
 }
 
-/**
- * @brief Loads trainer templates and validates creature references.
- */
 void ObjectMgr::LoadTrainerTemplates()
 {
     LoadTrainers("npc_trainer_template", true);
 
-    // post loading check
     std::set<uint32> trainer_ids;
     bool hasErrored = false;
 
@@ -249,23 +236,16 @@ void ObjectMgr::LoadTrainerTemplates()
         sLog.outErrorDb("Table `npc_trainer_template` has trainer template %u not used by any trainers ", *tItr);
     }
 
-    if (hasErrored || !trainer_ids.empty())                 // Append extra line in case of reported errors
+    if (hasErrored || !trainer_ids.empty())
     {
         sLog.outString();
     }
 }
 
-/**
- * @brief Loads vendor item data from a database table.
- *
- * @param tableName The source table name.
- * @param isTemplates true when loading vendor templates instead of direct vendor entries.
- */
 void ObjectMgr::LoadVendors(char const* tableName, bool isTemplates)
 {
     CacheVendorItemMap& vendorList = isTemplates ? m_mCacheVendorTemplateItemMap : m_mCacheVendorItemMap;
 
-    // For reload case
     for (CacheVendorItemMap::iterator itr = vendorList.begin(); itr != vendorList.end(); ++itr)
     {
         itr->second.Clear();
@@ -317,14 +297,10 @@ void ObjectMgr::LoadVendors(char const* tableName, bool isTemplates)
     sLog.outString();
 }
 
-/**
- * @brief Loads vendor templates and validates creature references.
- */
 void ObjectMgr::LoadVendorTemplates()
 {
     LoadVendors("npc_vendor_template", true);
 
-    // post loading check
     std::set<uint32> vendor_ids;
 
     for (CacheVendorItemMap::const_iterator vItr = m_mCacheVendorTemplateItemMap.begin(); vItr != m_mCacheVendorTemplateItemMap.end(); ++vItr)

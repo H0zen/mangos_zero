@@ -53,8 +53,6 @@ void DynamicCollision::FileBody(GameObjectModel& model)
         return;
     }
 
-    // Filed under EVERY tile the body's box overlaps. Keying on its position instead
-    // would file a hundred-yard bridge under one cell and lose it from every other.
     const int txLo = ClampTile(world::terrain::TileIndex(b.hi.x));
     const int txHi = ClampTile(world::terrain::TileIndex(b.lo.x));
     const int tyLo = ClampTile(world::terrain::TileIndex(b.hi.y));
@@ -142,8 +140,7 @@ void DynamicCollision::ForEachCandidate(float minx, float miny, float maxx, floa
             }
             for (GameObjectModel* model : bucket->second)
             {
-                // A body spanning several cells appears in several buckets; the stamp
-                // is what keeps one query from raycasting it more than once.
+
                 if (model->m_epoch == m_epoch)
                 {
                     continue;

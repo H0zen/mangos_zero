@@ -34,23 +34,14 @@ class Spell;
 class QueryResult;
 struct SpellEntry;
 
-/**
- * @brief Structure to hold spell cooldown information
- */
 struct SpellCooldown
 {
-    time_t end;    ///< End time of the cooldown
-    uint16 itemid; ///< Item ID associated with the cooldown
+    time_t end;
+    uint16 itemid;
 };
 
 typedef std::map<uint32, SpellCooldown> SpellCooldowns;
 
-/**
- * @brief Owns a player's active spell-cooldown map and the operations on it.
- *
- * Held by value on Player as m_spellCooldownMgr with a Player* back-pointer.
- * Persisted to character_spell_cooldown via LoadFromDB()/SaveToDB().
- */
 class SpellCooldownMgr
 {
     public:
@@ -81,6 +72,6 @@ class SpellCooldownMgr
         void SaveToDB();
 
     private:
-        Player* m_owner;            ///< Non-owning pointer to the owning Player.
-        SpellCooldowns m_cooldowns; ///< Active spell cooldowns keyed by spell id.
+        Player* m_owner;
+        SpellCooldowns m_cooldowns;
 };

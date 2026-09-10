@@ -23,28 +23,12 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SelectCommands.cpp
- * @brief Implementation of target selection chat commands.
- *
- * This file contains chat command handlers for selection operations including:
- * - Selecting players by various criteria
- * - Selecting creatures and objects
- * - Target area of effect selection
- */
-
 #include <string>
 #include "Chat.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "Language.h"
 
-/**
- * @brief Handler for HandleSelectPlayerCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleSelectPlayerCommand(char* args)
 {
     if (!*args)
@@ -62,12 +46,10 @@ bool ChatHandler::HandleSelectPlayerCommand(char* args)
         return false;
     }
 
-    // Normalize player name
     normalizePlayerName(playerName);
 
-    // Try to find online player first
     Player* target = sObjectMgr.GetPlayer(playerName.c_str());
-    ObjectGuid targetGuid;
+    ObjectGuid targetGuid = 0;
 
     if (target)
     {
@@ -75,7 +57,7 @@ bool ChatHandler::HandleSelectPlayerCommand(char* args)
     }
     else
     {
-        // Try to find offline player
+
         targetGuid = sObjectMgr.GetPlayerGuidByName(playerName);
         if (!targetGuid)
         {
@@ -85,13 +67,12 @@ bool ChatHandler::HandleSelectPlayerCommand(char* args)
         }
     }
 
-    // Store selection for console
     if (!m_session)
     {
         uint32 accountId = GetAccountId();
         m_consoleSelectedPlayers[accountId] = targetGuid;
 
-        PSendSysMessage("Selected player: %s (GUID: %u)", playerName.c_str(), targetGuid.GetCounter());
+        PSendSysMessage("Selected player: %s (GUID: %u)", playerName.c_str(), GuidCounter(targetGuid));
     }
     else
     {
@@ -101,13 +82,7 @@ bool ChatHandler::HandleSelectPlayerCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleSelectClearCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleSelectClearCommand(char* /*args*/)
+bool ChatHandler::HandleSelectClearCommand(char* )
 {
     if (!m_session)
     {

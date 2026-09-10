@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -70,16 +68,6 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Sends the result of a mail operation to the client.
- *
- * @param mailId The mail message identifier.
- * @param mailAction The mail action that was processed.
- * @param mailError The result code for the action.
- * @param equipError The equipment error code used for equip-related failures.
- * @param item_guid The related item GUID low part.
- * @param item_count The related item count.
- */
 void Player::SendMailResult(uint32 mailId, MailResponseType mailAction, MailResponseResult mailError, uint32 equipError, uint32 item_guid, uint32 item_count)
 {
     WorldPacket data(SMSG_SEND_MAIL_RESULT, (4 + 4 + 4 + (mailError == MAIL_ERR_EQUIP_ERROR ? 4 : 0)));

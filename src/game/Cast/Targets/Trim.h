@@ -32,21 +32,7 @@
 
 namespace cast
 {
-    /**
-     * @brief Cuts a list of found targets down to how many the spell may hit.
-     *
-     * The one the caster picked himself is taken out of the draw first and, for
-     * units, put back afterwards: a spell that reaches three of the ten standing
-     * around always reaches the one he aimed at. The rest go by lot.
-     *
-     * A gameobject the caster picked gets no such favour -- it is taken out and
-     * left out, which is the rule the object case has always followed.
-     *
-     * @param found          The list to cut down, changed in place.
-     * @param cap            How many may be hit; zero means no limit.
-     * @param chosen         The target the caster named, or null.
-     * @param keepsTheChosen Whether that one is put back after the draw.
-     */
+
     template<class T>
     void KeepAtMost(std::list<T*>& found, uint32 cap, T* chosen, bool keepsTheChosen)
     {
@@ -55,7 +41,6 @@ namespace cast
             return;
         }
 
-        // one is always taken out per pass, so the draw below always ends
         uint32 removedChosen = 0;
         for (auto one = found.begin(), next = one; one != found.end(); one = next)
         {

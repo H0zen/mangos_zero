@@ -31,17 +31,17 @@ namespace
 {
     ObjectGuid Player(uint32 counter)
     {
-        return ObjectGuid(HIGHGUID_PLAYER, counter);
+        return MakeGuid(HIGHGUID_PLAYER, counter);
     }
 
     ObjectGuid Creature(uint32 counter)
     {
-        return ObjectGuid(HIGHGUID_UNIT, static_cast<uint32>(1), counter);
+        return MakeGuid(HIGHGUID_UNIT, static_cast<uint32>(1), counter);
     }
 
     ObjectGuid Chest(uint32 counter)
     {
-        return ObjectGuid(HIGHGUID_GAMEOBJECT, static_cast<uint32>(2), counter);
+        return MakeGuid(HIGHGUID_GAMEOBJECT, static_cast<uint32>(2), counter);
     }
 
     cast::UnitTarget Unit(ObjectGuid guid, uint8 slots, uint64 arrivesInMs = 0)

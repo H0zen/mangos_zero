@@ -23,14 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file MapUpdater.h
- * @brief Worker pool that ticks maps in parallel.
- *
- * The world thread hands each map's Update() to this pool via schedule_update(), then
- * blocks in wait() until the whole tick has been processed.
- */
-
 #pragma once
 
 #include "Platform/Define.h"
@@ -45,9 +37,6 @@
 
 class Map;
 
-/**
- * @brief Schedules map updates across a pool of worker threads.
- */
 class MapUpdater
 {
     public:
@@ -58,52 +47,29 @@ class MapUpdater
         MapUpdater(const MapUpdater&) = delete;
         MapUpdater& operator=(const MapUpdater&) = delete;
 
-        /**
-         * @brief Queue map.Update(diff) for a worker.
-         * @return 0 on success, -1 if the pool is not running.
-         */
         int schedule_update(Map& map, uint32 diff);
 
-        /**
-         * @brief Block until every scheduled update has finished.
-         *
-         * This is the tick barrier: the world thread must not advance until every map
-         * queued this tick has been updated.
-         *
-         * @return Always 0.
-         */
         int wait();
 
-        /**
-         * @brief Start @p num_threads workers.
-         * @return 0 on success, -1 on failure.
-         */
         int activate(size_t num_threads);
 
-        /**
-         * @brief Drain outstanding updates, then stop and join the workers.
-         * @return Always 0.
-         */
         int deactivate();
 
-        /// True while worker threads are running.
         bool activated();
 
     private:
 
-        /// One queued map tick.
         typedef std::pair<Map*, uint32> Task;
 
-        /// Worker body: run tasks until stopped and the queue has drained.
         void workerLoop();
 
         std::vector<std::thread> m_workers;
         std::queue<Task>         m_tasks;
 
-        std::mutex              m_mutex;      ///< Guards m_tasks, m_pending and m_stop
-        std::condition_variable m_taskAdded;  ///< Wakes a worker when work arrives
-        std::condition_variable m_taskDone;   ///< Wakes wait() once m_pending hits zero
+        std::mutex              m_mutex;
+        std::condition_variable m_taskAdded;
+        std::condition_variable m_taskDone;
 
-        size_t m_pending; ///< Scheduled but not yet finished updates
-        bool   m_stop;    ///< Set by deactivate() to retire the workers
+        size_t m_pending;
+        bool   m_stop;
 };

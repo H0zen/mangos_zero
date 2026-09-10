@@ -30,26 +30,16 @@
 #include "Kinds.h"
 #include "Player.h"
 
-/**
- * Function that adds a player to the players of the affected outdoor pvp zones
- * @param   player to add
- * @param   whether zone is main outdoor pvp zone or a affected zone
- */
 void OutdoorPvP::HandlePlayerEnterZone(Player* player, bool isMainZone)
 {
     m_zonePlayers[player->GetObjectGuid()] = isMainZone;
 }
 
-/**
- * Function that removes a player from the players of the affected outdoor pvp zones
- * @param   player to remove
- * @param   whether zone is main outdoor pvp zone or a affected zone
- */
 void OutdoorPvP::HandlePlayerLeaveZone(Player* player, bool isMainZone)
 {
     if (m_zonePlayers.erase(player->GetObjectGuid()))
     {
-        // remove the world state information from the player
+
         if (isMainZone && !player->GetSession()->PlayerLogout())
         {
             SendRemoveWorldStates(player);
@@ -59,17 +49,11 @@ void OutdoorPvP::HandlePlayerLeaveZone(Player* player, bool isMainZone)
     }
 }
 
-/**
- * Function that updates the world state for all the players of the outdoor pvp zone
-
- * @param   world state to update
- * @param   new world state value
- */
 void OutdoorPvP::SendUpdateWorldState(uint32 field, uint32 value)
 {
     for (GuidZoneMap::const_iterator itr = m_zonePlayers.begin(); itr != m_zonePlayers.end(); ++itr)
     {
-        // only send world state update to main zone
+
         if (!itr->second)
         {
             continue;
@@ -82,14 +66,9 @@ void OutdoorPvP::SendUpdateWorldState(uint32 field, uint32 value)
     }
 }
 
-/**
- * @brief Applies outdoor PvP initialization state to a newly created game object.
- *
- * @param go The created game object.
- */
 void OutdoorPvP::HandleGameObjectCreate(GameObject* go)
 {
-    // set initial data and activate capture points
+
     if (auto* point = go->Behaves<CapturePointBehaviour>())
     {
         CapturePointSliderMap const* capturePoints = sOutdoorPvPMgr.GetCapturePointSliderMap();
@@ -105,14 +84,9 @@ void OutdoorPvP::HandleGameObjectCreate(GameObject* go)
     }
 }
 
-/**
- * @brief Persists outdoor PvP state from a game object before it is removed.
- *
- * @param go The removed game object.
- */
 void OutdoorPvP::HandleGameObjectRemove(GameObject* go)
 {
-    // save capture point slider value (negative value if locked)
+
     if (auto* point = go->Behaves<CapturePointBehaviour>())
     {
         CapturePointSlider value(point->Bar().Slider(), go->getLootState() != GO_ACTIVATED);
@@ -120,11 +94,6 @@ void OutdoorPvP::HandleGameObjectRemove(GameObject* go)
     }
 }
 
-/**
- * Function that handles player kills in the main outdoor pvp zones
- * @param   player who killed another player
- * @param   victim who was killed
- */
 void OutdoorPvP::HandlePlayerKill(Player* killer, Player* victim)
 {
     if (Group* group = killer->GetGroup())
@@ -138,14 +107,11 @@ void OutdoorPvP::HandlePlayerKill(Player* killer, Player* victim)
                 continue;
             }
 
-            // skip if too far away
             if (!groupMember->IsAtGroupRewardDistance(victim))
             {
                 continue;
             }
 
-            // creature kills must be notified, even if not inside objective / not outdoor pvp active
-            // player kills only count if active and inside objective
             if (groupMember->CanUseCapturePoint())
             {
                 HandlePlayerKillInsideArea(groupMember);
@@ -154,7 +120,7 @@ void OutdoorPvP::HandlePlayerKill(Player* killer, Player* victim)
     }
     else
     {
-        // creature kills must be notified, even if not inside objective / not outdoor pvp active
+
         if (killer && killer->CanUseCapturePoint())
         {
             HandlePlayerKillInsideArea(killer);
@@ -162,8 +128,7 @@ void OutdoorPvP::HandlePlayerKill(Player* killer, Player* victim)
     }
 }
 
-// apply a team buff for the main and affected zones
-void OutdoorPvP::BuffTeam(Team team, uint32 spellId, bool remove /*= false*/)
+void OutdoorPvP::BuffTeam(Team team, uint32 spellId, bool remove )
 {
     for (GuidZoneMap::const_iterator itr = m_zonePlayers.begin(); itr != m_zonePlayers.end(); ++itr)
     {
@@ -182,16 +147,7 @@ void OutdoorPvP::BuffTeam(Team team, uint32 spellId, bool remove /*= false*/)
     }
 }
 
-/**
- * @brief Selects the banner art kit for a controlling team.
- *
- * @param team The controlling team.
- * @param artKitAlliance The alliance art kit id.
- * @param artKitHorde The horde art kit id.
- * @param artKitNeutral The neutral art kit id.
- * @return uint32 The selected banner art kit id.
- */
-uint32 OutdoorPvP::GetBannerArtKit(Team team, uint32 artKitAlliance /*= CAPTURE_ARTKIT_ALLIANCE*/, uint32 artKitHorde /*= CAPTURE_ARTKIT_HORDE*/, uint32 artKitNeutral /*= CAPTURE_ARTKIT_NEUTRAL*/)
+uint32 OutdoorPvP::GetBannerArtKit(Team team, uint32 artKitAlliance , uint32 artKitHorde , uint32 artKitNeutral )
 {
     switch (team)
     {
@@ -204,14 +160,6 @@ uint32 OutdoorPvP::GetBannerArtKit(Team team, uint32 artKitAlliance /*= CAPTURE_
     }
 }
 
-/**
- * @brief Resolves a banner game object by guid and updates its visual state.
- *
- * @param objRef A world object providing map context.
- * @param goGuid The banner game object guid.
- * @param artKit The art kit to apply.
- * @param animId The animation id to play.
- */
 void OutdoorPvP::SetBannerVisual(const Occupant* objRef, ObjectGuid goGuid, uint32 artKit, uint32 animId)
 {
     if (GameObject* go = objRef->GetMap()->GetGameObject(goGuid))
@@ -220,13 +168,6 @@ void OutdoorPvP::SetBannerVisual(const Occupant* objRef, ObjectGuid goGuid, uint
     }
 }
 
-/**
- * @brief Updates a banner game object's animation and art kit.
- *
- * @param go The banner game object.
- * @param artKit The art kit to apply.
- * @param animId The animation id to play.
- */
 void OutdoorPvP::SetBannerVisual(GameObject* go, uint32 artKit, uint32 animId)
 {
     go->SendGameObjectCustomAnim(animId);
@@ -234,13 +175,6 @@ void OutdoorPvP::SetBannerVisual(GameObject* go, uint32 artKit, uint32 animId)
     go->Refresh();
 }
 
-/**
- * @brief Toggles respawn state for an outdoor PvP game object.
- *
- * @param objRef A world object providing map context.
- * @param goGuid The game object guid.
- * @param respawn True to refresh the game object, false to despawn it.
- */
 void OutdoorPvP::RespawnGO(const Occupant* objRef, ObjectGuid goGuid, bool respawn)
 {
     if (GameObject* go = objRef->GetMap()->GetGameObject(goGuid))

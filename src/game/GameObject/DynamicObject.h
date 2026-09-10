@@ -26,13 +26,14 @@
 #pragma once
 
 #include "Lifespan.h"
+#include "Lifespan.h"
 #include "Occupant.h"
 #include "DBCEnums.h"
 #include "Unit.h"
 
 enum DynamicObjectType
 {
-    DYNAMIC_OBJECT_PORTAL           = 0x0,      // unused
+    DYNAMIC_OBJECT_PORTAL           = 0x0,
     DYNAMIC_OBJECT_AREA_SPELL       = 0x1,
     DYNAMIC_OBJECT_FARSIGHT_FOCUS   = 0x2,
 };
@@ -62,40 +63,22 @@ class DynamicObject : public Occupant
         void RemoveAffected(Unit* unit) { m_affected.erase(unit->GetObjectGuid()); }
         void Delay(int32 delaytime);
 
-
-        float ComputeBoundingRadius() const override      // overwrite Occupant version
+        float ComputeBoundingRadius() const override
         {
-            return 0.0f;                                    // dynamic object not have real interact size
+            return 0.0f;
         }
 
         bool IsControlledByPlayer() const override
         {
-            return GetCasterGuid().IsPlayer();
+            return (GetCasterGuid() != 0 && GuidHigh(GetCasterGuid()) == HIGHGUID_PLAYER);
         }
 
         bool IsVisibleForInState(Player const* u, Occupant const* viewPoint, bool inVisibleList) const override;
 
-        /**
-         * @brief Anchor this area effect to a DECK spot rather than a world point.
-         *
-         * A persistent area aura cast on a transport belongs to the deck, not to the patch
-         * of sea the ship is leaving behind. Its true coordinates are the local offset,
-         * because on a deck the world transform is a lie and the offset is the only thing
-         * that does not move.
-         */
         void BindToTransport(ObjectGuid transportGuid, float lx, float ly, float lz);
 
         bool OnTransport() const { return bool(m_transportGuid); }
 
-        /**
-         * @brief Is `target` inside the effect, measured the honest way?
-         *
-         * A deck effect and a boarded target are both points in the vessel's own space, so
-         * the distance between them is their LOCAL separation -- exact, and independent of
-         * wherever the server imagines the hull to be. A target not on this vessel is not
-         * in a deck effect at all. Only an ordinary world effect falls back to the world
-         * distance.
-         */
         bool IsInEffectRange(Unit const* target) const;
 
         GridReference<DynamicObject>& GetGridRef()
@@ -107,15 +90,12 @@ class DynamicObject : public Occupant
         uint32 m_spellId;
         SpellEffectIndex m_effIndex;
 
-        /// How long the effect has left. An effect is always granted a length, so this is
-        /// always bounded, and running out is what ends it.
         Lifespan m_life;
-        float m_radius;                                     // radius apply persistent effect, 0 = no persistent effect
+        float m_radius;
         bool m_positive;
         GuidSet m_affected;
 
-        /// The vessel this effect rides, or an empty guid for an ordinary world effect.
-        ObjectGuid m_transportGuid;
+        ObjectGuid m_transportGuid = 0;
         float m_transOffsetX, m_transOffsetY, m_transOffsetZ;
     private:
         GridReference<DynamicObject> m_gridRef;

@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -71,31 +69,25 @@
 #include <cmath>
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Sends the player's initial action bar state to the client.
- */
 void Player::SendInitialActionButtons() const
 {
     DETAIL_LOG("Initializing Action Buttons for '%u'", GetGUIDLow());
 
-    /* Initiate packet with size 4 bytes per action button */
     WorldPacket data(SMSG_ACTION_BUTTONS, (MAX_ACTION_BUTTONS * 4));
 
-    /* For each possible action button the player could have */
     for (uint8 button = 0; button < MAX_ACTION_BUTTONS; ++button)
     {
-        /* Try and get each action button the player could have */
+
         ActionButtonList::const_iterator itr = m_actionButtons.find(button);
 
-        /* If the button is valid and not deleted */
         if (itr != m_actionButtons.end() && itr->second.uState != ACTIONBUTTON_DELETED)
         {
-            /* Send the data */
+
             data << uint32(itr->second.packedData);
         }
         else
         {
-            /* Nothing to send, so just send 0 */
+
             data << uint32(0);
         }
     }
@@ -104,15 +96,6 @@ void Player::SendInitialActionButtons() const
     DETAIL_LOG("Action Buttons for '%u' Initialized", GetGUIDLow());
 }
 
-/**
- * @brief Validates action bar data before it is stored or loaded.
- *
- * @param button The action bar button index.
- * @param action The action identifier assigned to the button.
- * @param type The action button type.
- * @param player The player being validated for, or null for template data.
- * @return True if the action button data is valid; otherwise, false.
- */
 bool Player::IsActionButtonDataValid(uint8 button, uint32 action, uint8 type, Player* player)
 {
     if (button >= MAX_ACTION_BUTTONS)
@@ -191,20 +174,12 @@ bool Player::IsActionButtonDataValid(uint8 button, uint32 action, uint8 type, Pl
             break;
         }
         default:
-            break;                                          // other cases not checked at this moment
+            break;
     }
 
     return true;
 }
 
-/**
- * @brief Adds or updates an action bar button entry.
- *
- * @param button The action bar button index.
- * @param action The action identifier to bind.
- * @param type The action button type.
- * @return The updated action button, or null if validation fails.
- */
 ActionButton* Player::addActionButton(uint8 button, uint32 action, uint8 type)
 {
     if (!IsActionButtonDataValid(button, action, type, this))
@@ -212,21 +187,14 @@ ActionButton* Player::addActionButton(uint8 button, uint32 action, uint8 type)
         return nullptr;
     }
 
-    // it create new button (NEW state) if need or return existing
     ActionButton& ab = m_actionButtons[button];
 
-    // set data and update to CHANGED if not NEW
     ab.SetActionAndType(action, ActionButtonType(type));
 
     DETAIL_LOG("Player '%u' Added Action '%u' (type %u) to Button '%u'", GetGUIDLow(), action, uint32(type), button);
     return &ab;
 }
 
-/**
- * @brief Removes an action bar button entry.
- *
- * @param button The action bar button index to remove.
- */
 void Player::removeActionButton(uint8 button)
 {
     ActionButtonList::iterator buttonItr = m_actionButtons.find(button);
@@ -237,11 +205,11 @@ void Player::removeActionButton(uint8 button)
 
     if (buttonItr->second.uState == ACTIONBUTTON_NEW)
     {
-        m_actionButtons.erase(buttonItr); // new and not saved
+        m_actionButtons.erase(buttonItr);
     }
     else
     {
-        buttonItr->second.uState = ACTIONBUTTON_DELETED; // saved, will deleted at next save
+        buttonItr->second.uState = ACTIONBUTTON_DELETED;
     }
 
     DETAIL_LOG("Action Button '%u' Removed from Player '%u'", button, GetGUIDLow());

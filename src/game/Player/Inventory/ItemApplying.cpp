@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -78,7 +76,6 @@ void Player::_ApplyItemMods(Item* item, uint8 slot, bool apply)
         return;
     }
 
-    // not apply/remove mods for broken item
     if (item->IsBroken())
     {
         return;
@@ -112,13 +109,6 @@ void Player::_ApplyItemMods(Item* item, uint8 slot, bool apply)
     DEBUG_LOG("_ApplyItemMods complete.");
 }
 
-/**
- * @brief Applies or removes stat bonuses from an equipped item prototype.
- *
- * @param proto The item prototype supplying the bonuses.
- * @param slot The equipment slot receiving the bonuses.
- * @param apply True to apply the bonuses; false to remove them.
- */
 void Player::_ApplyItemBonuses(ItemPrototype const* proto, uint8 slot, bool apply)
 {
     if (slot >= INVENTORY_SLOT_BAG_END || !proto)
@@ -132,7 +122,7 @@ void Player::_ApplyItemBonuses(ItemPrototype const* proto, uint8 slot, bool appl
 
         if (val == 0)
         {
-            break; // no point continuing through the loop, as this will signify no more stats of this variety (mana, strength, etc.) are to be added to the item
+            break;
         }
 
         switch (proto->ItemStat[i].ItemStatType)
@@ -140,26 +130,26 @@ void Player::_ApplyItemBonuses(ItemPrototype const* proto, uint8 slot, bool appl
             case ITEM_MOD_MANA:
                 stats::Apply(*this, UNIT_MOD_MANA, BASE_VALUE, float(val), apply);
                 break;
-            case ITEM_MOD_HEALTH:                           // modify HP
+            case ITEM_MOD_HEALTH:
                 stats::Apply(*this, UNIT_MOD_HEALTH, BASE_VALUE, float(val), apply);
                 break;
-            case ITEM_MOD_AGILITY:                          // modify agility
+            case ITEM_MOD_AGILITY:
                 stats::Apply(*this, UNIT_MOD_STAT_AGILITY, BASE_VALUE, float(val), apply);
                 ApplyStatBuffMod(STAT_AGILITY, float(val), apply);
                 break;
-            case ITEM_MOD_STRENGTH:                         // modify strength
+            case ITEM_MOD_STRENGTH:
                 stats::Apply(*this, UNIT_MOD_STAT_STRENGTH, BASE_VALUE, float(val), apply);
                 ApplyStatBuffMod(STAT_STRENGTH, float(val), apply);
                 break;
-            case ITEM_MOD_INTELLECT:                        // modify intellect
+            case ITEM_MOD_INTELLECT:
                 stats::Apply(*this, UNIT_MOD_STAT_INTELLECT, BASE_VALUE, float(val), apply);
                 ApplyStatBuffMod(STAT_INTELLECT, float(val), apply);
                 break;
-            case ITEM_MOD_SPIRIT:                           // modify spirit
+            case ITEM_MOD_SPIRIT:
                 stats::Apply(*this, UNIT_MOD_STAT_SPIRIT, BASE_VALUE, float(val), apply);
                 ApplyStatBuffMod(STAT_SPIRIT, float(val), apply);
                 break;
-            case ITEM_MOD_STAMINA:                          // modify stamina
+            case ITEM_MOD_STAMINA:
                 stats::Apply(*this, UNIT_MOD_STAT_STAMINA, BASE_VALUE, float(val), apply);
                 ApplyStatBuffMod(STAT_STAMINA, float(val), apply);
                 break;
@@ -224,7 +214,7 @@ void Player::_ApplyItemBonuses(ItemPrototype const* proto, uint8 slot, bool appl
     {
         damage = apply ? proto->Damage[0].DamageMin : BASE_MINDAMAGE;
         SetBaseWeaponDamage(attType, MINDAMAGE, damage);
-        // sLog.outError("applying mindam: assigning %f to weapon mindamage, now is: %f", damage, GetWeaponDamageRange(attType, MINDAMAGE));
+
     }
 
     if (proto->Damage[0].DamageMax  > 0)
@@ -260,13 +250,6 @@ void Player::_ApplyItemBonuses(ItemPrototype const* proto, uint8 slot, bool appl
     }
 }
 
-/**
- * @brief Applies or removes weapon-specific aura modifiers for an equipped weapon.
- *
- * @param item The equipped weapon item.
- * @param attackType The attack type affected by the weapon.
- * @param apply True to apply modifiers; false to remove them.
- */
 void Player::_ApplyWeaponDependentAuraMods(Item* item, WeaponAttackType attackType, bool apply)
 {
     const auto auraCritList = GetAurasByType(SPELL_AURA_MOD_CRIT_PERCENT);
@@ -288,17 +271,9 @@ void Player::_ApplyWeaponDependentAuraMods(Item* item, WeaponAttackType attackTy
     }
 }
 
-/**
- * @brief Applies or removes a weapon-dependent critical strike aura modifier.
- *
- * @param item The equipped weapon item.
- * @param attackType The affected attack type.
- * @param aura The aura providing the modifier.
- * @param apply True to apply the modifier; false to remove it.
- */
 void Player::_ApplyWeaponDependentAuraCritMod(Item* item, WeaponAttackType attackType, Aura* aura, bool apply)
 {
-    // generic not weapon specific case processes in aura code
+
     if (aura->GetSpellProto()->EquippedItemClass == -1)
     {
         return;
@@ -319,24 +294,15 @@ void Player::_ApplyWeaponDependentAuraCritMod(Item* item, WeaponAttackType attac
     }
 }
 
-/**
- * @brief Applies or removes a weapon-dependent damage aura modifier.
- *
- * @param item The equipped weapon item.
- * @param attackType The affected attack type.
- * @param aura The aura providing the modifier.
- * @param apply True to apply the modifier; false to remove it.
- */
 void Player::_ApplyWeaponDependentAuraDamageMod(Item* item, WeaponAttackType attackType, Aura* aura, bool apply)
 {
-    // ignore spell mods for not wands
+
     Modifier const* modifier = aura->GetModifier();
     if ((modifier->m_miscvalue & SPELL_SCHOOL_MASK_NORMAL) == 0 && (getClassMask() & CLASSMASK_WAND_USERS) == 0)
     {
         return;
     }
 
-    // generic not weapon specific case processes in aura code
     if (aura->GetSpellProto()->EquippedItemClass == -1)
     {
         return;
@@ -365,13 +331,6 @@ void Player::_ApplyWeaponDependentAuraDamageMod(Item* item, WeaponAttackType att
     }
 }
 
-/**
- * @brief Applies or removes all item spells associated with an equipped item.
- *
- * @param item The equipped item to process.
- * @param apply True to apply item equip effects; false to remove them.
- * @param form_change True if the update is caused by a shapeshift form change.
- */
 void Player::ApplyItemEquipSpell(Item* item, bool apply, bool form_change)
 {
     if (!item)
@@ -389,7 +348,6 @@ void Player::ApplyItemEquipSpell(Item* item, bool apply, bool form_change)
     {
         _Spell const& spellData = proto->Spells[i];
 
-        // no spell
         if (!spellData.SpellId)
         {
             continue;
@@ -397,7 +355,7 @@ void Player::ApplyItemEquipSpell(Item* item, bool apply, bool form_change)
 
         if (apply)
         {
-            // apply only at-equip spells
+
             if (spellData.SpellTrigger != ITEM_SPELLTRIGGER_ON_EQUIP)
             {
                 continue;
@@ -405,16 +363,13 @@ void Player::ApplyItemEquipSpell(Item* item, bool apply, bool form_change)
         }
         else
         {
-            // at un-apply remove all spells (not only at-apply, so any at-use active affects from item and etc)
-            // except on form change and with at-use with negative charges, so allow consuming item spells (including with extra flag that prevent consume really)
-            // applied to player after item remove from equip slot
+
             if (spellData.SpellTrigger == ITEM_SPELLTRIGGER_ON_USE && (form_change || spellData.SpellCharges < 0))
             {
                 continue;
             }
         }
 
-        // check if it is valid spell
         SpellEntry const* spellproto = sSpellStore.LookupEntry(spellData.SpellId);
         if (!spellproto)
         {
@@ -425,25 +380,17 @@ void Player::ApplyItemEquipSpell(Item* item, bool apply, bool form_change)
     }
 }
 
-/**
- * @brief Applies or removes a single equipment-derived spell effect.
- *
- * @param spellInfo The spell entry to process.
- * @param item The source item, or null for item set bonuses.
- * @param apply True to apply the spell effect; false to remove it.
- * @param form_change True if the update is caused by a shapeshift form change.
- */
 void Player::ApplyEquipSpell(SpellEntry const* spellInfo, Item* item, bool apply, bool form_change)
 {
     if (apply)
     {
-        // Can not be used in this stance/form
+
         if (GetErrorAtShapeshiftedCast(spellInfo, GetShapeshiftForm()) != SPELL_CAST_OK)
         {
             return;
         }
 
-        if (form_change)                                    // check aura active state from other form
+        if (form_change)
         {
             bool found = false;
             for (int k = 0; k < MAX_EFFECT_INDEX; ++k)
@@ -463,7 +410,7 @@ void Player::ApplyEquipSpell(SpellEntry const* spellInfo, Item* item, bool apply
                 }
             }
 
-            if (found)                                      // and skip re-cast already active aura at form change
+            if (found)
             {
                 return;
             }
@@ -475,41 +422,37 @@ void Player::ApplyEquipSpell(SpellEntry const* spellInfo, Item* item, bool apply
     }
     else
     {
-        if (form_change)                                    // check aura compatibility
+        if (form_change)
         {
-            // Can not be used in this stance/form
+
             if (GetErrorAtShapeshiftedCast(spellInfo, GetShapeshiftForm()) == SPELL_CAST_OK)
             {
-                return; // and remove only not compatible at form change
+                return;
             }
         }
 
         if (item)
         {
-            RemoveAurasFromItem(item, spellInfo->ID); // un-apply all spells , not only at-equipped
+            RemoveAurasFromItem(item, spellInfo->ID);
         }
         else
         {
-            RemoveAuras(spellInfo->ID); // un-apply spell (item set case)
+            RemoveAuras(spellInfo->ID);
         }
     }
 }
 
-/**
- * @brief Re-evaluates equipment and item set spells after a form change.
- */
 void Player::UpdateEquipSpellsAtFormChange()
 {
     for (int i = 0; i < INVENTORY_SLOT_BAG_END; ++i)
     {
         if (m_inventory.Own(i) && !m_inventory.Own(i)->IsBroken())
         {
-            ApplyItemEquipSpell(m_inventory.Own(i), false, true);   // remove spells that not fit to form
-            ApplyItemEquipSpell(m_inventory.Own(i), true, true);    // add spells that fit form but not active
+            ApplyItemEquipSpell(m_inventory.Own(i), false, true);
+            ApplyItemEquipSpell(m_inventory.Own(i), true, true);
         }
     }
 
-    // item set bonuses not dependent from item broken state
     for (size_t setindex = 0; setindex < ItemSetEff.size(); ++setindex)
     {
         ItemSetEffect* eff = ItemSetEff[setindex];
@@ -526,18 +469,12 @@ void Player::UpdateEquipSpellsAtFormChange()
                 continue;
             }
 
-            ApplyEquipSpell(spellInfo, nullptr, false, true);  // remove spells that not fit to form
-            ApplyEquipSpell(spellInfo, nullptr, true, true);   // add spells that fit form but not active
+            ApplyEquipSpell(spellInfo, nullptr, false, true);
+            ApplyEquipSpell(spellInfo, nullptr, true, true);
         }
     }
 }
 
-/**
- * @brief Triggers item and enchantment combat procs for an attack.
- *
- * @param Target The unit struck by the attack.
- * @param attType The attack type that caused the proc check.
- */
 void Player::CastItemCombatSpell(Unit* Target, WeaponAttackType attType)
 {
     Item* item = GetWeaponForAttack(attType, true, true);
@@ -561,13 +498,11 @@ void Player::CastItemCombatSpell(Unit* Target, WeaponAttackType attType)
     {
         _Spell const& spellData = proto->Spells[i];
 
-        // no spell
         if (!spellData.SpellId)
         {
             continue;
         }
 
-        // wrong triggering type
         if (spellData.SpellTrigger != ITEM_SPELLTRIGGER_CHANCE_ON_HIT)
         {
             continue;
@@ -580,7 +515,6 @@ void Player::CastItemCombatSpell(Unit* Target, WeaponAttackType attType)
             continue;
         }
 
-        // not allow proc extra attack spell at extra attack
         if (m_extraAttacks && spellInfo->HasSpellEffect(SPELL_EFFECT_ADD_EXTRA_ATTACKS))
         {
             return;
@@ -604,7 +538,6 @@ void Player::CastItemCombatSpell(Unit* Target, WeaponAttackType attType)
         }
     }
 
-    // item combat enchantments
     for (int e_slot = 0; e_slot < MAX_ENCHANTMENT_SLOT; ++e_slot)
     {
         uint32 enchant_id = item->GetEnchantmentId(EnchantmentSlot(e_slot));
@@ -629,7 +562,6 @@ void Player::CastItemCombatSpell(Unit* Target, WeaponAttackType attType)
                 continue;
             }
 
-            // Use first rank to access spell item enchant procs
             float ppmRate = sSpellMgr.GetItemEnchantProcChance(spellInfo->ID);
 
             float chance = ppmRate
@@ -653,31 +585,21 @@ void Player::CastItemCombatSpell(Unit* Target, WeaponAttackType attType)
     }
 }
 
-/**
- * @brief Casts all on-use spells provided by an item.
- *
- * @param item The item being used.
- * @param targets The prepared spell targets for the cast.
- */
 void Player::CastItemUseSpell(Item* item, SpellCastTargets const& targets)
 {
     ItemPrototype const* proto = item->GetProto();
 
-    // use triggered flag only for items with many spell casts and for not first cast
     int count = 0;
 
-    // item spells casted at use
     for (int i = 0; i < MAX_ITEM_PROTO_SPELLS; ++i)
     {
         _Spell const& spellData = proto->Spells[i];
 
-        // no spell
         if (!spellData.SpellId)
         {
             continue;
         }
 
-        // wrong triggering type
         if (spellData.SpellTrigger != ITEM_SPELLTRIGGER_ON_USE && spellData.SpellTrigger != ITEM_SPELLTRIGGER_ON_NO_DELAY_USE)
         {
             continue;
@@ -698,9 +620,6 @@ void Player::CastItemUseSpell(Item* item, SpellCastTargets const& targets)
     }
 }
 
-/**
- * @brief Removes all item-derived modifiers, enchantments, and equip effects.
- */
 void Player::_RemoveAllItemMods()
 {
     DEBUG_LOG("_RemoveAllItemMods start.");
@@ -715,7 +634,6 @@ void Player::_RemoveAllItemMods()
                 continue;
             }
 
-            // item set bonuses not dependent from item broken state
             if (proto->ItemSet)
             {
                 RemoveItemsSetItem(this, proto);
@@ -763,9 +681,6 @@ void Player::_RemoveAllItemMods()
     DEBUG_LOG("_RemoveAllItemMods complete.");
 }
 
-/**
- * @brief Applies all item-derived modifiers, set bonuses, enchantments, and equip effects.
- */
 void Player::_ApplyAllItemMods()
 {
     DEBUG_LOG("_ApplyAllItemMods start.");
@@ -810,7 +725,6 @@ void Player::_ApplyAllItemMods()
                 continue;
             }
 
-            // item set bonuses not dependent from item broken state
             if (proto->ItemSet)
             {
                 AddItemsSetItem(this, m_inventory.Own(i));
@@ -829,12 +743,9 @@ void Player::_ApplyAllItemMods()
     DEBUG_LOG("_ApplyAllItemMods complete.");
 }
 
-/**
- * @brief Updates ranged damage bonuses from the currently selected ammo.
- */
 void Player::_ApplyAmmoBonuses()
 {
-    // check ammo
+
     uint32 ammo_id = GetUInt32Value(PLAYER_AMMO_ID);
     if (!ammo_id)
     {
@@ -869,12 +780,6 @@ void Player::_ApplyAmmoBonuses()
     }
 }
 
-/**
- * @brief Checks whether a projectile item is compatible with the equipped ranged weapon.
- *
- * @param ammo_proto The ammo item prototype to validate.
- * @return True if the ammo can be used with the equipped ranged weapon; otherwise, false.
- */
 bool Player::CheckAmmoCompatibility(const ItemPrototype* ammo_proto) const
 {
     if (!ammo_proto)
@@ -882,7 +787,6 @@ bool Player::CheckAmmoCompatibility(const ItemPrototype* ammo_proto) const
         return false;
     }
 
-    // check ranged weapon
     Item* weapon = GetWeaponForAttack(RANGED_ATTACK, true, false);
     if (!weapon)
     {
@@ -895,7 +799,6 @@ bool Player::CheckAmmoCompatibility(const ItemPrototype* ammo_proto) const
         return false;
     }
 
-    // check ammo ws. weapon compatibility
     switch (weapon_proto->SubClass)
     {
         case ITEM_SUBCLASS_WEAPON_BOW:

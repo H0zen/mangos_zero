@@ -23,22 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file BattleGround.cpp
- * @brief Core implementation of the battleground system.
- *
- * This file contains the implementation of the BattleGround base class, which provides:
- * - Battleground state management (waiting, in-progress, finished)
- * - Player management (joining, leaving, tracking)
- * - Event handling and broadcasting
- * - Reward distribution and scoring
- * - World state synchronization
- * - Team management and raid groups
- * - Creature and game object spawning
- */
-
-
-
 #include <string>
 #include "BattleGround.h"
 #include "Object.h"
@@ -58,12 +42,6 @@
 #include "GridNotifiersImpl.h"
 #include "Chat.h"
 
-/**
- * @brief Rewards the honor to a specific team in the battleground.
- *
- * @param Honor The amount of honor to reward.
- * @param teamId The team ID.
- */
 void BattleGround::RewardHonorToTeam(uint32 Honor, Team teamId)
 {
     for (BattleGroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
@@ -77,7 +55,7 @@ void BattleGround::RewardHonorToTeam(uint32 Honor, Team teamId)
 
         if (!plr)
         {
-            sLog.outError("BattleGround:RewardHonorToTeam: %s not found!", itr->first.GetString().c_str());
+            sLog.outError("BattleGround:RewardHonorToTeam: %s not found!", GuidString(itr->first).c_str());
             continue;
         }
 
@@ -94,13 +72,6 @@ void BattleGround::RewardHonorToTeam(uint32 Honor, Team teamId)
     }
 }
 
-/**
- * @brief Rewards the reputation to a specific team in the battleground.
- *
- * @param faction_id The faction ID.
- * @param Reputation The amount of reputation to reward.
- * @param teamId The team ID.
- */
 void BattleGround::RewardReputationToTeam(uint32 faction_id, uint32 Reputation, Team teamId)
 {
     FactionEntry const* factionEntry = sFactionStore.LookupEntry(faction_id);
@@ -121,7 +92,7 @@ void BattleGround::RewardReputationToTeam(uint32 faction_id, uint32 Reputation, 
 
         if (!plr)
         {
-            sLog.outError("BattleGround:RewardReputationToTeam: %s not found!", itr->first.GetString().c_str());
+            sLog.outError("BattleGround:RewardReputationToTeam: %s not found!", GuidString(itr->first).c_str());
             continue;
         }
 
@@ -138,12 +109,6 @@ void BattleGround::RewardReputationToTeam(uint32 faction_id, uint32 Reputation, 
     }
 }
 
-/**
- * @brief Updates the state of the world for all players in the battleground.
- *
- * @param Field The field to update.
- * @param Value The value to set.
- */
 void BattleGround::UpdateWorldState(uint32 Field, uint32 Value)
 {
     WorldPacket data;
@@ -151,13 +116,6 @@ void BattleGround::UpdateWorldState(uint32 Field, uint32 Value)
     SendPacketToAll(&data);
 }
 
-/**
- * @brief Updates the state of the world for a specific player in the battleground.
- *
- * @param Field The field to update.
- * @param Value The value to set.
- * @param Source The player to update.
- */
 void BattleGround::UpdateWorldStateForPlayer(uint32 Field, uint32 Value, Player* Source)
 {
     WorldPacket data;
@@ -165,11 +123,6 @@ void BattleGround::UpdateWorldStateForPlayer(uint32 Field, uint32 Value, Player*
     Source->GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Ends the battleground and declares a winner.
- *
- * @param winner The winning team.
- */
 void BattleGround::EndBattleGround(Team winner)
 {
     this->RemoveFromBGFreeSlotQueue();
@@ -184,21 +137,18 @@ void BattleGround::EndBattleGround(Team winner)
     if (winner == ALLIANCE)
     {
         winmsg_id = LANG_BG_A_WINS;
-        PlaySoundToAll(SOUND_ALLIANCE_WINS);                // alliance wins sound
+        PlaySoundToAll(SOUND_ALLIANCE_WINS);
 
-        // reversed index for the bg score storage system
         bgScoresWinner = TEAM_INDEX_HORDE;
     }
     else if (winner == HORDE)
     {
         winmsg_id = LANG_BG_H_WINS;
-        PlaySoundToAll(SOUND_HORDE_WINS);                   // horde wins sound
+        PlaySoundToAll(SOUND_HORDE_WINS);
 
-        // reversed index for the bg score storage system
         bgScoresWinner = TEAM_INDEX_ALLIANCE;
     }
 
-    // store battleground scores
     if (sWorld.getConfig(CONFIG_BOOL_BATTLEGROUND_SCORE_STATISTICS))
     {
         static SqlStatementID insPvPstatsBattleground;
@@ -209,7 +159,6 @@ void BattleGround::EndBattleGround(Team winner)
         uint8 battleground_bracket = GetMinLevel() / 10;
         uint8 battleground_type = (uint8)GetTypeID();
 
-        // query next id
         result = CharacterDatabase.Query("SELECT MAX(`id`) FROM `pvpstats_battlegrounds`");
         if (result)
         {
@@ -224,7 +173,7 @@ void BattleGround::EndBattleGround(Team winner)
     SetWinner(winner);
 
     SetStatus(STATUS_WAIT_LEAVE);
-    // we must set it this way, because end time is sent in packet!
+
     m_EndTime = TIME_TO_AUTOREMOVE;
 
     for (BattleGroundPlayerMap::iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
@@ -239,11 +188,10 @@ void BattleGround::EndBattleGround(Team winner)
         Player* plr = sObjectMgr.GetPlayer(itr->first);
         if (!plr)
         {
-            sLog.outError("BattleGround:EndBattleGround %s not found!", itr->first.GetString().c_str());
+            sLog.outError("BattleGround:EndBattleGround %s not found!", GuidString(itr->first).c_str());
             continue;
         }
 
-        // should remove spirit of redemption
         if (plr->HasAuraType(SPELL_AURA_SPIRIT_OF_REDEMPTION))
         {
             plr->RemoveAurasOfType(SPELL_AURA_MOD_SHAPESHIFT);
@@ -256,15 +204,11 @@ void BattleGround::EndBattleGround(Team winner)
         }
         else
         {
-            // needed cause else in av some creatures will kill the players at the end
+
             plr->CombatStop();
             plr->GetHostileRefManager().deleteReferences();
         }
 
-        // this line is obsolete - team is set ALWAYS
-        // if (!team) team = plr->GetTeam();
-
-        // store battleground score statistics for each player
         if (sWorld.getConfig(CONFIG_BOOL_BATTLEGROUND_SCORE_STATISTICS))
         {
             static SqlStatementID insPvPstatsPlayer;
@@ -316,23 +260,12 @@ void BattleGround::EndBattleGround(Team winner)
     }
 }
 
-/**
- * @brief Gets the bonus honor from a kill.
- *
- * @param kills The number of kills.
- * @returns The amount of bonus honor.
- */
 uint32 BattleGround::GetBonusHonorFromKill(uint32 kills) const
 {
-    // variable kills means how many honorable kills you scored (so we need kills * honor_for_one_kill)
+
     return (uint32)MaNGOS::Honor::hk_honor_at_level(GetMaxLevel(), kills);
 }
 
-/**
- * @brief Gets the battlemaster entry for the battleground.
- *
- * @returns The battlemaster entry ID.
- */
 uint32 BattleGround::GetBattlemasterEntry() const
 {
     switch (GetTypeID())
@@ -344,12 +277,6 @@ uint32 BattleGround::GetBattlemasterEntry() const
     }
 }
 
-/**
- * @brief Rewards the mark to the player based on the battleground type and result.
- *
- * @param plr The player to reward.
- * @param count The count of marks to reward.
- */
 void BattleGround::RewardMark(Player* plr, uint32 count)
 {
     switch (GetTypeID())
@@ -389,12 +316,6 @@ void BattleGround::RewardMark(Player* plr, uint32 count)
     }
 }
 
-/**
- * @brief Casts a reward spell on the player.
- *
- * @param plr The player to cast the spell on.
- * @param spell_id The ID of the spell to cast.
- */
 void BattleGround::RewardSpellCast(Player* plr, uint32 spell_id)
 {
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(spell_id);
@@ -407,13 +328,6 @@ void BattleGround::RewardSpellCast(Player* plr, uint32 spell_id)
     plr->CastSpell(plr, spellInfo, true);
 }
 
-/**
- * @brief Rewards an item to the player.
- *
- * @param plr The player to reward.
- * @param item_id The ID of the item to reward.
- * @param count The count of items to reward.
- */
 void BattleGround::RewardItem(Player* plr, uint32 item_id, uint32 count)
 {
     ItemPosCountVec dest;
@@ -426,12 +340,12 @@ void BattleGround::RewardItem(Player* plr, uint32 item_id, uint32 count)
         return;
     }
 
-    if (msg != EQUIP_ERR_OK)                                // convert to possible store amount
+    if (msg != EQUIP_ERR_OK)
     {
         count -= no_space_count;
     }
 
-    if (count != 0 && !dest.empty())                        // can add some
+    if (count != 0 && !dest.empty())
     {
         if (Item* item = plr->StoreNewItem(dest, item_id, true, 0))
         {
@@ -445,13 +359,6 @@ void BattleGround::RewardItem(Player* plr, uint32 item_id, uint32 count)
     }
 }
 
-/**
- * @brief Sends the reward mark by mail if the player has no space in inventory.
- *
- * @param plr The player to send the mail to.
- * @param mark The ID of the mark item.
- * @param count The count of marks to send.
- */
 void BattleGround::SendRewardMarkByMail(Player* plr, uint32 mark, uint32 count) const
 {
     uint32 bmEntry = GetBattlemasterEntry();
@@ -468,16 +375,14 @@ void BattleGround::SendRewardMarkByMail(Player* plr, uint32 mark, uint32 count) 
 
     if (Item* markItem = Item::CreateItem(mark, count, plr))
     {
-        // save new item before send
-        markItem->SaveToDB();                               // save for prevent lost at next mail load, if send fail then item will deleted
+
+        markItem->SaveToDB();
 
         int loc_idx = plr->GetSession()->GetSessionDbLocaleIndex();
 
-        // subject: item name
         std::string subject = markProto->Name1;
         sObjectMgr.GetItemLocaleStrings(markProto->ItemId, loc_idx, &subject);
 
-        // text
         std::string textFormat = plr->GetSession()->GetMangosString(LANG_BG_MARK_BY_MAIL);
         char textBuf[300];
         snprintf(textBuf, 300, textFormat.c_str(), GetName(), GetName());
@@ -488,11 +393,6 @@ void BattleGround::SendRewardMarkByMail(Player* plr, uint32 mark, uint32 count) 
     }
 }
 
-/**
- * @brief Rewards the player for completing a battleground quest.
- *
- * @param plr The player to reward.
- */
 void BattleGround::RewardQuestComplete(Player* plr)
 {
     uint32 quest;

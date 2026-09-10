@@ -27,36 +27,13 @@
 
 #include "Platform/Define.h"
 
-/**
- * The chances a player's swing and a player's guard come to.
- *
- * Blocking, parrying, dodging and critting are worked out the same way and
- * always have been: something to start from, a correction for how the skill
- * that governs it compares with what the level allows, whatever auras add, and
- * never less than nothing.
- *
- * Which skill governs it is the only thing that differs. Guarding is governed by
- * defence; critting by the skill of the weapon in hand.
- */
 namespace stats
 {
-    /// What one point of skill above or below what the level allows is worth.
+
     float const PER_SKILL_POINT = 0.04f;
 
-    /// A block or a parry starts here for anyone who can do it at all.
     float const GUARD_FROM_NOTHING = 5.0f;
 
-    /**
-     * @brief A chance out of a hundred.
-     *
-     * @param from Where it starts: five for a block or a parry, and what agility
-     *        gives for a dodge, or what the modifier group holds for a crit.
-     * @param skill The governing skill: defence for a guard, the weapon's for a crit.
-     * @param allowedByLevel What that skill could be at this level. Being under it
-     *        is what makes a low-skilled weapon miss and a low defence get hit.
-     * @param fromAuras What everything else has added, which may be negative.
-     * @return Never below nothing. A chance cannot go the other way.
-     */
     inline float Chance(float from, int32 skill, int32 allowedByLevel, float fromAuras)
     {
         float const chance = from + (skill - allowedByLevel) * PER_SKILL_POINT + fromAuras;
@@ -64,18 +41,10 @@ namespace stats
         return chance < 0.0f ? 0.0f : chance;
     }
 
-    /**
-     * @brief What a caster's mana regeneration comes to, in and out of a cast.
-     *
-     * Two sources, and only one of them stops while casting: what spirit gives
-     * is interrupted, and what an aura gives outright is not. How much of the
-     * spirit half survives is itself an aura, and it cannot buy back more than
-     * all of it.
-     */
     struct ManaRegen
     {
-        float standing = 0.0f;                              ///< while not casting
-        float casting = 0.0f;                               ///< while casting
+        float standing = 0.0f;
+        float casting = 0.0f;
     };
 
     inline ManaRegen Regeneration(float fromSpirit, float spiritShare, float flatPerFive,

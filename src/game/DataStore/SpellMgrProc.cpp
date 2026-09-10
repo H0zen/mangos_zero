@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <set>
 #include "SpellMgr.h"
 #include "SpellAuraDefines.h"
@@ -54,7 +52,6 @@ template <typename EntryType, typename WorkerType, typename StorageType>
 
         uint32 first_id = mgr.GetFirstSpellInChain(spell_id);
 
-        // most spell ranks expected same data
         if (first_id)
         {
             firstRankSpells.insert(first_id);
@@ -65,7 +62,7 @@ template <typename EntryType, typename WorkerType, typename StorageType>
                 {
                     return;
                 }
-                // for later check that first rank also added
+
                 else
                 {
                     firstRankSpellsWithCustomRanks.insert(first_id);
@@ -78,7 +75,7 @@ template <typename EntryType, typename WorkerType, typename StorageType>
     }
     void FillHigherRanks()
     {
-        // check that first rank added for custom ranks
+
         for (std::set<uint32>::const_iterator itr = firstRankSpellsWithCustomRanks.begin(); itr != firstRankSpellsWithCustomRanks.end(); ++itr)
         {
             if (!worker.HasEntry(*itr))
@@ -87,7 +84,6 @@ template <typename EntryType, typename WorkerType, typename StorageType>
             }
         }
 
-        // fill absent non first ranks data base at first rank data
         for (std::set<uint32>::const_iterator itr = firstRankSpells.begin(); itr != firstRankSpells.end(); ++itr)
         {
             if (worker.SetStateToEntry(*itr))
@@ -110,13 +106,13 @@ struct DoSpellProcEvent
     void operator()(uint32 spell_id)
     {
         SpellProcEventEntry const& spe = state->second;
-        // add ranks only for not filled data (some ranks have ppm data different for ranks for example)
+
         SpellProcEventMap::const_iterator spellItr = spe_map.find(spell_id);
         if (spellItr == spe_map.end())
         {
             spe_map[spell_id] = spe;
         }
-        // if custom rank data added then it must be same except ppm
+
         else
         {
             SpellProcEventEntry const& r_spe = spellItr->second;
@@ -149,8 +145,6 @@ struct DoSpellProcEvent
                 sLog.outErrorDb("Spell %u listed in `spell_proc_event` as custom rank have different procEx from first rank in chain", spell_id);
             }
 
-            // only ppm allowed has been different from first rank
-
             if (spe.customChance != r_spe.customChance)
             {
                 sLog.outErrorDb("Spell %u listed in `spell_proc_event` as custom rank have different customChance from first rank in chain", spell_id);
@@ -170,11 +164,11 @@ struct DoSpellProcEvent
 
     bool IsValidCustomRank(SpellProcEventEntry const& spe, uint32 entry, uint32 first_id)
     {
-        // let have independent data in table for spells with ppm rates (exist rank dependent ppm rate spells)
+
         if (!spe.ppmRate)
         {
             sLog.outErrorDb("Spell %u listed in `spell_proc_event` is not first rank (%u) in chain", entry, first_id);
-            // prevent loading since it won't have an effect anyway
+
             return false;
         }
         return true;
@@ -207,12 +201,7 @@ struct DoSpellProcEvent
 
         if (spe.customChance == 0)
         {
-            /** enable for re-check cases, 0 chance ok for some cases because in some cases it set by another spell/talent spellmod)
-             *  if (spell->ProcChance==0 && !spe.ppmRate)
-             *  {
-             *      sLog.outErrorDb("Spell %u listed in `spell_proc_event` probally not triggered spell (no chance or ppm)", spell->Id);
-             *  }
-             */
+
         }
         else
         {
@@ -226,7 +215,6 @@ struct DoSpellProcEvent
             }
         }
 
-        // totally redundant record
         if (!spe.schoolMask && !spe.procFlags &&
             !spe.procEx && !spe.ppmRate && !spe.customChance && !spe.cooldown)
         {
@@ -264,14 +252,10 @@ struct DoSpellProcEvent
     uint32 count;
 };
 
-/**
- * @brief Loads spell proc event condition overrides from the database.
- */
 void SpellMgr::LoadSpellProcEvents()
 {
-    mSpellProcEventMap.clear();                             // need for reload case
+    mSpellProcEventMap.clear();
 
-    //                                                0      1           2                3                 4                 5                 6          7       8        9             10
     QueryResult* result = WorldDatabase.Query("SELECT `entry`, `SchoolMask`, `SpellFamilyName`, `SpellFamilyMask0`, `SpellFamilyMask1`, `SpellFamilyMask2`, `procFlags`, `procEx`, `ppmRate`, `CustomChance`, `Cooldown` FROM `spell_proc_event`");
     if (!result)
     {
@@ -330,16 +314,12 @@ struct DoSpellProcItemEnchant
     float ppm;
 };
 
-/**
- * @brief Loads proc-per-minute data for spell item enchant procs.
- */
 void SpellMgr::LoadSpellProcItemEnchant()
 {
-    mSpellProcItemEnchantMap.clear();                       // need for reload case
+    mSpellProcItemEnchantMap.clear();
 
     uint32 count = 0;
 
-    //                                                0      1
     QueryResult* result = WorldDatabase.Query("SELECT `entry`, `ppmRate` FROM `spell_proc_item_enchant`");
     if (!result)
     {
@@ -374,13 +354,12 @@ void SpellMgr::LoadSpellProcItemEnchant()
         if (first_id != entry)
         {
             sLog.outErrorDb("Spell %u listed in `spell_proc_item_enchant` is not first rank (%u) in chain", entry, first_id);
-            // prevent loading since it won't have an effect anyway
+
             continue;
         }
 
         mSpellProcItemEnchantMap[entry] = ppmRate;
 
-        // also add to high ranks
         DoSpellProcItemEnchant worker(mSpellProcItemEnchantMap, ppmRate);
         doForHighRanks(entry, worker);
 

@@ -23,26 +23,9 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Object.cpp
- * @brief Base implementation for all game objects
- *
- * This file implements the Object class, which is the base class for all
- * entities in the game world. It provides:
- * - Update field management (synchronized with clients)
- * - Object GUID handling
- * - Update data building for network transmission
- * - Object visibility and spawning
- * - Type identification
- *
- * The Object class uses an array of uint32 values (update fields) that
- * mirror the client's object state. Changes to these values are sent to
- * players who can see the object.
- */
-
-
 #include "Utilities/Errors.h"
 #include "Object.h"
+#include "ObjectKind.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
 #include "Opcodes.h"
@@ -69,10 +52,6 @@
 #include "Chat.h"
 #include "GameTime.h"
 
-/// Every write goes the same way: the mirror answers whether the value it now
-/// holds is different from the one it held, and only a difference is worth
-/// telling anybody about.
-
 void Object::SetInt32Value(uint16 index, int32 value)
 {
     MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
@@ -91,15 +70,6 @@ void Object::SetUInt32Value(uint16 index, uint32 value)
     {
         MarkForClientUpdate();
     }
-}
-
-/// Stores without announcing. The caller takes on saying so.
-void Object::UpdateUInt32Value(uint16 index, uint32 value)
-{
-    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
-
-    m_mirror.Write(index, value);
-    m_mirror.Touch(index);
 }
 
 void Object::SetUInt64Value(uint16 index, const uint64& value)
@@ -153,7 +123,6 @@ void Object::SetUInt16Value(uint16 index, uint8 offset, uint16 value)
     }
 }
 
-/// A stat never goes below nothing.
 void Object::SetStatFloatValue(uint16 index, float value)
 {
     SetFloatValue(index, value < 0.0f ? 0.0f : value);
@@ -228,45 +197,6 @@ void Object::RemoveByteFlag(uint16 index, uint8 offset, uint8 oldFlag)
     }
 }
 
-void Object::SetShortFlag(uint16 index, bool highpart, uint16 newFlag)
-{
-    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
-
-    if (m_mirror.Write(index, m_mirror.Read(index) | (uint32(newFlag) << (highpart ? 16 : 0))))
-    {
-        MarkForClientUpdate();
-    }
-}
-
-void Object::RemoveShortFlag(uint16 index, bool highpart, uint16 oldFlag)
-{
-    MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index, true));
-
-    if (m_mirror.Write(index, m_mirror.Read(index) & ~(uint32(oldFlag) << (highpart ? 16 : 0))))
-    {
-        MarkForClientUpdate();
-    }
-}
-
-/**
- * @brief Print index error
- * @param index Field index that caused error
- * @param set If true, was a set operation; if false, was a get operation
- * @return Always false
- *
- * Logs an error when attempting to access a nonexistent field.
- */
-/**
- * @brief Read a run of fields back from their stored text form
- * @param data Space-separated decimal values
- * @param first Index of the first field the text describes
- * @param count How many fields it must describe
- * @return false when the text does not hold exactly that many values
- *
- * The storage format happens to be the field array written out, which is why a
- * range is enough for both callers: a whole item, or one run of a character's
- * explored zones.
- */
 bool Object::LoadFields(char const* data, uint16 first, uint16 count)
 {
     if (!data)
@@ -296,11 +226,6 @@ bool Object::LoadFields(char const* data, uint16 first, uint16 count)
     return true;
 }
 
-/**
- * @brief Write a run of fields out in the form LoadFields reads
- * @param first Index of the first field
- * @param count How many fields to write
- */
 std::string Object::SaveFields(uint16 first, uint16 count) const
 {
     MANGOS_ASSERT(first + count <= GetValuesCount() || PrintIndexError(first, false));
@@ -316,35 +241,18 @@ std::string Object::SaveFields(uint16 first, uint16 count) const
 
 bool Object::PrintIndexError(uint32 index, bool set) const
 {
-    sLog.outError("Attempt %s nonexistent value field: %u (count: %u) for object typeid: %u type mask: %u", (set ? "set value to" : "get value from"), index, GetValuesCount(), GetTypeId(), m_objectType);
+    sLog.outError("Attempt %s nonexistent value field: %u (count: %u) for object typeid: %u type mask: %u", (set ? "set value to" : "get value from"), index, GetValuesCount(), GetTypeId(), TypeMaskFor(m_objectTypeId));
 
-    // ASSERT must fail after function call
     return false;
 }
 
-/**
- * @brief Print entry error
- * @param descr Description of the invalid operation
- * @return Always false
- *
- * Logs an error when an invalid operation is performed on this object.
- */
 bool Object::PrintEntryError(char const* descr) const
 {
-    sLog.outError("Object Type %u, Entry %u (lowguid %u) with invalid call for %s", GetTypeId(), GetEntry(), GetObjectGuid().GetCounter(), descr);
+    sLog.outError("Object Type %u, Entry %u (lowguid %u) with invalid call for %s", GetTypeId(), GetEntry(), GuidCounter(GetObjectGuid()), descr);
 
-    // always false for continue assert fail
     return false;
 }
 
-/**
- * @brief Build update data for player
- * @param pl Target player
- * @param update_players Map of players to their update data
- *
- * Builds update data for the specified player, adding them
- * to the update map if not already present.
- */
 void Object::BuildUpdateDataForPlayer(Player* pl, UpdateDataMapType& update_players)
 {
     UpdateDataMapType::iterator iter = update_players.find(pl);
@@ -359,13 +267,6 @@ void Object::BuildUpdateDataForPlayer(Player* pl, UpdateDataMapType& update_play
     BuildValuesUpdateBlockForPlayer(&iter->second, iter->first);
 }
 
-
-/**
- * @brief Mark object for client update
- *
- * Adds the object to the client update list if it's in world
- * and not already marked for update.
- */
 void Object::MarkForClientUpdate()
 {
     if (m_inWorld)

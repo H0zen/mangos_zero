@@ -33,28 +33,10 @@ class GameObject;
 struct GameObjectInfo;
 class Unit;
 
-/**
- * What one kind of gameobject does, and the state only that kind needs.
- *
- * A gameobject is the same thing whatever kind it is: a guid, a place, a block of
- * fields, a map it belongs to, a clock that says when it comes and goes. None of
- * that varies. What varies is what happens when somebody clicks it, what it does
- * on its own tick, and what it has to remember in order to do either -- and that
- * is what lives here, one class per kind.
- *
- * The kind is a column in `gameobject_template`, so it is read once, when the
- * template is fixed to the object, and never asked again. A door does not ask
- * what it is every time it is opened.
- *
- * This is the shape the client uses: its dispatcher at 0x5F7098 allocates a
- * behaviour object per type and hangs it off the gameobject rather than deriving
- * the gameobject itself, which is why the lift's facing comes out through a slot
- * of the behaviour's own vtable and not the object's.
- */
 class GameObjectBehaviour
 {
     public:
-        /// What a use asks to be cast, if it asks for anything.
+
         struct Casting
         {
             uint32 spellId = 0;
@@ -62,7 +44,6 @@ class GameObjectBehaviour
             bool triggered = false;
         };
 
-        /// Made by the factory alone, and only for an object whose template is set.
         explicit GameObjectBehaviour(GameObject& it) : m_it(it) {}
 
         virtual ~GameObjectBehaviour() = default;
@@ -70,55 +51,35 @@ class GameObjectBehaviour
         GameObjectBehaviour(GameObjectBehaviour const&) = delete;
         GameObjectBehaviour& operator=(GameObjectBehaviour const&) = delete;
 
-        /// Whether the object's tick goes on after a hook has had its say.
         enum class Tick
         {
-            Carry,                                          ///< nothing unusual; the tick continues
-            Rest,                                           ///< nothing more for the object, but its AI still runs
-            Stop                                            ///< the object's whole tick ends here, AI included
+            Carry,
+            Rest,
+            Stop
         };
 
-        /**
-         * @brief Somebody clicked it.
-         *
-         * @param user Whoever clicked.
-         * @param scriptSaidYes What the script hook made of it, which some kinds obey.
-         * @return The spell the use asks for, or nothing.
-         */
         virtual Casting UsedBy(Unit* user, bool scriptSaidYes);
 
-        /**
-         * @brief It is being made ready, and whatever the kind must settle first, it
-         *        settles here. Leaving the object not ready keeps it out of play.
-         */
         virtual void Arming() {}
 
-        /// Its clock ran out while it stood there ready.
         virtual Tick TimedOut() { return Tick::Carry; }
 
-        /// A tick of standing there spawned and ready, watching for whatever it watches for.
         virtual Tick Standing() { return Tick::Carry; }
 
-        /// A tick of being in use.
         virtual void InUse(uint32 elapsed) { (void)elapsed; }
 
-        /// Somebody has just finished with it.
         virtual Tick Spent() { return Tick::Carry; }
 
-        /// It has been put back and is about to stand ready again.
         virtual void Respawning() {}
 
     protected:
-        /// The object this behaviour belongs to. It never outlives it.
+
         GameObject& It() const { return m_it; }
 
-        /// Its template, which is what chose this behaviour in the first place.
         GameObjectInfo const& Data() const;
 
     private:
         GameObject& m_it;
 };
 
-/// The behaviour of the kind the object's template names. Never null: a kind with
-/// nothing of its own gets one that does nothing, so no caller has to check.
 std::unique_ptr<GameObjectBehaviour> BehaviourOf(GameObject& it);

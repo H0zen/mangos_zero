@@ -22,7 +22,6 @@
 #include "PlayerNumbers.h"
 #include "SpellAuras.h"
 
-/// The talent that pays a druid per level for the shape it is in.
 static uint32 const ICON_PREDATORY_STRIKES = 1563;
 
 PlayerSheet::PlayerSheet(Player& whose) : StatSheet(whose), m_owner(whose)
@@ -63,7 +62,7 @@ void PlayerSheet::Stat(Stats stat)
         case STAT_INTELLECT:
             MaxPower(POWER_MANA);
             AllSpellCrits();
-            Armour();                                       // an aura turns a share of intellect into armour
+            Armour();
             break;
 
         case STAT_STRENGTH:
@@ -72,7 +71,6 @@ void PlayerSheet::Stat(Stats stat)
             break;
     }
 
-    // an aura can turn any stat into attack power, so both hands follow always
     AttackPower(false);
     AttackPower(true);
 
@@ -111,7 +109,7 @@ void PlayerSheet::Everything()
 
 void PlayerSheet::Armour()
 {
-    // What turns a stat into armour: a share of intellect, per aura that says so.
+
     float fromIntellect = 0.0f;
 
     for (auto* aura : m_owner.GetAurasByType(SPELL_AURA_MOD_RESISTANCE_OF_STAT_PERCENT))
@@ -138,7 +136,6 @@ void PlayerSheet::MaxPower(Powers power)
     UnitMods const unitMod = UnitMods(UNIT_MOD_POWER_START + power);
     uint32 const created = m_owner.GetCreatePowers(power);
 
-    // A class with no mana of its own gains none from intellect either.
     float const fromIntellect = (power == POWER_MANA && created > 0) ? ManaFromIntellect() : 0.0f;
 
     m_owner.SetMaxPower(power, uint32(stats::PlayerMaxPower(m_owner.Tallied().Of(unitMod),
@@ -156,9 +153,6 @@ void PlayerSheet::AttackPower(bool ranged)
     who.agility = m_owner.GetStat(STAT_AGILITY);
     who.form = m_owner.GetShapeshiftForm();
 
-    // Predatory Strikes, which is the only talent that pays per level for the
-    // shape its owner is in. Nobody else can have it, so nobody else is searched:
-    // this walks every dummy aura a player carries, and there can be many.
     if (who.klass == CLASS_DRUID)
     {
         for (auto* aura : m_owner.GetAurasByType(SPELL_AURA_DUMMY))
@@ -180,7 +174,6 @@ void PlayerSheet::AttackPower(bool ranged)
 
     m_owner.SetAttackPower(ranged, static_cast<int32>(base), static_cast<int32>(added), share);
 
-    // what he swings for follows from what he swings with
     if (ranged)
     {
         Swing(RANGED_ATTACK);
@@ -223,7 +216,7 @@ void PlayerSheet::SwingRange(WeaponAttackType attType, bool normalized, float& l
     float weaponLeast = m_owner.GetWeaponDamageRange(attType, MINDAMAGE);
     float weaponMost = m_owner.GetWeaponDamageRange(attType, MAXDAMAGE);
 
-    if (m_owner.IsInFeralForm())                            // a cat or a bear swings by its level, whatever it carries
+    if (m_owner.IsInFeralForm())
     {
         uint32 lvl = m_owner.getLevel();
         if (lvl > 60)
@@ -234,12 +227,12 @@ void PlayerSheet::SwingRange(WeaponAttackType attType, bool normalized, float& l
         weaponLeast = lvl * 0.85f * speed;
         weaponMost = lvl * 1.25f * speed;
     }
-    else if (!m_owner.CanUseEquippedWeapon(attType))        // out of form and still unable to use it: broken, or forbidden
+    else if (!m_owner.CanUseEquippedWeapon(attType))
     {
         weaponLeast = BASE_MINDAMAGE;
         weaponMost = BASE_MAXDAMAGE;
     }
-    else if (attType == RANGED_ATTACK)                      // the ammo adds its own damage per second
+    else if (attType == RANGED_ATTACK)
     {
         std::pair<float, float> const ammo = m_owner.Arms().Ammo();
         weaponLeast += ammo.first * speed;
@@ -293,7 +286,7 @@ void PlayerSheet::Defences()
 
 void PlayerSheet::Block()
 {
-    // Nothing at all for anyone holding no shield.
+
     float const value = m_owner.Arms().CanBlock()
         ? stats::Chance(stats::GUARD_FROM_NOTHING,
                         int32(m_owner.GetDefenseSkillValue()), int32(m_owner.GetMaxSkillValueForLevel()),
@@ -305,7 +298,7 @@ void PlayerSheet::Block()
 
 void PlayerSheet::Parry()
 {
-    // Nothing at all for anyone who cannot parry, which is most classes.
+
     float const value = m_owner.Arms().CanParry()
         ? stats::Chance(stats::GUARD_FROM_NOTHING,
                         int32(m_owner.GetDefenseSkillValue()), int32(m_owner.GetMaxSkillValueForLevel()),
@@ -317,7 +310,7 @@ void PlayerSheet::Parry()
 
 void PlayerSheet::Dodge()
 {
-    // A dodge starts from agility rather than from a flat five.
+
     float const value = stats::Chance(m_owner.GetDodgeFromAgility(),
                                       int32(m_owner.GetDefenseSkillValue()), int32(m_owner.GetMaxSkillValueForLevel()),
                                       float(m_owner.GetTotalAuraModifier(SPELL_AURA_MOD_DODGE_PERCENT)));
@@ -340,12 +333,11 @@ void PlayerSheet::Crit(WeaponAttackType attType)
             modGroup = CRIT_PERCENTAGE;
             index = PLAYER_CRIT_PERCENTAGE;
             break;
-        case OFF_ATTACK:                                    // the client shows a crit chance for the main hand only
+        case OFF_ATTACK:
         default:
             return;
     }
 
-    // A crit is governed by the skill of the weapon in hand, not by defence.
     float const value = stats::Chance(m_owner.GetTotalPercentageModValue(modGroup),
                                       int32(m_owner.GetWeaponSkillValue(attType)),
                                       int32(m_owner.GetMaxSkillValueForLevel()), 0.0f);
@@ -368,7 +360,7 @@ void PlayerSheet::AllCrits()
 
 void PlayerSheet::SpellCrit(uint32 school)
 {
-    // No spell is of the normal school, so nothing crits there.
+
     if (school == SPELL_SCHOOL_NORMAL)
     {
         m_spellCrit[SPELL_SCHOOL_NORMAL] = 0.0f;

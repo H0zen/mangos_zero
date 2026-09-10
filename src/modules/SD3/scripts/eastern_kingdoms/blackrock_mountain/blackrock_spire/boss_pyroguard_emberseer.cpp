@@ -237,9 +237,9 @@ struct spell_emberseer_growing : public SpellScript
         // always check spellid and effectindex
         if (uiSpellId == SPELL_GROWING && uiEffIndex == EFFECT_INDEX_0)
         {
-            if (CreatureAI* pEmberseerAI = ToCreature(pCreatureTarget)->AI())
+            if (CreatureAI* pEmberseerAI = static_cast<Creature*>(pCreatureTarget)->AI())
             {
-                pEmberseerAI->SendAIEvent(AI_EVENT_CUSTOM_A, ToCreature(pCreatureTarget), ToCreature(pCreatureTarget), 0);
+                pEmberseerAI->SendAIEvent(AI_EVENT_CUSTOM_A, static_cast<Creature*>(pCreatureTarget), static_cast<Creature*>(pCreatureTarget), 0);
             }
             return true;
         }

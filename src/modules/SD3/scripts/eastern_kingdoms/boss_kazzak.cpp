@@ -102,7 +102,7 @@ struct boss_kazzak : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (!pVictim->IsPlayer())
+            if (!IsPlayer(pVictim))
             {
                 return;
             }

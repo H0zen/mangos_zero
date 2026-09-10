@@ -41,8 +41,7 @@
 
 Fleet::~Fleet()
 {
-    // Ordinarily the shutdown path has already emptied the fleet while the maps were still
-    // standing. This is the process that never got that far, and Scuttle is safe twice.
+
     Scuttle();
 }
 
@@ -69,7 +68,6 @@ void Fleet::MintDeckMaps()
 
         GameObjectInfo const* goinfo = ObjectMgr::GetGameObjectInfo(entry);
 
-        // Silent: Launch is where a bad row is refused and reported.
         if (!goinfo || goinfo->type != GAMEOBJECT_TYPE_MO_TRANSPORT)
         {
             continue;
@@ -133,15 +131,6 @@ void Fleet::Launch()
             continue;
         }
 
-        // THE LAP, computed the way the client computes it: the same DBC nodes, the same
-        // profile at the template's own speed, the same berth delays. The client works it
-        // out for itself and draws the hull by it, so a lap the two sides disagree on puts
-        // the hull where the server does not believe it is.
-        //
-        // On the eight classic routes this lands on the `period` column to the
-        // millisecond, which is what says the arithmetic is right. The column stays as a
-        // fallback for a vessel whose taxi path is missing, and a custom vessel needs no
-        // column at all.
         float const speed = goinfo->moTransport.moveSpeed ? float(goinfo->moTransport.moveSpeed) : 30.0f;
         float const accel = goinfo->moTransport.accelRate ? float(goinfo->moTransport.accelRate) : 1.0f;
         VesselRoute const route = VesselRoute::Along(goinfo->moTransport.taxiPathId, speed, accel);
@@ -165,7 +154,6 @@ void Fleet::Launch()
         float const x = start.at.x, y = start.at.y, z = start.at.z, o = 1.0f;
         uint32 const mapid = start.mapId;
 
-        // current code does not support transports in dungeon!
         const MapEntry* pMapInfo = sMapStore.LookupEntry(mapid);
         if (!pMapInfo || pMapInfo->Instanceable())
         {
@@ -173,11 +161,8 @@ void Fleet::Launch()
             continue;
         }
 
-        // Normally already minted by MintDeckMaps, and idempotent. Kept so a vessel still
-        // gets its map if this runs without that pass having gone first.
         Transport::RegisterVesselMap(entry, name.c_str());
 
-        // creates the Gameobject
         if (!t->Create(entry, mapid, x, y, z, o, GO_ANIMPROGRESS_DEFAULT))
         {
             delete t;
@@ -193,23 +178,12 @@ void Fleet::Launch()
 
         t->SetMap(sMapFoundry.OpenWorld(mapid));
 
-        // INTO THE WORLD'S GRID, as an ordinary object in a cell of the map it sails. That
-        // is what ticks it in phase one, what lets the shore's own visibility sweep find
-        // it, and what makes IsInWorld() true -- without which SharesWorld, InReach and
-        // every searcher built on them refuse to see the vessel at all, which is what left
-        // the relay gathering nobody.
-        //
-        // Active as well, so the water it is crossing stays awake with no player near it.
-        // Not filed in a cell: nothing in this core relocates a game object's cell, and the
-        // tick it needs comes from the map's own update instead.
         t->AddToWorld();
         t->SetActiveObjectState(true);
         t->GetMap()->AddToActive(t);
 
         t->PinRouteGrids();
 
-        // The failure is reported by Create, which can tell a missing Map.dbc row from a
-        // map that would not open; here we only count what succeeded.
         if (t->AsMap())
         {
             ++mapped;
@@ -225,9 +199,8 @@ void Fleet::Launch()
     sLog.outString();
     sLog.outString(">> Loaded %u transports, %u with a map of their own", count, mapped);
 
-    // check transport data DB integrity
     result = WorldDatabase.Query("SELECT `gameobject`.`guid`,`gameobject`.`id`,`transports`.`name` FROM `gameobject`,`transports` WHERE `gameobject`.`id` = `transports`.`entry`");
-    if (result)                                             // wrong data found
+    if (result)
     {
         do
         {
@@ -246,9 +219,7 @@ void Fleet::Launch()
 
 void Fleet::Scuttle()
 {
-    // Crew live in their map's object store, not the vessel's, and the vessel herself is in
-    // the world without being in any cell. Both have to be undone while the maps are still
-    // alive -- the vessels are destroyed below, after that.
+
     for (Transport* vessel : m_vessels)
     {
         vessel->WithdrawFromWorld();

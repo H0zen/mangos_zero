@@ -38,12 +38,7 @@
 
 namespace
 {
-    /**
-     * The twenty places the client draws, which are what he carries right now.
-     *
-     * The visit is handed the slot, the quest it names, its template and his line
-     * for it; returning false stops the walk where it stands.
-     */
+
     template <typename Visit>
     void EachCarried(Player& who, QuestJournal& journal, Visit visit)
     {
@@ -68,7 +63,6 @@ namespace
         }
     }
 
-    /// The same walk for a question that changes nothing, which skips a quest he has no line for.
     template <typename Visit>
     void EachCarried(Player const& who, QuestJournal const& journal, Visit visit)
     {
@@ -99,7 +93,6 @@ namespace
         }
     }
 
-    /// A quest he may not get on with while he is in a raid that it was not written for.
     bool BarredByRaid(Player const& who, Quest const* quest)
     {
         Group const* group = who.GetGroup();
@@ -171,7 +164,7 @@ void QuestJournal::TellTargetCount(Quest const* quest, ObjectGuid whose, uint32 
 
     int32 entry = quest->ReqCreatureOrGOId[which];
     if (entry < 0)
-        // client expected gameobject template id in form (id|0x80000000)
+
     {
         entry = (-entry) | 0x80000000;
     }
@@ -255,7 +248,6 @@ void QuestJournal::ExploredWithGroup(uint32 questId, Occupant const* what)
     {
         Player* member = itr->getSource();
 
-        // for any leave or dead (with not released body) group member at appropriate distance
         if (member && member->IsAtGroupRewardDistance(what) && !member->HasPlayerFlag(PLAYER_FLAGS_GHOST))
         {
             member->Journal().Explored(questId);
@@ -305,11 +297,11 @@ void QuestJournal::ItemGained(uint32 entry, uint32 count)
 
             if (m_owner.CanCompleteQuest(questId))
             {
-                m_owner.CompleteQuest(questId);     // UpdateForQuestObjects() inside
+                m_owner.CompleteQuest(questId);
                 return false;
             }
 
-            if (needed == line.m_itemcount[j])      // only 1 of several conditions is met
+            if (needed == line.m_itemcount[j])
             {
                 refresh = true;
             }
@@ -359,10 +351,10 @@ void QuestJournal::ItemLost(uint32 entry, uint32 count)
                     line.uState = QUEST_CHANGED;
                 }
 
-                m_owner.IncompleteQuest(questId);   // UpdateForQuestObjects() inside
+                m_owner.IncompleteQuest(questId);
             }
 
-            return false;   // TODO what do we have here for the item required for 2 quests at once?
+            return false;
         }
 
         return true;
@@ -406,7 +398,7 @@ void QuestJournal::KillCredited(uint32 entry, ObjectGuid whose)
 
         for (int j = 0; j < QUEST_OBJECTIVES_COUNT; ++j)
         {
-            // a gameobject to activate, or a creature to cast at, is not a kill
+
             if (quest->ReqCreatureOrGOId[j] <= 0 || quest->ReqSpell[j] != 0)
             {
                 continue;
@@ -424,7 +416,7 @@ void QuestJournal::KillCredited(uint32 entry, ObjectGuid whose)
 
 void QuestJournal::CastCredited(uint32 entry, ObjectGuid whose, uint32 spellId, bool originalCaster)
 {
-    bool const onCreature = whose.IsCreature();
+    bool const onCreature = (GuidHigh(whose) == HIGHGUID_UNIT);
 
     EachCarried(m_owner, *this, [&](uint16, uint32, Quest const* quest, QuestStatusData& line)
     {
@@ -450,7 +442,6 @@ void QuestJournal::CastCredited(uint32 entry, ObjectGuid whose, uint32 spellId, 
                 continue;
             }
 
-            // the sign of the objective says creature or gameobject, checked at quest_template loading
             int32 const target = quest->ReqCreatureOrGOId[j];
             uint32 const wanted = (onCreature ? (target > 0 ? uint32(target) : 0)
                                               : (target < 0 ? uint32(-target) : 0));
@@ -462,7 +453,6 @@ void QuestJournal::CastCredited(uint32 entry, ObjectGuid whose, uint32 spellId, 
 
             Credited(quest, line, j, whose);
 
-            // same objective target can be in many active quests, but not in 2 objectives for single quest
             break;
         }
 
@@ -486,7 +476,7 @@ void QuestJournal::TalkCredited(uint32 entry, ObjectGuid whose)
 
         for (int j = 0; j < QUEST_OBJECTIVES_COUNT; ++j)
         {
-            // a spell to cast, or a gameobject, is not someone to speak to
+
             if (quest->ReqSpell[j] > 0 || quest->ReqCreatureOrGOId[j] < 0)
             {
                 continue;
@@ -572,14 +562,11 @@ bool QuestJournal::NeedsItem(uint32 itemId) const
             return true;
         }
 
-        // hide quest if player is in raid-group and quest is no raid quest
         if (BarredByRaid(m_owner, quest) && !m_owner.Battle().InOne())
         {
             return true;
         }
 
-        // There should be no mixed ReqItem/ReqSource drop
-        // This part for ReqItem drop
         for (int j = 0; j < QUEST_ITEM_OBJECTIVES_COUNT; ++j)
         {
             if (itemId == quest->ReqItemId[j] && line.m_itemcount[j] < quest->ReqItemCount[j])
@@ -589,7 +576,6 @@ bool QuestJournal::NeedsItem(uint32 itemId) const
             }
         }
 
-        // This part - for ReqSource
         for (int j = 0; j < QUEST_SOURCE_ITEM_IDS_COUNT; ++j)
         {
             if (quest->ReqSourceId[j] != itemId)
@@ -600,14 +586,12 @@ bool QuestJournal::NeedsItem(uint32 itemId) const
             ItemPrototype const* proto = ObjectMgr::GetItemPrototype(itemId);
             uint32 const held = m_owner.GetItemCount(itemId, true);
 
-            // 'unique' item
             if (proto->MaxCount && held < proto->MaxCount)
             {
                 needed = true;
                 return false;
             }
 
-            // allows custom amount drop when not 0
             uint32 const ceiling = (quest->ReqSourceCount[j] ? quest->ReqSourceCount[j] : proto->Stackable);
             if (held < ceiling)
             {
@@ -635,7 +619,7 @@ bool QuestJournal::NeedsGameObject(int32 goId) const
 
         for (int j = 0; j < QUEST_OBJECTIVES_COUNT; ++j)
         {
-            if (quest->ReqCreatureOrGOId[j] >= 0)           // skip non GO case
+            if (quest->ReqCreatureOrGOId[j] >= 0)
             {
                 continue;
             }

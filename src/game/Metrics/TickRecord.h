@@ -25,23 +25,11 @@
 
 namespace metrics
 {
-    /**
-     * @brief How long one thing's ticks take, and where the time went.
-     *
-     * Kept beside whatever is being timed rather than inside it: being measured is
-     * not part of what a map is, and a map that had to be the metrics sink could
-     * not be timed by anything else.
-     */
+
     class TickRecord
     {
         public:
-            /**
-             * @brief Files one tick.
-             *
-             * What is kept is the shape of the tail: something that ticks in four
-             * milliseconds and once a minute takes three hundred averages fine and
-             * stutters visibly.
-             */
+
             void Record(uint32 elapsedMs, uint32 budgetMs)
             {
                 m_ms.Add(elapsedMs);
@@ -51,8 +39,6 @@ namespace metrics
                 }
             }
 
-            /// Where a tick's time went, filed as it crosses each boundary, so one
-            /// slow phase can be named instead of guessed at.
             void RecordPhase(TickPhase phase, uint32 ms) { m_phases.Add(phase, ms); }
 
             uint32 Ms(float percentile) const { return m_ms.Percentile(percentile); }

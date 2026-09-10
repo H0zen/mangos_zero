@@ -31,7 +31,6 @@
 
 class Player;
 
-/// Where a character is resting, if he is.
 enum RestType
 {
     REST_TYPE_NO                = 0,
@@ -39,24 +38,14 @@ enum RestType
     REST_TYPE_IN_CITY           = 2
 };
 
-/**
- * The arithmetic of rest, which depends on nothing but the numbers given.
- *
- * A bubble is a twentieth of a level and fills in eight hours of resting, so a
- * full bar is twenty bubbles and takes a hundred and sixty hours. The client
- * doubles whatever it is told, which is why what is kept here is half of what
- * is drawn.
- */
 namespace rest
 {
-    /// A level's worth of experience divided over the eight hours a bubble takes,
-    /// halved for the client, and multiplied by whatever rate is in force.
+
     inline float Gained(uint32 nextLevelXp, time_t seconds, float rate)
     {
         return float(seconds) * (nextLevelXp / 1152000.0f) * rate;
     }
 
-    /// What a server pays for resting, awake and asleep.
     struct Rates
     {
         float inGame = 1.0f;
@@ -64,12 +53,6 @@ namespace rest
         float offlineWilderness = 1.0f;
     };
 
-    /**
-     * @brief The rate in force for one stretch of rest.
-     *
-     * Logged out in an inn or a city pays its own rate; logged out anywhere else pays a
-     * quarter of that rate, which is the game's way of saying a field is not a bed.
-     */
     inline float RateFor(bool offline, bool inRestPlace, Rates const& paid)
     {
         if (!offline)
@@ -80,29 +63,12 @@ namespace rest
         return inRestPlace ? paid.offlineInn : paid.offlineWilderness / 4.0f;
     }
 
-    /// The most that can be held: a level and a half of drawn rest, which is
-    /// thirty bubbles, kept as three quarters of a level because the client
-    /// doubles it.
     inline float Ceiling(uint32 nextLevelXp)
     {
         return float(nextLevelXp) * 1.5f / 2.0f;
     }
 }
 
-/**
- * The rest a character has stored up, and where he is storing it.
- *
- * It is spent on the next experience he earns, one point of rest for one point
- * of experience, so a rested character advances at double rate until it runs
- * out. What is spent is taken off at once; nothing is kept in reserve.
- *
- * Resting is a place, not an action: an inn or a city. Standing in one sets the
- * flag the client draws and takes him out of free-for-all combat where the realm
- * has it; walking out puts him back.
- *
- * At the level ceiling nothing accrues at all, since there is no next level to
- * store a fraction of.
- */
 class Rest
 {
     public:
@@ -112,16 +78,12 @@ class Rest
 
         float Bonus() const { return m_bonus; }
 
-        /// Stores rest, holding it between nothing and the ceiling, and tells the
-        /// client which of the two states he is in.
         void Bonus(float amount);
 
-        /// Takes as much rest as the experience can use and hands it back.
         uint32 SpendOn(uint32 xp);
 
         RestType Kind() const { return m_type; }
 
-        /// Says where he is resting, REST_TYPE_NO for nowhere.
         void Kind(RestType type, uint32 areaTriggerId = 0);
 
         uint32 InnTrigger() const { return m_innTrigger; }
@@ -129,7 +91,6 @@ class Rest
         time_t EnteredInn() const { return m_enteredInn; }
         void EnteredInn(time_t when) { m_enteredInn = when; }
 
-        /// What a stretch of time is worth to him, in rest.
         float Over(time_t seconds, bool offline = false, bool inRestPlace = false) const;
 
     private:

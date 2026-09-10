@@ -30,26 +30,14 @@
 
 #include <ctime>
 
-/**
- * How long a ghost waits before it may take its body back.
- *
- * Thirty seconds the first time, a minute the second, two minutes the third and after: dying
- * again while the last death is still counted moves you a rung up a ladder of three. The
- * ladder forgets a rung every five minutes, so a careful hour resets it entirely.
- *
- * Whether dying to a player and dying to the world climb the same ladder is a server's
- * choice, and it is handed in.
- */
 namespace reclaim
 {
-    /// The rungs, in seconds.
+
     constexpr uint32 LADDER[] = { 30, 60, 120 };
     constexpr uint32 RUNGS = 3;
 
-    /// How long a rung is remembered.
     constexpr uint32 FORGETS_AFTER = 5 * MINUTE;
 
-    /// Which deaths climb the ladder at all.
     struct Climbs
     {
         bool onPvP = false;
@@ -61,7 +49,6 @@ namespace reclaim
         return pvp ? which.onPvP : which.onPvE;
     }
 
-    /// The rung a ghost is on, given when its ladder runs out. Nought once it has.
     inline uint32 Rung(time_t now, time_t forgetsAt)
     {
         if (now >= forgetsAt)
@@ -74,13 +61,11 @@ namespace reclaim
         return rung >= RUNGS ? RUNGS - 1 : rung;
     }
 
-    /// The wait itself.
     inline uint32 Wait(uint32 rung)
     {
         return LADDER[rung >= RUNGS ? RUNGS - 1 : rung];
     }
 
-    /// When the ladder will be forgotten after one more death now.
     inline time_t Climbed(time_t now, time_t forgetsAt)
     {
         if (now >= forgetsAt)

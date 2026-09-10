@@ -32,36 +32,12 @@ class GameObject;
 class Unit;
 class Occupant;
 
-/**
- * @brief Resolve a GUID relative to some object's map.
- *
- * These are free functions because they hold no state -- they never did. They
- * lived on a singleton purely because they were filed under "getting an object",
- * next to the player index and the corpse store, and inherited the singleton by
- * association. GetUnit alone accounts for 35 of the old class's call sites while
- * touching none of its members.
- *
- * All of them need a reference object only to reach its Map; when the caller
- * already has the Map, calling Map's own methods directly is cheaper and clearer.
- */
 namespace ObjectLookup
 {
-    /**
-     * @brief Find a unit (player or creature) by GUID.
-     *
-     * Players are resolved through the global registry, since a player is
-     * reachable regardless of which map the reference object is on. Everything
-     * else is looked up on the reference object's map.
-     *
-     * @param obj  Reference object, used for its map.
-     * @param guid GUID to resolve.
-     * @return The unit, or nullptr.
-     */
+
     Unit* GetUnit(Occupant const& obj, ObjectGuid guid);
 
-    /// Find a creature on the reference object's map.
     Creature* GetCreature(Occupant const& obj, ObjectGuid guid);
 
-    /// Find a game object on the reference object's map.
     GameObject* GetGameObject(Occupant const& obj, ObjectGuid guid);
 }

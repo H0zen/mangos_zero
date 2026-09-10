@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <sstream>
 #include <set>
 #include "ObjectMgr.h"
@@ -59,9 +57,6 @@
 #include "DisableMgr.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Loads page text records and validates page chains.
- */
 void ObjectMgr::LoadPageTexts()
 {
     sPageTextStore.Load();
@@ -70,7 +65,7 @@ void ObjectMgr::LoadPageTexts()
 
     for (uint32 i = 1; i < sPageTextStore.GetMaxEntry(); ++i)
     {
-        // check data correctness
+
         PageText const* page = sPageTextStore.LookupEntry<PageText>(i);
         if (!page)
         {
@@ -83,7 +78,6 @@ void ObjectMgr::LoadPageTexts()
             continue;
         }
 
-        // detect circular reference
         std::set<uint32> checkedPages;
         for (PageText const* pageItr = page; pageItr; pageItr = sPageTextStore.LookupEntry<PageText>(pageItr->Next_Page))
         {
@@ -110,9 +104,6 @@ void ObjectMgr::LoadPageTexts()
     }
 }
 
-/**
- * @brief Loads npc gossip text records from the database.
- */
 void ObjectMgr::LoadGossipText()
 {
     QueryResult* result = WorldDatabase.Query("SELECT * FROM `npc_text`");

@@ -23,36 +23,10 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Pet.h
- * @brief Pet (summon and hunter pet) class definition.
- *
- * This file defines the Pet class which represents player-controlled pets and minions
- * including summoned creatures, hunter pets, guardians, and companion pets.
- *
- * Key functionality includes:
- * - Pet summoning and despawning
- * - Hunter pet taming and stabling
- * - Pet ability and talent management
- * - Pet happiness/loyalty tracking
- * - Pet training and spell learning
- * - Pet aggression and assistance control
- * - Pet resurrection and revival mechanics
- * - Pet death and resurrection
- * - Pet experience and leveling
- * - Reactive ability triggers
- *
- * Pets can be of different types (summon, hunter, guardian, mini-pet) and have
- * different behaviors, training mechanisms, and longevity depending on their type.
- *
- * @see Pet for the main pet implementation
- * @see Creature for the base creature class
- * @see Unit for combat mechanics
- */
-
 #pragma once
 
 #include <unordered_map>
+#include "ObjectKind.h"
 #include "Utilities/Errors.h"
 #include "Platform/Define.h"
 #include "Utilities/MathDefines.h"
@@ -66,9 +40,6 @@
 
 class Transport;
 
-/// @brief Pet type enumeration.
-///
-/// Defines the different categories of pets with distinct mechanics and rules.
 enum PetType
 {
     SUMMON_PET              = 0,
@@ -80,23 +51,16 @@ enum PetType
 
 #define MAX_PET_STABLES         2
 
-// Pet storage location
-/// @brief Pet save mode enumeration.
-///
-/// Stored in character_pet.slot, indicates where/how a pet is saved in database.
 enum PetSaveMode
 {
-    PET_SAVE_AS_DELETED        = -1,                        // not saved in fact
-    PET_SAVE_AS_CURRENT        =  0,                        // in current slot (with player)
+    PET_SAVE_AS_DELETED        = -1,
+    PET_SAVE_AS_CURRENT        =  0,
     PET_SAVE_FIRST_STABLE_SLOT =  1,
-    PET_SAVE_LAST_STABLE_SLOT  =  MAX_PET_STABLES,          // last in DB stable slot index (including), all higher have same meaning as PET_SAVE_NOT_IN_SLOT
-    PET_SAVE_NOT_IN_SLOT       =  100,                      // for avoid conflict with stable size grow will use 100
-    PET_SAVE_REAGENTS          =  101                       // PET_SAVE_NOT_IN_SLOT with reagents return
+    PET_SAVE_LAST_STABLE_SLOT  =  MAX_PET_STABLES,
+    PET_SAVE_NOT_IN_SLOT       =  100,
+    PET_SAVE_REAGENTS          =  101
 };
 
-/// @brief Pet database status enumeration.
-///
-/// Indicates the current save status of a pet in the database.
 enum PetDatabaseStatus
 {
     PET_DB_NO_PET       = 0,
@@ -104,24 +68,15 @@ enum PetDatabaseStatus
     PET_DB_ALIVE        = 2,
 };
 
-// There might be a lot more
-/// @brief Pet mode flags enumeration.
-///
-/// Controls pet behavior and enabled actions.
 enum PetModeFlags
 {
     PET_MODE_UNKNOWN_0         = 0x0000001,
     PET_MODE_UNKNOWN_2         = 0x0000100,
     PET_MODE_DISABLE_ACTIONS   = 0x8000000,
 
-    // autoset in client at summon
-    /// @brief Default pet mode flags (autoset by client at summon)
     PET_MODE_DEFAULT           = PET_MODE_UNKNOWN_0 | PET_MODE_UNKNOWN_2,
 };
 
-/// @brief Pet happiness state enumeration.
-///
-/// Represents hunter pet loyalty and happiness level affecting XP gains.
 enum HappinessState
 {
     UNHAPPY = 1,
@@ -155,7 +110,7 @@ enum PetSpellType
 
 struct PetSpell
 {
-    uint8 active;                                           // use instead enum (not good use *uint8* limited enum in case when value in enum not possitive in *int8*)
+    uint8 active;
 
     PetSpellState state : 8;
     PetSpellType type   : 8;
@@ -163,7 +118,7 @@ struct PetSpell
 
 enum ActionFeedback
 {
-    FEEDBACK_PET_NONE        = 0,   // custom, not to be sent
+    FEEDBACK_PET_NONE        = 0,
     FEEDBACK_PET_DEAD        = 1,
     FEEDBACK_NOTHING_TO_ATT  = 2,
     FEEDBACK_CANT_ATT_TARGET = 3,
@@ -178,7 +133,7 @@ enum PetTalk
 
 enum PetNameInvalidReason
 {
-    // custom, not send
+
     PET_NAME_SUCCESS                                        = 0,
 
     PET_NAME_INVALID                                        = 1,
@@ -226,7 +181,7 @@ class Pet : public Creature
         void setPetType(PetType type) { m_petType = type; }
         bool isControlled() const { return getPetType() == SUMMON_PET || getPetType() == HUNTER_PET; }
         bool isTemporarySummoned() const { return Term().Bounded(); }
-        bool IsPermanentPetFor(Player* owner);              // pet have tab in character windows and set UNIT_FIELD_PETNUMBER
+        bool IsPermanentPetFor(Player* owner);
 
         bool Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo const* cinfo, uint32 pet_number);
         bool CreateBaseAtCreature(Creature* creature);
@@ -237,8 +192,8 @@ class Pet : public Creature
         static void DeleteFromDB(uint32 guidlow, bool separate_transaction = true);
         static PetDatabaseStatus GetStatusFromDB(Player*);
 
-        void SetDeathState(DeathState s) override;          // overwrite virtual Creature::SetDeathState and Unit::SetDeathState
-        void Update(uint32 update_diff, uint32 diff) override;  // overwrite virtual Creature::Update and Unit::Update
+        void SetDeathState(DeathState s) override;
+        void Update(uint32 update_diff, uint32 diff) override;
 
         uint8 GetPetAutoSpellSize() const override { return m_autospells.size(); }
         uint32 GetPetAutoSpellOnPos(uint8 pos) const override
@@ -258,7 +213,7 @@ class Pet : public Creature
             Unit const* owner = GetOwner();
             if (owner)
             {
-                return owner->IsPlayer() ? true : ((Creature const*)owner)->CanSwim();
+                return IsPlayer(owner) ? true : ((Creature const*)owner)->CanSwim();
             }
             else
             {
@@ -266,9 +221,9 @@ class Pet : public Creature
             }
         }
 
-        bool CanFly() const override { return false; } // pet are not able to fly. TODO: check if this is right
+        bool CanFly() const override { return false; }
 
-        void RegenerateAll(uint32 update_diff) override;    // overwrite Creature::RegenerateAll
+        void RegenerateAll(uint32 update_diff) override;
         void LooseHappiness();
         void TickLoyaltyChange();
         void ModifyLoyalty(int32 addvalue);
@@ -352,11 +307,9 @@ class Pet : public Creature
             m_auraUpdateMask = 0;
         }
 
-        // overwrite Creature function for name localization back to Occupant version without localization
         const char* GetNameForLocaleIdx(int32 locale_idx) const override { return Occupant::GetNameForLocaleIdx(locale_idx); }
 
-        bool    m_removed;                                  // prevent overwrite pet state in DB at next Pet::Update if pet already removed(saved)
-
+        bool    m_removed;
 
     protected:
         uint32  m_happinessTimer;

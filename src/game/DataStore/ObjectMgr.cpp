@@ -35,7 +35,7 @@
 #include <set>
 #include "ObjectMgr.h"
 #include "LivingWorldAnchorPolicy.h"
-#include "Movement/Generators/MotionMaster.h"  // WAYPOINT_MOTION_TYPE
+#include "Movement/Generators/MotionMaster.h"
 #include "Database/DatabaseEnv.h"
 #include "Policies/Singleton.h"
 #include "Mint.h"
@@ -73,13 +73,6 @@
 #include "CorpseManager.h"
 #include "Corpse.h"
 
-
-/**
- * @brief Normalizes a player name to the server's canonical casing.
- *
- * @param name The player name to normalize.
- * @return true if the name was normalized successfully; otherwise false.
- */
 bool normalizePlayerName(std::string& name)
 {
     if (name.empty())
@@ -128,12 +121,6 @@ LanguageDesc lang_description[LANGUAGES_COUNT] =
     { LANG_GUTTERSPEAK, 17737, SKILL_LANG_GUTTERSPEAK  },
 };
 
-/**
- * @brief Looks up language metadata by language id.
- *
- * @param lang The language id.
- * @return LanguageDesc const* The matching language descriptor, or null if not found.
- */
 LanguageDesc const* GetLanguageDescByID(uint32 lang)
 {
     for (int i = 0; i < LANGUAGES_COUNT; ++i)
@@ -147,13 +134,6 @@ LanguageDesc const* GetLanguageDescByID(uint32 lang)
     return nullptr;
 }
 
-/**
- * @brief Checks whether a player satisfies spell-click interaction requirements.
- *
- * @param player The player attempting the interaction.
- * @param clickedCreature The clicked creature.
- * @return true if the interaction requirements are met; otherwise, false.
- */
 bool SpellClickInfo::IsFitToRequirements(Player const* player, Creature const* clickedCreature) const
 {
     if (conditionId)
@@ -163,7 +143,7 @@ bool SpellClickInfo::IsFitToRequirements(Player const* player, Creature const* c
 
     if (questStart)
     {
-        // not in expected required quest state
+
         if (!player || ((!questStartCanActive || !player->IsActiveQuest(questStart)) && !player->GetQuestRewardStatus(questStart)))
         {
             return false;
@@ -172,7 +152,7 @@ bool SpellClickInfo::IsFitToRequirements(Player const* player, Creature const* c
 
     if (questEnd)
     {
-        // not in expected forbidden quest state
+
         if (!player || player->GetQuestRewardStatus(questEnd))
         {
             return false;
@@ -184,11 +164,6 @@ bool SpellClickInfo::IsFitToRequirements(Player const* player, Creature const* c
 
 template<typename T>
 
-/**
- * @brief Generates the next identifier from the typed guid generator.
- *
- * @return T The next generated identifier value.
- */
 T IdGenerator<T>::Generate()
 {
     if (m_nextGuid >= std::numeric_limits<T>::max() - 1)
@@ -202,14 +177,12 @@ T IdGenerator<T>::Generate()
 template uint32 IdGenerator<uint32>::Generate();
 template uint64 IdGenerator<uint64>::Generate();
 
-// create the standing order
 bool operator < (const HonorStanding& lhs, const HonorStanding& rhs)
 {
     return lhs.honorPoints > rhs.honorPoints;
 }
 
-// TODO improve the algorithm based on conditions
-bool AreaTrigger::IsLessOrEqualThan(AreaTrigger const* l) const      // Expected to have same map
+bool AreaTrigger::IsLessOrEqualThan(AreaTrigger const* l) const
 {
     MANGOS_ASSERT(target_mapId == l->target_mapId);
     if (!condition)
@@ -227,8 +200,6 @@ bool AreaTrigger::IsLessOrEqualThan(AreaTrigger const* l) const      // Expected
         return true;
     }
 
-    // most conditions for AT have level requirement
-    // let's order by the least restrictive
     const PlayerCondition* pCond1 = sConditionStorage.LookupEntry<PlayerCondition>(condition);
     const PlayerCondition* pCond2 = sConditionStorage.LookupEntry<PlayerCondition>(l->condition);
     if (pCond1->m_condition == CONDITION_LEVEL && pCond2->m_condition == CONDITION_LEVEL)
@@ -246,17 +217,11 @@ bool AreaTrigger::IsLessOrEqualThan(AreaTrigger const* l) const      // Expected
     return false;
 }
 
-/**
- * @brief Initializes the global object manager.
- */
 ObjectMgr::ObjectMgr()
     : DBCLocaleIndex(LOCALE_enUS)
 {
 }
 
-/**
- * @brief Releases dynamically allocated object manager resources.
- */
 ObjectMgr::~ObjectMgr()
 {
     for (QuestMap::iterator i = mQuestTemplates.begin(); i != mQuestTemplates.end(); ++i)
@@ -269,7 +234,6 @@ ObjectMgr::~ObjectMgr()
         delete[] i->second;
     }
 
-    // free only if loaded
     for (int class_ = 0; class_ < MAX_CLASSES; ++class_)
     {
         delete[] playerClassInfo[class_].levelInfo;
@@ -283,7 +247,6 @@ ObjectMgr::~ObjectMgr()
         }
     }
 
-    // free objects
     for (GroupMap::iterator itr = mGroupMap.begin(); itr != mGroupMap.end(); ++itr)
     {
         delete itr->second;
@@ -305,12 +268,6 @@ ObjectMgr::~ObjectMgr()
     }
 }
 
-/**
- * @brief Finds a loaded group by its identifier.
- *
- * @param id The group id.
- * @return The matching group, or null if not found.
- */
 Group* ObjectMgr::GetGroupById(uint32 id) const
 {
     GroupMap::const_iterator itr = mGroupMap.find(id);
@@ -322,13 +279,6 @@ Group* ObjectMgr::GetGroupById(uint32 id) const
     return nullptr;
 }
 
-/**
- * @brief Stores a localized string in a locale-indexed vector.
- *
- * @param s The localized string value.
- * @param locale The locale index.
- * @param data The destination locale vector.
- */
 void ObjectMgr::AddLocaleString(std::string const& s, LocaleConstant locale, StringVector& data)
 {
     if (!s.empty())
@@ -341,17 +291,6 @@ void ObjectMgr::AddLocaleString(std::string const& s, LocaleConstant locale, Str
     }
 }
 
-
-
-
-
-
-
-
-
-/**
- * @brief Loads creature hand-equippable item template entries.
- */
 void ObjectMgr::LoadCreatureItemTemplates()
 {
     sEquipmentStorageItem.Load(true);
@@ -392,10 +331,6 @@ void ObjectMgr::LoadCreatureItemTemplates()
     sLog.outString();
 }
 
-
-
-
-// generally for models having another model for the other team (totems)
 uint32 ObjectMgr::GetCreatureModelOtherTeamModel(uint32 modelId) const
 {
     if (const CreatureModelInfo* modelInfo = GetCreatureModelInfo(modelId))
@@ -406,14 +341,9 @@ uint32 ObjectMgr::GetCreatureModelOtherTeamModel(uint32 modelId) const
     return 0;
 }
 
-
-
-/**
- * @brief Loads creature spell templates and referenced script bindings.
- */
 void ObjectMgr::LoadCreatureSpells()
 {
-    // First we need to collect all script ids.
+
     std::set<uint32> spellScriptSet;
 
     std::unique_ptr<QueryResult> result (WorldDatabase.PQuery("SELECT `id` FROM `db_scripts` WHERE `script_type` = %d", DBS_ON_CREATURE_SPELL));
@@ -430,24 +360,22 @@ void ObjectMgr::LoadCreatureSpells()
 
     std::set<uint32> spellScriptSetFull = spellScriptSet;
 
-    // Now we load creature_spells.
-    m_CreatureSpellsMap.clear(); // for reload case
+    m_CreatureSpellsMap.clear();
 
-    //                                        0        1            2                3               4                 5                 6              7                    8                    9                   10                  11
     result.reset(WorldDatabase.Query("SELECT `entry`, `spellId_1`, `probability_1`, `castTarget_1`, `targetParam1_1`, `targetParam2_1`, `castFlags_1`, `delayInitialMin_1`, `delayInitialMax_1`, `delayRepeatMin_1`, `delayRepeatMax_1`, `scriptId_1`, "
-    //    12           13               14              15                16                17             18                   19                   20                  21                  22
+
         "`spellId_2`, `probability_2`, `castTarget_2`, `targetParam1_2`, `targetParam2_2`, `castFlags_2`, `delayInitialMin_2`, `delayInitialMax_2`, `delayRepeatMin_2`, `delayRepeatMax_2`, `scriptId_2`, "
-    //    23           24               25              26                27                28             29                   30                   31                  32                  33
+
         "`spellId_3`, `probability_3`, `castTarget_3`, `targetParam1_3`, `targetParam2_3`, `castFlags_3`, `delayInitialMin_3`, `delayInitialMax_3`, `delayRepeatMin_3`, `delayRepeatMax_3`, `scriptId_3`, "
-    //    34           35               36              37                38                39             40                   41                   42                  43                  44
+
         "`spellId_4`, `probability_4`, `castTarget_4`, `targetParam1_4`, `targetParam2_4`, `castFlags_4`, `delayInitialMin_4`, `delayInitialMax_4`, `delayRepeatMin_4`, `delayRepeatMax_4`, `scriptId_4`, "
-    //    45           46               47              48                49                50             51                   52                   53                  54                  55
+
         "`spellId_5`, `probability_5`, `castTarget_5`, `targetParam1_5`, `targetParam2_5`, `castFlags_5`, `delayInitialMin_5`, `delayInitialMax_5`, `delayRepeatMin_5`, `delayRepeatMax_5`, `scriptId_5`, "
-    //    56           57               58              59                60                61             62                   63                   64                  65                  66
+
         "`spellId_6`, `probability_6`, `castTarget_6`, `targetParam1_6`, `targetParam2_6`, `castFlags_6`, `delayInitialMin_6`, `delayInitialMax_6`, `delayRepeatMin_6`, `delayRepeatMax_6`, `scriptId_6`, "
-    //    67           68               69              70                71                72             73                   74                   75                  76                  77
+
         "`spellId_7`, `probability_7`, `castTarget_7`, `targetParam1_7`, `targetParam2_7`, `castFlags_7`, `delayInitialMin_7`, `delayInitialMax_7`, `delayRepeatMin_7`, `delayRepeatMax_7`, `scriptId_7`, "
-    //    78           79               80              81                82                83             84                   85                   86                  87                  88
+
         "`spellId_8`, `probability_8`, `castTarget_8`, `targetParam1_8`, `targetParam2_8`, `castFlags_8`, `delayInitialMin_8`, `delayInitialMax_8`, `delayRepeatMin_8`, `delayRepeatMax_8`, `scriptId_8` FROM `creature_spells`"));
     if (!result)
     {
@@ -495,8 +423,6 @@ void ObjectMgr::LoadCreatureSpells()
 
                 uint8 castFlags        = fields[6 + i * CREATURE_SPELLS_MAX_COLUMNS].GetUInt8();
 
-                // in the database we store timers as seconds
-                // based on screenshot of blizzard creature spells editor
                 uint32 delayInitialMin = fields[7 + i * CREATURE_SPELLS_MAX_COLUMNS].GetUInt16() * IN_MILLISECONDS;
                 uint32 delayInitialMax = fields[8 + i * CREATURE_SPELLS_MAX_COLUMNS].GetUInt16() * IN_MILLISECONDS;
 
@@ -550,24 +476,16 @@ void ObjectMgr::LoadCreatureSpells()
     sLog.outString(">> Loaded %lu creature spell templates.", (unsigned long)m_CreatureSpellsMap.size());
 }
 
-
-
-
-
-
-
-// name must be checked to correctness (if received) before call this function
 ObjectGuid ObjectMgr::GetPlayerGuidByName(std::string name) const
 {
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
 
     CharacterDatabase.escape_string(name);
 
-    // Player name safe to sending to DB (checked at login) and this function using
     QueryResult* result = CharacterDatabase.PQuery("SELECT `guid` FROM `characters` WHERE `name` = '%s'", name.c_str());
     if (result)
     {
-        guid = ObjectGuid(HIGHGUID_PLAYER, (*result)[0].GetUInt32());
+        guid = MakeGuid(HIGHGUID_PLAYER, (*result)[0].GetUInt32());
 
         delete result;
     }
@@ -575,23 +493,16 @@ ObjectGuid ObjectMgr::GetPlayerGuidByName(std::string name) const
     return guid;
 }
 
-/**
- * @brief Resolves a player name from a player GUID.
- *
- * @param guid The player GUID.
- * @param name Receives the resolved player name.
- * @return true if the player name was found; otherwise, false.
- */
 bool ObjectMgr::GetPlayerNameByGUID(ObjectGuid guid, std::string& name) const
 {
-    // prevent DB access for online player
+
     if (Player* player = GetPlayer(guid))
     {
         name = player->GetName();
         return true;
     }
 
-    uint32 lowguid = guid.GetCounter();
+    uint32 lowguid = GuidCounter(guid);
 
     QueryResult* result = CharacterDatabase.PQuery("SELECT `name` FROM `characters` WHERE `guid` = '%u'", lowguid);
 
@@ -605,21 +516,15 @@ bool ObjectMgr::GetPlayerNameByGUID(ObjectGuid guid, std::string& name) const
     return false;
 }
 
-/**
- * @brief Resolves a player's team from a player GUID.
- *
- * @param guid The player GUID.
- * @return The player's team, or TEAM_NONE if unavailable.
- */
 Team ObjectMgr::GetPlayerTeamByGUID(ObjectGuid guid) const
 {
-    // prevent DB access for online player
+
     if (Player* player = GetPlayer(guid))
     {
         return Player::TeamForRace(player->getRace());
     }
 
-    uint32 lowguid = guid.GetCounter();
+    uint32 lowguid = GuidCounter(guid);
 
     QueryResult* result = CharacterDatabase.PQuery("SELECT `race` FROM `characters` WHERE `guid` = '%u'", lowguid);
 
@@ -633,21 +538,15 @@ Team ObjectMgr::GetPlayerTeamByGUID(ObjectGuid guid) const
     return TEAM_NONE;
 }
 
-/**
- * @brief Resolves a player's class from a player GUID.
- *
- * @param guid The player GUID.
- * @return The player class id, or 0 if unavailable.
- */
 uint8 ObjectMgr::GetPlayerClassByGUID(ObjectGuid guid) const
 {
-    // prevent DB access for online player
+
     if (Player* player = GetPlayer(guid))
     {
         return player->getClass();
     }
 
-    uint32 lowguid = guid.GetCounter();
+    uint32 lowguid = GuidCounter(guid);
 
     QueryResult* result = CharacterDatabase.PQuery("SELECT `class` FROM `characters` WHERE `guid` = '%u'", lowguid);
 
@@ -661,26 +560,19 @@ uint8 ObjectMgr::GetPlayerClassByGUID(ObjectGuid guid) const
     return 0;
 }
 
-/**
- * @brief Resolves an account id from a player GUID.
- *
- * @param guid The player GUID.
- * @return The account id, or 0 if unavailable.
- */
 uint32 ObjectMgr::GetPlayerAccountIdByGUID(ObjectGuid guid) const
 {
-    if (!guid.IsPlayer())
+    if (!(guid != 0 && GuidHigh(guid) == HIGHGUID_PLAYER))
     {
         return 0;
     }
 
-    // prevent DB access for online player
     if (Player* player = GetPlayer(guid))
     {
         return player->GetSession()->GetAccountId();
     }
 
-    uint32 lowguid = guid.GetCounter();
+    uint32 lowguid = GuidCounter(guid);
 
     QueryResult* result = CharacterDatabase.PQuery("SELECT `account` FROM `characters` WHERE `guid` = '%u'", lowguid);
     if (result)
@@ -693,12 +585,6 @@ uint32 ObjectMgr::GetPlayerAccountIdByGUID(ObjectGuid guid) const
     return 0;
 }
 
-/**
- * @brief Resolves an account id from a player name.
- *
- * @param name The player name.
- * @return The account id, or 0 if unavailable.
- */
 uint32 ObjectMgr::GetPlayerAccountIdByPlayerName(const std::string& name) const
 {
     QueryResult* result = CharacterDatabase.PQuery("SELECT `account` FROM `characters` WHERE `name` = '%s'", name.c_str());
@@ -712,23 +598,10 @@ uint32 ObjectMgr::GetPlayerAccountIdByPlayerName(const std::string& name) const
     return 0;
 }
 
-
-
-
-
-
-
-
-/**
- * @brief Loads weekly honor standing lists for the specified week start date.
- *
- * @param dateBegin The start day of the ranking week.
- */
 void ObjectMgr::LoadStandingList(uint32 dateBegin)
 {
     HonorStanding Standing;
 
-    // needed for reload case
     AllyHonorStandingList.clear();
     HordeHonorStandingList.clear();
 
@@ -736,7 +609,7 @@ void ObjectMgr::LoadStandingList(uint32 dateBegin)
 
     Field* fields = nullptr;
     QueryResult* result2 = nullptr;
-    // this query create an ordered standing list
+
     QueryResult* result = CharacterDatabase.PQuery("SELECT `guid`,SUM(`honor`) as honor_sum FROM `character_honor_cp` WHERE `TYPE` = %u AND `date` BETWEEN %u AND %u AND `used`=0 GROUP BY `guid` ORDER BY `honor_sum` DESC", HONORABLE, dateBegin, dateBegin + 7);
     if (result)
     {
@@ -746,17 +619,16 @@ void ObjectMgr::LoadStandingList(uint32 dateBegin)
         {
             fields = result->Fetch();
             guid  = fields[0].GetUInt32();
-            side = GetPlayerTeamByGUID(ObjectGuid(HIGHGUID_PLAYER, guid));
+            side = GetPlayerTeamByGUID(MakeGuid(HIGHGUID_PLAYER, guid));
 
             kills = 0;
-            // kills count with victim setted ( not zero value )
+
             result2 = CharacterDatabase.PQuery("SELECT COUNT(*) FROM `character_honor_cp` WHERE `guid` = %u AND `victim`>0 AND `TYPE` = %u AND `date` BETWEEN %u AND %u AND `used`=0", guid, HONORABLE, dateBegin, dateBegin + 7);
             if (result2)
             {
                 kills = result2->Fetch()->GetUInt32();
             }
 
-            // you need to reach CONFIG_UINT32_MIN_HONOR_KILLS to be added in standing list
             if (kills < sWorld.getConfig(CONFIG_UINT32_MIN_HONOR_KILLS))
             {
                 continue;
@@ -782,22 +654,17 @@ void ObjectMgr::LoadStandingList(uint32 dateBegin)
         delete result;
         delete result2;
 
-        // make sure all things are sorted
         AllyHonorStandingList.sort();
         HordeHonorStandingList.sort();
     }
 }
 
-/**
- * @brief Loads the most recent weekly honor standings and rank point distribution preview.
- */
 void ObjectMgr::LoadStandingList()
 {
 
     uint32 LastWeekBegin = sWorld.GetDateLastMaintenanceDay() - 7;
     LoadStandingList(LastWeekBegin);
 
-    // distribution of RP earning without flushing table
     DistributeRankPoints(ALLIANCE, LastWeekBegin);
     DistributeRankPoints(HORDE, LastWeekBegin);
 
@@ -805,21 +672,16 @@ void ObjectMgr::LoadStandingList()
     sLog.outString(">> Loaded %lu Horde and %lu Ally honor standing definitions", HordeHonorStandingList.size(), AllyHonorStandingList.size());
 }
 
-/**
- * @brief Flushes processed honor ranking points and kill counters up to a cutoff date.
- *
- * @param dateTop The top date boundary used for weekly processing.
- */
 void ObjectMgr::FlushRankPoints(uint32 dateTop)
 {
-    // FLUSH CP
+
     QueryResult* result = CharacterDatabase.PQuery("SELECT `date` FROM `character_honor_cp` WHERE `TYPE` = %u AND `date` <= %u AND `used`=0 GROUP BY `date` ORDER BY `date` DESC", HONORABLE, dateTop);
     if (result)
     {
         uint32 date;
         bool flush;
         uint32 WeekBegin = dateTop - 7;
-        // search latest non-processed date if the server has been offline for different weeks
+
         do
         {
             date = result->Fetch()->GetUInt32();
@@ -830,12 +692,11 @@ void ObjectMgr::FlushRankPoints(uint32 dateTop)
         }
         while (result->NextRow());
 
-        // start to flush from latest non-processed date to up
         while (WeekBegin <= dateTop)
         {
             LoadStandingList(WeekBegin);
 
-            flush = WeekBegin <= dateTop - 7; // flush only with date < lastweek
+            flush = WeekBegin <= dateTop - 7;
 
             DistributeRankPoints(ALLIANCE, WeekBegin, flush);
             DistributeRankPoints(HORDE, WeekBegin, flush);
@@ -846,10 +707,9 @@ void ObjectMgr::FlushRankPoints(uint32 dateTop)
         delete result;
     }
 
-    // FLUSH KILLS
     static SqlStatementID updHonorable;
     static SqlStatementID updDishonorable;
-    // process only HK ( victim_type > 0 )
+
     result = CharacterDatabase.PQuery("SELECT `guid`,`TYPE`,COUNT(*) AS kills FROM `character_honor_cp` WHERE `date` <= %u AND `victim_type`>0 AND `used`=0 GROUP BY `guid`,`type`", dateTop - 7);
     if (result)
     {
@@ -877,7 +737,6 @@ void ObjectMgr::FlushRankPoints(uint32 dateTop)
         }
         while (result->NextRow());
 
-        // cleaning ALL cp before dateTop
         CharacterDatabase.PExecute("DELETE FROM `character_honor_cp` WHERE `date` <= %u", dateTop - 7);
         CharacterDatabase.CommitTransaction();
         delete result;
@@ -891,14 +750,7 @@ void ObjectMgr::FlushRankPoints(uint32 dateTop)
     sLog.outString(">> Flushed all ranking points");
 }
 
-/**
- * @brief Calculates and optionally persists weekly rank point changes for one faction.
- *
- * @param team The faction side to process.
- * @param dateBegin The start day of the ranking week.
- * @param flush true to persist calculated changes and mark honor records used.
- */
-void ObjectMgr::DistributeRankPoints(uint32 team, uint32 dateBegin , bool flush /*false*/)
+void ObjectMgr::DistributeRankPoints(uint32 team, uint32 dateBegin , bool flush )
 {
     float RP;
     uint32 HK;
@@ -920,7 +772,7 @@ void ObjectMgr::DistributeRankPoints(uint32 team, uint32 dateBegin , bool flush 
         result = CharacterDatabase.PQuery("SELECT `stored_honor_rating`,`stored_honorable_kills` FROM `characters` WHERE `guid` = %u ", itr->guid);
         if (!result)
         {
-            continue; // not cleaned table?
+            continue;
         }
 
         fields = result->Fetch();
@@ -942,29 +794,16 @@ void ObjectMgr::DistributeRankPoints(uint32 team, uint32 dateBegin , bool flush 
     delete result;
 }
 
-/**
- * @brief Gets the weekly honor standing list for a faction side.
- *
- * @param side The faction side.
- * @return The honor standing list for that side.
- */
 HonorStandingList ObjectMgr::GetStandingListBySide(uint32 side)
 {
     switch (side)
     {
         case ALLIANCE: return AllyHonorStandingList;
         case HORDE:    return HordeHonorStandingList;
-        default:       return AllyHonorStandingList; // mustn't happen
+        default:       return AllyHonorStandingList;
     }
 }
 
-/**
- * @brief Finds a weekly honor standing entry by player GUID and faction side.
- *
- * @param guid The player GUID counter.
- * @param side The faction side.
- * @return The matching honor standing, or null if not found.
- */
 HonorStanding* ObjectMgr::GetHonorStandingByGUID(uint32 guid, uint32 side)
 {
     HonorStandingList standingList = sObjectMgr.GetStandingListBySide(side);
@@ -979,13 +818,6 @@ HonorStanding* ObjectMgr::GetHonorStandingByGUID(uint32 guid, uint32 side)
     return 0;
 }
 
-/**
- * @brief Finds a weekly honor standing entry by ranking position and faction side.
- *
- * @param position The 1-based standing position.
- * @param side The faction side.
- * @return The matching honor standing, or null if not found.
- */
 HonorStanding* ObjectMgr::GetHonorStandingByPosition(uint32 position, uint32 side)
 {
     HonorStandingList standingList = sObjectMgr.GetStandingListBySide(side);
@@ -1003,13 +835,6 @@ HonorStanding* ObjectMgr::GetHonorStandingByPosition(uint32 position, uint32 sid
     return 0;
 }
 
-/**
- * @brief Finds the ranking position for a player in a faction standing list.
- *
- * @param guid The player GUID counter.
- * @param side The faction side.
- * @return The 1-based standing position, or 0 if not found.
- */
 uint32 ObjectMgr::GetHonorStandingPositionByGUID(uint32 guid, uint32 side)
 {
     HonorStandingList standingList = sObjectMgr.GetStandingListBySide(side);
@@ -1027,113 +852,28 @@ uint32 ObjectMgr::GetHonorStandingPositionByGUID(uint32 guid, uint32 side)
     return 0;
 }
 
-
-
-
-/* ********************************************************************************************* */
-/* *                                Static Wrappers                                              */
-/* ********************************************************************************************* */
-
-/**
- * @brief Gets static gameobject template data by entry id.
- *
- * @param id The gameobject entry id.
- * @return The gameobject template, or null if missing.
- */
 GameObjectInfo const* ObjectMgr::GetGameObjectInfo(uint32 id) { return sGOStorage.LookupEntry<GameObjectInfo>(id); }
 
-/**
- * @brief Finds an online player by name.
- *
- * @param name The player name.
- * @return The matching player, or null if not found.
- */
 Player* ObjectMgr::GetPlayer(const char* name) { return sPlayerRegistry.FindByName(name); }
 
-/**
- * @brief Finds a player by GUID.
- *
- * @param guid The player GUID.
- * @param inWorld true to restrict the search to players currently in world.
- * @return The matching player, or null if not found.
- */
-Player* ObjectMgr::GetPlayer(ObjectGuid guid, bool inWorld /*=true*/) { return sPlayerRegistry.Find(guid, inWorld); }
+Player* ObjectMgr::GetPlayer(ObjectGuid guid, bool inWorld ) { return sPlayerRegistry.Find(guid, inWorld); }
 
-/**
- * @brief Gets static creature template data by entry id.
- *
- * @param id The creature entry id.
- * @return The creature template, or null if missing.
- */
 CreatureInfo const* ObjectMgr::GetCreatureTemplate(uint32 id) { return sCreatureStorage.LookupEntry<CreatureInfo>(id); }
 
-/**
- * @brief Gets creature model metadata by display id.
- *
- * @param modelid The creature model id.
- * @return The creature model info, or null if missing.
- */
 CreatureModelInfo const* ObjectMgr::GetCreatureModelInfo(uint32 modelid) { return sCreatureModelStorage.LookupEntry<CreatureModelInfo>(modelid); }
 
-/**
- * @brief Gets equipment template data by entry id.
- *
- * @param entry The equipment template entry id.
- * @return The equipment template, or null if missing.
- */
 EquipmentInfo const* ObjectMgr::GetEquipmentInfo(uint32 entry) { return sEquipmentStorage.LookupEntry<EquipmentInfo>(entry); }
 
-/**
- * @brief Gets equipment item metadata by item entry id.
- *
- * @param entry The item entry id.
- * @return The equipment item info, or null if missing.
- */
 EquipmentInfoItem const* ObjectMgr::GetEquipmentInfoItem(uint32 entry) { return sEquipmentStorageItem.LookupEntry<EquipmentInfoItem>(entry); }
 
-/**
- * @brief Gets raw deprecated equipment template data by entry id.
- *
- * @param entry The raw equipment template entry id.
- * @return The raw equipment info, or null if missing.
- */
 EquipmentInfoRaw const* ObjectMgr::GetEquipmentInfoRaw(uint32 entry) { return sEquipmentStorageRaw.LookupEntry<EquipmentInfoRaw>(entry); }
 
-/**
- * @brief Gets creature spawn addon data by low GUID.
- *
- * @param lowguid The creature spawn low GUID.
- * @return The addon data, or null if missing.
- */
 CreatureDataAddon const* ObjectMgr::GetCreatureAddon(uint32 lowguid) { return sCreatureDataAddonStorage.LookupEntry<CreatureDataAddon>(lowguid); }
 
-/**
- * @brief Gets creature template addon data by entry id.
- *
- * @param entry The creature entry id.
- * @return The template addon data, or null if missing.
- */
 CreatureDataAddon const* ObjectMgr::GetCreatureTemplateAddon(uint32 entry) { return sCreatureInfoAddonStorage.LookupEntry<CreatureDataAddon>(entry); }
 
-/**
- * @brief Gets item prototype data by entry id.
- *
- * @param id The item entry id.
- * @return The item prototype, or null if missing.
- */
 ItemPrototype const* ObjectMgr::GetItemPrototype(uint32 id) { return sItemStorage.LookupEntry<ItemPrototype>(id); }
 
-
-/* ********************************************************************************************* */
-/* *                                Loading Functions                                            */
-/* ********************************************************************************************* */
-
-
-
-
-/**
- * @brief Loads starting pet spells from the database and DBC fallbacks.
- */
 void ObjectMgr::LoadPetCreateSpells()
 {
     QueryResult* result = WorldDatabase.Query("SELECT `entry`, `Spell1`, `Spell2`, `Spell3`, `Spell4` FROM `petcreateinfo_spell`");
@@ -1144,7 +884,7 @@ void ObjectMgr::LoadPetCreateSpells()
 
         sLog.outString();
         sLog.outString(">> Loaded 0 pet create spells");
-        // sLog.outErrorDb("`petcreateinfo_spell` table is empty!");
+
         return;
     }
 
@@ -1224,7 +964,6 @@ void ObjectMgr::LoadPetCreateSpells()
 
     delete result;
 
-    // cache spell->learn spell map for use in next loop
     std::map<uint32, uint32> learnCache;
     for (uint32 spell_id = 1; spell_id < sSpellStore.GetNumRows(); ++spell_id)
     {
@@ -1247,7 +986,6 @@ void ObjectMgr::LoadPetCreateSpells()
         learnCache[spellproto->EffectTriggerSpell[0]] = spellproto->ID;
     }
 
-    // fill data from DBC as more correct source if available
     uint32 dcount = 0;
     for (uint32 cr_id = 1; cr_id < sCreatureStorage.GetMaxEntry(); ++cr_id)
     {
@@ -1269,7 +1007,7 @@ void ObjectMgr::LoadPetCreateSpells()
             uint32 petspell_id = petSpellEntry->SpellId[i];
             if (petspell_id)
             {
-                // in dbc stored spell for pet use, but for teaching work we need learn spell ids
+
                 std::map<uint32, uint32>::const_iterator cache_itr = learnCache.find(petspell_id);
                 if (cache_itr != learnCache.end())
                 {
@@ -1288,20 +1026,15 @@ void ObjectMgr::LoadPetCreateSpells()
     sLog.outString(">> Loaded %u pet create spells from table and %u from DBC", count, dcount);
 }
 
-
-
 struct SQLInstanceLoader : public SQLStorageLoaderBase<SQLInstanceLoader, SQLStorage>
 {
     template<class D>
-        void convert_from_str(uint32 /*field_pos*/, char const* src, D& dst)
+        void convert_from_str(uint32 , char const* src, D& dst)
     {
         dst = D(sScriptMgr.GetScriptId(src));
     }
 };
 
-/**
- * @brief Loads instance templates and validates map and ghost entrance data.
- */
 void ObjectMgr::LoadInstanceTemplate()
 {
     SQLInstanceLoader loader;
@@ -1332,7 +1065,7 @@ void ObjectMgr::LoadInstanceTemplate()
 
         if (temp->parent > 0)
         {
-            // check existence
+
             MapEntry const* parentEntry = sMapStore.LookupEntry(temp->parent);
             if (!parentEntry)
             {
@@ -1351,7 +1084,6 @@ void ObjectMgr::LoadInstanceTemplate()
             }
         }
 
-        // if ghost entrance coordinates provided, can't be not exist for instance without ground entrance
         if (temp->ghostEntranceMap >= 0)
         {
             if (!MapCoords::Valid(temp->ghostEntranceMap, temp->ghostEntranceX, temp->ghostEntranceY))
@@ -1377,7 +1109,6 @@ void ObjectMgr::LoadInstanceTemplate()
             }
         }
 
-        // the reset_delay must be at least one day
         if (temp->reset_delay)
         {
             const_cast<InstanceTemplate*>(temp)->reset_delay = std::max((uint32)1, (uint32)(temp->reset_delay * sWorld.getConfig(CONFIG_FLOAT_RATE_INSTANCE_RESET_TIME)));
@@ -1391,15 +1122,12 @@ void ObjectMgr::LoadInstanceTemplate()
 struct SQLWorldLoader : public SQLStorageLoaderBase<SQLWorldLoader, SQLStorage>
 {
     template<class D>
-        void convert_from_str(uint32 /*field_pos*/, char const* src, D& dst)
+        void convert_from_str(uint32 , char const* src, D& dst)
     {
         dst = D(sScriptMgr.GetScriptId(src));
     }
 };
 
-/**
- * @brief Loads player condition definitions and removes invalid entries.
- */
 void ObjectMgr::LoadConditions()
 {
     SQLWorldLoader loader;
@@ -1425,12 +1153,6 @@ void ObjectMgr::LoadConditions()
     sLog.outString();
 }
 
-/**
- * @brief Gets a loaded gossip text record by id.
- *
- * @param Text_ID The gossip text identifier.
- * @return The gossip text record, or null if missing.
- */
 GossipText const* ObjectMgr::GetGossipText(uint32 Text_ID) const
 {
     GossipTextMap::const_iterator itr = mGossipText.find(Text_ID);
@@ -1441,10 +1163,6 @@ GossipText const* ObjectMgr::GetGossipText(uint32 Text_ID) const
     return nullptr;
 }
 
-
-
-// not very fast function but it is called only once a day, or on starting-up
-/// @param serverUp true if the server is already running, false when the server is started
 void ObjectMgr::ReturnOrDeleteOldMails(bool serverUp)
 {
     time_t curTime = time(nullptr);
@@ -1452,12 +1170,11 @@ void ObjectMgr::ReturnOrDeleteOldMails(bool serverUp)
     uint64 basetime(curTime);
     sLog.outString("Returning mails current time: hour: %d, minute: %d, second: %d ", lt.tm_hour, lt.tm_min, lt.tm_sec);
 
-    // delete all old mails without item and without body immediately, if starting server
     if (!serverUp)
     {
         CharacterDatabase.PExecute("DELETE FROM `mail` WHERE `expire_time` < '" UI64FMTD "' AND `has_items` = '0' AND `body` = ''", (uint64)basetime);
     }
-    //                                                     0  1           2      3        4          5         6           7   8       9
+
     QueryResult* result = CharacterDatabase.PQuery("SELECT `id`,`messageType`,`sender`,`receiver`,`has_items`,`expire_time`,`cod`,`checked`,`mailTemplateId` FROM `mail` WHERE `expire_time` < '" UI64FMTD "'", (uint64)basetime);
     if (!result)
     {
@@ -1465,13 +1182,8 @@ void ObjectMgr::ReturnOrDeleteOldMails(bool serverUp)
         bar.step();
         sLog.outString(">> Only expired mails (need to be return or delete) or DB table `mail` is empty.");
         sLog.outString();
-        return;                                             // any mails need to be returned or deleted
+        return;
     }
-
-    // std::ostringstream delitems, delmails; // will be here for optimization
-    // bool deletemail = false, deleteitem = false;
-    // delitems << "DELETE FROM `item_instance` WHERE `guid` IN ( ";
-    // delmails << "DELETE FROM `mail` WHERE `id` IN ( "
 
     BarGoLink bar(result->GetRowCount());
     uint32 count = 0;
@@ -1486,7 +1198,7 @@ void ObjectMgr::ReturnOrDeleteOldMails(bool serverUp)
         m->messageID = fields[0].GetUInt32();
         m->messageType = fields[1].GetUInt8();
         m->sender = fields[2].GetUInt32();
-        m->receiverGuid = ObjectGuid(HIGHGUID_PLAYER, fields[3].GetUInt32());
+        m->receiverGuid = MakeGuid(HIGHGUID_PLAYER, fields[3].GetUInt32());
         bool has_items = fields[4].GetBool();
         m->expire_time = (time_t)fields[5].GetUInt64();
         m->deliver_time = 0;
@@ -1501,12 +1213,11 @@ void ObjectMgr::ReturnOrDeleteOldMails(bool serverUp)
         }
         if (pl)
         {
-            // this code will run very improbably (the time is between 4 and 5 am, in game is online a player, who has old mail
-            // his in mailbox and he has already listed his mails )
+
             delete m;
             continue;
         }
-        // delete or return mail:
+
         if (has_items)
         {
             QueryResult* resultItems = CharacterDatabase.PQuery("SELECT `item_guid`,`item_template` FROM `mail_items` WHERE `mail_id`='%u'", m->messageID);
@@ -1525,10 +1236,10 @@ void ObjectMgr::ReturnOrDeleteOldMails(bool serverUp)
 
                 delete resultItems;
             }
-            // if it is mail from non-player, or if it's already return mail, it shouldn't be returned, but deleted
+
             if (m->messageType != MAIL_NORMAL || (m->checked & (MAIL_CHECK_MASK_COD_PAYMENT | MAIL_CHECK_MASK_RETURNED)))
             {
-                // mail open and then not returned
+
                 for (MailItemInfoVec::iterator itr2 = m->items.begin(); itr2 != m->items.end(); ++itr2)
                 {
                     CharacterDatabase.PExecute("DELETE FROM `item_instance` WHERE `guid` = '%u'", itr2->item_guid);
@@ -1536,12 +1247,12 @@ void ObjectMgr::ReturnOrDeleteOldMails(bool serverUp)
             }
             else
             {
-                // mail will be returned:
+
                 CharacterDatabase.PExecute("UPDATE `mail` SET `sender` = '%u', `receiver` = '%u', `expire_time` = '" UI64FMTD "', `deliver_time` = '" UI64FMTD "', `cod` = '0', `checked` = '%u' WHERE `id` = '%u'",
-                    m->receiverGuid.GetCounter(), m->sender, (uint64)(basetime + 30 * DAY), (uint64)basetime, MAIL_CHECK_MASK_RETURNED, m->messageID);
+                    GuidCounter(m->receiverGuid), m->sender, (uint64)(basetime + 30 * DAY), (uint64)basetime, MAIL_CHECK_MASK_RETURNED, m->messageID);
                 for (MailItemInfoVec::iterator itr2 = m->items.begin(); itr2 != m->items.end(); ++itr2)
                 {
-                    // update receiver in mail items for its proper delivery, and in instance_item for avoid lost item at sender delete
+
                     CharacterDatabase.PExecute("UPDATE `mail_items` SET `receiver` = %u WHERE `item_guid` = '%u'", m->sender, itr2->item_guid);
                     CharacterDatabase.PExecute("UPDATE `item_instance` SET `owner_guid` = %u WHERE `guid` = '%u'", m->sender, itr2->item_guid);
                 }
@@ -1550,8 +1261,6 @@ void ObjectMgr::ReturnOrDeleteOldMails(bool serverUp)
             }
         }
 
-        // deletemail = true;
-        // delmails << m->messageID << ", ";
         CharacterDatabase.PExecute("DELETE FROM `mail` WHERE `id` = '%u'", m->messageID);
         delete m;
         ++count;
@@ -1563,12 +1272,9 @@ void ObjectMgr::ReturnOrDeleteOldMails(bool serverUp)
     sLog.outString();
 }
 
-/**
- * @brief Loads area trigger to quest objective relationships.
- */
 void ObjectMgr::LoadQuestAreaTriggers()
 {
-    mQuestAreaTriggerMap.clear();                           // need for reload case
+    mQuestAreaTriggerMap.clear();
 
     QueryResult* result = WorldDatabase.PQuery("SELECT `entry`, `quest` FROM `quest_relations` WHERE `actor` = %d", QA_AREATRIGGER);
 
@@ -1613,10 +1319,8 @@ void ObjectMgr::LoadQuestAreaTriggers()
         {
             sLog.outErrorDb("Table `quest_relations` has record (id: %u) for not quest %u, but quest not have flag QUEST_SPECIAL_FLAG_EXPLORATION_OR_EVENT. Trigger or quest flags must be fixed, quest modified to require objective.", trigger_ID, quest_ID);
 
-            // this will prevent quest completing without objective
             const_cast<Quest*>(quest)->SetSpecialFlag(QUEST_SPECIAL_FLAG_EXPLORATION_OR_EVENT);
 
-            // continue; - quest modified to required objective and trigger can be allowed.
         }
 
         mQuestAreaTriggerMap[trigger_ID] = quest_ID;
@@ -1629,12 +1333,9 @@ void ObjectMgr::LoadQuestAreaTriggers()
     sLog.outString();
 }
 
-/**
- * @brief Loads area triggers that mark tavern rest zones.
- */
 void ObjectMgr::LoadTavernAreaTriggers()
 {
-    mTavernAreaTriggerSet.clear();                          // need for reload case
+    mTavernAreaTriggerSet.clear();
 
     QueryResult* result = WorldDatabase.Query("SELECT `id` FROM `areatrigger_tavern`");
 
@@ -1677,30 +1378,11 @@ void ObjectMgr::LoadTavernAreaTriggers()
     sLog.outString();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-/**
- * @brief Renumbers group ids into a compact sequential range.
- */
 void ObjectMgr::PackGroupIds()
 {
-    // this routine renumbers groups in such a way so they start from 1 and go up
 
-    // obtain set of all groups
     std::set<uint32> groupIds;
 
-    // all valid ids are in the instance table
-    // any associations to ids not in this table are assumed to be
-    // cleaned already in CleanupInstances
     QueryResult* result = CharacterDatabase.Query("SELECT `groupId` FROM `groups`");
     if (result)
     {
@@ -1729,12 +1411,12 @@ void ObjectMgr::PackGroupIds()
     bar.step();
 
     uint32 groupId = 1;
-    // we do assume std::set is sorted properly on integer value
+
     for (std::set<uint32>::iterator i = groupIds.begin(); i != groupIds.end(); ++i)
     {
         if (*i != groupId)
         {
-            // remap group id
+
             CharacterDatabase.BeginTransaction();
             CharacterDatabase.PExecute("UPDATE `groups` SET `groupId` = '%u' WHERE `groupId` = '%u'", groupId, *i);
             CharacterDatabase.PExecute("UPDATE `group_member` SET `groupId` = '%u' WHERE `groupId` = '%u'", groupId, *i);
@@ -1751,9 +1433,6 @@ void ObjectMgr::PackGroupIds()
     sLog.outString();
 }
 
-/**
- * @brief Initializes high-water marks for generated GUID and id sequences.
- */
 void ObjectMgr::SetHighestGuids()
 {
     QueryResult* result = CharacterDatabase.Query("SELECT MAX(`guid`) FROM `characters`");
@@ -1777,7 +1456,6 @@ void ObjectMgr::SetHighestGuids()
         delete result;
     }
 
-    // Cleanup other tables from nonexistent guids (>=m_hiItemGuid)
     CharacterDatabase.BeginTransaction();
     CharacterDatabase.PExecute("DELETE FROM `character_inventory` WHERE `item` >= '%u'", sMint.ItemGuids().NextAfterMaxUsed());
     CharacterDatabase.PExecute("DELETE FROM `mail_items` WHERE `item_guid` >= '%u'", sMint.ItemGuids().NextAfterMaxUsed());
@@ -1826,7 +1504,6 @@ void ObjectMgr::SetHighestGuids()
         delete result;
     }
 
-    // setup reserved ranges for static guids spawn
     sMint.StaticCreatureGuids().Set(sMint.FirstTemporaryCreature());
     sMint.FirstTemporaryCreature(sMint.FirstTemporaryCreature()
                                  + sWorld.getConfig(CONFIG_UINT32_GUID_RESERVE_SIZE_CREATURE));
@@ -1836,19 +1513,6 @@ void ObjectMgr::SetHighestGuids()
                                    + sWorld.getConfig(CONFIG_UINT32_GUID_RESERVE_SIZE_GAMEOBJECT));
 }
 
-
-
-
-
-
-
-
-
-
-
-/**
- * @brief Loads exploration base experience values by level.
- */
 void ObjectMgr::LoadExplorationBaseXP()
 {
     uint32 count = 0;
@@ -1883,24 +1547,12 @@ void ObjectMgr::LoadExplorationBaseXP()
     sLog.outString();
 }
 
-/**
- * @brief Gets the exploration base experience for a level.
- *
- * @param level The player level.
- * @return The configured base exploration XP, or 0 if missing.
- */
 uint32 ObjectMgr::GetBaseXP(uint32 level) const
 {
     BaseXPMap::const_iterator itr = mBaseXPTable.find(level);
     return itr != mBaseXPTable.end() ? itr->second : 0;
 }
 
-/**
- * @brief Gets the XP required for the next player level.
- *
- * @param level The current player level index.
- * @return The XP requirement, or 0 if out of range.
- */
 uint32 ObjectMgr::GetXPForLevel(uint32 level) const
 {
     if (level < mPlayerXPperLevel.size())
@@ -1910,9 +1562,6 @@ uint32 ObjectMgr::GetXPForLevel(uint32 level) const
     return 0;
 }
 
-/**
- * @brief Loads pet name fragments used for random pet naming.
- */
 void ObjectMgr::LoadPetNames()
 {
     uint32 count = 0;
@@ -1954,9 +1603,6 @@ void ObjectMgr::LoadPetNames()
     sLog.outString();
 }
 
-/**
- * @brief Initializes the next generated pet number from existing pets.
- */
 void ObjectMgr::LoadPetNumber()
 {
     QueryResult* result = CharacterDatabase.Query("SELECT MAX(`id`) FROM `character_pet`");
@@ -1974,12 +1620,6 @@ void ObjectMgr::LoadPetNumber()
     sLog.outString();
 }
 
-/**
- * @brief Generates a random or fallback pet name for a creature entry.
- *
- * @param entry The creature entry id.
- * @return The generated pet name.
- */
 std::string ObjectMgr::GeneratePetName(uint32 entry)
 {
     std::vector<std::string>& list0 = PetHalfName0[entry];
@@ -1999,16 +1639,13 @@ std::string ObjectMgr::GeneratePetName(uint32 entry)
     return *(list0.begin() + urand(0, list0.size() - 1)) + *(list1.begin() + urand(0, list1.size() - 1));
 }
 
-/**
- * @brief Loads persistent corpse records from the character database.
- */
 void ObjectMgr::LoadCorpses()
 {
     uint32 count = 0;
     QueryResult* result = CharacterDatabase.Query(
-        //                    0       1                  2                      3                      4                      5                       6
+
             "SELECT `corpse`.`guid`, `player`, `corpse`.`position_x`, `corpse`.`position_y`, `corpse`.`position_z`, `corpse`.`orientation`, `corpse`.`map`, "
-        //    7       8              9           10        11      12       13             14              15                16         17
+
             "`time`, `corpse_type`, `instance`, `gender`, `race`, `class`, `playerBytes`, `playerBytes2`, `equipmentCache`, `guildId`, `playerFlags` FROM `corpse` "
             "JOIN `characters` ON `player` = `characters`.`guid` "
             "LEFT JOIN `guild_member` ON `player`=`guild_member`.`guid` WHERE `corpse_type` <> 0");
@@ -2050,19 +1687,12 @@ void ObjectMgr::LoadCorpses()
     sLog.outString();
 }
 
-
-
-
-/**
- * @brief Loads point-of-interest definitions used by NPC map markers.
- */
 void ObjectMgr::LoadPointsOfInterest()
 {
-    mPointsOfInterest.clear();                              // need for reload case
+    mPointsOfInterest.clear();
 
     uint32 count = 0;
 
-    //                                                0      1  2  3      4     5
     QueryResult* result = WorldDatabase.Query("SELECT `entry`, `x`, `y`, `icon`, `flags`, `data`, `icon_name` FROM `points_of_interest`");
 
     if (!result)
@@ -2109,14 +1739,9 @@ void ObjectMgr::LoadPointsOfInterest()
     sLog.outString();
 }
 
-/**
- * @brief Removes stored creature spawn data and its grid mapping.
- *
- * @param guid The creature spawn GUID.
- */
 void ObjectMgr::DeleteCreatureData(uint32 guid)
 {
-    // remove mapid*cellid -> guid_set map
+
     CreatureData const* data = GetCreatureData(guid);
     if (data)
     {
@@ -2126,14 +1751,9 @@ void ObjectMgr::DeleteCreatureData(uint32 guid)
     mCreatureDataMap.erase(guid);
 }
 
-/**
- * @brief Removes stored gameobject spawn data and its grid mapping.
- *
- * @param guid The gameobject spawn GUID.
- */
 void ObjectMgr::DeleteGOData(uint32 guid)
 {
-    // remove mapid*cellid -> guid_set map
+
     GameObjectData const* data = GetGOData(guid);
     if (data)
     {
@@ -2143,54 +1763,20 @@ void ObjectMgr::DeleteGOData(uint32 guid)
     mGameObjectDataMap.erase(guid);
 }
 
-/**
- * @brief Adds corpse cell lookup data for a player corpse.
- *
- * @param mapid The map id.
- * @param cellid The cell id.
- * @param player_guid The owning player GUID low part.
- * @param instance The instance id.
- */
 void ObjectMgr::AddCorpseCellData(uint32 mapid, uint32 cellid, uint32 player_guid, uint32 instance)
 {
-    // corpses are always added to spawn mode 0 and they are spawned by their instance id
+
     CellObjectGuids& cell_guids = mMapObjectGuids[mapid][cellid];
     cell_guids.corpses[player_guid] = instance;
 }
 
-/**
- * @brief Removes corpse cell lookup data for a player corpse.
- *
- * @param mapid The map id.
- * @param cellid The cell id.
- * @param player_guid The owning player GUID low part.
- */
 void ObjectMgr::DeleteCorpseCellData(uint32 mapid, uint32 cellid, uint32 player_guid)
 {
-    // corpses are always added to spawn mode 0 and they are spawned by their instance id
+
     CellObjectGuids& cell_guids = mMapObjectGuids[mapid][cellid];
     cell_guids.corpses.erase(player_guid);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * @brief Gets the internal locale index for a locale constant.
- *
- * @param loc The locale constant.
- * @return The locale index, or -1 for the default locale.
- */
 int ObjectMgr::GetIndexForLocale(LocaleConstant loc)
 {
     if (loc == LOCALE_enUS)
@@ -2208,12 +1794,6 @@ int ObjectMgr::GetIndexForLocale(LocaleConstant loc)
     return -1;
 }
 
-/**
- * @brief Gets the locale constant mapped to an internal locale index.
- *
- * @param i The locale index.
- * @return The mapped locale constant, or the default locale if out of range.
- */
 LocaleConstant ObjectMgr::GetLocaleForIndex(int i)
 {
     if (i < 0 || i >= (int32)m_LocalForIndex.size())
@@ -2224,12 +1804,6 @@ LocaleConstant ObjectMgr::GetLocaleForIndex(int i)
     return m_LocalForIndex[i];
 }
 
-/**
- * @brief Gets or creates the internal locale index for a locale constant.
- *
- * @param loc The locale constant.
- * @return The locale index, or -1 for the default locale.
- */
 int ObjectMgr::GetOrNewIndexForLocale(LocaleConstant loc)
 {
     if (loc == LOCALE_enUS)
@@ -2249,13 +1823,6 @@ int ObjectMgr::GetOrNewIndexForLocale(LocaleConstant loc)
     return m_LocalForIndex.size() - 1;
 }
 
-
-/**
- * @brief Logs a formatted script text lookup error for a string entry.
- *
- * @param entry The string entry id.
- * @param text The printf-style error text.
- */
 inline void _DoStringError(int32 entry, char const* text, ...)
 {
     MANGOS_ASSERT(text);
@@ -2266,39 +1833,29 @@ inline void _DoStringError(int32 entry, char const* text, ...)
     vsnprintf(buf, 256, text, ap);
     va_end(ap);
 
-    if (entry <= MAX_CREATURE_AI_TEXT_STRING_ID)            // script library error
+    if (entry <= MAX_CREATURE_AI_TEXT_STRING_ID)
     {
         sLog.outErrorScriptLib("%s", buf);
     }
-    else if (entry <= MIN_CREATURE_AI_TEXT_STRING_ID)       // eventAI error
+    else if (entry <= MIN_CREATURE_AI_TEXT_STRING_ID)
     {
         sLog.outErrorEventAI("%s", buf);
     }
-    else if (entry < MIN_DB_SCRIPT_STRING_ID)               // mangos string error
+    else if (entry < MIN_DB_SCRIPT_STRING_ID)
     {
         sLog.outError("%s", buf);
     }
-    else // if (entry > MIN_DB_SCRIPT_STRING_ID)            // DB script text error
+    else
     {
         sLog.outErrorDb("DB-SCRIPTS: %s", buf);
     }
 }
 
-/**
- * @brief Loads localized string templates from a database table.
- *
- * @param db The database to query.
- * @param table The source table name.
- * @param min_value The inclusive lower id bound.
- * @param max_value The exclusive upper id bound.
- * @param extra_content true to also load sound/chat metadata.
- * @return true if the load succeeded; otherwise, false.
- */
 bool ObjectMgr::LoadMangosStrings(DatabaseType& db, char const* table, int32 min_value, int32 max_value, bool extra_content)
 {
     int32 start_value = min_value;
     int32 end_value   = max_value;
-    // some string can have negative indexes range
+
     if (start_value < 0)
     {
         if (end_value >= start_value)
@@ -2307,7 +1864,6 @@ bool ObjectMgr::LoadMangosStrings(DatabaseType& db, char const* table, int32 min
             return false;
         }
 
-        // real range (max+1,min+1) exaple: (-10,-1000) -> -999...-10+1
         std::swap(start_value, end_value);
         ++start_value;
         ++end_value;
@@ -2321,7 +1877,6 @@ bool ObjectMgr::LoadMangosStrings(DatabaseType& db, char const* table, int32 min
         }
     }
 
-    // cleanup affected map part for reloading case
     for (MangosStringLocaleMap::iterator itr = mMangosStringLocaleMap.begin(); itr != mMangosStringLocaleMap.end();)
     {
         if (itr->first >= start_value && itr->first < end_value)
@@ -2346,7 +1901,7 @@ bool ObjectMgr::LoadMangosStrings(DatabaseType& db, char const* table, int32 min
         bar.step();
 
         sLog.outString();
-        if (min_value == MIN_MANGOS_STRING_ID)              // error only in case internal strings
+        if (min_value == MIN_MANGOS_STRING_ID)
         {
             sLog.outErrorDb(">> Loaded 0 mangos strings. DB table `%s` is empty. Can not continue.", table);
         }
@@ -2390,7 +1945,6 @@ bool ObjectMgr::LoadMangosStrings(DatabaseType& db, char const* table, int32 min
         data.Content.resize(1);
         ++count;
 
-        // 0 -> default, idx in to idx+1
         data.Content[0] = fields[1].GetCppString();
 
         for (int i = 1; i < MAX_LOCALE; ++i)
@@ -2401,7 +1955,7 @@ bool ObjectMgr::LoadMangosStrings(DatabaseType& db, char const* table, int32 min
                 int idx = GetOrNewIndexForLocale(LocaleConstant(i));
                 if (idx >= 0)
                 {
-                    // 0 -> default, idx in to idx+1
+
                     if ((int32)data.Content.size() <= idx + 1)
                     {
                         data.Content.resize(idx + 2);
@@ -2412,7 +1966,6 @@ bool ObjectMgr::LoadMangosStrings(DatabaseType& db, char const* table, int32 min
             }
         }
 
-        // Load additional string content if necessary
         if (extra_content)
         {
             data.SoundId     = fields[10].GetUInt32();
@@ -2464,17 +2017,9 @@ bool ObjectMgr::LoadMangosStrings(DatabaseType& db, char const* table, int32 min
     return true;
 }
 
-/**
- * @brief Gets a localized MaNGOS string entry.
- *
- * @param entry The string entry id.
- * @param locale_idx The internal locale index.
- * @return The localized text, or a fallback error string.
- */
 const char* ObjectMgr::GetMangosString(int32 entry, int locale_idx) const
 {
-    // locale_idx==-1 -> default, locale_idx >= 0 in to idx+1
-    // Content[0] always exist if exist MangosStringLocale
+
     if (MangosStringLocale const* msl = GetMangosStringLocale(entry))
     {
         if ((int32)msl->Content.size() > locale_idx + 1 && !msl->Content[locale_idx + 1].empty())
@@ -2492,8 +2037,6 @@ const char* ObjectMgr::GetMangosString(int32 entry, int locale_idx) const
     return "<error>";
 }
 
-
-// Check if a player meets condition conditionId
 bool ObjectMgr::IsPlayerMeetToCondition(uint16 conditionId, Player const* pPlayer, Map const* map, Occupant const* source, ConditionSource conditionSourceType, ConditionEntry* entry) const
 {
     if (const PlayerCondition* condition = sConditionStorage.LookupEntry<PlayerCondition>(conditionId))
@@ -2504,8 +2047,6 @@ bool ObjectMgr::IsPlayerMeetToCondition(uint16 conditionId, Player const* pPlaye
     return false;
 }
 
-// Attention: make sure to keep this list in sync with ConditionSource to avoid array
-//            out of bounds access! It is accessed with ConditionSource as index!
 char const* conditionSourceToStr[] =
 {
         "loot system",
@@ -2516,12 +2057,11 @@ char const* conditionSourceToStr[] =
         "hardcoded",
         "vendor's item check",
         "spell_area check",
-        "npc_spellclick_spells check", // Unused. For 3.x and later.
+        "npc_spellclick_spells check",
         "DBScript engine",
         "area trigger check"
 };
 
-// Checks if player meets the condition
 bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const* source, ConditionSource conditionSourceType, ConditionEntry* entry) const
 {
     DEBUG_LOG("Condition-System: Check condition %u, type %i - called from %s with params plr: %s, map %i, src %s",
@@ -2542,16 +2082,16 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const
     switch (m_condition)
     {
         case CONDITION_NOT:
-            // Checked on load
+
             return !sConditionStorage.LookupEntry<PlayerCondition>(m_value1)->Meets(player, map, source, conditionSourceType, entry);
         case CONDITION_OR:
-            // Checked on load
+
             return sConditionStorage.LookupEntry<PlayerCondition>(m_value1)->Meets(player, map, source, conditionSourceType, entry) || sConditionStorage.LookupEntry<PlayerCondition>(m_value2)->Meets(player, map, source, conditionSourceType, entry);
         case CONDITION_AND:
-            // Checked on load
+
             return sConditionStorage.LookupEntry<PlayerCondition>(m_value1)->Meets(player, map, source, conditionSourceType, entry) && sConditionStorage.LookupEntry<PlayerCondition>(m_value2)->Meets(player, map, source, conditionSourceType, entry);
         case CONDITION_NONE:
-            return true;                                    // empty condition, always met
+            return true;
         case CONDITION_AURA:
             return player->HasAura(m_value1, SpellEffectIndex(m_value2));
         case CONDITION_ITEM:
@@ -2684,18 +2224,15 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const
             return !sGameEventMgr.IsActiveHoliday(HolidayIds(m_value1));
         case CONDITION_LEARNABLE_ABILITY:
         {
-            // Already know the spell
+
             if (player->HasSpell(m_value1))
             {
                 return false;
             }
 
-            // If item defined, check if player has the item already.
             if (m_value2)
             {
-                // Hard coded item count. This should be ok, since the intention with this condition is to have
-                // a all-in-one check regarding items that learn some ability (primary/secondary tradeskills).
-                // Commonly, items like this is unique and/or are not expected to be obtained more than once.
+
                 if (player->HasItemCount(m_value2, 1, true))
                 {
                     return false;
@@ -2715,25 +2252,21 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const
                     continue;
                 }
 
-                // doesn't have skill
                 if (!player->HasSkill(skillInfo->SkillLine))
                 {
                     return false;
                 }
 
-                // doesn't match class
                 if (skillInfo->ClassMask && (skillInfo->ClassMask & player->getClassMask()) == 0)
                 {
                     return false;
                 }
 
-                // doesn't match race
                 if (skillInfo->RaceMask && (skillInfo->RaceMask & player->getRaceMask()) == 0)
                 {
                     return false;
                 }
 
-                // skill level too low
                 if (skillInfo->TrivialSkillLineRankLow > player->GetSkillValue(skillInfo->SkillLine))
                 {
                     return false;
@@ -2768,7 +2301,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const
         }
         case CONDITION_SOURCE_AURA:
         {
-            if (!source->isType(TYPEMASK_UNIT))
+            if (!IsType(source, TYPEMASK_UNIT))
             {
                 sLog.outErrorDb("CONDITION_SOURCE_AURA (entry %u) is used for non unit source (source %s) by %s", m_entry, source->GetGuidStr().c_str(), player->GetGuidStr().c_str());
                 return false;
@@ -2777,7 +2310,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const
         }
         case CONDITION_LAST_WAYPOINT:
         {
-            if (!source->IsCreature())
+            if (!IsCreature(source))
             {
                 sLog.outErrorDb("CONDITION_LAST_WAYPOINT (entry %u) is used for non creature source (source %s) by %s", m_entry, source->GetGuidStr().c_str(), player->GetGuidStr().c_str());
                 return false;
@@ -2796,9 +2329,9 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const
         case CONDITION_DEAD_OR_AWAY:
             switch (m_value1)
             {
-                case 0:                                     // Player dead or out of range
+                case 0:
                     return !player || !player->IsAlive() || (m_value2 && source && !InReach(*source, *player, m_value2));
-                case 1:                                     // All players in Group dead or out of range
+                case 1:
                     if (!player)
                     {
                         return true;
@@ -2819,7 +2352,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const
                     {
                         return !player->IsAlive() || (m_value2 && source && !InReach(*source, *player, m_value2));
                     }
-                case 2:                                     // All players in instance dead or out of range
+                case 2:
                     for (Map::PlayerList::const_iterator itr = map->GetPlayers().begin(); itr != map->GetPlayers().end(); ++itr)
                     {
                         Player const* plr = itr->getSource();
@@ -2829,8 +2362,8 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const
                         }
                     }
                     return true;
-                case 3:                                     // Creature source is dead
-                    return !source || !source->IsCreature() || !((Unit*)source)->IsAlive();
+                case 3:
+                    return !source || !IsCreature(source) || !((Unit*)source)->IsAlive();
             }
         case CONDITION_CREATURE_IN_RANGE:
         {
@@ -2869,7 +2402,6 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, Occupant const
     }
 }
 
-// Which params must be provided to a Condition
 bool PlayerCondition::CheckParamRequirements(Player const* pPlayer, Map const* map, Occupant const* source, ConditionSource conditionSourceType) const
 {
     switch (m_condition)
@@ -2912,9 +2444,9 @@ bool PlayerCondition::CheckParamRequirements(Player const* pPlayer, Map const* m
         case CONDITION_DEAD_OR_AWAY:
             switch (m_value1)
             {
-                case 0:                                     // Player dead or out of range
-                case 1:                                     // All players in Group dead or out of range
-                case 2:                                     // All players in instance dead or out of range
+                case 0:
+                case 1:
+                case 2:
                     if (m_value2 && !source)
                     {
                         sLog.outErrorDb("CONDITION_DEAD_OR_AWAY %u - called from %s without source, but source expected for range check", m_entry, conditionSourceToStr[conditionSourceType]);
@@ -2924,7 +2456,7 @@ bool PlayerCondition::CheckParamRequirements(Player const* pPlayer, Map const* m
                     {
                         return true;
                     }
-                    // Case 2 (Instance map only)
+
                     if (!map && (pPlayer || source))
                     {
                         map = source ? source->GetMap() : pPlayer->GetMap();
@@ -2934,7 +2466,7 @@ bool PlayerCondition::CheckParamRequirements(Player const* pPlayer, Map const* m
                         sLog.outErrorDb("CONDITION_DEAD_OR_AWAY %u (Player in instance case) - called from %s without map param or from non-instanceable map %i", m_entry,  conditionSourceToStr[conditionSourceType], map ? map->GetId() : -1);
                         return false;
                     }
-                case 3:                                     // Creature source is dead
+                case 3:
                     return true;
             }
             break;
@@ -2958,7 +2490,6 @@ bool PlayerCondition::CheckParamRequirements(Player const* pPlayer, Map const* m
     return true;
 }
 
-// Verification of condition values validity
 bool PlayerCondition::IsValid(uint16 entry, ConditionType condition, uint32 value1, uint32 value2)
 {
     switch (condition)
@@ -3235,7 +2766,7 @@ bool PlayerCondition::IsValid(uint16 entry, ConditionType condition, uint32 valu
         }
         case CONDITION_ACTIVE_HOLIDAY:
         case CONDITION_NOT_ACTIVE_HOLIDAY:
-            // no way check holidays in pre-3.x
+
             break;
         case CONDITION_LEARNABLE_ABILITY:
         {
@@ -3332,7 +2863,6 @@ bool PlayerCondition::IsValid(uint16 entry, ConditionType condition, uint32 valu
     return true;
 }
 
-// Check if a condition can be used without providing a player param
 bool PlayerCondition::CanBeUsedWithoutPlayer(uint16 entry)
 {
     PlayerCondition const* condition = sConditionStorage.LookupEntry<PlayerCondition>(entry);
@@ -3364,13 +2894,6 @@ bool PlayerCondition::CanBeUsedWithoutPlayer(uint16 entry)
     }
 }
 
-/**
- * @brief Determines the training range type used by a skill line.
- *
- * @param pSkill The skill line entry.
- * @param racial True if the skill is racial.
- * @return SkillRangeType The applicable skill range type.
- */
 SkillRangeType GetSkillRangeType(SkillLineEntry const* pSkill, bool racial)
 {
     switch (pSkill->CategoryID)
@@ -3398,7 +2921,7 @@ SkillRangeType GetSkillRangeType(SkillLineEntry const* pSkill, bool racial)
             }
         case SKILL_CATEGORY_SECONDARY:
         case SKILL_CATEGORY_PROFESSION:
-            // not set skills for professions and racial abilities
+
             if (IsProfessionSkill(pSkill->ID))
             {
                 return SKILL_RANGE_RANK;
@@ -3412,32 +2935,12 @@ SkillRangeType GetSkillRangeType(SkillLineEntry const* pSkill, bool racial)
                 return SKILL_RANGE_MONO;
             }
         default:
-        case SKILL_CATEGORY_ATTRIBUTES:                     // not found in dbc
-        case SKILL_CATEGORY_GENERIC:                        // only GENERIC(DND)
+        case SKILL_CATEGORY_ATTRIBUTES:
+        case SKILL_CATEGORY_GENERIC:
             return SKILL_RANGE_NONE;
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-/**
- * This method will send the correct return when the code calls
- * pPlayer->GetGossipTextId(pCreature)
- * Otherwise the default
- */
-
-/**
- * @brief Builds the cache mapping creature entries to their default gossip text ids.
- */
 void ObjectMgr::LoadCoreSideGossipTextIdCache()
 {
     m_mCacheNpcTextIdMap.clear();
@@ -3483,14 +2986,6 @@ void ObjectMgr::LoadCoreSideGossipTextIdCache()
 
 }
 
-/**
- * @brief Adds a vendor item to a creature vendor list and persists it.
- *
- * @param entry The vendor creature entry.
- * @param item The item entry.
- * @param maxcount The limited stock count.
- * @param incrtime The stock replenishment interval.
- */
 void ObjectMgr::AddVendorItem(uint32 entry, uint32 item, uint32 maxcount, uint32 incrtime)
 {
     VendorItemData& vList = m_mCacheVendorItemMap[entry];
@@ -3499,13 +2994,6 @@ void ObjectMgr::AddVendorItem(uint32 entry, uint32 item, uint32 maxcount, uint32
     WorldDatabase.PExecuteLog("INSERT INTO `npc_vendor` (`entry`,`item`,`maxcount`,`incrtime`) VALUES('%u','%u','%u','%u')", entry, item, maxcount, incrtime);
 }
 
-/**
- * @brief Removes a vendor item from a creature vendor list and database.
- *
- * @param entry The vendor creature entry.
- * @param item The item entry.
- * @return true if the item was removed; otherwise, false.
- */
 bool ObjectMgr::RemoveVendorItem(uint32 entry, uint32 item)
 {
     CacheVendorItemMap::iterator  iter = m_mCacheVendorItemMap.find(entry);
@@ -3523,20 +3011,6 @@ bool ObjectMgr::RemoveVendorItem(uint32 entry, uint32 item)
     return true;
 }
 
-/**
- * @brief Validates a vendor item definition for a vendor or vendor template.
- *
- * @param isTemplate true when validating a vendor template.
- * @param tableName The source table name.
- * @param vendor_entry The vendor or template entry id.
- * @param item_id The item entry id.
- * @param maxcount The limited stock count.
- * @param incrtime The stock replenishment interval.
- * @param conditionId The optional condition id.
- * @param pl Optional player used for command feedback.
- * @param skip_vendors Optional set used to suppress repeated vendor errors.
- * @return true if the vendor item definition is valid; otherwise, false.
- */
 bool ObjectMgr::IsVendorItemValid(bool isTemplate, char const* tableName, uint32 vendor_entry, uint32 item_id, uint32 maxcount, uint32 incrtime, uint16 conditionId, Player* pl, std::set<uint32>* skip_vendors) const
 {
     char const* idStr = isTemplate ? "vendor template" : "vendor";
@@ -3632,7 +3106,7 @@ bool ObjectMgr::IsVendorItemValid(bool isTemplate, char const* tableName, uint32
 
     if (!vItems && !tItems)
     {
-        return true;                                        // later checks for non-empty lists
+        return true;
     }
 
     if (vItems && vItems->FindItem(item_id))
@@ -3694,36 +3168,19 @@ bool ObjectMgr::IsVendorItemValid(bool isTemplate, char const* tableName, uint32
     return true;
 }
 
-/**
- * @brief Registers a loaded group in the object manager.
- *
- * @param group The group to add.
- */
 void ObjectMgr::AddGroup(Group* group)
 {
     mGroupMap[group->GetId()] = group ;
 }
 
-/**
- * @brief Unregisters a loaded group from the object manager.
- *
- * @param group The group to remove.
- */
 void ObjectMgr::RemoveGroup(Group* group)
 {
     mGroupMap.erase(group->GetId());
 }
 
-
-
-
-
-
-// Functions for scripting access
 bool LoadMangosStrings(DatabaseType& db, char const* table, int32 start_value, int32 end_value, bool extra_content)
 {
-    // MAX_DB_SCRIPT_STRING_ID is max allowed negative value for scripts (scrpts can use only more deep negative values
-    // start/end reversed for negative values
+
     if (start_value > MAX_DB_SCRIPT_STRING_ID || end_value >= start_value)
     {
         sLog.outErrorDb("Table '%s' attempt loaded with reserved by mangos range (%d - %d), strings not loaded.", table, start_value, end_value + 1);
@@ -3733,49 +3190,24 @@ bool LoadMangosStrings(DatabaseType& db, char const* table, int32 start_value, i
     return sObjectMgr.LoadMangosStrings(db, table, start_value, end_value, extra_content);
 }
 
-
-/**
- * @brief Retrieves a creature template from the global creature store.
- *
- * @param entry The creature template entry.
- * @return CreatureInfo const* The matching creature template, or null if missing.
- */
 CreatureInfo const* GetCreatureTemplateStore(uint32 entry)
 {
     return sCreatureStorage.LookupEntry<CreatureInfo>(entry);
 }
 
-/**
- * @brief Retrieves a quest template from the object manager.
- *
- * @param entry The quest template entry.
- * @return Quest const* The matching quest template, or null if missing.
- */
 Quest const* GetQuestTemplateStore(uint32 entry)
 {
     return sObjectMgr.GetQuestTemplate(entry);
 }
 
-/**
- * @brief Retrieves localized MaNGOS string data by entry id.
- *
- * @param entry The localized string entry.
- * @return MangosStringLocale const* The matching localized string data, or null if missing.
- */
 MangosStringLocale const* GetMangosStringData(int32 entry)
 {
     return sObjectMgr.GetMangosStringLocale(entry);
 }
 
-/**
- * @brief Evaluates whether a creature spawn matches the current search criteria.
- *
- * @param dataPair The creature data pair being tested.
- * @return true if the search can stop early; otherwise, false.
- */
 bool FindCreatureData::operator()(CreatureDataPair const& dataPair)
 {
-    // skip wrong entry ids
+
     if (i_id && dataPair.second.id != i_id)
     {
         return false;
@@ -3786,13 +3218,11 @@ bool FindCreatureData::operator()(CreatureDataPair const& dataPair)
         i_anyData = &dataPair;
     }
 
-    // without player we can't find more stricted cases, so use fouded
     if (!i_player)
     {
         return true;
     }
 
-    // skip diff. map cases
     if (dataPair.second.mapid != i_player->GetMapId())
     {
         return false;
@@ -3806,7 +3236,6 @@ bool FindCreatureData::operator()(CreatureDataPair const& dataPair)
         i_mapDist = new_dist;
     }
 
-    // skip not spawned (in any state),
     uint16 pool_id = sPoolMgr.IsPartOfAPool<Creature>(dataPair.first);
     if (pool_id && !i_player->GetMap()->GetPersistentState()->IsSpawnedPoolObject<Creature>(dataPair.first))
     {
@@ -3822,11 +3251,6 @@ bool FindCreatureData::operator()(CreatureDataPair const& dataPair)
     return false;
 }
 
-/**
- * @brief Gets the best matching creature spawn data found by the search.
- *
- * @return The selected creature data pair, or null if none matched.
- */
 CreatureDataPair const* FindCreatureData::GetResult() const
 {
     if (i_spawnedData)
@@ -3842,15 +3266,9 @@ CreatureDataPair const* FindCreatureData::GetResult() const
     return i_anyData;
 }
 
-/**
- * @brief Evaluates whether a gameobject spawn matches the current search criteria.
- *
- * @param dataPair The gameobject data pair being tested.
- * @return true if the search can stop early; otherwise, false.
- */
 bool FindGOData::operator()(GameObjectDataPair const& dataPair)
 {
-    // skip wrong entry ids
+
     if (i_id && dataPair.second.id != i_id)
     {
         return false;
@@ -3861,13 +3279,11 @@ bool FindGOData::operator()(GameObjectDataPair const& dataPair)
         i_anyData = &dataPair;
     }
 
-    // without player we can't find more stricted cases, so use fouded
     if (!i_player)
     {
         return true;
     }
 
-    // skip diff. map cases
     if (dataPair.second.mapid != i_player->GetMapId())
     {
         return false;
@@ -3881,7 +3297,6 @@ bool FindGOData::operator()(GameObjectDataPair const& dataPair)
         i_mapDist = new_dist;
     }
 
-    // skip not spawned (in any state)
     uint16 pool_id = sPoolMgr.IsPartOfAPool<GameObject>(dataPair.first);
     if (pool_id && !i_player->GetMap()->GetPersistentState()->IsSpawnedPoolObject<GameObject>(dataPair.first))
     {
@@ -3897,11 +3312,6 @@ bool FindGOData::operator()(GameObjectDataPair const& dataPair)
     return false;
 }
 
-/**
- * @brief Gets the best matching gameobject spawn data found by the search.
- *
- * @return The selected gameobject data pair, or null if none matched.
- */
 GameObjectDataPair const* FindGOData::GetResult() const
 {
     if (i_mapData)
@@ -3917,15 +3327,7 @@ GameObjectDataPair const* FindGOData::GetResult() const
     return i_anyData;
 }
 
-/**
- * @brief Displays localized scripted text, sound, and emote output from a source object.
- *
- * @param source The speaking world object.
- * @param entry The text entry id.
- * @param target The optional target unit for whispers.
- * @return true if the text was displayed successfully; otherwise false.
- */
-bool DoDisplayText(Occupant* source, int32 entry, Unit const* target /*=nullptr*/)
+bool DoDisplayText(Occupant* source, int32 entry, Unit const* target )
 {
     MangosStringLocale const* data = sObjectMgr.GetMangosStringLocale(entry);
 
@@ -3943,10 +3345,10 @@ bool DoDisplayText(Occupant* source, int32 entry, Unit const* target /*=nullptr*
         }
         else if (data->Type == CHAT_TYPE_WHISPER || data->Type == CHAT_TYPE_BOSS_WHISPER)
         {
-            // An error will be displayed for the text
-            if (target && target->IsPlayer())
+
+            if (target &&IsPlayer(target))
             {
-                PlaySound(*source, SoundKind::Flat, data->SoundId, ToPlayer(target));
+                PlaySound(*source, SoundKind::Flat, data->SoundId, static_cast<Player const*>(target));
             }
         }
         else
@@ -3957,7 +3359,7 @@ bool DoDisplayText(Occupant* source, int32 entry, Unit const* target /*=nullptr*
 
     if (data->Emote)
     {
-        if (source->IsCreature() || source->IsPlayer())
+        if (IsCreature(source) ||IsPlayer(source))
         {
             ((Unit*)source)->HandleEmote(data->Emote);
         }
@@ -3968,7 +3370,7 @@ bool DoDisplayText(Occupant* source, int32 entry, Unit const* target /*=nullptr*
         }
     }
 
-    if ((data->Type == CHAT_TYPE_WHISPER || data->Type == CHAT_TYPE_BOSS_WHISPER) && (!target || !target->IsPlayer()))
+    if ((data->Type == CHAT_TYPE_WHISPER || data->Type == CHAT_TYPE_BOSS_WHISPER) && (!target || !IsPlayer(target)))
     {
         _DoStringError(entry, "DoDisplayText entry %i can not whisper without target unit (TYPEID_PLAYER).", entry);
         return false;

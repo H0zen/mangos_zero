@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <iterator>
 #include <random>
 #include <utility>
@@ -74,11 +72,6 @@
 #include "Geometry/Vector3.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Teaches a spell to the target player or pet.
- *
- * @param eff_idx The effect index containing the learned spell id.
- */
 void Spell::EffectLearnSpell(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
@@ -88,9 +81,9 @@ void Spell::EffectLearnSpell(const cast::Operation& operation)
         return;
     }
 
-    if (!unitTarget->IsPlayer())
+    if (!IsPlayer(unitTarget))
     {
-        if (m_caster->IsPlayer())
+        if (IsPlayer(m_caster))
         {
             EffectLearnPetSpell(operation);
         }
@@ -109,11 +102,6 @@ void Spell::EffectLearnSpell(const cast::Operation& operation)
     }
 }
 
-/**
- * @brief Dispels matching auras from the target and sends result logs.
- *
- * @param eff_idx The dispel effect index.
- */
 void Spell::EffectDispel(const cast::Operation& operation)
 {
     if (!unitTarget)
@@ -121,17 +109,14 @@ void Spell::EffectDispel(const cast::Operation& operation)
         return;
     }
 
-    // Shield Slam 50% chance dispel
     if (m_spellInfo->SpellClassSet == SPELLFAMILY_WARRIOR && (m_spellInfo->SpellClassMask & UI64LIT(0x0000000100000000)) &&
         !roll_chance_i(50))
     {
         return;
     }
 
-    // Fill possible dispel list
     std::list <std::pair<SpellAuraHolder* , uint32> > dispel_list;
 
-    // Create dispel mask by dispel type
     uint32 dispel_type = operation.miscValue;
     uint32 dispelMask  = GetDispellMask(DispelType(dispel_type));
     Unit::SpellAuraHolderMap const& auras = unitTarget->GetSpellAuraHolderMap();
@@ -152,8 +137,6 @@ void Spell::EffectDispel(const cast::Operation& operation)
                     positive = (holder->GetSpellProto()->AttributesEx & SPELL_ATTR_EX_CANT_BE_REFLECTED) == 0;
                 }
 
-                // do not remove positive auras if friendly target
-                //               negative auras if non-friendly target
                 if (positive == IsFriendly(*unitTarget, *m_caster))
                 {
                     continue;
@@ -162,22 +145,20 @@ void Spell::EffectDispel(const cast::Operation& operation)
             dispel_list.push_back(std::pair<SpellAuraHolder* , uint32>(holder, holder->GetStackAmount()));
         }
     }
-    // Ok if exist some buffs for dispel try dispel it
+
     if (!dispel_list.empty())
     {
-        std::list<std::pair<SpellAuraHolder* , uint32> > success_list; // (spell_id,casterGuid)
-        std::list < uint32 > fail_list;                     // spell_id
+        std::list<std::pair<SpellAuraHolder* , uint32> > success_list;
+        std::list < uint32 > fail_list;
 
-        // some spells have effect value = 0 and all from its by meaning expect 1
         if (!damage)
         {
             damage = 1;
         }
 
-        // Dispel N = damage buffs (or while exist buffs for dispel)
         for (int32 count = 0; count < damage && !dispel_list.empty(); ++count)
         {
-            // Random select buff for dispel
+
             std::list<std::pair<SpellAuraHolder* , uint32> >::iterator dispel_itr = dispel_list.begin();
             std::advance(dispel_itr, urand(0, dispel_list.size() - 1));
 
@@ -185,17 +166,15 @@ void Spell::EffectDispel(const cast::Operation& operation)
 
             dispel_itr->second -= 1;
 
-            // remove entry from dispel_list if nothing left in stack
             if (dispel_itr->second == 0)
             {
                 dispel_list.erase(dispel_itr);
             }
 
             SpellEntry const* spellInfo = holder->GetSpellProto();
-            // Base dispel chance
-            // TODO: possible chance depend from spell level??
+
             int32 miss_chance = 0;
-            // Apply dispel mod from aura caster
+
             if (Unit* caster = holder->GetCaster())
             {
                 if (Player* modOwner = caster->GetSpellModOwner())
@@ -203,7 +182,7 @@ void Spell::EffectDispel(const cast::Operation& operation)
                     modOwner->SpellMods().Apply(spellInfo->ID, SPELLMOD_RESIST_DISPEL_CHANCE, miss_chance, this);
                 }
             }
-            // Try dispel
+
             if (roll_chance_i(miss_chance))
             {
                 fail_list.push_back(spellInfo->ID);
@@ -226,27 +205,25 @@ void Spell::EffectDispel(const cast::Operation& operation)
                 }
             }
         }
-        // Send success log and really remove auras
+
         if (!success_list.empty())
         {
             int32 count = success_list.size();
             WorldPacket data(SMSG_SPELLDISPELLOG, 8 + 8 + 4 + 1 + 4 + count * 5);
-            data << unitTarget->GetPackGUID();              // Victim GUID
-            data << m_caster->GetPackGUID();                // Caster GUID
-            data << uint32(m_spellInfo->ID);                // Dispel spell id
-            //data << uint8(0);                               // [-ZERO] not used
-            data << uint32(count);                          // count
+            data << unitTarget->GetPackGUID();
+            data << m_caster->GetPackGUID();
+            data << uint32(m_spellInfo->ID);
+
+            data << uint32(count);
             for (std::list<std::pair<SpellAuraHolder* , uint32> >::iterator j = success_list.begin(); j != success_list.end(); ++j)
             {
                 SpellAuraHolder* dispelledHolder = j->first;
-                data << uint32(dispelledHolder->GetId());   // Spell Id
-                //data << uint8(0);                           // [-ZERO] 0 - dispelled !=0 cleansed
+                data << uint32(dispelledHolder->GetId());
+
                 unitTarget->RemoveStacks(dispelledHolder->GetId(), j->second, dispelledHolder->GetCasterGuid(), AURA_REMOVE_BY_DISPEL);
             }
             Deliver(Audience::Around(*m_caster).AndSubject(), &data);
 
-            // On success dispel
-            // Devour Magic
             if (m_spellInfo->SpellClassSet == SPELLFAMILY_WARLOCK && m_spellInfo->Category == SPELLCATEGORY_DEVOUR_MAGIC)
             {
                 uint32 heal_spell = 0;
@@ -266,61 +243,45 @@ void Spell::EffectDispel(const cast::Operation& operation)
                 }
             }
         }
-        // Send fail log to client
+
         if (!fail_list.empty())
         {
-            // Failed to dispel
+
             WorldPacket data(SMSG_DISPEL_FAILED, 8 + 8 + 4 + 4 * fail_list.size());
-            data << m_caster->GetObjectGuid();              // Caster GUID
-            data << unitTarget->GetObjectGuid();            // Victim GUID
-            data << uint32(m_spellInfo->ID);                // Dispel spell id
+            data << m_caster->GetObjectGuid();
+            data << unitTarget->GetObjectGuid();
+            data << uint32(m_spellInfo->ID);
             for (std::list< uint32 >::iterator j = fail_list.begin(); j != fail_list.end(); ++j)
             {
-                data << uint32(*j);                          // Spell Id
+                data << uint32(*j);
             }
             Deliver(Audience::Around(*m_caster).AndSubject(), &data);
         }
     }
 }
 
-/**
- * @brief Enables dual wielding for a player target.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectDualWield(const cast::Operation& /*operation*/)
+void Spell::EffectDualWield(const cast::Operation& )
 {
-    if (unitTarget && unitTarget->IsPlayer())
+    if (unitTarget &&IsPlayer(unitTarget))
     {
         ((Player*)unitTarget)->Arms().CanDualWield(true);
     }
 }
 
-/**
- * @brief Placeholder for pull-style spell effects.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectPull(const cast::Operation& /*operation*/)
+void Spell::EffectPull(const cast::Operation& )
 {
-    // TODO: create a proper pull towards distract spell center for distract
+
     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "WORLD: Spell Effect DUMMY");
 }
 
-/**
- * @brief Turns and distracts a non-combat unit target.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectDistract(const cast::Operation& /*operation*/)
+void Spell::EffectDistract(const cast::Operation& )
 {
-    // Check for possible target
+
     if (!unitTarget || unitTarget->IsInCombat())
     {
         return;
     }
 
-    // target must be OK to do this
     if (unitTarget->hasUnitState(UNIT_STAT_CAN_NOT_REACT))
     {
         return;
@@ -331,61 +292,48 @@ void Spell::EffectDistract(const cast::Operation& /*operation*/)
     unitTarget->clearUnitState(UNIT_STAT_MOVING);
     unitTarget->Place().Face(angle);
 
-    if (unitTarget->IsCreature())
+    if (IsCreature(unitTarget))
     {
         unitTarget->GetMotionMaster()->MoveDistract(damage * IN_MILLISECONDS);
     }
 }
 
-/**
- * @brief Attempts to pickpocket a valid creature target.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectPickPocket(const cast::Operation& /*operation*/)
+void Spell::EffectPickPocket(const cast::Operation& )
 {
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return;
     }
 
-    // victim must be creature and attackable
-    if (!unitTarget || !unitTarget->IsCreature() || IsFriendly(*m_caster, *unitTarget))
+    if (!unitTarget || !IsCreature(unitTarget) || IsFriendly(*m_caster, *unitTarget))
     {
         return;
     }
 
-    // victim have to be alive and humanoid or undead
     if (unitTarget->IsAlive() && (unitTarget->GetCreatureTypeMask() & CREATURE_TYPEMASK_HUMANOID_OR_UNDEAD) != 0)
     {
         int32 chance = 10 + int32(m_caster->getLevel()) - int32(unitTarget->getLevel());
 
         if (chance > irand(0, 19))
         {
-            // Stealing successful
-            // DEBUG_LOG("Sending loot from pickpocket");
+
             ((Player*)m_caster)->SendLoot(unitTarget->GetObjectGuid(), LOOT_PICKPOCKETING);
         }
         else
         {
-            // Reveal action + get attack
-            m_caster->SendSpellMiss(unitTarget, m_spellInfo->ID, SPELL_MISS_RESIST); // Pickpocket resisted.
+
+            m_caster->SendSpellMiss(unitTarget, m_spellInfo->ID, SPELL_MISS_RESIST);
             m_caster->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
             unitTarget->AttackedBy(m_caster);
         }
     }
 }
 
-/**
- * @brief Creates a farsight focus object and switches the player's camera to it.
- *
- * @param eff_idx The farsight effect index.
- */
 void Spell::EffectAddFarsight(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
 
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return;
     }
@@ -393,7 +341,6 @@ void Spell::EffectAddFarsight(const cast::Operation& operation)
     int32 duration = Recipe().DurationMs();
     DynamicObject* dynObj = new DynamicObject;
 
-    // set radius to 0: spell not expected to work as persistent aura
     if (!dynObj->Create(m_caster->GetMap()->GenerateLocalLowGuid(HIGHGUID_DYNAMICOBJECT), m_caster,
         m_spellInfo->ID, eff_idx, m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ, duration, 0, DYNAMIC_OBJECT_FARSIGHT_FOCUS))
     {
@@ -407,11 +354,6 @@ void Spell::EffectAddFarsight(const cast::Operation& operation)
     ((Player*)m_caster)->GetCamera().SetView(dynObj);
 }
 
-/**
- * @brief Teleports the target near the caster and turns it to face away from the caster.
- *
- * @param eff_idx The teleport effect index.
- */
 void Spell::EffectTeleUnitsFaceCaster(const cast::Operation& operation)
 {
     if (!unitTarget)
@@ -438,14 +380,9 @@ void Spell::EffectTeleUnitsFaceCaster(const cast::Operation& operation)
     unitTarget->NearTeleportTo(fx, fy, fz, m_caster->Where().Facing() + M_PI_F, unitTarget == m_caster);
 }
 
-/**
- * @brief Teaches or updates a skill for a player target.
- *
- * @param eff_idx The effect index containing the skill identifier.
- */
 void Spell::EffectLearnSkill(const cast::Operation& operation)
 {
-    if (!unitTarget->IsPlayer())
+    if (!IsPlayer(unitTarget))
     {
         return;
     }
@@ -465,30 +402,18 @@ void Spell::EffectLearnSkill(const cast::Operation& operation)
     }
 }
 
-/**
- * @brief Placeholder handler for trade-skill effects.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectTradeSkill(const cast::Operation& /*operation*/)
+void Spell::EffectTradeSkill(const cast::Operation& )
 {
-    if (!unitTarget->IsPlayer())
+    if (!IsPlayer(unitTarget))
     {
         return;
     }
-    // uint32 skillid =  m_spellInfo->EffectMiscValue[i];
-    // uint16 skillmax = ((Player*)unitTarget)->(skillid);
-    // ((Player*)unitTarget)->SetSkill(skillid,skillval?skillval:1,skillmax+75);
+
 }
 
-/**
- * @brief Applies a permanent enchantment to the target item.
- *
- * @param eff_idx The effect index providing the enchantment id.
- */
 void Spell::EffectEnchantItemPerm(const cast::Operation& operation)
 {
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return;
     }
@@ -499,7 +424,6 @@ void Spell::EffectEnchantItemPerm(const cast::Operation& operation)
 
     Player* p_caster = (Player*)m_caster;
 
-    // not grow at item use at item case
     p_caster->UpdateCraftSkill(m_spellInfo->ID);
 
     uint32 enchant_id = operation.miscValue;
@@ -514,7 +438,6 @@ void Spell::EffectEnchantItemPerm(const cast::Operation& operation)
         return;
     }
 
-    // item can be in trade slot and have owner diff. from caster
     Player* item_owner = itemTarget->GetOwner();
     if (!item_owner)
     {
@@ -529,25 +452,18 @@ void Spell::EffectEnchantItemPerm(const cast::Operation& operation)
             item_owner->GetName(), item_owner->GetSession()->GetAccountId());
     }
 
-    // remove old enchanting before applying new if equipped
     item_owner->ApplyEnchantment(itemTarget, PERM_ENCHANTMENT_SLOT, false);
 
     itemTarget->SetEnchantment(PERM_ENCHANTMENT_SLOT, enchant_id, 0, 0);
 
-    // add new enchanting if equipped
     item_owner->ApplyEnchantment(itemTarget, PERM_ENCHANTMENT_SLOT, true);
 }
 
-/**
- * @brief Applies a temporary enchantment to the target item.
- *
- * @param eff_idx The effect index providing the enchantment id.
- */
 void Spell::EffectEnchantItemTmp(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
 
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return;
     }
@@ -572,36 +488,33 @@ void Spell::EffectEnchantItemTmp(const cast::Operation& operation)
         return;
     }
 
-    // select enchantment duration
     uint32 duration;
 
-    // shaman family enchantments
     if (m_spellInfo->Attributes == (SPELL_ATTR_TARGET_MAINHAND_ITEM | SPELL_ATTR_NOT_SHAPESHIFT | SPELL_ATTR_DONT_AFFECT_SHEATH_STATE))
     {
-        duration = 300;                                      // 5 mins
-    }
-    // imbue enchantments except Imbue Weapon - Beastslayer
-    else if (m_spellInfo->SpellIconID == 241 && m_spellInfo->ID != 7434)
-    {
-        duration = 3600;                                     // 1 hour
-    }
-    // Consecrated Weapon and Blessed Wizard Oil
-    else if (m_spellInfo->ID == 28891 || m_spellInfo->ID == 28898)
-    {
-        duration = 3600;                                     // 1 hour
-    }
-    // some fishing pole bonuses
-    else if (Recipe().Says().hiddenFromClient)
-    {
-        duration = 600;                                      // 10 mins
-    }
-    // default case
-    else
-    {
-        duration = 1800;                                     // 30 mins
+        duration = 300;
     }
 
-    // item can be in trade slot and have owner diff. from caster
+    else if (m_spellInfo->SpellIconID == 241 && m_spellInfo->ID != 7434)
+    {
+        duration = 3600;
+    }
+
+    else if (m_spellInfo->ID == 28891 || m_spellInfo->ID == 28898)
+    {
+        duration = 3600;
+    }
+
+    else if (Recipe().Says().hiddenFromClient)
+    {
+        duration = 600;
+    }
+
+    else
+    {
+        duration = 1800;
+    }
+
     Player* item_owner = itemTarget->GetOwner();
     if (!item_owner)
     {
@@ -616,30 +529,20 @@ void Spell::EffectEnchantItemTmp(const cast::Operation& operation)
             item_owner->GetName(), item_owner->GetSession()->GetAccountId());
     }
 
-    // remove old enchanting before applying new if equipped
     item_owner->ApplyEnchantment(itemTarget, TEMP_ENCHANTMENT_SLOT, false);
 
     itemTarget->SetEnchantment(TEMP_ENCHANTMENT_SLOT, enchant_id, duration * 1000, 0);
 
-    // add new enchanting if equipped
     item_owner->ApplyEnchantment(itemTarget, TEMP_ENCHANTMENT_SLOT, true);
 }
 
-/**
- * @brief Converts the creature target into a hunter pet for the caster.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectTameCreature(const cast::Operation& /*operation*/)
+void Spell::EffectTameCreature(const cast::Operation& )
 {
-    // Caster must be player, checked in Spell::CheckCast
-    // Spell can be triggered, we need to check original caster prior to caster
+
     Player* plr = (Player*)GetAffectiveCaster();
 
     Creature* creatureTarget = (Creature*)unitTarget;
 
-    // cast finish successfully
-    // SendChannelUpdate(0);
     finish();
 
     Pet* pet = new Pet(HUNTER_PET);
@@ -668,48 +571,37 @@ void Spell::EffectTameCreature(const cast::Operation& /*operation*/)
     }
 
     pet->GetCharmInfo()->SetPetNumber(sMint.PetNumbers().Next(), true);
-    // this enables pet details window (Shift+P)
+
     pet->SetHealth(pet->GetMaxHealth());
 
-    // "kill" original creature
     creatureTarget->ForcedDespawn();
 
-    // prepare visual effect for levelup
     pet->SetUInt32Value(UNIT_FIELD_LEVEL, creatureTarget->getLevel() - 1);
 
-    // add to world
     pet->GetMap()->Add((Creature*)pet);
 
     pet->AIM_Initialize();
     pet->InitPetCreateSpells();
 
-    // visual effect for levelup
     pet->SetUInt32Value(UNIT_FIELD_LEVEL, creatureTarget->getLevel());
 
-    // caster have pet now
     plr->SetPet(pet);
 
     pet->SavePetToDB(PET_SAVE_AS_CURRENT);
     plr->PetSpellInitialize();
 }
 
-/**
- * @brief Summons, recalls, or replaces the caster's pet.
- *
- * @param eff_idx The summon effect index.
- */
 void Spell::EffectSummonPet(const cast::Operation& operation)
 {
     uint32 petentry = operation.miscValue;
 
     Pet* OldSummon = m_caster->GetPet();
 
-    // if pet requested type already exist
     if (OldSummon)
     {
         if ((petentry == 0 || OldSummon->GetEntry() == petentry) && OldSummon->getPetType() != SUMMON_PET)
         {
-            // pet in corpse state can't be summoned
+
             if (OldSummon->IsDead())
             {
                 return;
@@ -723,14 +615,14 @@ void Spell::EffectSummonPet(const cast::Operation& operation)
             OldSummon->Place().MoveTo(px, py, pz, OldSummon->Where().Facing());
             m_caster->GetMap()->Add((Creature*)OldSummon);
 
-            if (m_caster->IsPlayer() && OldSummon->isControlled())
+            if (IsPlayer(m_caster) && OldSummon->isControlled())
             {
                 ((Player*)m_caster)->PetSpellInitialize();
             }
             return;
         }
 
-        if (m_caster->IsPlayer())
+        if (IsPlayer(m_caster))
         {
             OldSummon->Unsummon(OldSummon->getPetType() == HUNTER_PET ? PET_SAVE_AS_DELETED : PET_SAVE_NOT_IN_SLOT, m_caster);
         }
@@ -742,7 +634,6 @@ void Spell::EffectSummonPet(const cast::Operation& operation)
 
     CreatureInfo const* cInfo = petentry ? ObjectMgr::GetCreatureTemplate(petentry) : nullptr;
 
-    // == 0 in case call current pet, check only real summon case
     if (petentry && !cInfo)
     {
         sLog.outErrorDb("EffectSummonPet: creature entry %u not found for spell %u.", petentry, m_spellInfo->ID);
@@ -751,12 +642,11 @@ void Spell::EffectSummonPet(const cast::Operation& operation)
 
     Pet* NewSummon = new Pet;
 
-    // petentry==0 for hunter "call pet" (current pet summoned if any)
-    if (m_caster->IsPlayer() && NewSummon->LoadPetFromDB((Player*)m_caster, petentry))
+    if (IsPlayer(m_caster) && NewSummon->LoadPetFromDB((Player*)m_caster, petentry))
     {
         if (NewSummon->getPetType() == SUMMON_PET)
         {
-            // Remove Demonic Sacrifice auras (known pet)
+
             const auto auraClassScripts = m_caster->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
             for (const auto* script : auraClassScripts)
             {
@@ -770,7 +660,6 @@ void Spell::EffectSummonPet(const cast::Operation& operation)
         return;
     }
 
-    // not error in case fail hunter call pet
     if (!petentry)
     {
         delete NewSummon;
@@ -793,7 +682,7 @@ void Spell::EffectSummonPet(const cast::Operation& operation)
     NewSummon->setPetType(SUMMON_PET);
 
     uint32 faction = m_caster->getFaction();
-    if (m_caster->IsCreature())
+    if (IsCreature(m_caster))
     {
         if (((Creature*)m_caster)->IsTotem())
         {
@@ -815,7 +704,6 @@ void Spell::EffectSummonPet(const cast::Operation& operation)
     NewSummon->SetUInt32Value(UNIT_CREATED_BY_SPELL, m_spellInfo->ID);
 
     NewSummon->GetCharmInfo()->SetPetNumber(pet_number, true);
-    // this enables pet details window (Shift+P)
 
     if (m_caster->IsPvP())
     {
@@ -827,7 +715,7 @@ void Spell::EffectSummonPet(const cast::Operation& operation)
 
     if (NewSummon->getPetType() == SUMMON_PET)
     {
-        // Remove Demonic Sacrifice auras (new pet)
+
         const auto auraClassScripts = m_caster->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
         for (const auto* script : auraClassScripts)
         {
@@ -838,9 +726,9 @@ void Spell::EffectSummonPet(const cast::Operation& operation)
         }
     }
 
-    if (m_caster->IsPlayer() && NewSummon->getPetType() == SUMMON_PET)
+    if (IsPlayer(m_caster) && NewSummon->getPetType() == SUMMON_PET)
     {
-        // generate new name for summon pet
+
         std::string new_name = sObjectMgr.GeneratePetName(petentry);
         if (!new_name.empty())
         {
@@ -862,21 +750,16 @@ void Spell::EffectSummonPet(const cast::Operation& operation)
     m_caster->SetPet(NewSummon);
     DEBUG_LOG("New Pet has guid %u", NewSummon->GetGUIDLow());
 
-    if (m_caster->IsPlayer())
+    if (IsPlayer(m_caster))
     {
         NewSummon->SavePetToDB(PET_SAVE_AS_CURRENT);
         ((Player*)m_caster)->PetSpellInitialize();
     }
 }
 
-/**
- * @brief Teaches a new spell to the caster's pet.
- *
- * @param eff_idx The effect index containing the learned spell id.
- */
 void Spell::EffectLearnPetSpell(const cast::Operation& operation)
 {
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return;
     }
@@ -911,21 +794,14 @@ void Spell::EffectLearnPetSpell(const cast::Operation& operation)
     }
 }
 
-/**
- * @brief Prepares taunt threat adjustments before the taunt aura is applied.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectTaunt(const cast::Operation& /*operation*/)
+void Spell::EffectTaunt(const cast::Operation& )
 {
     if (!unitTarget)
     {
         return;
     }
 
-    // this effect use before aura Taunt apply for prevent taunt already attacking target
-    // for spell as marked "non effective at already attacking target"
-    if (!unitTarget->IsPlayer())
+    if (!IsPlayer(unitTarget))
     {
         if (unitTarget->getVictim() == m_caster)
         {
@@ -934,18 +810,12 @@ void Spell::EffectTaunt(const cast::Operation& /*operation*/)
         }
     }
 
-    // Also use this effect to set the taunter's threat to the taunted creature's highest value
     if (unitTarget->CanHaveThreatList() && unitTarget->GetThreatManager().getCurrentVictim())
     {
         unitTarget->GetThreatManager().addThreat(m_caster, unitTarget->GetThreatManager().getCurrentVictim()->getThreat());
     }
 }
 
-/**
- * @brief Computes weapon-based spell damage and accumulates it for application.
- *
- * @param eff_idx The weapon damage effect index.
- */
 void Spell::EffectWeaponDmg(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
@@ -959,9 +829,6 @@ void Spell::EffectWeaponDmg(const cast::Operation& operation)
         return;
     }
 
-    // multiple weapon dmg effect workaround
-    // execute only the last weapon damage
-    // and handle all effects at once
     for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
     {
         switch (Recipe().At(static_cast<uint8>(j)).verb)
@@ -970,7 +837,7 @@ void Spell::EffectWeaponDmg(const cast::Operation& operation)
             case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:
             case SPELL_EFFECT_NORMALIZED_WEAPON_DMG:
             case SPELL_EFFECT_WEAPON_PERCENT_DAMAGE:
-                if (j < int(eff_idx))                       // we must calculate only at last weapon effect
+                if (j < int(eff_idx))
                 {
                     return;
                 }
@@ -978,24 +845,23 @@ void Spell::EffectWeaponDmg(const cast::Operation& operation)
         }
     }
 
-    // some spell specific modifiers
     bool customBonusDamagePercentMod = false;
-    float bonusDamagePercentMod  = 1.0f;                    // applied to fixed effect damage bonus if set customBonusDamagePercentMod
-    float weaponDamagePercentMod = 1.0f;                    // applied to weapon damage (and to fixed effect damage bonus if customBonusDamagePercentMod not set
-    float totalDamagePercentMod  = 1.0f;                    // applied to final bonus+weapon damage
+    float bonusDamagePercentMod  = 1.0f;
+    float weaponDamagePercentMod = 1.0f;
+    float totalDamagePercentMod  = 1.0f;
     bool normalized = false;
 
-    int32 spell_bonus = 0;                                  // bonus specific for spell
+    int32 spell_bonus = 0;
 
     switch (m_spellInfo->SpellClassSet)
     {
         case SPELLFAMILY_ROGUE:
         {
-            // Ambush
+
             if (m_spellInfo->SpellClassMask & UI64LIT(0x00000200))
             {
                 customBonusDamagePercentMod = true;
-                bonusDamagePercentMod = 2.5f;               // 250%
+                bonusDamagePercentMod = 2.5f;
             }
             break;
         }
@@ -1017,7 +883,6 @@ void Spell::EffectWeaponDmg(const cast::Operation& operation)
             case SPELL_EFFECT_WEAPON_PERCENT_DAMAGE:
                 weaponDamagePercentMod *= float(CalculateDamage(SpellEffectIndex(j), unitTarget)) / 100.0f;
 
-                //Prevent Seal of Command damage overflow
                 if (m_spellInfo->ID == 20424)
                 {
                     const auto mModDamagePercentDone = m_caster->GetAurasByType(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE);
@@ -1025,16 +890,15 @@ void Spell::EffectWeaponDmg(const cast::Operation& operation)
                     {
                         if ((aura->GetModifier()->m_miscvalue & SPELL_SCHOOL_MASK_HOLY) && (aura->GetModifier()->m_miscvalue & SPELL_SCHOOL_MASK_NORMAL) &&
                             aura->GetSpellProto()->EquippedItemClass == -1 &&
-                            // -1 == any item class (not wand then)
+
                             aura->GetSpellProto()->EquippedItemInvTypes == 0)
-                            // 0 == any inventory type (not wand then)
+
                         {
                             totalDamagePercentMod /= (aura->GetModifier()->m_amount + 100.0f) / 100.0f;
                         }
                     }
                 }
 
-                // applied only to prev.effects fixed damage
                 if (customBonusDamagePercentMod)
                 {
                     fixed_bonus = int32(fixed_bonus * bonusDamagePercentMod);
@@ -1045,14 +909,12 @@ void Spell::EffectWeaponDmg(const cast::Operation& operation)
                 }
                 break;
             default:
-                break;                                      // not weapon damage effect, just skip
+                break;
         }
     }
 
-    // non-weapon damage
     int32 bonus = spell_bonus + fixed_bonus;
 
-    // apply to non-weapon bonus weapon total pct effect, weapon total flat effect included in weapon damage
     if (bonus)
     {
         UnitMods unitMod;
@@ -1068,19 +930,15 @@ void Spell::EffectWeaponDmg(const cast::Operation& operation)
         bonus = int32(bonus * weapon_total_pct);
     }
 
-    // + weapon damage with applied weapon% dmg to base weapon damage in call
     bonus += int32(m_caster->CalculateDamage(Recipe().Swings(), normalized) * weaponDamagePercentMod);
 
-    // total damage
     bonus = int32(bonus * totalDamagePercentMod);
 
-    // prevent negative damage
     m_damage += uint32(bonus > 0 ? bonus : 0);
 
-    // Mangle (Cat): CP
     if (m_spellInfo->IsFitToFamily(SPELLFAMILY_DRUID, UI64LIT(0x0000040000000000)))
     {
-        if (m_caster->IsPlayer())
+        if (IsPlayer(m_caster))
         {
             ((Player*)m_caster)->AddComboPoints(unitTarget, 1);
         }

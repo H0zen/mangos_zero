@@ -17,7 +17,6 @@
 
 #pragma once
 
-/// The ways a unit can move, in the order the client is told about them.
 enum UnitMoveType
 {
     MOVE_WALK           = 0,
@@ -30,5 +29,4 @@ enum UnitMoveType
 
 #define MAX_MOVE_TYPE     6
 
-/// Yards a second for each of them, at a pace of one.
 extern float baseMoveSpeed[MAX_MOVE_TYPE];

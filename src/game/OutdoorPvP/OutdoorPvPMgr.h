@@ -30,153 +30,80 @@
 #include <map>
 #include "Timer.h"
 
-/**
- * @brief Timer constants for outdoor PvP manager
- */
 enum
 {
-    TIMER_OPVP_MGR_UPDATE = MINUTE * IN_MILLISECONDS ///< Update interval for outdoor PvP manager (1 minute)
+    TIMER_OPVP_MGR_UPDATE = MINUTE * IN_MILLISECONDS
 };
 
-/**
- * @brief Outdoor PvP type identifiers
- */
 enum OutdoorPvPTypes
 {
-    OPVP_ID_SI = 0, ///< Silithus outdoor PvP
-    OPVP_ID_EP,     ///< Eastern Plaguelands outdoor PvP
+    OPVP_ID_SI = 0,
+    OPVP_ID_EP,
 
-    MAX_OPVP_ID    ///< Maximum outdoor PvP ID
+    MAX_OPVP_ID
 };
 
-/**
- * @brief Zone IDs for outdoor PvP areas
- */
 enum OutdoorPvPZones
 {
-    ZONE_ID_SILITHUS            = 1377, ///< Silithus zone
-    ZONE_ID_TEMPLE_OF_AQ        = 3428, ///< Temple of Ahn'Qiraj zone
-    ZONE_ID_RUINS_OF_AQ         = 3429, ///< Ruins of Ahn'Qiraj zone
-    ZONE_ID_GATES_OF_AQ         = 3478, ///< Gates of Ahn'Qiraj zone
+    ZONE_ID_SILITHUS            = 1377,
+    ZONE_ID_TEMPLE_OF_AQ        = 3428,
+    ZONE_ID_RUINS_OF_AQ         = 3429,
+    ZONE_ID_GATES_OF_AQ         = 3478,
 
-    ZONE_ID_EASTERN_PLAGUELANDS = 139,  ///< Eastern Plaguelands zone
-    ZONE_ID_STRATHOLME          = 2017, ///< Stratholme zone
-    ZONE_ID_SCHOLOMANCE         = 2057  ///< Scholomance zone
+    ZONE_ID_EASTERN_PLAGUELANDS = 139,
+    ZONE_ID_STRATHOLME          = 2017,
+    ZONE_ID_SCHOLOMANCE         = 2057
 };
 
-/**
- * @brief Capture point slider state
- */
 struct CapturePointSlider
 {
 
-    /**
-     * @brief Default constructor
-     */
     CapturePointSlider() : Value(0.0f), IsLocked(false) {}
 
-    /**
-     * @brief Constructor with values
-     * @param value Slider value
-     * @param isLocked Lock state
-     */
     CapturePointSlider(float value, bool isLocked) : Value(value), IsLocked(isLocked) {}
 
-    float Value;  ///< Current slider value
-    bool IsLocked; ///< Whether the capture point is locked
+    float Value;
+    bool IsLocked;
 };
 
-// forward declaration
 class Player;
 class GameObject;
 class Creature;
 class OutdoorPvP;
 
-/**
- * @brief Map of capture point entries to slider states
- */
-typedef std::map<uint32 /*capture point entry*/, CapturePointSlider /*slider value and lock state*/> CapturePointSliderMap;
+typedef std::map<uint32 , CapturePointSlider > CapturePointSliderMap;
 
-/**
- * @brief Manager class for outdoor PvP zones
- *
- * Handles initialization, updates, and event routing for all
- * outdoor PvP zones in the game world.
- */
 class OutdoorPvPMgr
 {
     public:
-        /**
-         * @brief Constructor
-         */
+
         OutdoorPvPMgr();
 
-        /**
-         * @brief Destructor
-         */
         ~OutdoorPvPMgr();
 
-        /**
-         * @brief Initialize all outdoor PvP scripts
-         */
         void InitOutdoorPvP();
 
-        /**
-         * @brief Handle player entering an outdoor PvP area
-         * @param player Player entering the zone
-         * @param zoneId Zone ID being entered
-         */
         void HandlePlayerEnterZone(Player* player, uint32 zoneId);
 
-        /**
-         * @brief Handle player leaving an outdoor PvP area
-         * @param player Player leaving the zone
-         * @param zoneId Zone ID being left
-         */
         void HandlePlayerLeaveZone(Player* player, uint32 zoneId);
 
-        /**
-         * @brief Get outdoor PvP script for a zone
-         * @param zoneId Zone ID
-         * @return OutdoorPvP script for the zone, or nullptr if none
-         */
         OutdoorPvP* GetScript(uint32 zoneId);
 
-        /**
-         * @brief Update outdoor PvP manager
-         * @param diff Time difference since last update in milliseconds
-         */
         void Update(uint32 diff);
 
-        /**
-         * @brief Get capture point slider map
-         * @return Pointer to capture point slider map
-         */
         CapturePointSliderMap const* GetCapturePointSliderMap() const { return &m_capturePointSlider; }
 
-        /**
-         * @brief Set capture point slider value
-         * @param entry Capture point entry
-         * @param value Slider value and lock state
-         */
         void SetCapturePointSlider(uint32 entry, CapturePointSlider value) { m_capturePointSlider[entry] = value; }
 
     private:
-        /**
-         * @brief Get outdoor PvP script for affected zone
-         * @param zoneId Zone ID
-         * @return OutdoorPvP script for the zone
-         */
+
         OutdoorPvP* GetScriptOfAffectedZone(uint32 zoneId);
 
-        OutdoorPvP* m_scripts[MAX_OPVP_ID]; ///< Array of all outdoor PvP scripts
+        OutdoorPvP* m_scripts[MAX_OPVP_ID];
 
-        CapturePointSliderMap m_capturePointSlider; ///< Map of capture point slider states
+        CapturePointSliderMap m_capturePointSlider;
 
-        IntervalTimer m_updateTimer; ///< Update interval timer
+        IntervalTimer m_updateTimer;
 };
 
-/**
- * @brief Global outdoor PvP manager instance
- */
 #define sOutdoorPvPMgr MaNGOS::Singleton<OutdoorPvPMgr>::Instance()

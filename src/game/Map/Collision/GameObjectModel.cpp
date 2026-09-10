@@ -27,7 +27,6 @@
 #include <vector>
 #include "GameObjectModel.h"
 
-
 #include <cfloat>
 #include <cmath>
 
@@ -57,9 +56,6 @@ void GameObjectModel::SetPose(const Geometry::Transform& xf)
     DeriveBounds();
 }
 
-// The world box is the PLACED model box, not the model box translated: a rotated door
-// sweeps a larger footprint than its own extents, and a box that does not cover the body
-// is a body the broadphase never offers to the narrowphase.
 void GameObjectModel::DeriveBounds()
 {
     m_bounds = Aabb{};
@@ -115,8 +111,6 @@ void GameObjectModel::AddSurfaces(float x, float y, float zTop, float zBottom,
     const Vector3 originLocal = m_xf.worldToLocal(originWorld);
     const Vector3 dirLocal = m_xf.worldToLocalDirection(downWorld);
 
-    // localToWorld(o + t*d) == originWorld + t*downWorld, so t is a world distance
-    // whatever this object's scale.
     thread_local std::vector<float> hits;
     hits.clear();
     m_model->RaycastAll(originLocal, dirLocal, zTop - zBottom, hits);

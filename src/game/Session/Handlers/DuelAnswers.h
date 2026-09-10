@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client answers to a challenge.
 namespace duels
 {
     void DuelAccepted(Player& who, WorldPacket& packet);

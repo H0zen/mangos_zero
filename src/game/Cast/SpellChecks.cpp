@@ -23,29 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Spell.cpp
- * @brief Spell casting and effect implementation
- *
- * This file implements the Spell class which handles spell casting:
- * - Spell validation and casting requirements
- * - Spell effect execution (damage, healing, summon, etc.)
- * - Spell targeting and area effects
- * - Spell cooldowns and resource costs
- * - Spell interruption and pushback
- * - Spell aura application
- * - Spell hit/miss calculations
- *
- * Spells are the primary combat mechanic in WoW, encompassing
- * abilities, talents, and item effects.
- *
- * @see Spell for the spell class
- * @see SpellAura for spell auras
- * @see SpellMgr for spell management
- */
-
-
-
 #include "Reaction.h"
 #include "Utilities/MathDefines.h"
 #include "Spell.h"
@@ -79,12 +56,6 @@
 #include "DisableMgr.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Validates whether the spell can currently be cast.
- *
- * @param strict True to perform full pre-cast validation including global cooldown checks.
- * @return The resulting cast status.
- */
 SpellCastResult Spell::CheckCast(bool strict)
 {
     SpellCastResult refusal = CheckTheCasterMay(strict);
@@ -105,8 +76,6 @@ SpellCastResult Spell::CheckCast(bool strict)
         return refusal;
     }
 
-    // a focus object can be wanted by any kind of cast, so the items are asked
-    // about for everything except a passive
     if (!(Recipe().Starts() == cast::Start::Passive))
     {
         refusal = CheckItems();
@@ -134,7 +103,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
             if (Unit* target = m_targets.getUnitTarget())
             {
-                if (m_caster->IsPlayer() &&
+                if (IsPlayer(m_caster) &&
                     (sSpellMgr.GetSpellFacingFlag(m_spellInfo->ID) & SPELL_FACING_FLAG_INFRONT) &&
                     !m_caster->Where().HasInArc(target->Where(), M_PI_F))
                 {
@@ -143,7 +112,6 @@ SpellCastResult Spell::CheckCast(bool strict)
             }
         }
 
-        // a triggered spell pays nothing and is not stopped by what holds its caster
         refusal = CheckPower();
         if (refusal != SPELL_CAST_OK)
         {
@@ -169,18 +137,9 @@ SpellCastResult Spell::CheckCast(bool strict)
         return refusal;
     }
 
-    // last, so that any other problem with the cast is caught first
     return CheckTheTradeSlot();
 }
 
-/**
- * @brief Asks whether an item put up for trade may be the target of this cast.
- *
- * Enchanting what someone is offering is allowed only while the trade is being
- * accepted; before that the cast is remembered and quietly dropped.
- *
- * @return The reason the cast is refused, or SPELL_CAST_OK.
- */
 SpellCastResult Spell::CheckTheTradeSlot()
 {
     if (!(m_targets.m_targetMask & TARGET_FLAG_TRADE_ITEM))
@@ -188,7 +147,7 @@ SpellCastResult Spell::CheckTheTradeSlot()
         return SPELL_CAST_OK;
     }
 
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return SPELL_FAILED_NOT_TRADING;
     }
@@ -201,7 +160,7 @@ SpellCastResult Spell::CheckTheTradeSlot()
         return SPELL_FAILED_NOT_TRADING;
     }
 
-    TradeSlots slot = TradeSlots(m_targets.getItemTargetGuid().GetRawValue());
+    TradeSlots slot = TradeSlots(m_targets.getItemTargetGuid());
     if (slot != TRADE_SLOT_NONTRADED)
     {
         return SPELL_FAILED_ITEM_NOT_READY;
@@ -216,12 +175,6 @@ SpellCastResult Spell::CheckTheTradeSlot()
     return SPELL_CAST_OK;
 }
 
-/**
- * @brief Validates whether a pet or charmed unit can cast the spell.
- *
- * @param target An optional explicit target override.
- * @return The resulting cast status.
- */
 SpellCastResult Spell::CheckPetCast(Unit* target)
 {
     if (!m_caster->IsAlive())
@@ -229,7 +182,7 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
         return SPELL_FAILED_CASTER_DEAD;
     }
 
-    if (m_caster->IsNonMeleeSpellCasted(false))             // prevent spellcast interruption by another spellcast
+    if (m_caster->IsNonMeleeSpellCasted(false))
     {
         return SPELL_FAILED_SPELL_IN_PROGRESS;
     }
@@ -238,9 +191,9 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
         return SPELL_FAILED_AFFECTING_COMBAT;
     }
 
-    if (m_caster->IsCreature() && (((Creature*)m_caster)->IsPet() || m_caster->IsCharmed()))
+    if (IsCreature(m_caster) && (((Creature*)m_caster)->IsPet() || m_caster->IsCharmed()))
     {
-        // dead owner (pets still alive when owners ressed?)
+
         if (m_caster->GetCharmerOrOwner() && !m_caster->GetCharmerOrOwner()->IsAlive())
         {
             return SPELL_FAILED_CASTER_DEAD;
@@ -276,12 +229,11 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
 
         Unit* _target = m_targets.getUnitTarget();
 
-        // for target dead/target not valid
         if (_target)
         {
             if (!_target->IsTargetableForAttack())
             {
-                return SPELL_FAILED_BAD_TARGETS;             // guessed error
+                return SPELL_FAILED_BAD_TARGETS;
             }
 
             if (Recipe().IsPositive())
@@ -296,7 +248,7 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
                 bool duelvsplayertar = false;
                 for (const auto& other : Recipe().Does())
                 {
-                    // TARGET_DUELVSPLAYER is positive AND negative
+
                     duelvsplayertar |= (other.targetA == TARGET_DUELVSPLAYER);
                 }
                 if (IsFriendly(*m_caster, *target) && !duelvsplayertar)
@@ -305,7 +257,7 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
                 }
             }
         }
-        // cooldown
+
         if (((Creature*)m_caster)->HasSpellCooldown(m_spellInfo->ID))
         {
             return SPELL_FAILED_NOT_READY;
@@ -315,18 +267,11 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
     return CheckCast(true);
 }
 
-/**
- * @brief Checks whether active caster auras prevent this spell from being cast.
- *
- * @return The resulting cast status.
- */
 SpellCastResult Spell::CheckCasterAuras() const
 {
-    // Flag drop spells totally immuned to caster auras
-    // FIXME: find more nice check for all totally immuned spells
-    // HasAttribute(SPELL_ATTR_EX3_UNK28) ?
-    if (m_spellInfo->ID == 23336 ||                         // Alliance Flag Drop
-        m_spellInfo->ID == 23334)                       // Horde Flag Drop
+
+    if (m_spellInfo->ID == 23336 ||
+        m_spellInfo->ID == 23334)
     {
         return SPELL_CAST_OK;
     }
@@ -335,8 +280,6 @@ SpellCastResult Spell::CheckCasterAuras() const
     uint32 mechanic_immune = 0;
     uint32 dispel_immune = 0;
 
-    // Check if the spell grants school or mechanic immunity.
-    // We use bitmasks so the loop is done only once and not on every aura check below.
     if (Recipe().Says().dispelsOnImmunity)
     {
         for (const auto& operation : Recipe().Does())
@@ -360,23 +303,10 @@ SpellCastResult Spell::CheckCasterAuras() const
         }
     }
 
-    // Check whether the cast should be prevented by any state you might have.
     SpellCastResult prevented_reason = SPELL_CAST_OK;
-    // Have to check if there is a stun aura. Otherwise will have problems with ghost aura apply while logging out
-    uint32 unitflag = m_caster->GetUInt32Value(UNIT_FIELD_FLAGS);     // Get unit state
-    /** [-ZERO]
-     * if (unitflag & UNIT_FLAG_STUNNED && !(m_spellInfo->AttributesEx5 & SPELL_ATTR_EX5_USABLE_WHILE_STUNNED))
-     *     prevented_reason = SPELL_FAILED_STUNNED;
-     * else if (unitflag & UNIT_FLAG_CONFUSED && !(m_spellInfo->AttributesEx5 & SPELL_ATTR_EX5_USABLE_WHILE_CONFUSED))
-     * {
-     *     prevented_reason = SPELL_FAILED_CONFUSED;
-     * }
-     * else if (unitflag & UNIT_FLAG_FLEEING && !(m_spellInfo->AttributesEx5 & SPELL_ATTR_EX5_USABLE_WHILE_FEARED))
-     * {
-     *      prevented_reason = SPELL_FAILED_FLEEING;
-     * }
-     * else
-     */
+
+    uint32 unitflag = m_caster->GetUInt32Value(UNIT_FIELD_FLAGS);
+
     if (unitflag & UNIT_FLAG_SILENCED && m_spellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE)
     {
         prevented_reason = SPELL_FAILED_SILENCED;
@@ -391,12 +321,11 @@ SpellCastResult Spell::CheckCasterAuras() const
         prevented_reason = SPELL_FAILED_SILENCED;
     }
 
-    // Attr must make flag drop spell totally immune from all effects
     if (prevented_reason != SPELL_CAST_OK)
     {
         if (school_immune || mechanic_immune || dispel_immune)
         {
-            // Checking auras is needed now, because you are prevented by some state but the spell grants immunity.
+
             Unit::SpellAuraHolderMap const& auras = m_caster->GetSpellAuraHolderMap();
             for (Unit::SpellAuraHolderMap::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
             {
@@ -424,30 +353,10 @@ SpellCastResult Spell::CheckCasterAuras() const
                     {
                         continue;
                     }
-                    // Make a second check for spell failed so the right SPELL_FAILED message is returned.
-                    // That is needed when your casting is prevented by multiple states and you are only immune to some of them.
+
                     switch (aura->GetModifier()->m_auraname)
                     {
-                        /** Zero
-                         *  case SPELL_AURA_MOD_STUN:
-                         *     if (!(m_spellInfo->AttributesEx5 & SPELL_ATTR_EX5_USABLE_WHILE_STUNNED))
-                         *     {
-                         *         return SPELL_FAILED_STUNNED;
-                         *     }
-                         *     break;
-                         *  case SPELL_AURA_MOD_CONFUSE:
-                         *     if (!(m_spellInfo->AttributesEx5 & SPELL_ATTR_EX5_USABLE_WHILE_CONFUSED))
-                         *     {
-                         *         return SPELL_FAILED_CONFUSED;
-                         *     }
-                         *     break;
-                         *  case SPELL_AURA_MOD_FEAR:
-                         *     if (!(m_spellInfo->AttributesEx5 & SPELL_ATTR_EX5_USABLE_WHILE_FEARED))
-                         *     {
-                         *         return SPELL_FAILED_FLEEING;
-                         *     }
-                         *     break;
-                         */
+
                         case SPELL_AURA_MOD_SILENCE:
                         case SPELL_AURA_MOD_PACIFY:
                         case SPELL_AURA_MOD_PACIFY_SILENCE:
@@ -465,7 +374,7 @@ SpellCastResult Spell::CheckCasterAuras() const
                 }
             }
         }
-        // You are prevented from casting and the spell casted does not grant immunity. Return a failed error.
+
         else
         {
             return prevented_reason;
@@ -474,12 +383,6 @@ SpellCastResult Spell::CheckCasterAuras() const
     return SPELL_CAST_OK;
 }
 
-/**
- * @brief Checks whether the spell can be automatically cast on a target.
- *
- * @param target The target being evaluated.
- * @return True if automatic casting is allowed; otherwise, false.
- */
 bool Spell::CanAutoCast(Unit* target)
 {
     ObjectGuid targetguid = target->GetObjectGuid();
@@ -522,7 +425,7 @@ bool Spell::CanAutoCast(Unit* target)
     if (result == SPELL_CAST_OK || result == SPELL_FAILED_UNIT_NOT_INFRONT)
     {
         FillTargetMap();
-        // check if among target units, our WANTED target is as well (->only self cast spells return false)
+
         for (const auto& enrolled : m_roster.Units())
         {
             if (enrolled.guid == targetguid)
@@ -531,28 +434,20 @@ bool Spell::CanAutoCast(Unit* target)
             }
         }
     }
-    return false;                                           // target invalid
+    return false;
 }
 
-/**
- * @brief Validates spell range requirements for the current targets.
- *
- * @param strict True to use strict range validation.
- * @return The resulting cast status.
- */
 SpellCastResult Spell::CheckRange(bool strict)
 {
     Unit* target = m_targets.getUnitTarget();
 
-    // special range cases
     switch (m_spellInfo->RangeIndex)
     {
-        // self cast doesn't need range checking -- also for Starshards fix
-        // spells that can be cast anywhere also need no check
+
         case SPELL_RANGE_IDX_SELF_ONLY:
         case SPELL_RANGE_IDX_ANYWHERE:
             return SPELL_CAST_OK;
-        // combat range spells are treated differently
+
         case SPELL_RANGE_IDX_COMBAT:
         {
             if (target)
@@ -569,10 +464,9 @@ SpellCastResult Spell::CheckRange(bool strict)
                     range_mod += modOwner->SpellMods().Apply(m_spellInfo->ID, SPELLMOD_RANGE, base, this);
                 }
 
-                // with additional 5 dist for non stricted case (some melee spells have delay in apply
                 return InMeleeReach(*m_caster, *target, range_mod) ? SPELL_CAST_OK : SPELL_FAILED_OUT_OF_RANGE;
             }
-            break;                                          // let continue in generic way for no target
+            break;
         }
         case SPELL_RANGE_IDX_SHORT:
         {
@@ -589,7 +483,6 @@ SpellCastResult Spell::CheckRange(bool strict)
         }
     }
 
-    // add radius of caster and ~5 yds "give" for non stricred (landing) check
     float range_mod = strict ? 1.25f : 6.25;
 
     SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->RangeIndex);
@@ -603,7 +496,7 @@ SpellCastResult Spell::CheckRange(bool strict)
 
     if (target && target != m_caster)
     {
-        // distance from target in checks
+
         float dist = CombatDistanceBetween(*m_caster, *target, m_spellInfo->RangeIndex == SPELL_RANGE_IDX_COMBAT);
 
         if (dist > max_range)
@@ -616,7 +509,6 @@ SpellCastResult Spell::CheckRange(bool strict)
         }
     }
 
-    // TODO verify that such spells really use bounding radius
     if (m_targets.m_targetMask == TARGET_FLAG_DEST_LOCATION && m_targets.m_destX != 0 && m_targets.m_destY != 0 && m_targets.m_destZ != 0)
     {
         if (!m_caster->Where().WithinDist(Geometry::Vector3(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ), max_range))
@@ -632,32 +524,22 @@ SpellCastResult Spell::CheckRange(bool strict)
     return SPELL_CAST_OK;
 }
 
-/**
- * @brief Calculates the final power cost for a spell cast.
- *
- * @param spellInfo The spell prototype being cast.
- * @param caster The casting unit.
- * @param spell The active spell instance, if available.
- * @param castItem The cast item, if the spell originates from an item.
- * @return The resulting power cost.
- */
 uint32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spell const* spell, Item* castItem)
 {
-    // item cast not used power
+
     if (castItem)
     {
         return 0;
     }
 
-    // Spell drain all exist power on cast (Only paladin lay of Hands)
     if (cast::RecipeOf(*spellInfo).Says().drainsAllPower)
     {
-        // If power type - health drain all
+
         if (spellInfo->PowerType == POWER_HEALTH)
         {
             return caster->GetHealth();
         }
-        // Else drain all power
+
         if (spellInfo->PowerType < MAX_POWERS)
         {
             return caster->GetPower(Powers(spellInfo->PowerType));
@@ -666,14 +548,13 @@ uint32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spel
         return 0;
     }
 
-    // Base powerCost
     int32 powerCost = spellInfo->ManaCost;
-    // PCT cost from total amount
+
     if (spellInfo->ManaCostPct)
     {
         switch (spellInfo->PowerType)
         {
-            // health as power used
+
             case POWER_HEALTH:
                 powerCost += spellInfo->ManaCostPct * caster->GetCreateHealth() / 100;
                 break;
@@ -693,9 +574,9 @@ uint32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spel
     }
 
     SpellSchools school = GetFirstSchoolInMask(spell ? spell->m_spellSchoolMask : GetSpellSchoolMask(spellInfo));
-    // Flat mod from caster auras by spell school
+
     powerCost += caster->GetInt32Value(UNIT_FIELD_POWER_COST_MODIFIER + school);
-    // Apply cost mod by spell
+
     if (spell)
     {
         if (Player* modOwner = caster->GetSpellModOwner())
@@ -709,7 +590,6 @@ uint32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spel
         powerCost = int32(powerCost / (1.117f * spellInfo->SpellLevel / caster->getLevel() - 0.1327f));
     }
 
-    // PCT mod from user auras by school
     powerCost = int32(powerCost * (1.0f + caster->GetPowerCostMultiplier(school)));
     if (powerCost < 0)
     {
@@ -718,36 +598,28 @@ uint32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spel
     return powerCost;
 }
 
-/**
- * @brief Checks whether the caster has enough power to cast the spell.
- *
- * @return The resulting cast status.
- */
 SpellCastResult Spell::CheckPower()
 {
-    // never check power for triggered spells
+
     if (m_IsTriggeredSpell)
     {
         return SPELL_CAST_OK;
     }
 
-    // item cast not used power
     if (m_CastItem)
     {
         return SPELL_CAST_OK;
     }
 
-    // Questgivers ignore power requirements for scripts, any other creature (except a per) is checked only in combat
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
-        // power for pets should be checked
-        if (!m_caster->GetObjectGuid().IsPet() && m_caster->HasNpcFlag(UNIT_NPC_FLAG_QUESTGIVER) && !m_caster->IsInCombat())
+
+        if (!(GuidHigh(m_caster->GetObjectGuid()) == HIGHGUID_PET) && m_caster->HasNpcFlag(UNIT_NPC_FLAG_QUESTGIVER) && !m_caster->IsInCombat())
         {
             return SPELL_CAST_OK;
         }
     }
 
-    // health as power used - need check health amount
     if (m_spellInfo->PowerType == POWER_HEALTH)
     {
         if (m_caster->GetHealth() <= m_powerCost)
@@ -755,12 +627,9 @@ SpellCastResult Spell::CheckPower()
             return SPELL_FAILED_CANT_DO_THAT_YET;
         }
     }
-    else  // any power except health
+    else
     {
-        // Check valid power type: since the static data (m_spellInfo) are checked, the check should be done elsewhere
-        // [+ZERO] actual DBC power values are 0..3 and uint32(-2)
 
-        // Check power amount
         Powers powerType = Powers(m_spellInfo->PowerType);
         if (m_caster->GetPower(powerType) < m_powerCost)
         {
@@ -771,16 +640,11 @@ SpellCastResult Spell::CheckPower()
     return SPELL_CAST_OK;
 }
 
-/**
- * @brief Determines whether reagent and item requirements should be ignored.
- *
- * @return True if item requirements are ignored; otherwise, false.
- */
 bool Spell::IgnoreItemRequirements() const
 {
     if (m_IsTriggeredSpell)
     {
-        /// Not own traded item (in trader trade slot) req. reagents including triggered spell case
+
         if (Item* targetItem = m_targets.getItemTarget())
         {
             if (targetItem->GetOwnerGuid() != m_caster->GetObjectGuid())
@@ -789,8 +653,6 @@ bool Spell::IgnoreItemRequirements() const
             }
         }
 
-        /// Some triggered spells have same reagents that have master spell
-        /// expected in test: master spell have reagents in first slot then triggered don't must use own
         if (m_triggeredBySpellInfo && !m_triggeredBySpellInfo->Reagent[0])
         {
             return false;
@@ -802,21 +664,15 @@ bool Spell::IgnoreItemRequirements() const
     return false;
 }
 
-/**
- * @brief Validates cast item, target item, reagent, focus, and item-based spell requirements.
- *
- * @return The resulting cast status.
- */
 SpellCastResult Spell::CheckItems()
 {
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return SPELL_CAST_OK;
     }
 
     Player* p_caster = (Player*)m_caster;
 
-    // cast item checks
     if (m_CastItem)
     {
         if (m_CastItem->IsInTrade())
@@ -847,14 +703,13 @@ SpellCastResult Spell::CheckItems()
             }
         }
 
-        // consumable cast item checks
         if (proto->Class == ITEM_CLASS_CONSUMABLE && m_targets.getUnitTarget())
         {
-            // such items should only fail if there is no suitable effect at all - see Rejuvenation Potions for example
+
             SpellCastResult failReason = SPELL_CAST_OK;
             for (const auto& operation : Recipe().Does())
             {
-                // skip check, pet not required like checks, and for TARGET_PET m_targets.getUnitTarget() is not the real target but the caster
+
                 if (operation.targetA == TARGET_PET)
                 {
                     continue;
@@ -874,7 +729,6 @@ SpellCastResult Spell::CheckItems()
                     }
                 }
 
-                // Mana Potion, Rage Potion, Thistle Tea(Rogue), ...
                 if (operation.verb == SPELL_EFFECT_ENERGIZE)
                 {
                     if (operation.miscValue < 0 || operation.miscValue >= MAX_POWERS)
@@ -885,7 +739,7 @@ SpellCastResult Spell::CheckItems()
 
                     Powers power = Powers(operation.miscValue);
                     uint8 targetClass = m_targets.getUnitTarget()->getClass();
-                    /* Mana */
+
                     if (power == POWER_MANA)
                     {
                         if (targetClass == CLASS_WARRIOR || targetClass == CLASS_ROGUE)
@@ -894,7 +748,7 @@ SpellCastResult Spell::CheckItems()
                             continue;
                         }
                     }
-                    /* Rage */
+
                     else if (power == POWER_RAGE)
                     {
                         if (targetClass != CLASS_WARRIOR && targetClass != CLASS_DRUID)
@@ -903,7 +757,7 @@ SpellCastResult Spell::CheckItems()
                             continue;
                         }
                     }
-                    /* Energy */
+
                     else if (power == POWER_ENERGY)
                     {
                         if (targetClass != CLASS_ROGUE && targetClass != CLASS_DRUID)
@@ -931,10 +785,9 @@ SpellCastResult Spell::CheckItems()
         }
     }
 
-    // check target item (for triggered case not report error)
     if (m_targets.getItemTargetGuid())
     {
-        if (!m_caster->IsPlayer())
+        if (!IsPlayer(m_caster))
         {
             return m_IsTriggeredSpell && !(m_targets.m_targetMask & TARGET_FLAG_TRADE_ITEM)
                 ? SPELL_FAILED_DONT_REPORT : SPELL_FAILED_BAD_TARGETS;
@@ -952,16 +805,15 @@ SpellCastResult Spell::CheckItems()
                 ? SPELL_FAILED_DONT_REPORT : SPELL_FAILED_EQUIPPED_ITEM_CLASS;
         }
     }
-    // if not item target then required item must be equipped (for triggered case not report error)
+
     else
     {
-        if (m_caster->IsPlayer() && !((Player*)m_caster)->HasItemFitToSpellReqirements(m_spellInfo))
+        if (IsPlayer(m_caster) && !((Player*)m_caster)->HasItemFitToSpellReqirements(m_spellInfo))
         {
             return m_IsTriggeredSpell ? SPELL_FAILED_DONT_REPORT : SPELL_FAILED_EQUIPPED_ITEM_CLASS;
         }
     }
 
-    // check spell focus object
     if (m_spellInfo->RequiresSpellFocus)
     {
         GameObject* ok = nullptr;
@@ -974,10 +826,9 @@ SpellCastResult Spell::CheckItems()
             return SPELL_FAILED_REQUIRES_SPELL_FOCUS;
         }
 
-        focusObject = ok;                                   // game object found in range
+        focusObject = ok;
     }
 
-    // check reagents (ignore triggered spells with reagents processed by original spell) and special reagent ignore case.
     if (!IgnoreItemRequirements())
     {
         if (!p_caster->CanNoReagentCast(m_spellInfo))
@@ -992,7 +843,6 @@ SpellCastResult Spell::CheckItems()
                 uint32 itemid    = m_spellInfo->Reagent[i];
                 uint32 itemcount = m_spellInfo->ReagentCount[i];
 
-                // if CastItem is also spell reagent
                 if (m_CastItem && m_CastItem->GetEntry() == itemid)
                 {
                     ItemPrototype const* proto = m_CastItem->GetProto();
@@ -1002,7 +852,7 @@ SpellCastResult Spell::CheckItems()
                     }
                     for (int s = 0; s < MAX_ITEM_PROTO_SPELLS; ++s)
                     {
-                        // CastItem will be used up and does not count as reagent
+
                         int32 charges = m_CastItem->GetSpellCharges(s);
                         if (proto->Spells[s].SpellCharges < 0 && !(proto->ExtraFlags & ITEM_EXTRA_NON_CONSUMABLE) && abs(charges) < 2)
                         {
@@ -1019,7 +869,6 @@ SpellCastResult Spell::CheckItems()
             }
         }
 
-        // check totem-item requirements (items presence in inventory)
         uint32 totems = MAX_SPELL_TOTEMS;
         for (int i = 0; i < MAX_SPELL_TOTEMS ; ++i)
         {
@@ -1039,36 +888,11 @@ SpellCastResult Spell::CheckItems()
 
         if (totems != 0)
         {
-            return SPELL_FAILED_ITEM_GONE;                   //[-ZERO] not sure of it
+            return SPELL_FAILED_ITEM_GONE;
         }
 
-        /**[-ZERO] to rewrite?
-         * // Check items for TotemCategory  (items presence in inventory)
-         * uint32 TotemCategory = MAX_SPELL_TOTEM_CATEGORIES;
-         * for (int i= 0; i < MAX_SPELL_TOTEM_CATEGORIES; ++i)
-         * {
-         *     if (m_spellInfo->TotemCategory[i] != 0)
-         *     {
-         *         if (p_caster->HasItemTotemCategory(m_spellInfo->TotemCategory[i]))
-         *         {
-         *             TotemCategory -= 1;
-         *             continue;
-         *         }
-         *     }
-         *     else
-         *     {
-         *         TotemCategory -= 1;
-         *     }
-         * }
-
-         * if (TotemCategory != 0)
-         * {
-         *     return SPELL_FAILED_TOTEM_CATEGORY;             // 0x7B
-         * }
-         */
     }
 
-    // special checks for spell effects
     for (const auto& operation : Recipe().Does())
     {
         switch (operation.verb)
@@ -1099,7 +923,7 @@ SpellCastResult Spell::CheckItems()
                 {
                     return SPELL_FAILED_LOWLEVEL;
                 }
-                // Check for armor kit spells: Heavy(2833), Thick(10344), Rugged(19057), Core(22725)
+
                 if (m_CastItem && m_CastItem->GetProto())
                 {
                     static uint32 const armorKitSpells[] = { 2833, 10344, 19057, 22725 };
@@ -1114,7 +938,7 @@ SpellCastResult Spell::CheckItems()
                         }
                     }
                 }
-                // Not allow enchant in trade slot for some enchant type
+
                 if (targetItem->GetOwner() != m_caster)
                 {
                     uint32 enchant_id = operation.miscValue;
@@ -1137,7 +961,7 @@ SpellCastResult Spell::CheckItems()
                 {
                     return SPELL_FAILED_ITEM_GONE;
                 }
-                // Not allow enchant in trade slot for some enchant type
+
                 if (item->GetOwner() != m_caster)
                 {
                     uint32 enchant_id = operation.miscValue;
@@ -1154,7 +978,7 @@ SpellCastResult Spell::CheckItems()
                 break;
             }
             case SPELL_EFFECT_ENCHANT_HELD_ITEM:
-                // check item existence in effect code (not output errors at offhand hold item effect to main hand for example
+
                 break;
             case SPELL_EFFECT_DISENCHANT:
             {
@@ -1163,7 +987,6 @@ SpellCastResult Spell::CheckItems()
                     return SPELL_FAILED_CANT_BE_DISENCHANTED;
                 }
 
-                // prevent disenchanting in trade slot
                 if (m_targets.getItemTarget()->GetOwnerGuid() != m_caster->GetObjectGuid())
                 {
                     return SPELL_FAILED_CANT_BE_DISENCHANTED;
@@ -1175,7 +998,6 @@ SpellCastResult Spell::CheckItems()
                     return SPELL_FAILED_CANT_BE_DISENCHANTED;
                 }
 
-                // must have disenchant loot (other static req. checked at item prototype loading)
                 if (!itemProto->DisenchantID)
                 {
                     return SPELL_FAILED_CANT_BE_DISENCHANTED;
@@ -1185,7 +1007,7 @@ SpellCastResult Spell::CheckItems()
             case SPELL_EFFECT_WEAPON_DAMAGE:
             case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:
             {
-                if (!m_caster->IsPlayer())
+                if (!IsPlayer(m_caster))
                 {
                     return SPELL_FAILED_TARGET_NOT_PLAYER;
                 }
@@ -1217,10 +1039,10 @@ SpellCastResult Spell::CheckItems()
                         uint32 ammo = ((Player*)m_caster)->GetUInt32Value(PLAYER_AMMO_ID);
                         if (!ammo)
                         {
-                            // Requires No Ammo
+
                             if (m_caster->GetDummyAura(46699))
                             {
-                                break;                       // skip other checks
+                                break;
                             }
 
                             return SPELL_FAILED_NO_AMMO;
@@ -1237,7 +1059,6 @@ SpellCastResult Spell::CheckItems()
                             return SPELL_FAILED_NO_AMMO;
                         }
 
-                        // check ammo ws. weapon compatibility
                         switch (pItem->GetProto()->SubClass)
                         {
                             case ITEM_SUBCLASS_WEAPON_BOW:

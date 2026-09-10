@@ -34,8 +34,7 @@
 
 class Unit;
 
-//  memory management
-inline void* dtCustomAlloc(size_t size, dtAllocHint /*hint*/)
+inline void* dtCustomAlloc(size_t size, dtAllocHint )
 {
     return (void*)new unsigned char[size];
 }
@@ -45,13 +44,11 @@ inline void dtCustomFree(void* ptr)
     delete[](unsigned char*)ptr;
 }
 
-//  move map related classes
 namespace MMAP
 {
     typedef std::unordered_map<uint32, dtTileRef> MMapTileSet;
     typedef std::unordered_map<uint32, dtNavMeshQuery*> NavMeshQuerySet;
 
-    // dummy struct to hold map's mmap data
     struct MMapData
     {
         MMapData(dtNavMesh* mesh) : navMesh(mesh) {}
@@ -70,15 +67,12 @@ namespace MMAP
 
         dtNavMesh* navMesh;
 
-        // we have to use single dtNavMeshQuery for every instance, since those are not thread safe
-        NavMeshQuerySet navMeshQueries;     // instanceId to query
-        MMapTileSet mmapLoadedTiles;        // maps [map grid coords] to [dtTile]
+        NavMeshQuerySet navMeshQueries;
+        MMapTileSet mmapLoadedTiles;
     };
 
     typedef std::unordered_map<uint32, MMapData*> MMapDataSet;
 
-    // singelton class
-    // holds all all access to mmap loading unloading and meshes
     class MMapManager
     {
         public:
@@ -90,7 +84,6 @@ namespace MMAP
             bool unloadMap(uint32 mapId);
             bool unloadMapInstance(uint32 mapId, uint32 instanceId);
 
-            // the returned [dtNavMeshQuery const*] is NOT threadsafe
             dtNavMeshQuery const* GetNavMeshQuery(uint32 mapId, uint32 instanceId);
             dtNavMesh const* GetNavMesh(uint32 mapId);
 
@@ -104,9 +97,6 @@ namespace MMAP
             uint32 loadedTiles;
     };
 
-    // static class
-    // holds all mmap global data
-    // access point to MMapManager singelton
     class MMapFactory
     {
         public:

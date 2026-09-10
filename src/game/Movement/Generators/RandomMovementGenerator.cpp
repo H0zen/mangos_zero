@@ -31,18 +31,14 @@
 
 namespace
 {
-    /// Percent chance the creature does not pause at all between hops, so a wandering
-    /// mob occasionally strings two legs together instead of always resting.
+
     constexpr int CHANCE_NO_BREAK = 30;
 
-    /// A leash radius below this is meaningless and would make every hop degenerate.
     constexpr float MIN_WANDER_RADIUS = 0.1f;
 
     constexpr uint32 REST_AFTER_HOP_MIN = 3000;
     constexpr uint32 REST_AFTER_HOP_MAX = 10000;
 
-    /// Retry delay after a hop that could not be routed, or a point that could not be
-    /// found. Short enough to look alive, long enough not to hammer the router.
     constexpr uint32 RETRY_DELAY = 50;
 }
 
@@ -71,7 +67,7 @@ RandomMovementGenerator::RandomMovementGenerator(Creature const& creature)
 
 void RandomMovementGenerator::Initialize(Unit& owner)
 {
-    // _MOVE is set once a hop is actually picked.
+
     owner.addUnitState(UNIT_STAT_ROAMING);
 
     m_restTime.Reset(0);
@@ -109,22 +105,17 @@ Motion::MoveIntent RandomMovementGenerator::Intent(Unit& owner,
         return Motion::MoveIntent::Hold();
     }
 
-    // The point we picked turned out to be unreachable: try somewhere else shortly,
-    // rather than hammering the router every tick.
     if (status.blocked)
     {
         m_haveHop = false;
         m_restTime.Reset(RETRY_DELAY);
     }
 
-    // Mid-hop: re-state the same goal, which the driver recognises as the leg it is
-    // already walking and leaves alone.
     if (status.traveling && m_haveHop)
     {
         return Motion::MoveIntent::Move(m_hop, Motion::MOVE_WALK);
     }
 
-    // Standing: run down the rest timer.
     m_restTime.Update(diff);
     if (!m_restTime.Passed())
     {
@@ -142,8 +133,6 @@ Motion::MoveIntent RandomMovementGenerator::Intent(Unit& owner,
     m_hop = *hop;
     m_haveHop = true;
 
-    // The rest that follows THIS hop is decided now: the timer only runs while the
-    // creature is standing, so it starts counting the moment the leg ends.
     m_restTime.Reset(roll_chance_i(CHANCE_NO_BREAK)
         ? RETRY_DELAY
         : urand(REST_AFTER_HOP_MIN, REST_AFTER_HOP_MAX));

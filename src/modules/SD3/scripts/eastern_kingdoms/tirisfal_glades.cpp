@@ -126,13 +126,13 @@ struct npc_calvin_montague : public CreatureScript
 
         uint32 m_uiPhase;
         uint32 m_uiPhaseTimer;
-        ObjectGuid m_playerGuid;
+        ObjectGuid m_playerGuid = 0;
 
         void Reset() override
         {
             m_uiPhase = 0;
             m_uiPhaseTimer = 5000;
-            m_playerGuid.Clear();
+            m_playerGuid = 0;
             if (!m_creature->HasUnitFlag(UNIT_FLAG_PASSIVE))
             {
                 m_creature->SetUnitFlag(UNIT_FLAG_PASSIVE);
@@ -159,7 +159,7 @@ struct npc_calvin_montague : public CreatureScript
                 m_creature->SetUnitFlag(UNIT_FLAG_PASSIVE);
                 m_uiPhase = 1;
 
-                if (pDoneBy->IsPlayer())
+                if (IsPlayer(pDoneBy))
                 {
                     m_playerGuid = pDoneBy->GetObjectGuid();
                 }

@@ -44,22 +44,11 @@
 
 namespace
 {
-    /// A node that could not be routed to is skipped after this pause, rather than
-    /// butted into forever.
+
     constexpr int32 SKIP_DEAD_NODE_DELAY = 50;
 
     constexpr float PLAYER_FLIGHT_SPEED = 32.0f;
 
-    /**
-     * @brief Route one waypoint leg and append its points to a smoothed path.
-     *
-     * A segment is only welded into one spline when EVERY leg of it is a real route: a
-     * straight-line fallback means we do not know what lies between the nodes, and
-     * welding through it would walk the creature into it.
-     *
-     * @return False if the leg could not be routed. Near-duplicate points are dropped, so
-     *         a degenerate leg may append nothing while still succeeding.
-     */
     bool AppendLeg(Motion::IPathQuery& query, Motion::Vector3 const& start,
                    WaypointNode const& endNode, Movement::PointsArray& points)
     {
@@ -76,22 +65,6 @@ namespace
             return false;
         }
 
-        // Later legs are welded by omitting leg.front(), which only holds if this leg
-        // really does start where the previous one was committed. That was guaranteed
-        // while the shortcut fallback returned the exact requested endpoints, but a
-        // routed leg ends on a navmesh-adjusted point while the next leg is calculated
-        // from the raw waypoint, so the two can part company.
-        //
-        // The resulting seam is small and finite, and survives the point filter below
-        // whenever it is at least MIN_SEGMENT_LENGTH. It still cannot be sent: the
-        // linear path packs intermediate offsets by truncating each component toward
-        // zero at 0.25yd (ByteBuffer::appendPackXYZ), so a seam under a quarter yard
-        // per component packs to all-zero fields and the client reconstructs the point
-        // on top of its neighbour. That zero-length segment makes the client divide by
-        // the segment length, compute 0/0, and store NaN as the mover's position.
-        //
-        // Refuse the leg instead. The builder already treats a later failed leg as a
-        // clean chunk boundary and keeps what it has assembled.
         if (!points.empty() &&
             (leg.front() - points.back()).length() >= WAYPOINT_SMOOTHING_MIN_SEGMENT_LENGTH)
         {
@@ -168,7 +141,6 @@ void WaypointMovementGenerator::InitializeWaypointPath(Unit& owner, int32 pathId
     LoadPath(static_cast<Creature&>(owner), pathId, wpSource, overwriteEntry);
     m_nextMoveTime.Reset(initialDelay);
 
-    // The leg is prepared and laid on the next tick, by Intent.
     m_haveLeg = false;
     ResetLeg();
 }
@@ -185,7 +157,6 @@ void WaypointMovementGenerator::Reset(Unit& owner)
 {
     owner.addUnitState(UNIT_STAT_ROAMING);
 
-    // The interrupted leg is gone; Intent prepares a fresh one on the next tick.
     m_haveLeg = false;
     ResetLeg();
 }
@@ -215,7 +186,6 @@ bool WaypointMovementGenerator::CanMove(Unit const& owner, uint32 diff)
 {
     m_nextMoveTime.Update(diff);
 
-    // A pause that expires while the unit is externally paused must not bank time.
     if (m_nextMoveTime.Passed() && owner.hasUnitState(UNIT_STAT_WAYPOINT_PAUSED))
     {
         m_nextMoveTime.Reset(1);
@@ -272,7 +242,6 @@ void WaypointMovementGenerator::OnArrived(Creature& creature)
         {
             int32 textId = behavior->textid[0];
 
-            // More than one text: pick one of the (up to five) that are set.
             if (behavior->textid[1])
             {
                 int count = 2;
@@ -321,7 +290,6 @@ void WaypointMovementGenerator::ProcessSegmentProgress(Creature& creature, int32
         OnArrived(creature);
         ++m_segmentArrivals;
 
-        // Passing THROUGH a node (rather than stopping at it) leaves the creature moving.
         if (!creature.movespline->Finalized() && !Stopped(creature))
         {
             creature.addUnitState(UNIT_STAT_ROAMING_MOVE);
@@ -335,8 +303,6 @@ void WaypointMovementGenerator::BuildSmoothPath(Creature& creature,
     ClearSegment();
     m_legPoints.clear();
 
-    // An externally-scripted path is walked node by node: its script may replace the
-    // path under us at any node, so welding ahead through it is not safe.
     if (m_pathOrigin == PATH_FROM_EXTERNAL)
     {
         return;
@@ -347,12 +313,6 @@ void WaypointMovementGenerator::BuildSmoothPath(Creature& creature,
 
     Motion::Vector3 start = frame.MoverPosition(creature);
 
-    // Bounding box of the points committed so far. We keep extending the chunk through
-    // consecutive smoothable waypoints until the box would exceed the packable offset
-    // budget (see WaypointSmoothing.h) rather than stopping at a fixed count, so the
-    // spline carries as many waypoints as the SMSG_MONSTER_MOVE encoding safely allows.
-    // This minimises spline finalize/relaunch boundaries — each of which is a visible
-    // stop and restart — while guaranteeing the packed offsets never wrap.
     WaypointSmoothingBounds bounds;
 
     WaypointPath::const_iterator currPoint = startPoint;
@@ -363,8 +323,7 @@ void WaypointMovementGenerator::BuildSmoothPath(Creature& creature,
 
         if (!AppendLeg(*query, start, node, m_legPoints))
         {
-            // The FIRST leg failing means nothing is usable, so fall back to a plain
-            // routed leg. A later one failing keeps the chunk built so far.
+
             if (committed == 0)
             {
                 ClearSegment();
@@ -374,9 +333,6 @@ void WaypointMovementGenerator::BuildSmoothPath(Creature& creature,
             break;
         }
 
-        // The first waypoint is always accepted (a one-waypoint chunk is dropped below and
-        // the driver routes a plain leg instead). Each subsequent one is kept only while
-        // the whole path stays within the packable budget; otherwise roll it back.
         WaypointSmoothingBounds trial = bounds;
         for (size_t i = committed; i < m_legPoints.size(); ++i)
         {
@@ -392,8 +348,6 @@ void WaypointMovementGenerator::BuildSmoothPath(Creature& creature,
         bounds = trial;
         m_segment.push_back({currPoint->first, m_legPoints.size() - 1});
 
-        // A node that pauses, emotes or runs a script is where the creature must actually
-        // stop, so the weld ends there.
         WaypointSmoothingNode smoothing;
         smoothing.hasDelay = node.delay != 0;
         smoothing.hasScript = node.script_id != 0;
@@ -410,7 +364,6 @@ void WaypointMovementGenerator::BuildSmoothPath(Creature& creature,
             nextPoint = m_path->begin();
         }
 
-        // A full lap: stop before welding the path onto itself.
         if (nextPoint == startPoint)
         {
             break;
@@ -420,7 +373,6 @@ void WaypointMovementGenerator::BuildSmoothPath(Creature& creature,
         currPoint = nextPoint;
     }
 
-    // A chunk of one waypoint is not a smoothed segment; let the driver route it.
     if (m_segment.size() <= 1 || m_legPoints.size() < 2)
     {
         ClearSegment();
@@ -430,8 +382,7 @@ void WaypointMovementGenerator::BuildSmoothPath(Creature& creature,
 
 Motion::MoveIntent WaypointMovementGenerator::WalkPreparedLeg() const
 {
-    // The pace rides on the intent: the driver resolves walk/run from MOVE_WALK alone,
-    // so the unit-level SetWalk in PrepareMove is not enough to make a patrol walk.
+
     uint32 flags = Motion::MOVE_REQUIRE_PATH;
     if (m_legWalk)
     {
@@ -475,7 +426,6 @@ Motion::MoveIntent WaypointMovementGenerator::PrepareMove(Creature& creature)
         creature.SetUInt32Value(UNIT_NPC_EMOTESTATE, 0);
     }
 
-    // We are standing ON the node we last reached: step to the next one.
     if (m_isArrivalDone)
     {
         bool reachedLast = false;
@@ -491,7 +441,6 @@ Motion::MoveIntent WaypointMovementGenerator::PrepareMove(Creature& creature)
                 (reachedLast ? EXTERNAL_WAYPOINT_FINISHED_LAST : EXTERNAL_WAYPOINT_MOVE_START) + m_pathId,
                 currPoint->first);
 
-            // That hook may have despawned the creature or swapped its path.
             if (creature.IsDead() || !creature.IsInWorld())
             {
                 return Motion::MoveIntent::Hold();
@@ -506,8 +455,6 @@ Motion::MoveIntent WaypointMovementGenerator::PrepareMove(Creature& creature)
 
     BuildSmoothPath(creature, currPoint);
 
-    // A smoothed segment runs through several nodes and finishes at the LAST of them; an
-    // unsmoothed one just goes to the next node.
     WaypointNode const* finalNode = &currPoint->second;
     if (!m_legPoints.empty())
     {
@@ -518,17 +465,12 @@ Motion::MoveIntent WaypointMovementGenerator::PrepareMove(Creature& creature)
 
     m_legEnd = Motion::Vector3(finalNode->x, finalNode->y, finalNode->z);
 
-    // A node only holds a facing if it also pauses there — turning to a fixed heading and
-    // immediately walking off it would just read as a stumble.
     m_legFacing = (finalNode->orientation != 100 && finalNode->delay != 0)
         ? Motion::Facing::ToAngle(finalNode->orientation)
         : Motion::Facing{};
 
     m_haveLeg = true;
 
-    // A patrol walks unless the DB says it runs. Keep the unit's own walk flag in step
-    // with the leg's pace — the client reads it for the animation, the driver reads
-    // MOVE_WALK for the speed.
     m_legWalk = !creature.hasUnitState(UNIT_STAT_RUNNING_STATE) && !creature.IsLevitating();
     creature.SetWalk(m_legWalk, false);
 
@@ -539,7 +481,7 @@ Motion::MoveIntent WaypointMovementGenerator::Intent(Unit& owner,
                                                      Motion::MoveStatus const& status,
                                                      uint32 diff)
 {
-    // Waypoint movement can be switched off — handy for escort quests and the like.
+
     if (owner.hasUnitState(UNIT_STAT_NOT_MOVE) || !m_path || m_path->empty())
     {
         owner.clearUnitState(UNIT_STAT_ROAMING_MOVE);
@@ -548,8 +490,6 @@ Motion::MoveIntent WaypointMovementGenerator::Intent(Unit& owner,
 
     Creature& creature = static_cast<Creature&>(owner);
 
-    // There was no way to reach the node we aimed at. Count it as arrived so the patrol
-    // steps over it, rather than butting into it forever.
     if (status.blocked)
     {
         ClearSegment();
@@ -563,19 +503,11 @@ Motion::MoveIntent WaypointMovementGenerator::Intent(Unit& owner,
         return CanMove(creature, diff) ? PrepareMove(creature) : Motion::MoveIntent::Hold();
     }
 
-    // Nothing is in flight and nothing was laid: this is the first tick after Initialize
-    // or Reset (the driver lays the first leg on the first TICK, not in Initialize). The
-    // force-stop test below would read a creature that has simply not started yet as one
-    // a player just halted, and park it for STOP_TIME_FOR_PLAYER — three minutes of
-    // standing still at every spawn and after every evade.
     if (!m_haveLeg && !status.traveling)
     {
         return PrepareMove(creature);
     }
 
-    // Sample the stopped state BEFORE arrival handling clears UNIT_STAT_ROAMING_MOVE, so
-    // an externally force-stopped unit (a player talking to it, which also finalizes the
-    // spline) is paused rather than mistaken for a leg that simply finished.
     switch (GetWaypointSegmentUpdateState(!status.traveling, creature.IsStopped()))
     {
         case WaypointSegmentUpdateState::Stopped:
@@ -592,7 +524,6 @@ Motion::MoveIntent WaypointMovementGenerator::Intent(Unit& owner,
             }
             ClearSegment();
 
-            // OnArrived may have parked the creature at the node for its delay.
             if (Stopped(creature))
             {
                 m_haveLeg = false;
@@ -606,8 +537,6 @@ Motion::MoveIntent WaypointMovementGenerator::Intent(Unit& owner,
             break;
     }
 
-    // Mid-leg: re-state the leg we are already walking. The driver recognises the
-    // unchanged goal and leaves the running spline alone.
     return m_haveLeg ? WalkPreparedLeg() : Motion::MoveIntent::Hold();
 }
 
@@ -621,11 +550,6 @@ bool WaypointMovementGenerator::GetResetPosition(Unit& owner, float& x, float& y
 
     Creature& creature = static_cast<Creature&>(owner);
 
-    // Prefer resuming from the point where combat pulled the creature off its path (its
-    // departure point) rather than the last waypoint it reached. That removes the visible
-    // backtrack where an evading patroller runs back to the previous waypoint and then
-    // re-walks the leg it was already on. A zero sentinel means no combat start was
-    // recorded, and we fall back below.
     float combatX, combatY, combatZ;
     combatX = creature.CombatAnchor().x;
     combatY = creature.CombatAnchor().y;
@@ -638,7 +562,6 @@ bool WaypointMovementGenerator::GetResetPosition(Unit& owner, float& x, float& y
         z = combatZ;
         o = creature.Where().Facing();
 
-        // Face the waypoint it was heading for, so it keeps moving forward on resume.
         WaypointPath::const_iterator nextPoint = m_path->find(m_currentNode);
         if (nextPoint != m_path->end())
         {
@@ -656,8 +579,6 @@ bool WaypointMovementGenerator::GetResetPosition(Unit& owner, float& x, float& y
 
     WaypointPath::const_iterator lastPoint = m_path->find(m_lastReachedWaypoint);
 
-    // Before the first waypoint is reached m_lastReachedWaypoint is 0, which may not be
-    // in the path at all.
     if (!m_lastReachedWaypoint && lastPoint == m_path->end())
     {
         return false;
@@ -676,12 +597,11 @@ bool WaypointMovementGenerator::GetResetPosition(Unit& owner, float& x, float& y
         return true;
     }
 
-    // No orientation on the node: face along the leg that arrived at it.
     WaypointNode const& prevWP = (lastPoint != m_path->begin())
         ? std::prev(lastPoint)->second
         : m_path->rbegin()->second;
 
-    o = atan2(y - prevWP.y, x - prevWP.x); // returns -Pi..Pi
+    o = atan2(y - prevWP.y, x - prevWP.x);
     o = (o >= 0) ? o : 2 * M_PI_F + o;
 
     return true;
@@ -709,8 +629,6 @@ bool WaypointMovementGenerator::SetNextWaypoint(uint32 pointId)
         return false;
     }
 
-    // Move on the next tick. Doing it this way does not disturb a PAUSED state: if this
-    // is called while paused, the unit moves properly once unpaused.
     m_nextMoveTime.Reset(1);
     m_isArrivalDone = false;
     ClearSegment();
@@ -720,8 +638,6 @@ bool WaypointMovementGenerator::SetNextWaypoint(uint32 pointId)
     m_currentNode = pointId;
     return true;
 }
-
-//----- Flight path (player taxi)
 
 uint32 FlightPathMovementGenerator::GetPathAtMapEnd() const
 {
@@ -756,7 +672,6 @@ void FlightPathMovementGenerator::Reset(Unit& owner)
     player.addUnitState(UNIT_STAT_TAXI_FLIGHT);
     player.SetUnitFlag(UNIT_FLAG_CLIENT_CONTROL_LOST | UNIT_FLAG_TAXI_FLIGHT);
 
-    // One spline through every node up to the end of this map, flown at a fixed speed.
     Movement::MoveSplineInit init(player);
 
     const uint32 end = GetPathAtMapEnd();
@@ -780,8 +695,6 @@ void FlightPathMovementGenerator::Finalize(Unit& owner)
 {
     Player& player = static_cast<Player&>(owner);
 
-    // Clear the flag first, so no create-block for the flight state is built while the
-    // generator is already off the top of the stack.
     player.clearUnitState(UNIT_STAT_TAXI_FLIGHT);
 
     player.Unmount();
@@ -798,17 +711,13 @@ void FlightPathMovementGenerator::Finalize(Unit& owner)
         player.CastSpell(&player, 2479, true);
     }
 
-    // Snap Z to the ground at the landing point. Without this a laggy client, whose
-    // flight ended early, can be left hanging in the air.
     player.StopMoving(true);
 }
 
-bool FlightPathMovementGenerator::Update(Unit& owner, uint32 /*diff*/)
+bool FlightPathMovementGenerator::Update(Unit& owner, uint32 )
 {
     const uint32 pointId = uint32(owner.movespline->currentPathIdx());
 
-    // Each node produces a departure and an arrival event, so the spline index advances
-    // two per node.
     if (pointId > m_currentNode)
     {
         bool departure = true;
@@ -841,8 +750,8 @@ void FlightPathMovementGenerator::SetCurrentNodeAfterTeleport()
     }
 }
 
-bool FlightPathMovementGenerator::GetResetPosition(Unit& /*owner*/, float& x, float& y,
-                                                   float& z, float& /*o*/) const
+bool FlightPathMovementGenerator::GetResetPosition(Unit& , float& x, float& y,
+                                                   float& z, float& ) const
 {
     TaxiPathNodeEntry const& node = (*m_path)[m_currentNode];
     x = node.LocX;

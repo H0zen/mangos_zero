@@ -28,7 +28,6 @@
 #include "Item.h"
 #include "Log.h"
 
-/// Only what the player actually owns may be written under their name.
 bool ItemSaveQueue::IsOurs(Item const& item, char const* what) const
 {
     if (item.GetOwnerGuid() == m_owner)
@@ -38,7 +37,7 @@ bool ItemSaveQueue::IsOurs(Item const& item, char const* what) const
 
     sLog.outError("ItemSaveQueue::%s - %s is owned by %s, not by %s",
                   what, item.GetGuidStr().c_str(),
-                  item.GetOwnerGuid().GetString().c_str(), m_owner.GetString().c_str());
+                  GuidString(item.GetOwnerGuid()).c_str(), GuidString(m_owner).c_str());
     return false;
 }
 

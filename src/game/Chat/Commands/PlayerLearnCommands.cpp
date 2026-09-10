@@ -23,16 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file PlayerLearnCommands.cpp
- * @brief Implementation of player skill and spell learning chat commands.
- *
- * This file contains chat command handlers for learning operations including:
- * - Spell learning and unlearning
- * - Skill training
- * - Talent modification
- */
-
 #include "Common/Locales.h"
 #include <string>
 #include <cstdlib>
@@ -40,12 +30,6 @@
 #include "ObjectMgr.h"
 #include "SpellMgr.h"
 
-/**
- * @brief Handler for HandleUnLearnCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleUnLearnCommand(char* args)
 {
     if (!*args)
@@ -53,7 +37,6 @@ bool ChatHandler::HandleUnLearnCommand(char* args)
         return false;
     }
 
-    // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r
     uint32 spell_id = ExtractSpellIdFromLink(&args);
     if (!spell_id)
     {
@@ -61,7 +44,7 @@ bool ChatHandler::HandleUnLearnCommand(char* args)
     }
 
     bool allRanks = ExtractLiteralArg(&args, "all") != nullptr;
-    if (!allRanks && *args)                                 // can be fail also at syntax error
+    if (!allRanks && *args)
     {
         return false;
     }
@@ -91,13 +74,7 @@ bool ChatHandler::HandleUnLearnCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleLearnAllCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleLearnAllCommand(char* /*args*/)
+bool ChatHandler::HandleLearnAllCommand(char* )
 {
     static const char* allSpellList[] =
     {
@@ -482,7 +459,7 @@ bool ChatHandler::HandleLearnAllCommand(char* /*args*/)
             "8153",
             "9033",
             "9034",
-        //  "9036", problems with ghost state
+
             "16421",
             "21653",
             "22660",
@@ -491,7 +468,7 @@ bool ChatHandler::HandleLearnAllCommand(char* /*args*/)
             "2426",
             "5916",
             "6634",
-        //  "6718", phasing stealth, annoying for learn all case.
+
             "6719",
             "8822",
             "9591",
@@ -728,29 +705,23 @@ bool ChatHandler::HandleLearnAllCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleLearnAllGMCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleLearnAllGMCommand(char* /*args*/)
+bool ChatHandler::HandleLearnAllGMCommand(char* )
 {
     static const char* gmSpellList[] =
     {
-            "24347",                                            // Become A Fish, No Breath Bar
-            "35132",                                            // Visual Boom
-            "38488",                                            // Attack 4000-8000 AOE
-            "38795",                                            // Attack 2000 AOE + Slow Down 90%
-            "15712",                                            // Attack 200
-            "1852",                                             // GM Spell Silence
-            "31899",                                            // Kill
-            "31924",                                            // Kill
-            "29878",                                            // Kill My Self
-            "26644",                                            // More Kill
+            "24347",
+            "35132",
+            "38488",
+            "38795",
+            "15712",
+            "1852",
+            "31899",
+            "31924",
+            "29878",
+            "26644",
 
-            "28550",                                            // Invisible 24
-            "23452",                                            // Invisible + Target
+            "28550",
+            "23452",
             "0"
     };
 
@@ -773,26 +744,14 @@ bool ChatHandler::HandleLearnAllGMCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleLearnAllMyClassCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleLearnAllMyClassCommand(char* /*args*/)
+bool ChatHandler::HandleLearnAllMyClassCommand(char* )
 {
     HandleLearnAllMySpellsCommand((char*)"");
     HandleLearnAllMyTalentsCommand((char*)"");
     return true;
 }
 
-/**
- * @brief Handler for HandleLearnAllMySpellsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleLearnAllMySpellsCommand(char* /*args*/)
+bool ChatHandler::HandleLearnAllMySpellsCommand(char* )
 {
     Player* player = m_session->GetPlayer();
     ChrClassesEntry const* clsEntry = sChrClassesStore.LookupEntry(player->getClass());
@@ -816,32 +775,27 @@ bool ChatHandler::HandleLearnAllMySpellsCommand(char* /*args*/)
             continue;
         }
 
-        // skip server-side/triggered spells
         if (spellInfo->SpellLevel == 0)
         {
             continue;
         }
 
-        // skip wrong class/race skills
         if (!player->IsSpellFitByClassAndRace(spellInfo->ID))
         {
             continue;
         }
 
-        // skip other spell families
         if (spellInfo->SpellClassSet != family)
         {
             continue;
         }
 
-        // skip spells with first rank learned as talent (and all talents then also)
         uint32 first_rank = sSpellMgr.GetFirstSpellInChain(spellInfo->ID);
         if (GetTalentSpellCost(first_rank) > 0)
         {
             continue;
         }
 
-        // skip broken spells
         if (!SpellMgr::IsSpellValid(spellInfo, player, false))
         {
             continue;
@@ -854,13 +808,7 @@ bool ChatHandler::HandleLearnAllMySpellsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleLearnAllMyTalentsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleLearnAllMyTalentsCommand(char* /*args*/)
+bool ChatHandler::HandleLearnAllMyTalentsCommand(char* )
 {
     Player* player = m_session->GetPlayer();
     uint32 classMask = player->getClassMask();
@@ -884,7 +832,6 @@ bool ChatHandler::HandleLearnAllMyTalentsCommand(char* /*args*/)
             continue;
         }
 
-        // search highest talent rank
         uint32 spellid = 0;
 
         for (int rank = MAX_TALENT_RANK - 1; rank >= 0; --rank)
@@ -896,7 +843,7 @@ bool ChatHandler::HandleLearnAllMyTalentsCommand(char* /*args*/)
             }
         }
 
-        if (!spellid)                                       // ??? none spells in talent
+        if (!spellid)
         {
             continue;
         }
@@ -907,7 +854,6 @@ bool ChatHandler::HandleLearnAllMyTalentsCommand(char* /*args*/)
             continue;
         }
 
-        // learn highest rank of talent and learn all non-talent spell ranks (recursive by tree)
         player->learnSpellHighRank(spellid);
     }
 
@@ -915,17 +861,10 @@ bool ChatHandler::HandleLearnAllMyTalentsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleLearnAllLangCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleLearnAllLangCommand(char* /*args*/)
+bool ChatHandler::HandleLearnAllLangCommand(char* )
 {
     Player* player = m_session->GetPlayer();
 
-    // skipping UNIVERSAL language (0)
     for (int i = 1; i < LANGUAGES_COUNT; ++i)
     {
         player->learnSpell(lang_description[i].spell_id, false);
@@ -935,12 +874,6 @@ bool ChatHandler::HandleLearnAllLangCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleLearnAllDefaultCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLearnAllDefaultCommand(char* args)
 {
     Player* target;
@@ -956,12 +889,6 @@ bool ChatHandler::HandleLearnAllDefaultCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleLearnCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLearnCommand(char* args)
 {
     Player* player = m_session->GetPlayer();
@@ -974,7 +901,6 @@ bool ChatHandler::HandleLearnCommand(char* args)
         return false;
     }
 
-    // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r or Htalent form
     uint32 spell = ExtractSpellIdFromLink(&args);
     if (!spell || !sSpellStore.LookupEntry(spell))
     {
@@ -982,7 +908,7 @@ bool ChatHandler::HandleLearnCommand(char* args)
     }
 
     bool allRanks = ExtractLiteralArg(&args, "all") != nullptr;
-    if (!allRanks && *args)                                 // can be fail also at syntax error
+    if (!allRanks && *args)
     {
         return false;
     }
@@ -1021,12 +947,6 @@ bool ChatHandler::HandleLearnCommand(char* args)
     return true;
 }
 
-/**
- * @brief Teaches all recipes tied to a profession or skill line.
- *
- * @param player The player learning the recipes.
- * @param skill_id The skill line identifier to scan.
- */
 void ChatHandler::HandleLearnSkillRecipesHelper(Player* player, uint32 skill_id)
 {
     uint32 classmask = player->getClassMask();
@@ -1039,25 +959,21 @@ void ChatHandler::HandleLearnSkillRecipesHelper(Player* player, uint32 skill_id)
             continue;
         }
 
-        // wrong skill
         if (skillLine->SkillLine != skill_id)
         {
             continue;
         }
 
-        // not high rank
         if (skillLine->SupercededBySpell)
         {
             continue;
         }
 
-        // skip racial skills
         if (skillLine->RaceMask != 0)
         {
             continue;
         }
 
-        // skip wrong class skills
         if (skillLine->ClassMask && (skillLine->ClassMask & classmask) == 0)
         {
             continue;
@@ -1073,13 +989,7 @@ void ChatHandler::HandleLearnSkillRecipesHelper(Player* player, uint32 skill_id)
     }
 }
 
-/**
- * @brief Handler for HandleLearnAllCraftsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleLearnAllCraftsCommand(char* /*args*/)
+bool ChatHandler::HandleLearnAllCraftsCommand(char* )
 {
     for (uint32 i = 0; i < sSkillLineStore.GetNumRows(); ++i)
     {
@@ -1091,7 +1001,7 @@ bool ChatHandler::HandleLearnAllCraftsCommand(char* /*args*/)
 
         if (skillInfo->CategoryID == SKILL_CATEGORY_PROFESSION || skillInfo->CategoryID == SKILL_CATEGORY_SECONDARY)
         {
-            // Learn only the crafts that actually are crafts (MaNGOS ZERO)
+
             if (skillInfo->ID == SKILL_ENGINEERING || skillInfo->ID == SKILL_BLACKSMITHING ||
                 skillInfo->ID == SKILL_LEATHERWORKING || skillInfo->ID == SKILL_ALCHEMY ||
                 skillInfo->ID == SKILL_HERBALISM || skillInfo->ID == SKILL_MINING ||
@@ -1108,16 +1018,8 @@ bool ChatHandler::HandleLearnAllCraftsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleLearnAllRecipesCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLearnAllRecipesCommand(char* args)
 {
-    //  Learns all recipes of specified profession and sets skill to max
-    //  Example: .learn all_recipes enchanting
 
     Player* target = getSelectedPlayer();
     if (!target)
@@ -1138,7 +1040,6 @@ bool ChatHandler::HandleLearnAllRecipesCommand(char* args)
         return false;
     }
 
-    // converting string that we try to find to lower case
     wstrToLower(wnamepart);
 
     std::string name;

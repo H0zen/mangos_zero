@@ -23,22 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SpellHandler.cpp
- * @brief Spell casting opcode handlers
- *
- * This file handles spell-related opcodes including:
- * - CMSG_USE_ITEM: Use item (cast item spell)
- * - CMSG_CAST_SPELL: Cast spell
- * - CMSG_CANCEL_CAST: Cancel spell cast
- * - CMSG_CANCEL_AURA: Cancel aura
- * - CMSG_CANCEL_CHANNELING: Cancel channeled spell
- * - CMSG_SELF_RES: Self resurrection
- *
- * Spell handlers validate cast requirements, initiate spell casting,
- * and manage spell cancellation.
- */
-
 #include "Platform/Define.h"
 #include "DBCStores.h"
 #include "WorldPacket.h"
@@ -54,32 +38,25 @@
 #include "SpellAuras.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Handles use-item requests and casts the item's use spell.
- *
- * @param recvPacket The incoming use-item packet.
- */
 void spells::UseItem(Player& who, WorldPacket& recvPacket)
 {
     uint8 bagIndex, slot;
-    uint8 spell_count;                                      // number of spells at item, not used
+    uint8 spell_count;
 
     recvPacket >> bagIndex >> slot >> spell_count;
 
-    // TODO: add targets.read() check
     Player* pUser = &who;
 
-    // ignore for remote control state
     if (!pUser->IsSelfMover())
     {
-        recvPacket.rpos(recvPacket.wpos());                 // prevent spam at not read packet tail
+        recvPacket.rpos(recvPacket.wpos());
         return;
     }
 
     Item* pItem = pUser->GetItemByPos(bagIndex, slot);
     if (!pItem)
     {
-        recvPacket.rpos(recvPacket.wpos());                 // prevent spam at not read packet tail
+        recvPacket.rpos(recvPacket.wpos());
         pUser->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, nullptr, nullptr);
         return;
     }
@@ -89,15 +66,14 @@ void spells::UseItem(Player& who, WorldPacket& recvPacket)
     ItemPrototype const* proto = pItem->GetProto();
     if (!proto)
     {
-        recvPacket.rpos(recvPacket.wpos());                 // prevent spam at not read packet tail
+        recvPacket.rpos(recvPacket.wpos());
         pUser->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, pItem, nullptr);
         return;
     }
 
-    // some item classes can be used only in equipped state
     if (proto->InventoryType != INVTYPE_NON_EQUIP && !pItem->IsEquipped())
     {
-        recvPacket.rpos(recvPacket.wpos());                 // prevent spam at not read packet tail
+        recvPacket.rpos(recvPacket.wpos());
         pUser->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, pItem, nullptr);
         return;
     }
@@ -105,15 +81,14 @@ void spells::UseItem(Player& who, WorldPacket& recvPacket)
     InventoryResult msg = pUser->CanUseItem(pItem);
     if (msg != EQUIP_ERR_OK)
     {
-        recvPacket.rpos(recvPacket.wpos());                 // prevent spam at not read packet tail
+        recvPacket.rpos(recvPacket.wpos());
         pUser->SendEquipError(msg, pItem, nullptr);
         return;
     }
 
-    // not allow use item from trade (cheat way only)
     if (pItem->IsInTrade())
     {
-        recvPacket.rpos(recvPacket.wpos());                 // prevent spam at not read packet tail
+        recvPacket.rpos(recvPacket.wpos());
         pUser->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, pItem, nullptr);
         return;
     }
@@ -126,7 +101,7 @@ void spells::UseItem(Player& who, WorldPacket& recvPacket)
             {
                 if (IsNonCombatSpell(spellInfo))
                 {
-                    recvPacket.rpos(recvPacket.wpos());     // prevent spam at not read packet tail
+                    recvPacket.rpos(recvPacket.wpos());
                     pUser->SendEquipError(EQUIP_ERR_NOT_IN_COMBAT, pItem, nullptr);
                     return;
                 }
@@ -134,7 +109,6 @@ void spells::UseItem(Player& who, WorldPacket& recvPacket)
         }
     }
 
-    // check also  BIND_WHEN_PICKED_UP and BIND_QUEST_ITEM for .additem or .additemset case by GM (not binded at adding to inventory)
     if (pItem->GetProto()->Bonding == BIND_WHEN_USE || pItem->GetProto()->Bonding == BIND_WHEN_PICKED_UP || pItem->GetProto()->Bonding == BIND_QUEST_ITEM)
     {
         if (!pItem->IsSoulBound())
@@ -152,10 +126,9 @@ void spells::UseItem(Player& who, WorldPacket& recvPacket)
 
     if (!pItem->IsTargetValidForItemUse(targets.getUnitTarget()))
     {
-        // free gray item after use fail
+
         pUser->SendEquipError(EQUIP_ERR_NONE, pItem, nullptr);
 
-        // search spell for spell error
         uint32 spellid = 0;
         for (int i = 0; i < MAX_ITEM_PROTO_SPELLS; ++i)
         {
@@ -166,7 +139,6 @@ void spells::UseItem(Player& who, WorldPacket& recvPacket)
             }
         }
 
-        // send spell error
         if (SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellid))
         {
             Spell::SendCastResult(&who, spellInfo, SPELL_FAILED_BAD_TARGETS);
@@ -174,10 +146,9 @@ void spells::UseItem(Player& who, WorldPacket& recvPacket)
         return;
     }
 
-    // Note: If script stop casting it must send appropriate data to client to prevent stuck item in gray state.
     if (!sScriptMgr.OnItemUse(pUser, pItem, targets))
     {
-        // no script or script not process request by self
+
         pUser->CastItemUseSpell(pItem, targets);
     }
 }
@@ -188,11 +159,6 @@ void spells::UseItem(Player& who, WorldPacket& recvPacket)
 #define OPEN_BOOTY_CHEST 5107
 #define OPEN_STRONGBOX 8517
 
-/**
- * @brief Handles opening wrapped or lootable inventory items.
- *
- * @param recvPacket The incoming open-item packet.
- */
 void spells::OpenItem(Player& who, WorldPacket& recvPacket)
 {
     DETAIL_LOG("WORLD: CMSG_OPEN_ITEM packet, data length = %zu", recvPacket.size());
@@ -205,7 +171,6 @@ void spells::OpenItem(Player& who, WorldPacket& recvPacket)
 
     Player* pUser = &who;
 
-    // ignore for remote control state
     if (!pUser->IsSelfMover())
     {
         return;
@@ -225,7 +190,6 @@ void spells::OpenItem(Player& who, WorldPacket& recvPacket)
         return;
     }
 
-    // locked item
     uint32 lockId = proto->LockID;
     if (lockId && !pItem->HasItemFlag(ITEM_DYNFLAG_UNLOCKED))
     {
@@ -238,7 +202,6 @@ void spells::OpenItem(Player& who, WorldPacket& recvPacket)
             return;
         }
 
-        // required picklocking
         if (lockInfo->Skill[1] || lockInfo->Skill[0])
         {
             pUser->SendEquipError(EQUIP_ERR_ITEM_LOCKED, pItem, nullptr);
@@ -246,7 +209,7 @@ void spells::OpenItem(Player& who, WorldPacket& recvPacket)
         }
     }
 
-    if (pItem->HasItemFlag(ITEM_DYNFLAG_WRAPPED))// wrapped?
+    if (pItem->HasItemFlag(ITEM_DYNFLAG_WRAPPED))
     {
         QueryResult* result = CharacterDatabase.PQuery("SELECT `entry`, `flags` FROM `character_gifts` WHERE `item_guid` = '%u'", pItem->GetGUIDLow());
         if (result)
@@ -255,7 +218,7 @@ void spells::OpenItem(Player& who, WorldPacket& recvPacket)
             uint32 entry = fields[0].GetUInt32();
             uint32 flags = fields[1].GetUInt32();
 
-            pItem->SetGiftCreatorGuid(ObjectGuid());
+            pItem->SetGiftCreatorGuid(0);
             pItem->SetEntry(entry);
             pItem->SetAllItemFlags(flags);
             pItem->SetState(ITEM_CHANGED, pUser);
@@ -279,20 +242,14 @@ void spells::OpenItem(Player& who, WorldPacket& recvPacket)
     }
 }
 
-/**
- * @brief Handles direct use of a nearby game object.
- *
- * @param recv_data The incoming gameobject-use packet.
- */
 void spells::GameObjectUse(Player& who, WorldPacket& recv_data)
 {
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
 
     recv_data >> guid;
 
-    DEBUG_LOG("WORLD: Received opcode CMSG_GAMEOBJ_USE guid: %s", guid.GetString().c_str());
+    DEBUG_LOG("WORLD: Received opcode CMSG_GAMEOBJ_USE guid: %s", GuidString(guid).c_str());
 
-    // ignore for remote control state
     if (!who.IsSelfMover())
     {
         return;
@@ -309,21 +266,18 @@ void spells::GameObjectUse(Player& who, WorldPacket& recv_data)
         return;
     }
 
-    // Additional check preventing exploits (ie loot despawned chests)
     if (!obj->isSpawned())
     {
         sLog.outError("HandleGameObjectUseOpcode: CMSG_GAMEOBJ_USE for despawned GameObject (Entry %u), didn't expect this to happen.", obj->GetEntry());
         return;
     }
 
-    // Never expect this opcode for some type GO's
     if (obj->GetGoType() == GAMEOBJECT_TYPE_GENERIC)
     {
         sLog.outError("HandleGameObjectUseOpcode: CMSG_GAMEOBJ_USE for not allowed GameObject type %u (Entry %u), didn't expect this to happen.", obj->GetGoType(), obj->GetEntry());
         return;
     }
 
-    // Never expect this opcode for non intractable GO's
     if (obj->HasGoFlag(GO_FLAG_NO_INTERACT))
     {
         sLog.outError("HandleGameObjectUseOpcode: CMSG_GAMEOBJ_USE for GameObject (Entry %u) with non intractable flag (Flags %u), didn't expect this to happen.", obj->GetEntry(), obj->GetGoFlags());
@@ -333,21 +287,15 @@ void spells::GameObjectUse(Player& who, WorldPacket& recv_data)
     obj->Use(&who);
 }
 
-/**
- * @brief Handles a player or controlled-unit spell cast request.
- *
- * @param recvPacket The incoming cast-spell packet.
- */
 void spells::CastSpell(Player& who, WorldPacket& recvPacket)
 {
     uint32 spellId;
     recvPacket >> spellId;
 
-    // ignore for remote control state (for player case)
     Unit* mover = who.GetMover();
-    if (mover != &who && mover->IsPlayer())
+    if (mover != &who &&IsPlayer(mover))
     {
-        recvPacket.rpos(recvPacket.wpos());                 // prevent spam at ignore packet
+        recvPacket.rpos(recvPacket.wpos());
         return;
     }
 
@@ -359,41 +307,39 @@ void spells::CastSpell(Player& who, WorldPacket& recvPacket)
     if (!spellInfo)
     {
         sLog.outError("WORLD: unknown spell id %u", spellId);
-        recvPacket.rpos(recvPacket.wpos());                 // prevent spam at ignore packet
+        recvPacket.rpos(recvPacket.wpos());
         return;
     }
 
-    if (mover->IsPlayer())
+    if (IsPlayer(mover))
     {
-        // not have spell in spellbook or spell passive and not casted by client
+
         if (!((Player*)mover)->HasActiveSpell(spellId) || (cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive))
         {
             sLog.outError("World: Player %u casts spell %u which he shouldn't have", mover->GetGUIDLow(), spellId);
-            // cheater? kick? ban?
-            recvPacket.rpos(recvPacket.wpos());             // prevent spam at ignore packet
+
+            recvPacket.rpos(recvPacket.wpos());
             return;
         }
     }
     else
     {
-        // not have spell in spellbook or spell passive and not casted by client
+
         if (!((Creature*)mover)->HasSpell(spellId) || (cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive))
         {
-            // cheater? kick? ban?
-            recvPacket.rpos(recvPacket.wpos());             // prevent spam at ignore packet
+
+            recvPacket.rpos(recvPacket.wpos());
             return;
         }
     }
 
-    // client provided targets
     SpellCastTargets targets;
 
     recvPacket >> targets.ReadForCaster(&who);
 
-    // auto-selection buff level base at target level (in spellInfo)
     if (Unit* target = targets.getUnitTarget())
     {
-        // if rank not found then function return nullptr but in explicit cast case original spell can be casted and later failed with appropriate error message
+
         if (SpellEntry const* actualSpellInfo = sSpellMgr.SelectAuraRankForLevel(spellInfo, target->getLevel()))
         {
             spellInfo = actualSpellInfo;
@@ -404,20 +350,14 @@ void spells::CastSpell(Player& who, WorldPacket& recvPacket)
     spell->prepare(&targets);
 }
 
-/**
- * @brief Handles cancelling an actively cast non-melee spell.
- *
- * @param recvPacket The incoming cancel-cast packet.
- */
 void spells::CancelCast(Player& who, WorldPacket& recvPacket)
 {
     uint32 spellId;
 
     recvPacket >> spellId;
 
-    // ignore for remote control state (for player case)
     Unit* mover = who.GetMover();
-    if (mover != &who && mover->IsPlayer())
+    if (mover != &who &&IsPlayer(mover))
     {
         return;
     }
@@ -428,11 +368,6 @@ void spells::CancelCast(Player& who, WorldPacket& recvPacket)
     }
 }
 
-/**
- * @brief Handles player aura cancellation requests.
- *
- * @param recvPacket The incoming cancel-aura packet.
- */
 void spells::CancelAura(Player& who, WorldPacket& recvPacket)
 {
     uint32 spellId;
@@ -456,10 +391,10 @@ void spells::CancelAura(Player& who, WorldPacket& recvPacket)
 
     if (!cast::Recipes().IsPositive(spellId))
     {
-        // ignore for remote control state
+
         if (!who.IsSelfMover())
         {
-            // except own aura spells
+
             bool allow = false;
             for (int k = 0; k < MAX_EFFECT_INDEX; ++k)
             {
@@ -471,7 +406,6 @@ void spells::CancelAura(Player& who, WorldPacket& recvPacket)
                 }
             }
 
-            // this also include case when aura not found
             if (!allow)
             {
                 return;
@@ -483,7 +417,6 @@ void spells::CancelAura(Player& who, WorldPacket& recvPacket)
         }
     }
 
-    // channeled spell case (it currently casted then)
     if ((cast::RecipeOf(*spellInfo).Starts() == cast::Start::Channelled))
     {
         if (Spell* curSpell = who.GetCurrentSpell(CURRENT_CHANNELED_SPELL))
@@ -498,30 +431,22 @@ void spells::CancelAura(Player& who, WorldPacket& recvPacket)
 
     SpellAuraHolder* holder = who.GetSpellAuraHolder(spellId);
 
-    // not own area auras can't be cancelled (note: maybe need to check for aura on holder and not general on spell)
     if (holder && holder->GetCasterGuid() != who.GetObjectGuid() && HasAreaAuraEffect(holder->GetSpellProto()))
     {
         return;
     }
 
-    // non channeled case
     who.CancelAuras(spellId);
 }
 
-/**
- * @brief Handles cancellation of an aura on a controlled pet or charm.
- *
- * @param recvPacket The incoming pet cancel-aura packet.
- */
 void spells::PetCancelAura(Player& who, WorldPacket& recvPacket)
 {
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
     uint32 spellId;
 
     recvPacket >> guid;
     recvPacket >> spellId;
 
-    // ignore for remote control state
     if (!who.IsSelfMover())
     {
         return;
@@ -538,13 +463,13 @@ void spells::PetCancelAura(Player& who, WorldPacket& recvPacket)
 
     if (!pet)
     {
-        sLog.outError("HandlePetCancelAuraOpcode - %s not exist.", guid.GetString().c_str());
+        sLog.outError("HandlePetCancelAuraOpcode - %s not exist.", GuidString(guid).c_str());
         return;
     }
 
     if (guid != who.GetPetGuid() && guid != who.GetCharmGuid())
     {
-        sLog.outError("HandlePetCancelAura. %s isn't pet of %s", guid.GetString().c_str(), who.GetGuidStr().c_str());
+        sLog.outError("HandlePetCancelAura. %s isn't pet of %s", GuidString(guid).c_str(), who.GetGuidStr().c_str());
         return;
     }
 
@@ -559,40 +484,23 @@ void spells::PetCancelAura(Player& who, WorldPacket& recvPacket)
     pet->AddCreatureSpellCooldown(spellId);
 }
 
-/**
- * @brief Handles the legacy cancel-growth-aura opcode.
- *
- * @param recvPacket The unused incoming packet.
- */
-void spells::CancelGrowthAura(Player& who, WorldPacket& /*recvPacket*/)
+void spells::CancelGrowthAura(Player& who, WorldPacket& )
 {
-    // nothing do
+
 }
 
-/**
- * @brief Cancels the current auto-repeat spell.
- *
- * @param recvPacket The unused incoming packet.
- */
-void spells::CancelAutoRepeatSpell(Player& who, WorldPacket& /*recvPacket*/)
+void spells::CancelAutoRepeatSpell(Player& who, WorldPacket& )
 {
-    // cancel and prepare for deleting
-    // do not send SMSG_CANCEL_AUTO_REPEAT! client will send this Opcode again (loop)
+
     who.GetMover()->InterruptSpell(CURRENT_AUTOREPEAT_SPELL);
 }
 
-/**
- * @brief Handles cancellation of the current channeled spell.
- *
- * @param recv_data The incoming cancel-channel packet.
- */
 void spells::CancelChanneling(Player& who, WorldPacket& recv_data)
 {
-    recv_data.read_skip<uint32>();                          // spellid, not used
+    recv_data.read_skip<uint32>();
 
-    // ignore for remote control state (for player case)
     Unit* mover = who.GetMover();
-    if (mover != &who && mover->IsPlayer())
+    if (mover != &who &&IsPlayer(mover))
     {
         return;
     }
@@ -600,18 +508,12 @@ void spells::CancelChanneling(Player& who, WorldPacket& recv_data)
     who.InterruptSpell(CURRENT_CHANNELED_SPELL);
 }
 
-/**
- * @brief Handles manual destruction of a player totem.
- *
- * @param recvPacket The incoming totem-destroyed packet.
- */
 void spells::TotemDestroyed(Player& who, WorldPacket& recvPacket)
 {
     uint8 slotId;
 
     recvPacket >> slotId;
 
-    // ignore for remote control state
     if (!who.IsSelfMover())
     {
         return;
@@ -628,14 +530,9 @@ void spells::TotemDestroyed(Player& who, WorldPacket& recvPacket)
     }
 }
 
-/**
- * @brief Handles use of the player's self-resurrection spell.
- *
- * @param recv_data The unused incoming packet.
- */
-void spells::SelfRes(Player& who, WorldPacket& /*recv_data*/)
+void spells::SelfRes(Player& who, WorldPacket& )
 {
-    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "WORLD: CMSG_SELF_RES");                  // empty opcode
+    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "WORLD: CMSG_SELF_RES");
 
     if (who.GetUInt32Value(PLAYER_SELF_RES_SPELL))
     {

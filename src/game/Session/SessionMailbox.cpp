@@ -76,8 +76,6 @@ void SessionMailbox::Close()
         abandoned.swap(m_packets);
     }
 
-    // Freed outside the lock: nothing else can reach them once the mailbox is
-    // closed, and a destructor has no business running under it.
 }
 
 bool SessionMailbox::IsClosed() const

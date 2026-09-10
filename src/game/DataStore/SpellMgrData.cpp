@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <set>
 #include "SpellMgr.h"
 #include "SpellAuraDefines.h"
@@ -40,16 +38,12 @@
 #include "World.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Loads spell target destination coordinates from the database.
- */
 void SpellMgr::LoadSpellTargetPositions()
 {
-    mSpellTargetPositions.clear();                          // need for reload case
+    mSpellTargetPositions.clear();
 
     uint32 count = 0;
 
-    //                                                0   1           2                  3                  4                  5
     QueryResult* result = WorldDatabase.Query("SELECT `id`, `target_map`, `target_position_x`, `target_position_y`, `target_position_z`, `target_orientation` FROM `spell_target_position`");
     if (!result)
     {
@@ -139,7 +133,6 @@ template <typename EntryType, typename WorkerType, typename StorageType>
 
         uint32 first_id = mgr.GetFirstSpellInChain(spell_id);
 
-        // most spell ranks expected same data
         if (first_id)
         {
             firstRankSpells.insert(first_id);
@@ -150,7 +143,7 @@ template <typename EntryType, typename WorkerType, typename StorageType>
                 {
                     return;
                 }
-                // for later check that first rank also added
+
                 else
                 {
                     firstRankSpellsWithCustomRanks.insert(first_id);
@@ -163,7 +156,7 @@ template <typename EntryType, typename WorkerType, typename StorageType>
     }
     void FillHigherRanks()
     {
-        // check that first rank added for custom ranks
+
         for (std::set<uint32>::const_iterator itr = firstRankSpellsWithCustomRanks.begin(); itr != firstRankSpellsWithCustomRanks.end(); ++itr)
         {
             if (!worker.HasEntry(*itr))
@@ -172,7 +165,6 @@ template <typename EntryType, typename WorkerType, typename StorageType>
             }
         }
 
-        // fill absent non first ranks data base at first rank data
         for (std::set<uint32>::const_iterator itr = firstRankSpells.begin(); itr != firstRankSpells.end(); ++itr)
         {
             if (worker.SetStateToEntry(*itr))
@@ -198,12 +190,9 @@ struct DoSpellBonuses
     SpellBonusEntry const& spellBonus;
 };
 
-/**
- * @brief Loads spell bonus coefficient overrides from the database.
- */
 void SpellMgr::LoadSpellBonuses()
 {
-    mSpellBonusMap.clear();                             // need for reload case
+    mSpellBonusMap.clear();
     uint32 count = 0;
 
     QueryResult* result = WorldDatabase.Query("SELECT `entry`, `direct_bonus`, `one_hand_direct_bonus`, `two_hand_direct_bonus`, \
@@ -238,7 +227,7 @@ void SpellMgr::LoadSpellBonuses()
         if (first_id != entry)
         {
             sLog.outErrorDb("Spell %u listed in `spell_bonus_data` is not first rank (%u) in chain", entry, first_id);
-            // prevent loading since it won't have an effect anyway
+
             continue;
         }
 
@@ -259,7 +248,7 @@ void SpellMgr::LoadSpellBonuses()
 
         bool need_dot = false;
         bool need_direct = false;
-        uint32 x = 0;                                       // count all, including empty, meaning: not all existing effect is DoTs/HoTs
+        uint32 x = 0;
         for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
         {
             if (!spell->Effect[i])
@@ -268,7 +257,6 @@ void SpellMgr::LoadSpellBonuses()
                 continue;
             }
 
-            // DoTs/HoTs
             switch (spell->EffectAura[i])
             {
                 case SPELL_AURA_PERIODIC_DAMAGE:
@@ -287,22 +275,19 @@ void SpellMgr::LoadSpellBonuses()
             }
         }
 
-        // TODO: maybe add explicit list possible direct damage spell effects...
         if (x < MAX_EFFECT_INDEX)
         {
             need_direct = true;
         }
 
-        // Check if direct_bonus is needed in `spell_bonus_data`
         float direct_calc = 0.0f;
-        float direct_diff = 1000.0f;                        // for have big diff if no DB field value
+        float direct_diff = 1000.0f;
         if (sbe.direct_damage)
         {
             direct_calc = cast::RecipeOf(*spell).Coefficient(false);
             direct_diff = std::abs(sbe.direct_damage - direct_calc);
         }
 
-        // Check if direct_bonus_done is needed in `spell_bonus_data`
         float direct_done_calc = 0.0f;
         float direct_done_diff = 1000.0f;
         if (sbe.direct_damage_done)
@@ -311,7 +296,6 @@ void SpellMgr::LoadSpellBonuses()
             direct_done_diff = std::abs(sbe.direct_damage_done - direct_done_calc);
         }
 
-        // Check if direct_bonus_taken is needed in `spell_bonus_data`
         float direct_taken_calc = 0.0f;
         float direct_taken_diff = 1000.0f;
         if (sbe.direct_damage_taken)
@@ -320,16 +304,14 @@ void SpellMgr::LoadSpellBonuses()
             direct_taken_diff = std::abs(sbe.direct_damage_taken - direct_taken_calc);
         }
 
-        // Check if dot_bonus is needed in `spell_bonus_data`
         float dot_calc = 0.0f;
-        float dot_diff = 1000.0f;                           // for have big diff if no DB field value
+        float dot_diff = 1000.0f;
         if (sbe.dot_damage)
         {
             dot_calc = cast::RecipeOf(*spell).Coefficient(true);
             dot_diff = std::abs(sbe.dot_damage - dot_calc);
         }
 
-        // direct bonus
         if (direct_diff < 0.02f && !need_dot && !sbe.ap_bonus && !sbe.ap_dot_bonus)
         {
             sLog.outErrorDb("`spell_bonus_data` entry for spell %u `direct_bonus` not needed (data from table: %f, calculated %f, difference of %f) and `dot_bonus` also not used",
@@ -356,7 +338,6 @@ void SpellMgr::LoadSpellBonuses()
             sLog.outErrorDb("`spell_bonus_data` entry for spell %u `dot_bonus` not used (spell not have periodic affects)", entry);
         }
 
-        // direct bonus done
         if (direct_done_diff < 0.02f && !need_dot && !sbe.ap_bonus && !sbe.ap_dot_bonus)
         {
             sLog.outErrorDb("`spell_bonus_data` entry for spell %u `direct_bonus` not needed (data from table: %f, calculated %f, difference of %f) and `dot_bonus` also not used",
@@ -374,7 +355,6 @@ void SpellMgr::LoadSpellBonuses()
             sLog.outErrorDb("`spell_bonus_data` entry for spell %u `direct_bonus` not used (spell not have non-periodic affects)", entry);
         }
 
-        // direct bonus taken
         if (direct_taken_diff < 0.02f && !need_dot && !sbe.ap_bonus && !sbe.ap_dot_bonus)
         {
             sLog.outErrorDb("`spell_bonus_data` entry for spell %u `direct_bonus` not needed (data from table: %f, calculated %f, difference of %f) and `dot_bonus` also not used",
@@ -403,7 +383,6 @@ void SpellMgr::LoadSpellBonuses()
 
         mSpellBonusMap[entry] = sbe;
 
-        // also add to high ranks
         DoSpellBonuses worker(mSpellBonusMap, sbe);
         doForHighRanks(entry, worker);
 
@@ -416,56 +395,42 @@ void SpellMgr::LoadSpellBonuses()
     sLog.outString(">> Loaded %u extra spell bonus data",  count);
 }
 
-/**
- * @brief Checks whether a proc event definition can be triggered by a proc context.
- *
- * @param spellProcEvent The proc event definition to evaluate.
- * @param EventProcFlag The event flag being tested.
- * @param procSpell The spell that caused the proc, if any.
- * @param procFlags The proc flags of the current event.
- * @param procExtra Additional proc result flags.
- * @return true if the proc event can trigger; otherwise, false.
- */
 bool SpellMgr::IsSpellProcEventCanTriggeredBy(SpellProcEventEntry const* spellProcEvent, uint32 EventProcFlag, SpellEntry const* procSpell, uint32 procFlags, uint32 procExtra)
 {
-    // No extra req need
+
     uint32 procEvent_procEx = PROC_EX_NONE;
 
-    // check prockFlags for condition
     if ((procFlags & EventProcFlag) == 0)
     {
         return false;
     }
 
-    // Always trigger for this
     if (EventProcFlag & (PROC_FLAG_KILLED | PROC_FLAG_KILL | PROC_FLAG_ON_TRAP_ACTIVATION))
     {
         return true;
     }
 
-    if (spellProcEvent)     // Exist event data
+    if (spellProcEvent)
     {
-        // Store extra req
+
         procEvent_procEx = spellProcEvent->procEx;
 
-        // For melee triggers
         if (procSpell == nullptr)
         {
-            // Check (if set) for school (melee attack have Normal school)
+
             if (spellProcEvent->schoolMask && (spellProcEvent->schoolMask & SPELL_SCHOOL_MASK_NORMAL) == 0)
             {
                 return false;
             }
         }
-        else // For spells need check school/spell family/family mask
+        else
         {
-            // Check (if set) for school
+
             if (spellProcEvent->schoolMask && (spellProcEvent->schoolMask & GetSchoolMask(procSpell->School)) == 0)
             {
                 return false;
             }
 
-            // Check (if set) for spellFamilyName
             if (spellProcEvent->spellFamilyName && (spellProcEvent->spellFamilyName != procSpell->SpellClassSet))
             {
                 return false;
@@ -473,29 +438,27 @@ bool SpellMgr::IsSpellProcEventCanTriggeredBy(SpellProcEventEntry const* spellPr
         }
     }
 
-    // Check for extra req (if none) and hit/crit
     if (procEvent_procEx == PROC_EX_NONE)
     {
-        // Don't allow proc from periodic heal if no extra requirement is defined
+
         if (EventProcFlag & (PROC_FLAG_ON_DO_PERIODIC | PROC_FLAG_ON_TAKE_PERIODIC) && (procExtra & PROC_EX_PERIODIC_POSITIVE))
         {
             return false;
         }
 
-        // No extra req, so can trigger for (damage/healing present) and hit/crit
         if (procExtra & (PROC_EX_NORMAL_HIT | PROC_EX_CRITICAL_HIT))
         {
             return true;
         }
     }
-    else // all spells hits here only if resist/reflect/immune/evade
+    else
     {
-        // Exist req for PROC_EX_EX_TRIGGER_ALWAYS
+
         if (procEvent_procEx & PROC_EX_EX_TRIGGER_ALWAYS)
         {
             return true;
         }
-        // Check Extra Requirement like (hit/crit/miss/resist/parry/dodge/block/immune/reflect/absorb and other)
+
         if (procEvent_procEx & procExtra)
         {
             return true;
@@ -504,16 +467,12 @@ bool SpellMgr::IsSpellProcEventCanTriggeredBy(SpellProcEventEntry const* spellPr
     return false;
 }
 
-/**
- * @brief Loads elixir classification data from the database.
- */
 void SpellMgr::LoadSpellElixirs()
 {
-    mSpellElixirs.clear();                                  // need for reload case
+    mSpellElixirs.clear();
 
     uint32 count = 0;
 
-    //                                                0      1
     QueryResult* result = WorldDatabase.Query("SELECT `entry`, `mask` FROM `spell_elixir`");
     if (!result)
     {
@@ -563,14 +522,13 @@ struct DoSpellThreat
     void operator()(uint32 spell_id)
     {
         SpellThreatEntry const& ste = state->second;
-        // add ranks only for not filled data (spells adding flat threat are usually different for ranks)
+
         SpellThreatMap::const_iterator spellItr = threatMap.find(spell_id);
         if (spellItr == threatMap.end())
         {
             threatMap[spell_id] = ste;
         }
 
-        // just assert that entry is not redundant
         else
         {
             SpellThreatEntry const& r_ste = spellItr->second;
@@ -591,7 +549,7 @@ struct DoSpellThreat
         if (!ste.threat)
         {
             sLog.outErrorDb("Spell %u listed in `spell_threat` is not first rank (%u) in chain and has no threat", entry, first_id);
-            // prevent loading unexpected data
+
             return false;
         }
         return true;
@@ -600,8 +558,6 @@ struct DoSpellThreat
     {
         threatMap[spell->ID] = ste;
 
-        // flat threat bonus and attack power bonus currently only work properly when all
-        // effects have same targets, otherwise, we'd need to seperate it by effect index
         if (ste.threat || ste.ap_bonus != 0.f)
         {
             const uint32* targetA = spell->ImplicitTargetA;
@@ -621,14 +577,10 @@ struct DoSpellThreat
     uint32 count;
 };
 
-/**
- * @brief Loads custom spell threat definitions from the database.
- */
 void SpellMgr::LoadSpellThreats()
 {
-    mSpellThreatMap.clear();                                // need for reload case
+    mSpellThreatMap.clear();
 
-    //                                                0      1       2           3
     QueryResult* result = WorldDatabase.Query("SELECT `entry`, `Threat`, `multiplier`, `ap_bonus` FROM `spell_threat`");
     if (!result)
     {
@@ -668,14 +620,10 @@ void SpellMgr::LoadSpellThreats()
     sLog.outString();
 }
 
-/**
- * @brief Loads and validates scripted spell targets.
- */
 void SpellMgr::LoadSpellScriptTarget()
 {
     sSpellScriptTargetStorage.Load();
 
-    // Check content
     for (SQLMultiStorage::SQLSIterator<SpellTargetEntry> itr = sSpellScriptTargetStorage.getDataBegin<SpellTargetEntry>(); itr < sSpellScriptTargetStorage.getDataEnd<SpellTargetEntry>(); ++itr)
     {
         SpellEntry const* spellProto = sSpellStore.LookupEntry(itr->spellId);
@@ -724,7 +672,6 @@ void SpellMgr::LoadSpellScriptTarget()
             continue;
         }
 
-        // Checks by target type
         switch (itr->type)
         {
             case SPELL_TARGET_TYPE_GAMEOBJECT:
@@ -768,7 +715,6 @@ void SpellMgr::LoadSpellScriptTarget()
         }
     }
 
-    // Check all spells
     if (!sLog.HasLogFilter(LOG_FILTER_DB_STRICTED_CHECK))
     {
         for (uint32 i = 1; i < sSpellStore.GetNumRows(); ++i)
@@ -788,7 +734,7 @@ void SpellMgr::LoadSpellScriptTarget()
                     if (bounds.first == bounds.second)
                     {
                         sLog.outErrorDb("Spell (ID: %u) has effect EffectImplicitTargetA/EffectImplicitTargetB = %u (TARGET_SCRIPT), but does not have record in `spell_script_target`", spellInfo->ID, TARGET_SCRIPT);
-                        break;                              // effects of spell
+                        break;
                     }
                 }
             }

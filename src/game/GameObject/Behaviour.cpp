@@ -33,7 +33,7 @@ GameObjectInfo const& GameObjectBehaviour::Data() const
     return *m_it.GetGOInfo();
 }
 
-GameObjectBehaviour::Casting GameObjectBehaviour::UsedBy(Unit* /*user*/, bool /*scriptSaidYes*/)
+GameObjectBehaviour::Casting GameObjectBehaviour::UsedBy(Unit* , bool )
 {
     sLog.outError("GameObject::Use unhandled GameObject type %u (entry %u).",
                   It().GetGoType(), It().GetEntry());
@@ -41,7 +41,6 @@ GameObjectBehaviour::Casting GameObjectBehaviour::UsedBy(Unit* /*user*/, bool /*
     return Casting();
 }
 
-/// A kind with nothing of its own: it is there, and using it does nothing.
 namespace
 {
     class InertBehaviour : public GameObjectBehaviour
@@ -75,8 +74,6 @@ std::unique_ptr<GameObjectBehaviour> BehaviourOf(GameObject& it)
         case GAMEOBJECT_TYPE_FLAGDROP:         return std::make_unique<FlagDropBehaviour>(it);
         case GAMEOBJECT_TYPE_CAPTURE_POINT:    return std::make_unique<CapturePointBehaviour>(it);
 
-        // Everything the player never clicks: banners, meeting stones, the hull of a
-        // ship, an aura generator. They are in the world and that is all they do.
         case GAMEOBJECT_TYPE_BINDER:
         case GAMEOBJECT_TYPE_TEXT:
         case GAMEOBJECT_TYPE_TRANSPORT:
@@ -97,6 +94,5 @@ std::unique_ptr<GameObjectBehaviour> BehaviourOf(GameObject& it)
             break;
     }
 
-    // A type the data invented. The base says so the first time anyone clicks it.
     return std::unique_ptr<GameObjectBehaviour>(new GameObjectBehaviour(it));
 }

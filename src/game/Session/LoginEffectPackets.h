@@ -29,11 +29,6 @@
 
 class WorldPacket;
 
-/**
- * Exact Classic spell-836 wire builders. Login needs CAST_FAILED before the
- * initial object batch and START/GO after it, which a single generic CastSpell
- * call cannot express.
- */
 namespace LoginEffectPackets
 {
     constexpr uint32 SpellId = 836;

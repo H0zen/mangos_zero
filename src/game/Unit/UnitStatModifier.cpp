@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Unit.h"
 #include "Log.h"
 #include "Opcodes.h"
@@ -70,7 +68,6 @@ bool stats::Apply(Unit& who, UnitMods group, UnitModifierType which, float amoun
 
     who.Tallied().Put(group, which, amount, apply);
 
-    // Until the sheet is built there is nothing to tell.
     if (!who.Tallied().Ready())
     {
         return false;
@@ -114,12 +111,6 @@ bool stats::Apply(Unit& who, UnitMods group, UnitModifierType which, float amoun
     return true;
 }
 
-/**
- * @brief Computes the effective attack power for an attack type.
- *
- * @param attType The attack type to evaluate.
- * @return The resulting attack power value.
- */
 float Unit::GetTotalAttackPowerValue(WeaponAttackType attType) const
 {
     bool const ranged = attType == RANGED_ATTACK;
@@ -131,13 +122,6 @@ float Unit::GetTotalAttackPowerValue(WeaponAttackType attType) const
     return ap * (1.0f + GetAttackPowerMultiplier(ranged));
 }
 
-/**
- * @brief Gets the stored weapon damage range value for an attack type.
- *
- * @param attType The attack type.
- * @param type The minimum or maximum range selector.
- * @return The stored damage range value.
- */
 float Unit::GetWeaponDamageRange(WeaponAttackType attType , WeaponDamageRange type) const
 {
     if (attType == OFF_ATTACK && !haveOffhandWeapon())

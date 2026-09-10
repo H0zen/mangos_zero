@@ -25,28 +25,13 @@
 
 #pragma once
 
-// Hits that other hits caused, waiting their turn.
-//
-// A shield that splits damage onto a guardian, and a proc that answers a blow
-// with a bolt, are the same shape: a blow lands, and because it landed there is
-// another. Dealing that second one from inside the first -- which is what a
-// direct call does -- means it resolves against state the first has not finished
-// writing. The guardian can die, proc and pull threat before the blow that split
-// the damage onto him has been applied at all.
-//
-// So they queue. Apply finishes, the queue drains, and each child resolves
-// against a world that has settled.
-//
-// Depth is carried per entry rather than counted globally: a chain is a tree, and
-// what matters is how far THIS branch has come, not how many hits happened.
-
 #include "Combat/Blow.h"
 
 #include <deque>
 
 namespace combat
 {
-    /// One hit waiting to be dealt, and how far down a chain it already is.
+
     struct PendingHit
     {
         Blow blow;
@@ -57,18 +42,8 @@ namespace combat
     {
         public:
 
-            /// A proc that casts, whose cast damages, whose damage procs, is
-            /// ordinary at two or three. Past this it is two effects feeding
-            /// each other and the chain is cut.
             static constexpr uint8 MAX_DEPTH = 8;
 
-            /**
-             * @brief Queue a hit caused by one at `parentDepth`.
-             *
-             * Refuses, and says so, once the branch is too deep. The caller logs
-             * it: a dropped chain is worth knowing about, and silently swallowing
-             * one turns a runaway aura pair into a mystery.
-             */
             bool Push(const Blow& blow, uint8 parentDepth)
             {
                 if (parentDepth >= MAX_DEPTH)
@@ -84,7 +59,6 @@ namespace combat
                 return true;
             }
 
-            /// A hit begun by intent rather than by another hit.
             bool PushRoot(const Blow& blow)
             {
                 PendingHit pending;
@@ -108,8 +82,6 @@ namespace combat
             bool Empty() const { return m_pending.empty(); }
             size_t Size() const { return m_pending.size(); }
 
-            /// How many hits were refused for depth since the counter was last
-            /// read. Worth a metric: a number that climbs is a chain that loops.
             uint32 Dropped() const { return m_dropped; }
             void ClearDropped() { m_dropped = 0; }
 
@@ -121,8 +93,6 @@ namespace combat
 
         private:
 
-            // First in, first out: children are dealt in the order the blows that
-            // caused them landed, so a log reads in the order things happened.
             std::deque<PendingHit> m_pending;
             uint32 m_dropped = 0;
     };

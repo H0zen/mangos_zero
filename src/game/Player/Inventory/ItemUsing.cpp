@@ -79,16 +79,6 @@ InventoryResult Player::CanEquipNewItem(uint8 slot, uint16& dest, uint32 item, b
     return EQUIP_ERR_ITEM_NOT_FOUND;
 }
 
-/**
- * @brief Checks whether an item can be equipped and resolves its destination slot.
- *
- * @param slot The preferred equipment slot.
- * @param dest Output packed destination slot.
- * @param pItem The item to equip.
- * @param swap True to allow replacing an existing item.
- * @param direct_action True if this is an immediate player action.
- * @return The inventory result for the equip attempt.
- */
 InventoryResult Player::CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool swap, bool direct_action) const
 {
     dest = 0;
@@ -98,7 +88,7 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool
         ItemPrototype const* pProto = pItem->GetProto();
         if (pProto)
         {
-            // item used
+
             if (pItem->HasTemporaryLoot())
             {
                 return EQUIP_ERR_ALREADY_LOOTED;
@@ -109,25 +99,20 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool
                 return EQUIP_ERR_DONT_OWN_THAT_ITEM;
             }
 
-            // check count of items (skip for auto move for same player from bank)
             InventoryResult res = CanTakeMoreSimilarItems(pItem);
             if (res != EQUIP_ERR_OK)
             {
                 return res;
             }
 
-            // check this only in game
             if (direct_action)
             {
-                // May be here should be more stronger checks; STUNNED checked
-                // ROOT, CONFUSED, DISTRACTED, FLEEING this needs to be checked.
+
                 if (hasUnitState(UNIT_STAT_STUNNED))
                 {
                     return EQUIP_ERR_YOU_ARE_STUNNED;
                 }
 
-                // do not allow equipping gear except weapons, offhands, projectiles, relics in
-                // - combat
                 if (!pProto->CanChangeEquipStateInCombat())
                 {
                     if (IsInCombat())
@@ -136,7 +121,6 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool
                     }
                 }
 
-                // prevent equip item in process logout
                 if (GetSession()->isLogingOut())
                 {
                     return EQUIP_ERR_YOU_ARE_STUNNED;
@@ -144,7 +128,7 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool
 
                 if (IsInCombat() && pProto->Class == ITEM_CLASS_WEAPON && Arms().ChangeTimer() != 0)
                 {
-                    return EQUIP_ERR_CANT_DO_RIGHT_NOW; // maybe exist better err
+                    return EQUIP_ERR_CANT_DO_RIGHT_NOW;
                 }
 
                 if (IsNonMeleeSpellCasted(false))
@@ -152,7 +136,6 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool
                     return EQUIP_ERR_CANT_DO_RIGHT_NOW;
                 }
 
-                // prevent equip item in Spirit of Redemption (Aura: 27827)
                 if (HasAuraType(SPELL_AURA_SPIRIT_OF_REDEMPTION))
                 {
                     return EQUIP_ERR_CANT_DO_RIGHT_NOW;
@@ -175,13 +158,11 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool
                 return EQUIP_ERR_NO_EQUIPMENT_SLOT_AVAILABLE;
             }
 
-            // if swap ignore item (equipped also)
             if (InventoryResult res2 = CanEquipUniqueItem(pItem, swap ? eslot : uint8(NULL_SLOT)))
             {
                 return res2;
             }
 
-            // check unique-equipped special item classes
             if (pProto->Class == ITEM_CLASS_QUIVER)
             {
                 for (int i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; ++i)
@@ -226,7 +207,6 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool
                 }
             }
 
-            // equip two-hand weapon case (with possible unequip 2 items)
             if (type == INVTYPE_2HWEAPON)
             {
                 if (eslot != EQUIPMENT_SLOT_MAINHAND)
@@ -234,7 +214,6 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool
                     return EQUIP_ERR_ITEM_CANT_BE_EQUIPPED;
                 }
 
-                // offhand item must can be stored in inventory for offhand item and it also must be unequipped
                 Item* offItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
                 ItemPosCountVec off_dest;
                 if (offItem && (!direct_action ||
@@ -262,9 +241,6 @@ InventoryResult Player::CanUseItem(Item* pItem, bool direct_action) const
         {
             return EQUIP_ERR_YOU_ARE_DEAD;
         }
-
-        // if (isStunned())
-        //    return EQUIP_ERR_YOU_ARE_STUNNED;
 
         ItemPrototype const* pProto = pItem->GetProto();
         if (pProto)
@@ -301,9 +277,7 @@ InventoryResult Player::CanUseItem(Item* pItem, bool direct_action) const
 
 namespace
 {
-    /// Classic mount item ids whose level requirement comes from the
-    /// MinTrainMountLevel / MinTrainEpicMountLevel configuration entries rather
-    /// than from the prototype's own RequiredLevel. Frozen 1.12 tables.
+
     bool IsRegularMount(uint32 id)
     {
         switch (id)
@@ -340,20 +314,8 @@ namespace
     }
 }
 
-/**
- * @brief Checks whether an item prototype is usable by the player.
- *
- * The prototype form deliberately checks neither weapon proficiency nor
- * reputation; both live in the Item* overload, because only a concrete item
- * carries them.
- *
- * @param pProto The item prototype to validate.
- * @param direct_action True if the check is for an immediate player action.
- * @return The inventory result for the use check.
- */
 InventoryResult Player::CanUseItem(ItemPrototype const* pProto, bool direct_action) const
 {
-    // Used by group, function NeedBeforeGreed, to know if a prototype can be used by a player
 
     if (!pProto)
     {
@@ -384,8 +346,6 @@ InventoryResult Player::CanUseItem(ItemPrototype const* pProto, bool direct_acti
         return EQUIP_ERR_NO_REQUIRED_PROFICIENCY;
     }
 
-    // The honor requirement gates a deliberate player action only, not the
-    // loot-roll usability probe this overload also serves.
     if (direct_action && pProto->RequiredHonorRank != 0 &&
         uint32(GetHonorHighestRankInfo().rank) < pProto->RequiredHonorRank)
     {
@@ -410,12 +370,6 @@ InventoryResult Player::CanUseItem(ItemPrototype const* pProto, bool direct_acti
     return EQUIP_ERR_OK;
 }
 
-/**
- * @brief Checks whether a specific ammo item can be equipped as ammunition.
- *
- * @param item The ammo item entry.
- * @return The inventory result for the ammo check.
- */
 InventoryResult Player::CanUseAmmo(uint32 item) const
 {
     DEBUG_LOG("STORAGE: CanUseAmmo item = %u", item);
@@ -423,8 +377,7 @@ InventoryResult Player::CanUseAmmo(uint32 item) const
     {
         return EQUIP_ERR_YOU_ARE_DEAD;
     }
-    // if ( isStunned() )
-    //    return EQUIP_ERR_YOU_ARE_STUNNED;
+
     ItemPrototype const* pProto = ObjectMgr::GetItemPrototype(item);
     if (pProto)
     {
@@ -444,11 +397,6 @@ InventoryResult Player::CanUseAmmo(uint32 item) const
     return EQUIP_ERR_ITEM_NOT_FOUND;
 }
 
-/**
- * @brief Sets the player's active ammo item and refreshes ranged bonuses.
- *
- * @param item The ammo item entry to equip.
- */
 void Player::SetAmmo(uint32 item)
 {
     if (!item)
@@ -456,13 +404,11 @@ void Player::SetAmmo(uint32 item)
         return;
     }
 
-    // already set
     if (GetUInt32Value(PLAYER_AMMO_ID) == item)
     {
         return;
     }
 
-    // check ammo
     if (item)
     {
         InventoryResult msg = CanUseAmmo(item);
@@ -478,9 +424,6 @@ void Player::SetAmmo(uint32 item)
     _ApplyAmmoBonuses();
 }
 
-/**
- * @brief Clears the player's active ammo and removes ranged ammo bonuses.
- */
 void Player::RemoveAmmo()
 {
     SetUInt32Value(PLAYER_AMMO_ID, 0);

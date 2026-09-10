@@ -69,7 +69,7 @@ struct npc_galen_goodward : public CreatureScript
     {
         npc_galen_goodwardAI(Creature* pCreature) : npc_escortAI(pCreature) {}
 
-        ObjectGuid m_galensCageGuid;
+        ObjectGuid m_galensCageGuid = 0;
         uint32 m_uiPeriodicSay;
 
         void Reset() override

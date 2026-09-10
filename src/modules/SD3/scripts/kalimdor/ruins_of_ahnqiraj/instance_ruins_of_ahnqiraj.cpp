@@ -303,7 +303,7 @@ struct is_ruins_of_ahnqiraj : public InstanceScript
             {
                 if (type == TYPE_SIGNAL)
                 {
-                    Creature *general = instance->GetCreature(ObjectGuid(data));
+                    Creature *general = instance->GetCreature(static_cast<ObjectGuid>(data));
                     for (GuidList::const_iterator itr = m_lKaldoreiGuidList.begin(); itr != m_lKaldoreiGuidList.end(); ++itr)
                     {
                         if (Creature* pKaldorei = instance->GetCreature(*itr))

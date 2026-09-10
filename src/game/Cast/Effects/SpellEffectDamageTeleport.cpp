@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <random>
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"
@@ -64,11 +62,6 @@
 #include "CellImpl.h"
 #include "Geometry/Vector3.h"
 
-/**
- * @brief Sends a resurrection request to a dead player target.
- *
- * @param eff_idx The effect index providing resurrection values.
- */
 void Spell::EffectResurrectNew(const cast::Operation& operation)
 {
     if (!unitTarget || unitTarget->IsAlive())
@@ -76,7 +69,7 @@ void Spell::EffectResurrectNew(const cast::Operation& operation)
         return;
     }
 
-    if (!unitTarget->IsPlayer())
+    if (!IsPlayer(unitTarget))
     {
         return;
     }
@@ -88,7 +81,7 @@ void Spell::EffectResurrectNew(const cast::Operation& operation)
 
     Player* pTarget = ((Player*)unitTarget);
 
-    if (pTarget->isRessurectRequested())      // already have one active request
+    if (pTarget->isRessurectRequested())
     {
         return;
     }
@@ -99,29 +92,23 @@ void Spell::EffectResurrectNew(const cast::Operation& operation)
     SendResurrectRequest(pTarget);
 }
 
-/**
- * @brief Instantly kills the unit target and handles spell-specific side effects.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectInstaKill(const cast::Operation& /*operation*/)
+void Spell::EffectInstaKill(const cast::Operation& )
 {
     if (!unitTarget || !unitTarget->IsAlive())
     {
         return;
     }
 
-    // Demonic Sacrifice
-    if (m_spellInfo->ID == 18788 && unitTarget->IsCreature())
+    if (m_spellInfo->ID == 18788 &&IsCreature(unitTarget))
     {
         uint32 entry = unitTarget->GetEntry();
         uint32 spellID;
         switch (entry)
         {
-            case   416: spellID = 18789; break;             // imp
-            case   417: spellID = 18792; break;             // fellhunter
-            case  1860: spellID = 18790; break;             // void
-            case  1863: spellID = 18791; break;             // succubus
+            case   416: spellID = 18789; break;
+            case   417: spellID = 18792; break;
+            case  1860: spellID = 18790; break;
+            case  1863: spellID = 18791; break;
             default:
                 sLog.outError("EffectInstaKill: Unhandled creature entry (%u) case.", entry);
                 return;
@@ -130,10 +117,10 @@ void Spell::EffectInstaKill(const cast::Operation& /*operation*/)
         m_caster->CastSpell(m_caster, spellID, true);
     }
 
-    if (m_caster == unitTarget)                             // prevent interrupt message
+    if (m_caster == unitTarget)
     {
         finish();
-        WorldPacket data(SMSG_SPELLINSTAKILLLOG, (8 + 4));  // sent for selfkill only, other type is logged at SpellExecute
+        WorldPacket data(SMSG_SPELLINSTAKILLLOG, (8 + 4));
         data << m_caster->GetObjectGuid();
         data << uint32(m_spellInfo->ID);
         Deliver(Audience::Around(*m_caster).AndSubject(), &data);
@@ -142,11 +129,6 @@ void Spell::EffectInstaKill(const cast::Operation& /*operation*/)
     m_caster->DealDamage(unitTarget, unitTarget->GetHealth(), nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);
 }
 
-/**
- * @brief Applies environmental damage to the caster.
- *
- * @param eff_idx The effect index used to calculate the base damage.
- */
 void Spell::EffectEnvironmentalDMG(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
@@ -154,25 +136,17 @@ void Spell::EffectEnvironmentalDMG(const cast::Operation& operation)
     uint32 absorb = 0;
     uint32 resist = 0;
 
-    // Note: this hack with damage replace required until GO casting not implemented
-    // environment damage spells already have around enemies targeting but this not help in case nonexistent GO casting support
-    // currently each enemy selected explicitly and self cast damage, we prevent apply self casted spell bonuses/etc
     damage = m_spellInfo->CalculateSimpleValue(eff_idx);
 
     m_caster->CalculateDamageAbsorbAndResist(m_caster, GetSpellSchoolMask(m_spellInfo), SPELL_DIRECT_DAMAGE, damage, &absorb, &resist);
 
     m_caster->SendSpellNonMeleeDamageLog(m_caster, m_spellInfo->ID, damage, GetSpellSchoolMask(m_spellInfo), absorb, resist, false, 0, false);
-    if (m_caster->IsPlayer())
+    if (IsPlayer(m_caster))
     {
         ((Player*)m_caster)->Dangers().Harm(DAMAGE_FIRE, damage);
     }
 }
 
-/**
- * @brief Computes school-damage special cases and accumulates resulting damage.
- *
- * @param effect_idx The damage effect index.
- */
 void Spell::EffectSchoolDMG(const cast::Operation& operation)
 {
     const SpellEffectIndex effect_idx = SpellEffectIndex(operation.slot);
@@ -183,11 +157,11 @@ void Spell::EffectSchoolDMG(const cast::Operation& operation)
         {
             case SPELLFAMILY_GENERIC:
             {
-                switch (m_spellInfo->ID)                    // better way to check unknown
+                switch (m_spellInfo->ID)
                 {
-                    // Meteor like spells (divided damage to targets)
-                    case 24340: case 26558: case 28884:     // Meteor
-                    case 26789:                             // Shard of the Fallen Star
+
+                    case 24340: case 26558: case 28884:
+                    case 26789:
                     {
                         uint32 count = 0;
                         for (const auto& enrolled : m_roster.Units())
@@ -198,11 +172,11 @@ void Spell::EffectSchoolDMG(const cast::Operation& operation)
                             }
                         }
 
-                        damage /= count;                    // divide to all targets
+                        damage /= count;
                         break;
                     }
-                    // percent from health with min
-                    case 25599:                             // Thundercrash
+
+                    case 25599:
                     {
                         damage = unitTarget->GetHealth() / 2;
                         if (damage < 200)
@@ -211,10 +185,10 @@ void Spell::EffectSchoolDMG(const cast::Operation& operation)
                         }
                         break;
                     }
-                    // Judgement of Command
+
                     case 20467:    case 20963:    case 20964:    case 20965:    case 20966:
                     {
-                        if (!unitTarget->hasUnitState(UNIT_STAT_STUNNED) && m_caster->IsPlayer())
+                        if (!unitTarget->hasUnitState(UNIT_STAT_STUNNED) &&IsPlayer(m_caster))
                         {
                             damage /= 2;
                         }
@@ -228,12 +202,12 @@ void Spell::EffectSchoolDMG(const cast::Operation& operation)
                 break;
             case SPELLFAMILY_WARRIOR:
             {
-                // Bloodthirst
+
                 if (m_spellInfo->SpellIconID == 38 && m_spellInfo->SpellClassMask & UI64LIT(0x2000000))
                 {
                     damage = uint32(damage * (m_caster->GetTotalAttackPowerValue(BASE_ATTACK)) / 100);
                 }
-                // Shield Slam
+
                 else if (m_spellInfo->SpellClassMask & UI64LIT(0x100000000))
                 {
                     damage += int32(m_caster->Sheet().ShieldBlock());
@@ -242,15 +216,15 @@ void Spell::EffectSchoolDMG(const cast::Operation& operation)
             }
             case SPELLFAMILY_WARLOCK:
             {
-                // Conflagrate - consumes Immolate
+
                 if (m_spellInfo->SpellClassMask & UI64LIT(0x0000000000000200))
                 {
-                    // for caster applied auras only
+
                     const auto mPeriodic = unitTarget->GetAurasByType(SPELL_AURA_PERIODIC_DAMAGE);
                     for (auto* aura : mPeriodic)
                     {
                         if (aura->GetCasterGuid() == m_caster->GetObjectGuid() &&
-                            // Immolate
+
                             aura->GetSpellProto()->IsFitToFamily(SPELLFAMILY_WARLOCK, UI64LIT(0x0000000000000004)))
                         {
                             unitTarget->RemoveAurasCastBy(aura->GetId(), m_caster->GetObjectGuid());
@@ -262,10 +236,10 @@ void Spell::EffectSchoolDMG(const cast::Operation& operation)
             }
             case SPELLFAMILY_DRUID:
             {
-                // Ferocious Bite
+
                 if ((m_spellInfo->SpellClassMask & UI64LIT(0x000800000)) && m_spellInfo->SpellVisualID == 6587)
                 {
-                    // converts each extra point of energy into ($f1+$AP/630) additional damage
+
                     float multiple = m_caster->GetTotalAttackPowerValue(BASE_ATTACK) / 630 + operation.chainAmplitude;
                     damage += int32(m_caster->GetPower(POWER_ENERGY) * multiple);
                     m_caster->SetPower(POWER_ENERGY, 0);
@@ -274,8 +248,8 @@ void Spell::EffectSchoolDMG(const cast::Operation& operation)
             }
             case SPELLFAMILY_ROGUE:
             {
-                // Eviscerate
-                if ((m_spellInfo->SpellClassMask & UI64LIT(0x00020000)) && m_caster->IsPlayer())
+
+                if ((m_spellInfo->SpellClassMask & UI64LIT(0x00020000)) &&IsPlayer(m_caster))
                 {
                     if (uint32 combo = ((Player*)m_caster)->GetComboPoints())
                     {
@@ -297,14 +271,9 @@ void Spell::EffectSchoolDMG(const cast::Operation& operation)
     }
 }
 
-/**
- * @brief Triggers another spell on the current unit target.
- *
- * @param eff_idx The effect index providing the triggered spell id.
- */
 void Spell::EffectTriggerSpell(const cast::Operation& operation)
 {
-    // only unit case known
+
     if (!unitTarget)
     {
         if (gameObjTarget || itemTarget)
@@ -316,17 +285,16 @@ void Spell::EffectTriggerSpell(const cast::Operation& operation)
 
     uint32 triggered_spell_id = operation.triggerSpell;
 
-    // special cases
     switch (triggered_spell_id)
     {
-        // Temporal Parasite Summon #2, special case because chance is set to 101% in DBC while description is 67%
+
         case 16630:
             if (urand(0, 100) < 67)
             {
                 m_caster->CastSpell(unitTarget, triggered_spell_id, true);
             }
             return;
-        // Temporal Parasite Summon #3, special case because chance is set to 101% in DBC while description is 34%
+
         case 16631:
             if (urand(0, 100) < 34)
             {
@@ -334,25 +302,22 @@ void Spell::EffectTriggerSpell(const cast::Operation& operation)
             }
             return;
 
-        // Vanish (not exist)
         case 18461:
         {
             unitTarget->RemoveAurasOfType(SPELL_AURA_MOD_ROOT);
             unitTarget->RemoveAurasOfType(SPELL_AURA_MOD_DECREASE_SPEED);
             unitTarget->RemoveAurasOfType(SPELL_AURA_MOD_STALKED);
 
-            // if this spell is given to NPC it must handle rest by it's own AI
-            if (!unitTarget->IsPlayer())
+            if (!IsPlayer(unitTarget))
             {
                 return;
             }
 
-            // get highest rank of the Stealth spell
             uint32 spellId = 0;
             const PlayerSpellMap& sp_list = ((Player*)unitTarget)->GetSpellMap();
             for (PlayerSpellMap::const_iterator itr = sp_list.begin(); itr != sp_list.end(); ++itr)
             {
-                // only highest rank is shown in spell book, so simply check if shown in spell book
+
                 if (!itr->second.active || itr->second.disabled || itr->second.state == PLAYERSPELL_REMOVED)
                 {
                     continue;
@@ -371,13 +336,11 @@ void Spell::EffectTriggerSpell(const cast::Operation& operation)
                 }
             }
 
-            // no Stealth spell found
             if (!spellId)
             {
                 return;
             }
 
-            // reset cooldown on it if needed
             if (((Player*)unitTarget)->HasSpellCooldown(spellId))
             {
                 ((Player*)unitTarget)->RemoveSpellCooldown(spellId);
@@ -387,14 +350,13 @@ void Spell::EffectTriggerSpell(const cast::Operation& operation)
             return;
         }
 
-        // Terrordale Haunting Spirit #2, special case because chance is set to 101% in DBC while description is 55%
         case 23209:
             if (urand(0, 100) < 55)
             {
                 m_caster->CastSpell(unitTarget, triggered_spell_id, true);
             }
             return;
-        // Terrordale Haunting Spirit #3, special case because chance is set to 101% in DBC while description is 35%
+
         case 23253:
             if (urand(0, 100) < 35)
             {
@@ -402,21 +364,19 @@ void Spell::EffectTriggerSpell(const cast::Operation& operation)
             }
             return;
 
-        // just skip
-        case 23770:                                         // Sayge's Dark Fortune of *
-            // not exist, common cooldown can be implemented in scripts if need.
+        case 23770:
+
             return;
-        // Brittle Armor - (need add max stack of 24575 Brittle Armor)
+
         case 29284:
             m_caster->CastSpell(unitTarget, 24575, true, m_CastItem, nullptr, m_originalCasterGUID);
             return;
-        // Mercurial Shield - (need add max stack of 26464 Mercurial Shield)
+
         case 29286:
             m_caster->CastSpell(unitTarget, 26464, true, m_CastItem, nullptr, m_originalCasterGUID);
             return;
     }
 
-    // normal case
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(triggered_spell_id);
     if (!spellInfo)
     {
@@ -424,42 +384,35 @@ void Spell::EffectTriggerSpell(const cast::Operation& operation)
         return;
     }
 
-    // select formal caster for triggered spell
     Unit* caster = m_caster;
 
-    // some triggered spells require specific equipment
-    if (spellInfo->EquippedItemClass >= 0 && m_caster->IsPlayer())
+    if (spellInfo->EquippedItemClass >= 0 &&IsPlayer(m_caster))
     {
-        // main hand weapon required
+
         if (spellInfo->AttributesExC & SPELL_ATTR_EX3_MAIN_HAND)
         {
             Item* item = ((Player*)m_caster)->GetWeaponForAttack(BASE_ATTACK, true, false);
 
-            // skip spell if no weapon in slot or broken
             if (!item)
             {
                 return;
             }
 
-            // skip spell if weapon not fit to triggered spell
             if (!item->IsFitToSpellRequirements(spellInfo))
             {
                 return;
             }
         }
 
-        // offhand hand weapon required
         if (spellInfo->AttributesExC & SPELL_ATTR_EX3_REQ_OFFHAND)
         {
             Item* item = ((Player*)m_caster)->GetWeaponForAttack(OFF_ATTACK, true, false);
 
-            // skip spell if no weapon in slot or broken
             if (!item)
             {
                 return;
             }
 
-            // skip spell if weapon not fit to triggered spell
             if (!item->IsFitToSpellRequirements(spellInfo))
             {
                 return;
@@ -468,26 +421,19 @@ void Spell::EffectTriggerSpell(const cast::Operation& operation)
     }
     else
     {
-        // Note: not exist spells with weapon req. and IsSpellHaveCasterSourceTargets == true
-        // so this just for speedup places in else
+
         caster = IsSpellWithCasterSourceTargetsOnly(spellInfo) ? unitTarget : m_caster;
     }
 
     caster->CastSpell(unitTarget, spellInfo, true, m_CastItem, nullptr, m_originalCasterGUID, m_spellInfo);
 }
 
-/**
- * @brief Triggers a missile spell at the stored destination coordinates.
- *
- * @param effect_idx The effect index providing the triggered spell id.
- */
 void Spell::EffectTriggerMissileSpell(const cast::Operation& operation)
 {
     const SpellEffectIndex effect_idx = SpellEffectIndex(operation.slot);
 
     uint32 triggered_spell_id = operation.triggerSpell;
 
-    // normal case
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(triggered_spell_id);
 
     if (!spellInfo)
@@ -513,7 +459,7 @@ void Spell::EffectTriggerMissileSpell(const cast::Operation& operation)
     m_caster->CastSpell(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ, spellInfo, true, m_CastItem, nullptr, m_originalCasterGUID, m_spellInfo);
 }
 
-void Spell::EffectTeleportUnits(const cast::Operation& operation)   // TODO - Use target settings for this effect!
+void Spell::EffectTeleportUnits(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
 
@@ -522,7 +468,6 @@ void Spell::EffectTeleportUnits(const cast::Operation& operation)   // TODO - Us
         return;
     }
 
-    // Target dependend on TargetB, if there is none provided, decide dependend on A
     uint32 targetType = operation.targetB;
     if (!targetType)
     {
@@ -533,8 +478,8 @@ void Spell::EffectTeleportUnits(const cast::Operation& operation)   // TODO - Us
     {
         case TARGET_INNKEEPER_COORDINATES:
         {
-            // Only players can teleport to innkeeper
-            if (!unitTarget->IsPlayer())
+
+            if (!IsPlayer(unitTarget))
             {
                 return;
             }
@@ -542,7 +487,7 @@ void Spell::EffectTeleportUnits(const cast::Operation& operation)   // TODO - Us
             ((Player*)unitTarget)->TeleportToHomebind(unitTarget == m_caster ? TELE_TO_SPELL : 0);
             return;
         }
-        case TARGET_AREAEFFECT_INSTANT:                     // in all cases first TARGET_TABLE_X_Y_Z_COORDINATES
+        case TARGET_AREAEFFECT_INSTANT:
         case TARGET_TABLE_X_Y_Z_COORDINATES:
         {
             SpellTargetPosition const* st = sSpellMgr.GetSpellTargetPosition(m_spellInfo->ID);
@@ -556,7 +501,7 @@ void Spell::EffectTeleportUnits(const cast::Operation& operation)   // TODO - Us
             {
                 unitTarget->NearTeleportTo(st->target_X, st->target_Y, st->target_Z, st->target_Orientation, unitTarget == m_caster);
             }
-            else if (unitTarget->IsPlayer())
+            else if (IsPlayer(unitTarget))
             {
                 ((Player*)unitTarget)->TeleportTo(st->target_mapId, st->target_X, st->target_Y, st->target_Z, st->target_Orientation, unitTarget == m_caster ? TELE_TO_SPELL : 0);
             }
@@ -564,7 +509,6 @@ void Spell::EffectTeleportUnits(const cast::Operation& operation)   // TODO - Us
         }
         case TARGET_EFFECT_SELECT:
         {
-            // m_destN filled, but sometimes for wrong dest and does not have TARGET_FLAG_DEST_LOCATION
 
             float x = unitTarget->Where().X();
             float y = unitTarget->Where().Y();
@@ -576,37 +520,36 @@ void Spell::EffectTeleportUnits(const cast::Operation& operation)   // TODO - Us
         }
         default:
         {
-            // If not exist data for dest location - return
+
             if (!(m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION))
             {
                 sLog.outError("Spell::EffectTeleportUnits - unknown EffectImplicitTargetB[%u] = %u for spell ID %u", eff_idx, operation.targetB, m_spellInfo->ID);
                 return;
             }
-            // Init dest coordinates
+
             float x = m_targets.m_destX;
             float y = m_targets.m_destY;
             float z = m_targets.m_destZ;
             float orientation = unitTarget->Where().Facing();
-            // Teleport
+
             unitTarget->NearTeleportTo(x, y, z, orientation, unitTarget == m_caster);
             return;
         }
     }
 
-    // post effects for TARGET_TABLE_X_Y_Z_COORDINATES
     switch (m_spellInfo->ID)
     {
-        // Dimensional Ripper - Everlook
+
         case 23442:
         {
             int32 r = irand(0, 119);
-            if (r >= 70)                                    // 7/12 success
+            if (r >= 70)
             {
-                if (r < 100)                                // 4/12 evil twin
+                if (r < 100)
                 {
                     m_caster->CastSpell(m_caster, 23445, true);
                 }
-                else                                        // 1/12 fire
+                else
                 {
                     m_caster->CastSpell(m_caster, 23449, true);
                 }

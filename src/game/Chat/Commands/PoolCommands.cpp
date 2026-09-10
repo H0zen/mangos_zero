@@ -23,25 +23,10 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file PoolCommands.cpp
- * @brief Implementation of creature and object pool management chat commands.
- *
- * This file contains chat command handlers for pool operations including:
- * - Pool listing and information
- * - Pool entry management
- * - Pool respawn control
- */
-
 #include <string>
 #include "Chat.h"
 #include "ObjectMgr.h"
 
-/**
- * @brief Displays summary information for a pool template.
- *
- * @param pool_id The pool identifier to display.
- */
 void ChatHandler::ShowPoolListHelper(uint16 pool_id)
 {
     PoolTemplateData const& pool_template = sPoolMgr.GetPoolTemplate(pool_id);
@@ -59,13 +44,7 @@ void ChatHandler::ShowPoolListHelper(uint16 pool_id)
     }
 }
 
-/**
- * @brief Handler for HandlePoolListCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandlePoolListCommand(char* /*args*/)
+bool ChatHandler::HandlePoolListCommand(char* )
 {
     Player* player = m_session->GetPlayer();
 
@@ -80,7 +59,6 @@ bool ChatHandler::HandlePoolListCommand(char* /*args*/)
 
     uint32 counter = 0;
 
-    // spawn pools for expected map or for not initialized shared pools state for non-instanceable maps
     for (uint16 pool_id = 0; pool_id < sPoolMgr.GetMaxPoolId(); ++pool_id)
     {
         if (sPoolMgr.GetPoolTemplate(pool_id).CanBeSpawnedAtMap(mapState->GetMapEntry()))
@@ -98,19 +76,12 @@ bool ChatHandler::HandlePoolListCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandlePoolSpawnsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandlePoolSpawnsCommand(char* args)
 {
     Player* player = m_session->GetPlayer();
 
     MapPersistentState* mapState = player->GetMap()->GetPersistentState();
 
-    // shared continent pools data expected too big for show
     uint32 pool_id = 0;
     if (!ExtractUint32KeyFromLink(&args, "Hpool", pool_id) && !mapState->GetMapEntry()->Instanceable())
     {
@@ -155,15 +126,9 @@ bool ChatHandler::HandlePoolSpawnsCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandlePoolInfoCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandlePoolInfoCommand(char* args)
 {
-    // id or [name] Shift-click form |color|Hpool:id|h[name]|h|r
+
     uint32 pool_id;
     if (!ExtractUint32KeyFromLink(&args, "Hpool", pool_id))
     {

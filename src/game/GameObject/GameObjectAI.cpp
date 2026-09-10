@@ -20,18 +20,10 @@
 #include "GameObjectAI.h"
 #include "GameObject.h"
 
-/**
- * @brief Creates a scripted AI wrapper for a game object.
- *
- * @param go The game object controlled by this AI.
- */
 GameObjectAI::GameObjectAI(GameObject* go) : m_go(go)
 {
 }
 
-/**
- * @brief Destroys the game object AI instance.
- */
 GameObjectAI::~GameObjectAI()
 {
 }

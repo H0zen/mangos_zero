@@ -75,8 +75,8 @@ namespace
     Blow Swing(int32 base)
     {
         Blow a;
-        a.attacker = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(1));
-        a.victim = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
+        a.attacker = MakeGuid(HIGHGUID_PLAYER, static_cast<uint32>(1));
+        a.victim = MakeGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
         a.delivery = Delivery::MeleeMain;
         a.school = combat::School::Physical;
         a.amount = base;
@@ -86,8 +86,8 @@ namespace
     Blow Bolt(int32 base)
     {
         Blow a;
-        a.attacker = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(1));
-        a.victim = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
+        a.attacker = MakeGuid(HIGHGUID_PLAYER, static_cast<uint32>(1));
+        a.victim = MakeGuid(HIGHGUID_PLAYER, static_cast<uint32>(2));
         a.delivery = Delivery::Spell;
         a.spellId = 133;
         a.school = combat::School::Fire;
@@ -97,7 +97,7 @@ namespace
 
     ObjectGuid SomeGuid(uint32 counter)
     {
-        return ObjectGuid(HIGHGUID_PLAYER, counter);
+        return MakeGuid(HIGHGUID_PLAYER, counter);
     }
 }
 

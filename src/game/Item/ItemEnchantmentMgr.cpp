@@ -52,12 +52,9 @@ typedef std::unordered_map<uint32, EnchStoreList> EnchantmentStore;
 
 static EnchantmentStore RandomItemEnch;
 
-/**
- * @brief Loads random item enchantment templates from the database.
- */
 void LoadRandomEnchantmentsTable()
 {
-    RandomItemEnch.clear();                                 // for reload case
+    RandomItemEnch.clear();
 
     uint32 count = 0;
     QueryResult* result = WorldDatabase.Query("SELECT `entry`, `ench`, `chance` FROM `item_enchantment_template`");
@@ -95,12 +92,6 @@ void LoadRandomEnchantmentsTable()
     sLog.outString();
 }
 
-/**
- * @brief Selects a random enchantment id for a random property template.
- *
- * @param entry The random enchantment template entry id.
- * @return The selected enchantment id, or 0 if none was selected.
- */
 uint32 GetItemEnchantMod(uint32 entry)
 {
     if (!entry)
@@ -130,7 +121,6 @@ uint32 GetItemEnchantMod(uint32 entry)
         }
     }
 
-    // we could get here only if sum of all enchantment chances is lower than 100%
     dRoll = (irand(0, (int)floor(fCount * 100) + 1)) / 100;
     fCount = 0;
 

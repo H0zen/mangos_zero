@@ -385,59 +385,59 @@ struct is_naxxramas : public InstanceScript
                 {
                     case TYPE_ANUB_REKHAN:
                         m_auiEncounter[uiType] = uiData;
-                        DoUseDoorOrButton(GO_ARAC_ANUB_DOOR);
+                        DoUseDoorOrButtonByEntry(GO_ARAC_ANUB_DOOR);
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_ARAC_ANUB_GATE);
+                            DoUseDoorOrButtonByEntry(GO_ARAC_ANUB_GATE);
                         }
                         break;
                     case TYPE_FAERLINA:
-                        DoUseDoorOrButton(GO_ARAC_FAER_WEB);
+                        DoUseDoorOrButtonByEntry(GO_ARAC_FAER_WEB);
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_ARAC_FAER_DOOR);
-                            DoUseDoorOrButton(GO_ARAC_MAEX_OUTER_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_ARAC_FAER_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_ARAC_MAEX_OUTER_DOOR);
                         }
                         m_auiEncounter[uiType] = uiData;
                         break;
                     case TYPE_MAEXXNA:
                         m_auiEncounter[uiType] = uiData;
-                        DoUseDoorOrButton(GO_ARAC_MAEX_INNER_DOOR, uiData);
+                        DoUseDoorOrButtonByEntry(GO_ARAC_MAEX_INNER_DOOR, uiData);
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_ARAC_EYE_RAMP);
-                            DoUseDoorOrButton(GO_ARAC_EYE_BOSS);
-                            DoRespawnGameObject(GO_ARAC_PORTAL, 30 * MINUTE);
-                            DoToggleGameObjectFlags(GO_ARAC_PORTAL, GO_FLAG_NO_INTERACT, false);
+                            DoUseDoorOrButtonByEntry(GO_ARAC_EYE_RAMP);
+                            DoUseDoorOrButtonByEntry(GO_ARAC_EYE_BOSS);
+                            DoRespawnGameObjectByEntry(GO_ARAC_PORTAL, 30 * MINUTE);
+                            DoToggleGameObjectFlagsByEntry(GO_ARAC_PORTAL, GO_FLAG_NO_INTERACT, false);
                             m_uiTauntTimer = 5000;
                         }
                         break;
                     case TYPE_NOTH:
                         m_auiEncounter[uiType] = uiData;
-                        DoUseDoorOrButton(GO_PLAG_NOTH_ENTRY_DOOR);
+                        DoUseDoorOrButtonByEntry(GO_PLAG_NOTH_ENTRY_DOOR);
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_PLAG_NOTH_EXIT_DOOR);
-                            DoUseDoorOrButton(GO_PLAG_HEIG_ENTRY_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_PLAG_NOTH_EXIT_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_PLAG_HEIG_ENTRY_DOOR);
                         }
                         break;
                     case TYPE_HEIGAN:
                         m_auiEncounter[uiType] = uiData;
-                        DoUseDoorOrButton(GO_PLAG_HEIG_ENTRY_DOOR);
+                        DoUseDoorOrButtonByEntry(GO_PLAG_HEIG_ENTRY_DOOR);
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_PLAG_HEIG_EXIT_HALLWAY);
+                            DoUseDoorOrButtonByEntry(GO_PLAG_HEIG_EXIT_HALLWAY);
                         }
                         break;
                     case TYPE_LOATHEB:
                         m_auiEncounter[uiType] = uiData;
-                        DoUseDoorOrButton(GO_PLAG_LOAT_DOOR);
+                        DoUseDoorOrButtonByEntry(GO_PLAG_LOAT_DOOR);
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_PLAG_EYE_RAMP);
-                            DoUseDoorOrButton(GO_PLAG_EYE_BOSS);
-                            DoRespawnGameObject(GO_PLAG_PORTAL, 30 * MINUTE);
-                            DoToggleGameObjectFlags(GO_PLAG_PORTAL, GO_FLAG_NO_INTERACT, false);
+                            DoUseDoorOrButtonByEntry(GO_PLAG_EYE_RAMP);
+                            DoUseDoorOrButtonByEntry(GO_PLAG_EYE_BOSS);
+                            DoRespawnGameObjectByEntry(GO_PLAG_PORTAL, 30 * MINUTE);
+                            DoToggleGameObjectFlagsByEntry(GO_PLAG_PORTAL, GO_FLAG_NO_INTERACT, false);
                             m_uiTauntTimer = 5000;
                         }
                         break;
@@ -448,24 +448,24 @@ struct is_naxxramas : public InstanceScript
                         switch (uiData)
                         {
                             case IN_PROGRESS:
-                                DoUseDoorOrButton(GO_MILI_GOTH_ENTRY_GATE);
-                                DoUseDoorOrButton(GO_MILI_GOTH_COMBAT_GATE);
+                                DoUseDoorOrButtonByEntry(GO_MILI_GOTH_ENTRY_GATE);
+                                DoUseDoorOrButtonByEntry(GO_MILI_GOTH_COMBAT_GATE);
                                 break;
                             case SPECIAL:
-                                DoUseDoorOrButton(GO_MILI_GOTH_COMBAT_GATE);
+                                DoUseDoorOrButtonByEntry(GO_MILI_GOTH_COMBAT_GATE);
                                 break;
                             case FAIL:
                                 if (m_auiEncounter[uiType] == IN_PROGRESS)
                                 {
-                                    DoUseDoorOrButton(GO_MILI_GOTH_COMBAT_GATE);
+                                    DoUseDoorOrButtonByEntry(GO_MILI_GOTH_COMBAT_GATE);
                                 }
 
-                                DoUseDoorOrButton(GO_MILI_GOTH_ENTRY_GATE);
+                                DoUseDoorOrButtonByEntry(GO_MILI_GOTH_ENTRY_GATE);
                                 break;
                             case DONE:
-                                DoUseDoorOrButton(GO_MILI_GOTH_ENTRY_GATE);
-                                DoUseDoorOrButton(GO_MILI_GOTH_EXIT_GATE);
-                                DoUseDoorOrButton(GO_MILI_HORSEMEN_DOOR);
+                                DoUseDoorOrButtonByEntry(GO_MILI_GOTH_ENTRY_GATE);
+                                DoUseDoorOrButtonByEntry(GO_MILI_GOTH_EXIT_GATE);
+                                DoUseDoorOrButtonByEntry(GO_MILI_HORSEMEN_DOOR);
 
                                 m_dialogueHelper.StartNextDialogueText(NPC_THANE);
                                 break;
@@ -495,7 +495,7 @@ struct is_naxxramas : public InstanceScript
                             m_uiHorseMenKilled = 0;
                         }
                         m_auiEncounter[uiType] = uiData;
-                        DoUseDoorOrButton(GO_MILI_HORSEMEN_DOOR);
+                        DoUseDoorOrButtonByEntry(GO_MILI_HORSEMEN_DOOR);
                         if (uiData == DONE)
                         {
                             // Despawn spirits
@@ -516,11 +516,11 @@ struct is_naxxramas : public InstanceScript
                                 pSpirit->ForcedDespawn();
                             }
 
-                            DoUseDoorOrButton(GO_MILI_EYE_RAMP);
-                            DoUseDoorOrButton(GO_MILI_EYE_BOSS);
-                            DoRespawnGameObject(GO_MILI_PORTAL, 30 * MINUTE);
-                            DoToggleGameObjectFlags(GO_MILI_PORTAL, GO_FLAG_NO_INTERACT, false);
-                            DoRespawnGameObject(GO_CHEST_HORSEMEN_NORM, 30 * MINUTE);
+                            DoUseDoorOrButtonByEntry(GO_MILI_EYE_RAMP);
+                            DoUseDoorOrButtonByEntry(GO_MILI_EYE_BOSS);
+                            DoRespawnGameObjectByEntry(GO_MILI_PORTAL, 30 * MINUTE);
+                            DoToggleGameObjectFlagsByEntry(GO_MILI_PORTAL, GO_FLAG_NO_INTERACT, false);
+                            DoRespawnGameObjectByEntry(GO_CHEST_HORSEMEN_NORM, 30 * MINUTE);
                             m_uiTauntTimer = 5000;
                         }
                         break;
@@ -528,7 +528,7 @@ struct is_naxxramas : public InstanceScript
                         m_auiEncounter[uiType] = uiData;
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_CONS_PATH_EXIT_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_CONS_PATH_EXIT_DOOR);
                         }
                         break;
                     case TYPE_GROBBULUS:
@@ -538,8 +538,8 @@ struct is_naxxramas : public InstanceScript
                         m_auiEncounter[uiType] = uiData;
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_CONS_GLUT_EXIT_DOOR);
-                            DoUseDoorOrButton(GO_CONS_THAD_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_CONS_GLUT_EXIT_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_CONS_THAD_DOOR);
                         }
                         break;
                     case TYPE_THADDIUS:
@@ -552,14 +552,14 @@ struct is_naxxramas : public InstanceScript
                         m_auiEncounter[uiType] = uiData;
                         if (uiData != SPECIAL)
                         {
-                            DoUseDoorOrButton(GO_CONS_THAD_DOOR, uiData);
+                            DoUseDoorOrButtonByEntry(GO_CONS_THAD_DOOR, uiData);
                         }
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_CONS_EYE_RAMP);
-                            DoUseDoorOrButton(GO_CONS_EYE_BOSS);
-                            DoRespawnGameObject(GO_CONS_PORTAL, 30 * MINUTE);
-                            DoToggleGameObjectFlags(GO_CONS_PORTAL, GO_FLAG_NO_INTERACT, false);
+                            DoUseDoorOrButtonByEntry(GO_CONS_EYE_RAMP);
+                            DoUseDoorOrButtonByEntry(GO_CONS_EYE_BOSS);
+                            DoRespawnGameObjectByEntry(GO_CONS_PORTAL, 30 * MINUTE);
+                            DoToggleGameObjectFlagsByEntry(GO_CONS_PORTAL, GO_FLAG_NO_INTERACT, false);
                             m_uiTauntTimer = 5000;
                         }
                         break;
@@ -567,7 +567,7 @@ struct is_naxxramas : public InstanceScript
                         m_auiEncounter[uiType] = uiData;
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_KELTHUZAD_WATERFALL_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_KELTHUZAD_WATERFALL_DOOR);
                             m_dialogueHelper.StartNextDialogueText(NPC_KELTHUZAD);
                         }
                         // Start Sapph summoning process
@@ -578,7 +578,7 @@ struct is_naxxramas : public InstanceScript
                         break;
                     case TYPE_KELTHUZAD:
                         m_auiEncounter[uiType] = uiData;
-                        DoUseDoorOrButton(GO_KELTHUZAD_EXIT_DOOR);
+                        DoUseDoorOrButtonByEntry(GO_KELTHUZAD_EXIT_DOOR);
                         if (uiData == NOT_STARTED)
                         {
                             if (GameObject* pWindow = GetSingleGameObjectFromStorage(GO_KELTHUZAD_WINDOW_1))
@@ -606,7 +606,7 @@ struct is_naxxramas : public InstanceScript
                         }
                         return;
                     case TYPE_SIGNAL_2:
-                        if (Creature *pCreatureTarget = instance->GetCreature(ObjectGuid(m_tempCreatureGuid)))
+                        if (Creature *pCreatureTarget = instance->GetCreature(static_cast<ObjectGuid>(m_tempCreatureGuid)))
                         {
                             switch (uiData)
                             {
@@ -626,7 +626,7 @@ struct is_naxxramas : public InstanceScript
                                             uiTriggered = SPELL_C_TO_ANCHOR_2;
                                         }
 
-                                        ToCreature(pCreatureTarget)->CastSpell(pAnchor2, uiTriggered, true);
+                                        static_cast<Creature*>(pCreatureTarget)->CastSpell(pAnchor2, uiTriggered, true);
                                     }
                                     break;
                                 case SPELL_A_TO_ANCHOR_2:                           // trigger mobs at high left side
@@ -691,7 +691,7 @@ struct is_naxxramas : public InstanceScript
                         SetGothTriggers();
                         return;
                     case TYPE_SIGNAL_8:
-                        DoTriggerHeiganTraps(instance->GetCreature(ObjectGuid(m_tempCreatureGuid)), uint8(uiData));
+                        DoTriggerHeiganTraps(instance->GetCreature(static_cast<ObjectGuid>(m_tempCreatureGuid)), uint8(uiData));
                         return;
                     case TYPE_SIGNAL_9:
                     case TYPE_SIGNAL_10:
@@ -796,13 +796,13 @@ struct is_naxxramas : public InstanceScript
                             {
                                 return 0;
                             }
-                            return gtit->first.GetRawValue();
+                            return gtit->first;
                         }
                         break;
                     case TYPE_SIGNAL_6: //the same design flaw...
-                        if (Creature *anchor = (const_cast<instance_naxxramas*>(this))->GetClosestAnchorForGoth(instance->GetCreature(ObjectGuid(m_tempCreatureGuid)), true))
+                        if (Creature *anchor = (const_cast<instance_naxxramas*>(this))->GetClosestAnchorForGoth(instance->GetCreature(static_cast<ObjectGuid>(m_tempCreatureGuid)), true))
                         {
-                            return anchor->GetObjectGuid().GetRawValue();
+                            return anchor->GetObjectGuid();
                         }
                 }
                 return 0;

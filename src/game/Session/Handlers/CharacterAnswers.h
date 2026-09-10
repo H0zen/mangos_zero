@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks before and during the choice of a hero.
 namespace characters
 {
     void CharCreate(WorldSession& session, WorldPacket& packet);

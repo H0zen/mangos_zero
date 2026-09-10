@@ -174,7 +174,7 @@ struct boss_thaddius : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (!pVictim->IsPlayer())
+            if (!IsPlayer(pVictim))
             {
                 return;
             }
@@ -300,23 +300,23 @@ struct spell_thaddius_encounter : public SpellScript
                 if (uiEffIndex == EFFECT_INDEX_0)
                 {
                     // Only do something to Thaddius, and on the first hit.
-                    if (pCreatureTarget->GetEntry() != NPC_THADDIUS || !ToCreature(pCreatureTarget)->HasAura(SPELL_THADIUS_SPAWN))
+                    if (pCreatureTarget->GetEntry() != NPC_THADDIUS || !static_cast<Creature*>(pCreatureTarget)->HasAura(SPELL_THADIUS_SPAWN))
                     {
                         return true;
                     }
                     // remove Stun and then Cast
-                    ToCreature(pCreatureTarget)->RemoveAuras(SPELL_THADIUS_SPAWN);
-                    ToCreature(pCreatureTarget)->CastSpell(ToCreature(pCreatureTarget), SPELL_THADIUS_LIGHTNING_VISUAL, false);
+                    static_cast<Creature*>(pCreatureTarget)->RemoveAuras(SPELL_THADIUS_SPAWN);
+                    static_cast<Creature*>(pCreatureTarget)->CastSpell(static_cast<Creature*>(pCreatureTarget), SPELL_THADIUS_LIGHTNING_VISUAL, false);
                 }
                 return true;
             case SPELL_THADIUS_LIGHTNING_VISUAL:
                 if (uiEffIndex == EFFECT_INDEX_0 && pCreatureTarget->GetEntry() == NPC_THADDIUS)
                 {
-                    if (ScriptedInstance* pInstance = static_cast<ScriptedInstance*>(ToCreature(pCreatureTarget)->GetInstanceData()))
+                    if (ScriptedInstance* pInstance = static_cast<ScriptedInstance*>(static_cast<Creature*>(pCreatureTarget)->GetInstanceData()))
                     {
                         if (Player* pPlayer = pInstance->GetPlayerInMap(true, false))
                         {
-                            ToCreature(pCreatureTarget)->AI()->AttackStart(pPlayer);
+                            static_cast<Creature*>(pCreatureTarget)->AI()->AttackStart(pPlayer);
                         }
                     }
                 }
@@ -480,7 +480,7 @@ struct npc_tesla_coil : public CreatureScript
                     m_creature->RemoveAuras(m_bToFeugen ? SPELL_FEUGEN_TESLA_PASSIVE : SPELL_STALAGG_TESLA_PASSIVE);
                     DoCastSpellIfCan(m_creature, SPELL_SHOCK_OVERLOAD, CAST_INTERRUPT_PREVIOUS);
                     DoScriptText(EMOTE_TESLA_OVERLOAD, m_creature);
-                    m_pInstance->DoUseDoorOrButton(m_bToFeugen ? GO_CONS_NOX_TESLA_FEUGEN : GO_CONS_NOX_TESLA_STALAGG);
+                    m_pInstance->DoUseDoorOrButtonByEntry(m_bToFeugen ? GO_CONS_NOX_TESLA_FEUGEN : GO_CONS_NOX_TESLA_STALAGG);
                 }
                 else
                 {
@@ -767,7 +767,7 @@ struct boss_stalagg : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->IsPlayer())
+            if (IsPlayer(pVictim))
             {
                 DoScriptText(SAY_STAL_SLAY, m_creature);
             }
@@ -831,7 +831,7 @@ struct boss_feugen : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->IsPlayer())
+            if (IsPlayer(pVictim))
             {
                 DoScriptText(SAY_FEUG_SLAY, m_creature);
             }

@@ -34,46 +34,23 @@
 
 class Player;
 
-/**
- * @brief The server-wide index of logged-in players.
- *
- * This is the one part of the old ObjectAccessor that genuinely was a global
- * registry. Everything else it carried -- corpse ownership and lifecycle, and a
- * handful of stateless per-map lookups -- has moved to CorpseManager and
- * ObjectLookup respectively, because none of it shared any state with this.
- *
- * The index is held by composition rather than inheritance, which is what closes
- * the hazard in the old HashMapHolder/Player2Corpse pair: with no virtual
- * functions anywhere, the derived Insert/Remove only hid the base ones.
- */
 class PlayerRegistry : public MaNGOS::Singleton<PlayerRegistry>
 {
         friend class MaNGOS::Singleton<PlayerRegistry>;
 
     public:
 
-        /**
-         * @brief Find a logged-in player by GUID.
-         *
-         * @param guid    Player GUID.
-         * @param inWorld When true (the default) only players actually in the
-         *                world are returned; a player still loading is skipped.
-         */
         Player* Find(ObjectGuid guid, bool inWorld = true) const;
 
-        /// Find by exact name. Linear; callers are rare (commands, mail, trade).
         Player* FindByName(const char* name) const;
 
-        /// Disconnect a player by GUID, if online.
         void Kick(ObjectGuid guid) const;
 
-        /// Persist every online player. Used by the periodic save and shutdown.
         void SaveAll() const;
 
         void Add(Player* player);
         void Remove(Player* player);
 
-        /// Run work(Player*) over everyone online, under the shared lock.
         template <typename F>
         void ForEach(F&& work) const
         {

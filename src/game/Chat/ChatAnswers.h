@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client says to other people.
 namespace chat
 {
     void Messagechat(WorldSession& session, WorldPacket& packet);

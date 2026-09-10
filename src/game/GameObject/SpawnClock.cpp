@@ -59,8 +59,6 @@ bool SpawnClock::IsUp() const
         return true;
     }
 
-    // A permanent spawn is up while nothing is pending; a fleeting one is up until
-    // its moment is taken off the clock.
     return m_permanent ? m_moment == 0 : m_moment != 0;
 }
 

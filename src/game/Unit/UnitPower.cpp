@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Unit.h"
 #include "Log.h"
 #include "Opcodes.h"
@@ -60,18 +58,12 @@
 #include <math.h>
 #include <stdarg.h>
 
-/**
- * @brief Changes the unit's power type and updates dependent state.
- *
- * @param new_powertype The new power type.
- */
 void Unit::SetPowerType(Powers new_powertype)
 {
-    // set power type
+
     SetPowerKind(new_powertype);
 
-    // group updates
-    if (IsPlayer())
+    if (IsPlayer(this))
     {
         if (((Player*)this)->GetGroup())
         {
@@ -84,26 +76,23 @@ void Unit::SetPowerType(Powers new_powertype)
         if (pet->isControlled())
         {
             Unit* owner = GetOwner();
-            if (owner && (owner->IsPlayer()) && ((Player*)owner)->GetGroup())
+            if (owner && (IsPlayer(owner)) && ((Player*)owner)->GetGroup())
             {
                 ((Player*)owner)->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_PET_POWER_TYPE);
             }
         }
     }
 
-    // special cases for power type switching (druid and pets only)
-    if (IsPlayer() || (IsCreature() && ((Creature*)this)->IsPet()))
+    if (IsPlayer(this) || (IsCreature(this) && ((Creature*)this)->IsPet()))
     {
         uint32 maxValue = GetCreatePowers(new_powertype);
         uint32 curValue = maxValue;
 
-        // special cases with current power = 0
         if (new_powertype == POWER_RAGE)
         {
             curValue = 0;
         }
 
-        // set power (except for mana)
         if (new_powertype != POWER_MANA)
         {
             SetMaxPower(new_powertype, maxValue);
@@ -112,12 +101,6 @@ void Unit::SetPowerType(Powers new_powertype)
     }
 }
 
-/**
- * @brief Sets a power value while clamping to its maximum.
- *
- * @param power The power type to set.
- * @param val The requested power value.
- */
 void Unit::SetPower(Powers power, uint32 val)
 {
     if (GetPower(power) == val)
@@ -133,8 +116,7 @@ void Unit::SetPower(Powers power, uint32 val)
 
     SetStatInt32Value(UNIT_FIELD_POWER1 + power, val);
 
-    // group update
-    if (IsPlayer())
+    if (IsPlayer(this))
     {
         if (((Player*)this)->GetGroup())
         {
@@ -147,13 +129,12 @@ void Unit::SetPower(Powers power, uint32 val)
         if (pet->isControlled())
         {
             Unit* owner = GetOwner();
-            if (owner && (owner->IsPlayer()) && ((Player*)owner)->GetGroup())
+            if (owner && (IsPlayer(owner)) && ((Player*)owner)->GetGroup())
             {
                 ((Player*)owner)->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_PET_CUR_POWER);
             }
         }
 
-        // Update the pet's character sheet with happiness damage bonus
         if (pet->getPetType() == HUNTER_PET && power == POWER_HAPPINESS)
         {
             pet->Sheet().Swing(BASE_ATTACK);
@@ -161,19 +142,12 @@ void Unit::SetPower(Powers power, uint32 val)
     }
 }
 
-/**
- * @brief Sets a power maximum and clamps current power if necessary.
- *
- * @param power The power type to update.
- * @param val The new maximum value.
- */
 void Unit::SetMaxPower(Powers power, uint32 val)
 {
     uint32 cur_power = GetPower(power);
     SetStatInt32Value(UNIT_FIELD_MAXPOWER1 + power, val);
 
-    // group update
-    if (IsPlayer())
+    if (IsPlayer(this))
     {
         if (((Player*)this)->GetGroup())
         {
@@ -186,7 +160,7 @@ void Unit::SetMaxPower(Powers power, uint32 val)
         if (pet->isControlled())
         {
             Unit* owner = GetOwner();
-            if (owner && (owner->IsPlayer()) && ((Player*)owner)->GetGroup())
+            if (owner && (IsPlayer(owner)) && ((Player*)owner)->GetGroup())
             {
                 ((Player*)owner)->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_PET_MAX_POWER);
             }
@@ -199,19 +173,11 @@ void Unit::SetMaxPower(Powers power, uint32 val)
     }
 }
 
-/**
- * @brief Applies or removes a flat modifier to current power.
- *
- * @param power The power type to modify.
- * @param val The amount to apply or remove.
- * @param apply True to apply the modifier; false to remove it.
- */
 void Unit::ApplyPowerMod(Powers power, uint32 val, bool apply)
 {
     ApplyModUInt32Value(UNIT_FIELD_POWER1 + power, val, apply);
 
-    // group update
-    if (IsPlayer())
+    if (IsPlayer(this))
     {
         if (((Player*)this)->GetGroup())
         {
@@ -224,7 +190,7 @@ void Unit::ApplyPowerMod(Powers power, uint32 val, bool apply)
         if (pet->isControlled())
         {
             Unit* owner = GetOwner();
-            if (owner && (owner->IsPlayer()) && ((Player*)owner)->GetGroup())
+            if (owner && (IsPlayer(owner)) && ((Player*)owner)->GetGroup())
             {
                 ((Player*)owner)->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_PET_CUR_POWER);
             }
@@ -232,19 +198,11 @@ void Unit::ApplyPowerMod(Powers power, uint32 val, bool apply)
     }
 }
 
-/**
- * @brief Applies or removes a flat modifier to maximum power.
- *
- * @param power The power type to modify.
- * @param val The amount to apply or remove.
- * @param apply True to apply the modifier; false to remove it.
- */
 void Unit::ApplyMaxPowerMod(Powers power, uint32 val, bool apply)
 {
     ApplyModUInt32Value(UNIT_FIELD_MAXPOWER1 + power, val, apply);
 
-    // group update
-    if (IsPlayer())
+    if (IsPlayer(this))
     {
         if (((Player*)this)->GetGroup())
         {
@@ -257,7 +215,7 @@ void Unit::ApplyMaxPowerMod(Powers power, uint32 val, bool apply)
         if (pet->isControlled())
         {
             Unit* owner = GetOwner();
-            if (owner && (owner->IsPlayer()) && ((Player*)owner)->GetGroup())
+            if (owner && (IsPlayer(owner)) && ((Player*)owner)->GetGroup())
             {
                 ((Player*)owner)->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_PET_MAX_POWER);
             }
@@ -265,12 +223,6 @@ void Unit::ApplyMaxPowerMod(Powers power, uint32 val, bool apply)
     }
 }
 
-/**
- * @brief Registers or unregisters an aura in the proc-trigger-damage list.
- *
- * @param aura The aura to add or remove.
- * @param apply True to add the aura; false to remove it.
- */
 void Unit::ApplyAuraProcTriggerDamage(Aura* aura, bool apply)
 {
     if (apply)
@@ -283,23 +235,17 @@ void Unit::ApplyAuraProcTriggerDamage(Aura* aura, bool apply)
     }
 }
 
-/**
- * @brief Gets the default base value for a power type.
- *
- * @param power The power type to query.
- * @return The created base power value.
- */
 uint32 Unit::GetCreatePowers(Powers power) const
 {
     switch (power)
     {
-        case POWER_HEALTH:      return 0;                   // is it really should be here?
+        case POWER_HEALTH:      return 0;
         case POWER_MANA:        return GetCreateMana();
         case POWER_RAGE:        return POWER_RAGE_DEFAULT;
-        case POWER_FOCUS:       return (IsPlayer() || !((Creature const*)this)->IsPet() || ((Pet const*)this)->getPetType() != HUNTER_PET ? 0 : POWER_FOCUS_DEFAULT);
+        case POWER_FOCUS:       return (IsPlayer(this) || !((Creature const*)this)->IsPet() || ((Pet const*)this)->getPetType() != HUNTER_PET ? 0 : POWER_FOCUS_DEFAULT);
         case POWER_ENERGY:      return POWER_ENERGY_DEFAULT;
-        case POWER_HAPPINESS:   return (IsPlayer() || !((Creature const*)this)->IsPet() || ((Pet const*)this)->getPetType() != HUNTER_PET ? 0 : POWER_HAPPINESS_DEFAULT);
-        default: break; //MAX_POWERS and POWERS_ALL probably should not belong to the enum Powers to do not require the default: case
+        case POWER_HAPPINESS:   return (IsPlayer(this) || !((Creature const*)this)->IsPet() || ((Pet const*)this)->getPetType() != HUNTER_PET ? 0 : POWER_HAPPINESS_DEFAULT);
+        default: break;
     }
 
     return 0;

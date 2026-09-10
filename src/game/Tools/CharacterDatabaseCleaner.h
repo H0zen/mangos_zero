@@ -28,51 +28,23 @@
 namespace CharacterDatabaseCleaner
 {
 
-    /**
-     * @brief Cleaning flags enumeration
-     */
     enum CleaningFlags
     {
-        //                     0x1       Reserved for next version
-        CLEANING_FLAG_SKILLS = 0x2,      ///< Clean skills
-        CLEANING_FLAG_SPELLS = 0x4,      ///< Clean spells
-        //                     0x8       Reserved for next version
+
+        CLEANING_FLAG_SKILLS = 0x2,
+        CLEANING_FLAG_SPELLS = 0x4,
+
     };
 
-    /**
-     * @brief Clean the character database
-     */
     void CleanDatabase();
 
-    /**
-     * @brief Check unique values
-     * @param column Column name
-     * @param table Table name
-     * @param check Check function
-     */
     void CheckUnique(const char* column, const char* table, bool (*check)(uint32));
 
-    /**
-     * @brief Check skill validity
-     * @param skill Skill ID
-     * @return True if valid
-     */
     bool SkillCheck(uint32 skill);
 
-    /**
-     * @brief Check spell validity
-     * @param spell_id Spell ID
-     * @return True if valid
-     */
     bool SpellCheck(uint32 spell_id);
 
-    /**
-     * @brief Clean character skills
-     */
     void CleanCharacterSkills();
 
-    /**
-     * @brief Clean character spells
-     */
     void CleanCharacterSpell();
 }

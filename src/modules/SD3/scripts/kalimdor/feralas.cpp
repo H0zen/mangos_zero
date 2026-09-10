@@ -259,7 +259,7 @@ struct npc_shay_leafrunner : public CreatureScript
                 ContactPointNear(*pWho, m_creature, fX, fY, fZ, INTERACTION_DISTANCE);
                 m_creature->GetMotionMaster()->MovePoint(0, fX, fY, fZ);
             }
-            else if (m_bIsRecalled && pWho->IsPlayer() && InReach(*pWho, *pWho, INTERACTION_DISTANCE))
+            else if (m_bIsRecalled &&IsPlayer(pWho) && InReach(*pWho, *pWho, INTERACTION_DISTANCE))
             {
                 m_uiWanderTimer = 60000;
                 m_bIsRecalled = false;
@@ -276,7 +276,7 @@ struct npc_shay_leafrunner : public CreatureScript
         void ReceiveAIEvent(AIEventType eventType, Creature* /*pSender*/, Unit* pInvoker, uint32 uiMiscValue) override
         {
             // start following
-            if (eventType == AI_EVENT_START_EVENT && pInvoker->IsPlayer())
+            if (eventType == AI_EVENT_START_EVENT &&IsPlayer(pInvoker))
             {
                 StartFollow((Player*)pInvoker, 0, GetQuestTemplateStore(uiMiscValue));
                 m_uiWanderTimer = 30000;
@@ -351,12 +351,12 @@ struct spell_npc_shay_leafrunner : public SpellScript
     {
         if (uiSpellId == SPELL_SHAYS_BELL && uiEffIndex == EFFECT_INDEX_0)
         {
-            if (!pCaster->IsPlayer())
+            if (!IsPlayer(pCaster))
             {
                 return true;
             }
 
-            ToCreature(pCreatureTarget)->AI()->SendAIEvent(AI_EVENT_CUSTOM_A, pCaster, ToCreature(pCreatureTarget));
+            static_cast<Creature*>(pCreatureTarget)->AI()->SendAIEvent(AI_EVENT_CUSTOM_A, pCaster, static_cast<Creature*>(pCreatureTarget));
             return true;
         }
 

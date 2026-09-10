@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about chat channels.
 namespace channels
 {
     void JoinChannel(WorldSession& session, WorldPacket& packet);

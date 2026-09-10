@@ -62,7 +62,7 @@ class ChatCommand
     public:
         uint32             Id;
         const char* Name;
-        uint32             SecurityLevel;                   // function pointer required correct align (use uint32)
+        uint32             SecurityLevel;
         bool               AllowConsole;
         bool (ChatHandler::* Handler)(char* args);
         std::string        Help;
@@ -88,9 +88,9 @@ class ChatCommand
 
 enum ChatCommandSearchResult
 {
-    CHAT_COMMAND_OK,                                        // found accessible command by command string
-    CHAT_COMMAND_UNKNOWN,                                   // first level command not found
-    CHAT_COMMAND_UNKNOWN_SUBCOMMAND,                        // command found but some level subcommand not find in subcommand list
+    CHAT_COMMAND_OK,
+    CHAT_COMMAND_UNKNOWN,
+    CHAT_COMMAND_UNKNOWN_SUBCOMMAND,
 };
 
 enum PlayerChatTag
@@ -121,9 +121,6 @@ static const uint32 ReputationRankStrIndex[MAX_REPUTATION_RANK] =
 #define RESET_MAIL_COMMAND_ARG_OPTION_ALL  "all"
 #define RESET_MAIL_COMMAND_ARG_OPTION_FROM "from"
 
-// What strange voodoo is this, this line makes no sense to me - Antz
-// for (uint64_t bit = 1; bit <= x+1; bit *= 2) if (x & bit) switch (bit)
-
 #define BITMASK_AND_SWITCH(x) \
     for (uint64_t bit = 1; bit <= x+1; bit *= 2) if (x & bit) switch (bit)
 
@@ -143,7 +140,7 @@ enum  ResetItemCommandArgFlags
     | RESET_ITEMS_COMMAND_FLAG_OPTION_KEYRING
     | RESET_ITEMS_COMMAND_FLAG_OPTION_BUYBACK
     ),
-    RESET_ITEMS_COMMAND_FLAG_OPTION_ALL_BAGS = RESET_ITEMS_COMMAND_FLAG_OPTION_ALL << 1 | 1, // Will also delete bank bags and equiped bags
+    RESET_ITEMS_COMMAND_FLAG_OPTION_ALL_BAGS = RESET_ITEMS_COMMAND_FLAG_OPTION_ALL << 1 | 1,
 };
 
 enum ResetMailCommandArgFlags
@@ -164,7 +161,6 @@ class ChatHandler
 
         static char* LineFromMessage(char*& pos) { char* start = strtok(pos, "\n"); pos = nullptr; return start; }
 
-        // function with different implementation for chat/console
         virtual const char* GetMangosString(int32 entry) const;
         const char* GetOnOffStr(bool value) const;
 
@@ -184,36 +180,16 @@ class ChatHandler
             return sentErrorMessage;
         }
 
-        /**
-         * \brief Prepare SMSG_GM_MESSAGECHAT/SMSG_MESSAGECHAT
-         *
-         * Method:    BuildChatPacket build message chat packet generic way
-         * FullName:  ChatHandler::BuildChatPacket
-         * Access:    public static
-         * Returns:   void
-         *
-         * \param WorldPacket& data             : Provided packet will be filled with requested info
-         * \param ChatMsg msgtype               : Message type from ChatMsg enum from SharedDefines.h
-         * \param ChatTagFlags chatTag          : Chat tag from PlayerChatTag in Chat.h
-         * \param char const* message           : Message to send
-         * \param Language language             : Language from Language enum in SharedDefines.h
-         * \param ObjectGuid const& senderGuid  : May be null in some case but often required for ignore list
-         * \param char const* senderName        : Required for type *MONSTER* or *BATTLENET, but also if GM is true
-         * \param ObjectGuid const& targetGuid  : Often null, but needed for type *MONSTER* or *BATTLENET or *BATTLEGROUND* or *ACHIEVEMENT
-         * \param char const* targetName        : Often null, but needed for type *MONSTER* or *BATTLENET or *BATTLEGROUND*
-         * \param char const* channelName       : Required only for CHAT_MSG_CHANNEL
-         **/
         static void BuildChatPacket(
             WorldPacket& data, ChatMsg msgtype, char const* message, Language language = LANG_UNIVERSAL, ChatTagFlags chatTag = CHAT_TAG_NONE,
-            ObjectGuid const& senderGuid = ObjectGuid(), char const* senderName = nullptr,
-            ObjectGuid const& targetGuid = ObjectGuid(), char const* targetName = nullptr,
+            ObjectGuid const& senderGuid = 0, char const* senderName = nullptr,
+            ObjectGuid const& targetGuid = 0, char const* targetName = nullptr,
             char const* channelName = nullptr, uint8 playerRank = 0);
     protected:
-        explicit ChatHandler() : m_session(nullptr), sentErrorMessage(false) {}      // for CLI subclass
+        explicit ChatHandler() : m_session(nullptr), sentErrorMessage(false) {}
 
         bool hasStringAbbr(const char* name, const char* part);
 
-        // function with different implementation for chat/console
         virtual uint32 GetAccountId() const;
         virtual AccountTypes GetAccessLevel() const;
         virtual bool isAvailable(ChatCommand const& cmd) const;
@@ -222,7 +198,7 @@ class ChatHandler
         virtual LocaleConstant GetSessionDbcLocale() const;
         virtual int GetSessionDbLocaleIndex() const;
 
-        bool HasLowerSecurity(Player* target, ObjectGuid guid = ObjectGuid(), bool strong = false);
+        bool HasLowerSecurity(Player* target, ObjectGuid guid = 0, bool strong = false);
         bool HasLowerSecurityAccount(WorldSession* target, uint32 account, bool strong = false);
 
         void SendGlobalSysMessage(const char* str, AccountTypes minSec = SEC_PLAYER);
@@ -420,11 +396,8 @@ class ChatHandler
         bool HandleModifyRepCommand(char* args);
         bool HandleModifyGenderCommand(char* args);
 
-        //-----------------------Npc Commands-----------------------
         bool HandleNpcAddCommand(char* args);
 
-        // The transport half of .gps: deck offsets and what the baked mesh says is under
-        // them. No-op when the object is not aboard anything.
         void ReportTransportPosition(Occupant* obj);
         bool HandleNpcAddVendorItemCommand(char* args);
         bool HandleNpcAIInfoCommand(char* args);
@@ -451,9 +424,6 @@ class ChatHandler
         bool HandleNpcUnFollowCommand(char* args);
         bool HandleNpcWhisperCommand(char* args);
         bool HandleNpcYellCommand(char* args);
-
-        // TODO: NpcCommands that needs to be fixed :
-        //----------------------------------------------------------
 
         bool HandlePDumpLoadCommand(char* args);
         bool HandlePDumpWriteCommand(char* args);
@@ -698,19 +668,15 @@ class ChatHandler
         bool HandleFreezePlayerCommand(char* args);
         bool HandleUnfreezePlayerCommand(char* args);
 
-
-        //! LivingWorld grid occupancy diagnostic (read-only, GM-only, in-game only)
         bool HandleGridInfoCommand(char* args);
         bool HandleGridAnchorsCommand(char* args);
 
-        //! Development Commands
         bool HandleSaveAllCommand(char* args);
 
         Player*   getSelectedPlayer();
         Creature* getSelectedCreature();
         Unit*     getSelectedUnit();
 
-        // extraction different type params from args string, all functions update (char** args) to first unparsed tail symbol at return
         void  SkipWhiteSpaces(char** args);
         bool  ExtractInt32(char** args, int32& val);
         bool  ExtractOptInt32(char** args, int32& val, int32 defVal);
@@ -720,15 +686,15 @@ class ChatHandler
         bool  ExtractFloat(char** args, float& val);
         bool  ExtractOptFloat(char** args, float& val, float defVal);
         char* ExtractQuotedArg(char** args, bool asis = false);
-        // string with " or [] or ' around
+
         char* ExtractLiteralArg(char** args, char const* lit = nullptr);
-        // literal string (until whitespace and not started from "['|), any or 'lit' if provided
+
         char* ExtractQuotedOrLiteralArg(char** args, bool asis = false);
         bool  ExtractOnOff(char** args, bool& value);
         char* ExtractLinkArg(char** args, char const* const* linkTypes = nullptr, int* foundIdx = nullptr, char** keyPair = nullptr, char** somethingPair = nullptr);
-        // shift-link like arg (with aditional info if need)
-        char* ExtractArg(char** args, bool asis = false);   // any name/number/quote/shift-link strings
-        char* ExtractOptNotLastArg(char** args);            // extract name/number/quote/shift-link arg only if more data in args for parse
+
+        char* ExtractArg(char** args, bool asis = false);
+        char* ExtractOptNotLastArg(char** args);
 
         char* ExtractKeyFromLink(char** text, char const* linkType, char** something1 = nullptr);
         char* ExtractKeyFromLink(char** text, char const* const* linkTypes, int* found_idx = nullptr, char** something1 = nullptr);
@@ -742,14 +708,12 @@ class ChatHandler
         bool   ExtractRaceMask(char** text, uint32& raceMask, char const** maskName = nullptr);
         std::string ExtractPlayerNameFromLink(char** text);
         bool ExtractPlayerTarget(char** args, Player** player, ObjectGuid* player_guid = nullptr, std::string* player_name = nullptr);
-        // select by arg (name/link) or in-game selection online/offline player
 
         std::string playerLink(std::string const& name) const { return m_session ? "|cffffffff|Hplayer:" + name + "|h[" + name + "]|h|r" : name; }
         std::string GetNameLink(Player* chr) const;
 
         GameObject* GetGameObjectWithGuid(uint32 lowguid, uint32 entry);
 
-        // Utility methods for commands
         bool ShowAccountListHelper(QueryResult* result, uint32* limit = nullptr, bool title = true, bool error = true);
         void ShowFactionListHelper(FactionEntry const* factionEntry, LocaleConstant loc, FactionState const* repState = nullptr, Player* target = nullptr);
         void ShowItemListHelper(uint32 itemId, int loc_idx, Player* target = nullptr);
@@ -781,16 +745,13 @@ class ChatHandler
         template <typename T>
             std::string PrepareStringNpcOrGoSpawnInformation(uint32 guid);
 
-        /**
-         * Stores informations about a deleted character
-         */
         struct DeletedInfo
         {
-            uint32      lowguid;                            ///< the low GUID from the character
-            std::string name;                               ///< the character name
-            uint32      accountId;                          ///< the account id
-            std::string accountName;                        ///< the account name
-            time_t      deleteDate;                         ///< the date at which the character has been deleted
+            uint32      lowguid;
+            std::string name;
+            uint32      accountId;
+            std::string accountName;
+            time_t      deleteDate;
         };
 
         typedef std::list<DeletedInfo> DeletedInfoList;
@@ -803,13 +764,11 @@ class ChatHandler
 
         void SetSentErrorMessage(bool val) { sentErrorMessage = val;};
     private:
-        WorldSession* m_session;                            // != nullptr for chat command call and nullptr for CLI command
+        WorldSession* m_session;
 
-        // common global flag
         static bool load_command_table;
         bool sentErrorMessage;
 
-        // Console player selection storage (accountId -> player GUID)
         static std::map<uint32, ObjectGuid> m_consoleSelectedPlayers;
 };
 
@@ -820,7 +779,6 @@ class CliHandler : public ChatHandler
         explicit CliHandler(uint32 accountId, AccountTypes accessLevel, void* callbackArg, Print* zprint)
             : m_accountId(accountId), m_loginAccessLevel(accessLevel), m_callbackArg(callbackArg), m_print(zprint) {}
 
-        // overwrite functions
         const char* GetMangosString(int32 entry) const override;
         uint32 GetAccountId() const override;
         AccountTypes GetAccessLevel() const override;
@@ -838,7 +796,4 @@ class CliHandler : public ChatHandler
         Print* m_print;
 };
 
-/**
- * Applies an aura spell directly to the target using the provided caster context.
- */
 bool AddAuraToPlayer(const SpellEntry* spellInfo, Unit* target, Occupant* caster);

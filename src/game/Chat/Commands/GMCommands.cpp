@@ -23,16 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file GMCommands.cpp
- * @brief Implementation of general GM (Game Master) utility chat commands.
- *
- * This file contains chat command handlers for basic GM operations including:
- * - Help and command information display
- * - GM level and security queries
- * - General purpose administrative utilities
- */
-
 #include "Common/Locales.h"
 #include <string>
 #include <list>
@@ -43,16 +33,10 @@
 #include "SpellMgr.h"
 #include "PlayerRegistry.h"
 
-/**
- * @brief Handler for HandlePInfoCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandlePInfoCommand(char* args)
 {
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     std::string target_name;
     if (!ExtractPlayerTarget(&args, &target, &target_guid, &target_name))
     {
@@ -67,10 +51,9 @@ bool ChatHandler::HandlePInfoCommand(char* args)
     uint8 race = 0;
     uint8 class_ = 0;
 
-    // get additional information from Player object
     if (target)
     {
-        // check online security
+
         if (HasLowerSecurity(target))
         {
             return false;
@@ -86,15 +69,14 @@ bool ChatHandler::HandlePInfoCommand(char* args)
     }
     else
     {
-        // check offline security
+
         if (HasLowerSecurity(nullptr, target_guid))
         {
             return false;
         }
 
-        //                                                     0          1      2      3       4       5
         QueryResult* result = CharacterDatabase.PQuery("SELECT `totaltime`, `level`, `money`, `account`, `race`, `class`"
-            " FROM `characters` WHERE `guid` = '%u'", target_guid.GetCounter());
+            " FROM `characters` WHERE `guid` = '%u'", GuidCounter(target_guid));
         if (!result)
         {
             return false;
@@ -148,7 +130,7 @@ bool ChatHandler::HandlePInfoCommand(char* args)
 
     std::string nameLink = playerLink(target_name);
 
-    PSendSysMessage(LANG_PINFO_ACCOUNT, (target ? "" : GetMangosString(LANG_OFFLINE)), nameLink.c_str(), target_guid.GetCounter(), username.c_str(), accId, security, email.c_str(), last_ip.c_str(), last_login.c_str(), latency);
+    PSendSysMessage(LANG_PINFO_ACCOUNT, (target ? "" : GetMangosString(LANG_OFFLINE)), nameLink.c_str(), GuidCounter(target_guid), username.c_str(), accId, security, email.c_str(), last_ip.c_str(), last_login.c_str(), latency);
 
     std::string timeStr = secsToTimeString(total_player_time, TimeFormat::ShortText, true);
     uint32 gold = money / GOLD;
@@ -160,7 +142,7 @@ bool ChatHandler::HandlePInfoCommand(char* args)
     ChrClassesEntry const* classEntry = sChrClassesStore.LookupEntry(class_);
     char const* race_name = raceEntry ? raceEntry->Name_lang[GetSessionDbcLocale()] : "<unknown>";
     char const* class_name = classEntry ? classEntry->Name_lang[GetSessionDbcLocale()] : "<unknown>";
-    //PSendSysMessage(LANG_PINFO_RACE_CLASS, race_name, class_name);
+
     PSendSysMessage("Race: %s, Class: %s", race_name, class_name);
 
     if (target)
@@ -185,7 +167,6 @@ bool ChatHandler::HandlePInfoCommand(char* args)
             posX, posY, posZ, orientation);
     }
 
-    // Skills
     {
         int loc = GetSessionDbcLocale();
         bool printedHeader = false;
@@ -238,7 +219,7 @@ bool ChatHandler::HandlePInfoCommand(char* args)
         {
             QueryResult* skillResult = CharacterDatabase.PQuery(
                     "SELECT `skill`, `value`, `max` FROM `character_skills` WHERE `guid` = '%u' ORDER BY `skill`",
-                target_guid.GetCounter());
+                GuidCounter(target_guid));
             if (skillResult)
             {
                 do
@@ -289,12 +270,6 @@ bool ChatHandler::HandlePInfoCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleWaterwalkCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleWaterwalkCommand(char* args)
 {
     bool value;
@@ -314,7 +289,6 @@ bool ChatHandler::HandleWaterwalkCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(player))
     {
         return false;
@@ -322,11 +296,11 @@ bool ChatHandler::HandleWaterwalkCommand(char* args)
 
     if (value)
     {
-        player->SetWaterWalk(true); // ON
+        player->SetWaterWalk(true);
     }
     else
     {
-        player->SetWaterWalk(false); // OFF
+        player->SetWaterWalk(false);
     }
 
     PSendSysMessage(LANG_YOU_SET_WATERWALK, args, GetNameLink(player).c_str());
@@ -337,12 +311,6 @@ bool ChatHandler::HandleWaterwalkCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGMCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGMCommand(char* args)
 {
     if (!*args)
@@ -379,12 +347,6 @@ bool ChatHandler::HandleGMCommand(char* args)
     return false;
 }
 
-/**
- * @brief Handler for HandleGMVisibleCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGMVisibleCommand(char* args)
 {
     if (!*args)
@@ -430,12 +392,6 @@ bool ChatHandler::HandleGMVisibleCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGMFlyCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGMFlyCommand(char* args)
 {
     bool value;
@@ -452,21 +408,12 @@ bool ChatHandler::HandleGMFlyCommand(char* args)
         target = m_session->GetPlayer();
     }
 
-    // [-ZERO] Need reimplement in another way
-    // GM fly wil be achieved with the swimming moveflag
-    // Warning : Still buggy when Jump
     target->SetCanFly(value);
     PSendSysMessage(LANG_COMMAND_FLYMODE_STATUS, GetNameLink(target).c_str(), args);
     return true;
 }
 
-/**
- * @brief Handler for HandleGMListIngameCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleGMListIngameCommand(char* /*args*/)
+bool ChatHandler::HandleGMListIngameCommand(char* )
 {
     std::list< std::pair<std::string, bool> > names;
     sPlayerRegistry.ForEach([&names, this](Player *player)
@@ -498,15 +445,9 @@ bool ChatHandler::HandleGMListIngameCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleGMListFullCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleGMListFullCommand(char* /*args*/)
+bool ChatHandler::HandleGMListFullCommand(char* )
 {
-    ///- Get the accounts with GM Level >0
+
     QueryResult* result = LoginDatabase.Query("SELECT `username`,`gmlevel` FROM `account` WHERE `gmlevel` > 0");
     if (result)
     {
@@ -515,7 +456,6 @@ bool ChatHandler::HandleGMListFullCommand(char* /*args*/)
         SendSysMessage(LANG_GMLIST_HEADER);
         SendSysMessage("========================");
 
-        ///- Circle through them. Display username and GM level
         do
         {
             Field* fields = result->Fetch();
@@ -533,12 +473,6 @@ bool ChatHandler::HandleGMListFullCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyStandStateCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyStandStateCommand(char* args)
 {
     uint32 anim_id;
@@ -557,15 +491,9 @@ bool ChatHandler::HandleModifyStandStateCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleChangeWeatherCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleChangeWeatherCommand(char* args)
 {
-    // Weather is OFF
+
     if (!sWorld.getConfig(CONFIG_BOOL_WEATHER))
     {
         SendSysMessage(LANG_WEATHER_DISABLED);
@@ -579,7 +507,6 @@ bool ChatHandler::HandleChangeWeatherCommand(char* args)
         return false;
     }
 
-    // see enum WeatherType
     if (!Weather::IsValidWeatherType(type))
     {
         return false;
@@ -591,7 +518,6 @@ bool ChatHandler::HandleChangeWeatherCommand(char* args)
         return false;
     }
 
-    // clamp grade from 0 to 1
     if (grade < 0.0f)
     {
         grade = 0.0f;
@@ -613,30 +539,21 @@ bool ChatHandler::HandleChangeWeatherCommand(char* args)
     return true;
 }
 
-// Internal shortcut function to freeze a player
 bool freezePlayer(Player* player, Occupant* caster)
 {
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(SPELL_GM_FREEZE);
     return AddAuraToPlayer(spellInfo, player, caster);
 }
 
-// Internal shortcut function to freeze a player
 void unFreezePlayer(Player* player)
 {
     player->RemoveAuras(SPELL_GM_FREEZE);
 }
 
-/**
- * @brief Handler for HandleFreezePlayerCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleFreezePlayerCommand(char* args)
 {
     Player* targetPlayer = nullptr;
 
-    // 1. Try to extract player name from args if not empty
     if (*args)
     {
         char* playerName = ExtractLiteralArg(&args);
@@ -649,7 +566,6 @@ bool ChatHandler::HandleFreezePlayerCommand(char* args)
         }
     }
 
-    // 2. If arg is empty, gets the current selected target (returns current player if no unit selected)
     if (!targetPlayer)
     {
         Unit* selectedTtarget = getSelectedPlayer();
@@ -666,7 +582,6 @@ bool ChatHandler::HandleFreezePlayerCommand(char* args)
     const char* targetName = targetPlayer->GetName();
     Player * currentGM = m_session->GetPlayer();
 
-    // Prevent freezing yourself !
     if (targetPlayer == currentGM)
     {
         SendSysMessage(LANG_NO_CHAR_SELECTED);
@@ -675,7 +590,6 @@ bool ChatHandler::HandleFreezePlayerCommand(char* args)
         return false;
     }
 
-    // Check if target can be freezed
     if (targetPlayer->GetSession()->GetSecurity() > m_session->GetSecurity())
     {
         PSendSysMessage(LANG_COMMAND_FREEZE_PLAYER_CANNOT_FREEZE_HIGHER_SECLEVEL, targetName);
@@ -685,27 +599,18 @@ bool ChatHandler::HandleFreezePlayerCommand(char* args)
 
     freezePlayer(targetPlayer, currentGM);
 
-    // Notif GM
     PSendSysMessage(LANG_COMMAND_FREEZE_PLAYER, targetName);
 
-    // Send message to player to prevent he has been frozen
     ChatHandler(targetPlayer).SendSysMessage(LANG_COMMAND_FREEZE_PLAYER_YOU_HAVE_BEEN_FROZEN);
 
     return true;
 }
 
-/**
- * @brief Handler for HandleUnfreezePlayerCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleUnfreezePlayerCommand(char* args)
 {
 
     Player* targetPlayer = nullptr;
 
-    // 1. Try to extract player name from args if not empty
     if (*args)
     {
         char* playerName = ExtractLiteralArg(&args);
@@ -718,7 +623,6 @@ bool ChatHandler::HandleUnfreezePlayerCommand(char* args)
         }
     }
 
-    // 2. If arg is empty, gets the current selected target (returns current player if no unit selected)
     if (!targetPlayer)
     {
         Unit* selectedTtarget = getSelectedPlayer();
@@ -734,12 +638,9 @@ bool ChatHandler::HandleUnfreezePlayerCommand(char* args)
 
     unFreezePlayer(targetPlayer);
 
-    // Notif GM
     PSendSysMessage(LANG_COMMAND_UNFREEZE_PLAYER, targetPlayer->GetName());
 
-    // Send message to player to prevent he has been unfrozen
     ChatHandler(targetPlayer).SendSysMessage(LANG_COMMAND_FREEZE_PLAYER_YOU_HAVE_BEEN_UNFROZEN);
 
     return true;
 }
-

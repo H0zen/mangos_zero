@@ -23,17 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file GuildCommands.cpp
- * @brief Implementation of guild management chat commands.
- *
- * This file contains chat command handlers for guild operations including:
- * - Guild creation and deletion
- * - Guild member management
- * - Guild property modification
- * - Guild bank management
- */
-
 #include "CharacterRows.h"
 #include <string>
 #include "Chat.h"
@@ -41,17 +30,9 @@
 #include "GuildMgr.h"
 #include "Guild.h"
 
-/** \brief GM command level 3 - Create a guild.
- *
- * This command allows a GM (level 3) to create a guild.
- *
- * The "args" parameter contains the name of the guild leader
- * and then the name of the guild.
- *
- */
 bool ChatHandler::HandleGuildCreateCommand(char* args)
 {
-    // guildmaster name optional
+
     char* guildMasterStr = ExtractOptNotLastArg(&args);
 
     Player* target;
@@ -87,19 +68,12 @@ bool ChatHandler::HandleGuildCreateCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGuildInviteCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGuildInviteCommand(char* args)
 {
-    // player name optional
+
     char* nameStr = ExtractOptNotLastArg(&args);
 
-    // if not guild name only (in "") then player name
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     if (!ExtractPlayerTarget(&nameStr, nullptr, &target_guid))
     {
         return false;
@@ -118,7 +92,6 @@ bool ChatHandler::HandleGuildInviteCommand(char* args)
         return false;
     }
 
-    // player's guild membership checked in AddMember before add
     if (!targetGuild->AddMember(target_guid, targetGuild->GetLowestRank()))
     {
         return false;
@@ -127,16 +100,10 @@ bool ChatHandler::HandleGuildInviteCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGuildUninviteCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGuildUninviteCommand(char* args)
 {
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     if (!ExtractPlayerTarget(&args, &target, &target_guid))
     {
         return false;
@@ -163,18 +130,12 @@ bool ChatHandler::HandleGuildUninviteCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGuildRankCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGuildRankCommand(char* args)
 {
     char* nameStr = ExtractOptNotLastArg(&args);
 
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     std::string target_name;
     if (!ExtractPlayerTarget(&nameStr, &target, &target_guid, &target_name))
     {
@@ -214,12 +175,6 @@ bool ChatHandler::HandleGuildRankCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGuildDeleteCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGuildDeleteCommand(char* args)
 {
     if (!*args)

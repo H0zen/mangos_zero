@@ -27,7 +27,6 @@
 
 #include "Platform/Define.h"
 
-/// The four names cut out of the range a character can drink into.
 enum DrunkenState
 {
     DRUNKEN_SOBER               = 0,
@@ -40,19 +39,6 @@ enum DrunkenState
 
 class Player;
 
-/**
- * How much a character has had to drink.
- *
- * The amount is a number from nothing to twenty-three thousand and more, and
- * four names are cut out of that range: sober, tipsy, drunk, smashed. Only the
- * name reaches the client, packed into the same field as his gender.
- *
- * He sobers by two hundred and fifty-six every ten seconds, whatever he drank,
- * so a full skinful takes about a quarter of an hour to wear off.
- *
- * Past drunk he begins to see what is otherwise hidden: the sixth kind of
- * invisibility is pirates and ghosts that only a drunk man can make out.
- */
 class Drink
 {
     public:
@@ -61,13 +47,10 @@ class Drink
 
         uint16 Amount() const { return m_amount; }
 
-        /// Sets how much is in him and settles what follows from it.
         void Amount(uint16 amount);
 
-        /// Which of the four names the amount falls under.
         static DrunkenState NameOf(uint16 amount);
 
-        /// Sobers him by a step every ten seconds.
         void Run(uint32 elapsed);
 
     private:

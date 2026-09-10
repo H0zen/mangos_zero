@@ -21,14 +21,6 @@
 
 class Pet;
 
-/**
- * The numbers a pet fights with.
- *
- * A pet sits between the other two. It has stats, and armour, health, mana and
- * attack power grow with them -- but only by what it has gained since it was
- * created, because what it was created with is already in its modifiers. A
- * hunter's pet also hits as well as it feels.
- */
 class PetSheet : public StatSheet
 {
     public:

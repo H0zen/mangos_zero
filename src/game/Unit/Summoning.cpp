@@ -49,9 +49,8 @@ Creature* SummonCreature(Occupant& summoner, uint32 id, float x, float y, float 
     Map* map = summoner.GetMap();
     TemporarySummon* pCreature = new TemporarySummon(summoner.GetObjectGuid());
 
-    // A summon inherits its summoner's side, and only a player has one.
     Team team = TEAM_NONE;
-    if (Player const* owner = ToPlayer(&summoner))
+    if (Player const* owner = static_cast<Player*>(&summoner))
     {
         team = owner->GetTeam();
     }
@@ -70,15 +69,13 @@ Creature* SummonCreature(Occupant& summoner, uint32 id, float x, float y, float 
 
     pCreature->SetSpawn(pos);
 
-    // Set run or walk before any other movement starts
     pCreature->SetWalk(!setRun);
 
-    // Active state set before added to map
     pCreature->SetActiveObjectState(asActiveObject);
 
-    pCreature->Summon(spwtype, despwtime);                  // Also initializes the AI and MMGen
+    pCreature->Summon(spwtype, despwtime);
 
-    if (Creature* maker = ToCreature(&summoner))
+    if (Creature* maker = static_cast<Creature*>(&summoner))
     {
         if (CreatureAI* ai = maker->AI())
         {
@@ -86,10 +83,8 @@ Creature* SummonCreature(Occupant& summoner, uint32 id, float x, float y, float 
         }
     }
 
-    // coming into the world for the first time counts as coming back
     pCreature->Links().Respawned();
 
-    // return the creature therewith the summoner has access to it
     return pCreature;
 }
 

@@ -36,21 +36,11 @@ namespace Movement
     using Geometry::Vector3;
     using Geometry::Vector4;
 
-    /**
-     * @brief Converts seconds to milliseconds.
-     * @param sec The time in seconds.
-     * @return uint32 The time in milliseconds.
-     */
     inline uint32 SecToMS(float sec)
     {
         return static_cast<uint32>(sec * 1000.f);
     }
 
-    /**
-     * @brief Converts milliseconds to seconds.
-     * @param ms The time in milliseconds.
-     * @return float The time in seconds.
-     */
     inline float MSToSec(uint32 ms)
     {
         return ms / 1000.f;
@@ -58,23 +48,15 @@ namespace Movement
 
     template<class T, T limit>
 
-    /**
-     * @brief A counter class that generates unique IDs up to a specified limit.
-     */
     class counter
     {
         public:
-            /**
-             * @brief Constructor for the counter class.
-             */
+
             counter()
             {
                 init();
             }
 
-            /**
-             * @brief Increases the counter value.
-             */
             void Increase()
             {
                 if (m_counter == limit)
@@ -87,35 +69,22 @@ namespace Movement
                 }
             }
 
-            /**
-             * @brief Generates a new ID.
-             * @return T The new ID.
-             */
             T NewId()
             {
                 Increase(); return m_counter;
             }
 
-            /**
-             * @brief Gets the current counter value.
-             * @return T The current counter value.
-             */
             T getCurrent() const { return m_counter;}
 
         private:
-            /**
-             * @brief Initializes the counter to zero.
-             */
+
             void init()
             {
                 m_counter = 0;
             }
 
-            T m_counter; /**< The current counter value. */
+            T m_counter;
     };
 
-    /**
-     * @brief Typedef for a 32-bit unsigned integer counter.
-     */
     typedef counter<uint32, 0xFFFFFFFF> UInt32Counter;
 }

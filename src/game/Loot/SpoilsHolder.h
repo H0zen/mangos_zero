@@ -27,24 +27,14 @@
 
 #include "ObjectGuid.h"
 
-class Object;
+class Spoilable;
 class Player;
 struct Loot;
 
 namespace spoils
 {
-    /**
-     * @brief The thing a loot guid names.
-     *
-     * A body on his map, a chest, a set of bones, or a lockbox in his own bags. Nothing
-     * else can hold a pile, and a guid naming anything else resolves to nothing.
-     *
-     * This is where the client's guid becomes an object, and the only place that has to
-     * know which stores to look in. What may then be done with it is the object's own
-     * answer -- Object::Spoils and Object::OpenableBy.
-     */
-    Object* Holder(Player& who, ObjectGuid guid);
 
-    /// The pile that guid names, if this player may take from it right now.
+    Spoilable* Holder(Player& who, ObjectGuid guid);
+
     Loot* OpenedBy(Player& who, ObjectGuid guid);
 }

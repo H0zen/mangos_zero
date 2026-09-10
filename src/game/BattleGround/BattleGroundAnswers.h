@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about battlegrounds.
 namespace battlegrounds
 {
     void BattlemasterHello(WorldSession& session, WorldPacket& packet);

@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
 #include "Log.h"
@@ -56,16 +54,9 @@
 #include "DisableMgr.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Loads quest relation mappings for a specific actor and role.
- *
- * @param map The destination relations map.
- * @param actor The quest actor type.
- * @param role The quest relation role.
- */
 void ObjectMgr::LoadQuestRelationsHelper(QuestRelationsMap& map, QuestActor actor, QuestRole role)
 {
-    map.clear();                                            // need for reload case
+    map.clear();
 
     uint32 count = 0;
 
@@ -110,9 +101,6 @@ void ObjectMgr::LoadQuestRelationsHelper(QuestRelationsMap& map, QuestActor acto
     sLog.outString(">> Loaded %u %s quest %s from `quest_relations`", count, (actor == 1) ? "gameobject" : "creature", (role == 1) ? "takers" : "givers");
 }
 
-/**
- * @brief Loads quest-giver relations for gameobjects.
- */
 void ObjectMgr::LoadGameobjectQuestRelations()
 {
     LoadQuestRelationsHelper(m_GOQuestRelations, QA_GAMEOBJECT, QR_START);
@@ -131,9 +119,6 @@ void ObjectMgr::LoadGameobjectQuestRelations()
     }
 }
 
-/**
- * @brief Loads quest-completion relations for gameobjects.
- */
 void ObjectMgr::LoadGameobjectInvolvedRelations()
 {
     LoadQuestRelationsHelper(m_GOQuestInvolvedRelations, QA_GAMEOBJECT, QR_END);
@@ -152,9 +137,6 @@ void ObjectMgr::LoadGameobjectInvolvedRelations()
     }
 }
 
-/**
- * @brief Loads quest-giver relations for creatures.
- */
 void ObjectMgr::LoadCreatureQuestRelations()
 {
     LoadQuestRelationsHelper(m_CreatureQuestRelations, QA_CREATURE, QR_START);
@@ -173,9 +155,6 @@ void ObjectMgr::LoadCreatureQuestRelations()
     }
 }
 
-/**
- * @brief Loads quest-completion relations for creatures.
- */
 void ObjectMgr::LoadCreatureInvolvedRelations()
 {
     LoadQuestRelationsHelper(m_CreatureQuestInvolvedRelations, QA_CREATURE, QR_END);
@@ -194,12 +173,9 @@ void ObjectMgr::LoadCreatureInvolvedRelations()
     }
 }
 
-/**
- * @brief Builds the set of gameobject entries that must activate for quests.
- */
 void ObjectMgr::LoadGameObjectForQuests()
 {
-    mGameObjectForQuestSet.clear();                         // need for reload case
+    mGameObjectForQuestSet.clear();
 
     if (!sGOStorage.GetMaxEntry())
     {
@@ -213,9 +189,6 @@ void ObjectMgr::LoadGameObjectForQuests()
     BarGoLink bar(sGOStorage.GetRecordCount());
     uint32 count = 0;
 
-    // The entries that can light up for a quest. Three ways in: a questgiver
-    // that has any relation at all, a chest whose loot holds a quest item, or a
-    // template naming the quest that lights it up while in progress.
     for (SQLStorageBase::SQLSIterator<GameObjectInfo> itr = sGOStorage.getDataBegin<GameObjectInfo>(); itr < sGOStorage.getDataEnd<GameObjectInfo>(); ++itr)
     {
         bar.step();
@@ -229,8 +202,7 @@ void ObjectMgr::LoadGameObjectForQuests()
         }
         else if (itr->type == GAMEOBJECT_TYPE_CHEST)
         {
-            // A chest with no quest of its own still counts when what it holds
-            // is somebody's quest item.
+
             worthLighting = worthLighting || LootTemplates_Gameobject.HaveQuestLootFor(itr->GetLootId());
         }
 

@@ -34,8 +34,7 @@ namespace combat
 {
     namespace
     {
-        /// The shield a share was decided against, found again by the pair that
-        /// identifies an aura: the spell, and who cast it.
+
         Aura* FindShield(Unit& victim, AuraType type, const AbsorbShare& share)
         {
             for (Aura* aura : victim.GetAurasByType(type))
@@ -56,8 +55,6 @@ namespace combat
             return;
         }
 
-        // Collected first and removed after, because removing an aura rewrites
-        // the list this walks.
         std::vector<uint32> spent;
 
         for (const AbsorbShare& share : outcome.absorbs)
@@ -68,8 +65,6 @@ namespace combat
                 aura = FindShield(victim, SPELL_AURA_MANA_SHIELD, share);
             }
 
-            // Gone between the decision and here -- dispelled by something that
-            // ran in between. The share simply does not happen.
             if (!aura)
             {
                 continue;

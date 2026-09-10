@@ -22,7 +22,7 @@
 
 namespace
 {
-    /// The five flags that keep a creature out of a fight, and the ask for each.
+
     struct Dropped
     {
         uint32 asked;
@@ -55,7 +55,7 @@ void Disguise::Wear(uint32 factionId, uint32 flags)
 
 void Disguise::TakeOff()
 {
-    // whoever is driving it decides what side it is on
+
     if (m_owner.IsCharmed())
     {
         return;
@@ -77,7 +77,6 @@ void Disguise::TakeOff()
             continue;
         }
 
-        // saying it cannot be attacked out of combat, mid-swing, would be false
         if (each.flag == UNIT_FLAG_OOC_NOT_ATTACKABLE && m_owner.IsInCombat())
         {
             continue;

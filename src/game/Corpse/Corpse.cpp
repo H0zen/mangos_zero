@@ -33,39 +33,26 @@
 #include "World.h"
 #include "ObjectMgr.h"
 
-/**
- * @brief Creates a corpse object of the specified type.
- *
- * @param type The corpse type to initialize.
- */
 Corpse::Corpse(CorpseType type) : Occupant(),
     loot(this),
     lootRecipient(nullptr),
     lootForBody(false)
 {
-    m_objectType |= TYPEMASK_CORPSE;
     m_objectTypeId = TYPEID_CORPSE;
     m_updateFlag = (UPDATEFLAG_TRANSPORT | UPDATEFLAG_ALL | UPDATEFLAG_HAS_POSITION);
-
 
     m_type = type;
 
     m_time = time(nullptr);
 }
 
-/**
- * @brief Destroys the corpse instance.
- */
 Corpse::~Corpse()
 {
 }
 
-/**
- * @brief Adds the corpse to the world and registers it for lookup.
- */
 void Corpse::AddToWorld()
 {
-    ///- Register the corpse for guid lookup
+
     if (!IsInWorld())
     {
         sCorpseManager.AddObject(this);
@@ -74,12 +61,9 @@ void Corpse::AddToWorld()
     Object::AddToWorld();
 }
 
-/**
- * @brief Removes the corpse from the world and unregisters it.
- */
 void Corpse::RemoveFromWorld()
 {
-    ///- Remove the corpse from the accessor
+
     if (IsInWorld())
     {
         sCorpseManager.RemoveObject(this);
@@ -88,25 +72,12 @@ void Corpse::RemoveFromWorld()
     Object::RemoveFromWorld();
 }
 
-/**
- * @brief Creates a corpse object from a GUID.
- *
- * @param guidlow The low part of the corpse GUID.
- * @return true.
- */
 bool Corpse::Create(uint32 guidlow)
 {
     Object::_Create(guidlow, 0, HIGHGUID_CORPSE);
     return true;
 }
 
-/**
- * @brief Creates a corpse for a player at the player's current position.
- *
- * @param guidlow The low part of the corpse GUID.
- * @param owner The player that owns the corpse.
- * @return true if the corpse was created successfully; otherwise, false.
- */
 bool Corpse::Create(uint32 guidlow, Player* owner)
 {
     MANGOS_ASSERT(owner);
@@ -114,8 +85,6 @@ bool Corpse::Create(uint32 guidlow, Player* owner)
     Occupant::_Create(guidlow, HIGHGUID_CORPSE);
     Place().MoveTo(owner->Where().X(), owner->Where().Y(), owner->Where().Z(), owner->Where().Facing());
 
-    // we need to assign owner's map for corpse
-    // in other way we will get a crash in Corpse::SaveToDB()
     SetMap(owner->GetMap());
 
     if (!IsPlaceable(*this))
@@ -137,9 +106,6 @@ bool Corpse::Create(uint32 guidlow, Player* owner)
     return true;
 }
 
-/**
- * @brief Removes a bones corpse from the world.
- */
 void Corpse::DeleteBonesFromWorld()
 {
     MANGOS_ASSERT(GetType() == CORPSE_BONES);
@@ -154,14 +120,6 @@ void Corpse::DeleteBonesFromWorld()
     AddObjectToRemoveList();
 }
 
-/**
- * @brief Checks whether the corpse is visible to a player in the current state.
- *
- * @param u The player evaluating visibility.
- * @param viewPoint The viewpoint used for visibility checks.
- * @param inVisibleList true when the corpse is already in the visible list.
- * @return true if the corpse should be visible; otherwise, false.
- */
 bool Corpse::OpenableBy(Player const& who) const
 {
     return InReach(*this, who, INTERACTION_DISTANCE);
@@ -174,8 +132,7 @@ bool Corpse::IsVisibleForInState(Player const* u, Occupant const* viewPoint, boo
 
 namespace
 {
-    /// How long a body is left where it fell. A corpse waits three days for its owner to
-    /// come back for it; bones, which nobody can claim, are swept within the hour.
+
     constexpr time_t BONES_LIE_FOR = 60 * MINUTE;
     constexpr time_t BODY_LIES_FOR = 3 * DAY;
 }

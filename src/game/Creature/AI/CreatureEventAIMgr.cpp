@@ -41,17 +41,9 @@
 #include "World.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-
-// -------------------
-
-/**
- * @brief Loads EventAI text resources and optionally checks for unused entries.
- *
- * @param check_entry_use true to validate text usage after loading.
- */
 void CreatureEventAIMgr::LoadCreatureEventAI_Texts(bool check_entry_use)
 {
-    // Load EventAI Text
+
     sObjectMgr.LoadMangosStrings(WorldDatabase, "creature_ai_texts", MIN_CREATURE_AI_TEXT_STRING_ID, MAX_CREATURE_AI_TEXT_STRING_ID, true);
 
     if (check_entry_use)
@@ -60,9 +52,6 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Texts(bool check_entry_use)
     }
 }
 
-/**
- * @brief Scans loaded EventAI texts and reports entries that are never referenced.
- */
 void CreatureEventAIMgr::CheckUnusedAITexts()
 {
     if (m_usedTextsAmount == sObjectMgr.GetLoadedStringsCount(MIN_CREATURE_AI_TEXT_STRING_ID))
@@ -95,7 +84,7 @@ void CreatureEventAIMgr::CheckUnusedAITexts()
                     case ACTION_T_TEXT:
                     case ACTION_T_CHANCED_TEXT:
                     {
-                        // ACTION_T_CHANCED_TEXT contains a chance value in first param
+
                         int k = action.type == ACTION_T_TEXT ? 0 : 1;
                         for (; k < 3; ++k)
                         {
@@ -118,19 +107,11 @@ void CreatureEventAIMgr::CheckUnusedAITexts()
     }
 }
 
-// -------------------
-
-/**
- * @brief Loads EventAI summon definitions and optionally checks for unused entries.
- *
- * @param check_entry_use true to validate summon usage after loading.
- */
 void CreatureEventAIMgr::LoadCreatureEventAI_Summons(bool check_entry_use)
 {
-    // Drop Existing EventSummon Map
+
     m_CreatureEventAI_Summon_Map.clear();
 
-    // Gather additional data for EventAI
     QueryResult* result = WorldDatabase.Query("SELECT `id`, `position_x`, `position_y`, `position_z`, `orientation`, `spawntimesecs` FROM `creature_ai_summons`");
     if (result)
     {
@@ -157,7 +138,6 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Summons(bool check_entry_use)
                 continue;
             }
 
-            // Add to map
             m_CreatureEventAI_Summon_Map[temp.id] = temp;
             ++Count;
         }
@@ -182,13 +162,10 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Summons(bool check_entry_use)
     }
 }
 
-/**
- * @brief Reports EventAI summon entries that are loaded but never referenced.
- */
 void CreatureEventAIMgr::CheckUnusedAISummons()
 {
     std::set<int32> idx_set;
-    // check not used strings this is negative range
+
     for (CreatureEventAI_Summon_Map::const_iterator itr = m_CreatureEventAI_Summon_Map.begin(); itr != m_CreatureEventAI_Summon_Map.end(); ++itr)
     {
         idx_set.insert(itr->first);
@@ -226,18 +203,6 @@ void CreatureEventAIMgr::CheckUnusedAISummons()
     }
 }
 
-/// Helper function to check if a target-type is suitable for the event-type
-
-/**
- * @brief Validates whether an action target type is compatible with an event type.
- *
- * @param eventType The triggering event type.
- * @param actionType The action being validated.
- * @param targetType The requested target type.
- * @param eventId The script event id.
- * @param action The action slot number.
- * @return true if the target type is acceptable; otherwise, false.
- */
 bool IsValidTargetType(EventAI_Type eventType, EventAI_ActionType actionType, uint32 targetType, uint32 eventId, uint8 action)
 {
     switch (targetType)
@@ -248,14 +213,14 @@ bool IsValidTargetType(EventAI_Type eventType, EventAI_ActionType actionType, ui
                 sLog.outErrorEventAI("Event %u Action%u uses incorrect Target type %u for event-type %u (must target player)", eventId, action, targetType, eventType);
                 return false;
             }
-            return true;                                    // Can always be used
+            return true;
         case TARGET_T_HOSTILE_RANDOM:
         case TARGET_T_HOSTILE_RANDOM_NOT_TOP:
             if (actionType == ACTION_T_QUEST_EVENT || actionType == ACTION_T_CAST_EVENT || actionType == ACTION_T_QUEST_EVENT_ALL || actionType == ACTION_T_KILLED_MONSTER)
             {
                 sLog.outErrorEventAI("Event %u Action%u uses LIKELY bad Target type %u for event-type %u (must target player)", eventId, action, targetType, eventType);
             }
-            // no break, check if valid at all
+
         case TARGET_T_HOSTILE:
         case TARGET_T_HOSTILE_SECOND_AGGRO:
         case TARGET_T_HOSTILE_LAST_AGGRO:
@@ -270,12 +235,12 @@ bool IsValidTargetType(EventAI_Type eventType, EventAI_ActionType actionType, ui
                     return false;
                 case EVENT_T_TIMER_GENERIC:
                     sLog.outErrorEventAI("Event %u Action%u uses LIKELY incorrect Target type %u for event-type %u (can not be used OOC)", eventId, action, targetType, eventType);
-                    return true;                            // Does not need to be an error
+                    return true;
                 default:
                     return true;
             }
-        case TARGET_T_ACTION_INVOKER:                       // Unit who caused this Event to occur (only works for EVENT_T_AGGRO, EVENT_T_KILL, EVENT_T_DEATH, EVENT_T_SPELLHIT, EVENT_T_OOC_LOS, EVENT_T_FRIENDLY_HP, EVENT_T_FRIENDLY_IS_CC, EVENT_T_FRIENDLY_MISSING_BUFF, EVENT_T_RECEIVE_EMOTE, EVENT_T_RECEIVE_AI_EVENT)
-        case TARGET_T_ACTION_INVOKER_OWNER:                 // Unit who is responsible for Event to occur (only works for EVENT_T_AGGRO, EVENT_T_KILL, EVENT_T_DEATH, EVENT_T_SPELLHIT, EVENT_T_OOC_LOS, EVENT_T_FRIENDLY_HP, EVENT_T_FRIENDLY_IS_CC, EVENT_T_FRIENDLY_MISSING_BUFF, EVENT_T_RECEIVE_EMOTE, EVENT_T_RECEIVE_AI_EVENT)
+        case TARGET_T_ACTION_INVOKER:
+        case TARGET_T_ACTION_INVOKER_OWNER:
             switch (eventType)
             {
                 case EVENT_T_AGGRO:
@@ -293,7 +258,7 @@ bool IsValidTargetType(EventAI_Type eventType, EventAI_ActionType actionType, ui
                     sLog.outErrorEventAI("Event %u Action%u uses incorrect Target type %u for event-type %u", eventId, action, targetType, eventType);
                     return false;
             }
-        case TARGET_T_EVENT_SENDER:                         // Unit who sent an AIEvent that was received with EVENT_T_RECEIVE_AI_EVENT
+        case TARGET_T_EVENT_SENDER:
             if (eventType != EVENT_T_RECEIVE_AI_EVENT)
             {
                 sLog.outErrorEventAI("Event %u Action%u uses incorrect Target type %u for event-type %u", eventId, action, targetType, eventType);
@@ -306,16 +271,12 @@ bool IsValidTargetType(EventAI_Type eventType, EventAI_ActionType actionType, ui
     }
 }
 
-/**
- * @brief Loads and validates all EventAI scripts from the database.
- */
 void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
 {
-    // Drop Existing EventAI List
+
     m_CreatureEventAI_Event_Map.clear();
     std::set<int32> usedTextIds;
 
-    // Gather event data
     QueryResult* result = WorldDatabase.Query("SELECT `id`, `creature_id`, `event_type`, `event_inverse_phase_mask`, `event_chance`, `event_flags`, "
         "`event_param1`, `event_param2`, `event_param3`, `event_param4`, "
         "`action1_type`, `action1_param1`, `action1_param2`, `action1_param3`, "
@@ -340,7 +301,7 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
             uint32 creature_id = temp.creature_id;
 
             uint32 e_type = fields[2].GetUInt32();
-            // Report any errors in event
+
             if (e_type >= EVENT_T_END)
             {
                 sLog.outErrorEventAI("Event %u have wrong type (%u), skipping.", i, e_type);
@@ -356,26 +317,23 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
             temp.raw.param3 = fields[8].GetUInt32();
             temp.raw.param4 = fields[9].GetUInt32();
 
-            // Creature does not exist in database
             if (!sCreatureStorage.LookupEntry<CreatureInfo>(temp.creature_id))
             {
                 sLog.outErrorEventAI("Event %u has script for non-existing creature entry (%u), skipping.", i, temp.creature_id);
                 continue;
             }
 
-            // No chance of this event occuring
             if (temp.event_chance == 0)
             {
                 sLog.outErrorEventAI("Event %u has 0 percent chance. Event will never trigger!", i);
             }
-            // Chance above 100, force it to be 100
+
             else if (temp.event_chance > 100)
             {
                 sLog.outErrorEventAI("Creature %u are using event %u with more than 100 percent chance. Adjusting to 100 percent.", temp.creature_id, i);
                 temp.event_chance = 100;
             }
 
-            // Individual event checks
             switch (temp.event_type)
             {
                 case EVENT_T_TIMER_IN_COMBAT:
@@ -600,13 +558,13 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                 }
                 case EVENT_T_RECEIVE_AI_EVENT:
                 {
-                    // Sender-Creature does not exist in database
+
                     if (temp.receiveAIEvent.senderEntry && !sCreatureStorage.LookupEntry<CreatureInfo>(temp.receiveAIEvent.senderEntry))
                     {
                         sLog.outErrorEventAI("Event %u has nonexisting creature (%u) defined for event RECEIVE_AI_EVENT, skipping.", i, temp.receiveAIEvent.senderEntry);
                         continue;
                     }
-                    // Event-Type is not defined
+
                     if (temp.receiveAIEvent.eventType >= MAXIMAL_AI_EVENT_EVENTAI)
                     {
                         sLog.outErrorEventAI("Event %u has unfitting event-type (%u) defined for event RECEIVE_AI_EVENT (must be less than %u), skipping.", i, temp.receiveAIEvent.eventType, MAXIMAL_AI_EVENT_EVENTAI);
@@ -616,7 +574,7 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                 }
                 case EVENT_T_REACHED_WAYPOINT:
                 {
-                    // nothing to check because the types used prevent anything unwanted from being entered (positive and negative values are allowed for all inputs)
+
                     break;
                 }
                 default:
@@ -641,13 +599,12 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                 action.raw.param2 = fields[12 + (j * 4)].GetUInt32();
                 action.raw.param3 = fields[13 + (j * 4)].GetUInt32();
 
-                // Report any errors in actions
                 switch (action.type)
                 {
                     case ACTION_T_NONE:
                         break;
                     case ACTION_T_CHANCED_TEXT:
-                        // Check first param as chance
+
                         if (!action.chanced_text.chance)
                         {
                             sLog.outErrorEventAI("Event %u Action %u has not set chance param1. Text will not be displayed", i, j + 1);
@@ -656,7 +613,7 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                         {
                             sLog.outErrorEventAI("Event %u Action %u has set chance param1 >= 100. Text will always be displayed", i, j + 1);
                         }
-                        // no break here to check texts
+
                     case ACTION_T_TEXT:
                     {
                         bool not_set = false;
@@ -674,7 +631,7 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                                 {
                                     not_set = true;
                                 }
-                                // range negative
+
                                 else if (action.text.TextId[k] > MIN_CREATURE_AI_TEXT_STRING_ID || action.text.TextId[k] <= MAX_CREATURE_AI_TEXT_STRING_ID)
                                 {
                                     sLog.outErrorEventAI("Event %u Action %u param%d references out-of-range entry (%i) in texts table.", i, j + 1, k + 1, action.text.TextId[k]);
@@ -771,21 +728,7 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                         {
                             sLog.outErrorEventAI("Event %u Action %u uses nonexistent SpellID %u.", i, j + 1, action.cast.spellId);
                         }
-                        /* FIXME: temp.raw.param3 not have event tipes with recovery time in it....
-                        else
-                        {
-                            if (spell->RecoveryTime > 0 && temp.event_flags & EFLAG_REPEATABLE)
-                            {
-                                // output as debug for now, also because there's no general rule all spells have RecoveryTime
-                                if (temp.event_param3 < spell->RecoveryTime)
-                                {
-                                    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "CreatureEventAI:  Event %u Action %u uses SpellID %u but cooldown is longer(%u) than minumum defined in event param3(%u).", i, j+1,action.cast.spellId, spell->RecoveryTime, temp.event_param3);
-                                }
-                            }
-                        }
-                        */
 
-                        // Cast is always triggered if target is forced to cast on self
                         if (action.cast.castFlags & CAST_FORCE_TARGET_SELF)
                         {
                             action.cast.castFlags |= CAST_TRIGGERED;
@@ -793,25 +736,20 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
 
                         IsValidTargetType(temp.event_type, action.type, action.cast.target, i, j + 1);
 
-                        // Some Advanced target type checks - Can have false positives
                         if (!sLog.HasLogFilter(LOG_FILTER_EVENT_AI_DEV) && spell)
                         {
-                            // spell must be cast on self, but is not
+
                             if ((IsOnlySelfTargeting(spell) || spell->RangeIndex == SPELL_RANGE_IDX_SELF_ONLY) && action.cast.target != TARGET_T_SELF && !(action.cast.castFlags & CAST_FORCE_TARGET_SELF))
                             {
                                 sLog.outErrorEventAI("Event %u Action %u uses SpellID %u that must be self cast (target is %u)", i, j + 1, action.cast.spellId, action.cast.target);
                             }
 
-                            // TODO: spell must be cast on enemy, but is not
-
-                            // used TARGET_T_ACTION_INVOKER, but likely should be _INVOKER_OWNER instead
                             if (action.cast.target == TARGET_T_ACTION_INVOKER &&
                                 (spell->HasSpellEffect(SPELL_EFFECT_QUEST_COMPLETE) || spell->HasSpellEffect(SPELL_EFFECT_DUMMY)))
                             {
                                 sLog.outErrorEventAI("Event %u Action %u has TARGET_T_ACTION_INVOKER(%u) target type, but should have TARGET_T_ACTION_INVOKER_OWNER(%u).", i, j + 1, TARGET_T_ACTION_INVOKER, TARGET_T_ACTION_INVOKER_OWNER);
                             }
 
-                            // Spell that should only target players, but could get any
                             if (cast::RecipeOf(*spell).Says().playersOnly &&
                                 (action.cast.target == TARGET_T_ACTION_INVOKER || action.cast.target == TARGET_T_HOSTILE_RANDOM || action.cast.target == TARGET_T_HOSTILE_RANDOM_NOT_TOP))
                             {
@@ -924,7 +862,7 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                         }
                         IsValidTargetType(temp.event_type, action.type, action.remove_aura.target, i, j + 1);
                         break;
-                    case ACTION_T_RANDOM_PHASE:             // PhaseId1, PhaseId2, PhaseId3
+                    case ACTION_T_RANDOM_PHASE:
                         if (action.random_phase.phase1 >= MAX_PHASE)
                         {
                             sLog.outErrorEventAI("Event %u Action %u attempts to set phase1 >= %u. Phase mask can not be used past phase %u.", i, j + 1, MAX_PHASE, MAX_PHASE - 1);
@@ -938,7 +876,7 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                             sLog.outErrorEventAI("Event %u Action %u attempts to set phase3 >= %u. Phase mask can not be used past phase %u.", i, j + 1, MAX_PHASE, MAX_PHASE - 1);
                         }
                         break;
-                    case ACTION_T_RANDOM_PHASE_RANGE:       // PhaseMin, PhaseMax
+                    case ACTION_T_RANDOM_PHASE_RANGE:
                         if (action.random_phase_range.phaseMin >= MAX_PHASE)
                         {
                             sLog.outErrorEventAI("Event %u Action %u attempts to set phaseMin >= %u. Phase mask can not be used past phase %u.", i, j + 1, MAX_PHASE, MAX_PHASE - 1);
@@ -951,7 +889,7 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                         {
                             sLog.outErrorEventAI("Event %u Action %u attempts to set phaseMax <= phaseMin.", i, j + 1);
                             std::swap(action.random_phase_range.phaseMin, action.random_phase_range.phaseMax);
-                            // equal case processed at call
+
                         }
                         break;
                     case ACTION_T_SUMMON_ID:
@@ -973,7 +911,7 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                         IsValidTargetType(temp.event_type, action.type, action.killed_monster.target, i, j + 1);
                         break;
                     case ACTION_T_SET_INST_DATA:
-                        if (action.set_inst_data.value > 4/*SPECIAL*/)
+                        if (action.set_inst_data.value > 4)
                         {
                             sLog.outErrorEventAI("Event %u Action %u attempts to set instance data above encounter state 4. Custom case?", i, j + 1);
                         }
@@ -1028,15 +966,15 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                             }
                         }
                         break;
-                    case ACTION_T_EVADE:                    // No Params
-                    case ACTION_T_FLEE_FOR_ASSIST:          // No Params
-                    case ACTION_T_DIE:                      // No Params
-                    case ACTION_T_ZONE_COMBAT_PULSE:        // No Params
-                    case ACTION_T_FORCE_DESPAWN:            // Delay
-                    case ACTION_T_AUTO_ATTACK:              // AllowAttackState (0 = stop attack, anything else means continue attacking)
-                    case ACTION_T_COMBAT_MOVEMENT:          // AllowCombatMovement (0 = stop combat based movement, anything else continue attacking)
-                    case ACTION_T_RANGED_MOVEMENT:          // Distance, Angle
-                    case ACTION_T_CALL_FOR_HELP:            // Distance
+                    case ACTION_T_EVADE:
+                    case ACTION_T_FLEE_FOR_ASSIST:
+                    case ACTION_T_DIE:
+                    case ACTION_T_ZONE_COMBAT_PULSE:
+                    case ACTION_T_FORCE_DESPAWN:
+                    case ACTION_T_AUTO_ATTACK:
+                    case ACTION_T_COMBAT_MOVEMENT:
+                    case ACTION_T_RANGED_MOVEMENT:
+                    case ACTION_T_CALL_FOR_HELP:
                         break;
 
                     case ACTION_T_RANDOM_SAY:
@@ -1078,7 +1016,7 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                         }
                         break;
 
-                    case ACTION_T_SUMMON_UNIQUE:                                          //49
+                    case ACTION_T_SUMMON_UNIQUE:
                         if (!sCreatureStorage.LookupEntry<CreatureInfo>(action.summon_unique.creatureId))
                         {
                             sLog.outErrorEventAI("Event %u Action %u uses nonexistent creature entry %u.", i, j + 1, action.summon_unique.creatureId);
@@ -1103,7 +1041,6 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                 }
             }
 
-            // Add to list
             m_CreatureEventAI_Event_Map[creature_id].push_back(temp);
             ++Count;
         }
@@ -1112,7 +1049,6 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
         delete result;
         m_usedTextsAmount = usedTextIds.size();
 
-        // post check
         for (uint32 i = 1; i < sCreatureStorage.GetMaxEntry(); ++i)
         {
             if (CreatureInfo const* cInfo = sCreatureStorage.LookupEntry<CreatureInfo>(i))

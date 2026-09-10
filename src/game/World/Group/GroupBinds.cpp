@@ -27,8 +27,7 @@
 
 GroupBinds::~GroupBinds()
 {
-    // Whether the copies or their holders are taken down first is undefined, so
-    // each copy is told the group is gone rather than left with a dangling name.
+
     for (auto& held : m_held)
     {
         held.second.state->RemoveGroup(&m_owner);
@@ -56,17 +55,17 @@ DungeonHold* GroupBinds::BindTo(DungeonPersistentState* state, bool permanent, b
     DungeonHold& hold = m_held[state->GetMapId()];
     if (hold.state)
     {
-        // a boss has fallen, or a member's own holds are being copied over
+
         if (!load && (permanent != hold.permanent || state != hold.state))
         {
             CharacterDatabase.PExecute("UPDATE `group_instance` SET `instance` = '%u', `permanent` = '%u' WHERE `leaderGuid` = '%u' AND `instance` = '%u'",
-                state->GetInstanceId(), permanent, m_owner.GetLeaderGuid().GetCounter(), hold.state->GetInstanceId());
+                state->GetInstanceId(), permanent, GuidCounter(m_owner.GetLeaderGuid()), hold.state->GetInstanceId());
         }
     }
     else if (!load)
     {
         CharacterDatabase.PExecute("INSERT INTO `group_instance` (`leaderGuid`, `instance`, `permanent`) VALUES ('%u', '%u', '%u')",
-            m_owner.GetLeaderGuid().GetCounter(), state->GetInstanceId(), permanent);
+            GuidCounter(m_owner.GetLeaderGuid()), state->GetInstanceId(), permanent);
     }
 
     if (hold.state != state)
@@ -101,10 +100,10 @@ void GroupBinds::Release(uint32 mapId, bool unload)
     if (!unload)
     {
         CharacterDatabase.PExecute("DELETE FROM `group_instance` WHERE `leaderGuid` = '%u' AND `instance` = '%u'",
-            m_owner.GetLeaderGuid().GetCounter(), itr->second.state->GetInstanceId());
+            GuidCounter(m_owner.GetLeaderGuid()), itr->second.state->GetInstanceId());
     }
 
-    itr->second.state->RemoveGroup(&m_owner);               // the copy can go here
+    itr->second.state->RemoveGroup(&m_owner);
     m_held.erase(itr);
 }
 
@@ -131,8 +130,6 @@ void GroupBinds::Reset(InstanceResetMethod method, Player* tellHim)
         return;
     }
 
-    // method can be INSTANCE_RESET_ALL, INSTANCE_RESET_GROUP_DISBAND
-
     for (DungeonHolds::iterator itr = m_held.begin(); itr != m_held.end();)
     {
         DungeonPersistentState* state = itr->second.state;
@@ -143,7 +140,6 @@ void GroupBinds::Reset(InstanceResetMethod method, Player* tellHim)
             continue;
         }
 
-        // resetting them all reaches ordinary dungeons only, never a raid
         if (method == INSTANCE_RESET_ALL && entry->InstanceType == MAP_RAID)
         {
             ++itr;
@@ -177,8 +173,6 @@ void GroupBinds::Reset(InstanceResetMethod method, Player* tellHim)
             continue;
         }
 
-        // someone else may hold the copy permanently, in which case it is not
-        // reset -- the group merely lets go of it
         if (state->CanReset())
         {
             state->DeleteFromDB();
@@ -190,7 +184,6 @@ void GroupBinds::Reset(InstanceResetMethod method, Player* tellHim)
 
         itr = m_held.erase(itr);
 
-        // this drops the copy unless someone online still holds it
         state->RemoveGroup(&m_owner);
     }
 }

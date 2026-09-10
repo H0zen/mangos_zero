@@ -21,20 +21,12 @@
 
 class Creature;
 
-/**
- * The numbers an ordinary creature fights with.
- *
- * The simple case: a creature has no stats to derive anything from, so nearly
- * every number is its modifiers folded and written down. Only the swing is
- * really computed, and only because attack power feeds into it.
- */
 class CreatureSheet : public StatSheet
 {
     public:
 
         explicit CreatureSheet(Creature& whose);
 
-        /// A creature's stats buy it nothing, so there is nothing to follow.
         void Stat(Stats stat) override;
 
         void Everything() override;

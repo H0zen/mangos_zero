@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
 #include "Log.h"
@@ -57,22 +55,13 @@
 #include "DisableMgr.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Gets instance template data by map id.
- *
- * @param map The instance map id.
- * @return The instance template, or null if missing.
- */
 InstanceTemplate const* ObjectMgr::GetInstanceTemplate(uint32 map) { return sInstanceTemplate.LookupEntry<InstanceTemplate>(map); }
 
-/**
- * @brief Loads groups, group members, and group instance bindings from the database.
- */
 void ObjectMgr::LoadGroups()
 {
-    // -- loading groups --
+
     uint32 count = 0;
-    //                                                    0         1              2           3           4              5      6      7      8      9      10     11     12     13      14          15
+
     QueryResult* result = CharacterDatabase.Query("SELECT `mainTank`, `mainAssistant`, `lootMethod`, `looterGuid`, `lootThreshold`, `icon1`, `icon2`, `icon3`, `icon4`, `icon5`, `icon6`, `icon7`, `icon8`, `isRaid`, `leaderGuid`, `groupId` FROM `groups`");
 
     if (!result)
@@ -107,9 +96,8 @@ void ObjectMgr::LoadGroups()
     sLog.outString(">> Loaded %u group definitions", count);
     sLog.outString();
 
-    // -- loading members --
     count = 0;
-    //                                       0           1          2         3
+
     result = CharacterDatabase.Query("SELECT `memberGuid`, `assistant`, `subgroup`, `groupId` FROM `group_member` ORDER BY `groupId`");
     if (!result)
     {
@@ -118,7 +106,7 @@ void ObjectMgr::LoadGroups()
     }
     else
     {
-        Group* group = nullptr;                                // used as cached pointer for avoid relookup group for each member
+        Group* group = nullptr;
 
         BarGoLink bar2(result->GetRowCount());
         do
@@ -128,7 +116,7 @@ void ObjectMgr::LoadGroups()
             ++count;
 
             uint32 memberGuidlow = fields[0].GetUInt32();
-            ObjectGuid memberGuid = ObjectGuid(HIGHGUID_PLAYER, memberGuidlow);
+            ObjectGuid memberGuid = MakeGuid(HIGHGUID_PLAYER, memberGuidlow);
             bool   assistent     = fields[1].GetBool();
             uint8  subgroup      = fields[2].GetUInt8();
             uint32 groupId       = fields[3].GetUInt32();
@@ -138,7 +126,7 @@ void ObjectMgr::LoadGroups()
                 if (!group)
                 {
                     sLog.outErrorDb("Incorrect entry in group_member table : no group with Id %d for member %s!",
-                        groupId, memberGuid.GetString().c_str());
+                        groupId, GuidString(memberGuid).c_str());
                     CharacterDatabase.PExecute("DELETE FROM `group_member` WHERE `memberGuid` = '%u'", memberGuidlow);
                     continue;
                 }
@@ -147,7 +135,7 @@ void ObjectMgr::LoadGroups()
             if (!group->LoadMemberFromDB(memberGuidlow, subgroup, assistent))
             {
                 sLog.outErrorDb("Incorrect entry in group_member table : member %s can not be added to group (Id: %u)!",
-                    memberGuid.GetString().c_str(), groupId);
+                    GuidString(memberGuid).c_str(), groupId);
                 CharacterDatabase.PExecute("DELETE FROM `group_member` WHERE `memberGuid` = '%u'", memberGuidlow);
             }
         }
@@ -155,8 +143,6 @@ void ObjectMgr::LoadGroups()
         delete result;
     }
 
-    // clean groups
-    // TODO: maybe delete from the DB before loading in this case
     for (GroupMap::iterator itr = mGroupMap.begin(); itr != mGroupMap.end();)
     {
         if (itr->second->GetMembersCount() < 2)
@@ -171,14 +157,13 @@ void ObjectMgr::LoadGroups()
         }
     }
 
-    // -- loading instances --
     count = 0;
     result = CharacterDatabase.Query(
-        //                            0             1      2           3            4
+
             "SELECT `group_instance`.`leaderGuid`, `map`, `instance`, `permanent`, `resettime`, "
-        //   5
+
             "(SELECT COUNT(*) FROM `character_instance` WHERE `guid` = `group_instance`.`leaderGuid` AND `instance` = `group_instance`.`instance` AND `permanent` = 1 LIMIT 1), "
-        //              6
+
             " `groups`.`groupId` "
             "FROM `group_instance` LEFT JOIN `instance` ON `instance` = `id` LEFT JOIN `groups` ON `groups`.`leaderGUID` = `group_instance`.`leaderGUID` ORDER BY `leaderGuid`"
         );
@@ -190,7 +175,7 @@ void ObjectMgr::LoadGroups()
     }
     else
     {
-        Group* group = nullptr;                                // used as cached pointer for avoid relookup group for each member
+        Group* group = nullptr;
 
         BarGoLink bar2(result->GetRowCount());
         do
@@ -205,7 +190,7 @@ void ObjectMgr::LoadGroups()
 
             if (!group || group->GetId() != groupId)
             {
-                // find group id in map by leader low guid
+
                 group = GetGroupById(groupId);
                 if (!group)
                 {

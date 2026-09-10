@@ -23,23 +23,20 @@
 
 #pragma once
 
-#include "Creature.h"             // CreatureInfo, CREATURE_ELITE_WORLDBOSS, CREATURE_ELITE_NORMAL
-#include "Unit.h"                 // UNIT_NPC_FLAG_FLIGHTMASTER, UNIT_NPC_FLAG_GOSSIP
-#include "DataStore/DBCStructure.h"  // MapEntry
-#include "DataStore/DBCStores.h"     // sFactionTemplateStore, FactionTemplateEntry
-#include "DataStore/DBCEnums.h"      // FactionMasks
+#include "Creature.h"
+#include "Unit.h"
+#include "DataStore/DBCStructure.h"
+#include "DataStore/DBCStores.h"
+#include "DataStore/DBCEnums.h"
 
-// Wave 1 high-confidence LivingWorld anchor categories (bitmask).
 enum LivingWorldAnchorCategory
 {
     LW_ANCHOR_NONE                 = 0x0,
-    LW_ANCHOR_WORLD_BOSS_OR_LEADER = 0x1, // creature rank == WORLDBOSS, continents only
-    LW_ANCHOR_FLIGHT_MASTER        = 0x2, // npcflag & FLIGHTMASTER, continents only
-    LW_ANCHOR_SETTLEMENT_DEFENDER  = 0x4, // Wave 2: defender-faction continent waypoint patrollers
+    LW_ANCHOR_WORLD_BOSS_OR_LEADER = 0x1,
+    LW_ANCHOR_FLIGHT_MASTER        = 0x2,
+    LW_ANCHOR_SETTLEMENT_DEFENDER  = 0x4,
 };
 
-// Pure core: classify by raw template values + continent flag. Continent-gated so
-// raid/dungeon/battleground spawns can never qualify. constexpr so it is compile-time testable.
 constexpr uint32 LivingWorldAnchorCategoriesFor(uint32 rank, uint32 npcFlags, bool isContinent)
 {
     if (!isContinent)
@@ -59,7 +56,6 @@ constexpr uint32 LivingWorldAnchorCategoriesFor(uint32 rank, uint32 npcFlags, bo
     return cats;
 }
 
-// Compile-time tests (the pilot's static_assert idiom).
 static_assert(LivingWorldAnchorCategoriesFor(CREATURE_ELITE_WORLDBOSS, 0, true) == LW_ANCHOR_WORLD_BOSS_OR_LEADER,
     "continent world boss must match the world-boss/leader category");
 static_assert(LivingWorldAnchorCategoriesFor(CREATURE_ELITE_NORMAL, UNIT_NPC_FLAG_FLIGHTMASTER, true) == LW_ANCHOR_FLIGHT_MASTER,
@@ -74,7 +70,6 @@ static_assert(LivingWorldAnchorCategoriesFor(CREATURE_ELITE_WORLDBOSS, UNIT_NPC_
 static_assert(LivingWorldAnchorCategoriesFor(CREATURE_ELITE_NORMAL, 0, true) == LW_ANCHOR_NONE,
     "ordinary continent creatures must not qualify");
 
-// Runtime helpers used at the two active-object decision points.
 inline uint32 GetLivingWorldAnchorCategories(CreatureInfo const* cInfo, MapEntry const* mapEntry)
 {
     if (!cInfo || !mapEntry)
@@ -89,9 +84,6 @@ inline bool IsLivingWorldAnchor(CreatureInfo const* cInfo, MapEntry const* mapEn
     return (GetLivingWorldAnchorCategories(cInfo, mapEntry) & enabledMask) != 0;
 }
 
-// --- pure cores (compile-time testable) ---
-
-// Player-aligned, friendly to a player side, hostile to monsters.
 constexpr uint32 LW_PLAYER_SIDES = FACTION_MASK_PLAYER | FACTION_MASK_ALLIANCE | FACTION_MASK_HORDE;
 
 constexpr bool IsLivingWorldDefenderFactionMasks(uint32 ourMask, uint32 friendlyMask, uint32 hostileMask)
@@ -101,8 +93,6 @@ constexpr bool IsLivingWorldDefenderFactionMasks(uint32 ourMask, uint32 friendly
         && (hostileMask  & FACTION_MASK_MONSTER) != 0;
 }
 
-// Any NpcFlags service bit >= 0x80 (vendor/banker/innkeeper/auctioneer/flightmaster/
-// spirit-healer...). Gossip(0x1)/questgiver(0x2)/trainer(0x10) are < 0x80 and survive.
 constexpr bool IsLivingWorldServiceNpc(uint32 npcFlags)
 {
     return (npcFlags & ~uint32(0x7F)) != 0;
@@ -126,8 +116,6 @@ constexpr uint32 LivingWorldDefenderCategoryFor(uint32 ourMask, uint32 friendlyM
     return LW_ANCHOR_SETTLEMENT_DEFENDER;
 }
 
-// --- compile-time tests (representative Ironforge-style masks) ---
-// Ironforge guard faction: our=ALLIANCE, friendly=PLAYER|ALLIANCE, hostile=HORDE|MONSTER.
 static_assert(LivingWorldDefenderCategoryFor(FACTION_MASK_ALLIANCE,
     FACTION_MASK_PLAYER | FACTION_MASK_ALLIANCE, FACTION_MASK_HORDE | FACTION_MASK_MONSTER,
     0, true, true) == LW_ANCHOR_SETTLEMENT_DEFENDER,
@@ -138,20 +126,19 @@ static_assert(LivingWorldDefenderCategoryFor(FACTION_MASK_MONSTER, 0,
     "a pure-monster (hostile wildlife) faction must never be a defender");
 static_assert(LivingWorldDefenderCategoryFor(FACTION_MASK_ALLIANCE,
     FACTION_MASK_PLAYER | FACTION_MASK_ALLIANCE, FACTION_MASK_HORDE | FACTION_MASK_MONSTER,
-    0x80 /*VENDOR*/, true, true) == LW_ANCHOR_NONE,
+    0x80 , true, true) == LW_ANCHOR_NONE,
     "a vendor (service NpcFlag >= 0x80) must be excluded even on a guard faction");
 static_assert(LivingWorldDefenderCategoryFor(FACTION_MASK_ALLIANCE,
     FACTION_MASK_PLAYER | FACTION_MASK_ALLIANCE, FACTION_MASK_HORDE | FACTION_MASK_MONSTER,
-    0, false /*idle/random*/, true) == LW_ANCHOR_NONE,
+    0, false , true) == LW_ANCHOR_NONE,
     "a stationary (non-waypoint) guard-faction NPC is not a settlement defender");
 static_assert(LivingWorldDefenderCategoryFor(FACTION_MASK_ALLIANCE,
     FACTION_MASK_PLAYER | FACTION_MASK_ALLIANCE, FACTION_MASK_HORDE | FACTION_MASK_MONSTER,
-    0, true, false /*instance*/) == LW_ANCHOR_NONE,
+    0, true, false ) == LW_ANCHOR_NONE,
     "non-continent (raid/dungeon/BG) spawns must never qualify");
 static_assert(IsLivingWorldServiceNpc(0x1 | 0x2) == false,
     "gossip/questgiver-only NPCs are not service NPCs");
 
-// --- thin runtime resolver (does the DBC lookup; not constexpr) ---
 inline uint32 GetLivingWorldDefenderCategory(CreatureInfo const* cInfo, MapEntry const* mapEntry, bool isWaypointMover)
 {
     if (!cInfo || !mapEntry || !mapEntry->IsContinent() || !isWaypointMover)

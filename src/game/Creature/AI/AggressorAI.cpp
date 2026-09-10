@@ -32,17 +32,9 @@
 #include "Map.h"
 #include "Log.h"
 
-/**
- * @brief Determines whether AggressorAI can control the given creature.
- *
- * Selects this AI for hostile creatures that are allowed to aggro nearby targets.
- *
- * @param creature The creature being evaluated.
- * @return The AI selection priority for this creature.
- */
 int AggressorAI::Permissible(const Creature* creature)
 {
-    // have some hostile factions, it will be selected by IsHostileTo check at MoveInLineOfSight
+
     if (!(creature->GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_NO_AGGRO) && !NeutralToAll(*creature))
     {
         return PERMIT_BASE_PROACTIVE;
@@ -51,26 +43,13 @@ int AggressorAI::Permissible(const Creature* creature)
     return PERMIT_BASE_NO;
 }
 
-/**
- * @brief Initializes an aggressive creature AI instance.
- *
- * @param c The creature controlled by this AI.
- */
 AggressorAI::AggressorAI(Creature* c) : CreatureAI(c), i_state(STATE_NORMAL), i_tracker(TIME_INTERVAL_LOOK)
 {
 }
 
-/**
- * @brief Handles units entering the creature's line of sight.
- *
- * Starts combat against valid hostile targets and, in dungeons, can add threat to
- * nearby hostile units even when the creature already has a victim.
- *
- * @param u The unit that entered line of sight.
- */
 void AggressorAI::MoveInLineOfSight(Unit* u)
 {
-    // Ignore Z for flying creatures
+
     if (!m_creature->CanFly() && m_creature->Where().HeightGapTo(u->Where()) > CREATURE_Z_ATTACK_RANGE)
     {
         return;
@@ -95,18 +74,12 @@ void AggressorAI::MoveInLineOfSight(Unit* u)
     }
 }
 
-/**
- * @brief Returns the creature to its evade state.
- *
- * Clears threat, stops combat, restores movement toward home, and resets the
- * configured spell list when the creature leaves combat.
- */
 void AggressorAI::EnterEvadeMode()
 {
     if (!m_creature->IsAlive())
     {
         DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking, he is dead [guid=%u]", m_creature->GetGUIDLow());
-        i_victimGuid.Clear();
+        i_victimGuid = 0;
         m_creature->CombatStop(true);
         m_creature->DeleteThreatList();
         return;
@@ -133,15 +106,13 @@ void AggressorAI::EnterEvadeMode()
     else
     {
         DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking, victim out run him [guid=%u]", m_creature->GetGUIDLow());
-        // i_state = STATE_LOOK_AT_VICTIM;
-        // i_tracker.Reset(TIME_INTERVAL_LOOK);
+
     }
 
     if (!m_creature->IsCharmed())
     {
         m_creature->RemoveAllAurasOnEvade();
 
-        // Remove ChaseMovementGenerator from MotionMaster stack list, and add HomeMovementGenerator instead
         if (m_creature->GetMotionMaster()->GetCurrentMovementGeneratorType() == CHASE_MOTION_TYPE)
         {
             m_creature->GetMotionMaster()->MoveTargetedHome();
@@ -149,25 +120,16 @@ void AggressorAI::EnterEvadeMode()
     }
 
     m_creature->DeleteThreatList();
-    i_victimGuid.Clear();
+    i_victimGuid = 0;
     m_creature->CombatStop(true);
     m_creature->Claim().StakedBy(nullptr);
 
-    // Reset back to default spells template. This also resets timers.
     SetSpellsList(m_creature->GetCreatureInfo()->SpellListId);
 }
 
-/**
- * @brief Updates the aggressive AI each server tick.
- *
- * Refreshes the current victim tracking, updates creature spell timers, and
- * performs melee attacks when ready.
- *
- * @param diff The elapsed time since the last update in milliseconds.
- */
 void AggressorAI::UpdateAI(const uint32 diff)
 {
-    // update i_victimGuid if m_creature->getVictim() !=0 and changed
+
     if (!m_creature->SelectHostileTarget() || !m_creature->getVictim())
     {
         return;
@@ -183,25 +145,12 @@ void AggressorAI::UpdateAI(const uint32 diff)
     DoMeleeAttackIfReady();
 }
 
-/**
- * @brief Checks whether a unit can be seen by this creature AI.
- *
- * @param pl The unit to test for visibility.
- * @return true if the unit is within sight range and detectable; otherwise, false.
- */
 bool AggressorAI::IsVisible(Unit* pl) const
 {
     return m_creature->Where().WithinDist(pl->Where(), sWorld.getConfig(CONFIG_FLOAT_SIGHT_MONSTER)) &&
         pl->IsVisibleForOrDetect(m_creature, m_creature, true);
 }
 
-/**
- * @brief Starts attacking a target unit.
- *
- * Adds initial threat, flags both units in combat, and starts movement toward the target.
- *
- * @param u The unit to attack.
- */
 void AggressorAI::AttackStart(Unit* u)
 {
     if (!u)

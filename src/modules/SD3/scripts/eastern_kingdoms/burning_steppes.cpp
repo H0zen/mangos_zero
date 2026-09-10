@@ -61,7 +61,7 @@ struct npc_ragged_john : public CreatureScript
         {
             if (who->HasAura(16468, EFFECT_INDEX_0))
             {
-                if (who->IsPlayer() && InReach(*m_creature, *who, 15) && who->isInAccessablePlaceFor(m_creature))
+                if (IsPlayer(who) && InReach(*m_creature, *who, 15) && who->isInAccessablePlaceFor(m_creature))
                 {
                     DoCastSpellIfCan(who, 16472);
                     ((Player*)who)->Journal().Explored(4866);
@@ -229,8 +229,8 @@ struct npc_grark_lorkrub : public CreatureScript
             DialogueHelper(aOutroDialogue)
         {}
 
-        ObjectGuid m_nuzarkGuid;
-        ObjectGuid m_lexlortGuid;
+        ObjectGuid m_nuzarkGuid = 0;
+        ObjectGuid m_lexlortGuid = 0;
 
         GuidList m_lSearscaleGuidList;
 
@@ -490,15 +490,15 @@ struct spell_capture_grark : public SpellScript
         if (uiSpellId == SPELL_CAPTURE_GRARK && uiEffIndex == EFFECT_INDEX_0)
         {
             // Note: this implementation needs additional research! There is a lot of guesswork involved in this!
-            if (ToCreature(pCreatureTarget)->GetHealthPercent() > 25.0f)
+            if (static_cast<Creature*>(pCreatureTarget)->GetHealthPercent() > 25.0f)
             {
                 return false;
             }
 
             // The faction is guesswork - needs more research
-            DoScriptText(EMOTE_SUBMIT, ToCreature(pCreatureTarget));
-            ToCreature(pCreatureTarget)->SetFactionTemporary(FACTION_FRIENDLY, TEMPFACTION_RESTORE_RESPAWN);
-            ToCreature(pCreatureTarget)->AI()->EnterEvadeMode();
+            DoScriptText(EMOTE_SUBMIT, static_cast<Creature*>(pCreatureTarget));
+            static_cast<Creature*>(pCreatureTarget)->SetFactionTemporary(FACTION_FRIENDLY, TEMPFACTION_RESTORE_RESPAWN);
+            static_cast<Creature*>(pCreatureTarget)->AI()->EnterEvadeMode();
 
             // always return true when we are handling this spell and effect
             return true;
@@ -570,7 +570,7 @@ struct npc_klinfran_the_crazed : public CreatureScript
         uint32 m_uiTransformEmote_Timer;
         bool m_bTransform;
 
-        ObjectGuid m_hunterGuid;
+        ObjectGuid m_hunterGuid = 0;
         uint32 m_uiDemonic_Frenzy_Timer;
         uint32 m_uiDespawn_Timer;
 
@@ -605,7 +605,7 @@ struct npc_klinfran_the_crazed : public CreatureScript
                         m_uiDespawn_Timer = 20 * MINUTE * IN_MILLISECONDS;
                     }
 
-                    m_hunterGuid.Clear();
+                    m_hunterGuid = 0;
                     m_uiDemonic_Frenzy_Timer = 5000;
                     break;
                 }
@@ -631,7 +631,7 @@ struct npc_klinfran_the_crazed : public CreatureScript
         /** Klinfran the Crazed */
         void Aggro(Unit* pWho) override
         {
-            if (pWho->getClass() == CLASS_HUNTER && (m_hunterGuid.IsEmpty() || m_hunterGuid == pWho->GetObjectGuid()))
+            if (pWho->getClass() == CLASS_HUNTER && ((m_hunterGuid == 0) || m_hunterGuid == pWho->GetObjectGuid()))
             {
                 m_hunterGuid = pWho->GetObjectGuid();
             }

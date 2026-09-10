@@ -23,28 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file util.cpp
- * @brief Movement physics utilities
- *
- * This file provides utility functions for movement physics calculations:
- *
- * - Fall time computation based on fall distance
- * - Fall elevation calculation based on time
- * - Terminal velocity constants
- * - Safe fall calculations
- *
- * Physics constants:
- * - Gravity: 19.29110527038574 units/s²
- * - Terminal velocity: 60.148003 units/s (normal fall)
- * - Safe fall terminal velocity: 7 units/s (with slow fall)
- *
- * Used by the movement system for accurate fall prediction and
- * jump/parabolic trajectory calculations.
- *
- * @see Movement namespace for all utilities
- */
-
 #include <string>
 #include "MoveSplineFlag.h"
 #include <math.h>
@@ -52,44 +30,16 @@
 namespace Movement
 {
 
-    /**
-     * @var gravity
-     * @brief Gravity constant in units per second squared
-     *
-     * Value: 19.29110527038574
-     * Used for fall time and parabolic trajectory calculations.
-     */
     double gravity = 19.29110527038574;
 
-    /**
-     * @var terminalVelocity
-     * @brief Maximum fall speed in units per second
-     *
-     * Value: 60.148003f
-     * Standard falling terminal velocity without slow fall.
-     */
     float terminalVelocity = 60.148003f;
 
-    /**
-     * @var terminalSavefallVelocity
-     * @brief Maximum safe fall speed in units per second
-     *
-     * Value: 7.f
-     * Terminal velocity with slow fall effects (e.g., Levitate, Slow Fall).
-     */
     float terminalSavefallVelocity = 7.f;
 
-    // Precomputed constants for terminal velocity and fall time
     const float terminal_length = float(terminalVelocity * terminalVelocity) / (2.f * gravity);
     const float terminal_savefall_length = (terminalSavefallVelocity * terminalSavefallVelocity) / (2.f * gravity);
-    const float terminalFallTime = float(terminalVelocity / gravity); // the time needed to reach terminalVelocity
+    const float terminalFallTime = float(terminalVelocity / gravity);
 
-    /**
-     * @brief Computes the fall time based on the path length and whether it is a safe fall.
-     * @param path_length The length of the fall path.
-     * @param isSafeFall True if it is a safe fall, false otherwise.
-     * @return float The computed fall time.
-     */
     float computeFallTime(float path_length, bool isSafeFall)
     {
         if (path_length < 0.f)
@@ -124,13 +74,6 @@ namespace Movement
         return time;
     }
 
-    /**
-     * @brief Computes the fall elevation based on the time passed, whether it is a safe fall, and the start velocity.
-     * @param t_passed The time passed.
-     * @param isSafeFall True if it is a safe fall, false otherwise.
-     * @param start_velocity The start velocity.
-     * @return float The computed fall elevation.
-     */
     float computeFallElevation(float t_passed, bool isSafeFall, float start_velocity)
     {
         float termVel;
@@ -150,7 +93,7 @@ namespace Movement
             start_velocity = termVel;
         }
 
-        float terminal_time = terminalFallTime - start_velocity / gravity; // the time needed to reach terminalVelocity
+        float terminal_time = terminalFallTime - start_velocity / gravity;
 
         if (t_passed > terminal_time)
         {
@@ -165,19 +108,13 @@ namespace Movement
         return result;
     }
 
-    /**
-     * @brief Computes the fall elevation based on the time passed.
-     * @param t_passed The time passed.
-     * @return float The computed fall elevation.
-     */
     float computeFallElevation(float t_passed)
     {
         float result;
 
         if (t_passed > terminalFallTime)
         {
-            // result = terminalVelocity * (t_passed - terminal_time) + gravity*terminal_time*terminal_time*0.5f;
-            // simplified view:
+
             result = terminalVelocity * (t_passed - terminalFallTime) + terminal_length;
         }
         else
@@ -190,42 +127,41 @@ namespace Movement
 
 #define STR(x) #x
 
-    // Array of movement flag names
     const char* g_MovementFlag_names[] =
     {
-        STR(Forward),            // 0x00000001,
-        STR(Backward),           // 0x00000002,
-        STR(Strafe_Left),        // 0x00000004,
-        STR(Strafe_Right),       // 0x00000008,
-        STR(Turn_Left),          // 0x00000010,
-        STR(Turn_Right),         // 0x00000020,
-        STR(Pitch_Up),           // 0x00000040,
-        STR(Pitch_Down),         // 0x00000080,
+        STR(Forward),
+        STR(Backward),
+        STR(Strafe_Left),
+        STR(Strafe_Right),
+        STR(Turn_Left),
+        STR(Turn_Right),
+        STR(Pitch_Up),
+        STR(Pitch_Down),
 
-        STR(Walk),               // 0x00000100,             // Walking
-        STR(Ontransport),        // 0x00000200,
-        STR(Levitation),         // 0x00000400,
-        STR(Root),               // 0x00000800,
-        STR(Falling),            // 0x00001000,
-        STR(Fallingfar),         // 0x00002000,
-        STR(Pendingstop),        // 0x00004000,
-        STR(PendingSTRafestop),  // 0x00008000,
-        STR(Pendingforward),     // 0x00010000,
-        STR(Pendingbackward),    // 0x00020000,
-        STR(PendingSTRafeleft),  // 0x00040000,
-        STR(PendingSTRaferight), // 0x00080000,
-        STR(Pendingroot),        // 0x00100000,
-        STR(Swimming),           // 0x00200000,             // Appears With Fly Flag Also
-        STR(Ascending),          // 0x00400000,             // Swim Up Also
-        STR(Descending),         // 0x00800000,             // Swim Down Also
-        STR(Can_Fly),            // 0x01000000,             // Can Fly In 3.3?
-        STR(Flying),             // 0x02000000,             // Actual Flying Mode
-        STR(Spline_Elevation),   // 0x04000000,             // Used For Flight Paths
-        STR(Spline_Enabled),     // 0x08000000,             // Used For Flight Paths
-        STR(Waterwalking),       // 0x10000000,             // Prevent Unit From Falling Through Water
-        STR(Safe_Fall),          // 0x20000000,             // Active Rogue Safe Fall Spell (Passive)
-        STR(Hover),              // 0x40000000
-        STR(Unknown13),          // 0x80000000
+        STR(Walk),
+        STR(Ontransport),
+        STR(Levitation),
+        STR(Root),
+        STR(Falling),
+        STR(Fallingfar),
+        STR(Pendingstop),
+        STR(PendingSTRafestop),
+        STR(Pendingforward),
+        STR(Pendingbackward),
+        STR(PendingSTRafeleft),
+        STR(PendingSTRaferight),
+        STR(Pendingroot),
+        STR(Swimming),
+        STR(Ascending),
+        STR(Descending),
+        STR(Can_Fly),
+        STR(Flying),
+        STR(Spline_Elevation),
+        STR(Spline_Enabled),
+        STR(Waterwalking),
+        STR(Safe_Fall),
+        STR(Hover),
+        STR(Unknown13),
         STR(Unk1),
         STR(Unk2),
         STR(Unk3),
@@ -244,51 +180,42 @@ namespace Movement
         STR(Unk10),
     };
 
-    // Array of spline flag names
     const char* g_SplineFlag_names[32] =
     {
-        STR(Done),             // 0x00000001,
-        STR(Falling),          // 0x00000002,
-        STR(Unknown3),         // 0x00000004,
-        STR(Unknown4),         // 0x00000008,
-        STR(Unknown5),         // 0x00000010,
-        STR(Unknown6),         // 0x00000020,
-        STR(Unknown7),         // 0x00000040,
-        STR(Unknown8),         // 0x00000080,
-        STR(Runmode),          // 0x00000100,
-        STR(Flying),           // 0x00000200,
-        STR(No_Spline),        // 0x00000400,
-        STR(Unknown12),        // 0x00000800,
-        STR(Unknown13),        // 0x00001000,
-        STR(Unknown14),        // 0x00002000,
-        STR(Unknown15),        // 0x00004000,
-        STR(Unknown16),        // 0x00008000,
-        STR(Final_Point),      // 0x00010000,
-        STR(Final_Target),     // 0x00020000,
-        STR(Final_Angle),      // 0x00040000,
-        STR(Unknown19),        // 0x00080000,
-        STR(Cyclic),           // 0x00100000,
-        STR(Enter_Cycle),      // 0x00200000,
-        STR(Frozen),           // 0x00400000,
-        STR(Unknown23),        // 0x00800000,
-        STR(Unknown24),        // 0x01000000,
-        STR(Unknown25),        // 0x02000000,
-        STR(Unknown26),        // 0x04000000,
-        STR(Unknown27),        // 0x08000000,
-        STR(Unknown28),        // 0x10000000,
-        STR(Unknown29),        // 0x20000000,
-        STR(Unknown30),        // 0x40000000,
-        STR(Unknown31),        // 0x80000000,
+        STR(Done),
+        STR(Falling),
+        STR(Unknown3),
+        STR(Unknown4),
+        STR(Unknown5),
+        STR(Unknown6),
+        STR(Unknown7),
+        STR(Unknown8),
+        STR(Runmode),
+        STR(Flying),
+        STR(No_Spline),
+        STR(Unknown12),
+        STR(Unknown13),
+        STR(Unknown14),
+        STR(Unknown15),
+        STR(Unknown16),
+        STR(Final_Point),
+        STR(Final_Target),
+        STR(Final_Angle),
+        STR(Unknown19),
+        STR(Cyclic),
+        STR(Enter_Cycle),
+        STR(Frozen),
+        STR(Unknown23),
+        STR(Unknown24),
+        STR(Unknown25),
+        STR(Unknown26),
+        STR(Unknown27),
+        STR(Unknown28),
+        STR(Unknown29),
+        STR(Unknown30),
+        STR(Unknown31),
     };
 
-    /**
-     * @brief Prints the flags to a string.
-     * @tparam Flags The type of the flags.
-     * @tparam N The number of flags.
-     * @param t The flags.
-     * @param names The names of the flags.
-     * @param str The string to append the flag names to.
-     */
     template<class Flags, int N>
         void print_flags(Flags t, const char * (&names)[N], std::string& str)
     {
@@ -301,10 +228,6 @@ namespace Movement
         }
     }
 
-    /**
-     * @brief Converts the MoveSplineFlag to a string representation.
-     * @return std::string The string representation of the MoveSplineFlag.
-     */
     std::string MoveSplineFlag::ToString() const
     {
         std::string str;

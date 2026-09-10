@@ -159,7 +159,7 @@ struct boss_gothik : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->IsPlayer())
+            if (IsPlayer(pVictim))
             {
                 DoScriptText(SAY_KILL, m_creature);
             }
@@ -209,8 +209,8 @@ struct boss_gothik : public CreatureScript
 
             m_lSummonedAddGuids.remove(pSummoned->GetObjectGuid());
 
-            m_pInstance->SetData64(TYPE_SIGNAL_6, pSummoned->GetObjectGuid().GetRawValue());
-            if (Creature* pAnchor = m_pInstance->instance->GetCreature(ObjectGuid(m_pInstance->GetData64(TYPE_SIGNAL_6))))
+            m_pInstance->SetData64(TYPE_SIGNAL_6, pSummoned->GetObjectGuid());
+            if (Creature* pAnchor = m_pInstance->instance->GetCreature(static_cast<ObjectGuid>(m_pInstance->GetData64(TYPE_SIGNAL_6))))
             {
                 switch (pSummoned->GetEntry())
                 {
@@ -338,7 +338,7 @@ struct boss_gothik : public CreatureScript
                 case PHASE_TELEPORTING:                         // Phase is only reached if m_pInstance is valid
                     if (m_uiTeleportTimer < uiDiff)
                     {
-                        m_pInstance->SetData64(TYPE_SIGNAL_7, m_creature->GetObjectGuid().GetRawValue());
+                        m_pInstance->SetData64(TYPE_SIGNAL_7, m_creature->GetObjectGuid());
                         uint32 uiTeleportSpell = m_pInstance->GetData(TYPE_SIGNAL_7) ? SPELL_TELEPORT_LEFT : SPELL_TELEPORT_RIGHT;
                         if (DoCastSpellIfCan(m_creature, uiTeleportSpell) == CAST_OK)
                         {
@@ -444,13 +444,13 @@ struct spell_anchor : public SpellScript
             return true;
         }
 
-        ScriptedInstance* pInstance = static_cast<ScriptedInstance*>(ToCreature(pCreatureTarget)->GetInstanceData());
+        ScriptedInstance* pInstance = static_cast<ScriptedInstance*>(static_cast<Creature*>(pCreatureTarget)->GetInstanceData());
 
         if (!pInstance)
         {
             return true;
         }
-        pInstance->SetData64(TYPE_SIGNAL_2, pCreatureTarget->GetObjectGuid().GetRawValue());
+        pInstance->SetData64(TYPE_SIGNAL_2, pCreatureTarget->GetObjectGuid());
         pInstance->SetData(TYPE_SIGNAL_2, uiSpellId);
 
         return true;

@@ -185,7 +185,7 @@ struct is_sunken_temple : public InstanceScript
                             if (!m_uiProtectorsRemaining)
                             {
                                 m_auiEncounter[uiType] = uiData;
-                                DoUseDoorOrButton(GO_JAMMALAN_BARRIER);
+                                DoUseDoorOrButtonByEntry(GO_JAMMALAN_BARRIER);
                                 // Intro yell
                                 DoOrSimulateScriptTextForThisInstance(SAY_JAMMALAN_INTRO, NPC_JAMMALAN);
                             }
@@ -300,8 +300,8 @@ struct is_sunken_temple : public InstanceScript
                         }
 
                         // Use combat doors
-                        DoUseDoorOrButton(GO_HAKKAR_DOOR_1);
-                        DoUseDoorOrButton(GO_HAKKAR_DOOR_2);
+                        DoUseDoorOrButtonByEntry(GO_HAKKAR_DOOR_1);
+                        DoUseDoorOrButtonByEntry(GO_HAKKAR_DOOR_2);
 
                         m_auiEncounter[uiType] = uiData;
 
@@ -488,7 +488,7 @@ struct is_sunken_temple : public InstanceScript
 
                 SummonCreature(*pPlayer, NPC_ATALARION, aSunkenTempleLocation[0].m_fX, aSunkenTempleLocation[0].m_fY, aSunkenTempleLocation[0].m_fZ, aSunkenTempleLocation[0].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0);
                 // Spawn the idol of Hakkar
-                DoRespawnGameObject(GO_IDOL_OF_HAKKAR, 30 * MINUTE);
+                DoRespawnGameObjectByEntry(GO_IDOL_OF_HAKKAR, 30 * MINUTE);
 
                 // Spawn the big green lights
                 for (GuidList::const_iterator itr = m_luiBigLightGUIDs.begin(); itr != m_luiBigLightGUIDs.end(); ++itr)

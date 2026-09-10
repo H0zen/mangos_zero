@@ -42,19 +42,19 @@
 
 namespace
 {
-    /// Where an utterance of this kind goes.
+
     enum class Earshot
     {
-        Around,     ///< everyone within Form::range
-        Listener,   ///< the target alone
-        Zone,       ///< everyone in the speaker's zone
+        Around,
+        Listener,
+        Zone,
     };
 
     struct Form
     {
         ChatMsg  message;
         Earshot  earshot;
-        uint32   range;     ///< world config key; unused unless Earshot::Around
+        uint32   range;
     };
 
     Form FormOf(ChatType kind)
@@ -79,7 +79,6 @@ namespace
         }
     }
 
-    /// The zone a speaker stands in.
     uint32 ZoneOf(Occupant const& speaker)
     {
         return speaker.GetTerrain()->GetZoneId(speaker.Where().X(), speaker.Where().Y(),
@@ -94,7 +93,7 @@ void Utter(Occupant const& speaker, ChatType kind, char const* text, Unit const*
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, form.message, text, language, CHAT_TAG_NONE,
                                  speaker.GetObjectGuid(), speaker.GetName(),
-                                 target ? target->GetObjectGuid() : ObjectGuid(),
+                                 target ? target->GetObjectGuid() : 0,
                                  target ? target->GetName() : "");
 
     switch (form.earshot)
@@ -105,7 +104,7 @@ void Utter(Occupant const& speaker, ChatType kind, char const* text, Unit const*
             break;
 
         case Earshot::Listener:
-            if (Player const* listener = ToPlayer(target))
+            if (Player const* listener = static_cast<Player const*>(target))
             {
                 listener->GetSession()->SendPacket(&data);
             }
@@ -119,8 +118,7 @@ void Utter(Occupant const& speaker, ChatType kind, char const* text, Unit const*
 
 namespace MaNGOS
 {
-    /// Builds one chat packet per locale, so a line reaches each listener in
-    /// the language their client asked for.
+
     class MonsterChatBuilder
     {
         public:
@@ -142,7 +140,7 @@ namespace MaNGOS
 
                 ChatHandler::BuildChatPacket(data, i_msgtype, text, i_language, CHAT_TAG_NONE,
                                              i_object.GetObjectGuid(), i_object.GetNameForLocaleIdx(loc_idx),
-                                             i_target ? i_target->GetObjectGuid() : ObjectGuid(),
+                                             i_target ? i_target->GetObjectGuid() : 0,
                                              i_target ? i_target->GetNameForLocaleIdx(loc_idx) : "");
             }
 
@@ -161,8 +159,6 @@ void Utter(Occupant const& speaker, MangosStringLocale const* line, Unit const* 
 
     Form const form = FormOf(ChatType(line->Type));
 
-    // Only a spoken line carries a language; an emote and a whisper are read
-    // whatever the listener speaks.
     Language const language = (form.message == CHAT_MSG_MONSTER_SAY || form.message == CHAT_MSG_MONSTER_YELL)
                             ? Language(line->LanguageId) : LANG_UNIVERSAL;
 
@@ -177,7 +173,7 @@ void Utter(Occupant const& speaker, MangosStringLocale const* line, Unit const* 
             break;
 
         case Earshot::Listener:
-            if (Player* listener = const_cast<Player*>(ToPlayer(target)))
+            if (Player* listener = const_cast<Player*>(static_cast<Player const*>(target)))
             {
                 say(listener);
             }
@@ -221,8 +217,7 @@ void SendDespawnAnimation(Occupant const& what)
 
 namespace
 {
-    /// Builds one chat packet per locale for a creature that need not be spawned: a script
-    /// yells in the name of a template, and the client is content with a zero low guid.
+
     class StaticMonsterChatBuilder
     {
         public:
@@ -242,12 +237,12 @@ namespace
 
                 ChatHandler::BuildChatPacket(data, i_msgtype, text, i_language, CHAT_TAG_NONE,
                                              i_senderGuid, nameForLocale,
-                                             i_target ? i_target->GetObjectGuid() : ObjectGuid(),
+                                             i_target ? i_target->GetObjectGuid() : 0,
                                              i_target ? i_target->GetNameForLocaleIdx(loc_idx) : "");
             }
 
         private:
-            ObjectGuid i_senderGuid;
+            ObjectGuid i_senderGuid = 0;
             CreatureInfo const* i_cInfo;
             ChatMsg i_msgtype;
             int32 i_textId;
@@ -267,20 +262,20 @@ void YellToMap(Map& map, CreatureInfo const* speaker, int32 textId, Language lan
 
 void YellToMap(Map& map, ObjectGuid speaker, int32 textId, Language language, Unit const* target)
 {
-    if (!speaker.IsAnyTypeCreature())
+    if (!(GuidHigh(speaker) == HIGHGUID_UNIT || GuidHigh(speaker) == HIGHGUID_PET))
     {
-        sLog.outError("YellToMap: %s is not a creature.", speaker.GetString().c_str());
+        sLog.outError("YellToMap: %s is not a creature.", GuidString(speaker).c_str());
         return;
     }
 
-    CreatureInfo const* cInfo = ObjectMgr::GetCreatureTemplate(speaker.GetEntry());
+    CreatureInfo const* cInfo = ObjectMgr::GetCreatureTemplate(GuidEntry(speaker));
     if (!cInfo)
     {
-        sLog.outError("YellToMap: no creature template for %s", speaker.GetString().c_str());
+        sLog.outError("YellToMap: no creature template for %s", GuidString(speaker).c_str());
         return;
     }
 
-    YellToMap(map, cInfo, textId, language, target, speaker.GetCounter());
+    YellToMap(map, cInfo, textId, language, target, GuidCounter(speaker));
 }
 
 void PlaySoundToMap(Map& map, uint32 soundId, uint32 zoneId)

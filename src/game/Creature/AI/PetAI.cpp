@@ -44,12 +44,6 @@
 #include <cfloat>
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Determines whether PetAI can control the given creature.
- *
- * @param creature The creature being evaluated.
- * @return The AI selection priority for pets.
- */
 int PetAI::Permissible(const Creature* creature)
 {
     if (creature->IsPet())
@@ -60,24 +54,12 @@ int PetAI::Permissible(const Creature* creature)
     return PERMIT_BASE_NO;
 }
 
-/**
- * @brief Initializes a pet AI instance.
- *
- * @param c The creature controlled by this AI.
- */
 PetAI::PetAI(Creature* c) : CreatureAI(c), i_tracker(TIME_INTERVAL_LOOK), inCombat(false), m_loiterUntilTime(0)
 {
     m_AllySet.clear();
     UpdateAllies();
 }
 
-/**
- * @brief Handles units entering the pet's line of sight.
- *
- * Aggressive pets can automatically start attacking valid hostile targets.
- *
- * @param u The unit entering line of sight.
- */
 void PetAI::MoveInLineOfSight(Unit* u)
 {
     if (m_creature->getVictim())
@@ -109,11 +91,6 @@ void PetAI::MoveInLineOfSight(Unit* u)
     }
 }
 
-/**
- * @brief Starts pet combat against a target.
- *
- * @param u The unit to attack.
- */
 void PetAI::AttackStart(Unit* u)
 {
     if (!u || (m_creature->IsPet() && ((Pet*)m_creature)->getPetType() == MINI_PET))
@@ -123,42 +100,25 @@ void PetAI::AttackStart(Unit* u)
 
     if (m_creature->Attack(u, true))
     {
-        // TMGs call CreatureRelocation which via MoveInLineOfSight can call this function
-        // thus with the following clear the original TMG gets invalidated and crash, doh
-        // hope it doesn't start to leak memory without this :-/
-        // i_pet->Clear();
+
         m_creature->Pacing().Reckon(MOVE_RUN, false);
-        // range and action choices handled by UpdateAI
+
         inCombat = true;
     }
 }
 
-/**
- * @brief Handles pet evade mode.
- */
 void PetAI::EnterEvadeMode()
 {
 }
 
-/**
- * @brief Checks whether a unit is visible to the pet.
- *
- * @param pl The unit to test for visibility.
- * @return true if the unit is visible; otherwise, false.
- */
 bool PetAI::IsVisible(Unit* pl) const
 {
     return _isVisible(pl);
 }
 
-/**
- * @brief Checks whether the current attack should stop.
- *
- * @return true if the pet should stop attacking; otherwise, false.
- */
 bool PetAI::_needToStop() const
 {
-    // This is needed for charmed creatures, as once their target was reset other effects can trigger threat
+
     if (m_creature->IsCharmed() && m_creature->getVictim() == m_creature->GetCharmer())
     {
         return true;
@@ -167,14 +127,11 @@ bool PetAI::_needToStop() const
     return !m_creature->getVictim()->IsTargetableForAttack();
 }
 
-/**
- * @brief Stops the current pet attack and enters a short loiter period.
- */
 void PetAI::_stopAttack()
 {
     if (inCombat)
     {
-        // simulate well known corpse loiter behavior by picking a loiter time
+
         m_loiterUntilTime = getMSTime() + urand(1000, 2500);
         inCombat = false;
     }
@@ -184,11 +141,6 @@ void PetAI::_stopAttack()
     m_creature->AttackStop();
 }
 
-/**
- * @brief Selects the next target for the pet based on stance and nearby threats.
- *
- * @param owner The pet owner or charmer.
- */
 void PetAI::SelectNextTarget(Unit* owner)
 {
     if (!m_creature->GetCharmInfo()->HasReactState(REACT_PASSIVE) && !m_creature->GetCharmInfo()->HasCommandState(COMMAND_STAY))
@@ -243,11 +195,6 @@ void PetAI::SelectNextTarget(Unit* owner)
 
 }
 
-/**
- * @brief Updates pet combat, movement, and autocast behavior.
- *
- * @param diff The elapsed time since the last update in milliseconds.
- */
 void PetAI::UpdateAI(const uint32 diff)
 {
     if (!m_creature->IsAlive())
@@ -258,7 +205,7 @@ void PetAI::UpdateAI(const uint32 diff)
     Unit* owner = m_creature->GetCharmerOrOwner();
 
     if (m_updateAlliesTimer <= diff)
-        // UpdateAllies self set update timer
+
     {
         UpdateAllies();
     }
@@ -272,7 +219,6 @@ void PetAI::UpdateAI(const uint32 diff)
         _stopAttack();
     }
 
-    // i_pet.getVictim() can't be used for check in case stop fighting, i_pet.getVictim() clear at Unit death etc.
     if (m_creature->getVictim())
     {
         if (_needToStop())
@@ -286,7 +232,7 @@ void PetAI::UpdateAI(const uint32 diff)
 
         if (m_creature->IsStopped() || meleeReach)
         {
-            // required to be stopped cases
+
             if (m_creature->IsStopped() && m_creature->IsNonMeleeSpellCasted(false))
             {
                 if (m_creature->hasUnitState(UNIT_STAT_FOLLOW_MOVE))
@@ -298,7 +244,7 @@ void PetAI::UpdateAI(const uint32 diff)
                     return;
                 }
             }
-            // not required to be stopped case
+
             else if (DoMeleeAttackIfReady())
             {
                 if (!m_creature->getVictim())
@@ -306,7 +252,6 @@ void PetAI::UpdateAI(const uint32 diff)
                     return;
                 }
 
-                // if pet misses its target, it will also be the first in threat list
                 m_creature->getVictim()->AddThreat(m_creature);
 
                 if (_needToStop())
@@ -318,12 +263,12 @@ void PetAI::UpdateAI(const uint32 diff)
     }
     else if (owner && m_creature->GetCharmInfo() && ((m_loiterUntilTime == 0) || (getMSTime() > m_loiterUntilTime)))
     {
-        // pets with dead enemies, after loiter, pick next target based on distance and stance
+
         if (m_loiterUntilTime > 0)
         {
             m_loiterUntilTime = 0;
             SelectNextTarget(owner);
-            // if nothing to do, loiter is extended 1 tick
+
         }
         else if (owner->IsInCombat() && !(m_creature->GetCharmInfo()->HasReactState(REACT_PASSIVE) || m_creature->GetCharmInfo()->HasCommandState(COMMAND_STAY)))
         {
@@ -338,13 +283,12 @@ void PetAI::UpdateAI(const uint32 diff)
         }
     }
 
-    // Autocast (casted only in combat or persistent spells in any state)
     if (!m_creature->IsNonMeleeSpellCasted(false))
     {
         typedef std::vector<std::pair<Unit*, Spell*> > TargetSpellList;
         TargetSpellList targetSpellStore;
 
-        float maxOutOfRangeDistance = 0.0f; // track spells failing due to range
+        float maxOutOfRangeDistance = 0.0f;
         for (uint8 i = 0; i < m_creature->GetPetAutoSpellSize(); ++i)
         {
             uint32 spellID = m_creature->GetPetAutoSpellOnPos(i);
@@ -364,35 +308,29 @@ void PetAI::UpdateAI(const uint32 diff)
                 continue;
             }
 
-            // ignore some combinations of combat state and combat/noncombat spells
             if (!inCombat)
             {
-                // ignore attacking spells, and allow only self/around spells
+
                 if (!cast::RecipeOf(*spellInfo).IsPositive())
                 {
                     continue;
                 }
 
-                // non combat spells allowed
-                // only pet spells have IsNonCombatSpell and not fit this reqs:
-                // Consume Shadows, Lesser Invisibility, so ignore checks for its
                 if (!IsNonCombatSpell(spellInfo))
                 {
-                    // allow only spell without spell cost or with spell cost but not duration limit
+
                     int32 duration = cast::RecipeOf(*spellInfo).DurationMs();
                     if ((spellInfo->ManaCost || spellInfo->ManaCostPct || spellInfo->ManaPerSecond) && duration > 0)
                     {
                         continue;
                     }
 
-                    // allow only spell without cooldown > duration
                     int32 cooldown = GetSpellRecoveryTime(spellInfo);
                     if (cooldown >= 0 && duration >= 0 && cooldown > duration)
                     {
                         continue;
                     }
 
-                    // not allow instant kill autocasts as full health cost
                     if (spellInfo->HasSpellEffect(SPELL_EFFECT_INSTAKILL))
                     {
                         continue;
@@ -401,7 +339,7 @@ void PetAI::UpdateAI(const uint32 diff)
             }
             else
             {
-                // just ignore non-combat spells
+
                 if (IsNonCombatSpell(spellInfo))
                 {
                     continue;
@@ -422,7 +360,6 @@ void PetAI::UpdateAI(const uint32 diff)
                 {
                     Unit* Target = m_creature->GetMap()->GetUnit(*tar);
 
-                    // only buff targets that are in combat, unless the spell can only be cast while out of combat
                     if (!Target)
                     {
                         continue;
@@ -436,7 +373,6 @@ void PetAI::UpdateAI(const uint32 diff)
                     }
                 }
 
-                //if offensive spell wasn't usable, check WHY
                 if (!spellUsed && inCombat && m_creature->getVictim() && !cast::RecipeOf(*spellInfo).IsPositive())
                 {
                     SpellCastResult failReason = spell->CheckPetCast(m_creature->getVictim());
@@ -461,7 +397,6 @@ void PetAI::UpdateAI(const uint32 diff)
             }
         }
 
-        // found units to cast on to
         if (!targetSpellStore.empty())
         {
             uint32 index = urand(0, targetSpellStore.size() - 1);
@@ -477,12 +412,12 @@ void PetAI::UpdateAI(const uint32 diff)
             if (!m_creature->Where().HasInArc(target->Where(), M_PI_F))
             {
                 m_creature->SetInFront(target);
-                if (target->IsPlayer())
+                if (IsPlayer(target))
                 {
                     m_creature->SendCreateUpdateToPlayer((Player*)target);
                 }
 
-                if (owner && owner->IsPlayer())
+                if (owner &&IsPlayer(owner))
                 {
                     m_creature->SendCreateUpdateToPlayer((Player*)owner);
                 }
@@ -498,13 +433,13 @@ void PetAI::UpdateAI(const uint32 diff)
         }
         else if (maxOutOfRangeDistance > 0.0f && inCombat && m_creature->getVictim() && (m_attackDistance != maxOutOfRangeDistance))
         {
-            // spells failed due to range - move closer
+
             m_attackDistance = maxOutOfRangeDistance;
             HandleMovementOnAttackStart(m_creature->getVictim());
         }
         else if (inCombat && m_creature->getVictim())
         {
-            // No castable spells at all - switch to melee
+
             if (m_attackDistance > 0.0f || !m_creature->hasUnitState(UNIT_STAT_CHASE))
             {
                 m_attackDistance = 0.0f;
@@ -512,7 +447,6 @@ void PetAI::UpdateAI(const uint32 diff)
             }
         }
 
-        // deleted cached Spell objects
         for (TargetSpellList::const_iterator itr = targetSpellStore.begin(); itr != targetSpellStore.end(); ++itr)
         {
             delete itr->second;
@@ -520,43 +454,33 @@ void PetAI::UpdateAI(const uint32 diff)
     }
 }
 
-/**
- * @brief Checks whether a unit is visible to the pet for guard-range logic.
- *
- * @param u The unit to evaluate.
- * @return true if the unit is visible to the pet; otherwise false.
- */
 bool PetAI::_isVisible(Unit* u) const
 {
     return m_creature->Where().WithinDist(u->Where(), sWorld.getConfig(CONFIG_FLOAT_SIGHT_GUARDER)) &&
         u->IsVisibleForOrDetect(m_creature, m_creature, true);
 }
 
-/**
- * @brief Refreshes the cached ally set used for group-aware pet support logic.
- */
 void PetAI::UpdateAllies()
 {
     Unit* owner = m_creature->GetCharmerOrOwner();
     Group* pGroup = nullptr;
 
-    m_updateAlliesTimer = 10 * IN_MILLISECONDS;             // update friendly targets every 10 seconds, lesser checks increase performance
+    m_updateAlliesTimer = 10 * IN_MILLISECONDS;
 
     if (!owner)
     {
         return;
     }
-    else if (owner->IsPlayer())
+    else if (IsPlayer(owner))
     {
         pGroup = ((Player*)owner)->GetGroup();
     }
 
-    // only pet and owner/not in group->ok
     if (m_AllySet.size() == 2 && !pGroup)
     {
         return;
     }
-    // owner is in group; group members filled in already (no raid -> subgroupcount = whole count)
+
     if (pGroup && !pGroup->isRaidGroup() && m_AllySet.size() == (pGroup->GetMembersCount() + 2))
     {
         return;
@@ -564,7 +488,7 @@ void PetAI::UpdateAllies()
 
     m_AllySet.clear();
     m_AllySet.insert(m_creature->GetObjectGuid());
-    if (pGroup)                                             // add group
+    if (pGroup)
     {
         for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
         {
@@ -582,20 +506,15 @@ void PetAI::UpdateAllies()
             m_AllySet.insert(target->GetObjectGuid());
         }
     }
-    else                                                    // remove group
+    else
     {
         m_AllySet.insert(owner->GetObjectGuid());
     }
 }
 
-/**
- * @brief Reacts to an incoming attacker according to the pet's command and react states.
- *
- * @param attacker The unit that attacked the pet.
- */
 void PetAI::AttackedBy(Unit* attacker)
 {
-    // when attacked, fight back in case 1)no victim already AND 2)not set to passive AND 3)not set to stay, unless can it can reach attacker with melee attack anyway
+
     if (!m_creature->getVictim() && m_creature->GetCharmInfo() && !m_creature->GetCharmInfo()->HasReactState(REACT_PASSIVE) &&
         (!m_creature->GetCharmInfo()->HasCommandState(COMMAND_STAY) || InMeleeReach(*m_creature, *attacker)))
     {

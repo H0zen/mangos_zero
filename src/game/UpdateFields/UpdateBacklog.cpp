@@ -30,17 +30,13 @@ void UpdateBacklog::Send()
 {
     UpdateDataMapType update_players;
 
-    // A passenger's block names its hull by guid and carries (0,0,0) for a world
-    // position, so the client can only place it once that hull exists. Hulls go
-    // into every observer's batch first; the set this came from is ordered by
-    // pointer, which says nothing about either.
     std::vector<Object*> hulls;
     std::vector<Object*> rest;
     rest.reserve(m_waiting.size());
 
     for (Object* obj : m_waiting)
     {
-        (obj->GetObjectGuid().IsMOTransport() ? hulls : rest).push_back(obj);
+        ((GuidHigh(obj->GetObjectGuid()) == HIGHGUID_MO_TRANSPORT) ? hulls : rest).push_back(obj);
     }
     m_waiting.clear();
 
@@ -53,11 +49,11 @@ void UpdateBacklog::Send()
         obj->BuildUpdateData(update_players);
     }
 
-    WorldPacket packet;                                     // here we allocate a std::vector with a size of 0x10000
+    WorldPacket packet;
     for (UpdateDataMapType::iterator iter = update_players.begin(); iter != update_players.end(); ++iter)
     {
         iter->second.BuildPacket(&packet);
         iter->first->GetSession()->SendPacket(&packet);
-        packet.clear();                                     // clean the string
+        packet.clear();
     }
 }

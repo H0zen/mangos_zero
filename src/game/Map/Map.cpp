@@ -23,25 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Map.cpp
- * @brief Implementation of game world map system
- *
- * This file implements the Map class which manages individual game maps
- * (continents, instances, battlegrounds). Key responsibilities include:
- * - Grid-based map data loading and management
- * - Game object and creature spawning
- * - Player movement and visibility
- * - Instance data management
- * - Transport systems (boats, zeppelins)
- * - Weather systems
- * - Script execution
- *
- * Maps are divided into grids (64x64) that can be loaded/unloaded dynamically
- * to manage memory usage. Each map instance handles its own lifecycle,
- * including loading terrain data, spawning objects, and cleanup.
- */
-
 #include <cmath>
 #include "PerKind.h"
 #include "SpawnRecord.h"
@@ -81,23 +62,6 @@
 #include "ObjectGridLoader.h"
 #include "Corpse.h"
 
-
-/**
- * @brief Map destructor
- *
- * Cleans up all resources associated with the map:
- * - Triggers Eluna OnDestroy callback if enabled
- * - Unloads all grids and objects
- * - Cleans up scheduled scripts
- * - Releases persistent state reference
- * - Deletes instance data
- * - Removes all transports
- * - Unloads MMAP navigation data
- * - Releases terrain data reference
- * - Deletes weather system
- *
- * @note This is called when an instance is unloaded or server shuts down
- */
 Map::~Map()
 {
 
@@ -105,16 +69,14 @@ Map::~Map()
 
     if (m_persistentState)
     {
-        m_persistentState->SetUsedByMapState(nullptr);          // field pointer can be deleted after this
+        m_persistentState->SetUsedByMapState(nullptr);
     }
 
     delete i_data;
     i_data = nullptr;
 
-    // unload instance specific navigation data
     MMAP::MMapFactory::createOrGetMMapManager()->unloadMapInstance(m_TerrainData->GetMapId(), GetInstanceId());
 
-    // release reference count
     if (m_TerrainData->Release())
     {
         sTerrainMgr.UnloadTerrain(m_TerrainData->GetMapId());
@@ -124,17 +86,6 @@ Map::~Map()
     m_weatherSystem = nullptr;
 }
 
-/**
- * @brief Load map and VMap data for a specific grid
- * @param gx Grid X coordinate (0-63)
- * @param gy Grid Y coordinate (0-63)
- *
- * Loads terrain data and visual maps for the specified grid coordinates.
- * This is called on-demand when players enter a grid area. The loaded
- * data includes height maps, liquid data, and collision information.
- *
- * @note If the grid is already loaded, this function returns immediately
- */
 void Map::LoadMapAndVMap(int gx, int gy)
 {
     if (m_bLoadedGrids[gx][gy])
@@ -148,21 +99,6 @@ void Map::LoadMapAndVMap(int gx, int gy)
     }
 }
 
-/**
- * @brief Construct a new Map instance
- * @param id Map ID from Map.dbc
- * @param expiry Time before grid expires (0 for permanent maps)
- * @param InstanceId Instance ID (0 for continents, unique for instances)
- *
- * Initializes a map instance with:
- * - Map entry lookup from DBC
- * - Terrain data loading
- * - Grid state initialization
- * - GUID generators for temporary objects
- * - Eluna Lua state (if enabled)
- *
- * @note This constructor is used for both continents and instanced maps
- */
 Map::Map(uint32 id, time_t expiry, uint32 InstanceId)
     : i_mapEntry(sMapStore.LookupEntry(id)),
     i_id(id), i_InstanceId(InstanceId), m_unloadTimer(0),
@@ -181,16 +117,14 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId)
     {
         for (unsigned int idx = 0; idx < MAX_NUMBER_OF_GRIDS; ++idx)
         {
-            // z code
+
             m_bLoadedGrids[idx][j] = false;
             setNGrid(nullptr, idx, j);
         }
     }
 
-    // lets initialize visibility distance for map
     Map::InitVisibilityDistance();
 
-    // add reference for TerrainData object
     m_TerrainData->AddRef();
 
     m_persistentState = sMapPersistentStateMgr.AddPersistentState(i_mapEntry, GetInstanceId(), 0, IsDungeon());
@@ -199,21 +133,12 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId)
     m_weatherSystem = new WeatherSystem(this);
 }
 
-/**
- * @brief Initializes the default visibility distance for the map.
- */
 void Map::InitVisibilityDistance()
 {
-    // init visibility for continents
+
     m_VisibleDistance = World::GetMaxVisibleDistanceOnContinents();
 }
 
-/**
- * @brief Registers a cinematic flyover viewer watching this map from a remote
- * camera, extending the packet broadcast radius to its visibility distance.
- *
- * @param radius The flyover visibility distance in yards.
- */
 float Map::GetBroadcastRadius() const
 {
     return m_cinematicViewerRadius > m_VisibleDistance ? m_cinematicViewerRadius : m_VisibleDistance;
@@ -225,13 +150,6 @@ void Map::AddCinematicViewer(float radius)
     m_cinematicViewerRadius = *m_cinematicViewerRadii.rbegin();
 }
 
-/**
- * @brief Unregisters a cinematic flyover viewer; the effective broadcast
- * radius drops to the largest remaining viewer radius, or reverts to the map
- * visibility distance when the last viewer is removed.
- *
- * @param radius The radius this viewer was registered with.
- */
 void Map::RemoveCinematicViewer(float radius)
 {
     std::multiset<float>::iterator itr = m_cinematicViewerRadii.find(radius);
@@ -245,69 +163,23 @@ void Map::RemoveCinematicViewer(float radius)
     m_cinematicViewerRadius = m_cinematicViewerRadii.empty() ? 0.0f : *m_cinematicViewerRadii.rbegin();
 }
 
-// Template specialization of utility methods
-
-/**
- * @brief Adds a grid object to the specified cell storage.
- *
- * @tparam T The object type being inserted.
- * @param obj The object to add.
- * @param grid The grid that owns the cell.
- * @param cell The target cell inside the grid.
- */
 template<class T>
 
-/**
- * @brief Adds a grid object to the specified cell storage.
- *
- * @tparam T The object type being inserted.
- * @param obj The object to add.
- * @param grid The grid that owns the cell.
- * @param cell The target cell inside the grid.
- */
 void Map::AddToGrid(T* obj, NGridType* grid, Cell const& cell)
 {
     (*grid)(cell.CellX(), cell.CellY()).template AddGridObject<T>(obj);
 }
 
-/**
- * @brief Adds a player to the world object storage of the target cell.
- *
- * @param obj The player to add.
- * @param grid The grid that owns the cell.
- * @param cell The target cell inside the grid.
- */
 template<>
 
-/**
- * @brief Adds a player to the world object storage of the target cell.
- *
- * @param obj The player to add.
- * @param grid The grid that owns the cell.
- * @param cell The target cell inside the grid.
- */
 void Map::AddToGrid(Player* obj, NGridType* grid, Cell const& cell)
 {
     (*grid)(cell.CellX(), cell.CellY()).AddWorldObject(obj);
     grid->incPlayerCount();
 }
 
-/**
- * @brief Adds a corpse to either world or grid storage depending on its type.
- *
- * @param obj The corpse to add.
- * @param grid The grid that owns the cell.
- * @param cell The target cell inside the grid.
- */
 template<>
 
-/**
- * @brief Adds a corpse to either world or grid storage depending on its type.
- *
- * @param obj The corpse to add.
- * @param grid The grid that owns the cell.
- * @param cell The target cell inside the grid.
- */
 void Map::AddToGrid(Corpse* obj, NGridType* grid, Cell const& cell)
 {
     if (obj->OutlivesItsGrid())
@@ -320,22 +192,8 @@ void Map::AddToGrid(Corpse* obj, NGridType* grid, Cell const& cell)
     }
 }
 
-/**
- * @brief Adds a creature to the proper storage and updates its current cell.
- *
- * @param obj The creature to add.
- * @param grid The grid that owns the cell.
- * @param cell The target cell inside the grid.
- */
 template<>
 
-/**
- * @brief Adds a creature to the proper storage and updates its current cell.
- *
- * @param obj The creature to add.
- * @param grid The grid that owns the cell.
- * @param cell The target cell inside the grid.
- */
 void Map::AddToGrid(Creature* obj, NGridType* grid, Cell const& cell)
 {
     if (obj->OutlivesItsGrid())
@@ -350,67 +208,23 @@ void Map::AddToGrid(Creature* obj, NGridType* grid, Cell const& cell)
     obj->SetCurrentCell(cell);
 }
 
-/**
- * @brief Removes a grid object from the specified cell storage.
- *
- * @tparam T The object type being removed.
- * @param obj The object to remove.
- * @param grid The grid that owns the cell.
- * @param cell The source cell inside the grid.
- */
 template<class T>
 
-/**
- * @brief Removes a grid object from the specified cell storage.
- *
- * @tparam T The object type being removed.
- * @param obj The object to remove.
- * @param grid The grid that owns the cell.
- * @param cell The source cell inside the grid.
- */
 void Map::RemoveFromGrid(T* obj, NGridType* grid, Cell const& cell)
 {
     (*grid)(cell.CellX(), cell.CellY()).template RemoveGridObject<T>(obj);
 }
 
-/**
- * @brief Removes a player from the world object storage of the target cell.
- *
- * @param obj The player to remove.
- * @param grid The grid that owns the cell.
- * @param cell The source cell inside the grid.
- */
 template<>
 
-/**
- * @brief Removes a player from the world object storage of the target cell.
- *
- * @param obj The player to remove.
- * @param grid The grid that owns the cell.
- * @param cell The source cell inside the grid.
- */
 void Map::RemoveFromGrid(Player* obj, NGridType* grid, Cell const& cell)
 {
     (*grid)(cell.CellX(), cell.CellY()).RemoveWorldObject(obj);
     grid->decPlayerCount();
 }
 
-/**
- * @brief Removes a corpse from either world or grid storage depending on its type.
- *
- * @param obj The corpse to remove.
- * @param grid The grid that owns the cell.
- * @param cell The source cell inside the grid.
- */
 template<>
 
-/**
- * @brief Removes a corpse from either world or grid storage depending on its type.
- *
- * @param obj The corpse to remove.
- * @param grid The grid that owns the cell.
- * @param cell The source cell inside the grid.
- */
 void Map::RemoveFromGrid(Corpse* obj, NGridType* grid, Cell const& cell)
 {
     if (obj->OutlivesItsGrid())
@@ -423,22 +237,8 @@ void Map::RemoveFromGrid(Corpse* obj, NGridType* grid, Cell const& cell)
     }
 }
 
-/**
- * @brief Removes a creature from the proper storage container.
- *
- * @param obj The creature to remove.
- * @param grid The grid that owns the cell.
- * @param cell The source cell inside the grid.
- */
 template<>
 
-/**
- * @brief Removes a creature from the proper storage container.
- *
- * @param obj The creature to remove.
- * @param grid The grid that owns the cell.
- * @param cell The source cell inside the grid.
- */
 void Map::RemoveFromGrid(Creature* obj, NGridType* grid, Cell const& cell)
 {
     if (obj->OutlivesItsGrid())
@@ -451,11 +251,6 @@ void Map::RemoveFromGrid(Creature* obj, NGridType* grid, Cell const& cell)
     }
 }
 
-/**
- * @brief Removes a player from global object access and deletes it.
- *
- * @param pl The player to delete.
- */
 void Map::DeleteFromWorld(Player* pl)
 {
     sPlayerRegistry.Remove(pl);
@@ -470,12 +265,10 @@ Map::EnsureGridCreated(const GridPair& p)
         setNGrid(new NGridType(p.x_coord * MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, i_gridExpiry, sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD)),
             p.x_coord, p.y_coord);
 
-        // build a linkage between this map and NGridType
         buildNGridLinkage(getNGrid(p.x_coord, p.y_coord));
 
         getNGrid(p.x_coord, p.y_coord)->SetGridState(GRID_STATE_IDLE);
 
-        // z coord
         int gx = (MAX_NUMBER_OF_GRIDS - 1) - p.x_coord;
         int gy = (MAX_NUMBER_OF_GRIDS - 1) - p.y_coord;
 
@@ -520,12 +313,6 @@ Map::EnsureGridLoadedAtEnter(const Cell& cell, Player* player)
     }
 }
 
-/**
- * @brief Ensures that object data for the grid containing the cell is loaded.
- *
- * @param cell The cell whose grid should be available.
- * @return true if object data was loaded during this call; otherwise false.
- */
 bool Map::EnsureGridLoaded(const Cell& cell)
 {
     EnsureGridCreated(GridPair(cell.GridX(), cell.GridY()));
@@ -534,13 +321,12 @@ bool Map::EnsureGridLoaded(const Cell& cell)
     MANGOS_ASSERT(grid != nullptr);
     if (!isGridObjectDataLoaded(cell.GridX(), cell.GridY()))
     {
-        grid->markGridObjectDataLoading(); // re-entrancy guard (upstream semantics)
+        grid->markGridObjectDataLoading();
         ObjectGridLoader loader(*grid, this, cell);
         loader.LoadN();
 
         setGridObjectDataLoaded(true, cell.GridX(), cell.GridY());
 
-        // Add resurrectable corpses to world object list in grid
         sCorpseManager.AddCorpsesToGrid(GridPair(cell.GridX(), cell.GridY()), (*grid)(cell.CellX(), cell.CellY()), this);
         return true;
     }
@@ -548,12 +334,6 @@ bool Map::EnsureGridLoaded(const Cell& cell)
     return false;
 }
 
-/**
- * @brief Forces the grid at the provided coordinates to load and stay locked.
- *
- * @param x The world X coordinate.
- * @param y The world Y coordinate.
- */
 void Map::ForceLoadGrid(float x, float y)
 {
     if (!IsLoaded(x, y))
@@ -570,33 +350,21 @@ void Map::ForceLoadGrid(float x, float y)
     }
 }
 
-/**
- * @brief Adds a player to the map and initializes its visible world state.
- *
- * @param player The player entering the map.
- * @param initialEntry Optional initial-login hook; ordinary map entry passes null.
- * @return Always true after the player has been added.
- */
 bool Map::Add(Player* player, InitialWorldEntryHook* initialEntry)
 {
     player->GetMapRef().link(this, player);
     player->SetMap(this);
 
-    // update player state for other player and visa-versa
     CellPair p = MaNGOS::ComputeCellPair(player->Where().X(), player->Where().Y());
     Cell cell(p);
     EnsureGridLoadedAtEnter(cell, player);
     player->AddToWorld();
 
-    // The hook needs committed membership to derive the correct world anchor,
-    // but must finish its preamble before any object block enters the batch.
     if (initialEntry)
     {
         initialEntry->AfterAddToWorld(*player);
     }
 
-    // Coalesce only a genuine login using the player's own camera. Redirected
-    // cameras and non-login map entry retain the established packet path.
     std::optional<InitialWorldUpdateBatch> initialUpdates;
     if (player->GetSession()->PlayerLoading() && player->GetCamera().GetBody() == player)
     {
@@ -611,8 +379,6 @@ bool Map::Add(Player* player, InitialWorldEntryHook* initialEntry)
     player->GetViewPoint().Event_AddedToWorld(
         &(*grid)(cell.CellX(), cell.CellY()), player, batch);
 
-    // The owner camera is the sole flush point. Continuing after a missed
-    // flush would admit a client with an incomplete initial world.
     if (batch && !batch->WasSent())
     {
         if (!batch->FlushAttempted())
@@ -625,7 +391,6 @@ bool Map::Add(Player* player, InitialWorldEntryHook* initialEntry)
     {
         UpdateObjectVisibility(player, cell, p);
     }
-
 
     if (i_data)
     {
@@ -680,7 +445,7 @@ template<class T>
 
 namespace
 {
-    /// Everyone whose camera stands in the visited cells and whom the audience admits.
+
     struct CameraSweep
     {
         Audience const& who;
@@ -700,8 +465,6 @@ namespace
                     continue;
                 }
 
-                // The distance is to what the viewer is looking THROUGH, which is not
-                // always where the viewer stands.
                 if (who.HasRange()
                     && !camera->GetBody()->Where().WithinDist(who.Subject()->Where(), range))
                 {
@@ -790,10 +553,7 @@ uint32 Map::Hearers(Audience const& who, MapBroadcaster::Listener const& tell)
 
 uint32 Map::Across(Audience const& who, MapBroadcaster::Listener const& tell)
 {
-    // A packet with a range has no range to answer with across the boundary: the one
-    // object that could measure it is the vessel, whose pose is a waypoint estimate
-    // nothing is allowed to decide anything by. So a shout from the pier stays ashore,
-    // while everything unmeasured reaches the decks crossing this water.
+
     if (who.HasRange())
     {
         return 0;
@@ -826,12 +586,6 @@ uint32 Map::Across(Audience const& who, MapBroadcaster::Listener const& tell)
     return told;
 }
 
-/**
- * @brief Checks whether the grid and its object data are currently loaded.
- *
- * @param p The grid coordinates to test.
- * @return true if the grid exists and its object data is loaded; otherwise false.
- */
 bool Map::loaded(const GridPair& p) const
 {
     return (getNGrid(p.x_coord, p.y_coord) && isGridObjectDataLoaded(p.x_coord, p.y_coord));
@@ -846,15 +600,13 @@ void Map::VisitNearbyCellsOf(Occupant* obj,
         return;
     }
 
-    // lets update mobs/objects in ALL visible cells around player!
     CellArea area = Cell::CalculateCellArea(obj->Where().X(), obj->Where().Y(), GetVisibilityDistance());
 
     for (uint32 x = area.low_bound.x_coord; x <= area.high_bound.x_coord; ++x)
     {
         for (uint32 y = area.low_bound.y_coord; y <= area.high_bound.y_coord; ++y)
         {
-            // marked cells are those that have been visited
-            // don't visit the same cell twice
+
             uint32 cell_id = (y * TOTAL_NUMBER_OF_CELLS_PER_MAP) + x;
             if (!isCellMarked(cell_id))
             {
@@ -869,25 +621,10 @@ void Map::VisitNearbyCellsOf(Occupant* obj,
     }
 }
 
-/**
- * @brief Updates map sessions, active objects, scripts, and grid states for one tick.
- *
- * @param t_diff The elapsed update time in milliseconds.
- */
 void Map::Update(const uint32& t_diff)
 {
     metrics::PhaseClock<metrics::TickRecord> phases(m_ticks, getMSTime());
 
-    /// Run the packets the serial phase routed here.
-    ///
-    /// Each entry is re-checked first: the serial phase continued after the
-    /// packet was posted and may have moved the player off this map, logged him
-    /// out, or destroyed him.
-    ///
-    /// Everything that arrives here was marked thread-safe, which is a promise
-    /// that the answer touches nothing outside this map. A sentry stands over
-    /// each one, so a row whose promise is false says so in the log instead of
-    /// racing quietly.
     for (MapMailbox::Entry& entry : m_mailbox.Take())
     {
         WorldSession* session = entry.session;
@@ -899,12 +636,12 @@ void Map::Update(const uint32& t_diff)
         Player* plr = session->GetPlayer();
         if (!plr || plr->GetObjectGuid() != entry.player)
         {
-            continue;   // logged out, or the session is on a different character
+            continue;
         }
 
         if (!plr->IsInWorld() || plr->GetMap() != this)
         {
-            continue;   // left for another map after the packet was routed
+            continue;
         }
 
         WorkSentry watch(LookupOpcodeName(entry.packet->GetOpcode()));
@@ -913,7 +650,6 @@ void Map::Update(const uint32& t_diff)
 
     phases.Mark(metrics::TickPhase::Mailbox, getMSTime());
 
-    /// update players at tick
     for (m_mapRefIter = m_mapRefManager.begin(); m_mapRefIter != m_mapRefManager.end(); ++m_mapRefIter)
     {
         Player* plr = m_mapRefIter->getSource();
@@ -926,17 +662,14 @@ void Map::Update(const uint32& t_diff)
 
     phases.Mark(metrics::TickPhase::Players, getMSTime());
 
-    /// update active cells around players and active objects
     resetMarkedCells();
 
     MaNGOS::ObjectUpdater updater(t_diff);
-    // for creature
+
     TypeContainerVisitor<MaNGOS::ObjectUpdater, GridTypeMapContainer  > grid_object_update(updater);
-    // for pets
+
     TypeContainerVisitor<MaNGOS::ObjectUpdater, WorldTypeMapContainer > world_object_update(updater);
 
-    // the player iterator is stored in the map object
-    // to make sure calls to Map::Remove don't invalidate it
     for (m_mapRefIter = m_mapRefManager.begin(); m_mapRefIter != m_mapRefManager.end(); ++m_mapRefIter)
     {
         Player* plr = m_mapRefIter->getSource();
@@ -948,8 +681,6 @@ void Map::Update(const uint32& t_diff)
 
         VisitNearbyCellsOf(plr, grid_object_update, world_object_update);
 
-        // Collect and remove references to creatures too far away from player's m_HostileRefManager
-        // Combat state will change on next tick, if case
         if (!IsDungeon() && plr->IsInCombat())
         {
             std::vector<Creature*> _removeList;
@@ -960,9 +691,9 @@ void Map::Update(const uint32& t_diff)
             {
                 if (Unit* unit = ref->getSource()->getOwner())
                 {
-                    if (ToCreature(unit) && unit->GetMapId() == plr->GetMapId() && !InReach(*unit, *plr, GetVisibilityDistance(), false))
+                    if (static_cast<Creature*>(unit) && unit->GetMapId() == plr->GetMapId() && !InReach(*unit, *plr, GetVisibilityDistance(), false))
                     {
-                        _removeList.push_back(ToCreature(unit));
+                        _removeList.push_back(static_cast<Creature*>(unit));
                     }
                 }
 
@@ -984,18 +715,14 @@ void Map::Update(const uint32& t_diff)
 
     phases.Mark(metrics::TickPhase::GridObjects, getMSTime());
 
-    // non-player active objects
     if (!m_activeNonPlayers.empty())
     {
         for (m_activeNonPlayersIter = m_activeNonPlayers.begin(); m_activeNonPlayersIter != m_activeNonPlayers.end();)
         {
             Occupant* obj = *m_activeNonPlayersIter;
 
-            // step before processing, in this case if Map::Remove remove next object we correctly
-            // step to next-next, and if we step to end() then newly added objects can wait next update.
             ++m_activeNonPlayersIter;
 
-            // skip not in world
             if (!obj || !obj->IsInWorld())
             {
                 continue;
@@ -1007,32 +734,26 @@ void Map::Update(const uint32& t_diff)
 
     phases.Mark(metrics::TickPhase::ActiveObjects, getMSTime());
 
-    // Send world objects and item update field changes
     m_backlog.Send();
 
-    // Don't unload grids if it's battleground, since we may have manually added GOs,creatures, those doesn't load from DB at grid re-load !
-    // This isn't really bother us, since as soon as we have instanced BG-s, the whole map unloads as the BG gets ended
     if (!IsBattleGround())
     {
         for (GridRefManager<NGridType>::iterator i = GridRefManager<NGridType>::begin(); i != GridRefManager<NGridType>::end();)
         {
             NGridType* grid = i->getSource();
             GridInfo* info = i->getSource()->getGridInfoRef();
-            ++i;                                            // The update might delete the map and we need the next map before the iterator gets invalid
+            ++i;
             MANGOS_ASSERT(grid->GetGridState() >= 0 && grid->GetGridState() < MAX_GRID_STATE);
             GridStateFor(grid->GetGridState()).Update(*this, *grid, *info, grid->getX(), grid->getY(), t_diff);
         }
     }
 
-
     phases.Mark(metrics::TickPhase::ObjectUpdates, getMSTime());
 
-    ///- Process necessary scripts
     if (!m_scripts.Empty())
     {
         m_scripts.RunDue();
     }
-
 
     if (i_data)
     {
@@ -1043,15 +764,6 @@ void Map::Update(const uint32& t_diff)
 
     phases.Mark(metrics::TickPhase::Scripts, getMSTime());
 
-    // LAST ACT, and it must stay last: every vessel sailing this map takes its tick here,
-    // and that tick runs the vessel's deck map nested inside it. A deckhand's spell can
-    // drop a dynamic object ashore and a passenger can step off onto this map, so the deck
-    // must not run until this map has finished walking its own containers.
-    //
-    // Not through the grid's ObjectUpdater, though the vessel is a world object: a game
-    // object never relocates its cell in this core, so a ship would advance once, drift
-    // out of the cell it was filed in and never be visited again -- which is a ship that
-    // sits at its first waypoint for ever.
     for (Transport* vessel : sFleet.On(GetId()))
     {
         if (vessel->GetMap() == this)
@@ -1062,12 +774,6 @@ void Map::Update(const uint32& t_diff)
     }
 }
 
-/**
- * @brief Removes a player from the map and optionally deletes it.
- *
- * @param player The player to remove.
- * @param remove True to fully delete the player object after cleanup.
- */
 bool Map::Rebind(Player* player, float x, float y, float z, float o)
 {
     Map* from = player->GetMap();
@@ -1076,7 +782,6 @@ bool Map::Rebind(Player* player, float x, float y, float z, float o)
         return false;
     }
 
-    // OUT of the old map's containers, by the pose he still holds there.
     CellPair was = MaNGOS::ComputeCellPair(player->Where().X(), player->Where().Y());
     if (was.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || was.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
     {
@@ -1092,8 +797,6 @@ bool Map::Rebind(Player* player, float x, float y, float z, float o)
         return false;
     }
 
-    // The map he is leaving may be walking this very list -- a vessel's map ticks nested
-    // inside the tick of the world she sails.
     if (from->m_mapRefIter == player->GetMapRef())
     {
         from->m_mapRefIter = from->m_mapRefIter->nocheck_prev();
@@ -1101,8 +804,6 @@ bool Map::Rebind(Player* player, float x, float y, float z, float o)
     player->GetMapRef().unlink();
     from->RemoveFromGrid(player, oldGrid, leaving);
 
-    // AND IN, at the pose he stands in here. Aboard that is a deck offset; ashore it is
-    // the world point his own client just reported.
     player->Place().MoveTo(x, y, z, o);
     player->SetMap(this);
     player->GetMapRef().link(this, player);
@@ -1114,8 +815,6 @@ bool Map::Rebind(Player* player, float x, float y, float z, float o)
     NGridType* grid = getNGrid(arriving.GridX(), arriving.GridY());
     player->GetViewPoint().Event_GridChanged(&(*grid)(arriving.CellX(), arriving.CellY()));
 
-    // The cameras HERE, so whoever could not see him a moment ago gets him at once. For
-    // the ones who already hold him this settles to nothing at all.
     UpdateObjectVisibility(player, arriving, now);
 
     return true;
@@ -1138,11 +837,6 @@ void Map::Remove(Player* player, bool remove)
         player->RemoveFromWorld();
     }
 
-    // this may be called during Map::Update
-    // after decrement+unlink, ++m_mapRefIter will continue correctly
-    // when the first element of the list is being removed
-    // nocheck_prev will return the padding element of the RefManager
-    // instead of nullptr in the case of prev
     if (m_mapRefIter == player->GetMapRef())
     {
         m_mapRefIter = m_mapRefIter->nocheck_prev();
@@ -1151,7 +845,6 @@ void Map::Remove(Player* player, bool remove)
     CellPair p = MaNGOS::ComputeCellPair(player->Where().X(), player->Where().Y());
     if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
     {
-        // invalid coordinates
 
         if (remove)
         {
@@ -1218,18 +911,17 @@ template<class T>
         obj->RemoveFromWorld();
     }
 
-    UpdateObjectVisibility(obj, cell, p);                   // i think will be better to call this function while object still in grid, this changes nothing but logically is better(as for me)
+    UpdateObjectVisibility(obj, cell, p);
     RemoveFromGrid(obj, grid, cell);
 
     if (remove)
     {
-        // if option set then object already saved at this moment
+
         if (!sWorld.getConfig(CONFIG_BOOL_SAVE_RESPAWN_TIME_IMMEDIATELY))
         {
             SaveRespawnTime(*obj);
         }
 
-        // Note: In case resurrectable corpse and pet its removed from global lists in own destructor
         delete obj;
     }
 }
@@ -1277,47 +969,29 @@ void Map::PlayerRelocation(Player* player, float x, float y, float z, float orie
     }
 }
 
-/**
- * @brief Relocates a creature or falls back to respawn relocation if needed.
- *
- * @param creature The creature to move.
- * @param x The destination X coordinate.
- * @param y The destination Y coordinate.
- * @param z The destination Z coordinate.
- * @param ang The destination facing angle.
- */
 void Map::CreatureRelocation(Creature* creature, float x, float y, float z, float ang)
 {
     MANGOS_ASSERT(CheckGridIntegrity(creature, false));
 
     Cell new_cell(MaNGOS::ComputeCellPair(x, y));
 
-    // do move or do move to respawn or remove creature if previous all fail
     if (CreatureCellRelocation(creature, new_cell))
     {
-        // update pos
+
         creature->Place().MoveTo(x, y, z, ang);
         creature->m_movementInfo.ChangePosition(x, y, z, ang);
         creature->OnRelocated();
     }
-    // if creature can't be move in new cell/grid (not loaded) move it to repawn cell/grid
-    // creature coordinates will be updated and notifiers send
+
     else if (!CreatureRespawnRelocation(creature))
     {
-        // ... or unload (if respawn grid also not loaded)
+
         DEBUG_FILTER_LOG(LOG_FILTER_CREATURE_MOVES, "Creature (GUID: %u Entry: %u ) can't be move to unloaded respawn grid.", creature->GetGUIDLow(), creature->GetEntry());
     }
 
     MANGOS_ASSERT(CheckGridIntegrity(creature, true));
 }
 
-/**
- * @brief Moves a creature between cells or grids if the destination is available.
- *
- * @param c The creature to relocate.
- * @param new_cell The destination cell.
- * @return true if the creature can be placed in the destination cell; otherwise false.
- */
 bool Map::CreatureCellRelocation(Creature* c, const Cell &new_cell)
 {
     Cell const& old_cell = c->GetCurrentCell();
@@ -1336,12 +1010,6 @@ bool Map::CreatureCellRelocation(Creature* c, const Cell &new_cell)
         }
     }
 
-    // B-Cell: never place a non-active creature into a non-resident cell. A same-grid respawn
-    // relocation (a wandered creature sent home during teardown) can target a home cell that was
-    // already unloaded earlier in the same drain; Map::Visit and Map::Remove both gate on the
-    // cell bit, so the creature would be stranded -- frozen and unremovable. Reject here so the
-    // caller (CreatureRespawnRelocation -> Unload) deletes + reschedules it instead. Active
-    // anchors are exempt: the accretion path below loads their destination envelope first.
     if (!c->IsActiveObject())
     {
         NGridType* ng = getNGrid(new_cell.GridX(), new_cell.GridY());
@@ -1365,12 +1033,6 @@ bool Map::CreatureCellRelocation(Creature* c, const Cell &new_cell)
     return true;
 }
 
-/**
- * @brief Moves a creature back to its respawn cell and reinitializes motion.
- *
- * @param c The creature to relocate.
- * @return true if the respawn relocation succeeded; otherwise false.
- */
 bool Map::CreatureRespawnRelocation(Creature* c)
 {
     float resp_x, resp_y, resp_z, resp_o;
@@ -1387,12 +1049,11 @@ bool Map::CreatureRespawnRelocation(Creature* c)
 
     DEBUG_FILTER_LOG(LOG_FILTER_CREATURE_MOVES, "Creature (GUID: %u Entry: %u) will moved from grid[%u,%u]cell[%u,%u] to respawn grid[%u,%u]cell[%u,%u].", c->GetGUIDLow(), c->GetEntry(), c->GetCurrentCell().GridX(), c->GetCurrentCell().GridY(), c->GetCurrentCell().CellX(), c->GetCurrentCell().CellY(), resp_cell.GridX(), resp_cell.GridY(), resp_cell.CellX(), resp_cell.CellY());
 
-    // teleport it to respawn point (like normal respawn if player see)
     if (CreatureCellRelocation(c, resp_cell))
     {
         c->Place().MoveTo(resp_x, resp_y, resp_z, resp_o);
         c->m_movementInfo.ChangePosition(resp_x, resp_y, resp_z, resp_o);
-        c->GetMotionMaster()->Initialize();                 // prevent possible problems with default move generators
+        c->GetMotionMaster()->Initialize();
         c->OnRelocated();
         return true;
     }
@@ -1402,14 +1063,6 @@ bool Map::CreatureRespawnRelocation(Creature* c)
     }
 }
 
-/**
- * @brief Returns true if a player is in the given grid or any of its 8 neighbours.
- *
- * A player's visibility force-loads the grids it can see into (<= 1 grid away), so a
- * grid is "needed FULL" if any player is in or adjacent to it -- not only when a player
- * is physically inside it. Used to gate the B-Cell FULL->ENVELOPE downgrade so a grid a
- * nearby player can see is never torn down (which otherwise thrashes load/unload).
- */
 bool Map::HasPlayerInOrAroundGrid(uint32 gridX, uint32 gridY) const
 {
     for (int dx = -1; dx <= 1; ++dx)
@@ -1432,12 +1085,6 @@ bool Map::HasPlayerInOrAroundGrid(uint32 gridX, uint32 gridY) const
     return false;
 }
 
-/**
- * @brief Read-only: true if the specific cell containing (x,y) has its DB objects loaded.
- *
- * Unlike IsLoaded()/loaded() (which report the whole-grid FULL flag), this is true for a
- * single envelope cell in an otherwise-partial grid. Never loads anything.
- */
 bool Map::IsCellLoaded(float x, float y) const
 {
     Cell cell(MaNGOS::ComputeCellPair(x, y));
@@ -1445,14 +1092,6 @@ bool Map::IsCellLoaded(float x, float y) const
     return grid && grid->isCellObjectDataLoaded(cell.CellX(), cell.CellY());
 }
 
-/**
- * @brief Unloads a grid and its terrain data when it is safe to do so.
- *
- * @param x The grid X coordinate.
- * @param y The grid Y coordinate.
- * @param pForce True to unload even if nearby active objects exist.
- * @return true if the grid was unloaded; otherwise false.
- */
 bool Map::UnloadGrid(const uint32& x, const uint32& y, bool pForce)
 {
     NGridType* grid = getNGrid(x, y);
@@ -1467,14 +1106,10 @@ bool Map::UnloadGrid(const uint32& x, const uint32& y, bool pForce)
         DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "Unloading grid[%u,%u] for map %u", x, y, i_id);
         ObjectGridUnloader unloader(*grid);
 
-        // Finish remove and delete all creatures with delayed remove before moving to respawn grids
-        // Must know real mob position before move
         RemoveAllObjectsInRemoveList();
 
-        // move creatures to respawn grids if this is diff.grid or to remove list
         unloader.MoveToRespawnN();
 
-        // Finish remove and delete all creatures with delayed remove before unload
         RemoveAllObjectsInRemoveList();
 
         unloader.UnloadN();
@@ -1485,8 +1120,6 @@ bool Map::UnloadGrid(const uint32& x, const uint32& y, bool pForce)
     int gx = (MAX_NUMBER_OF_GRIDS - 1) - x;
     int gy = (MAX_NUMBER_OF_GRIDS - 1) - y;
 
-    // unload GridMap - it is reference-countable so will be deleted safely when lockCount < 1
-    // also simply set Map's pointer to corresponding GridMap object to nullptr
     if (m_bLoadedGrids[gx][gy])
     {
         m_bLoadedGrids[gx][gy] = false;
@@ -1497,28 +1130,16 @@ bool Map::UnloadGrid(const uint32& x, const uint32& y, bool pForce)
     return true;
 }
 
-/**
- * @brief Unloads every currently loaded grid on the map.
- *
- * @param pForce True to force unloading regardless of active objects.
- */
 void Map::UnloadAll(bool pForce)
 {
     for (GridRefManager<NGridType>::iterator i = GridRefManager<NGridType>::begin(); i != GridRefManager<NGridType>::end();)
     {
         NGridType& grid(*i->getSource());
         ++i;
-        UnloadGrid(grid.getX(), grid.getY(), pForce);       // deletes the grid and removes it from the GridRefManager
+        UnloadGrid(grid.getX(), grid.getY(), pForce);
     }
 }
 
-/**
- * @brief Verifies that a creature's stored cell matches its coordinates.
- *
- * @param c The creature to validate.
- * @param moved True when validating after relocation.
- * @return Always true after optionally logging inconsistencies.
- */
 bool Map::CheckGridIntegrity(Creature* c, bool moved) const
 {
     Cell const& cur_cell = c->GetCurrentCell();
@@ -1532,29 +1153,17 @@ bool Map::CheckGridIntegrity(Creature* c, bool moved) const
             c->Where().X(), c->Where().Y(), (moved ? "final" : "original"),
             cur_cell.GridX(), cur_cell.GridY(), cur_cell.CellX(), cur_cell.CellY(),
             xy_cell.GridX(),  xy_cell.GridY(),  xy_cell.CellX(),  xy_cell.CellY());
-        return true;                                        // not crash at error, just output error in debug mode
+        return true;
     }
 
     return true;
 }
 
-/**
- * @brief Returns the localized map name.
- *
- * @return const char* The map name or a fallback placeholder.
- */
 const char* Map::GetMapName() const
 {
     return i_mapEntry ? i_mapEntry->MapName_lang[sWorld.GetDefaultDbcLocale()] : "UNNAMEDMAP\x0";
 }
 
-/**
- * @brief Updates visibility changes for players around the specified object.
- *
- * @param obj The object whose visibility changed.
- * @param cell The cell used as the visit origin.
- * @param cellpair The cell coordinates corresponding to the object.
- */
 void Map::UpdateObjectVisibility(Occupant* obj, Cell cell, CellPair cellpair)
 {
     cell.SetNoCreate();
@@ -1563,11 +1172,6 @@ void Map::UpdateObjectVisibility(Occupant* obj, Cell cell, CellPair cellpair)
     cell.Visit(cellpair, player_notifier, *this, *obj, GetVisibilityDistance());
 }
 
-/**
- * @brief Sends the initial create data that lets a player see its own world state.
- *
- * @param player The player receiving the initialization packets.
- */
 void Map::SendInitSelf(Player* player, InitialWorldUpdateBatch* batch)
 {
     DETAIL_LOG("Creating player data for himself %u", player->GetGUIDLow());
@@ -1575,7 +1179,6 @@ void Map::SendInitSelf(Player* player, InitialWorldUpdateBatch* batch)
     UpdateData localData;
     UpdateData& data = batch ? batch->Data() : localData;
 
-    // attach to player data current transport data
     if (Transport* transport = player->GetTransport())
     {
         if (batch)
@@ -1584,21 +1187,17 @@ void Map::SendInitSelf(Player* player, InitialWorldUpdateBatch* batch)
         }
         transport->BuildCreateUpdateBlockForPlayer(&data, player);
 
-        // The vessel is the only thing that can announce her crew -- including to the man
-        // who has just stepped aboard her.
         if (TransportMap* hull = transport->AsMap())
         {
             hull->AppendCrewCreateBlocks(data, player);
         }
     }
 
-    // build data for self occupant in world at own client (one time for map)
     player->BuildCreateUpdateBlockForPlayer(&data, player);
 
     if (batch)
     {
-        // The owner camera sweep appends nearby objects and performs the one
-        // flush after every self, inventory, and vessel block is present.
+
         return;
     }
 
@@ -1607,19 +1206,9 @@ void Map::SendInitSelf(Player* player, InitialWorldUpdateBatch* batch)
     player->GetSession()->SendPacket(&packet);
 }
 
-/**
- * @brief Sends create packets for transports visible to a player entering the map.
- *
- * @param player The player receiving transport initialization data.
- */
 void Map::SendInitTransports(Player* player, InitialWorldUpdateBatch* batch)
 {
-    // A player joining a map takes possession of every vessel on it -- one of the four
-    // events that carry transport visibility. No distance, no grid: you share her map, you
-    // have her. The client sails her into view from the path itself.
-    // ON A DECK, the only vessel that matters is the one this map IS. Vessels are filed
-    // under the WORLD map they sail, so the lookup below finds nothing here -- and a player
-    // logging in aboard was handed no hull at all, which is a man standing in mid-air.
+
     if (TransportMap* hull = AsTransport())
     {
         if (batch)
@@ -1634,12 +1223,9 @@ void Map::SendInitTransports(Player* player, InitialWorldUpdateBatch* batch)
         return;
     }
 
-    // Keyed on i_id -- the map doing the sending -- not on the player's own map id, which
-    // during a teleport is not yet this one.
     for (Transport* vessel : sFleet.On(i_id))
     {
-        // Our own vessel came from SendInitSelf, ahead of our own body, so we already
-        // stand on something by the time our block lands. Skip it here.
+
         if (vessel == player->GetTransport() || vessel->GetMapId() != i_id)
         {
             continue;
@@ -1657,11 +1243,6 @@ void Map::SendInitTransports(Player* player, InitialWorldUpdateBatch* batch)
     }
 }
 
-/**
- * @brief Sends out-of-range updates for transports no longer visible to the player.
- *
- * @param player The player receiving transport removal updates.
- */
 void Map::SendRemoveTransports(Player* player)
 {
     Fleet::Vessels const& calling = sFleet.On(player->GetMapId());
@@ -1672,7 +1253,6 @@ void Map::SendRemoveTransports(Player* player)
 
     UpdateData transData;
 
-    // except used transport
     for (Transport* vessel : calling)
     {
         if (vessel != player->GetTransport() && vessel->GetMapId() != i_id)
@@ -1687,13 +1267,6 @@ void Map::SendRemoveTransports(Player* player)
     player->GetSession()->SendPacket(&packet);
 }
 
-/**
- * @brief Stores a grid pointer at the specified grid coordinates.
- *
- * @param grid The grid pointer to store.
- * @param x The grid X coordinate.
- * @param y The grid Y coordinate.
- */
 inline void Map::setNGrid(NGridType* grid, uint32 x, uint32 y)
 {
     if (x >= MAX_NUMBER_OF_GRIDS || y >= MAX_NUMBER_OF_GRIDS)
@@ -1704,25 +1277,16 @@ inline void Map::setNGrid(NGridType* grid, uint32 x, uint32 y)
     i_grids[x][y] = grid;
 }
 
-/**
- * @brief Queues a world object for deferred removal from the map.
- *
- * @param obj The object scheduled for cleanup and deletion.
- */
 void Map::AddObjectToRemoveList(Occupant* obj)
 {
     MANGOS_ASSERT(obj->GetMapId() == GetId() && obj->GetInstanceId() == GetInstanceId());
 
-
-    obj->CleanupsBeforeDelete();                            // remove or simplify at least cross referenced links
+    obj->CleanupsBeforeDelete();
 
     i_objectsToRemove.insert(obj);
-    // DEBUG_LOG("Object (GUID: %u TypeId: %u ) added to removing list.",obj->GetGUIDLow(),obj->GetTypeId());
+
 }
 
-/**
- * @brief Processes and removes every object queued for deferred deletion.
- */
 void Map::RemoveAllObjectsInRemoveList()
 {
     if (i_objectsToRemove.empty())
@@ -1730,7 +1294,6 @@ void Map::RemoveAllObjectsInRemoveList()
         return;
     }
 
-    // DEBUG_LOG("Object remover 1 check.");
     while (!i_objectsToRemove.empty())
     {
         Occupant* obj = *i_objectsToRemove.begin();
@@ -1740,7 +1303,7 @@ void Map::RemoveAllObjectsInRemoveList()
         {
             case TYPEID_CORPSE:
             {
-                // ??? WTF
+
                 Corpse* corpse = GetCorpse(obj->GetObjectGuid());
                 if (!corpse)
                 {
@@ -1766,14 +1329,9 @@ void Map::RemoveAllObjectsInRemoveList()
                 break;
         }
     }
-    // DEBUG_LOG("Object remover 2 check.");
+
 }
 
-/**
- * @brief Counts non-gamemaster players currently present on the map.
- *
- * @return uint32 The number of non-GM players.
- */
 uint32 Map::GetPlayersCountExceptGMs() const
 {
     uint32 count = 0;
@@ -1787,13 +1345,6 @@ uint32 Map::GetPlayersCountExceptGMs() const
     return count;
 }
 
-/**
- * @brief Checks whether any active object is near a grid.
- *
- * @param x The grid X coordinate.
- * @param y The grid Y coordinate.
- * @return true if nearby activity prevents unloading; otherwise false.
- */
 bool Map::ActiveObjectsNearGrid(uint32 x, uint32 y) const
 {
     MANGOS_ASSERT(x < MAX_NUMBER_OF_GRIDS);
@@ -1802,7 +1353,6 @@ bool Map::ActiveObjectsNearGrid(uint32 x, uint32 y) const
     CellPair cell_min(x * MAX_NUMBER_OF_CELLS, y * MAX_NUMBER_OF_CELLS);
     CellPair cell_max(cell_min.x_coord + MAX_NUMBER_OF_CELLS, cell_min.y_coord + MAX_NUMBER_OF_CELLS);
 
-    // we must find visible range in cells so we unload only non-visible cells...
     float viewDist = GetVisibilityDistance();
     int cell_range = (int)ceilf(viewDist / SIZE_OF_GRID_CELL) + 1;
 
@@ -1838,19 +1388,13 @@ bool Map::ActiveObjectsNearGrid(uint32 x, uint32 y) const
     return false;
 }
 
-/**
- * @brief Marks a non-player world object as active and protects relevant grids from unloading.
- *
- * @param obj The active object to register.
- */
 void Map::AddToActive(Occupant* obj)
 {
     m_activeNonPlayers.insert(obj);
     Cell cell = Cell(MaNGOS::ComputeCellPair(obj->Where().X(), obj->Where().Y()));
     EnsureGridLoadedAtEnter(cell);
 
-    // also not allow unloading spawn grid to prevent creating creature clone at load
-    if (obj->IsCreature())
+    if (IsCreature(obj))
     {
         Creature* c = (Creature*)obj;
 
@@ -1875,14 +1419,9 @@ void Map::AddToActive(Occupant* obj)
     }
 }
 
-/**
- * @brief Unregisters an active non-player object and releases any unload locks it added.
- *
- * @param obj The active object to remove.
- */
 void Map::RemoveFromActive(Occupant* obj)
 {
-    // Map::Update for active object in proccess
+
     if (m_activeNonPlayersIter != m_activeNonPlayers.end())
     {
         ActiveNonPlayers::iterator itr = m_activeNonPlayers.find(obj);
@@ -1901,8 +1440,7 @@ void Map::RemoveFromActive(Occupant* obj)
         m_activeNonPlayers.erase(obj);
     }
 
-    // also allow unloading spawn grid
-    if (obj->IsCreature())
+    if (IsCreature(obj))
     {
         Creature* c = (Creature*)obj;
 
@@ -1927,18 +1465,12 @@ void Map::RemoveFromActive(Occupant* obj)
     }
 }
 
-/**
- * @brief Creates and optionally loads script instance data for the map.
- *
- * @param load True to load persisted state from the database; otherwise initialize a fresh instance.
- */
 void Map::CreateInstanceData(bool load)
 {
     if (i_data != nullptr)
     {
         return;
     }
-
 
     uint32 i_script_id = 0;
     if (!i_data)
@@ -1959,7 +1491,7 @@ void Map::CreateInstanceData(bool load)
 
     if (load)
     {
-        // TODO: make a global storage for this
+
         QueryResult* result;
 
         if (Instanceable())
@@ -1984,7 +1516,7 @@ void Map::CreateInstanceData(bool load)
         }
         else
         {
-            // for non-instanceable map always add data to table if not found, later code expected that for map in `word` exist always after load
+
             if (!Instanceable())
             {
                 CharacterDatabase.PExecute("INSERT INTO `world` VALUES ('%u', '')", GetId());
@@ -1998,19 +1530,13 @@ void Map::CreateInstanceData(bool load)
     }
 }
 
-/**
- * @brief Teleports every player on the map to the requested fallback location.
- *
- * @param loc The destination type used for teleportation.
- */
 void Map::TeleportAllPlayersTo(TeleportLocation loc)
 {
     while (HavePlayers())
     {
         if (Player* plr = m_mapRefManager.getFirst()->getSource())
         {
-            // Teleport to specified location and removes the player from this map (if the map exists).
-            // Todo : we can add some specific location if needed (ex: map exit location for dungeon)
+
             switch (loc)
             {
                 case TELEPORT_LOCATION_HOMEBIND:
@@ -2022,21 +1548,12 @@ void Map::TeleportAllPlayersTo(TeleportLocation loc)
                 default:
                     break;
             }
-            // just in case, remove the player from the list explicitly here as well to prevent a possible infinite loop
-            // note that this remove is not needed if the code works well in other places
+
             plr->GetMapRef().unlink();
         }
     }
 }
 
-/**
- * @brief Sets or updates weather for a zone on the map.
- *
- * @param zoneId The zone receiving the weather update.
- * @param type The weather type to apply.
- * @param grade The weather intensity.
- * @param permanently True to persist the new weather state.
- */
 void Map::SetWeather(uint32 zoneId, WeatherType type, float grade, bool permanently)
 {
     Weather* wth = m_weatherSystem->FindOrCreateWeather(zoneId);
@@ -2053,14 +1570,10 @@ template void Map::Remove(Creature*, bool);
 template void Map::Remove(GameObject*, bool);
 template void Map::Remove(DynamicObject*, bool);
 
-/* ******* World Maps ******* */
-
 WorldPersistentState* WorldMap::GetPersistanceState() const
 {
     return (WorldPersistentState*)Map::GetPersistentState();
 }
-
-/* ******* Dungeon Instance Maps ******* */
 
 DungeonMap::DungeonMap(uint32 id, time_t expiry, uint32 InstanceId)
     : Map(id, expiry, InstanceId),
@@ -2068,11 +1581,8 @@ DungeonMap::DungeonMap(uint32 id, time_t expiry, uint32 InstanceId)
 {
     MANGOS_ASSERT(i_mapEntry->IsDungeon());
 
-    // lets initialize visibility distance for dungeons
     DungeonMap::InitVisibilityDistance();
 
-    // the timer is started by default, and stopped when the first player joins
-    // this make sure it gets unloaded if for some reason no player joins
     m_unloadTimer = std::max(sWorld.getConfig(CONFIG_UINT32_INSTANCE_UNLOAD_DELAY), (uint32)MIN_UNLOAD_DELAY);
 }
 
@@ -2080,34 +1590,24 @@ DungeonMap::~DungeonMap()
 {
 }
 
-/**
- * @brief Initializes dungeon visibility distance values.
- */
 void DungeonMap::InitVisibilityDistance()
 {
-    // init visibility distance for instances
+
     m_VisibleDistance = World::GetMaxVisibleDistanceInInstances();
 }
 
-/**
- * Do map specific checks and add the player to the map if successful.
- */
 bool DungeonMap::Add(Player* player, InitialWorldEntryHook* initialEntry)
 {
-    // TODO: Not sure about checking player level: already done in HandleAreaTriggerOpcode
-    // GMs still can teleport player in instance.
-    // Is it needed?
 
     if (!CanEnter(player))
     {
         return false;
     }
 
-    // check for existing instance binds
     DungeonHold* playerBind = player->Binds().To(GetId());
     if (playerBind && playerBind->permanent)
     {
-        // can not enter other instances if bound permanently
+
         if (playerBind->state != GetPersistanceState())
         {
             sLog.outError("InstanceMap::Add: player %s(%d) is permanently bound to instance %d,%d,%d,%d,%d but he is being put in instance %d,%d,%d,%d,%d",
@@ -2126,12 +1626,12 @@ bool DungeonMap::Add(Player* player, InitialWorldEntryHook* initialEntry)
         Group* pGroup = player->GetGroup();
         if (pGroup)
         {
-            // solo saves should be reset when entering a group
+
             DungeonHold* groupBind = pGroup->Binds().To(GetId());
             if (playerBind)
             {
                 sLog.outError("InstanceMap::Add: %s is being put in instance %d,%d,%d,%d,%d but he is in group (Id: %d) and is bound to instance %d,%d,%d,%d,%d!",
-                    player->GetObjectGuid().GetString().c_str(), playerBind->state->GetMapId(), playerBind->state->GetInstanceId(),
+                    GuidString(player->GetObjectGuid()).c_str(), playerBind->state->GetMapId(), playerBind->state->GetInstanceId(),
                     playerBind->state->GetPlayerCount(), playerBind->state->GetGroupCount(),
                     playerBind->state->CanReset(), pGroup->GetId(),
                     playerBind->state->GetMapId(), playerBind->state->GetInstanceId(),
@@ -2145,22 +1645,20 @@ bool DungeonMap::Add(Player* player, InitialWorldEntryHook* initialEntry)
                         groupBind->state->GetPlayerCount(), groupBind->state->GetGroupCount(), groupBind->state->CanReset());
                 }
 
-                // no reason crash if we can fix state
                 player->Binds().Release(GetId());
             }
 
-            // bind to the group or keep using the group save
             if (!groupBind)
             {
                 pGroup->Binds().BindTo(GetPersistanceState(), false);
             }
             else
             {
-                // can not jump to a different instance without resetting it
+
                 if (groupBind->state != GetPersistentState())
                 {
                     sLog.outError("InstanceMap::Add: %s is being put in instance %d,%d but he is in group (Id: %d) which is bound to instance %d,%d!",
-                        player->GetObjectGuid().GetString().c_str(), GetPersistentState()->GetMapId(),
+                        GuidString(player->GetObjectGuid()).c_str(), GetPersistentState()->GetMapId(),
                         GetPersistentState()->GetInstanceId(),
                         pGroup->GetId(), groupBind->state->GetMapId(),
                         groupBind->state->GetInstanceId());
@@ -2178,8 +1676,7 @@ bool DungeonMap::Add(Player* player, InitialWorldEntryHook* initialEntry)
                     }
                     MANGOS_ASSERT(false);
                 }
-                // if the group/leader is permanently bound to the instance
-                // players also become permanently bound when they enter
+
                 if (groupBind->permanent)
                 {
                     WorldPacket data(SMSG_INSTANCE_SAVE_CREATED, 4);
@@ -2191,56 +1688,41 @@ bool DungeonMap::Add(Player* player, InitialWorldEntryHook* initialEntry)
         }
         else
         {
-            // set up a solo bind or continue using it
+
             if (!playerBind)
             {
                 player->Binds().BindTo(GetPersistanceState(), false);
             }
             else
-                // can not jump to a different instance without resetting it
+
             {
                 MANGOS_ASSERT(playerBind->state == GetPersistentState());
             }
         }
     }
 
-    // for normal instances cancel the reset schedule when the
-    // first player enters (no players yet)
     SetResetSchedule(false);
 
     DETAIL_LOG("MAP: Player '%s' is entering instance '%u' of map '%s'", player->GetName(), GetInstanceId(), GetMapName());
-    // initialize unload state
+
     m_unloadTimer = 0;
     m_resetAfterUnload = false;
     m_unloadWhenEmpty = false;
 
-    // this will acquire the same mutex so it can not be in the previous block
     Map::Add(player, initialEntry);
 
     return true;
 }
 
-/**
- * @brief Updates the dungeon map for one tick.
- *
- * @param t_diff The elapsed update time in milliseconds.
- */
 void DungeonMap::Update(const uint32& t_diff)
 {
     Map::Update(t_diff);
 }
 
-/**
- * @brief Removes a player from the dungeon map and arms unload scheduling when appropriate.
- *
- * @param player The player leaving the dungeon.
- * @param remove True to fully delete the player object after cleanup.
- */
 void DungeonMap::Remove(Player* player, bool remove)
 {
     DETAIL_LOG("MAP: Removing player '%s' from instance '%u' of map '%s' before relocating to other map", player->GetName(), GetInstanceId(), GetMapName());
 
-    // if last player set unload timer
     if (!m_unloadTimer && m_mapRefManager.getSize() == 1)
     {
         m_unloadTimer = m_unloadWhenEmpty ? MIN_UNLOAD_DELAY : std::max(sWorld.getConfig(CONFIG_UINT32_INSTANCE_UNLOAD_DELAY), (uint32)MIN_UNLOAD_DELAY);
@@ -2248,30 +1730,17 @@ void DungeonMap::Remove(Player* player, bool remove)
 
     Map::Remove(player, remove);
 
-    // for normal instances schedule the reset after all players have left
     SetResetSchedule(true);
 }
 
-/**
- * Returns true if there are no players in the instance
- */
-
-/**
- * @brief Resets the dungeon now or after players leave depending on occupancy and reset mode.
- *
- * @param method The reset mode being applied.
- * @return true if the instance currently has no players; otherwise false.
- */
 bool DungeonMap::Reset(InstanceResetMethod method)
 {
-    // note: since the map may not be loaded when the instance needs to be reset
-    // the instance must be deleted from the DB by InstanceSaveManager
 
     if (HavePlayers())
     {
         if (method == INSTANCE_RESET_ALL)
         {
-            // notify the players to leave the instance so it can be reset
+
             for (MapRefManager::iterator itr = m_mapRefManager.begin(); itr != m_mapRefManager.end(); ++itr)
             {
                 itr->getSource()->SendResetFailedNotify(GetId());
@@ -2281,22 +1750,20 @@ bool DungeonMap::Reset(InstanceResetMethod method)
         {
             if (method == INSTANCE_RESET_GLOBAL)
             {
-                // set the homebind timer for players inside (1 minute)
+
                 for (MapRefManager::iterator itr = m_mapRefManager.begin(); itr != m_mapRefManager.end(); ++itr)
                 {
                     itr->getSource()->Binds().StillWelcome(false);
                 }
             }
 
-            // the unload timer is not started
-            // instead the map will unload immediately after the players have left
             m_unloadWhenEmpty = true;
             m_resetAfterUnload = true;
         }
     }
     else
     {
-        // unloaded at next update
+
         m_unloadTimer = MIN_UNLOAD_DELAY;
         m_resetAfterUnload = true;
     }
@@ -2304,20 +1771,14 @@ bool DungeonMap::Reset(InstanceResetMethod method)
     return m_mapRefManager.isEmpty();
 }
 
-/**
- * @brief Permanently binds all players currently inside the dungeon to its persistent state.
- *
- * @param player A player whose group context is used when binding the group.
- */
 void DungeonMap::PermBindAllPlayers(Player* player)
 {
     Group* group = player->GetGroup();
-    // group members outside the instance group don't get bound
+
     for (MapRefManager::iterator itr = m_mapRefManager.begin(); itr != m_mapRefManager.end(); ++itr)
     {
         Player* plr = itr->getSource();
-        // players inside an instance can not be bound to other instances
-        // some players may already be permanently bound, in this case nothing happens
+
         DungeonHold* bind = plr->Binds().To(GetId());
         if (!bind || !bind->permanent)
         {
@@ -2327,7 +1788,6 @@ void DungeonMap::PermBindAllPlayers(Player* player)
             plr->GetSession()->SendPacket(&data);
         }
 
-        // if the leader is not in the instance the group will not get a perm bind
         if (group && group->GetLeaderGuid() == plr->GetObjectGuid())
         {
             group->Binds().BindTo(GetPersistanceState(), true);
@@ -2335,11 +1795,6 @@ void DungeonMap::PermBindAllPlayers(Player* player)
     }
 }
 
-/**
- * @brief Teleports players out, clears respawn data if needed, and unloads all dungeon grids.
- *
- * @param pForce True to force unloading regardless of active objects.
- */
 void DungeonMap::UnloadAll(bool pForce)
 {
     TeleportAllPlayersTo(TELEPORT_LOCATION_HOMEBIND);
@@ -2352,11 +1807,6 @@ void DungeonMap::UnloadAll(bool pForce)
     Map::UnloadAll(pForce);
 }
 
-/**
- * @brief Sends impending reset warnings to all players in the dungeon.
- *
- * @param timeLeft The remaining time before reset, in seconds.
- */
 void DungeonMap::SendResetWarnings(uint32 timeLeft) const
 {
     for (MapRefManager::const_iterator itr = m_mapRefManager.begin(); itr != m_mapRefManager.end(); ++itr)
@@ -2365,27 +1815,15 @@ void DungeonMap::SendResetWarnings(uint32 timeLeft) const
     }
 }
 
-/**
- * @brief Enables or disables scheduled reset handling for normal dungeons.
- *
- * @param on True to schedule the reset; false to cancel it.
- */
 void DungeonMap::SetResetSchedule(bool on)
 {
-    // only for normal instances
-    // the reset time is only scheduled when there are no payers inside
-    // it is assumed that the reset time will rarely (if ever) change while the reset is scheduled
+
     if (!HavePlayers() && !IsRaid())
     {
         sMapPersistentStateMgr.GetScheduler().ScheduleReset(on, GetPersistanceState()->GetResetTime(), DungeonResetEvent(RESET_EVENT_NORMAL_DUNGEON, GetId(), GetInstanceId()));
     }
 }
 
-/**
- * @brief Returns the maximum player capacity defined for the dungeon instance.
- *
- * @return uint32 The configured player limit, or zero if no template exists.
- */
 uint32 DungeonMap::GetMaxPlayers() const
 {
     InstanceTemplate const* iTemplate = ObjectMgr::GetInstanceTemplate(GetId());
@@ -2396,22 +1834,15 @@ uint32 DungeonMap::GetMaxPlayers() const
     return iTemplate->maxPlayers;
 }
 
-/**
- * @brief Returns the persistent state object for the dungeon instance.
- *
- * @return DungeonPersistentState* The dungeon persistent state.
- */
 DungeonPersistentState* DungeonMap::GetPersistanceState() const
 {
     return (DungeonPersistentState*)Map::GetPersistentState();
 }
 
-/* ******* Battleground Instance Maps ******* */
-
 BattleGroundMap::BattleGroundMap(uint32 id, time_t expiry, uint32 InstanceId)
     : Map(id, expiry, InstanceId)
 {
-    // lets initialize visibility distance for BG/Arenas
+
     BattleGroundMap::InitVisibilityDistance();
 }
 
@@ -2419,11 +1850,6 @@ BattleGroundMap::~BattleGroundMap()
 {
 }
 
-/**
- * @brief Updates the battleground map and its battleground logic for one tick.
- *
- * @param diff The elapsed update time in milliseconds.
- */
 void BattleGroundMap::Update(const uint32& diff)
 {
     Map::Update(diff);
@@ -2431,31 +1857,17 @@ void BattleGroundMap::Update(const uint32& diff)
     GetBG()->Update(diff);
 }
 
-/**
- * @brief Returns the persistent state object for the battleground instance.
- *
- * @return BattleGroundPersistentState* The battleground persistent state.
- */
 BattleGroundPersistentState* BattleGroundMap::GetPersistanceState() const
 {
     return (BattleGroundPersistentState*)Map::GetPersistentState();
 }
 
-/**
- * @brief Initializes battleground and arena visibility distance values.
- */
 void BattleGroundMap::InitVisibilityDistance()
 {
-    // init visibility distance for BG/Arenas
+
     m_VisibleDistance = World::GetMaxVisibleDistanceInBGArenas();
 }
 
-/**
- * @brief Checks whether a player is allowed to enter the battleground instance.
- *
- * @param player The player attempting to enter.
- * @return true if the player belongs to this battleground instance; otherwise false.
- */
 bool BattleGroundMap::CanEnter(Player* player)
 {
     if (!Map::CanEnter(player))
@@ -2468,16 +1880,9 @@ bool BattleGroundMap::CanEnter(Player* player)
         return false;
     }
 
-    // player number limit is checked in bgmgr, no need to do it here
     return true;
 }
 
-/**
- * @brief Adds a player to the battleground map after validating entry.
- *
- * @param player The player entering the battleground.
- * @return true if the player was added; otherwise false.
- */
 bool BattleGroundMap::Add(Player* player, InitialWorldEntryHook* initialEntry)
 {
     if (!CanEnter(player))
@@ -2485,37 +1890,22 @@ bool BattleGroundMap::Add(Player* player, InitialWorldEntryHook* initialEntry)
         return false;
     }
 
-    // reset instance validity, battleground maps do not homebind
     player->Binds().StillWelcome(true);
 
     return Map::Add(player, initialEntry);
 }
 
-/**
- * @brief Removes a player from the battleground map.
- *
- * @param player The player leaving the battleground.
- * @param remove True to fully delete the player object after cleanup.
- */
 void BattleGroundMap::Remove(Player* player, bool remove)
 {
     DETAIL_LOG("MAP: Removing player '%s' from bg '%u' of map '%s' before relocating to other map", player->GetName(), GetInstanceId(), GetMapName());
     Map::Remove(player, remove);
 }
 
-/**
- * @brief Starts the battleground unload timer.
- */
 void BattleGroundMap::SetUnload()
 {
     m_unloadTimer = MIN_UNLOAD_DELAY;
 }
 
-/**
- * @brief Teleports players to their battleground entry point and unloads all battleground grids.
- *
- * @param pForce True to force unloading regardless of active objects.
- */
 void BattleGroundMap::UnloadAll(bool pForce)
 {
     TeleportAllPlayersTo(TELEPORT_LOCATION_BG_ENTRY_POINT);
@@ -2523,12 +1913,6 @@ void BattleGroundMap::UnloadAll(bool pForce)
     Map::UnloadAll(pForce);
 }
 
-/**
- * @brief Checks whether a player can enter this map instance.
- *
- * @param player The player attempting to enter.
- * @return true if entry is allowed; otherwise false.
- */
 bool Map::CanEnter(Player* player)
 {
     if (player->GetMapRef().getTarget() == this)
@@ -2548,65 +1932,31 @@ bool Map::CanEnter(Player* player)
     return true;
 }
 
-/// Put scripts in the execution queue
-
-/// Process queued scripts
-
-/**
- * Function return player that in world at CURRENT map
- *
- * Note: This is function preferred if you sure that need player only placed at specific map
- *       This is not true for some spell cast targeting and most packet handlers
- *
- * @param guid must be player guid (HIGHGUID_PLAYER)
- */
 Player* Map::GetPlayer(ObjectGuid guid)
 {
-    Player* plr = sPlayerRegistry.Find(guid);         // return only in world players
+    Player* plr = sPlayerRegistry.Find(guid);
     return plr && plr->GetMap() == this ? plr : nullptr;
 }
 
-/**
- * Function return creature (non-pet and then most summoned by spell creatures) that in world at CURRENT map
- *
- * @param guid must be creature guid (HIGHGUID_UNIT)
- */
 Creature* Map::GetCreature(ObjectGuid guid)
 {
     return m_objectsStore.find<Creature>(guid, (Creature*)nullptr);
 }
 
-/**
- * Function return pet that in world at CURRENT map
- *
- * @param guid must be pet guid (HIGHGUID_PET)
- */
 Pet* Map::GetPet(ObjectGuid guid)
 {
     return m_objectsStore.find<Pet>(guid, (Pet*)nullptr);
 }
 
-/**
- * Function return corpse that at CURRENT map
- *
- * Note: corpse can be NOT IN WORLD, so can't be used corpse->GetMap() without pre-check corpse->isInWorld()
- *
- * @param guid must be corpse guid (HIGHGUID_CORPSE)
- */
 Corpse* Map::GetCorpse(ObjectGuid guid)
 {
     Corpse* ret = sCorpseManager.FindInMap(guid, GetId());
     return ret && ret->GetInstanceId() == GetInstanceId() ? ret : nullptr;
 }
 
-/**
- * Function return non-player unit object that in world at CURRENT map, so creature, or pet
- *
- * @param guid must be non-player unit guid (HIGHGUID_PET HIGHGUID_UNIT)
- */
 Creature* Map::GetAnyTypeCreature(ObjectGuid guid)
 {
-    switch (guid.GetHigh())
+    switch (GuidHigh(guid))
     {
         case HIGHGUID_UNIT:         return GetCreature(guid);
         case HIGHGUID_PET:          return GetPet(guid);
@@ -2616,37 +1966,19 @@ Creature* Map::GetAnyTypeCreature(ObjectGuid guid)
     return nullptr;
 }
 
-/**
- * Function return gameobject that in world at CURRENT map
- *
- * @param guid must be gameobject guid (HIGHGUID_GAMEOBJECT)
- */
 GameObject* Map::GetGameObject(ObjectGuid guid)
 {
     return m_objectsStore.find<GameObject>(guid, (GameObject*)nullptr);
 }
 
-/**
- * Function return dynamic object that in world at CURRENT map
- *
- * @param guid must be dynamic object guid (HIGHGUID_DYNAMICOBJECT)
- */
 DynamicObject* Map::GetDynamicObject(ObjectGuid guid)
 {
     return m_objectsStore.find<DynamicObject>(guid, (DynamicObject*)nullptr);
 }
 
-/**
- * Function return unit in world at CURRENT map
- *
- * Note: in case player guid not always expected need player at current map only.
- *       For example in spell casting can be expected any in world player targeting in some cases
- *
- * @param guid must be unit guid (HIGHGUID_PLAYER HIGHGUID_PET HIGHGUID_UNIT)
- */
 Unit* Map::GetUnit(ObjectGuid guid)
 {
-    if (guid.IsPlayer())
+    if ((guid != 0 && GuidHigh(guid) == HIGHGUID_PLAYER))
     {
         return GetPlayer(guid);
     }
@@ -2654,12 +1986,9 @@ Unit* Map::GetUnit(ObjectGuid guid)
     return GetAnyTypeCreature(guid);
 }
 
-/**
- * Function return world object in world at CURRENT map, so any except transports
- */
 Occupant* Map::GetOccupant(ObjectGuid guid)
 {
-    switch (guid.GetHigh())
+    switch (GuidHigh(guid))
     {
         case HIGHGUID_PLAYER:       return GetPlayer(guid);
         case HIGHGUID_GAMEOBJECT:   return GetGameObject(guid);
@@ -2668,7 +1997,7 @@ Occupant* Map::GetOccupant(ObjectGuid guid)
         case HIGHGUID_DYNAMICOBJECT: return GetDynamicObject(guid);
         case HIGHGUID_CORPSE:
         {
-            // corpse special case, it can be not in world
+
             Corpse* corpse = GetCorpse(guid);
             return corpse && corpse->IsInWorld() ? corpse : nullptr;
         }
@@ -2680,15 +2009,9 @@ Occupant* Map::GetOccupant(ObjectGuid guid)
     return nullptr;
 }
 
-/**
- * @brief Generates a new map-local low GUID for the requested object type.
- *
- * @param guidhigh The high-guid category to allocate for.
- * @return uint32 The generated low GUID value.
- */
 uint32 Map::GenerateLocalLowGuid(HighGuid guidhigh)
 {
-    // TODO: for map local guid counters possible force reload map instead shutdown server at guid counter overflow
+
     switch (guidhigh)
     {
         case HIGHGUID_UNIT:
@@ -2705,28 +2028,15 @@ uint32 Map::GenerateLocalLowGuid(HighGuid guidhigh)
     }
 }
 
-/**
- * Function to check if a point is in line of sight from an other point
- */
 bool Map::IsInLineOfSight(float srcX, float srcY, float srcZ, float destX, float destY, float destZ) const
 {
     return m_TerrainData->IsInLineOfSight(srcX, srcY, srcZ, destX, destY, destZ)
            && m_dyn_tree.IsInLineOfSight(srcX, srcY, srcZ, destX, destY, destZ, PHASE_ANY);
 }
 
-/**
- * get the hit position and return true if we hit something (in this case the dest position will hold the hit-position)
- * otherwise the result pos will be the dest pos
- */
 bool Map::GetHitPosition(float srcX, float srcY, float srcZ, float& destX, float& destY, float& destZ, float modifyDist) const
 {
-    // Both worlds answer with the FRACTION of the segment at which they were hit rather
-    // than with a point, so they can be asked over the SAME segment and only the nearer
-    // answer resolved into a position -- and pulled back by modifyDist exactly once.
-    //
-    // Not the other way round: bounding the dynamic sweep by the static hit, as this
-    // used to, hides every game object standing in the last modifyDist of the ray,
-    // because the static hit handed over had already been pulled back.
+
     const float staticFrac = m_TerrainData->NearestHitFraction(srcX, srcY, srcZ, destX, destY, destZ);
     const float dynFrac = m_dyn_tree.NearestHitFraction(srcX, srcY, srcZ, destX, destY, destZ, PHASE_ANY);
     const float frac = std::min(staticFrac, dynFrac);
@@ -2735,7 +2045,7 @@ bool Map::GetHitPosition(float srcX, float srcY, float srcZ, float& destX, float
     {
         const float dx = destX - srcX, dy = destY - srcY, dz = destZ - srcZ;
         const float len = sqrt(dx * dx + dy * dy + dz * dz);
-        // Stop modifyDist short of the surface, and never past the origin.
+
         float travel = frac * len - modifyDist;
         if (travel < 0.0f)
         {
@@ -2754,9 +2064,7 @@ world::terrain::Column Map::ColumnAt(float x, float y, float zTop, float zBottom
     return m_TerrainData->ColumnAt(x, y, zTop, zBottom, &m_dyn_tree, PHASE_ANY);
 }
 
-// Find a height within a reasonable range of the provided Z. May fail, and the
-// caller has to handle that.
-bool Map::GetHeightInRange(float x, float y, float& z, float maxSearchDist /*= 4.0f*/) const
+bool Map::GetHeightInRange(float x, float y, float& z, float maxSearchDist ) const
 {
     const auto floor = FloorNear(x, y, z, maxSearchDist);
     if (!floor)
@@ -2774,7 +2082,7 @@ std::optional<float> Map::Floor(float x, float y, float z) const
 }
 
 std::optional<float> Map::FloorNear(float x, float y, float z,
-                                    float maxSearchDist /*= 4.0f*/) const
+                                    float maxSearchDist ) const
 {
     const auto floor = Floor(x, y, z);
     if (!floor || fabs(z - *floor) > maxSearchDist)
@@ -2784,29 +2092,17 @@ std::optional<float> Map::FloorNear(float x, float y, float z,
     return floor;
 }
 
-/// The one place the INVALID_HEIGHT sentinel is still written. Everything above this
-/// line gets an optional and cannot mistake "no floor" for a height of -100000.
 float Map::GetHeight(float x, float y, float z) const
 {
     const auto floor = Floor(x, y, z);
     return floor ? *floor : INVALID_HEIGHT;
 }
 
-/**
- * @brief Inserts a game object collision model into the dynamic tree.
- *
- * @param mdl The model to insert.
- */
 void Map::InsertGameObjectModel(const GameObjectModel& mdl)
 {
     m_dyn_tree.Insert(const_cast<GameObjectModel&>(mdl));
 }
 
-/**
- * @brief Removes a game object collision model from the dynamic tree.
- *
- * @param mdl The model to remove.
- */
 void Map::RemoveGameObjectModel(const GameObjectModel& mdl)
 {
     m_dyn_tree.Remove(const_cast<GameObjectModel&>(mdl));
@@ -2820,15 +2116,13 @@ bool Map::GetRandomPointInTheAir(float& x, float& y, float& z, float radius)
     float i_x = x + range * cos(angle);
     float i_y = y + range * sin(angle);
 
-    // get real ground of new point
-    // the code consider cylinder instead of sphere for possible z
     float ground = GetHeight(i_x, i_y, z);
-    if (ground > INVALID_HEIGHT) // GetHeight can fail
+    if (ground > INVALID_HEIGHT)
     {
-        float min_z = z - 0.7f * radius; // 0.7 to have a bit a "flat" cylinder, TODO which value looks nicest
+        float min_z = z - 0.7f * radius;
         if (min_z < ground)
         {
-            min_z = ground + 2.5f; // Get some space to prevent landing
+            min_z = ground + 2.5f;
         }
         float max_z = std::max(z + 0.7f * radius, min_z);
         x = i_x;
@@ -2841,7 +2135,7 @@ bool Map::GetRandomPointInTheAir(float& x, float& y, float& z, float radius)
 
 bool Map::GetReachableRandomPointOnGround(float& x, float& y, float& z, float radius)
 {
-    // Generate a random range and direction for the new point
+
     const float angle = rand_norm_f() * (M_PI_F * 2.0f);
     const float range = rand_norm_f() * radius;
 
@@ -2850,31 +2144,22 @@ bool Map::GetReachableRandomPointOnGround(float& x, float& y, float& z, float ra
     float i_z = z + 1.0f;
 
     GetHitPosition(x, y, z + 1.0f, i_x, i_y, i_z, -0.5f);
-    i_z = z; // reset i_z to z value to avoid too much difference from original point before GetHeightInRange
-    if (!GetHeightInRange(i_x, i_y, i_z)) // GetHeight can fail
+    i_z = z;
+    if (!GetHeightInRange(i_x, i_y, i_z))
     {
         return false;
     }
 
-    // here we have a valid position but the point can have a big Z in some case
-    // next code will check angle from 2 points of view: x-axis and y-axis movement
-    //        c
-    //       /|
-    //      / |
-    //    b/__|a
-
-    // project vector to get only positive value
     float ac = fabs(z - i_z);
     float delta = 0;
 
-    // slope represented by b angle (in radian)
     float slope = 0;
-    const float MAX_SLOPE_IN_RADIAN = 50.0f / 180.0f * M_PI_F;  // 50(degree) max seem best value for walkable slope
+    const float MAX_SLOPE_IN_RADIAN = 50.0f / 180.0f * M_PI_F;
 
-    delta = fabs(x - i_x);  // check x-axis movement
-    if (delta > 0.0f)       // check to avoid divide by 0
+    delta = fabs(x - i_x);
+    if (delta > 0.0f)
     {
-        // compute slope
+
         float slope = atan(ac / delta);
         if (slope < MAX_SLOPE_IN_RADIAN)
         {
@@ -2885,10 +2170,10 @@ bool Map::GetReachableRandomPointOnGround(float& x, float& y, float& z, float ra
         }
     }
 
-    delta = fabs(y - i_y);  // check y-axis movement
-    if (delta > 0.0f)       // check to avoid divide by 0
+    delta = fabs(y - i_y);
+    if (delta > 0.0f)
     {
-        // compute slope
+
         slope = atan(ac / delta);
         if (slope < MAX_SLOPE_IN_RADIAN)
         {
@@ -2902,26 +2187,17 @@ bool Map::GetReachableRandomPointOnGround(float& x, float& y, float& z, float ra
     return false;
 }
 
-/**
- * @brief Checks whether a game object collision model is present in the dynamic tree.
- *
- * @param mdl The model to test.
- * @return true if the model is currently tracked; otherwise false.
- */
 bool Map::ContainsGameObjectModel(const GameObjectModel& mdl) const
 {
     return m_dyn_tree.Contains(mdl);
 }
 
-/// Re-files a body whose world box changed. The POSE is set here and the index only
-/// re-files: a spatial index has no business reading a game object.
 void Map::RefreshGameObjectModel(GameObjectModel& mdl)
 {
     mdl.UpdatePose();
     m_dyn_tree.Refresh(mdl);
 }
 
-// This will generate a random point to all directions in water for the provided point in radius range.
 bool Map::GetRandomPointUnderWater(float& x, float& y, float& z, float radius, GridMapLiquidData& liquid_status)
 {
     const float angle = rand_norm_f() * (M_PI_F * 2.0f);
@@ -2930,20 +2206,17 @@ bool Map::GetRandomPointUnderWater(float& x, float& y, float& z, float radius, G
     float i_x = x + range * cos(angle);
     float i_y = y + range * sin(angle);
 
-    // get real ground of new point
-    // the code consider cylinder instead of sphere for possible z
     float ground = GetHeight(i_x, i_y, z);
-    if (ground > INVALID_HEIGHT) // GetHeight can fail
+    if (ground > INVALID_HEIGHT)
     {
-        float min_z = z - 0.7f * radius; // 0.7 to have a bit a "flat" cylinder, TODO which value looks nicest
+        float min_z = z - 0.7f * radius;
         if (min_z < ground)
         {
-            min_z = ground + 0.5f; // Get some space to prevent under map
+            min_z = ground + 0.5f;
         }
 
-        float liquidLevel = liquid_status.level - 2.0f; // just to make the generated point is in water and not on surface or a bit above
+        float liquidLevel = liquid_status.level - 2.0f;
 
-        // if not enough space to fit the creature better is to return from here
         if (min_z > liquidLevel)
         {
             return false;
@@ -2959,11 +2232,6 @@ bool Map::GetRandomPointUnderWater(float& x, float& y, float& z, float radius, G
     return false;
 }
 
-// This will generate a random point to all directions in air for the provided point in radius range.
-
-// supposed to be used for not big radius, usually less than 20.0f
-
-// Get random point by handling different situation depending of if the unit is flying/swimming/walking
 bool Map::GetReachableRandomPosition(Unit* unit, float& x, float& y, float& z, float radius)
 {
     float i_x = x;
@@ -3021,4 +2289,3 @@ bool Map::GetReachableRandomPosition(Unit* unit, float& x, float& y, float& z, f
 
     return false;
 }
-

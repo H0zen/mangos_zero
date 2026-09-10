@@ -25,16 +25,6 @@
 
 #pragma once
 
-// What stands between a blow and a victim's health.
-//
-// Everything here is read, never written. A shield's remaining strength is an
-// input to the decision; drawing on it is Apply's business, from the plan the
-// Outcome carries back. That separation is the whole reason Resolve can be a
-// function of its arguments.
-//
-// A shield covers a SET of schools while the blow it stops has exactly one, so
-// the question a defence asks is always membership.
-
 #include "Combat/School.h"
 #include "Platform/Define.h"
 #include "ObjectGuid.h"
@@ -43,16 +33,10 @@
 
 namespace combat
 {
-    /**
-     * @brief A shield, and how much it can still take.
-     *
-     * Some shields are paid for in mana as they work: every point they stop
-     * costs `manaMultiplier` mana, and they stop nothing once the mana is gone.
-     * A multiplier of zero is a shield that costs nothing to hold up.
-     */
+
     struct Absorber
     {
-        ObjectGuid caster;
+        ObjectGuid caster = 0;
         uint32 spellId = 0;
         int32 remaining = 0;
         SchoolSet covers = SchoolSet::All();
@@ -63,16 +47,9 @@ namespace combat
         bool Covers(School school) const { return covers.Contains(school); }
     };
 
-    /**
-     * @brief An aura that sends part of the blow to somebody else.
-     *
-     * A flat share takes a fixed amount off; a fractional one takes a portion.
-     * Either way the amount leaves this victim and arrives at another, and the
-     * arrival is queued rather than dealt during this blow's mitigation.
-     */
     struct Splitter
     {
-        ObjectGuid target;
+        ObjectGuid target = 0;
         uint32 spellId = 0;
         int32 flat = 0;
         float fraction = 0.f;
@@ -82,17 +59,12 @@ namespace combat
     {
         int32 armour = 0;
 
-        /// Against the school of the blow being resolved. Already net of any
-        /// resistance the attacker ignores.
         int32 resistance = 0;
 
-        /// Subtracted from a blocked blow.
         int32 blockValue = 0;
 
-        /// Nothing of this school touches the victim at all.
         bool immune = false;
 
-        /// What the victim can be drawn on for shields that charge for their work.
         int32 mana = 0;
 
         std::vector<Absorber> absorbers;

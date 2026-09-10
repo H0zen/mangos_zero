@@ -26,23 +26,22 @@
 
 struct CinematicFlyoverKeyframe
 {
-    uint32 timestampMs;  // Time from route start in milliseconds
-    // cppcheck-suppress unusedStructMember
-    float x, y, z;       // World position
-    // cppcheck-suppress unusedStructMember
-    float orientation;   // Facing in radians
+    uint32 timestampMs;
+
+    float x, y, z;
+
+    float orientation;
 };
 
 struct CinematicFlyoverRoute
 {
-    uint32 raceId;          // ChrRaces race ID
-    uint32 cinematicId;     // CinematicCamera.dbc ID
-    uint32 mapId;           // Map ID
-    uint32 durationMs;      // Total route duration in milliseconds
+    uint32 raceId;
+    uint32 cinematicId;
+    uint32 mapId;
+    uint32 durationMs;
     uint32 keyframeCount;
-    // cppcheck-suppress unusedStructMember
+
     const CinematicFlyoverKeyframe* keyframes;
 };
 
-/// Route accessor function - returns nullptr if no route exists for the race
 const CinematicFlyoverRoute* GetCinematicFlyoverRouteForRace(uint8 raceId);

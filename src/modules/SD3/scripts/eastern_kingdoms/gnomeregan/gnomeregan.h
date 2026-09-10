@@ -69,7 +69,7 @@ enum
 
 struct sBombFace
 {
-    ObjectGuid m_gnomeFaceGuid;
+    ObjectGuid m_gnomeFaceGuid = 0;
     bool m_bActivated;
     uint32 m_uiBombTimer;
 };

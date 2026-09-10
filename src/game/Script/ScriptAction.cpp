@@ -23,29 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file ScriptMgr.cpp
- * @brief Script system manager implementation
- *
- * This file implements ScriptMgr which manages all game scripts:
- * - Creature AI scripts
- * - GameObject scripts
- * - Item scripts
- * - Area trigger scripts
- * - Spell scripts
- * - Quest scripts
- * - Instance scripts
- *
- * Scripts are loaded from script libraries and provide hooks for
- * customizing game behavior. The script manager routes events to
- * the appropriate script handlers.
- *
- * @see ScriptMgr for the manager class
- * @see ScriptedInstance for instance script base
- */
-
-
-
 #include <algorithm>
 #include <vector>
 #include "Reaction.h"
@@ -72,10 +49,8 @@
 #include "LFGMgr.h"
 #ifdef ENABLE_SD3
 #include "system/ScriptDevMgr.h"
-#endif /* ENABLE_SD3 */
+#endif
 
-/// Helper function to get Object source or target for Script-Command
-/// returns false iff an error happened
 bool ScriptAction::GetScriptCommandObject(const ObjectGuid guid, bool includeItem, Object*& resultObject)
 {
     resultObject = nullptr;
@@ -85,7 +60,7 @@ bool ScriptAction::GetScriptCommandObject(const ObjectGuid guid, bool includeIte
         return true;
     }
 
-    switch (guid.GetHigh())
+    switch (GuidHigh(guid))
     {
         case HIGHGUID_UNIT:
             resultObject = m_map->GetCreature(guid);
@@ -102,7 +77,7 @@ bool ScriptAction::GetScriptCommandObject(const ObjectGuid guid, bool includeIte
         case HIGHGUID_CORPSE:
             resultObject = sCorpseManager.Find(guid);
             break;
-        case HIGHGUID_ITEM: // case HIGHGUID_CONTAINER: ==HIGHGUID_ITEM
+        case HIGHGUID_ITEM:
         {
             if (includeItem)
             {
@@ -112,10 +87,10 @@ bool ScriptAction::GetScriptCommandObject(const ObjectGuid guid, bool includeIte
                 }
                 break;
             }
-            // else no break, but display error message
+
         }
         default:
-            sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u with unsupported guid %s, skipping", m_type, m_script->id, m_script->command, guid.GetString().c_str());
+            sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u with unsupported guid %s, skipping", m_type, m_script->id, m_script->command, GuidString(guid).c_str());
             return false;
     }
 
@@ -127,8 +102,6 @@ bool ScriptAction::GetScriptCommandObject(const ObjectGuid guid, bool includeIte
     return true;
 }
 
-/// Select source and target for a script command
-/// Returns false iff an error happened
 bool ScriptAction::GetScriptProcessTargets(Occupant* pOrigSource, Occupant* pOrigTarget, Occupant*& pFinalSource, Occupant*& pFinalTarget)
 {
     Occupant* pBuddy = nullptr;
@@ -159,17 +132,17 @@ bool ScriptAction::GetScriptProcessTargets(Occupant* pOrigSource, Occupant* pOri
             }
             else
             {
-                // GameObjectInfo const* ginfo = ObjectMgr::GetGameObjectInfo(m_script->buddyEntry);
-                pBuddy = m_map->GetGameObject(ObjectGuid(HIGHGUID_GAMEOBJECT, m_script->buddyEntry, m_script->searchRadiusOrGuid));
+
+                pBuddy = m_map->GetGameObject(MakeGuid(HIGHGUID_GAMEOBJECT, m_script->buddyEntry, m_script->searchRadiusOrGuid));
             }
-            // TODO Maybe load related grid if not already done? How to handle multi-map case?
+
             if (!pBuddy)
             {
                 sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u has buddy %u by guid %u not loaded in map %u (data-flags %u), skipping.", m_type, m_script->id, m_script->command, m_script->buddyEntry, m_script->searchRadiusOrGuid, m_map->GetId(), m_script->data_flags);
                 return false;
             }
         }
-        else                                                // Buddy by entry
+        else
         {
             if (!pOrigSource && !pOrigTarget)
             {
@@ -177,10 +150,8 @@ bool ScriptAction::GetScriptProcessTargets(Occupant* pOrigSource, Occupant* pOri
                 return false;
             }
 
-            // Prefer non-players as searcher
             Occupant* pSearcher = pOrigSource ? pOrigSource : pOrigTarget;
-            if (pOrigSource && pOrigTarget &&
-                pOrigSource->IsPlayer() && !pOrigTarget->IsPlayer())
+            if (pOrigSource && pOrigTarget &&IsPlayer(pOrigSource) && !IsPlayer(pOrigTarget))
             {
                 pSearcher = pOrigTarget;
             }
@@ -204,7 +175,7 @@ bool ScriptAction::GetScriptProcessTargets(Occupant* pOrigSource, Occupant* pOri
                     {
                         Cell::VisitWorldObjects(pSearcher, searcher, m_script->searchRadiusOrGuid);
                     }
-                    else                                        // Normal Creature
+                    else
                     {
                         Cell::VisitGridObjects(pSearcher, searcher, m_script->searchRadiusOrGuid);
                     }
@@ -212,7 +183,6 @@ bool ScriptAction::GetScriptProcessTargets(Occupant* pOrigSource, Occupant* pOri
 
                 pBuddy = pCreatureBuddy;
 
-                // TODO: Remove this extra check output after a while - it might have false effects
                 if (!pBuddy && pSearcher->GetEntry() == m_script->buddyEntry)
                 {
                     sLog.outErrorDb(" DB-SCRIPTS: WARNING: Process table `db_scripts [type = %d]` id %u, command %u has no OTHER buddy %u found - maybe you need to update the script?", m_type, m_script->id, m_script->command, m_script->buddyEntry);
@@ -262,10 +232,9 @@ bool ScriptAction::GetScriptProcessTargets(Occupant* pOrigSource, Occupant* pOri
     return true;
 }
 
-/// Helper to log error information
 bool ScriptAction::LogIfNotCreature(Occupant* pOccupant)
 {
-    if (!pOccupant || !pOccupant->IsCreature())
+    if (!pOccupant || !IsCreature(pOccupant))
     {
         sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u call for non-creature, skipping.", m_type, m_script->id, m_script->command);
         return true;
@@ -273,15 +242,9 @@ bool ScriptAction::LogIfNotCreature(Occupant* pOccupant)
     return false;
 }
 
-/**
- * @brief Logs an error when the provided world object is not a unit.
- *
- * @param pOccupant The world object to validate.
- * @return true if validation failed; otherwise false.
- */
 bool ScriptAction::LogIfNotUnit(Occupant* pOccupant)
 {
-    if (!pOccupant || !pOccupant->isType(TYPEMASK_UNIT))
+    if (!pOccupant || !IsType(pOccupant, TYPEMASK_UNIT))
     {
         sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u call for non-unit, skipping.", m_type, m_script->id, m_script->command);
         return true;
@@ -289,15 +252,9 @@ bool ScriptAction::LogIfNotUnit(Occupant* pOccupant)
     return false;
 }
 
-/**
- * @brief Logs an error when the provided world object is not a game object.
- *
- * @param pOccupant The world object to validate.
- * @return true if validation failed; otherwise false.
- */
 bool ScriptAction::LogIfNotGameObject(Occupant* pOccupant)
 {
-    if (!pOccupant || !pOccupant->IsGameObject())
+    if (!pOccupant || !IsGameObject(pOccupant))
     {
         sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u call for non-gameobject, skipping.", m_type, m_script->id, m_script->command);
         return true;
@@ -305,15 +262,9 @@ bool ScriptAction::LogIfNotGameObject(Occupant* pOccupant)
     return false;
 }
 
-/**
- * @brief Logs an error when the provided world object is not a player.
- *
- * @param pOccupant The world object to validate.
- * @return true if validation failed; otherwise false.
- */
 bool ScriptAction::LogIfNotPlayer(Occupant* pOccupant)
 {
-    if (!pOccupant || !pOccupant->IsPlayer())
+    if (!pOccupant || !IsPlayer(pOccupant))
     {
         sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u call for non-player, skipping.", m_type, m_script->id, m_script->command);
         return true;
@@ -321,28 +272,25 @@ bool ScriptAction::LogIfNotPlayer(Occupant* pOccupant)
     return false;
 }
 
-/// Helper to get a player if possible (target preferred)
 Player* ScriptAction::GetPlayerTargetOrSourceAndLog(Occupant* pSource, Occupant* pTarget)
 {
-    if ((!pTarget || !pTarget->IsPlayer()) && (!pSource || !pSource->IsPlayer()))
+    if ((!pTarget || !IsPlayer(pTarget)) && (!pSource || !IsPlayer(pSource)))
     {
         sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u call for non player, skipping.", m_type, m_script->id, m_script->command);
         return nullptr;
     }
 
-    return pTarget && pTarget->IsPlayer() ? (Player*)pTarget : (Player*)pSource;
+    return pTarget &&IsPlayer(pTarget) ? (Player*)pTarget : (Player*)pSource;
 }
 
-/// Handle one Script Step
-// Return true if and only if further parts of this script shall be skipped
 bool ScriptAction::HandleScriptStep()
 {
     Occupant* pSource;
     Occupant* pTarget;
-    Object* pSourceOrItem;                                  // Stores a provided pSource (if exists as Occupant) or source-item
+    Object* pSourceOrItem;
 
     {
-        // Add scope for source & target variables so that they are not used below
+
         Object* source = nullptr;
         Object* target = nullptr;
         if (!GetScriptCommandObject(m_sourceGuid, true, source))
@@ -354,23 +302,21 @@ bool ScriptAction::HandleScriptStep()
             return false;
         }
 
-        // Give some debug log output for easier use
-        DEBUG_FILTER_LOG(LOG_FILTER_DB_SCRIPTS, "DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u for source %s (%sin world), target %s (%sin world)", m_type, m_script->id, m_script->command, m_sourceGuid.GetString().c_str(), source ? "" : "not ", m_targetGuid.GetString().c_str(), target ? "" : "not ");
+        DEBUG_FILTER_LOG(LOG_FILTER_DB_SCRIPTS, "DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u for source %s (%sin world), target %s (%sin world)", m_type, m_script->id, m_script->command, GuidString(m_sourceGuid).c_str(), source ? "" : "not ", GuidString(m_targetGuid).c_str(), target ? "" : "not ");
 
-        // Get expected source and target (if defined with buddy)
-        pSource = source && source->isType(TYPEMASK_PRESENCE) ? static_cast<Occupant*>(source) : nullptr;
-        pTarget = target && target->isType(TYPEMASK_PRESENCE) ? static_cast<Occupant*>(target) : nullptr;
+        pSource = source && IsType(source, TYPEMASK_PRESENCE) ? static_cast<Occupant*>(source) : nullptr;
+        pTarget = target && IsType(target, TYPEMASK_PRESENCE) ? static_cast<Occupant*>(target) : nullptr;
         if (!GetScriptProcessTargets(pSource, pTarget, pSource, pTarget))
         {
             return false;
         }
 
-        pSourceOrItem = pSource ? pSource : (source && source->isType(TYPEMASK_ITEM) ? source : nullptr);
+        pSourceOrItem = pSource ? pSource : (source && IsType(source, TYPEMASK_ITEM) ? source : nullptr);
     }
 
     switch (m_script->command)
     {
-        case SCRIPT_COMMAND_TALK:                           // 0
+        case SCRIPT_COMMAND_TALK:
         {
             if (!pSource)
             {
@@ -378,10 +324,9 @@ bool ScriptAction::HandleScriptStep()
                 break;
             }
 
-            Unit* unitTarget = pTarget && pTarget->isType(TYPEMASK_UNIT) ? static_cast<Unit*>(pTarget) : nullptr;
+            Unit* unitTarget = pTarget && IsType(pTarget, TYPEMASK_UNIT) ? static_cast<Unit*>(pTarget) : nullptr;
             int32 textId = m_script->textId[0];
 
-            // May have text for random
             if (m_script->textId[1])
             {
                 int i = 2;
@@ -393,7 +338,6 @@ bool ScriptAction::HandleScriptStep()
                     }
                 }
 
-                // Use one random
                 textId = m_script->textId[urand(0, i - 1)];
             }
 
@@ -403,7 +347,7 @@ bool ScriptAction::HandleScriptStep()
             }
             break;
         }
-        case SCRIPT_COMMAND_EMOTE:                          // 1
+        case SCRIPT_COMMAND_EMOTE:
         {
             if (LogIfNotUnit(pSource))
             {
@@ -424,7 +368,7 @@ bool ScriptAction::HandleScriptStep()
             ((Unit*)pSource)->HandleEmote(emotes[urand(0, emotes.size() - 1)]);
             break;
         }
-        case SCRIPT_COMMAND_FIELD_SET:                      // 2
+        case SCRIPT_COMMAND_FIELD_SET:
             if (!pSourceOrItem)
             {
                 sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u call for nullptr object.", m_type, m_script->id, m_script->command);
@@ -438,30 +382,27 @@ bool ScriptAction::HandleScriptStep()
             }
             pSourceOrItem->SetUInt32Value(m_script->setField.fieldId, m_script->setField.fieldValue);
             break;
-        case SCRIPT_COMMAND_MOVE_TO:                        // 3
+        case SCRIPT_COMMAND_MOVE_TO:
         {
             if (LogIfNotUnit(pSource))
             {
                 break;
             }
 
-            // Just turn around
             if ((m_script->x == 0.0f && m_script->y == 0.0f && m_script->z == 0.0f) ||
-                // Check point-to-point distance, hence revert effect of bounding radius
+
                 ((Unit*)pSource)->Where().WithinDist(Geometry::Vector3(m_script->x, m_script->y, m_script->z), 0.01f - ((Unit*)pSource)->Where().Extent()))
             {
                 ((Unit*)pSource)->SetFacingTo(m_script->o);
                 break;
             }
 
-            // For command additional teleport the unit
             if (m_script->data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL)
             {
                 ((Unit*)pSource)->NearTeleportTo(m_script->x, m_script->y, m_script->z, m_script->o != 0.0f ? m_script->o : ((Unit*)pSource)->Where().Facing());
                 break;
             }
 
-            // Normal Movement
             if (m_script->moveTo.travelSpeed)
             {
                 ((Unit*)pSource)->MonsterMoveWithSpeed(m_script->x, m_script->y, m_script->z, m_script->moveTo.travelSpeed * 0.01f);
@@ -473,7 +414,7 @@ bool ScriptAction::HandleScriptStep()
             }
             break;
         }
-        case SCRIPT_COMMAND_FLAG_SET:                       // 4
+        case SCRIPT_COMMAND_FLAG_SET:
             if (!pSourceOrItem)
             {
                 sLog.outErrorDb("SCRIPT_COMMAND_FLAG_SET (script id %u) call for nullptr object.", m_script->id);
@@ -487,7 +428,7 @@ bool ScriptAction::HandleScriptStep()
             }
             pSourceOrItem->SetFlag(m_script->setFlag.fieldId, m_script->setFlag.fieldValue);
             break;
-        case SCRIPT_COMMAND_FLAG_REMOVE:                    // 5
+        case SCRIPT_COMMAND_FLAG_REMOVE:
             if (!pSourceOrItem)
             {
                 sLog.outErrorDb("SCRIPT_COMMAND_FLAG_REMOVE (script id %u) call for nullptr object.", m_script->id);
@@ -501,7 +442,7 @@ bool ScriptAction::HandleScriptStep()
             }
             pSourceOrItem->RemoveFlag(m_script->removeFlag.fieldId, m_script->removeFlag.fieldValue);
             break;
-        case SCRIPT_COMMAND_TELEPORT_TO:                    // 6
+        case SCRIPT_COMMAND_TELEPORT_TO:
         {
             Player* pPlayer = GetPlayerTargetOrSourceAndLog(pSource, pTarget);
             if (!pPlayer)
@@ -512,7 +453,7 @@ bool ScriptAction::HandleScriptStep()
             pPlayer->TeleportTo(m_script->teleportTo.mapId, m_script->x, m_script->y, m_script->z, m_script->o);
             break;
         }
-        case SCRIPT_COMMAND_QUEST_EXPLORED:                 // 7
+        case SCRIPT_COMMAND_QUEST_EXPLORED:
         {
             Player* pPlayer = GetPlayerTargetOrSourceAndLog(pSource, pTarget);
             if (!pPlayer)
@@ -521,16 +462,15 @@ bool ScriptAction::HandleScriptStep()
             }
 
             Occupant* pOccupant = nullptr;
-            if (pSource && pSource->isType(TYPEMASK_CREATURE_OR_GAMEOBJECT))
+            if (pSource && IsType(pSource, TYPEMASK_CREATURE_OR_GAMEOBJECT))
             {
                 pOccupant = pSource;
             }
-            else if (pTarget && pTarget->isType(TYPEMASK_CREATURE_OR_GAMEOBJECT))
+            else if (pTarget && IsType(pTarget, TYPEMASK_CREATURE_OR_GAMEOBJECT))
             {
                 pOccupant = pTarget;
             }
 
-            // if we have a distance, we must have a occupant
             if (m_script->questExplored.distance != 0 && !pOccupant)
             {
                 sLog.outErrorDb(" DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u called without source occupant, skipping.", m_type, m_script->id, m_script->command);
@@ -538,8 +478,8 @@ bool ScriptAction::HandleScriptStep()
             }
 
             bool failQuest = false;
-            // Creature must be alive for giving credit
-            if (pOccupant && pOccupant->IsCreature() && !((Creature*)pOccupant)->IsAlive())
+
+            if (pOccupant &&IsCreature(pOccupant) && !((Creature*)pOccupant)->IsAlive())
             {
                 failQuest = true;
             }
@@ -548,7 +488,6 @@ bool ScriptAction::HandleScriptStep()
                 failQuest = true;
             }
 
-            // quest id and flags checked at script loading
             if (!failQuest)
             {
                 pPlayer->Journal().Explored(m_script->questExplored.questId);
@@ -560,7 +499,7 @@ bool ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_KILL_CREDIT:                    // 8
+        case SCRIPT_COMMAND_KILL_CREDIT:
         {
             Player* pPlayer = GetPlayerTargetOrSourceAndLog(pSource, pTarget);
             if (!pPlayer)
@@ -569,9 +508,8 @@ bool ScriptAction::HandleScriptStep()
             }
 
             uint32 creatureEntry = m_script->killCredit.creatureEntry;
-            Occupant* pRewardSource = pSource && pSource->IsCreature() ? pSource : (pTarget && pTarget->IsCreature() ? pTarget : nullptr);
+            Occupant* pRewardSource = pSource &&IsCreature(pSource) ? pSource : (pTarget &&IsCreature(pTarget) ? pTarget : nullptr);
 
-            // dynamic effect, take entry of reward Source
             if (!creatureEntry)
             {
                 if (pRewardSource)
@@ -596,12 +534,12 @@ bool ScriptAction::HandleScriptStep()
             }
             else
             {
-                pPlayer->Journal().KillCredited(creatureEntry, pRewardSource ? pRewardSource->GetObjectGuid() : ObjectGuid());
+                pPlayer->Journal().KillCredited(creatureEntry, pRewardSource ? pRewardSource->GetObjectGuid() : 0);
             }
 
             break;
         }
-        case SCRIPT_COMMAND_RESPAWN_GO:                     // 9
+        case SCRIPT_COMMAND_RESPAWN_GO:
         {
             GameObject* pGo;
             if (m_script->respawnGo.goGuid)
@@ -609,11 +547,10 @@ bool ScriptAction::HandleScriptStep()
                 GameObjectData const* goData = sObjectMgr.GetGOData(m_script->respawnGo.goGuid);
                 if (!goData)
                 {
-                    break;                                   // checked at load
+                    break;
                 }
 
-                // TODO - This was a change, was before current map of source
-                pGo = m_map->GetGameObject(ObjectGuid(HIGHGUID_GAMEOBJECT, goData->id, m_script->respawnGo.goGuid));
+                pGo = m_map->GetGameObject(MakeGuid(HIGHGUID_GAMEOBJECT, goData->id, m_script->respawnGo.goGuid));
             }
             else
             {
@@ -640,17 +577,17 @@ bool ScriptAction::HandleScriptStep()
 
             if (pGo->isSpawned())
             {
-                break;                                       // gameobject already spawned
+                break;
             }
 
             uint32 time_to_despawn = m_script->respawnGo.despawnDelay < 5 ? 5 : m_script->respawnGo.despawnDelay;
 
             pGo->SetLootState(GO_READY);
-            pGo->SetRespawnTime(time_to_despawn);           // despawn object in ? seconds
+            pGo->SetRespawnTime(time_to_despawn);
             pGo->Refresh();
             break;
         }
-        case SCRIPT_COMMAND_TEMP_SUMMON_CREATURE:           // 10
+        case SCRIPT_COMMAND_TEMP_SUMMON_CREATURE:
         {
             if (!pSource)
             {
@@ -672,8 +609,8 @@ bool ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_OPEN_DOOR:                      // 11
-        case SCRIPT_COMMAND_CLOSE_DOOR:                     // 12
+        case SCRIPT_COMMAND_OPEN_DOOR:
+        case SCRIPT_COMMAND_CLOSE_DOOR:
         {
             GameObject* pDoor;
             uint32 time_to_reset = m_script->changeDoor.resetDelay < 15 ? 15 : m_script->changeDoor.resetDelay;
@@ -681,13 +618,12 @@ bool ScriptAction::HandleScriptStep()
             if (m_script->changeDoor.goGuid)
             {
                 GameObjectData const* goData = sObjectMgr.GetGOData(m_script->changeDoor.goGuid);
-                if (!goData)                                // checked at load
+                if (!goData)
                 {
                     break;
                 }
 
-                // TODO - Was a change, before random map
-                pDoor = m_map->GetGameObject(ObjectGuid(HIGHGUID_GAMEOBJECT, goData->id, m_script->changeDoor.goGuid));
+                pDoor = m_map->GetGameObject(MakeGuid(HIGHGUID_GAMEOBJECT, goData->id, m_script->changeDoor.goGuid));
             }
             else
             {
@@ -714,19 +650,19 @@ bool ScriptAction::HandleScriptStep()
             if ((m_script->command == SCRIPT_COMMAND_OPEN_DOOR && pDoor->GetGoState() != GO_STATE_READY) ||
                 (m_script->command == SCRIPT_COMMAND_CLOSE_DOOR && pDoor->GetGoState() == GO_STATE_READY))
             {
-                break;                                       // to be opened door already open, or to be closed door already closed
+                break;
             }
 
             pDoor->UseDoorOrButton(time_to_reset);
 
-            if (pTarget && pTarget->isType(TYPEMASK_GAMEOBJECT) && ((GameObject*)pTarget)->GetGoType() == GAMEOBJECT_TYPE_BUTTON)
+            if (pTarget && IsType(pTarget, TYPEMASK_GAMEOBJECT) && ((GameObject*)pTarget)->GetGoType() == GAMEOBJECT_TYPE_BUTTON)
             {
                 ((GameObject*)pTarget)->UseDoorOrButton(time_to_reset);
             }
 
             break;
         }
-        case SCRIPT_COMMAND_ACTIVATE_OBJECT:                // 13
+        case SCRIPT_COMMAND_ACTIVATE_OBJECT:
         {
             if (LogIfNotUnit(pSource))
             {
@@ -740,7 +676,7 @@ bool ScriptAction::HandleScriptStep()
             ((GameObject*)pTarget)->Use((Unit*)pSource);
             break;
         }
-        case SCRIPT_COMMAND_REMOVE_AURA:                    // 14
+        case SCRIPT_COMMAND_REMOVE_AURA:
         {
             if (LogIfNotUnit(pSource))
             {
@@ -750,30 +686,29 @@ bool ScriptAction::HandleScriptStep()
             ((Unit*)pSource)->RemoveAuras(m_script->removeAura.spellId);
             break;
         }
-        case SCRIPT_COMMAND_CAST_SPELL:                     // 15
+        case SCRIPT_COMMAND_CAST_SPELL:
         {
-            if (LogIfNotUnit(pTarget))                      // TODO - Change when support for casting without victim will be supported
+            if (LogIfNotUnit(pTarget))
             {
                 break;
             }
 
-            // Select Spell
             uint32 spell = m_script->castSpell.spellId;
             uint32 filledCount = 0;
-            while (filledCount < MAX_TEXT_ID && m_script->textId[filledCount])  // Count which dataint fields are filled
+            while (filledCount < MAX_TEXT_ID && m_script->textId[filledCount])
             {
                 ++filledCount;
             }
 
             if (filledCount > 0)
             {
-                if (uint32 randomField = urand(0, filledCount))               // Random selection resulted in one of the dataint fields
+                if (uint32 randomField = urand(0, filledCount))
                 {
                     spell = m_script->textId[randomField - 1];
                 }
             }
-            // TODO: when GO cast implemented, code below must be updated accordingly to also allow GO spell cast
-            if (pSource && pSource->IsGameObject())
+
+            if (pSource &&IsGameObject(pSource))
             {
                 ((Unit*)pTarget)->CastSpell(((Unit*)pTarget), spell, true, nullptr, nullptr, pSource->GetObjectGuid());
                 {
@@ -789,7 +724,7 @@ bool ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_PLAY_SOUND:                     // 16
+        case SCRIPT_COMMAND_PLAY_SOUND:
         {
             if (!pSource)
             {
@@ -797,7 +732,6 @@ bool ScriptAction::HandleScriptStep()
                 break;
             }
 
-            // bitmask: 0/1=target-player, 0/2=with distance dependent, 0/4=map wide, 0/8=zone wide
             Player* pSoundTarget = nullptr;
             if (m_script->playSound.flags & 1)
             {
@@ -829,7 +763,7 @@ bool ScriptAction::HandleScriptStep()
             }
             break;
         }
-        case SCRIPT_COMMAND_CREATE_ITEM:                    // 17
+        case SCRIPT_COMMAND_CREATE_ITEM:
         {
             Player* pPlayer = GetPlayerTargetOrSourceAndLog(pSource, pTarget);
             if (!pPlayer)
@@ -844,10 +778,10 @@ bool ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_DESPAWN_SELF:                   // 18
+        case SCRIPT_COMMAND_DESPAWN_SELF:
         {
-            // TODO - Remove this check after a while
-            if (pTarget && !pTarget->IsCreature() && pSource && pSource->IsCreature())
+
+            if (pTarget && !IsCreature(pTarget) && pSource &&IsCreature(pSource))
             {
                 sLog.outErrorDb("DB-SCRIPTS: Process table `db_scripts [type = %d]` id %u, command %u target must be creature, but (only) source is, use data_flags to fix", m_type, m_script->id, m_script->command);
                 pTarget = pSource;
@@ -862,19 +796,16 @@ bool ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_PLAY_MOVIE:                     // 19
+        case SCRIPT_COMMAND_PLAY_MOVIE:
         {
-            break;                                      // must be skipped at loading
+            break;
         }
-        case SCRIPT_COMMAND_MOVEMENT:                       // 20
+        case SCRIPT_COMMAND_MOVEMENT:
         {
             if (LogIfNotCreature(pSource))
             {
                 break;
             }
-
-            // Consider add additional checks for cases where creature should not change movementType
-            // (pet? in combat? already using same MMgen as script try to apply?)
 
             switch (m_script->movement.movementType)
             {
@@ -906,7 +837,7 @@ bool ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_SET_ACTIVEOBJECT:               // 21
+        case SCRIPT_COMMAND_SET_ACTIVEOBJECT:
         {
             if (LogIfNotCreature(pSource))
             {
@@ -916,7 +847,7 @@ bool ScriptAction::HandleScriptStep()
             ((Creature*)pSource)->SetActiveObjectState(m_script->activeObject.activate);
             break;
         }
-        case SCRIPT_COMMAND_SET_FACTION:                    // 22
+        case SCRIPT_COMMAND_SET_FACTION:
         {
             if (LogIfNotCreature(pSource))
             {
@@ -934,7 +865,7 @@ bool ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_MORPH_TO_ENTRY_OR_MODEL:        // 23
+        case SCRIPT_COMMAND_MORPH_TO_ENTRY_OR_MODEL:
         {
             if (LogIfNotCreature(pSource))
             {
@@ -959,7 +890,7 @@ bool ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_MOUNT_TO_ENTRY_OR_MODEL:        // 24
+        case SCRIPT_COMMAND_MOUNT_TO_ENTRY_OR_MODEL:
         {
             if (LogIfNotCreature(pSource))
             {
@@ -984,7 +915,7 @@ bool ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_SET_RUN:                        // 25
+        case SCRIPT_COMMAND_SET_RUN:
         {
             if (LogIfNotCreature(pSource))
             {
@@ -995,7 +926,7 @@ bool ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_ATTACK_START:                   // 26
+        case SCRIPT_COMMAND_ATTACK_START:
         {
             if (LogIfNotCreature(pSource))
             {
@@ -1019,7 +950,7 @@ bool ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_GO_LOCK_STATE:                  // 27
+        case SCRIPT_COMMAND_GO_LOCK_STATE:
         {
             if (LogIfNotGameObject(pSource))
             {
@@ -1028,14 +959,6 @@ bool ScriptAction::HandleScriptStep()
 
             GameObject* pGo = static_cast<GameObject*>(pSource);
 
-            /** flag lockState
-             * go_lock          0x01
-             * go_unlock        0x02
-             * go_nonInteract   0x04
-             * go_Interact      0x08
-             */
-
-            // Lock or Unlock
             if (m_script->goLockState.lockState & 0x01)
             {
                 pGo->SetGoFlag(GO_FLAG_LOCKED);
@@ -1044,7 +967,7 @@ bool ScriptAction::HandleScriptStep()
             {
                 pGo->RemoveGoFlag(GO_FLAG_LOCKED);
             }
-            // Set Non Interactable or Set Interactable
+
             if (m_script->goLockState.lockState & 0x04)
             {
                 pGo->SetGoFlag(GO_FLAG_NO_INTERACT);
@@ -1056,37 +979,35 @@ bool ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_STAND_STATE:                    // 28
+        case SCRIPT_COMMAND_STAND_STATE:
         {
             if (LogIfNotCreature(pSource))
             {
                 break;
             }
 
-            // Must be safe cast to Unit* here
             ((Unit*)pSource)->SetStandState(m_script->standState.stand_state);
             break;
         }
-        case SCRIPT_COMMAND_MODIFY_NPC_FLAGS:               // 29
+        case SCRIPT_COMMAND_MODIFY_NPC_FLAGS:
         {
             if (LogIfNotCreature(pSource))
             {
                 break;
             }
 
-            Creature* pCreature = ToCreature(pSource);
+            Creature* pCreature = static_cast<Creature*>(pSource);
 
-            // Add Flags
             if (m_script->npcFlag.change_flag & 0x01)
             {
                 pCreature->SetNpcFlag(m_script->npcFlag.flag);
             }
-            // Remove Flags
+
             else if (m_script->npcFlag.change_flag & 0x02)
             {
                 pCreature->RemoveNpcFlag(m_script->npcFlag.flag);
             }
-            // Toggle Flags
+
             else
             {
                 pCreature->ApplyNpcFlag(m_script->npcFlag.flag,
@@ -1095,9 +1016,9 @@ bool ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_SEND_TAXI_PATH:                 // 30
+        case SCRIPT_COMMAND_SEND_TAXI_PATH:
         {
-            // only Player
+
             Player* pPlayer = GetPlayerTargetOrSourceAndLog(pSource, pTarget);
             if (!pPlayer)
             {
@@ -1107,7 +1028,7 @@ bool ScriptAction::HandleScriptStep()
             pPlayer->ActivateTaxiPathTo(m_script->sendTaxiPath.taxiPathId);
             break;
         }
-        case SCRIPT_COMMAND_TERMINATE_SCRIPT:               // 31
+        case SCRIPT_COMMAND_TERMINATE_SCRIPT:
         {
             bool result = false;
             if (m_script->terminateScript.npcEntry)
@@ -1120,7 +1041,7 @@ bool ScriptAction::HandleScriptStep()
                     break;
                 }
 
-                if (pSearcher->IsPlayer() && pTarget && !pTarget->IsPlayer())
+                if (IsPlayer(pSearcher) && pTarget && !IsPlayer(pTarget))
                 {
                     pSearcher = pTarget;
                 }
@@ -1146,7 +1067,7 @@ bool ScriptAction::HandleScriptStep()
                 result = true;
             }
 
-            if (result)                                    // Terminate further steps of this script
+            if (result)
             {
                 if (m_script->textId[0] && !LogIfNotCreature(pSource))
                 {
@@ -1162,7 +1083,7 @@ bool ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_PAUSE_WAYPOINTS:                // 32
+        case SCRIPT_COMMAND_PAUSE_WAYPOINTS:
         {
             if (LogIfNotCreature(pSource))
             {
@@ -1178,22 +1099,22 @@ bool ScriptAction::HandleScriptStep()
             }
             break;
         }
-        case SCRIPT_COMMAND_JOIN_LFG:                       // 33
+        case SCRIPT_COMMAND_JOIN_LFG:
         {
-            //Not supported
+
             break;
         }
-        case SCRIPT_COMMAND_TERMINATE_COND:                 // 34
+        case SCRIPT_COMMAND_TERMINATE_COND:
         {
             Player* player = nullptr;
             Occupant* second = pSource;
-            // First case: target is player
-            if (pTarget && pTarget->IsPlayer())
+
+            if (pTarget &&IsPlayer(pTarget))
             {
                 player = static_cast<Player*>(pTarget);
             }
-            // Second case: source is player
-            else if (pSource && pSource->IsPlayer())
+
+            else if (pSource &&IsPlayer(pSource))
             {
                 player = static_cast<Player*>(pSource);
                 second = pTarget;
@@ -1232,7 +1153,7 @@ bool ScriptAction::HandleScriptStep()
             }
             return terminateResult;
         }
-        case SCRIPT_COMMAND_SEND_AI_EVENT_AROUND:           // 35
+        case SCRIPT_COMMAND_SEND_AI_EVENT_AROUND:
         {
             if (LogIfNotCreature(pSource))
             {
@@ -1246,17 +1167,17 @@ bool ScriptAction::HandleScriptStep()
             ((Creature*)pSource)->AI()->SendAIEventAround(AIEventType(m_script->sendAIEvent.eventType), (Unit*)pTarget, 0, float(m_script->sendAIEvent.radius));
             break;
         }
-        case SCRIPT_COMMAND_TURN_TO:                        // 36
+        case SCRIPT_COMMAND_TURN_TO:
         {
             if (LogIfNotUnit(pSource))
             {
                 break;
             }
-            //note for self: this command has different impl. and usage in other core(s)
+
             ((Unit*)pSource)->SetFacingTo(pSource->Where().BearingTo(pTarget->Where()));
             break;
         }
-        case SCRIPT_COMMAND_MOVE_DYNAMIC:                   // 37
+        case SCRIPT_COMMAND_MOVE_DYNAMIC:
         {
             if (LogIfNotCreature(pSource))
             {
@@ -1268,7 +1189,7 @@ bool ScriptAction::HandleScriptStep()
             }
 
             float x, y, z;
-            if (m_script->moveDynamic.maxDist == 0)         // Move to pTarget
+            if (m_script->moveDynamic.maxDist == 0)
             {
                 if (pTarget == pSource)
                 {
@@ -1277,7 +1198,7 @@ bool ScriptAction::HandleScriptStep()
                 }
                 ContactPointNear(*pTarget, pSource, x, y, z);
             }
-            else                                            // Calculate position
+            else
             {
                 float orientation;
                 if (m_script->data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL)
@@ -1301,7 +1222,7 @@ bool ScriptAction::HandleScriptStep()
             ((Creature*)pSource)->GetMotionMaster()->MovePoint(1, x, y, z);
             break;
         }
-        case SCRIPT_COMMAND_SEND_MAIL:                      // 38
+        case SCRIPT_COMMAND_SEND_MAIL:
         {
             if (LogIfNotPlayer(pTarget))
             {
@@ -1326,7 +1247,7 @@ bool ScriptAction::HandleScriptStep()
             MailDraft(m_script->sendMail.mailTemplateId).SendMailTo(static_cast<Player*>(pTarget), sender, MAIL_CHECK_MASK_HAS_BODY, deliverDelay);
             break;
         }
-        case SCRIPT_COMMAND_CHANGE_ENTRY:                   // 39
+        case SCRIPT_COMMAND_CHANGE_ENTRY:
         {
             if (LogIfNotCreature(pSource))
             {
@@ -1336,7 +1257,7 @@ bool ScriptAction::HandleScriptStep()
             ((Creature*)pSource)->UpdateEntry(m_script->changeEntry.creatureEntry);
             break;
         }
-        case SCRIPT_COMMAND_DESPAWN_GO:                     // 40
+        case SCRIPT_COMMAND_DESPAWN_GO:
         {
 
             uint32 goEntry;
@@ -1354,14 +1275,14 @@ bool ScriptAction::HandleScriptStep()
                 break;
             }
 
-            pGo = m_map->GetGameObject(ObjectGuid(HIGHGUID_GAMEOBJECT, goData->id, m_script->despawnGo.goGuid));
+            pGo = m_map->GetGameObject(MakeGuid(HIGHGUID_GAMEOBJECT, goData->id, m_script->despawnGo.goGuid));
 
             pGo->SetRespawnTime(m_script->despawnGo.respawnTime);
             pGo->SetLootState(GO_JUST_DEACTIVATED);
 
             break;
         }
-        case SCRIPT_COMMAND_RESPAWN:                        // 41
+        case SCRIPT_COMMAND_RESPAWN:
         {
             if (LogIfNotCreature(pTarget))
             {
@@ -1370,7 +1291,7 @@ bool ScriptAction::HandleScriptStep()
             ((Creature*)pTarget)->Respawn();
             break;
         }
-        case SCRIPT_COMMAND_SET_EQUIPMENT_SLOTS:            // 42
+        case SCRIPT_COMMAND_SET_EQUIPMENT_SLOTS:
         {
             if (LogIfNotCreature(pSource))
             {
@@ -1379,33 +1300,29 @@ bool ScriptAction::HandleScriptStep()
 
             Creature* pCSource = static_cast<Creature*>(pSource);
 
-            // reset default
             if (m_script->setEquipment.resetDefault)
             {
                 pCSource->LoadEquipment(pCSource->GetCreatureInfo()->EquipmentTemplateId, true);
                 break;
             }
 
-            // main hand
             if (m_script->textId[0] >= 0)
             {
                 pCSource->SetVirtualItem(VIRTUAL_ITEM_SLOT_0, m_script->textId[0]);
             }
 
-            // off hand
             if (m_script->textId[1] >= 0)
             {
                 pCSource->SetVirtualItem(VIRTUAL_ITEM_SLOT_1, m_script->textId[1]);
             }
 
-            // ranged
             if (m_script->textId[2] >= 0)
             {
                 pCSource->SetVirtualItem(VIRTUAL_ITEM_SLOT_2, m_script->textId[2]);
             }
             break;
         }
-        case SCRIPT_COMMAND_RESET_GO:                       // 43
+        case SCRIPT_COMMAND_RESET_GO:
         {
             if (LogIfNotGameObject(pTarget))
             {
@@ -1426,7 +1343,7 @@ bool ScriptAction::HandleScriptStep()
             }
             break;
         }
-        case SCRIPT_COMMAND_UPDATE_TEMPLATE:                // 44
+        case SCRIPT_COMMAND_UPDATE_TEMPLATE:
         {
             if (LogIfNotCreature(pSource))
             {
@@ -1445,7 +1362,7 @@ bool ScriptAction::HandleScriptStep()
             }
             break;
         }
-        case SCRIPT_COMMAND_XP_USER:                        // 53
+        case SCRIPT_COMMAND_XP_USER:
         {
             Player* pPlayer = GetPlayerTargetOrSourceAndLog(pSource, pTarget);
             if (!pPlayer)
@@ -1464,16 +1381,15 @@ bool ScriptAction::HandleScriptStep()
             break;
         }
 
-        case SCRIPT_COMMAND_SET_FLY:                        // 59
+        case SCRIPT_COMMAND_SET_FLY:
         {
             if (LogIfNotCreature(pSource))
             {
                 break;
             }
 
-            Creature* pFlier = ToCreature(pSource);
+            Creature* pFlier = static_cast<Creature*>(pSource);
 
-            // enable / disable the fly anim flag
             if (m_script->data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL)
             {
                 pFlier->SetAlwaysStanding(m_script->fly.enable != 0);

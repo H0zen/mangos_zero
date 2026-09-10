@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "Position.h"
 #include "Platform/Define.h"
 #include "ObjectGuid.h"
 #include "Object.h"
@@ -33,23 +34,9 @@
 
 class ByteBuffer;
 
-/**
- * How a unit is moving, and the block that says so on the wire.
- *
- * MovementInfo is read off and written to a packet whole; the flags are what the
- * client and the server agree the unit is doing. Nothing here knows anything
- * about the unit itself.
- */
-
-/**
- * These flags denote the different kinds of movement you can do. You can have many at the
- * same time as this is used as a bitmask.
- * \todo [-ZERO] Need check and update used in most movement packets (send and received)
- * \see MovementInfo
- */
 enum MovementFlags
 {
-    // Byte 1 (Resets on Movement Key Press)
+
     MOVEFLAG_NONE             = 0x00000000,
     MOVEFLAG_FORWARD          = 0x00000001,
     MOVEFLAG_BACKWARD         = 0x00000002,
@@ -60,27 +47,25 @@ enum MovementFlags
     MOVEFLAG_PITCH_UP         = 0x00000040,
     MOVEFLAG_PITCH_DOWN       = 0x00000080,
 
-    // Byte 2 (Resets on Situation Change)
-    MOVEFLAG_WALK_MODE        = 0x00000100,               // Walking
+    MOVEFLAG_WALK_MODE        = 0x00000100,
 
     MOVEFLAG_LEVITATING       = 0x00000400,
-    MOVEFLAG_FLYING           = 0x00000800,               // [-ZERO] is it really need and correct value
+    MOVEFLAG_FLYING           = 0x00000800,
     MOVEFLAG_FALLING          = 0x00002000,
     MOVEFLAG_FALLINGFAR       = 0x00004000,
-    MOVEFLAG_SWIMMING         = 0x00200000,               // appears with fly flag also
+    MOVEFLAG_SWIMMING         = 0x00200000,
     MOVEFLAG_SPLINE_ENABLED   = 0x00400000,
-    MOVEFLAG_CAN_FLY          = 0x00800000,               // [-ZERO] is it really need and correct value
-    MOVEFLAG_FLYING_OLD       = 0x01000000,               // [-ZERO] is it really need and correct value
+    MOVEFLAG_CAN_FLY          = 0x00800000,
+    MOVEFLAG_FLYING_OLD       = 0x01000000,
 
-    MOVEFLAG_ONTRANSPORT      = 0x02000000,               // Used for flying on some creatures
-    MOVEFLAG_SPLINE_ELEVATION = 0x04000000,               // used for flight paths
-    MOVEFLAG_ROOT             = 0x08000000,               // used for flight paths
-    MOVEFLAG_WATERWALKING     = 0x10000000,               // prevent unit from falling through water
-    MOVEFLAG_SAFE_FALL        = 0x20000000,               // active rogue safe fall spell (passive)
+    MOVEFLAG_ONTRANSPORT      = 0x02000000,
+    MOVEFLAG_SPLINE_ELEVATION = 0x04000000,
+    MOVEFLAG_ROOT             = 0x08000000,
+    MOVEFLAG_WATERWALKING     = 0x10000000,
+    MOVEFLAG_SAFE_FALL        = 0x20000000,
     MOVEFLAG_HOVER            = 0x40000000
 };
 
-// flags that use in movement check for example at spell casting
 MovementFlags const movementFlagsMask = MovementFlags(
     MOVEFLAG_FORWARD | MOVEFLAG_BACKWARD | MOVEFLAG_STRAFE_LEFT | MOVEFLAG_STRAFE_RIGHT |
     MOVEFLAG_PITCH_UP | MOVEFLAG_PITCH_DOWN | MOVEFLAG_ROOT |
@@ -97,18 +82,15 @@ class MovementInfo
         MovementInfo() : moveFlags(MOVEFLAG_NONE), time(0),
             t_time(0), s_pitch(0.0f), fallTime(0), u_unk1(0.0f) {}
 
-        // Read/Write methods
         void Read(ByteBuffer& data);
         void Write(ByteBuffer& data) const;
 
-        // Movement flags manipulations
         void AddMovementFlag(MovementFlags f) { moveFlags |= f; }
         void RemoveMovementFlag(MovementFlags f) { moveFlags &= ~f; }
         bool HasMovementFlag(MovementFlags f) const { return moveFlags & f; }
         MovementFlags GetMovementFlags() const { return MovementFlags(moveFlags); }
         void SetMovementFlags(MovementFlags f) { moveFlags = f; }
 
-        // Position manipulations
         Position const* GetPos() const { return &pos; }
         void SetTransportData(ObjectGuid guid, float x, float y, float z, float o, uint32 time)
         {
@@ -121,7 +103,7 @@ class MovementInfo
         }
         void ClearTransportData()
         {
-            t_guid = ObjectGuid();
+            t_guid = 0;
             t_pos.x = 0.0f;
             t_pos.y = 0.0f;
             t_pos.z = 0.0f;
@@ -154,16 +136,16 @@ class MovementInfo
         }
         void SetFallTime(uint32 t) { fallTime = t; }
     private:
-        // common
-        uint32   moveFlags;             // see enum MovementFlags
+
+        uint32   moveFlags;
         uint32   time;
         Position pos;
-        ObjectGuid t_guid;              // transport
+        ObjectGuid t_guid = 0;
         Position t_pos;
         uint32   t_time;
-        float    s_pitch;               // swimming and unknown
+        float    s_pitch;
 
-        uint32   fallTime;              // last fall time
-        JumpInfo jump;                  // jumping
-        float    u_unk1;                // spline
+        uint32   fallTime;
+        JumpInfo jump;
+        float    u_unk1;
 };

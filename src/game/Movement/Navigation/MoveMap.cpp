@@ -23,27 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file MoveMap.cpp
- * @brief Navigation mesh (MMAP) pathfinding system
- *
- * This file implements the MMAP (MoveMap) system which provides
- * pathfinding capabilities using Recast/Detour navigation meshes.
- *
- * Features:
- * - Navigation mesh loading and management per map tile
- * - Pathfinding query interface for units
- * - Configurable pathfinding per map/unit type
- * - Height and slope limit validation
- *
- * Pathfinding can be disabled globally via config, per map via
- * database, or per unit via creature flags.
- *
- * @see MMapManager for the singleton manager
- * @see MMapFactory for creation utilities
- * @see DetourNavMesh for underlying navigation mesh
- */
-
 #include "Utilities/Errors.h"
 #include <string>
 #include <set>
@@ -55,8 +34,7 @@
 
 namespace
 {
-    /// Named from the expansion, never from the format string: a deck map's id is seven
-    /// digits and the old sizing silently cut the extension off.
+
     std::string MMapFileName(uint32 mapId)
     {
         char leaf[64];
@@ -75,40 +53,10 @@ namespace
 namespace MMAP
 {
 
-    /**
-     * @namespace MMAP
-     * @brief MoveMap pathfinding namespace
-     *
-     * Contains all MMAP-related classes and functions for navigation
-     * mesh pathfinding. Key components:
-     *
-     * - MMapFactory: Factory for creating/accessing MMapManager
-     * - MMapManager: Singleton managing all navigation meshes
-     * - MMapData: Per-map navigation mesh data container
-     */
-
-    /**
-     * @var g_MMapManager
-     * @brief Global singleton MMapManager instance
-     */
     MMapManager* g_MMapManager = nullptr;
 
-    /**
-     * @var g_mmapDisabledIds
-     * @brief Set of map IDs with disabled pathfinding
-     *
-     * Maps in this set will not load navigation meshes and all
-     * pathfinding requests will fall back to legacy methods.
-     */
     std::set<uint32>* g_mmapDisabledIds = nullptr;
 
-    /**
-     * @brief Create or retrieve the MMapManager singleton
-     * @return Pointer to the MMapManager instance
-     *
-     * Creates the manager on first call. All subsequent calls return
-     * the existing instance.
-     */
     MMapManager* MMapFactory::createOrGetMMapManager()
     {
         if (g_MMapManager == nullptr)
@@ -119,16 +67,6 @@ namespace MMAP
         return g_MMapManager;
     }
 
-    /**
-     * @brief Disable pathfinding on specified maps
-     * @param ignoreMapIds Comma-separated list of map IDs
-     *
-     * Parses the configuration string and adds each map ID to the
-     * disabled set. Maps in this set will not use pathfinding.
-     *
-     * Example: "0,1,489" disables pathfinding for Eastern Kingdoms,
-     * Kalimdor, and Warsong Gulch.
-     */
     void MMapFactory::preventPathfindingOnMaps(const char* ignoreMapIds)
     {
         if (!g_mmapDisabledIds)
@@ -150,20 +88,6 @@ namespace MMAP
         delete[] mapList;
     }
 
-    /**
-     * @brief Check if pathfinding is enabled for a map and unit
-     * @param mapId Map ID to check
-     * @param unit Unit requesting path (optional, affects per-unit checks)
-     * @return true if pathfinding should be used
-     *
-     * Pathfinding is enabled if:
-     * - Global MMAP config is enabled
-     * - Map is not in disabled list
-     * - Unit-specific checks pass (players always enabled, pets inherit,
-     *   creatures check flags)
-     *
-     * @note Players always have pathfinding enabled if global config is on
-     */
     bool MMapFactory::IsPathfindingEnabled(uint32 mapId, const Unit* unit = nullptr)
     {
         if (!sWorld.getConfig(CONFIG_BOOL_MMAP_ENABLED))
@@ -173,8 +97,8 @@ namespace MMAP
 
         if (unit)
         {
-            // Always use mmaps for players
-            if (unit->IsPlayer())
+
+            if (IsPlayer(unit))
             {
                 return true;
             }
@@ -189,9 +113,7 @@ namespace MMAP
                 return true;
             }
 
-            // Always use mmaps for pets of players
-            if (unit->IsCreature() && ((Creature*)unit)->IsPet() && unit->GetOwner() &&
-                unit->GetOwner()->IsPlayer())
+            if (IsCreature(unit) && ((Creature*)unit)->IsPet() && unit->GetOwner() &&IsPlayer(unit->GetOwner()))
             {
                 return true;
             }
@@ -241,7 +163,6 @@ namespace MMAP
         return false;
     }
 
-    // ######################## MMapManager ########################
     MMapManager::~MMapManager()
     {
         for (MMapDataSet::iterator i = loadedMMaps.begin(); i != loadedMMaps.end(); ++i)
@@ -249,22 +170,16 @@ namespace MMAP
             delete i->second;
         }
 
-        // by now we should not have maps loaded
-        // if we had, tiles in MMapData->mmapLoadedTiles, their actual data is lost!
     }
 
     bool MMapManager::loadMapData(uint32 mapId)
     {
-        // we already have this map loaded?
+
         if (loadedMMaps.find(mapId) != loadedMMaps.end())
         {
             return true;
         }
 
-        // The buffer is sized for the WIDEST EXPANSION, not for the format string: a map id
-        // wider than the %04u pad -- a vessel's deck, minted above a million -- expanded
-        // past a buffer measured from "mmaps/%04u.mmap" and the name was truncated to
-        // "...1181646.m", which fails to open and reads like missing data.
         const std::string fileName = MMapFileName(mapId);
 
         FILE* file = fopen(fileName.c_str(), "rb");
@@ -297,10 +212,8 @@ namespace MMAP
             return false;
         }
 
-
         DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:loadMapData: Loaded %04u.mmap", mapId);
 
-        // store inside our map list
         MMapData* mmap_data = new MMapData(mesh);
         mmap_data->mmapLoadedTiles.clear();
 
@@ -315,17 +228,15 @@ namespace MMAP
 
     bool MMapManager::loadMap(uint32 mapId, int32 x, int32 y)
     {
-        // make sure the mmap is loaded and ready to load tiles
+
         if (!loadMapData(mapId))
         {
             return false;
         }
 
-        // get this mmap data
         MMapData* mmap = loadedMMaps[mapId];
         MANGOS_ASSERT(mmap->navMesh);
 
-        // check if we already have this tile loaded
         uint32 packedGridPos = packTileID(x, y);
         if (mmap->mmapLoadedTiles.find(packedGridPos) != mmap->mmapLoadedTiles.end())
         {
@@ -333,11 +244,9 @@ namespace MMAP
             return false;
         }
 
-        // MMap tile files follow the same swapped grid order as VMap tiles.
         const int32 filenameTileX = y;
         const int32 filenameTileY = x;
 
-        // load this tile :: mmaps/MMMYYXX.mmtile
         const std::string fileName = MMapTileFileName(mapId, filenameTileX, filenameTileY);
 
         FILE* file = fopen(fileName.c_str(), "rb");
@@ -347,7 +256,6 @@ namespace MMAP
             return false;
         }
 
-        // read header
         MmapTileHeader fileHeader;
         size_t file_read = fread(&fileHeader, sizeof(MmapTileHeader), 1, file);
 
@@ -397,7 +305,6 @@ namespace MMAP
         dtMeshHeader* header = (dtMeshHeader*)data;
         dtTileRef tileRef = 0;
 
-        // memory allocated for data is now managed by detour, and will be deallocated when the tile is removed
         dtStatus dtResult = mmap->navMesh->addTile(data, fileHeader.size, DT_TILE_FREE_DATA, 0, &tileRef);
         if (dtStatusFailed(dtResult))
         {
@@ -420,34 +327,30 @@ namespace MMAP
 
     bool MMapManager::unloadMap(uint32 mapId, int32 x, int32 y)
     {
-        // check if we have this map loaded
+
         if (loadedMMaps.find(mapId) == loadedMMaps.end())
         {
-            // file may not exist, therefore not loaded
+
             DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:unloadMap: Asked to unload not loaded navmesh map. %04u%02i%02i.mmtile", mapId, x, y);
             return false;
         }
 
         MMapData* mmap = loadedMMaps[mapId];
 
-        // check if we have this tile loaded
         uint32 packedGridPos = packTileID(x, y);
         if (mmap->mmapLoadedTiles.find(packedGridPos) == mmap->mmapLoadedTiles.end())
         {
-            // file may not exist, therefore not loaded
+
             DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:unloadMap: Asked to unload not loaded navmesh tile. %04u%02i%02i.mmtile", mapId, x, y);
             return false;
         }
 
         dtTileRef tileRef = mmap->mmapLoadedTiles[packedGridPos];
 
-        // unload, and mark as non loaded
         dtStatus dtResult = mmap->navMesh->removeTile(tileRef, nullptr, nullptr);
         if (dtStatusFailed(dtResult))
         {
-            // this is technically a memory leak
-            // if the grid is later reloaded, dtNavMesh::addTile will return error but no extra memory is used
-            // we can not recover from this error - assert out
+
             sLog.outError("MMAP:unloadMap: Could not unload %04u%02i%02i.mmtile from navmesh", mapId, x, y);
             MANGOS_ASSERT(false);
         }
@@ -466,12 +369,11 @@ namespace MMAP
     {
         if (loadedMMaps.find(mapId) == loadedMMaps.end())
         {
-            // file may not exist, therefore not loaded
+
             DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:unloadMap: Asked to unload not loaded navmesh map %04u", mapId);
             return false;
         }
 
-        // unload all tiles from given map
         MMapData* mmap = loadedMMaps[mapId];
         for (MMapTileSet::iterator i = mmap->mmapLoadedTiles.begin(); i != mmap->mmapLoadedTiles.end(); ++i)
         {
@@ -498,10 +400,10 @@ namespace MMAP
 
     bool MMapManager::unloadMapInstance(uint32 mapId, uint32 instanceId)
     {
-        // check if we have this map loaded
+
         if (loadedMMaps.find(mapId) == loadedMMaps.end())
         {
-            // file may not exist, therefore not loaded
+
             DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:unloadMapInstance: Asked to unload not loaded navmesh map %04u", mapId);
             return false;
         }
@@ -542,7 +444,7 @@ namespace MMAP
         MMapData* mmap = loadedMMaps[mapId];
         if (mmap->navMeshQueries.find(instanceId) == mmap->navMeshQueries.end())
         {
-            // allocate mesh query
+
             dtNavMeshQuery* query = dtAllocNavMeshQuery();
             MANGOS_ASSERT(query);
             dtStatus dtResult = query->init(mmap->navMesh, 1024);

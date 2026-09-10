@@ -23,15 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SpellTargetPickers.cpp
- * @brief The rules by which a slot's target code finds who it means.
- *
- * One function per rule that takes more than a line to state: a chain, a
- * cone, a party, a spot on the ground. Each is handed what it needs and
- * adds to the list it is given.
- */
-
 #include <algorithm>
 #include <iterator>
 #include <list>
@@ -69,15 +60,11 @@
 #include "Corpse.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-// Helper for Chain Healing
-// Spell target first
-// Raidmates then descending by injury suffered (MaxHealth - Health)
-// Other players/mobs then descending by injury suffered (MaxHealth - Health)
 struct ChainHealingOrder
 {
     const Unit* MainTarget;
     explicit ChainHealingOrder(Unit const* Target) : MainTarget(Target) {};
-    // functor for operator ">"
+
     bool operator()(Unit const* _Left, Unit const* _Right) const
     {
         return (ChainHealingHash(_Left) < ChainHealingHash(_Right));
@@ -89,7 +76,7 @@ struct ChainHealingOrder
         {
             return 0;
         }
-        else if (Target->IsPlayer() && MainTarget->IsPlayer() &&
+        else if (IsPlayer(Target) &&IsPlayer(MainTarget) &&
             ((Player const*)Target)->IsInSameRaidWith((Player const*)MainTarget))
         {
             if (Target->GetHealth() == Target->GetMaxHealth())
@@ -120,25 +107,17 @@ class ChainHealingFullHealth
         }
 };
 
-// Helper for targets nearest to the spell target
-// The spell target is always first unless there is a target at _completely_ the same position (unbelievable case)
 struct TargetDistanceOrderNear
 {
     const Unit* MainTarget;
     explicit TargetDistanceOrderNear(const Unit* Target) : MainTarget(Target) {};
-    // functor for operator ">"
+
     bool operator()(const Unit* _Left, const Unit* _Right) const
     {
         return MainTarget->Where().IsNearer(_Left->Where(), _Right->Where());
     }
 };
 
-/**
- * @brief Picks one unit at random in the area and then a chain of others near it.
- *
- * Whether that first one has to be an enemy, a friend or anyone at all is the
- * only thing the three target codes disagree about.
- */
 void Spell::PickARandomChainInTheArea(uint32 targetMode, UnitList& targetUnitMap, float radius, uint32 chainTargets, uint32& mayHit)
 {
         m_targets.m_targetMask = 0;
@@ -156,7 +135,7 @@ void Spell::PickARandomChainInTheArea(uint32 targetMode, UnitList& targetUnitMap
                 Cell::VisitAllObjects(m_caster, searcher, max_range);
                 return;
             }
-            case TARGET_RANDOM_UNIT_CHAIN_IN_AREA: // This works the same as Target_random_friend_chain_in_area but is named differently for some reason
+            case TARGET_RANDOM_UNIT_CHAIN_IN_AREA:
             case TARGET_RANDOM_FRIEND_CHAIN_IN_AREA:
             {
                 MaNGOS::AnyFriendlyUnitInObjectRangeCheck u_check(m_caster, max_range);
@@ -173,7 +152,6 @@ void Spell::PickARandomChainInTheArea(uint32 targetMode, UnitList& targetUnitMap
 
         tempTargetUnitMap.sort(TargetDistanceOrderNear(m_caster));
 
-        // Now to get us a random target that's in the initial range of the spell
         uint32 t = 0;
         UnitList::iterator itr = tempTargetUnitMap.begin();
         while (itr != tempTargetUnitMap.end() && (*itr)->Where().WithinDist(m_caster->Where(), radius))
@@ -220,9 +198,6 @@ void Spell::PickARandomChainInTheArea(uint32 targetMode, UnitList& targetUnitMap
         }
 }
 
-/**
- * @brief Picks the unit the caster aimed at and the chain that jumps on from it.
- */
 void Spell::PickTheChainFromTheVictim(const cast::Operation& operation, UnitList& targetUnitMap, float radius, uint32 chainTargets, uint32& mayHit)
 {
     const SpellEffectIndex effIndex = SpellEffectIndex(operation.slot);
@@ -252,7 +227,7 @@ void Spell::PickTheChainFromTheVictim(const cast::Operation& operation, UnitList
                 max_range = radius;
             }
             else
-                // FIXME: This very like horrible hack and wrong for most spells
+
             {
                 max_range = radius + mayHit * CHAIN_SPELL_JUMP_RADIUS;
             }
@@ -305,12 +280,6 @@ void Spell::PickTheChainFromTheVictim(const cast::Operation& operation, UnitList
         }
 }
 
-/**
- * @brief Picks everyone in the area, on the side the slot's own verb calls for.
- *
- * Completing a quest reaches anyone standing there; a helpful slot reaches
- * friends; everything else reaches enemies.
- */
 void Spell::PickTheAreaTheVerbWants(const cast::Operation& operation, UnitList& targetUnitMap, float radius)
 {
     const SpellEffectIndex effIndex = SpellEffectIndex(operation.slot);
@@ -322,7 +291,7 @@ void Spell::PickTheAreaTheVerbWants(const cast::Operation& operation, UnitList& 
                 targetB = cast::Side::Anyone;
                 return;
             default:
-                // Select friendly targets for positive effect
+
                 if (operation.positive)
                 {
                     targetB = cast::Side::Friendly;
@@ -333,7 +302,6 @@ void Spell::PickTheAreaTheVerbWants(const cast::Operation& operation, UnitList& 
         UnitList tempTargetUnitMap;
         SQLMultiStorage::SQLMSIteratorBounds<SpellTargetEntry> bounds = sSpellScriptTargetStorage.getBounds<SpellTargetEntry>(m_spellInfo->ID);
 
-        // fill real target list if no spell script target defined
         FillAreaTargets(bounds.first != bounds.second ? tempTargetUnitMap : targetUnitMap,
             radius, cast::Around::Spot, bounds.first != bounds.second ? cast::Side::Anyone : targetB);
 
@@ -341,7 +309,7 @@ void Spell::PickTheAreaTheVerbWants(const cast::Operation& operation, UnitList& 
         {
             for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
             {
-                if (!(*iter)->IsCreature())
+                if (!IsCreature(*iter))
                 {
                     continue;
                 }
@@ -353,7 +321,6 @@ void Spell::PickTheAreaTheVerbWants(const cast::Operation& operation, UnitList& 
                         continue;
                     }
 
-                    // only creature entries supported for this target type
                     if (i_spellST->type == SPELL_TARGET_TYPE_GAMEOBJECT)
                     {
                         continue;
@@ -377,13 +344,6 @@ void Spell::PickTheAreaTheVerbWants(const cast::Operation& operation, UnitList& 
         }
 }
 
-/**
- * @brief Picks whoever is in the area, and where the spell names particular creature
- * entries, only those of them.
- *
- * A lasting ground effect picks nobody, because it is the ground it is laid
- * on; a summon picks the caster.
- */
 void Spell::PickTheNamedCreaturesInTheArea(const cast::Operation& operation, UnitList& targetUnitMap, float radius)
 {
     const SpellEffectIndex effIndex = SpellEffectIndex(operation.slot);
@@ -400,14 +360,14 @@ void Spell::PickTheNamedCreaturesInTheArea(const cast::Operation& operation, Uni
 
         UnitList tempTargetUnitMap;
         SQLMultiStorage::SQLMSIteratorBounds<SpellTargetEntry> bounds = sSpellScriptTargetStorage.getBounds<SpellTargetEntry>(m_spellInfo->ID);
-        // fill real target list if no spell script target defined
+
         FillAreaTargets(bounds.first != bounds.second ? tempTargetUnitMap : targetUnitMap, radius, cast::Around::Spot, cast::Side::Anyone);
 
         if (!tempTargetUnitMap.empty())
         {
             for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
             {
-                if (!(*iter)->IsCreature())
+                if (!IsCreature(*iter))
                 {
                     continue;
                 }
@@ -419,7 +379,6 @@ void Spell::PickTheNamedCreaturesInTheArea(const cast::Operation& operation, Uni
                         continue;
                     }
 
-                    // only creature entries supported for this target type
                     if (i_spellST->type == SPELL_TARGET_TYPE_GAMEOBJECT)
                     {
                         continue;
@@ -443,7 +402,7 @@ void Spell::PickTheNamedCreaturesInTheArea(const cast::Operation& operation, Uni
         }
         else
         {
-            // remove not targetable units if spell has no script targets
+
             for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end();)
             {
                 if (!(*itr)->IsTargetableForAttack(Recipe().Says().castOnDead))
@@ -458,10 +417,6 @@ void Spell::PickTheNamedCreaturesInTheArea(const cast::Operation& operation, Uni
         }
 }
 
-/**
- * @brief Picks the gameobjects standing around a spot, either the one the cast came
- * from or the one it was aimed at.
- */
 void Spell::PickTheObjectsAroundTheSpot(SpellEffectIndex effIndex, uint32 targetMode, std::list<GameObject*>& found, float radius)
 {
         float x, y, z;
@@ -484,12 +439,6 @@ void Spell::PickTheObjectsAroundTheSpot(SpellEffectIndex effIndex, uint32 target
             m_targets.getDestination(x, y, z);
         }
 
-        // It may be possible to fill targets for some spell effects
-        // automatically (SPELL_EFFECT_WMO_REPAIR(88) for example) but
-        // for some/most spells we clearly need/want to limit with spell_target_script
-
-        // Some spells untested, for affected GO type 33. May need further adjustments for spells related.
-
         SQLMultiStorage::SQLMSIteratorBounds<SpellTargetEntry> bounds = sSpellScriptTargetStorage.getBounds<SpellTargetEntry>(m_spellInfo->ID);
         for (SQLMultiStorage::SQLMultiSIterator<SpellTargetEntry> i_spellST = bounds.first; i_spellST != bounds.second; ++i_spellST)
         {
@@ -500,7 +449,7 @@ void Spell::PickTheObjectsAroundTheSpot(SpellEffectIndex effIndex, uint32 target
 
             if (i_spellST->type == SPELL_TARGET_TYPE_GAMEOBJECT)
             {
-                // search all GO's with entry, within range of m_destN
+
                 MaNGOS::GameObjectEntryInPosRangeCheck go_check(*m_caster, i_spellST->targetEntry, x, y, z, radius);
                 MaNGOS::GameObjectListSearcher<MaNGOS::GameObjectEntryInPosRangeCheck> checker(found, go_check);
                 Cell::VisitGridObjects(m_caster, checker, radius);
@@ -508,26 +457,20 @@ void Spell::PickTheObjectsAroundTheSpot(SpellEffectIndex effIndex, uint32 target
         }
 }
 
-/**
- * @brief Picks the one party member a spell may be laid on, never the caster.
- *
- * A groupmate's pet counts, and so does the caster's own master when it is a
- * pet doing the casting.
- */
 void Spell::PickTheOneGroupmate(UnitList& targetUnitMap)
 {
         Unit* target = m_targets.getUnitTarget();
-        // Those spells apparently can't be casted on the caster.
+
         if (target && target != m_caster)
         {
-            // Can only be casted on group's members or its pets
+
             Group*  pGroup = nullptr;
 
             Unit* owner = m_caster->GetCharmerOrOwner();
             Unit* targetOwner = target->GetCharmerOrOwner();
             if (owner)
             {
-                if (owner->IsPlayer())
+                if (IsPlayer(owner))
                 {
                     if (target == owner)
                     {
@@ -537,9 +480,9 @@ void Spell::PickTheOneGroupmate(UnitList& targetUnitMap)
                     pGroup = ((Player*)owner)->GetGroup();
                 }
             }
-            else if (m_caster->IsPlayer())
+            else if (IsPlayer(m_caster))
             {
-                if (targetOwner == m_caster && target->IsCreature() && ((Creature*)target)->IsPet())
+                if (targetOwner == m_caster &&IsCreature(target) && ((Creature*)target)->IsPet())
                 {
                     targetUnitMap.push_back(target);
                     return;
@@ -549,19 +492,18 @@ void Spell::PickTheOneGroupmate(UnitList& targetUnitMap)
 
             if (pGroup)
             {
-                // Our target can also be a player's pet who's grouped with us or our pet. But can't be controlled player
+
                 if (targetOwner)
                 {
-                    if (targetOwner->IsPlayer() &&
-                        target->IsCreature() && (((Creature*)target)->IsPet()) &&
+                    if (IsPlayer(targetOwner) &&IsCreature(target) && (((Creature*)target)->IsPet()) &&
                         target->GetOwnerGuid() == targetOwner->GetObjectGuid() &&
                         pGroup->IsMember(((Player*)targetOwner)->GetObjectGuid()))
                     {
                         targetUnitMap.push_back(target);
                     }
                 }
-                // 1Our target can be a player who is on our group
-                else if (target->IsPlayer() && pGroup->IsMember(((Player*)target)->GetObjectGuid()))
+
+                else if (IsPlayer(target) && pGroup->IsMember(((Player*)target)->GetObjectGuid()))
                 {
                     targetUnitMap.push_back(target);
                 }
@@ -569,12 +511,6 @@ void Spell::PickTheOneGroupmate(UnitList& targetUnitMap)
         }
 }
 
-/**
- * @brief Picks everyone in the cone the caster faces.
- *
- * Two spells open a cone of their own: one sweeps behind the caster and one
- * opens a cone narrow enough to be a line.
- */
 void Spell::PickTheConeThisSpellOpens(const cast::Operation& operation, UnitList& targetUnitMap, float radius)
 {
     const SpellEffectIndex effIndex = SpellEffectIndex(operation.slot);
@@ -589,7 +525,6 @@ void Spell::PickTheConeThisSpellOpens(const cast::Operation& operation, UnitList
         UnitList tempTargetUnitMap;
         SQLMultiStorage::SQLMSIteratorBounds<SpellTargetEntry> bounds = sSpellScriptTargetStorage.getBounds<SpellTargetEntry>(m_spellInfo->ID);
 
-        // fill real target list if no spell script target defined
         FillAreaTargets(bounds.first != bounds.second ? tempTargetUnitMap : targetUnitMap,
             radius, cast::Around::CasterInFront15, bounds.first != bounds.second ? cast::Side::Anyone : targetB);
 
@@ -597,7 +532,7 @@ void Spell::PickTheConeThisSpellOpens(const cast::Operation& operation, UnitList
         {
             for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
             {
-                if (!(*iter)->IsCreature())
+                if (!IsCreature(*iter))
                 {
                     continue;
                 }
@@ -609,7 +544,6 @@ void Spell::PickTheConeThisSpellOpens(const cast::Operation& operation, UnitList
                         continue;
                     }
 
-                    // only creature entries supported for this target type
                     if (i_spellST->type == SPELL_TARGET_TYPE_GAMEOBJECT)
                     {
                         continue;
@@ -632,9 +566,6 @@ void Spell::PickTheConeThisSpellOpens(const cast::Operation& operation, UnitList
         }
 }
 
-/**
- * @brief Picks the party standing around the caster, or around whoever owns him.
- */
 void Spell::PickThePartyAround(UnitList& targetUnitMap, float radius)
 {
         Unit* owner = m_caster->GetCharmerOrOwner();
@@ -643,21 +574,21 @@ void Spell::PickThePartyAround(UnitList& targetUnitMap, float radius)
         if (owner)
         {
             targetUnitMap.push_back(m_caster);
-            if (owner->IsPlayer())
+            if (IsPlayer(owner))
             {
                 pTarget = (Player*)owner;
             }
         }
-        else if (m_caster->IsPlayer())
+        else if (IsPlayer(m_caster))
         {
             if (Unit* target = m_targets.getUnitTarget())
             {
-                if (!target->IsPlayer())
+                if (!IsPlayer(target))
                 {
                     if (((Creature*)target)->IsPet())
                     {
                         Unit* targetOwner = target->GetOwner();
-                        if (targetOwner->IsPlayer())
+                        if (IsPlayer(targetOwner))
                         {
                             pTarget = (Player*)targetOwner;
                         }
@@ -680,7 +611,6 @@ void Spell::PickThePartyAround(UnitList& targetUnitMap, float radius)
             {
                 Player* Target = itr->getSource();
 
-                // IsHostileTo check duel and controlled by enemy
                 if (Target && Target->GetSubGroup() == subgroup && !IsHostile(*m_caster, *Target))
                 {
                     if (InReach(*pTarget, *Target, radius))
@@ -719,9 +649,6 @@ void Spell::PickThePartyAround(UnitList& targetUnitMap, float radius)
         }
 }
 
-/**
- * @brief Picks the wounded a healing chain jumps between, worst hurt first.
- */
 void Spell::PickTheChainOfWounded(UnitList& targetUnitMap, float radius, uint32 chainTargets, uint32& mayHit)
 {
         Unit* pUnitTarget = m_targets.getUnitTarget();
@@ -795,12 +722,9 @@ void Spell::PickTheChainOfWounded(UnitList& targetUnitMap, float radius, uint32 
         }
 }
 
-/**
- * @brief Picks the party members of the aimed-at player who share his class.
- */
 void Spell::PickThePartyOfTheTargetsClass(UnitList& targetUnitMap, float radius)
 {
-        Player* targetPlayer = m_targets.getUnitTarget() && m_targets.getUnitTarget()->IsPlayer()
+        Player* targetPlayer = m_targets.getUnitTarget() &&IsPlayer(m_targets.getUnitTarget())
             ? (Player*)m_targets.getUnitTarget() : nullptr;
 
         Group* pGroup = targetPlayer ? targetPlayer->GetGroup() : nullptr;
@@ -810,7 +734,6 @@ void Spell::PickThePartyOfTheTargetsClass(UnitList& targetUnitMap, float radius)
             {
                 Player* Target = itr->getSource();
 
-                // IsHostileTo check duel and controlled by enemy
                 if (Target && InReach(*targetPlayer, *Target, radius) &&
                     targetPlayer->getClass() == Target->getClass() &&
                     !IsHostile(*m_caster, *Target))
@@ -825,19 +748,11 @@ void Spell::PickThePartyOfTheTargetsClass(UnitList& targetUnitMap, float radius)
         }
 }
 
-/**
- * @brief Picks the spot beside the caster a lasting ground effect is put down on,
- * in front of him, behind him or to either side.
- */
 void Spell::PickTheSpotBesideTheCaster(const cast::Operation& operation, uint32 targetMode, UnitList& targetUnitMap, float radius)
 {
         if (!(m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION))
         {
-            // General override, we don't want to use max spell range here.
-            // Note: 0.0 radius is also for index 36. It is possible that 36 must be defined as
-            // "at the base of", in difference to 0 which appear to be "directly in front of".
-            // TODO: some summoned will make caster be half inside summoned object. Need to fix
-            // that in the below code (nearpoint vs closepoint, etc).
+
             if (operation.radiusIndex == 0)
             {
                 radius = 0.0f;

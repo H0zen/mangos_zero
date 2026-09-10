@@ -62,8 +62,6 @@ InventoryResult ItemDestination::Weigh(Item* item, bool swap)
         return fits;
     }
 
-    // Something is on it already and has to be able to come off before anything
-    // can go on.
     return m_who.CanUnequipItem(m_worn, true);
 }
 

@@ -23,29 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file ScriptMgr.cpp
- * @brief Script system manager implementation
- *
- * This file implements ScriptMgr which manages all game scripts:
- * - Creature AI scripts
- * - GameObject scripts
- * - Item scripts
- * - Area trigger scripts
- * - Spell scripts
- * - Quest scripts
- * - Instance scripts
- *
- * Scripts are loaded from script libraries and provide hooks for
- * customizing game behavior. The script manager routes events to
- * the appropriate script handlers.
- *
- * @see ScriptMgr for the manager class
- * @see ScriptedInstance for instance script base
- */
-
-
-
 #include <algorithm>
 #include <set>
 #include <mutex>
@@ -69,12 +46,9 @@
 #include <DBCStores.h>
 #ifdef ENABLE_SD3
 #include "system/ScriptDevMgr.h"
-#endif /* ENABLE_SD3 */
+#endif
 #include "LFGMgr.h"
 
-// /////////////////////////////////////////////////////////
-//              Scripting Library Hooks
-// /////////////////////////////////////////////////////////
 void ScriptMgr::LoadScriptBinding()
 {
 #ifdef ENABLE_SD3
@@ -95,7 +69,7 @@ void ScriptMgr::LoadScriptBinding()
         return;
     }
 
-    std::set<uint32> eventIds;                              // Store possible event ids, for checking
+    std::set<uint32> eventIds;
     CollectPossibleEventIds(eventIds);
 
     BarGoLink bar(result->GetRowCount());
@@ -117,13 +91,12 @@ void ScriptMgr::LoadScriptBinding()
             continue;
         }
         uint32 scriptId = GetScriptId(scriptName);
-        if (!scriptId)  //this should never happen! the script names are initialized from the same table
+        if (!scriptId)
         {
             sLog.outErrorScriptLib("something is very bad with your script_binding table!");
             continue;
         }
 
-        // checking if the scripted object actually exists
         bool exists = false;
         switch (type)
         {
@@ -149,7 +122,7 @@ void ScriptMgr::LoadScriptBinding()
             case SCRIPTED_MAP:
                 exists = bool(sMapStore.LookupEntry(uint32(id)));
                 break;
-            case SCRIPTED_PVP_ZONE: // for now, no check on special zones
+            case SCRIPTED_PVP_ZONE:
                 exists = bool(sAreaStore.LookupEntry(uint32(id)));
                 break;
             case SCRIPTED_BATTLEGROUND:
@@ -179,7 +152,7 @@ void ScriptMgr::LoadScriptBinding()
 
         if (type == SCRIPTED_SPELL || type == SCRIPTED_AURASPELL)
         {
-            id |= uint32(data) << 24;   //incorporate spell effect number into the key
+            id |= uint32(data) << 24;
         }
 
         m_scriptBind[type][id] = scriptId;
@@ -190,7 +163,7 @@ void ScriptMgr::LoadScriptBinding()
     sLog.outString("Of the total %u script bindings, loaded succesfully:", count);
     for (uint8 i = 0; i < SCRIPTED_MAX_TYPE; ++i)
     {
-        if (m_scriptBind[i].size()) //ignore missing script types to shorten the log
+        if (m_scriptBind[i].size())
         {
             sLog.outString(".. type %u: %u binds", i, uint32(m_scriptBind[i].size()));
             count -= m_scriptBind[i].size();
@@ -199,15 +172,10 @@ void ScriptMgr::LoadScriptBinding()
     sLog.outString("Thus, %u script binds are found bad.", count);
 
     sLog.outString();
-#endif /* ENABLE_SD3 */
+#endif
     return;
 }
 
-/**
- * @brief Reloads script bindings in debug builds.
- *
- * @return true if bindings were reloaded; otherwise false.
- */
 bool ScriptMgr::ReloadScriptBinding()
 {
 #ifdef _DEBUG
@@ -216,12 +184,9 @@ bool ScriptMgr::ReloadScriptBinding()
     return true;
 #else
     return false;
-#endif /* _DEBUG */
+#endif
 }
 
-/**
- * @brief Loads and sorts the distinct script names referenced by script bindings.
- */
 void ScriptMgr::LoadScriptNames()
 {
     m_scriptNames.push_back("");
@@ -254,16 +219,9 @@ void ScriptMgr::LoadScriptNames()
     sLog.outString();
 }
 
-/**
- * @brief Resolves a script name to its internal script id.
- *
- * @param name The script name to search for.
- * @return uint32 The resolved script id, or 0 if not found.
- */
 uint32 ScriptMgr::GetScriptId(const char* name) const
 {
-    // use binary search to find the script name in the sorted vector
-    // assume "" is the first element
+
     if (!name)
     {
         return 0;
@@ -280,18 +238,11 @@ uint32 ScriptMgr::GetScriptId(const char* name) const
     return uint32(itr - m_scriptNames.begin());
 }
 
-/**
- * @brief Returns the script id bound to a specific scripted entity entry.
- *
- * @param entity The scripted object type.
- * @param entry The object entry or binding key.
- * @return uint32 The bound script id, or 0 if none exists.
- */
 uint32 ScriptMgr::GetBoundScriptId(ScriptedObjectType entity, int32 entry)
 {
 #ifdef _DEBUG
     std::shared_lock<std::shared_mutex> guard(m_bindMutex);
-#endif /* _DEBUG */
+#endif
     uint32 id = 0;
     if (entity < SCRIPTED_MAX_TYPE)
     {
@@ -308,11 +259,6 @@ uint32 ScriptMgr::GetBoundScriptId(ScriptedObjectType entity, int32 entry)
     return id;
 }
 
-/**
- * @brief Returns the version string for the loaded script library.
- *
- * @return char const* The script library version, or nullptr when unavailable.
- */
 char const* ScriptMgr::GetScriptLibraryVersion() const
 {
 #ifdef ENABLE_SD3

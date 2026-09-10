@@ -25,17 +25,6 @@
 
 #pragma once
 
-// The last N of something, and what its tail looks like.
-//
-// A mean hides exactly what matters here. A map that ticks in 4 ms and once a
-// minute takes 300 averages beautifully and stutters visibly, so what gets
-// reported is the tail: p50 to say what normal is, p99 to say what the worst
-// regular case is, and the maximum to say whether anything went truly wrong.
-//
-// The window is fixed and overwrites its oldest sample, so a long-running
-// server reports what is happening now rather than what happened all evening,
-// and the whole thing allocates nothing.
-
 #include "Platform/Define.h"
 
 #include <algorithm>
@@ -64,13 +53,6 @@ namespace metrics
             size_t Count() const { return m_count; }
             bool Empty() const { return m_count == 0; }
 
-            /**
-             * @brief The value at `fraction` of the way up the sorted window.
-             *
-             * Nearest-rank: the smallest sample at or above the given share of
-             * the window. Reports zero when nothing has been recorded, which a
-             * caller reads as "no data" rather than "instant".
-             */
             uint32 Percentile(float fraction) const
             {
                 if (m_count == 0)

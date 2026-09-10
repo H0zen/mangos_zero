@@ -45,7 +45,6 @@ namespace MaNGOS
             return (float)ceil(count * (-0.53177f + 0.59357f * exp((level + 23.54042f) / 26.07859f)));
         }
 
-        // set passed rank info to default
         inline void InitRankInfo(HonorRankInfo& prk)
         {
             prk.positive = true;
@@ -61,7 +60,7 @@ namespace MaNGOS
             {
                 int8 rank = prk.positive ? prk.rank - NEGATIVE_HONOR_RANK_COUNT - 1 : prk.rank - NEGATIVE_HONOR_RANK_COUNT;
                 prk.maxRP = (rank) * 5000.00f;
-                if (prk.maxRP < 0) // in negative rank case
+                if (prk.maxRP < 0)
                 {
                     prk.maxRP *= -1;
                 }
@@ -77,13 +76,11 @@ namespace MaNGOS
             return prk;
         }
 
-        // What is Player's rank... private, scout...
         inline HonorRankInfo CalculateHonorRank(float honor_points)
         {
             HonorRankInfo prk;
             InitRankInfo(prk);
 
-            // rank none
             if (honor_points == 0)
             {
                 return prk;
@@ -124,7 +121,6 @@ namespace MaNGOS
         {
             HonorScores sc;
 
-            // initialize the breakpoint values
             sc.BRK[13] = 0.002f;
             sc.BRK[12] = 0.007f;
             sc.BRK[11] = 0.017f;
@@ -140,32 +136,24 @@ namespace MaNGOS
             sc.BRK[ 1] = 0.858f;
             sc.BRK[ 0] = 1.000f;
 
-            // get the WS scores at the top of each break point
             for (uint8 group = 0; group < 14; group++)
             {
                 sc.BRK[group] = floor((sc.BRK[group] * standingList.size()) + 0.5f);
             }
 
-            // initialize RP array
-            // set the low point
             sc.FY[ 0] = 0;
 
-            // the Y values for each breakpoint are fixed
             sc.FY[ 1] = 400;
             for (uint8 i = 2; i <= 13; i++)
             {
                 sc.FY[i] = (i - 1) * 1000;
             }
 
-            // and finally
-            sc.FY[14] = 13000;   // ... gets 13000 RP
+            sc.FY[14] = 13000;
 
-            // the X values for each breakpoint are found from the CP scores
-            // of the players around that point in the WS scores
             HonorStanding* tempSt;
             float honor;
 
-            // initialize CP array
             sc.FX[ 0] = 0;
 
             for (uint8 i = 1; i <= 13; i++)
@@ -185,23 +173,20 @@ namespace MaNGOS
                 sc.FX[i] = honor ? honor / 2 : 0;
             }
 
-            // set the high point if FX full filled before
-            sc.FX[14] = sc.FX[13] ? standingList.begin()->honorPoints : 0;   // top scorer
+            sc.FX[14] = sc.FX[13] ? standingList.begin()->honorPoints : 0;
 
             return sc;
         }
 
         inline float CalculateRpEarning(float CP, HonorScores sc)
         {
-            // search the function for the two points that bound the given CP
+
             uint8 i = 0;
             while (i < 14 && sc.BRK[i] > 0 && sc.FX[i] <= CP)
             {
                 i++;
             }
 
-            // we now have i such that FX[i] > CP >= FX[i-1]
-            // so interpolate
             return (sc.FY[i] - sc.FY[i - 1]) * (CP - sc.FX[i - 1]) / (sc.FX[i] - sc.FX[i - 1]) + sc.FY[i - 1];
         }
 
@@ -259,10 +244,10 @@ namespace MaNGOS
             uint32 today = sWorld.GetDateToday();
 
             int total_kills  = killer->CalculateTotalKills(victim, today, today);
-            // int k_rank       = killer->CalculateHonorRank( killer->GetTotalHonor() );
+
             uint32 v_rank    = victim->GetHonorRankInfo().visualRank;
             uint32 k_level   = killer->getLevel();
-            // int v_level      = victim->getLevel();
+
             float diff_honor = (victim->GetRankPoints() / (killer->GetRankPoints() + 1)) + 1;
             float diff_level = (victim->getLevel() * (1.0 / (killer->getLevel())));
 

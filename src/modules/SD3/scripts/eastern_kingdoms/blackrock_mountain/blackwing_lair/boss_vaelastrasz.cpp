@@ -85,11 +85,11 @@ struct boss_vaelastrasz : public CreatureScript
 
         ScriptedInstance* m_pInstance;
 
-        ObjectGuid m_nefariusGuid;
+        ObjectGuid m_nefariusGuid = 0;
         uint32 m_uiIntroTimer;
         uint8 m_uiIntroPhase;
 
-        ObjectGuid m_playerGuid;
+        ObjectGuid m_playerGuid = 0;
         uint32 m_uiSpeechTimer;
         uint8 m_uiSpeechNum;
 
@@ -103,7 +103,7 @@ struct boss_vaelastrasz : public CreatureScript
 
         void Reset() override
         {
-            m_playerGuid.Clear();
+            m_playerGuid = 0;
 
             m_uiIntroTimer = 0;
             m_uiIntroPhase = 0;
@@ -196,7 +196,7 @@ struct boss_vaelastrasz : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* pSender, Unit* pInvoker, uint32 /*uiMiscValue*/) override
         {
-            if (eventType == AI_EVENT_START_EVENT && pSender == m_creature && pInvoker->IsPlayer())
+            if (eventType == AI_EVENT_START_EVENT && pSender == m_creature &&IsPlayer(pInvoker))
             {
                 BeginIntro();
             }

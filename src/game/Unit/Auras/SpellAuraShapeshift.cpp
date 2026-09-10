@@ -23,28 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SpellAuras.cpp
- * @brief Spell aura implementation
- *
- * This file implements the SpellAura class which handles spell auras:
- * - Aura application and removal
- * - Aura effect processing (stat modifiers, DoTs, HoTs, etc.)
- * - Aura stacking rules
- * - Aura dispelling mechanics
- * - Aura periodic effects
- * - Aura duration management
- * - Aura visual effects
- *
- * Auras are persistent effects applied by spells that modify
- * unit stats, deal damage over time, or provide other benefits.
- *
- * @see SpellAura for the aura class
- * @see Spell for spell casting
- */
-
-
-
 #include "SpellAuras.h"
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"
@@ -82,15 +60,9 @@ enum SpellCreatedItems {
     ITEM_SOUL_SHARD = 6265
 };
 
-/**
- * @brief Applies or removes a mounted display from the target.
- *
- * @param apply True to mount; false to unmount.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraMounted(bool apply, bool Real)
 {
-    // only at real add/remove aura
+
     if (!Real)
     {
         return;
@@ -122,15 +94,9 @@ void Aura::HandleAuraMounted(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Applies or removes water walking on the target.
- *
- * @param apply True to enable water walking; false to disable it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraWaterWalk(bool apply, bool Real)
 {
-    // only at real add/remove aura
+
     if (!Real)
     {
         return;
@@ -139,15 +105,9 @@ void Aura::HandleAuraWaterWalk(bool apply, bool Real)
     GetTarget()->SetWaterWalk(apply);
 }
 
-/**
- * @brief Applies or removes feather fall on the target.
- *
- * @param apply True to enable feather fall; false to disable it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraFeatherFall(bool apply, bool Real)
 {
-    // only at real add/remove aura
+
     if (!Real)
     {
         return;
@@ -156,15 +116,9 @@ void Aura::HandleAuraFeatherFall(bool apply, bool Real)
     GetTarget()->SetFeatherFall(apply);
 }
 
-/**
- * @brief Applies or removes hovering movement state.
- *
- * @param apply True to enable hover; false to disable it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraHover(bool apply, bool Real)
 {
-    // only at real add/remove aura
+
     if (!Real)
     {
         return;
@@ -173,27 +127,15 @@ void Aura::HandleAuraHover(bool apply, bool Real)
     GetTarget()->SetHover(apply);
 }
 
-/**
- * @brief Refreshes client breathing timers for the target.
- *
- * @param apply Unused.
- * @param Real Unused.
- */
-void Aura::HandleWaterBreathing(bool /*apply*/, bool /*Real*/)
+void Aura::HandleWaterBreathing(bool , bool )
 {
-    // update timers in client
-    if (GetTarget()->IsPlayer())
+
+    if (IsPlayer(GetTarget()))
     {
         ((Player*)GetTarget())->Dangers().Redraw();
     }
 }
 
-/**
- * @brief Applies or removes a shapeshift form and its related state changes.
- *
- * @param apply True to enter the form; false to leave it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraModShapeshift(bool apply, bool Real)
 {
     if (!Real)
@@ -214,7 +156,6 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
     Powers PowerType = POWER_MANA;
     Unit* target = GetTarget();
 
-    // remove SPELL_AURA_EMPATHY
     target->RemoveAurasOfType(SPELL_AURA_EMPATHY);
 
     switch (form)
@@ -306,7 +247,6 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
             break;
     }
 
-    // remove polymorph before changing display id to keep new display id
     switch (form)
     {
         case FORM_CAT:
@@ -317,7 +257,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
         case FORM_DIREBEAR:
         case FORM_MOONKIN:
         {
-            // remove movement affects
+
             target->RemoveAurasOfType(SPELL_AURA_MOD_ROOT, GetHolder());
             const auto slowingAuras = target->GetAurasByType(SPELL_AURA_MOD_DECREASE_SPEED);
             for (const auto* slowing : slowingAuras)
@@ -326,9 +266,8 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
 
                 const uint32 aurMechMask = GetAllSpellMechanicMask(aurSpellInfo);
 
-                // If spell that caused this aura has Croud Control or Daze effect
                 if ((aurMechMask & MECHANIC_NOT_REMOVED_BY_SHAPESHIFT) ||
-                    // some Daze spells have these parameters instead of MECHANIC_DAZE (skip snare spells)
+
                     (aurSpellInfo->SpellIconID == 15 && aurSpellInfo->DispelType == 0 &&
                     (aurMechMask & (1 << (MECHANIC_SNARE - 1))) == 0))
                 {
@@ -338,17 +277,15 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                 target->CancelAuras(aurSpellInfo->ID);
             }
 
-            // and polymorphic affects
             if (target->IsPolymorphed())
             {
                 target->RemoveAuras(target->GetTransform());
             }
 
-            //no break here
         }
         case FORM_GHOSTWOLF:
         {
-            // remove water walk aura. TODO:: there is probably better way to do this
+
             target->RemoveAurasOfType(SPELL_AURA_WATER_WALK);
 
             break;
@@ -359,7 +296,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
 
     if (apply)
     {
-        // remove other shapeshift before applying a new one
+
         target->RemoveAurasOfType(SPELL_AURA_MOD_SHAPESHIFT, GetHolder());
 
         if (modelid > 0)
@@ -370,7 +307,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
 
         if (PowerType != POWER_MANA)
         {
-            // reset power to default values only at power change
+
             if (target->GetPowerType() != PowerType)
             {
                 target->SetPowerType(PowerType);
@@ -382,7 +319,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                 case FORM_BEAR:
                 case FORM_DIREBEAR:
                 {
-                    // get furor proc chance
+
                     int32 furorChance = 0;
                     const auto mDummy = target->GetAurasByType(SPELL_AURA_DUMMY);
                     for (auto* aura : mDummy)
@@ -417,13 +354,13 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                 case FORM_BERSERKERSTANCE:
                 {
                     uint32 Rage_val = 0;
-                    // Tactical mastery
-                    if (target->IsPlayer())
+
+                    if (IsPlayer(target))
                     {
                         const auto aurasOverrideClassScripts = target->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
                         for (auto* aura : aurasOverrideClassScripts)
                         {
-                            // select by script id
+
                             switch (aura->GetModifier()->m_miscvalue)
                             {
                                 case 831: Rage_val =  50; break;
@@ -455,7 +392,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
     {
         if (modelid > 0)
         {
-            // workaround for tauren scale appear too big
+
             if (target->getRace() == RACE_TAUREN)
             {
                 if (target->getGender() == GENDER_MALE)
@@ -479,68 +416,60 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
         target->SetShapeshiftForm(FORM_NONE);
     }
 
-    // adding/removing linked auras
-    // add/remove the shapeshift aura's boosts
     HandleShapeshiftBoosts(apply);
 
-    if (target->IsPlayer())
+    if (IsPlayer(target))
     {
         ((Player*)target)->InitDataForForm();
     }
 }
 
-/**
- * @brief Applies or removes a transform model effect.
- *
- * @param apply True to apply the transform; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraTransform(bool apply, bool Real)
 {
     Unit* target = GetTarget();
     if (apply)
     {
-        // special case (spell specific functionality)
+
         if (m_modifier.m_miscvalue == 0)
         {
             switch (GetId())
             {
-                case 16739:                                 // Orb of Deception
+                case 16739:
                 {
                     uint32 orb_model = target->GetNativeDisplayId();
                     switch (orb_model)
                     {
-                        // Troll Female
+
                         case 1479: target->SetDisplayId(10134); break;
-                        // Troll Male
+
                         case 1478: target->SetDisplayId(10135); break;
-                        // Tauren Male
+
                         case 59:   target->SetDisplayId(10136); break;
-                        // Human Male
+
                         case 49:   target->SetDisplayId(10137); break;
-                        // Human Female
+
                         case 50:   target->SetDisplayId(10138); break;
-                        // Orc Male
+
                         case 51:   target->SetDisplayId(10139); break;
-                        // Orc Female
+
                         case 52:   target->SetDisplayId(10140); break;
-                        // Dwarf Male
+
                         case 53:   target->SetDisplayId(10141); break;
-                        // Dwarf Female
+
                         case 54:   target->SetDisplayId(10142); break;
-                        // NightElf Male
+
                         case 55:   target->SetDisplayId(10143); break;
-                        // NightElf Female
+
                         case 56:   target->SetDisplayId(10144); break;
-                        // Undead Female
+
                         case 58:   target->SetDisplayId(10145); break;
-                        // Undead Male
+
                         case 57:   target->SetDisplayId(10146); break;
-                        // Tauren Female
+
                         case 60:   target->SetDisplayId(10147); break;
-                        // Gnome Male
+
                         case 1563: target->SetDisplayId(10148); break;
-                        // Gnome Female
+
                         case 1564: target->SetDisplayId(10149); break;
                         default: break;
                     }
@@ -551,57 +480,53 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
                     break;
             }
         }
-        else                                                // m_modifier.m_miscvalue != 0
+        else
         {
             uint32 model_id;
 
             CreatureInfo const* ci = ObjectMgr::GetCreatureTemplate(m_modifier.m_miscvalue);
             if (!ci)
             {
-                model_id = 16358;                           // pig pink ^_^
+                model_id = 16358;
                 sLog.outError("Auras: unknown creature id = %d (only need its modelid) Form Spell Aura Transform in Spell ID = %d", m_modifier.m_miscvalue, GetId());
             }
             else
             {
-                model_id = Creature::ChooseDisplayId(ci);    // Will use the default model here
+                model_id = Creature::ChooseDisplayId(ci);
             }
 
             target->SetDisplayId(model_id);
 
-            // creature case, need to update equipment if additional provided
-            if (ci && target->IsCreature())
+            if (ci &&IsCreature(target))
             {
                 ((Creature*)target)->LoadEquipment(ci->EquipmentTemplateId, false);
             }
         }
 
-        // update active transform spell only not set or not overwriting negative by positive case
         if (!target->GetTransform() || !cast::Recipes().IsPositive(GetId()) || cast::Recipes().IsPositive(target->GetTransform()))
         {
             target->SetTransform(GetId());
         }
     }
-    else                                                    // !apply
+    else
     {
-        // ApplyModifier(true) will reapply it if need
+
         target->SetTransform(0);
         target->SetDisplayId(target->GetNativeDisplayId());
 
-        // apply default equipment for creature case
-        if (target->IsCreature())
+        if (IsCreature(target))
         {
             ((Creature*)target)->LoadEquipment(((Creature*)target)->GetCreatureInfo()->EquipmentTemplateId, true);
         }
 
-        // re-apply some from still active with preference negative cases
         const auto otherTransforms = target->GetAurasByType(SPELL_AURA_TRANSFORM);
         if (!otherTransforms.empty())
         {
-            // look for other transform auras
+
             Aura* handledAura = otherTransforms.front();
             for (auto* transform : otherTransforms)
             {
-                // negative auras are preferred
+
                 if (!cast::Recipes().IsPositive(transform->GetSpellProto()->ID))
                 {
                     handledAura = transform;
@@ -613,15 +538,9 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Applies or removes a forced reputation reaction for a player.
- *
- * @param apply True to apply the forced reaction; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleForceReaction(bool apply, bool Real)
 {
-    if (!GetTarget()->IsPlayer())
+    if (!IsPlayer(GetTarget()))
     {
         return;
     }
@@ -639,22 +558,15 @@ void Aura::HandleForceReaction(bool apply, bool Real)
     player->GetReputationMgr().ApplyForceReaction(faction_id, faction_rank, apply);
     player->GetReputationMgr().SendForceReactions();
 
-    // stop fighting if at apply forced rank friendly or at remove real rank friendly
     if ((apply && faction_rank >= REP_FRIENDLY) || (!apply && player->GetReputationRank(faction_id) >= REP_FRIENDLY))
     {
         player->StopAttackFaction(faction_id);
     }
 }
 
-/**
- * @brief Applies or removes a player skill bonus from the aura.
- *
- * @param apply True to apply the bonus; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraModSkill(bool apply, bool /*Real*/)
+void Aura::HandleAuraModSkill(bool apply, bool )
 {
-    if (!GetTarget()->IsPlayer())
+    if (!IsPlayer(GetTarget()))
     {
         return;
     }
@@ -669,12 +581,6 @@ void Aura::HandleAuraModSkill(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Awards the configured item when a channel-death aura ends by death.
- *
- * @param apply True on application; false on removal.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleChannelDeathItem(bool apply, bool Real)
 {
     if (Real && !apply)
@@ -683,7 +589,7 @@ void Aura::HandleChannelDeathItem(bool apply, bool Real)
         {
             return;
         }
-        // Item amount
+
         if (m_modifier.m_amount <= 0)
         {
             return;
@@ -696,27 +602,22 @@ void Aura::HandleChannelDeathItem(bool apply, bool Real)
         }
 
         Unit* caster = GetCaster();
-        if (!caster || !caster->IsPlayer())
+        if (!caster || !IsPlayer(caster))
         {
             return;
         }
 
         uint32 createdItemId = Operation().itemType;
 
-        // Soul Shard (target req.)
         if (createdItemId == ITEM_SOUL_SHARD)
         {
             Unit* victim = GetTarget();
 
-            // Only from non-grey units
-            if (!((Player*)caster)->isHonorOrXPTarget(victim) ||
-                (victim->IsCreature() && !((Creature*)victim)->IsTappedBy((Player*)caster)))
+            if (!((Player*)caster)->isHonorOrXPTarget(victim) || (IsCreature(victim) && !((Creature*)victim)->IsTappedBy((Player*)caster)))
             {
                 return;
             }
 
-            // Avoid awarding multiple souls on the same target
-            // 1.11.0: If you cast Drain Soul while shadowburn is on the victim, you will no longer receive two soul shards upon the victim's death.
             for (auto const& aura : victim->GetAurasByType(SPELL_AURA_CHANNEL_DEATH_ITEM))
             {
                 if (aura != this && caster->GetObjectGuid() == aura->GetCasterGuid() && aura->GetSpellProto()->EffectItemType[aura->GetEffIndex()] == ITEM_SOUL_SHARD)
@@ -727,7 +628,6 @@ void Aura::HandleChannelDeathItem(bool apply, bool Real)
 
         }
 
-        // Adding items
         uint32 noSpaceForCount = 0;
         uint32 count = m_modifier.m_amount;
 
@@ -748,16 +648,10 @@ void Aura::HandleChannelDeathItem(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Redirects the caster camera to the target while the aura is active.
- *
- * @param apply True to bind sight; false to restore normal view.
- * @param Real Unused.
- */
-void Aura::HandleBindSight(bool apply, bool /*Real*/)
+void Aura::HandleBindSight(bool apply, bool )
 {
     Unit* caster = GetCaster();
-    if (!caster || !caster->IsPlayer())
+    if (!caster || !IsPlayer(caster))
     {
         return;
     }
@@ -773,16 +667,10 @@ void Aura::HandleBindSight(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Redirects the caster camera for farsight while the aura is active.
- *
- * @param apply True to enable farsight; false to restore normal view.
- * @param Real Unused.
- */
-void Aura::HandleFarSight(bool apply, bool /*Real*/)
+void Aura::HandleFarSight(bool apply, bool )
 {
     Unit* caster = GetCaster();
-    if (!caster || !caster->IsPlayer())
+    if (!caster || !IsPlayer(caster))
     {
         return;
     }
@@ -798,15 +686,9 @@ void Aura::HandleFarSight(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Applies or removes creature tracking flags on a player.
- *
- * @param apply True to enable tracking; false to disable it.
- * @param Real Unused.
- */
-void Aura::HandleAuraTrackCreatures(bool apply, bool /*Real*/)
+void Aura::HandleAuraTrackCreatures(bool apply, bool )
 {
-    Player* player = ToPlayer(GetTarget());
+    Player* player = static_cast<Player*>(GetTarget());
     if (!player)
     {
         return;
@@ -820,15 +702,9 @@ void Aura::HandleAuraTrackCreatures(bool apply, bool /*Real*/)
     player->ApplyTracking(Player::Tracked::Creatures, uint32(1) << (m_modifier.m_miscvalue - 1), apply);
 }
 
-/**
- * @brief Applies or removes resource tracking flags on a player.
- *
- * @param apply True to enable tracking; false to disable it.
- * @param Real Unused.
- */
-void Aura::HandleAuraTrackResources(bool apply, bool /*Real*/)
+void Aura::HandleAuraTrackResources(bool apply, bool )
 {
-    Player* player = ToPlayer(GetTarget());
+    Player* player = static_cast<Player*>(GetTarget());
     if (!player)
     {
         return;
@@ -842,15 +718,9 @@ void Aura::HandleAuraTrackResources(bool apply, bool /*Real*/)
     player->ApplyTracking(Player::Tracked::Resources, uint32(1) << (m_modifier.m_miscvalue - 1), apply);
 }
 
-/**
- * @brief Applies or removes stealthed-unit tracking on a player.
- *
- * @param apply True to enable tracking; false to disable it.
- * @param Real Unused.
- */
-void Aura::HandleAuraTrackStealthed(bool apply, bool /*Real*/)
+void Aura::HandleAuraTrackStealthed(bool apply, bool )
 {
-    Player* player = ToPlayer(GetTarget());
+    Player* player = static_cast<Player*>(GetTarget());
     if (!player)
     {
         return;
@@ -864,13 +734,7 @@ void Aura::HandleAuraTrackStealthed(bool apply, bool /*Real*/)
     player->TrackStealthed(apply);
 }
 
-/**
- * @brief Applies or removes a scale modifier and refreshes model data.
- *
- * @param apply True to apply the scale change; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraModScale(bool apply, bool /*Real*/)
+void Aura::HandleAuraModScale(bool apply, bool )
 {
     GetTarget()->ApplyScalePercent(float(m_modifier.m_amount), apply);
     GetTarget()->UpdateModelData();

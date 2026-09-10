@@ -462,13 +462,13 @@ struct npc_grimstone : public CreatureScript
                 // Reset Doors
                 if (m_uiEventPhase >= 10)                       // North Gate is opened
                 {
-                    m_pInstance->DoUseDoorOrButton(GO_ARENA_2);
-                    m_pInstance->DoUseDoorOrButton(GO_ARENA_4);
+                    m_pInstance->DoUseDoorOrButtonByEntry(GO_ARENA_2);
+                    m_pInstance->DoUseDoorOrButtonByEntry(GO_ARENA_4);
                 }
                 else if (m_uiEventPhase >= 4)                   // East Gate is opened
                 {
-                    m_pInstance->DoUseDoorOrButton(GO_ARENA_1);
-                    m_pInstance->DoUseDoorOrButton(GO_ARENA_4);
+                    m_pInstance->DoUseDoorOrButtonByEntry(GO_ARENA_1);
+                    m_pInstance->DoUseDoorOrButtonByEntry(GO_ARENA_4);
                 }
 
                 // Despawn Summoned Mobs
@@ -496,7 +496,7 @@ struct npc_grimstone : public CreatureScript
                             // Shortly after spawn, start walking
                             DoCastSpellIfCan(m_creature, SPELL_ASHCROMBES_TELEPORT_A, CAST_TRIGGERED);
                             DoScriptText(SAY_START_2, m_creature);
-                            m_pInstance->DoUseDoorOrButton(GO_ARENA_4);
+                            m_pInstance->DoUseDoorOrButtonByEntry(GO_ARENA_4);
                             // Some of the NPCs in the crowd do cheer emote at event start
                             // we randomly select 25% of the NPCs to do this
                             m_pInstance->GetArenaCrowdGuid(m_lArenaCrowd);
@@ -526,7 +526,7 @@ struct npc_grimstone : public CreatureScript
                             // Open East Gate
                             DoCastSpellIfCan(m_creature, SPELL_ARENA_FLASH_A, CAST_TRIGGERED);
                             DoCastSpellIfCan(m_creature, SPELL_ARENA_FLASH_B, CAST_TRIGGERED);
-                            m_pInstance->DoUseDoorOrButton(GO_ARENA_1);
+                            m_pInstance->DoUseDoorOrButtonByEntry(GO_ARENA_1);
                             m_uiEventTimer = 3000;
                             break;
                         case 4:
@@ -551,7 +551,7 @@ struct npc_grimstone : public CreatureScript
                             DoScriptText(SAY_SUMMON_BOSS_2, m_creature);
                             m_creature->SetVisibility(VISIBILITY_ON);
                             DoCastSpellIfCan(m_creature, SPELL_ASHCROMBES_TELEPORT_A, CAST_TRIGGERED);
-                            m_pInstance->DoUseDoorOrButton(GO_ARENA_1);
+                            m_pInstance->DoUseDoorOrButtonByEntry(GO_ARENA_1);
                             SetEscortPaused(false);
                             m_uiEventTimer = 0;
                             break;
@@ -559,7 +559,7 @@ struct npc_grimstone : public CreatureScript
                             // Open North Gate
                             DoCastSpellIfCan(m_creature, SPELL_ARENA_FLASH_C, CAST_TRIGGERED);
                             DoCastSpellIfCan(m_creature, SPELL_ARENA_FLASH_D, CAST_TRIGGERED);
-                            m_pInstance->DoUseDoorOrButton(GO_ARENA_2);
+                            m_pInstance->DoUseDoorOrButtonByEntry(GO_ARENA_2);
                             m_uiEventTimer = 5000;
                             break;
                         case 10:
@@ -590,9 +590,9 @@ struct npc_grimstone : public CreatureScript
                         case 12:
                             // Boss dead
                             m_lSummonedGUIDList.clear();
-                            m_pInstance->DoUseDoorOrButton(GO_ARENA_2);
-                            m_pInstance->DoUseDoorOrButton(GO_ARENA_3);
-                            m_pInstance->DoUseDoorOrButton(GO_ARENA_4);
+                            m_pInstance->DoUseDoorOrButtonByEntry(GO_ARENA_2);
+                            m_pInstance->DoUseDoorOrButtonByEntry(GO_ARENA_3);
+                            m_pInstance->DoUseDoorOrButtonByEntry(GO_ARENA_4);
                             SetEscortPaused(false);
                             m_uiEventTimer = 0;
                             break;
@@ -621,7 +621,7 @@ struct spell_banner_of_provocation : public SpellScript
     {
         if (uiSpellId == SPELL_SUMMON_THELRIN_DND && uiEffIndex == EFFECT_INDEX_1)
         {
-            InstanceData* pInstance = ToCreature(pCreatureTarget)->GetInstanceData();
+            InstanceData* pInstance = static_cast<Creature*>(pCreatureTarget)->GetInstanceData();
             if (pInstance && pInstance->GetData(TYPE_RING_OF_LAW) != DONE && pInstance->GetData(TYPE_RING_OF_LAW) != SPECIAL)
             {
                 pInstance->SetData(TYPE_RING_OF_LAW, pInstance->GetData(TYPE_RING_OF_LAW) == IN_PROGRESS ? uint32(SPECIAL) : uint32(DATA_BANNER_BEFORE_EVENT));
@@ -1296,7 +1296,7 @@ struct npc_marshal_windsor : public CreatureScript
                 case 16:
                     if (m_pInstance)
                     {
-                        m_pInstance->DoUseDoorOrButton(GO_JAIL_DOOR_SUPPLY);
+                        m_pInstance->DoUseDoorOrButtonByEntry(GO_JAIL_DOOR_SUPPLY);
                     }
                     break;
                 case 18:
@@ -1307,7 +1307,7 @@ struct npc_marshal_windsor : public CreatureScript
                 case 20:
                     if (m_pInstance)
                     {
-                        m_pInstance->DoUseDoorOrButton(GO_JAIL_SUPPLY_CRATE);
+                        m_pInstance->DoUseDoorOrButtonByEntry(GO_JAIL_SUPPLY_CRATE);
                     }
                     break;
                 case 21:
@@ -1857,7 +1857,7 @@ struct boss_plugger_spazzringAI : public ScriptedAI
 
     void SpellHit(Unit* pCaster, const SpellEntry* pSpell) override
     {
-        if (pCaster->IsPlayer())
+        if (IsPlayer(pCaster))
         {
             if (SD3_SpellId(pSpell) == SPELL_PICKPOCKET)
             {

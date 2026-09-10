@@ -23,29 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Group.cpp
- * @brief Player group/party implementation
- *
- * This file implements the Group class which manages player parties:
- *
- * - Group creation and disbanding
- * - Member invite/accept/decline/kick
- * - Leadership transfer
- * - Loot method and master selection
- * - Experience sharing
- * - Quest credit sharing
- * - Group chat
- * - Roll-based loot distribution
- *
- * Groups support up to 5 members (regular) or 40 members (raid).
- *
- * @see Group for the group class
- * @see GroupMgr for group management
- */
-
-
-
 #include "Group.h"
 #include "Platform/Define.h"
 #include <ctime>
@@ -64,17 +41,9 @@
 #include "LFGMgr.h"
 #include "LFGHandler.h"
 
-/**
- * @brief Adds a member to the first available subgroup.
- *
- * @param guid The member player GUID.
- * @param name The member player name.
- * @param isAssistant True if the member should be marked as assistant.
- * @return true if a suitable subgroup was found and the member was added; otherwise false.
- */
 bool Group::_addMember(ObjectGuid guid, const char* name, bool isAssistant)
 {
-    // get first not-full group
+
     uint8 groupid = 0;
     if (m_subGroupsCounts)
     {
@@ -87,7 +56,7 @@ bool Group::_addMember(ObjectGuid guid, const char* name, bool isAssistant)
                 break;
             }
         }
-        // We are raid group and no one slot is free
+
         if (!groupFound)
         {
             return false;
@@ -97,15 +66,6 @@ bool Group::_addMember(ObjectGuid guid, const char* name, bool isAssistant)
     return _addMember(guid, name, isAssistant, groupid);
 }
 
-/**
- * @brief Adds a member to a specific subgroup and updates player references.
- *
- * @param guid The member player GUID.
- * @param name The member player name.
- * @param isAssistant True if the member should be marked as assistant.
- * @param group The subgroup assignment.
- * @return true if the member was added; otherwise false.
- */
 bool Group::_addMember(ObjectGuid guid, const char* name, bool isAssistant, uint8 group)
 {
     if (IsFull())
@@ -133,17 +93,17 @@ bool Group::_addMember(ObjectGuid guid, const char* name, bool isAssistant, uint
     if (player)
     {
         player->Invites().ToParty(nullptr);
-        // if player is in group and he is being added to BG raid group, then call SetBattleGroundRaid()
+
         if (player->GetGroup() && isBGGroup())
         {
             player->SetBattleGroundRaid(this, group);
         }
-        // if player is in bg raid and we are adding him to normal group, then call SetOriginalGroup()
+
         else if (player->GetGroup())
         {
             player->SetOriginalGroup(this, group);
         }
-        // if player is not in group, then call set group
+
         else
         {
             player->SetGroup(this, group);
@@ -151,7 +111,7 @@ bool Group::_addMember(ObjectGuid guid, const char* name, bool isAssistant, uint
 
         if (player->IsInWorld())
         {
-            // if the same group invites the player back, cancel the homebind timer
+
             if (DungeonHold* bind = m_binds.To(player->GetMapId()))
             {
                 if (bind->state->GetInstanceId() == player->GetInstanceId())
@@ -162,43 +122,37 @@ bool Group::_addMember(ObjectGuid guid, const char* name, bool isAssistant, uint
         }
     }
 
-    if (!isRaidGroup())                                     // reset targetIcons for non-raid-groups
+    if (!isRaidGroup())
     {
         for (int i = 0; i < TARGET_ICON_COUNT; ++i)
         {
-            m_targetIcons[i].Clear();
+            m_targetIcons[i] = 0;
         }
     }
 
     if (!isBGGroup())
     {
-        // insert into group table
+
         CharacterDatabase.PExecute("INSERT INTO `group_member` (`groupId`,`memberGuid`,`assistant`,`subgroup`) VALUES ('%u','%u','%u','%u')",
-            m_Id, member.guid.GetCounter(), ((member.assistant == 1) ? 1 : 0), member.group);
+            m_Id, GuidCounter(member.guid), ((member.assistant == 1) ? 1 : 0), member.group);
     }
 
     return true;
 }
 
-/**
- * @brief Removes a member from internal group state and updates leadership if needed.
- *
- * @param guid The member player GUID.
- * @return true if the removed member was the leader and leadership changed; otherwise false.
- */
 bool Group::_removeMember(ObjectGuid guid)
 {
     Player* player = sObjectMgr.GetPlayer(guid);
     if (player)
     {
-        // if we are removing player from battleground raid
+
         if (isBGGroup())
         {
             player->RemoveFromBattleGroundRaid();
         }
         else
         {
-            // we can remove player who is in battleground from his original group
+
             if (player->GetOriginalGroup() == this)
             {
                 player->SetOriginalGroup(nullptr);
@@ -222,10 +176,10 @@ bool Group::_removeMember(ObjectGuid guid)
 
     if (!isBGGroup())
     {
-        CharacterDatabase.PExecute("DELETE FROM `group_member` WHERE `memberGuid`='%u'", guid.GetCounter());
+        CharacterDatabase.PExecute("DELETE FROM `group_member` WHERE `memberGuid`='%u'", GuidCounter(guid));
     }
 
-    if (m_leaderGuid == guid)                               // leader was removed
+    if (m_leaderGuid == guid)
     {
         if (GetMembersCount() > 0)
         {
@@ -237,11 +191,6 @@ bool Group::_removeMember(ObjectGuid guid)
     return false;
 }
 
-/**
- * @brief Updates the stored group leader and migrates instance bindings as needed.
- *
- * @param guid The new leader GUID.
- */
 void Group::_setLeader(ObjectGuid guid)
 {
     member_citerator slot = _getMemberCSlot(guid);
@@ -252,18 +201,12 @@ void Group::_setLeader(ObjectGuid guid)
 
     if (!isBGGroup())
     {
-        uint32 slot_lowguid = slot->guid.GetCounter();
+        uint32 slot_lowguid = GuidCounter(slot->guid);
 
-        uint32 leader_lowguid = m_leaderGuid.GetCounter();
+        uint32 leader_lowguid = GuidCounter(m_leaderGuid);
 
-        // TODO: set a time limit to have this function run rarely cause it can be slow
         CharacterDatabase.BeginTransaction();
 
-        // update the group's bound instances when changing leaders
-
-        // remove all permanent binds from the group
-        // in the DB also remove solo binds that will be replaced with permbinds
-        // from the new leader
         CharacterDatabase.PExecute(
                 "DELETE FROM `group_instance` WHERE `leaderguid`='%u' AND (`permanent` = 1 OR "
                 "`instance` IN (SELECT `instance` FROM `character_instance` WHERE `guid` = '%u')"
@@ -276,16 +219,11 @@ void Group::_setLeader(ObjectGuid guid)
             m_binds.ReleasePermanent();
         }
 
-        // update the group's solo binds to the new leader
         CharacterDatabase.PExecute("UPDATE `group_instance` SET `leaderGuid`='%u' WHERE `leaderGuid` = '%u'",
             slot_lowguid, leader_lowguid);
 
-        // copy the permanent binds from the new leader to the group
-        // overwriting the solo binds with permanent ones if necessary
-        // in the DB those have been deleted already
         Player::ConvertInstancesToGroup(player, this, slot->guid);
 
-        // update the group leader
         CharacterDatabase.PExecute("UPDATE `groups` SET `leaderGuid`='%u' WHERE `groupId`='%u'", slot_lowguid, m_Id);
         CharacterDatabase.CommitTransaction();
     }
@@ -294,11 +232,6 @@ void Group::_setLeader(ObjectGuid guid)
     m_leaderName = slot->name;
 }
 
-/**
- * @brief Removes a player's participation from all active loot rolls.
- *
- * @param guid The player GUID to remove from roll tracking.
- */
 void Group::_removeRolls(ObjectGuid guid)
 {
     for (Rolls::iterator it = RollId.begin(); it != RollId.end();)
@@ -337,13 +270,6 @@ void Group::_removeRolls(ObjectGuid guid)
     }
 }
 
-/**
- * @brief Changes a member's stored subgroup assignment.
- *
- * @param guid The member player GUID.
- * @param group The new subgroup.
- * @return true if the subgroup was updated; otherwise false.
- */
 bool Group::_setMembersGroup(ObjectGuid guid, uint8 group)
 {
     member_witerator slot = _getMemberWSlot(guid);
@@ -358,19 +284,12 @@ bool Group::_setMembersGroup(ObjectGuid guid, uint8 group)
 
     if (!isBGGroup())
     {
-        CharacterDatabase.PExecute("UPDATE `group_member` SET `subgroup`='%u' WHERE `memberGuid`='%u'", group, guid.GetCounter());
+        CharacterDatabase.PExecute("UPDATE `group_member` SET `subgroup`='%u' WHERE `memberGuid`='%u'", group, GuidCounter(guid));
     }
 
     return true;
 }
 
-/**
- * @brief Sets or clears the assistant flag for a member.
- *
- * @param guid The member player GUID.
- * @param state The desired assistant state.
- * @return true if the flag was updated; otherwise false.
- */
 bool Group::_setAssistantFlag(ObjectGuid guid, const bool& state)
 {
     member_witerator slot = _getMemberWSlot(guid);
@@ -382,17 +301,11 @@ bool Group::_setAssistantFlag(ObjectGuid guid, const bool& state)
     slot->assistant = state;
     if (!isBGGroup())
     {
-        CharacterDatabase.PExecute("UPDATE `group_member` SET `assistant`='%u' WHERE `memberGuid`='%u'", (state == true) ? 1 : 0, guid.GetCounter());
+        CharacterDatabase.PExecute("UPDATE `group_member` SET `assistant`='%u' WHERE `memberGuid`='%u'", (state == true) ? 1 : 0, GuidCounter(guid));
     }
     return true;
 }
 
-/**
- * @brief Sets the group's main tank designation.
- *
- * @param guid The selected main tank GUID, or an empty GUID to clear it.
- * @return true if the designation changed; otherwise false.
- */
 bool Group::_setMainTank(ObjectGuid guid)
 {
     if (m_mainTankGuid == guid)
@@ -410,7 +323,7 @@ bool Group::_setMainTank(ObjectGuid guid)
 
         if (m_mainAssistantGuid == guid)
         {
-            _setMainAssistant(ObjectGuid());
+            _setMainAssistant(0);
         }
     }
 
@@ -418,18 +331,12 @@ bool Group::_setMainTank(ObjectGuid guid)
 
     if (!isBGGroup())
     {
-        CharacterDatabase.PExecute("UPDATE `groups` SET `mainTank`='%u' WHERE `groupId`='%u'", m_mainTankGuid.GetCounter(), m_Id);
+        CharacterDatabase.PExecute("UPDATE `groups` SET `mainTank`='%u' WHERE `groupId`='%u'", GuidCounter(m_mainTankGuid), m_Id);
     }
 
     return true;
 }
 
-/**
- * @brief Sets the group's main assistant designation.
- *
- * @param guid The selected main assistant GUID, or an empty GUID to clear it.
- * @return true if the designation changed; otherwise false.
- */
 bool Group::_setMainAssistant(ObjectGuid guid)
 {
     if (m_mainAssistantGuid == guid)
@@ -447,7 +354,7 @@ bool Group::_setMainAssistant(ObjectGuid guid)
 
         if (m_mainTankGuid == guid)
         {
-            _setMainTank(ObjectGuid());
+            _setMainTank(0);
         }
     }
 
@@ -456,19 +363,12 @@ bool Group::_setMainAssistant(ObjectGuid guid)
     if (!isBGGroup())
     {
         CharacterDatabase.PExecute("UPDATE `groups` SET `mainAssistant`='%u' WHERE `groupId`='%u'",
-            m_mainAssistantGuid.GetCounter(), m_Id);
+            GuidCounter(m_mainAssistantGuid), m_Id);
     }
 
     return true;
 }
 
-/**
- * @brief Checks whether two players belong to the same subgroup of this group.
- *
- * @param member1 The first player.
- * @param member2 The second player.
- * @return true if both players belong to this group and share a subgroup; otherwise false.
- */
 bool Group::SameSubGroup(Player const* member1, Player const* member2) const
 {
     if (!member1 || !member2)
@@ -485,7 +385,6 @@ bool Group::SameSubGroup(Player const* member1, Player const* member2) const
     }
 }
 
-// allows setting subgroup for offline members
 void Group::ChangeMembersGroup(ObjectGuid guid, uint8 group)
 {
     if (!isRaidGroup())
@@ -510,13 +409,12 @@ void Group::ChangeMembersGroup(ObjectGuid guid, uint8 group)
         }
     }
     else
-        // This methods handles itself groupcounter decrease
+
     {
         ChangeMembersGroup(player, group);
     }
 }
 
-// only for online members
 void Group::ChangeMembersGroup(Player* player, uint8 group)
 {
     if (!player || !isRaidGroup())
@@ -536,7 +434,7 @@ void Group::ChangeMembersGroup(Player* player, uint8 group)
         {
             player->GetGroupRef().setSubGroup(group);
         }
-        // if player is in BG raid, it is possible that he is also in normal raid - and that normal raid is stored in m_originalGroup reference
+
         else
         {
             prevSubGroup = player->GetOriginalSubGroup();

@@ -27,6 +27,7 @@
 
 #include "FieldTable.h"
 
+#include <algorithm>
 #include <cstring>
 
 Mirror::~Mirror()
@@ -38,16 +39,17 @@ void Mirror::Open(uint8 typeId)
 {
     MANGOS_ASSERT(!m_values);
 
-    m_count = Fields::For(typeId).count;
+    Fields::Table const& table = Fields::For(typeId);
+
+    m_count = table.count;
     m_values = new uint32[m_count];
     std::memset(m_values, 0, m_count * sizeof(uint32));
-    m_dirty.assign(m_count, false);
+    m_dirty.assign(table.blocks, 0);
 }
 
 float Mirror::ReadFloat(uint16 index) const
 {
-    // A float shares the dword with everything else, so it is copied out rather
-    // than read through a second pointer to the same bytes.
+
     float value;
     std::memcpy(&value, m_values + index, sizeof(value));
     return value;
@@ -61,7 +63,7 @@ bool Mirror::Write(uint16 index, uint32 value)
     }
 
     m_values[index] = value;
-    m_dirty[index] = true;
+    Touch(index);
     return true;
 }
 
@@ -76,6 +78,6 @@ void Mirror::Settle()
 {
     if (m_values)
     {
-        m_dirty.assign(m_count, false);
+        std::fill(m_dirty.begin(), m_dirty.end(), 0u);
     }
 }

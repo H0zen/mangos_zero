@@ -28,17 +28,9 @@
 #include "Geometry/Placement.h"
 #include "Platform/Define.h"
 
-/**
- * @brief Whether a place named by a row, a command or a packet is a place at all.
- *
- * These answer from the data stores alone -- Map.dbc, the instance templates, the terrain
- * tiles on disk -- and never from what happens to be open. A coordinate is checked long
- * before any map exists for it: a spawn table is read at start-up, a teleport command is
- * typed at a console, a movement packet arrives naming a map nobody is on.
- */
 namespace MapCoords
 {
-    /// Is this a map the server can open? A dungeon also needs its instance template.
+
     bool Known(uint32 mapId);
 
     bool Valid(uint32 mapId, float x, float y);
@@ -46,6 +38,5 @@ namespace MapCoords
     bool Valid(uint32 mapId, float x, float y, float z, float o);
     bool Valid(Geometry::Placement const& where);
 
-    /// Is there terrain on disk under this spot? Asked of the start-up sanity check.
     bool TileExists(uint32 mapId, float x, float y);
 }

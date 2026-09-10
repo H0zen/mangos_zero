@@ -44,14 +44,13 @@ class Item;
 
 enum GuildDefaultRanks
 {
-    // these ranks can be modified, but they can not be deleted
+
     GR_GUILDMASTER  = 0,
     GR_OFFICER      = 1,
     GR_VETERAN      = 2,
     GR_MEMBER       = 3,
     GR_INITIATE     = 4,
-    // When promoting member server does: rank--;!
-    // When demoting member server does: rank++;!
+
 };
 
 enum GuildRankRights
@@ -85,7 +84,7 @@ enum Typecommand
 
 enum CommandErrors
 {
-    ERR_PLAYER_NO_MORE_IN_GUILD     = 0x00, // no message/error
+    ERR_PLAYER_NO_MORE_IN_GUILD     = 0x00,
     ERR_GUILD_INTERNAL              = 0x01,
     ERR_ALREADY_IN_GUILD            = 0x02,
     ERR_ALREADY_IN_GUILD_S          = 0x03,
@@ -93,8 +92,8 @@ enum CommandErrors
     ERR_ALREADY_INVITED_TO_GUILD_S  = 0x05,
     ERR_GUILD_NAME_INVALID          = 0x06,
     ERR_GUILD_NAME_EXISTS_S         = 0x07,
-    ERR_GUILD_LEADER_LEAVE          = 0x08, // for Typecommand 0x03
-    ERR_GUILD_PERMISSIONS           = 0x08, // for another Typecommand
+    ERR_GUILD_LEADER_LEAVE          = 0x08,
+    ERR_GUILD_PERMISSIONS           = 0x08,
     ERR_GUILD_PLAYER_NOT_IN_GUILD   = 0x09,
     ERR_GUILD_PLAYER_NOT_IN_GUILD_S = 0x0A,
     ERR_GUILD_PLAYER_NOT_FOUND_S    = 0x0B,
@@ -104,7 +103,7 @@ enum CommandErrors
     ERR_GUILD_RANKS_LOCKED          = 0x11,
     ERR_GUILD_RANK_IN_USE           = 0x12,
     ERR_GUILD_IGNORING_YOU_S        = 0x13,
-    ERR_GUILD_UNK20                 = 0x14  // for Typecommand 0x05 only
+    ERR_GUILD_UNK20                 = 0x14
 };
 
 enum GuildEvents
@@ -119,10 +118,10 @@ enum GuildEvents
     GE_LEADER_CHANGED               = 0x07,
     GE_DISBANDED                    = 0x08,
     GE_TABARDCHANGE                 = 0x09,
-    GE_UNK1                         = 0x0A,                 // string, string EVENT_GUILD_ROSTER_UPDATE tab content change?
-    GE_UNK2                         = 0x0B,                 // EVENT_GUILD_ROSTER_UPDATE
-    GE_SIGNED_ON                    = 0x0C,                 // ERR_FRIEND_ONLINE_SS
-    GE_SIGNED_OFF                   = 0x0D,                 // ERR_FRIEND_OFFLINE_S
+    GE_UNK1                         = 0x0A,
+    GE_UNK2                         = 0x0B,
+    GE_SIGNED_ON                    = 0x0C,
+    GE_SIGNED_OFF                   = 0x0D,
 };
 
 enum PetitionSigns
@@ -172,7 +171,7 @@ struct MemberSlot
     void SetOFFNOTE(std::string offnote);
     void ChangeRank(uint32 newRank);
 
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
     uint32 accountId;
     std::string Name;
     uint32 RankId;
@@ -231,7 +230,7 @@ class Guild
         bool AddMember(ObjectGuid plGuid, uint32 plRank);
         bool DelMember(ObjectGuid guid, bool isDisbanding = false);
         bool ChangeMemberRank(ObjectGuid guid, uint8 newRank);
-        // lowest rank is the count of ranks - 1 (the highest rank_id in table)
+
         uint32 GetLowestRank() const { return m_Ranks.size() - 1; }
 
         void SetMOTD(std::string motd);
@@ -254,7 +253,7 @@ class Guild
         void BroadcastEvent(GuildEvents event, ObjectGuid guid, char const* str1 = nullptr, char const* str2 = nullptr, char const* str3 = nullptr);
         void BroadcastEvent(GuildEvents event, char const* str1 = nullptr, char const* str2 = nullptr, char const* str3 = nullptr)
         {
-            BroadcastEvent(event, ObjectGuid(), str1, str2, str3);
+            BroadcastEvent(event, 0, str1, str2, str3);
         }
 
         template<class Do>
@@ -262,7 +261,7 @@ class Guild
         {
             for (MemberList::iterator itr = members.begin(); itr != members.end(); ++itr)
             {
-                if (Player* player = sPlayerRegistry.Find(ObjectGuid(HIGHGUID_PLAYER, itr->first)))
+                if (Player* player = sPlayerRegistry.Find(MakeGuid(HIGHGUID_PLAYER, itr->first)))
                 {
                     if (player != except)
                     {
@@ -293,7 +292,7 @@ class Guild
 
         MemberSlot* GetMemberSlot(ObjectGuid guid)
         {
-            MemberList::iterator itr = members.find(guid.GetCounter());
+            MemberList::iterator itr = members.find(GuidCounter(guid));
             return itr != members.end() ? &itr->second : nullptr;
         }
 
@@ -309,20 +308,19 @@ class Guild
             return nullptr;
         }
 
-        void Roster(WorldSession* session = nullptr);          // nullptr = broadcast
+        void Roster(WorldSession* session = nullptr);
         void Query(WorldSession* session);
 
-        // Guild EventLog
         void   LoadGuildEventLogFromDB();
         void   DisplayGuildEventLog(WorldSession* session);
-        void   LogGuildEvent(uint8 EventType, ObjectGuid playerGuid1, ObjectGuid playerGuid2 = ObjectGuid(), uint8 newRank = 0);
+        void   LogGuildEvent(uint8 EventType, ObjectGuid playerGuid1, ObjectGuid playerGuid2 = 0, uint8 newRank = 0);
 
     protected:
         void AddRank(const std::string& name, uint32 rights);
 
         uint32 m_Id;
         std::string m_Name;
-        ObjectGuid m_LeaderGuid;
+        ObjectGuid m_LeaderGuid = 0;
         std::string MOTD;
         std::string GINFO;
         uint32 m_CreatedYear;
@@ -334,13 +332,12 @@ class Guild
         uint32 m_BorderStyle;
         uint32 m_BorderColor;
         uint32 m_BackgroundColor;
-        uint32 m_accountsNumber;                            // 0 used as marker for need lazy calculation at request
+        uint32 m_accountsNumber;
 
         RankList m_Ranks;
 
         MemberList members;
 
-        /** These are actually ordered lists. The first element is the oldest entry.*/
         typedef std::list<GuildEventLogEntry> GuildEventLog;
         GuildEventLog m_GuildEventLog;
 

@@ -23,27 +23,15 @@
 #include <list>
 #include <vector>
 
-/**
- * What a vendor has for sale, and how much of it is left.
- *
- * A row with no maximum is an endless shelf: the count and the restock hour are
- * never looked at. A row with one holds that many at most, and one more comes in
- * every `incrtime` seconds -- worked out from the hour it was last asked for
- * rather than counted up on a clock, so a vendor nobody visits still has a full
- * shelf when someone finally does.
- *
- * The list of counts holds only the wares somebody has actually bought. A ware
- * nobody has touched has no entry, and its count is its maximum.
- */
 struct VendorItem
 {
     VendorItem(uint32 _item, uint32 _maxcount, uint32 _incrtime, uint16 _conditionId)
         : item(_item), maxcount(_maxcount), incrtime(_incrtime), conditionId(_conditionId) {}
 
     uint32 item;
-    uint32 maxcount;                                        // 0 for infinity item amount
-    uint32 incrtime;                                        // time for restore items amount if maxcount != 0
-    uint16 conditionId;                                     // condition to check for this item
+    uint32 maxcount;
+    uint32 incrtime;
+    uint16 conditionId;
 };
 typedef std::vector<VendorItem*> VendorItemList;
 

@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <string>
 #include "Player.h"
 #include "Language.h"
@@ -71,49 +69,31 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Registers a joined chat channel on the player.
- *
- * @param c The channel that was joined.
- */
 void Player::JoinedChannel(Channel* c)
 {
     m_channels.push_back(c);
 }
 
-/**
- * @brief Removes a chat channel from the player's joined channel list.
- *
- * @param c The channel that was left.
- */
 void Player::LeftChannel(Channel* c)
 {
     m_channels.remove(c);
 }
 
-/**
- * @brief Leaves and cleans up all channels currently joined by the player.
- */
 void Player::CleanupChannels()
 {
     while (!m_channels.empty())
     {
         Channel* ch = *m_channels.begin();
-        m_channels.erase(m_channels.begin());               // remove from player's channel list
-        ch->Leave(this, false);                             // not send to client, not remove from player's channel list
+        m_channels.erase(m_channels.begin());
+        ch->Leave(this, false);
         if (ChannelMgr* cMgr = channelMgr(GetTeam()))
         {
-            cMgr->LeftChannel(ch->GetName()); // deleted channel if empty
+            cMgr->LeftChannel(ch->GetName());
         }
     }
     DEBUG_LOG("Player: channels cleaned up!");
 }
 
-/**
- * @brief Updates built-in local channels after a zone change.
- *
- * @param newZone The new area identifier used for localized channel names.
- */
 void Player::UpdateLocalChannels(uint32 newZone)
 {
     if (m_channels.empty())
@@ -139,7 +119,6 @@ void Player::UpdateLocalChannels(uint32 newZone)
     {
         next = i; ++next;
 
-        // skip non built-in channels
         if (!(*i)->IsConstant())
         {
             continue;
@@ -151,33 +130,28 @@ void Player::UpdateLocalChannels(uint32 newZone)
             continue;
         }
 
-        if ((ch->Flags & 4) == 4)                           // global channel without zone name in pattern
+        if ((ch->Flags & 4) == 4)
         {
             continue;
         }
 
-        //  new channel
         char new_channel_name_buf[100];
         snprintf(new_channel_name_buf, 100, ch->Name_lang[m_session->GetSessionDbcLocale()], current_zone_name.c_str());
         Channel* new_channel = cMgr->GetJoinChannel(new_channel_name_buf);
 
         if ((*i) != new_channel)
         {
-            new_channel->Join(this, "");                    // will output Changed Channel: N. Name
+            new_channel->Join(this, "");
 
-            // leave old channel
-            (*i)->Leave(this, false);                       // not send leave channel, it already replaced at client
-            std::string name = (*i)->GetName();             // store name, (*i)erase in LeftChannel
-            LeftChannel(*i);                                // remove from player's channel list
-            cMgr->LeftChannel(name);                        // delete if empty
+            (*i)->Leave(this, false);
+            std::string name = (*i)->GetName();
+            LeftChannel(*i);
+            cMgr->LeftChannel(name);
         }
     }
     DEBUG_LOG("Player: channels cleaned up!");
 }
 
-/**
- * @brief Leaves the currently joined looking-for-group channel, if any.
- */
 void Player::LeaveLFGChannel()
 {
     for (JoinedChannelsList::iterator i = m_channels.begin(); i != m_channels.end(); ++i)

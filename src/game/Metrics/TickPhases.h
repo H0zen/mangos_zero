@@ -25,13 +25,6 @@
 
 #pragma once
 
-// What a map's tick is made of.
-//
-// A tick time says a map is slow. It does not say which part, and the parts do
-// very different amounts of work: a continent with nobody on it should be
-// spending its time on almost nothing, so when it is not, the interesting
-// question is which of these is awake.
-
 #include "Metrics/Distribution.h"
 
 #include <array>
@@ -40,14 +33,14 @@ namespace metrics
 {
     enum class TickPhase
     {
-        Mailbox,        ///< packets the serial phase routed here
-        Players,        ///< per-player update
-        GridObjects,    ///< creatures and props around players
-        ActiveObjects,  ///< non-player objects that keep themselves awake
-        ObjectUpdates,  ///< building and sending the update packets
-        GridStates,     ///< grid loading, unloading and ageing
-        Scripts,        ///< queued scripts, instance data, weather
-        Vessels,        ///< global transports, and their decks nested inside
+        Mailbox,
+        Players,
+        GridObjects,
+        ActiveObjects,
+        ObjectUpdates,
+        GridStates,
+        Scripts,
+        Vessels,
 
         Count
     };
@@ -68,8 +61,6 @@ namespace metrics
         }
     }
 
-    /// One window per phase. Small windows: this is read to find a culprit, not
-    /// to plot a graph.
     class TickBreakdown
     {
         public:
@@ -84,8 +75,6 @@ namespace metrics
                 return m_phases[static_cast<size_t>(phase)].Percentile(0.5f);
             }
 
-            /// The phase with the largest median, and what it costs. This is the
-            /// answer to "where did the tick go".
             TickPhase Worst(uint32& ms) const
             {
                 TickPhase worst = TickPhase::Mailbox;
@@ -107,13 +96,6 @@ namespace metrics
             std::array<Distribution<64>, static_cast<size_t>(TickPhase::Count)> m_phases;
     };
 
-    /**
-     * @brief A stopwatch that files the time between marks.
-     *
-     * One line at each boundary rather than a scope per phase: the phases of a
-     * map tick run one after another in a single function, and bracketing each
-     * one would mean rewriting the function's shape to measure it.
-     */
     template <class Sink>
     class PhaseClock
     {

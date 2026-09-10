@@ -48,7 +48,7 @@ enum SocialFlag
 {
     SOCIAL_FLAG_FRIEND      = 0x01,
     SOCIAL_FLAG_IGNORED     = 0x02,
-    SOCIAL_FLAG_MUTED       = 0x04,                         // guessed
+    SOCIAL_FLAG_MUTED       = 0x04,
 };
 
 struct FriendInfo
@@ -79,16 +79,15 @@ struct FriendInfo
 typedef std::map<uint32, FriendInfo> PlayerSocialMap;
 typedef std::map<uint32, PlayerSocial> SocialMap;
 
-/// Results of friend related commands
 enum FriendsResult
 {
-    FRIEND_DB_ERROR         = 0x00,                         // ERR_FRIEND_NOT_FOUND
+    FRIEND_DB_ERROR         = 0x00,
     FRIEND_LIST_FULL        = 0x01,
     FRIEND_ONLINE           = 0x02,
     FRIEND_OFFLINE          = 0x03,
-    FRIEND_NOT_FOUND        = 0x04,                         // ERR_FRIEND_NOT_FOUND
+    FRIEND_NOT_FOUND        = 0x04,
     FRIEND_REMOVED          = 0x05,
-    FRIEND_ADDED_ONLINE     = 0x06,                         // ERR_FRIEND_ADDED_S
+    FRIEND_ADDED_ONLINE     = 0x06,
     FRIEND_ADDED_OFFLINE    = 0x07,
     FRIEND_ALREADY          = 0x08,
     FRIEND_SELF             = 0x09,
@@ -99,20 +98,20 @@ enum FriendsResult
     FRIEND_IGNORE_ALREADY   = 0x0E,
     FRIEND_IGNORE_ADDED     = 0x0F,
     FRIEND_IGNORE_REMOVED   = 0x10,
-    FRIEND_IGNORE_AMBIGUOUS = 0x11,                         // That name is ambiguous, type more of the player's server name
+    FRIEND_IGNORE_AMBIGUOUS = 0x11,
     FRIEND_MUTE_FULL        = 0x12,
     FRIEND_MUTE_SELF        = 0x13,
     FRIEND_MUTE_NOT_FOUND   = 0x14,
     FRIEND_MUTE_ALREADY     = 0x15,
     FRIEND_MUTE_ADDED       = 0x16,
     FRIEND_MUTE_REMOVED     = 0x17,
-    FRIEND_MUTE_AMBIGUOUS   = 0x18,                         // ERR_VOICE_IGNORE_AMBIGUOUS
-    FRIEND_UNK7             = 0x19,                         // ERR_MAX_VALUE (nothing is showed)
-    FRIEND_UNKNOWN          = 0x1A                          // Unknown friend response from server
+    FRIEND_MUTE_AMBIGUOUS   = 0x18,
+    FRIEND_UNK7             = 0x19,
+    FRIEND_UNKNOWN          = 0x1A
 };
 
 #define SOCIALMGR_FRIEND_LIMIT  50
-#define SOCIALMGR_IGNORE_LIMIT  25                          // checked max for 1.12.x, 2.4.3, list tail not show if more
+#define SOCIALMGR_IGNORE_LIMIT  25
 
 class PlayerSocial
 {
@@ -121,17 +120,17 @@ class PlayerSocial
     public:
         PlayerSocial();
         ~PlayerSocial();
-        // adding/removing
+
         bool AddToSocialList(ObjectGuid friend_guid, bool ignore);
         void RemoveFromSocialList(ObjectGuid friend_guid, bool ignore);
         void SetFriendNote(ObjectGuid friend_guid, std::string note);
-        // The owner is explicit because initial login sends before registry insertion.
+
         void SendFriendList(Player* owner);
         void SendIgnoreList(Player* owner);
-        // Misc
+
         bool HasFriend(ObjectGuid friend_guid);
         bool HasIgnore(ObjectGuid ignore_guid);
-        void SetPlayerGuid(ObjectGuid guid) { m_playerLowGuid = guid.GetCounter(); }
+        void SetPlayerGuid(ObjectGuid guid) { m_playerLowGuid = GuidCounter(guid); }
         uint32 GetNumberOfSocialsWithFlag(SocialFlag flag);
     private:
         PlayerSocialMap m_playerSocialMap;
@@ -143,15 +142,15 @@ class SocialMgr
     public:
         SocialMgr();
         ~SocialMgr();
-        // Misc
+
         void RemovePlayerSocial(uint32 guid) { m_socialMap.erase(guid); }
 
         void GetFriendInfo(Player* player, uint32 friendGUID, FriendInfo& friendInfo);
-        // Packet management
+
         void MakeFriendStatusPacket(FriendsResult result, uint32 friend_guid, WorldPacket* data);
         void SendFriendStatus(Player* player, FriendsResult result, ObjectGuid friend_guid, bool broadcast);
         void BroadcastToFriendListers(Player* player, WorldPacket* packet);
-        // Loading
+
         PlayerSocial* LoadFromDB(QueryResult* result, ObjectGuid guid);
     private:
         SocialMap m_socialMap;

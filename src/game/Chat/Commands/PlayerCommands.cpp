@@ -23,17 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file PlayerCommands.cpp
- * @brief Implementation of player character management chat commands.
- *
- * This file contains chat command handlers for player operations including:
- * - Player property modification
- * - Character information display
- * - Player state management
- * - Character customization
- */
-
 #include "CharacterRows.h"
 #include "Common/Locales.h"
 #include <sstream>
@@ -47,12 +36,6 @@
 #include "PlayerRegistry.h"
 #include "CorpseManager.h"
 
-/**
- * @brief Handler for HandleCharacterEraseCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleCharacterEraseCommand(char* args)
 {
     char* nameStr = ExtractLiteralArg(&args);
@@ -62,7 +45,7 @@ bool ChatHandler::HandleCharacterEraseCommand(char* args)
     }
 
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     std::string target_name;
     if (!ExtractPlayerTarget(&nameStr, &target, &target_guid, &target_name))
     {
@@ -85,23 +68,17 @@ bool ChatHandler::HandleCharacterEraseCommand(char* args)
     sAccountMgr.GetName(account_id, account_name);
 
     CharacterRows::Delete(target_guid, account_id, true, true);
-    PSendSysMessage(LANG_CHARACTER_DELETED, target_name.c_str(), target_guid.GetCounter(), account_name.c_str(), account_id);
+    PSendSysMessage(LANG_CHARACTER_DELETED, target_name.c_str(), GuidCounter(target_guid), account_name.c_str(), account_id);
     return true;
 }
 
-/**
- * @brief Handler for HandleCharacterLevelCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleCharacterLevelCommand(char* args)
 {
     char* nameStr = ExtractOptNotLastArg(&args);
 
     int32 newlevel;
     bool nolevel = false;
-    // exception opt second arg: .character level $name
+
     if (!ExtractInt32(&args, newlevel))
     {
         if (!nameStr)
@@ -121,7 +98,7 @@ bool ChatHandler::HandleCharacterLevelCommand(char* args)
     }
 
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     std::string target_name;
     if (!ExtractPlayerTarget(&nameStr, &target, &target_guid, &target_name))
     {
@@ -136,17 +113,17 @@ bool ChatHandler::HandleCharacterLevelCommand(char* args)
 
     if (newlevel < 1)
     {
-        return false; // invalid level
+        return false;
     }
 
-    if (newlevel > STRONG_MAX_LEVEL)                        // hardcoded maximum level
+    if (newlevel > STRONG_MAX_LEVEL)
     {
         newlevel = STRONG_MAX_LEVEL;
     }
 
     HandleCharacterLevel(target, target_guid, oldlevel, newlevel);
 
-    if (!m_session || m_session->GetPlayer() != target)     // including player==nullptr
+    if (!m_session || m_session->GetPlayer() != target)
     {
         std::string nameLink = playerLink(target_name);
         PSendSysMessage(LANG_YOU_CHANGE_LVL, nameLink.c_str(), newlevel);
@@ -155,16 +132,10 @@ bool ChatHandler::HandleCharacterLevelCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleCharacterRenameCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleCharacterRenameCommand(char* args)
 {
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     std::string target_name;
     if (!ExtractPlayerTarget(&args, &target, &target_guid, &target_name))
     {
@@ -173,7 +144,7 @@ bool ChatHandler::HandleCharacterRenameCommand(char* args)
 
     if (target)
     {
-        // check online security
+
         if (HasLowerSecurity(target))
         {
             return false;
@@ -185,7 +156,7 @@ bool ChatHandler::HandleCharacterRenameCommand(char* args)
     }
     else
     {
-        // check offline security
+
         if (HasLowerSecurity(nullptr, target_guid))
         {
             return false;
@@ -193,19 +164,13 @@ bool ChatHandler::HandleCharacterRenameCommand(char* args)
 
         std::string oldNameLink = playerLink(target_name);
 
-        PSendSysMessage(LANG_RENAME_PLAYER_GUID, oldNameLink.c_str(), target_guid.GetCounter());
-        CharacterDatabase.PExecute("UPDATE `characters` SET `at_login` = `at_login` | '1' WHERE `guid` = '%u'", target_guid.GetCounter());
+        PSendSysMessage(LANG_RENAME_PLAYER_GUID, oldNameLink.c_str(), GuidCounter(target_guid));
+        CharacterDatabase.PExecute("UPDATE `characters` SET `at_login` = `at_login` | '1' WHERE `guid` = '%u'", GuidCounter(target_guid));
     }
 
     return true;
 }
 
-/**
- * @brief Handler for HandleCharacterReputationCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleCharacterReputationCommand(char* args)
 {
     Player* target;
@@ -226,29 +191,17 @@ bool ChatHandler::HandleCharacterReputationCommand(char* args)
     return true;
 }
 
-/**********************************************************************
- CommandTable : characterDeletedCommandTable
- ***********************************************************************/
-
-/**
- * Collects all GUIDs (and related info) from deleted characters which are still in the database.
- *
- * @param foundList    a reference to an std::list which will be filled with info data
- * @param searchString the search string which either contains a player GUID (low part) or a part of the character-name
- * @return             returns false if there was a problem while selecting the characters (e.g. player name not normalizeable)
- */
-
 bool ChatHandler::GetDeletedCharacterInfoList(DeletedInfoList& foundList, std::string searchString)
 {
     QueryResult* resultChar;
     if (!searchString.empty())
     {
-        // search by GUID
+
         if (isNumeric(searchString))
         {
             resultChar = CharacterDatabase.PQuery("SELECT `guid`, `deleteInfos_Name`, `deleteInfos_Account`, `deleteDate` FROM `characters` WHERE `deleteDate` IS NOT NULL AND `guid` = %u", uint32(atoi(searchString.c_str())));
         }
-        // search by name
+
         else
         {
             if (!normalizePlayerName(searchString))
@@ -276,7 +229,6 @@ bool ChatHandler::GetDeletedCharacterInfoList(DeletedInfoList& foundList, std::s
             info.name = fields[1].GetCppString();
             info.accountId = fields[2].GetUInt32();
 
-            // account name will be empty for nonexistent account
             sAccountMgr.GetName(info.accountId, info.accountName);
 
             info.deleteDate = time_t(fields[3].GetUInt64());
@@ -291,13 +243,6 @@ bool ChatHandler::GetDeletedCharacterInfoList(DeletedInfoList& foundList, std::s
     return true;
 }
 
-/**
- * Generate WHERE guids list by deleted info in way preventing return too long where list for existed query string length limit.
- *
- * @param itr          a reference to an deleted info list iterator, it updated in function for possible next function call if list to long
- * @param itr_end      a reference to an deleted info list iterator end()
- * @return             returns generated where list string in form: 'guid IN (gui1, guid2, ...)'
- */
 std::string ChatHandler::GenerateDeletedCharacterGUIDsWhereStr(DeletedInfoList::const_iterator& itr, DeletedInfoList::const_iterator const& itr_end)
 {
     std::ostringstream wherestr;
@@ -306,7 +251,7 @@ std::string ChatHandler::GenerateDeletedCharacterGUIDsWhereStr(DeletedInfoList::
     {
         wherestr << itr->lowguid;
 
-        if (wherestr.str().size() > MAX_QUERY_LEN - 50)     // near to max query
+        if (wherestr.str().size() > MAX_QUERY_LEN - 50)
         {
             ++itr;
             break;
@@ -322,16 +267,6 @@ std::string ChatHandler::GenerateDeletedCharacterGUIDsWhereStr(DeletedInfoList::
     return wherestr.str();
 }
 
-/**
- * Shows all deleted characters which matches the given search string, expected non empty list
- *
- * @see ChatHandler::HandleCharacterDeletedListCommand
- * @see ChatHandler::HandleCharacterDeletedRestoreCommand
- * @see ChatHandler::HandleCharacterDeletedDeleteCommand
- * @see ChatHandler::DeletedInfoList
- *
- * @param foundList contains a list with all found deleted characters
- */
 void ChatHandler::HandleCharacterDeletedListHelper(DeletedInfoList const& foundList)
 {
     if (!m_session)
@@ -365,26 +300,14 @@ void ChatHandler::HandleCharacterDeletedListHelper(DeletedInfoList const& foundL
     }
 }
 
-/**
- * Restore a previously deleted character
- *
- * @see ChatHandler::HandleCharacterDeletedListHelper
- * @see ChatHandler::HandleCharacterDeletedRestoreCommand
- * @see ChatHandler::HandleCharacterDeletedDeleteCommand
- * @see ChatHandler::DeletedInfoList
- *
- * @param delInfo the informations about the character which will be restored
- */
-
 void ChatHandler::HandleCharacterDeletedRestoreHelper(DeletedInfo const& delInfo)
 {
-    if (delInfo.accountName.empty())                    // account not exist
+    if (delInfo.accountName.empty())
     {
         PSendSysMessage(LANG_CHARACTER_DELETED_SKIP_ACCOUNT, delInfo.name.c_str(), delInfo.lowguid, delInfo.accountId);
         return;
     }
 
-    // check character count
     uint32 charcount = sAccountMgr.GetCharactersCount(delInfo.accountId);
     if (charcount >= 10)
     {
@@ -402,19 +325,9 @@ void ChatHandler::HandleCharacterDeletedRestoreHelper(DeletedInfo const& delInfo
         delInfo.name.c_str(), delInfo.accountId, delInfo.lowguid);
 }
 
-/**
- * Handles the '.character deleted delete' command, which completely deletes all deleted characters which matches the given search string
- *
- * @see Player::GetDeletedCharacterGUIDs
- * @see CharacterRows::Delete
- * @see ChatHandler::HandleCharacterDeletedListCommand
- * @see ChatHandler::HandleCharacterDeletedRestoreCommand
- *
- * @param args the search string which either contains a player GUID or a part of the character-name
- */
 bool ChatHandler::HandleCharacterDeletedDeleteCommand(char* args)
 {
-    // It is required to submit at least one argument
+
     if (!*args)
     {
         return false;
@@ -435,25 +348,14 @@ bool ChatHandler::HandleCharacterDeletedDeleteCommand(char* args)
     SendSysMessage(LANG_CHARACTER_DELETED_DELETE);
     HandleCharacterDeletedListHelper(foundList);
 
-    // Call the appropriate function to delete them (current account for deleted characters is 0)
     for (DeletedInfoList::const_iterator itr = foundList.begin(); itr != foundList.end(); ++itr)
     {
-        CharacterRows::Delete(ObjectGuid(HIGHGUID_PLAYER, itr->lowguid), 0, false, true);
+        CharacterRows::Delete(MakeGuid(HIGHGUID_PLAYER, itr->lowguid), 0, false, true);
     }
 
     return true;
 }
 
-/**
- * Handles the '.character deleted list' command, which shows all deleted characters which matches the given search string
- *
- * @see ChatHandler::HandleCharacterDeletedListHelper
- * @see ChatHandler::HandleCharacterDeletedRestoreCommand
- * @see ChatHandler::HandleCharacterDeletedDeleteCommand
- * @see ChatHandler::DeletedInfoList
- *
- * @param args the search string which either contains a player GUID or a part of the character-name
- */
 bool ChatHandler::HandleCharacterDeletedListCommand(char* args)
 {
     DeletedInfoList foundList;
@@ -462,7 +364,6 @@ bool ChatHandler::HandleCharacterDeletedListCommand(char* args)
         return false;
     }
 
-    // if no characters have been found, output a warning
     if (foundList.empty())
     {
         SendSysMessage(LANG_CHARACTER_DELETED_LIST_EMPTY);
@@ -473,20 +374,9 @@ bool ChatHandler::HandleCharacterDeletedListCommand(char* args)
     return true;
 }
 
-/**
- * Handles the '.character deleted restore' command, which restores all deleted characters which matches the given search string
- *
- * The command automatically calls '.character deleted list' command with the search string to show all restored characters.
- *
- * @see ChatHandler::HandleCharacterDeletedRestoreHelper
- * @see ChatHandler::HandleCharacterDeletedListCommand
- * @see ChatHandler::HandleCharacterDeletedDeleteCommand
- *
- * @param args the search string which either contains a player GUID or a part of the character-name
- */
 bool ChatHandler::HandleCharacterDeletedRestoreCommand(char* args)
 {
-    // It is required to submit at least one argument
+
     if (!*args)
     {
         return false;
@@ -496,7 +386,6 @@ bool ChatHandler::HandleCharacterDeletedRestoreCommand(char* args)
     std::string newCharName;
     uint32 newAccount = 0;
 
-    // GCC by some strange reason fail build code without temporary variable
     std::istringstream params(args);
     params >> searchString >> newCharName >> newAccount;
 
@@ -517,7 +406,7 @@ bool ChatHandler::HandleCharacterDeletedRestoreCommand(char* args)
 
     if (newCharName.empty())
     {
-        // Drop nonexistent account cases
+
         for (DeletedInfoList::iterator itr = foundList.begin(); itr != foundList.end(); ++itr)
         {
             HandleCharacterDeletedRestoreHelper(*itr);
@@ -527,10 +416,8 @@ bool ChatHandler::HandleCharacterDeletedRestoreCommand(char* args)
     {
         DeletedInfo delInfo = foundList.front();
 
-        // update name
         delInfo.name = newCharName;
 
-        // if new account provided update deleted info
         if (newAccount && newAccount != delInfo.accountId)
         {
             delInfo.accountId = newAccount;
@@ -547,17 +434,6 @@ bool ChatHandler::HandleCharacterDeletedRestoreCommand(char* args)
     return true;
 }
 
-/**
- * Handles the '.character deleted old' command, which completely deletes all deleted characters deleted with some days ago
- *
- * @see CharacterRows::DeleteLongDeleted
- * @see CharacterRows::Delete
- * @see ChatHandler::HandleCharacterDeletedDeleteCommand
- * @see ChatHandler::HandleCharacterDeletedListCommand
- * @see ChatHandler::HandleCharacterDeletedRestoreCommand
- *
- * @param args the search string which either contains a player GUID or a part of the character-name
- */
 bool ChatHandler::HandleCharacterDeletedOldCommand(char* args)
 {
     int32 keepDays = sWorld.getConfig(CONFIG_UINT32_CHARDELETE_KEEP_DAYS);
@@ -575,10 +451,6 @@ bool ChatHandler::HandleCharacterDeletedOldCommand(char* args)
     CharacterRows::DeleteLongDeleted((uint32)keepDays);
     return true;
 }
-
-/**********************************************************************
- CommandTable : commandTable
- ***********************************************************************/
 
 void ChatHandler::HandleCharacterLevel(Player* player, ObjectGuid player_guid, uint32 oldlevel, uint32 newlevel)
 {
@@ -598,7 +470,7 @@ void ChatHandler::HandleCharacterLevel(Player* player, ObjectGuid player_guid, u
             {
                 ChatHandler(player).PSendSysMessage(LANG_YOURS_LEVEL_UP, GetNameLink().c_str(), newlevel);
             }
-            else                                            // if (oldlevel > newlevel)
+            else
             {
                 ChatHandler(player).PSendSysMessage(LANG_YOURS_LEVEL_DOWN, GetNameLink().c_str(), newlevel);
             }
@@ -606,21 +478,15 @@ void ChatHandler::HandleCharacterLevel(Player* player, ObjectGuid player_guid, u
     }
     else
     {
-        // update level and XP at level, all other will be updated at loading
-        CharacterDatabase.PExecute("UPDATE `characters` SET `level` = '%u', `xp` = 0 WHERE `guid` = '%u'", newlevel, player_guid.GetCounter());
+
+        CharacterDatabase.PExecute("UPDATE `characters` SET `level` = '%u', `xp` = 0 WHERE `guid` = '%u'", newlevel, GuidCounter(player_guid));
     }
 }
 
-/**
- * @brief Handler for HandleReviveCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleReviveCommand(char* args)
 {
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     if (!ExtractPlayerTarget(&args, &target, &target_guid))
     {
         return false;
@@ -631,7 +497,7 @@ bool ChatHandler::HandleReviveCommand(char* args)
         target->ResurrectPlayer(0.5f);
         target->SpawnCorpseBones();
     }
-    else // will resurrected at login without corpse
+    else
     {
         sCorpseManager.ConvertCorpseForPlayer(target_guid);
     }
@@ -639,17 +505,10 @@ bool ChatHandler::HandleReviveCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleDismountCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleDismountCommand(char* /*args*/)
+bool ChatHandler::HandleDismountCommand(char* )
 {
     Player* player = m_session->GetPlayer();
 
-    // If player is not mounted, so go out :)
     if (!player->IsMounted())
     {
         SendSysMessage(LANG_CHAR_NON_MOUNTED);
@@ -669,12 +528,6 @@ bool ChatHandler::HandleDismountCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleLinkGraveCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLinkGraveCommand(char* args)
 {
     uint32 g_id;
@@ -735,12 +588,6 @@ bool ChatHandler::HandleLinkGraveCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleItemMoveCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleItemMoveCommand(char* args)
 {
     if (!*args)
@@ -775,7 +622,6 @@ bool ChatHandler::HandleItemMoveCommand(char* args)
         return false;
     }
 
-    // can be autostore pos
     if (!player->IsValidPos(INVENTORY_SLOT_BAG_0, dstslot, false))
     {
         return false;
@@ -789,12 +635,6 @@ bool ChatHandler::HandleItemMoveCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleCooldownCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleCooldownCommand(char* args)
 {
     Player* target = getSelectedPlayer();
@@ -814,7 +654,7 @@ bool ChatHandler::HandleCooldownCommand(char* args)
     }
     else
     {
-        // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r or Htalent form
+
         uint32 spell_id = ExtractSpellIdFromLink(&args);
         if (!spell_id)
         {
@@ -834,17 +674,10 @@ bool ChatHandler::HandleCooldownCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleSaveCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleSaveCommand(char* /*args*/)
+bool ChatHandler::HandleSaveCommand(char* )
 {
     Player* player = m_session->GetPlayer();
 
-    // save GM account without delay and output message (testing, etc)
     if (GetAccessLevel() > SEC_PLAYER)
     {
         player->SaveToDB();
@@ -852,7 +685,6 @@ bool ChatHandler::HandleSaveCommand(char* /*args*/)
         return true;
     }
 
-    // save or plan save after 20 sec (logout delay) if current next save time more this value and _not_ output any messages to prevent cheat planning
     uint32 save_interval = sWorld.getConfig(CONFIG_UINT32_INTERVAL_SAVE);
     if (save_interval == 0 || (save_interval > 20 * IN_MILLISECONDS && player->GetSaveTimer() <= save_interval - 20 * IN_MILLISECONDS))
     {
@@ -862,26 +694,14 @@ bool ChatHandler::HandleSaveCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleSaveAllCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleSaveAllCommand(char* /*args*/)
+bool ChatHandler::HandleSaveAllCommand(char* )
 {
     sPlayerRegistry.SaveAll();
     SendSysMessage(LANG_PLAYERS_SAVED);
     return true;
 }
 
-/**
- * @brief Handler for HandleStartCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleStartCommand(char* /*args*/)
+bool ChatHandler::HandleStartCommand(char* )
 {
     Player* chr = m_session->GetPlayer();
 
@@ -899,17 +719,10 @@ bool ChatHandler::HandleStartCommand(char* /*args*/)
         return false;
     }
 
-    // cast spell Stuck
     chr->CastSpell(chr, 7355, false);
     return true;
 }
 
-/**
- * @brief Handler for HandleTaxiCheatCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleTaxiCheatCommand(char* args)
 {
     bool value;
@@ -925,7 +738,7 @@ bool ChatHandler::HandleTaxiCheatCommand(char* args)
     {
         chr = m_session->GetPlayer();
     }
-    // check online security
+
     else if (HasLowerSecurity(chr))
     {
         return false;
@@ -953,12 +766,6 @@ bool ChatHandler::HandleTaxiCheatCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleExploreCheatCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleExploreCheatCommand(char* args)
 {
     if (!*args)
@@ -1008,12 +815,6 @@ bool ChatHandler::HandleExploreCheatCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleLevelUpCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleLevelUpCommand(char* args)
 {
     int32 addlevel = 1;
@@ -1023,7 +824,6 @@ bool ChatHandler::HandleLevelUpCommand(char* args)
     {
         nameStr = ExtractOptNotLastArg(&args);
 
-        // exception opt second arg: .levelup $name
         if (!ExtractInt32(&args, addlevel))
         {
             if (!nameStr)
@@ -1038,7 +838,7 @@ bool ChatHandler::HandleLevelUpCommand(char* args)
     }
 
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     std::string target_name;
     if (!ExtractPlayerTarget(&nameStr, &target, &target_guid, &target_name))
     {
@@ -1053,14 +853,14 @@ bool ChatHandler::HandleLevelUpCommand(char* args)
         newlevel = 1;
     }
 
-    if (newlevel > STRONG_MAX_LEVEL)                        // hardcoded maximum level
+    if (newlevel > STRONG_MAX_LEVEL)
     {
         newlevel = STRONG_MAX_LEVEL;
     }
 
     HandleCharacterLevel(target, target_guid, oldlevel, newlevel);
 
-    if (!m_session || m_session->GetPlayer() != target)     // including chr==nullptr
+    if (!m_session || m_session->GetPlayer() != target)
     {
         std::string nameLink = playerLink(target_name);
         PSendSysMessage(LANG_YOU_CHANGE_LVL, nameLink.c_str(), newlevel);
@@ -1069,12 +869,6 @@ bool ChatHandler::HandleLevelUpCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleShowAreaCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleShowAreaCommand(char* args)
 {
     if (!*args)
@@ -1108,12 +902,6 @@ bool ChatHandler::HandleShowAreaCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleHideAreaCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleHideAreaCommand(char* args)
 {
     if (!*args)
@@ -1147,12 +935,6 @@ bool ChatHandler::HandleHideAreaCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleAddItemCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleAddItemCommand(char* args)
 {
     char* cId = ExtractKeyFromLink(&args, "Hitem");
@@ -1162,7 +944,7 @@ bool ChatHandler::HandleAddItemCommand(char* args)
     }
 
     uint32 itemId = 0;
-    if (!ExtractUInt32(&cId, itemId))                       // [name] manual form
+    if (!ExtractUInt32(&cId, itemId))
     {
         std::string itemName = cId;
         WorldDatabase.escape_string(itemName);
@@ -1189,7 +971,6 @@ bool ChatHandler::HandleAddItemCommand(char* args)
         return false;
     }
 
-    // Check enchant id
     if (enchant_id > 0)
     {
 
@@ -1223,26 +1004,23 @@ bool ChatHandler::HandleAddItemCommand(char* args)
         return false;
     }
 
-    // Subtract
     if (count < 0)
     {
-        uint32 deletedCount = plTarget->DestroyItemCount(itemId, -count, true, false, /* delete_from_bank */ true, /* delete_from_buyback*/ true);
+        uint32 deletedCount = plTarget->DestroyItemCount(itemId, -count, true, false,  true,  true);
         PSendSysMessage(LANG_REMOVEITEM, itemId, -count , deletedCount, GetNameLink(plTarget).c_str());
         return true;
     }
 
-    // Adding items
     uint32 noSpaceForCount = 0;
 
-    // check space and find places
     ItemPosCountVec dest;
     uint8 msg = plTarget->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, itemId, count, &noSpaceForCount);
-    if (msg != EQUIP_ERR_OK)                                // convert to possible store amount
+    if (msg != EQUIP_ERR_OK)
     {
         count -= noSpaceForCount;
     }
 
-    if (count == 0 || dest.empty())                         // can't add any
+    if (count == 0 || dest.empty())
     {
         PSendSysMessage(LANG_ITEM_CANNOT_CREATE, itemId, noSpaceForCount);
         SetSentErrorMessage(true);
@@ -1253,16 +1031,12 @@ bool ChatHandler::HandleAddItemCommand(char* args)
 
     if (count > 0 && item)
     {
-        // Perhaps we can enchant the item
+
         if (enchant_id)
         {
             item->SetEnchantment(PERM_ENCHANTMENT_SLOT, enchant_id, 0, 0);
         }
 
-        // If player is GM, then remove item binding to allow to give it later toplayer
-        // WARNING : If enchant is applied, the item can stay souldbound if it is a soulbound enchant id.
-        // e.g : enchant id is 1900 (Crusader) => Item stays "LINKED WHEN PICKED UP"
-        //    if enchant id is 2606 (+30AP)    => Item becomes is Soulbound even if added on a GM character
         if (pl == plTarget)
         {
             item->SetBinding(false);
@@ -1286,12 +1060,6 @@ bool ChatHandler::HandleAddItemCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleAddItemSetCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleAddItemSetCommand(char* args)
 {
     uint32 itemsetId;
@@ -1300,7 +1068,6 @@ bool ChatHandler::HandleAddItemSetCommand(char* args)
         return false;
     }
 
-    // prevent generation all items with itemset field value '0'
     if (itemsetId == 0)
     {
         PSendSysMessage(LANG_NO_ITEMS_FROM_ITEMSET_FOUND, itemsetId);
@@ -1335,7 +1102,6 @@ bool ChatHandler::HandleAddItemSetCommand(char* args)
             {
                 Item* item = plTarget->StoreNewItem(dest, pProto->ItemId, true);
 
-                // remove binding (let GM give it to another player later)
                 if (pl == plTarget)
                 {
                     item->SetBinding(false);
@@ -1366,13 +1132,7 @@ bool ChatHandler::HandleAddItemSetCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleMaxSkillCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleMaxSkillCommand(char* /*args*/)
+bool ChatHandler::HandleMaxSkillCommand(char* )
 {
     Player* SelectedPlayer = getSelectedPlayer();
     if (!SelectedPlayer)
@@ -1382,17 +1142,10 @@ bool ChatHandler::HandleMaxSkillCommand(char* /*args*/)
         return false;
     }
 
-    // each skills that have max skill value dependent from level seted to current level max skill value
     SelectedPlayer->UpdateSkillsToMaxSkillsForLevel();
     return true;
 }
 
-/**
- * @brief Handler for HandleSetSkillCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleSetSkillCommand(char* args)
 {
     Player* target = getSelectedPlayer();
@@ -1403,7 +1156,6 @@ bool ChatHandler::HandleSetSkillCommand(char* args)
         return false;
     }
 
-    // number or [name] Shift-click form |color|Hskill:skill_id|h[name]|h|r
     char* skill_p = ExtractKeyFromLink(&args, "Hskill");
     if (!skill_p)
     {
@@ -1463,12 +1215,6 @@ bool ChatHandler::HandleSetSkillCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleCombatStopCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleCombatStopCommand(char* args)
 {
     Player* target;
@@ -1477,7 +1223,6 @@ bool ChatHandler::HandleCombatStopCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(target))
     {
         return false;
@@ -1488,12 +1233,6 @@ bool ChatHandler::HandleCombatStopCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleRepairitemsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleRepairitemsCommand(char* args)
 {
     Player* target;
@@ -1502,13 +1241,11 @@ bool ChatHandler::HandleRepairitemsCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(target))
     {
         return false;
     }
 
-    // Repair items
     target->DurabilityRepairAll(false, 0);
 
     PSendSysMessage(LANG_YOU_REPAIR_ITEMS, GetNameLink(target).c_str());
@@ -1519,12 +1256,6 @@ bool ChatHandler::HandleRepairitemsCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyHPCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyHPCommand(char* args)
 {
     if (!*args)
@@ -1548,7 +1279,6 @@ bool ChatHandler::HandleModifyHPCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(chr))
     {
         return false;
@@ -1577,12 +1307,6 @@ bool ChatHandler::HandleModifyHPCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyManaCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyManaCommand(char* args)
 {
     if (!*args)
@@ -1606,7 +1330,6 @@ bool ChatHandler::HandleModifyManaCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(chr))
     {
         return false;
@@ -1630,12 +1353,6 @@ bool ChatHandler::HandleModifyManaCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyEnergyCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyEnergyCommand(char* args)
 {
     if (!*args)
@@ -1660,7 +1377,6 @@ bool ChatHandler::HandleModifyEnergyCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(chr))
     {
         return false;
@@ -1685,12 +1401,6 @@ bool ChatHandler::HandleModifyEnergyCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyRageCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyRageCommand(char* args)
 {
     if (!*args)
@@ -1715,7 +1425,6 @@ bool ChatHandler::HandleModifyRageCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(chr))
     {
         return false;
@@ -1738,12 +1447,6 @@ bool ChatHandler::HandleModifyRageCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyTalentCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyTalentCommand(char* args)
 {
     if (!*args)
@@ -1765,7 +1468,6 @@ bool ChatHandler::HandleModifyTalentCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(target))
     {
         return false;
@@ -1775,12 +1477,6 @@ bool ChatHandler::HandleModifyTalentCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyASpeedCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyASpeedCommand(char* args)
 {
     if (!*args)
@@ -1805,7 +1501,6 @@ bool ChatHandler::HandleModifyASpeedCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(chr))
     {
         return false;
@@ -1829,16 +1524,10 @@ bool ChatHandler::HandleModifyASpeedCommand(char* args)
     chr->Pacing().Reckon(MOVE_WALK, true, modSpeed);
     chr->Pacing().Reckon(MOVE_RUN, true, modSpeed);
     chr->Pacing().Reckon(MOVE_SWIM, true, modSpeed);
-    // chr->Pacing().Reckon(MOVE_TURN,   true, modSpeed);
+
     return true;
 }
 
-/**
- * @brief Handler for HandleModifySpeedCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifySpeedCommand(char* args)
 {
     if (!*args)
@@ -1863,7 +1552,6 @@ bool ChatHandler::HandleModifySpeedCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(chr))
     {
         return false;
@@ -1889,12 +1577,6 @@ bool ChatHandler::HandleModifySpeedCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifySwimCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifySwimCommand(char* args)
 {
     if (!*args)
@@ -1919,7 +1601,6 @@ bool ChatHandler::HandleModifySwimCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(chr))
     {
         return false;
@@ -1945,12 +1626,6 @@ bool ChatHandler::HandleModifySwimCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyBWalkCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyBWalkCommand(char* args)
 {
     if (!*args)
@@ -1975,7 +1650,6 @@ bool ChatHandler::HandleModifyBWalkCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(chr))
     {
         return false;
@@ -2001,12 +1675,6 @@ bool ChatHandler::HandleModifyBWalkCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyScaleCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyScaleCommand(char* args)
 {
     if (!*args)
@@ -2030,9 +1698,9 @@ bool ChatHandler::HandleModifyScaleCommand(char* args)
         return false;
     }
 
-    if (target->IsPlayer())
+    if (IsPlayer(target))
     {
-        // check online security
+
         if (HasLowerSecurity((Player*)target))
         {
             return false;
@@ -2051,12 +1719,6 @@ bool ChatHandler::HandleModifyScaleCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyMountCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyMountCommand(char* args)
 {
     if (!*args)
@@ -2290,7 +1952,6 @@ bool ChatHandler::HandleModifyMountCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(chr))
     {
         return false;
@@ -2320,12 +1981,6 @@ bool ChatHandler::HandleModifyMountCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyMoneyCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyMoneyCommand(char* args)
 {
     if (!*args)
@@ -2341,7 +1996,6 @@ bool ChatHandler::HandleModifyMoneyCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(chr))
     {
         return false;
@@ -2404,12 +2058,6 @@ bool ChatHandler::HandleModifyMoneyCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyDrunkCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyDrunkCommand(char* args)
 {
     if (!*args)
@@ -2430,12 +2078,6 @@ bool ChatHandler::HandleModifyDrunkCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyRepCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyRepCommand(char* args)
 {
     if (!*args)
@@ -2452,7 +2094,6 @@ bool ChatHandler::HandleModifyRepCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(target))
     {
         return false;
@@ -2548,12 +2189,6 @@ bool ChatHandler::HandleModifyRepCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyGenderCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyGenderCommand(char* args)
 {
     if (!*args)
@@ -2581,7 +2216,7 @@ bool ChatHandler::HandleModifyGenderCommand(char* args)
 
     Gender gender;
 
-    if (!strncmp(gender_str, "male", gender_len))           // MALE
+    if (!strncmp(gender_str, "male", gender_len))
     {
         if (player->getGender() == GENDER_MALE)
         {
@@ -2590,7 +2225,7 @@ bool ChatHandler::HandleModifyGenderCommand(char* args)
 
         gender = GENDER_MALE;
     }
-    else if (!strncmp(gender_str, "female", gender_len))    // FEMALE
+    else if (!strncmp(gender_str, "female", gender_len))
     {
         if (player->getGender() == GENDER_FEMALE)
         {
@@ -2606,11 +2241,9 @@ bool ChatHandler::HandleModifyGenderCommand(char* args)
         return false;
     }
 
-    // Set gender
     player->SetGender(gender);
     player->SetDrunkAndGender(player->Drinking().Amount(), static_cast<uint8>(gender));
 
-    // Change display ID
     player->InitDisplayIds();
 
     char const* gender_full = gender ? "female" : "male";

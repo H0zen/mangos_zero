@@ -23,7 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
 #include <cmath>
 #include "Utterance.h"
 #include "Summoning.h"
@@ -58,22 +57,11 @@
 #include "Geometry/Quat.h"
 #include "AnimatedTraps.h"
 
-/**
- * @brief Someone has used this object.
- *
- * What that comes to depends entirely on what kind of object it is, and each kind
- * answers for itself below. All that is common is what happens before -- the use
- * cooldown the template may impose, and the scripts that get a say -- and what may
- * happen after, which is one spell, cast at whoever used it.
- *
- * @param user The unit using the object.
- */
 void GameObject::Use(Unit* user)
 {
-    // user must be provided
+
     MANGOS_ASSERT(user || PrintEntryError("GameObject::Use (without user)"));
 
-    // traps and goobers are the only ones the template gives a use cooldown to
     if (uint32 cooldown = GetGOInfo()->GetCooldown())
     {
         if (m_usableAt > sWorld.GetGameTime())
@@ -84,15 +72,13 @@ void GameObject::Use(Unit* user)
         m_usableAt = sWorld.GetGameTime() + cooldown;
     }
 
-    bool const scriptReturnValue = user->IsPlayer() && sScriptMgr.OnGameObjectUse(static_cast<Player*>(user), this);
+    bool const scriptReturnValue =IsPlayer(user) && sScriptMgr.OnGameObjectUse(static_cast<Player*>(user), this);
 
     if (!scriptReturnValue)
     {
         GetMap()->Scripts().Start(DBS_ON_GOT_USE, GetEntry(), user, this);
     }
 
-    // WHAT KIND IT IS WAS DECIDED WHEN ITS TEMPLATE WAS FIXED TO IT, not here. A door
-    // does not ask what it is every time somebody opens it.
     GameObjectBehaviour::Casting const cast = m_behaviour->UsedBy(user, scriptReturnValue);
 
     if (!cast.spellId)
@@ -109,11 +95,8 @@ void GameObject::Use(Unit* user)
 
     Spell* spell = new Spell(cast.caster, spellInfo, cast.triggered, GetObjectGuid());
 
-    // spell target is user of GO
     SpellCastTargets targets;
     targets.setUnitTarget(user);
 
     spell->prepare(&targets);
 }
-
-

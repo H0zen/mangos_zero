@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <random>
 #include <utility>
 #include "Platform/Define.h"
@@ -69,11 +67,6 @@
 #include "Geometry/Vector3.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Removes auras from the target that match the specified mechanic.
- *
- * @param eff_idx The effect index containing the mechanic id.
- */
 void Spell::EffectDispelMechanic(const cast::Operation& operation)
 {
     if (!unitTarget)
@@ -104,14 +97,9 @@ void Spell::EffectDispelMechanic(const cast::Operation& operation)
     }
 }
 
-/**
- * @brief Restores the caster's dead pet and revives it with percentage-based health.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectSummonDeadPet(const cast::Operation& /*operation*/)
+void Spell::EffectSummonDeadPet(const cast::Operation& )
 {
-    Player* _player = ToPlayer(m_caster);
+    Player* _player = static_cast<Player*>(m_caster);
 
     if (!_player || damage < 0)
     {
@@ -161,16 +149,10 @@ void Spell::EffectSummonDeadPet(const cast::Operation& /*operation*/)
 
     pet->AIM_Initialize();
 
-    // _player->PetSpellInitialize(); -- action bar not removed at death and not required send at revive
     pet->SavePetToDB(PET_SAVE_AS_CURRENT);
 }
 
-/**
- * @brief Unsummons all totems currently owned by the caster.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectDestroyAllTotems(const cast::Operation& /*operation*/)
+void Spell::EffectDestroyAllTotems(const cast::Operation& )
 {
     for (int slot = 0;  slot < MAX_TOTEM_SLOT; ++slot)
     {
@@ -181,29 +163,21 @@ void Spell::EffectDestroyAllTotems(const cast::Operation& /*operation*/)
     }
 }
 
-/**
- * @brief Removes a fixed number of durability points from one or more player items.
- *
- * @param eff_idx The effect index containing the inventory slot selector.
- */
 void Spell::EffectDurabilityDamage(const cast::Operation& operation)
 {
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }
 
     int32 slot = operation.miscValue;
 
-    // FIXME: some spells effects have value -1/-2
-    // Possibly its mean -1 all player equipped items and -2 all items
     if (slot < 0)
     {
         ((Player*)unitTarget)->DurabilityPointsLossAll(damage, (slot < -1));
         return;
     }
 
-    // invalid slot value
     if (slot >= INVENTORY_SLOT_BAG_END)
     {
         return;
@@ -215,29 +189,21 @@ void Spell::EffectDurabilityDamage(const cast::Operation& operation)
     }
 }
 
-/**
- * @brief Removes a percentage of durability from one or more player items.
- *
- * @param eff_idx The effect index containing the inventory slot selector.
- */
 void Spell::EffectDurabilityDamagePCT(const cast::Operation& operation)
 {
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }
 
     int32 slot = operation.miscValue;
 
-    // FIXME: some spells effects have value -1/-2
-    // Possibly its mean -1 all player equipped items and -2 all items
     if (slot < 0)
     {
         ((Player*)unitTarget)->DurabilityLossAll(double(damage) / 100.0f, (slot < -1));
         return;
     }
 
-    // invalid slot value
     if (slot >= INVENTORY_SLOT_BAG_END)
     {
         return;
@@ -254,12 +220,7 @@ void Spell::EffectDurabilityDamagePCT(const cast::Operation& operation)
     }
 }
 
-/**
- * @brief Modifies the caster's threat on the target by a percentage.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectModifyThreatPercent(const cast::Operation& /*operation*/)
+void Spell::EffectModifyThreatPercent(const cast::Operation& )
 {
     if (!unitTarget)
     {
@@ -269,11 +230,6 @@ void Spell::EffectModifyThreatPercent(const cast::Operation& /*operation*/)
     unitTarget->GetThreatManager().modifyThreatPercent(m_caster, damage);
 }
 
-/**
- * @brief Summons a transmitted game object such as fishing nodes, rituals, or spell casters.
- *
- * @param eff_idx The effect index containing the game object entry.
- */
 void Spell::EffectTransmitted(const cast::Operation& operation)
 {
     uint32 name_id = operation.miscValue;
@@ -292,7 +248,7 @@ void Spell::EffectTransmitted(const cast::Operation& operation)
     {
         m_targets.getDestination(fx, fy, fz);
     }
-    // FIXME: this can be better check for most objects but still hack
+
     else if (operation.radiusIndex && m_spellInfo->Speed == 0)
     {
         float dis = GetSpellRadius(sSpellRadiusStore.LookupEntry(operation.radiusIndex));
@@ -304,11 +260,9 @@ void Spell::EffectTransmitted(const cast::Operation& operation)
         float max_dis = Recipe().Takes().rangeMax;
         float dis = rand_norm_f() * (max_dis - min_dis) + min_dis;
 
-        // special code for fishing bobber (TARGET_SELF_FISHING), should not try to avoid objects
-        // nor try to find ground level, but randomly vary in angle
         if (goinfo->type == GAMEOBJECT_TYPE_FISHINGNODE)
         {
-            // calculate angle variation for roughly equal dimensions of target area
+
             float max_angle = (max_dis - min_dis) / (max_dis + m_caster->Where().Extent());
             float angle_offset = max_angle * (rand_norm_f() - 0.5f);
             const Geometry::Vector3 near_ = PointNear(*m_caster, dis + m_caster->Where().Extent(), m_caster->Where().Facing() + angle_offset);
@@ -324,7 +278,7 @@ void Spell::EffectTransmitted(const cast::Operation& operation)
             }
 
             fz = liqData.level;
-            // finally, check LoS
+
             if (!HasLineOfSight(*m_caster, Geometry::Vector3(fx, fy, fz)))
             {
                 SendCastResult(SPELL_FAILED_LINE_OF_SIGHT);
@@ -340,7 +294,6 @@ void Spell::EffectTransmitted(const cast::Operation& operation)
 
     Map* cMap = m_caster->GetMap();
 
-    // if gameobject is summoning object, it should be spawned right on caster's position
     if (goinfo->type == GAMEOBJECT_TYPE_SUMMONING_RITUAL)
     {
         fx = m_caster->Where().X();
@@ -364,10 +317,8 @@ void Spell::EffectTransmitted(const cast::Operation& operation)
         case GAMEOBJECT_TYPE_FISHINGNODE:
         {
             m_caster->SetChannelObjectGuid(pGameObj->GetObjectGuid());
-            m_caster->Conjured().AddObject(pGameObj);              // will removed at spell cancel
+            m_caster->Conjured().AddObject(pGameObj);
 
-            // end time of range when possible catch fish (FISHING_BOBBER_READY_TIME..GetDuration(m_spellInfo))
-            // start time == fish-FISHING_BOBBER_READY_TIME (0..GetDuration(m_spellInfo)-FISHING_BOBBER_READY_TIME)
             int32 lastSec = 0;
             switch (urand(0, 3))
             {
@@ -382,10 +333,10 @@ void Spell::EffectTransmitted(const cast::Operation& operation)
         }
         case GAMEOBJECT_TYPE_SUMMONING_RITUAL:
         {
-            if (m_caster->IsPlayer())
+            if (IsPlayer(m_caster))
             {
                 pGameObj->Behaves<RitualBehaviour>()->Tally().UsedBy(m_caster->GetObjectGuid());
-                m_caster->Conjured().AddObject(pGameObj);          // will removed at spell cancel
+                m_caster->Conjured().AddObject(pGameObj);
             }
             break;
         }
@@ -408,46 +359,34 @@ void Spell::EffectTransmitted(const cast::Operation& operation)
     pGameObj->SetSpellId(m_spellInfo->ID);
 
     DEBUG_LOG("AddObject at SpellEfects.cpp EffectTransmitted");
-    // m_caster->Conjured().AddObject(pGameObj);
-    // m_ObjToDel.push_back(pGameObj);
 
     cMap->Add(pGameObj);
 
     pGameObj->SummonLinkedTrapIfAny();
 
-    if (m_caster->IsCreature() && ((Creature*)m_caster)->AI())
+    if (IsCreature(m_caster) && ((Creature*)m_caster)->AI())
     {
         ((Creature*)m_caster)->AI()->JustSummoned(pGameObj);
     }
-    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->IsCreature() && ((Creature*)m_originalCaster)->AI())
+    if (m_originalCaster && m_originalCaster != m_caster &&IsCreature(m_originalCaster) && ((Creature*)m_originalCaster)->AI())
     {
         ((Creature*)m_originalCaster)->AI()->JustSummoned(pGameObj);
     }
 }
 
-/**
- * @brief Placeholder handler for generic skill effects.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectSkill(const cast::Operation& /*operation*/)
+void Spell::EffectSkill(const cast::Operation& )
 {
     DEBUG_LOG("WORLD: SkillEFFECT");
 }
 
-/**
- * @brief Fully resurrects a dead player target as part of a spirit heal effect.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectSpiritHeal(const cast::Operation& /*operation*/)
+void Spell::EffectSpiritHeal(const cast::Operation& )
 {
-    // TODO player can't see the heal-animation - he should respawn some ticks later
+
     if (!unitTarget || unitTarget->IsAlive())
     {
         return;
     }
-    if (!unitTarget->IsPlayer())
+    if (!IsPlayer(unitTarget))
     {
         return;
     }
@@ -464,11 +403,10 @@ void Spell::EffectSpiritHeal(const cast::Operation& /*operation*/)
     ((Player*)unitTarget)->SpawnCorpseBones();
 }
 
-// remove insignia spell effect
-void Spell::EffectSkinPlayerCorpse(const cast::Operation& /*operation*/)
+void Spell::EffectSkinPlayerCorpse(const cast::Operation& )
 {
     DEBUG_LOG("Effect: SkinPlayerCorpse");
-    if ((!m_caster->IsPlayer()) || (!unitTarget->IsPlayer()) || (unitTarget->IsAlive()))
+    if ((!IsPlayer(m_caster)) || (!IsPlayer(unitTarget)) || (unitTarget->IsAlive()))
     {
         return;
     }
@@ -476,14 +414,9 @@ void Spell::EffectSkinPlayerCorpse(const cast::Operation& /*operation*/)
     ((Player*)unitTarget)->RemovedInsignia((Player*)m_caster);
 }
 
-/**
- * @brief Sets the player's homebind location to the current position.
- *
- * @param eff_idx The bind effect index.
- */
-void Spell::EffectBind(const cast::Operation& /*operation*/)
+void Spell::EffectBind(const cast::Operation& )
 {
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }
@@ -497,7 +430,6 @@ void Spell::EffectBind(const cast::Operation& /*operation*/)
 
     player->SetHomebindToLocation(loc, area_id);
 
-    // binding
     WorldPacket data(SMSG_BINDPOINTUPDATE, (4 + 4 + 4 + 4 + 4));
     data << float(loc.X());
     data << float(loc.Y());
@@ -512,7 +444,6 @@ void Spell::EffectBind(const cast::Operation& /*operation*/)
     DEBUG_LOG("New Home MapId is %u", loc.MapId());
     DEBUG_LOG("New Home AreaId is %u", area_id);
 
-    // zone update
     data.Initialize(SMSG_PLAYERBOUND, 8 + 4);
     data << m_caster->GetObjectGuid();
     data << uint32(area_id);

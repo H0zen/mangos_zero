@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks of a vendor.
 namespace items
 {
     void SellItem(Player& who, WorldPacket& packet);

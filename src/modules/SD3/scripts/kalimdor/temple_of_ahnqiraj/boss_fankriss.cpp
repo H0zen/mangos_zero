@@ -78,7 +78,7 @@ struct boss_fankriss : public CreatureScript
         uint32 m_uiEntangleTimer;
         uint32 m_uiEntangleSummonTimer;
 
-        ObjectGuid m_EntangleTargetGuid;
+        ObjectGuid m_EntangleTargetGuid = 0;
 
         void Reset() override
         {

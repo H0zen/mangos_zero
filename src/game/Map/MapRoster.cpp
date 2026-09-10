@@ -29,9 +29,7 @@
 
 MapRoster::~MapRoster()
 {
-    // The shutdown path empties the sheet through RetireAll while the vessels are still
-    // afloat and everything else is still standing. Anything left here is a process that
-    // never got that far, and the maps go without ceremony.
+
     for (auto const& filed : m_sheet)
     {
         delete filed.second;
@@ -78,8 +76,6 @@ void MapRoster::Retire(MapKey const& key)
         m_sheet.erase(filed);
     }
 
-    // Struck off first, then emptied: unloading a map runs scripts and destructors that ask
-    // the roster what is open, and what they must not be told is the map being torn down.
     leaving->UnloadAll(true);
     delete leaving;
 }

@@ -31,7 +31,7 @@
 
 namespace Movement
 {
-    // Initialize the evaluation methods for different spline modes
+
     SplineBase::EvaluationMethtod SplineBase::evaluators[SplineBase::ModesEnd] =
     {
         &SplineBase::EvaluateLinear,
@@ -40,7 +40,6 @@ namespace Movement
         (EvaluationMethtod)& SplineBase::UninitializedSpline,
     };
 
-    // Initialize the derivative evaluation methods for different spline modes
     SplineBase::EvaluationMethtod SplineBase::derivative_evaluators[SplineBase::ModesEnd] =
     {
         &SplineBase::EvaluateDerivativeLinear,
@@ -49,7 +48,6 @@ namespace Movement
         (EvaluationMethtod)& SplineBase::UninitializedSpline,
     };
 
-    // Initialize the segment length calculation methods for different spline modes
     SplineBase::SegLenghtMethtod SplineBase::seglengths[SplineBase::ModesEnd] =
     {
         &SplineBase::SegLengthLinear,
@@ -58,38 +56,29 @@ namespace Movement
         (SegLenghtMethtod)& SplineBase::UninitializedSpline,
     };
 
-    // Initialize the spline initialization methods for different spline modes
     SplineBase::InitMethtod SplineBase::initializers[SplineBase::ModesEnd] =
     {
-        //&SplineBase::InitLinear,
-        &SplineBase::InitCatmullRom,    // we should use catmullrom initializer even for linear mode! (client's internal structure limitation)
+
+        &SplineBase::InitCatmullRom,
         &SplineBase::InitCatmullRom,
         &SplineBase::InitBezier3,
         (InitMethtod)& SplineBase::UninitializedSpline,
     };
 
     using Geometry::Matrix4;
-    // Catmull-Rom spline coefficients
+
     static const Matrix4 s_catmullRomCoeffs(
         -0.5f, 1.5f, -1.5f, 0.5f,
         1.f, -2.5f, 2.f, -0.5f,
         -0.5f, 0.f,  0.5f, 0.f,
         0.f,  1.f,  0.f,  0.f);
 
-    // Bezier spline coefficients
     static const Matrix4 s_Bezier3Coeffs(
         -1.f,  3.f, -3.f, 1.f,
         3.f, -6.f,  3.f, 0.f,
         -3.f,  3.f,  0.f, 0.f,
         1.f,  0.f,  0.f, 0.f);
 
-    /**
-     * @brief Evaluates the spline using the given matrix and control points.
-     * @param vertice Array of control points.
-     * @param t Parameter for interpolation.
-     * @param matr Coefficient matrix.
-     * @param result Output vector for the evaluated point.
-     */
     inline static void C_Evaluate(const Vector3* vertice, float t, const Matrix4& matr, Vector3& result)
     {
         Vector4 tvec(t * t * t, t * t, t, 1.f);
@@ -99,13 +88,6 @@ namespace Movement
             vertice[2] * weights[2] + vertice[3] * weights[3];
     }
 
-    /**
-     * @brief Evaluates the derivative of the spline using the given matrix and control points.
-     * @param vertice Array of control points.
-     * @param t Parameter for interpolation.
-     * @param matr Coefficient matrix.
-     * @param result Output vector for the evaluated derivative.
-     */
     inline static void C_Evaluate_Derivative(const Vector3* vertice, float t, const Matrix4& matr, Vector3& result)
     {
         Vector4 tvec(3.f * t * t, 2.f * t, 1.f, 0.f);
@@ -115,36 +97,18 @@ namespace Movement
             vertice[2] * weights[2] + vertice[3] * weights[3];
     }
 
-    /**
-     * @brief Evaluates the spline linearly.
-     * @param index Index of the segment.
-     * @param u Parameter for interpolation.
-     * @param result Output vector for the evaluated point.
-     */
     void SplineBase::EvaluateLinear(index_type index, float u, Vector3& result) const
     {
         MANGOS_ASSERT(index >= index_lo && index < index_hi);
         result = points[index] + (points[index + 1] - points[index]) * u;
     }
 
-    /**
-     * @brief Evaluates the spline using Catmull-Rom interpolation.
-     * @param index Index of the segment.
-     * @param t Parameter for interpolation.
-     * @param result Output vector for the evaluated point.
-     */
     void SplineBase::EvaluateCatmullRom(index_type index, float t, Vector3& result) const
     {
         MANGOS_ASSERT(index >= index_lo && index < index_hi);
         C_Evaluate(&points[index - 1], t, s_catmullRomCoeffs, result);
     }
 
-    /**
-     * @brief Evaluates the spline using Bezier interpolation.
-     * @param index Index of the segment.
-     * @param t Parameter for interpolation.
-     * @param result Output vector for the evaluated point.
-     */
     void SplineBase::EvaluateBezier3(index_type index, float t, Vector3& result) const
     {
         index *= 3u;
@@ -152,36 +116,18 @@ namespace Movement
         C_Evaluate(&points[index], t, s_Bezier3Coeffs, result);
     }
 
-    /**
-     * @brief Evaluates the derivative of the spline linearly.
-     * @param index Index of the segment.
-     * @param t Parameter for interpolation (not used).
-     * @param result Output vector for the evaluated derivative.
-     */
     void SplineBase::EvaluateDerivativeLinear(index_type index, float, Vector3& result) const
     {
         MANGOS_ASSERT(index >= index_lo && index < index_hi);
         result = points[index + 1] - points[index];
     }
 
-    /**
-     * @brief Evaluates the derivative of the spline using Catmull-Rom interpolation.
-     * @param index Index of the segment.
-     * @param t Parameter for interpolation.
-     * @param result Output vector for the evaluated derivative.
-     */
     void SplineBase::EvaluateDerivativeCatmullRom(index_type index, float t, Vector3& result) const
     {
         MANGOS_ASSERT(index >= index_lo && index < index_hi);
         C_Evaluate_Derivative(&points[index - 1], t, s_catmullRomCoeffs, result);
     }
 
-    /**
-     * @brief Evaluates the derivative of the spline using Bezier interpolation.
-     * @param index Index of the segment.
-     * @param t Parameter for interpolation.
-     * @param result Output vector for the evaluated derivative.
-     */
     void SplineBase::EvaluateDerivativeBezier3(index_type index, float t, Vector3& result) const
     {
         index *= 3u;
@@ -189,22 +135,12 @@ namespace Movement
         C_Evaluate_Derivative(&points[index], t, s_Bezier3Coeffs, result);
     }
 
-    /**
-     * @brief Calculates the length of a linear segment.
-     * @param index Index of the segment.
-     * @return Length of the segment.
-     */
     float SplineBase::SegLengthLinear(index_type index) const
     {
         MANGOS_ASSERT(index >= index_lo && index < index_hi);
         return (points[index] - points[index + 1]).length();
     }
 
-    /**
-     * @brief Calculates the length of a Catmull-Rom segment.
-     * @param index Index of the segment.
-     * @return Length of the segment.
-     */
     float SplineBase::SegLengthCatmullRom(index_type index) const
     {
         MANGOS_ASSERT(index >= index_lo && index < index_hi);
@@ -225,11 +161,6 @@ namespace Movement
         return length;
     }
 
-    /**
-     * @brief Calculates the length of a Bezier segment.
-     * @param index Index of the segment.
-     * @return Length of the segment.
-     */
     float SplineBase::SegLengthBezier3(index_type index) const
     {
         index *= 3u;
@@ -253,12 +184,6 @@ namespace Movement
         return length;
     }
 
-    /**
-     * @brief Initializes the spline with the given control points and evaluation mode.
-     * @param controls Array of control points.
-     * @param count Number of control points.
-     * @param m Evaluation mode.
-     */
     void SplineBase::init_spline(const Vector3* controls, index_type count, EvaluationMode m)
     {
         m_mode = m;
@@ -267,13 +192,6 @@ namespace Movement
         (this->*initializers[m_mode])(controls, count, cyclic, 0);
     }
 
-    /**
-     * @brief Initializes a cyclic spline with the given control points and evaluation mode.
-     * @param controls Array of control points.
-     * @param count Number of control points.
-     * @param m Evaluation mode.
-     * @param cyclic_point Index of the cyclic point.
-     */
     void SplineBase::init_cyclic_spline(const Vector3* controls, index_type count, EvaluationMode m, index_type cyclic_point)
     {
         m_mode = m;
@@ -282,13 +200,6 @@ namespace Movement
         (this->*initializers[m_mode])(controls, count, cyclic, cyclic_point);
     }
 
-    /**
-     * @brief Initializes the spline linearly.
-     * @param controls Array of control points.
-     * @param count Number of control points.
-     * @param cyclic Indicates if the spline is cyclic.
-     * @param cyclic_point Index of the cyclic point.
-     */
     void SplineBase::InitLinear(const Vector3* controls, index_type count, bool cyclic, index_type cyclic_point)
     {
         MANGOS_ASSERT(count >= 2);
@@ -298,8 +209,6 @@ namespace Movement
 
         memcpy(&points[0], controls, sizeof(Vector3) * count);
 
-        // first and last two indexes are space for special 'virtual points'
-        // these points are required for proper C_Evaluate and C_Evaluate_Derivative method work
         if (cyclic)
         {
             points[count] = controls[cyclic_point];
@@ -313,13 +222,6 @@ namespace Movement
         index_hi = cyclic ? count : (count - 1);
     }
 
-    /**
-     * @brief Initializes the spline using Catmull-Rom interpolation.
-     * @param controls Array of control points.
-     * @param count Number of control points.
-     * @param cyclic Indicates if the spline is cyclic.
-     * @param cyclic_point Index of the cyclic point.
-     */
     void SplineBase::InitCatmullRom(const Vector3* controls, index_type count, bool cyclic, index_type cyclic_point)
     {
         const int real_size = count + (cyclic ? (1 + 2) : (1 + 1));
@@ -331,8 +233,6 @@ namespace Movement
 
         memcpy(&points[lo_index], controls, sizeof(Vector3) * count);
 
-        // first and last two indexes are space for special 'virtual points'
-        // these points are required for proper C_Evaluate and C_Evaluate_Derivative method work
         if (cyclic)
         {
             if (cyclic_point == 0)
@@ -357,14 +257,7 @@ namespace Movement
         index_hi = high_index + (cyclic ? 1 : 0);
     }
 
-    /**
-     * @brief Initializes the spline using Bezier interpolation.
-     * @param controls Array of control points.
-     * @param count Number of control points.
-     * @param cyclic Indicates if the spline is cyclic (not used).
-     * @param cyclic_point Index of the cyclic point (not used).
-     */
-    void SplineBase::InitBezier3(const Vector3* controls, index_type count, bool /*cyclic*/, index_type /*cyclic_point*/)
+    void SplineBase::InitBezier3(const Vector3* controls, index_type count, bool , index_type )
     {
         index_type c = count / 3u * 3u;
         index_type t = c / 3u;
@@ -374,12 +267,9 @@ namespace Movement
 
         index_lo = 0;
         index_hi = t - 1;
-        // mov_assert(points.size() % 3 == 0);
+
     }
 
-    /**
-     * @brief Clears the spline.
-     */
     void SplineBase::clear()
     {
         index_lo = 0;
@@ -387,10 +277,6 @@ namespace Movement
         points.clear();
     }
 
-    /**
-     * @brief Converts the spline to a string representation.
-     * @return String representation of the spline.
-     */
     std::string SplineBase::ToString() const
     {
         std::stringstream str;

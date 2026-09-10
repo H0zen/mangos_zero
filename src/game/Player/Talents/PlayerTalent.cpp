@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -70,12 +68,6 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Learns a specific talent rank if all requirements are satisfied.
- *
- * @param talentId The talent entry identifier.
- * @param talentRank The requested talent rank index.
- */
 void Player::LearnTalent(uint32 talentId, uint32 talentRank)
 {
     uint32 CurTalentPoints = GetFreeTalentPoints();
@@ -104,13 +96,11 @@ void Player::LearnTalent(uint32 talentId, uint32 talentRank)
         return;
     }
 
-    // prevent learn talent for different class (cheating)
     if ((getClassMask() & talentTabInfo->ClassMask) == 0)
     {
         return;
     }
 
-    // find current max talent rank
     uint32 curtalent_maxrank = 0;
     for (int32 k = MAX_TALENT_RANK - 1; k > -1; --k)
     {
@@ -121,19 +111,16 @@ void Player::LearnTalent(uint32 talentId, uint32 talentRank)
         }
     }
 
-    // we already have same or higher talent rank learned
     if (curtalent_maxrank >= (talentRank + 1))
     {
         return;
     }
 
-    // check if we have enough talent points
     if (CurTalentPoints < (talentRank - curtalent_maxrank + 1))
     {
         return;
     }
 
-    // Check if it requires another talent
     if (talentInfo->DependsOn > 0)
     {
         if (TalentEntry const* depTalentInfo = sTalentStore.LookupEntry(talentInfo->DependsOn))
@@ -157,24 +144,22 @@ void Player::LearnTalent(uint32 talentId, uint32 talentRank)
         }
     }
 
-    // Check if it requires spell
     if (talentInfo->RequiredSpellID && !HasSpell(talentInfo->RequiredSpellID))
     {
         return;
     }
 
-    // Find out how many points we have in this field
     uint32 spentPoints = 0;
 
     uint32 tTab = talentInfo->TalentTab;
     if (talentInfo->Row > 0)
     {
         unsigned int numRows = sTalentStore.GetNumRows();
-        for (unsigned int i = 0; i < numRows; ++i)          // Loop through all talents.
+        for (unsigned int i = 0; i < numRows; ++i)
         {
-            // Someday, someone needs to revamp
+
             const TalentEntry* tmpTalent = sTalentStore.LookupEntry(i);
-            if (tmpTalent)                                  // the way talents are tracked
+            if (tmpTalent)
             {
                 if (tmpTalent->TalentTab == tTab)
                 {
@@ -193,13 +178,11 @@ void Player::LearnTalent(uint32 talentId, uint32 talentRank)
         }
     }
 
-    // not have required min points spent in talent tree
     if (spentPoints < (talentInfo->Row * MAX_TALENT_RANK))
     {
         return;
     }
 
-    // spell not set in talent.dbc
     uint32 spellid = talentInfo->RankID[talentRank];
     if (spellid == 0)
     {
@@ -207,24 +190,16 @@ void Player::LearnTalent(uint32 talentId, uint32 talentRank)
         return;
     }
 
-    // already known
     if (HasSpell(spellid))
     {
         return;
     }
 
-    // learn! (other talent ranks will unlearned at learning)
     learnSpell(spellid, false);
     DETAIL_LOG("TalentID: %u Rank: %u Spell: %u\n", talentId, talentRank, spellid);
 
 }
 
-/**
- * @brief Refreshes stored fall tracking data when movement indicates a new fall state.
- *
- * @param minfo The current movement information.
- * @param opcode The movement opcode being processed.
- */
 void Player::UpdateFallInformationIfNeed(MovementInfo const& minfo, uint16 opcode)
 {
     if (m_lastFallTime >= minfo.GetFallTime() || m_lastFallZ <= minfo.GetPos()->z || opcode == MSG_MOVE_FALL_LAND)
@@ -233,12 +208,6 @@ void Player::UpdateFallInformationIfNeed(MovementInfo const& minfo, uint16 opcod
     }
 }
 
-/**
- * @brief Checks whether the player can currently see spell-click interaction on a creature.
- *
- * @param c The creature to evaluate.
- * @return True if spell-click should be visible; otherwise, false.
- */
 bool Player::canSeeSpellClickOn(Creature const* c) const
 {
     if (!c->HasNpcFlag(UNIT_NPC_FLAG_SPELLCLICK))

@@ -23,19 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file AccountCommands.cpp
- * @brief Implementation of account management chat commands.
- *
- * This file contains chat command handlers for account-related operations including:
- * - Account information display
- * - Password management
- * - Account locking
- * - Account creation and deletion
- * - Character listing
- * - Account properties modification (addons, GM level, password)
- */
-
 #include <string>
 #include "World.h"
 #include "Chat.h"
@@ -43,15 +30,9 @@
 #include "Database/DatabaseEnv.h"
 #include "Player.h"
 
-/**
- * @brief Displays the current account information and access level.
- *
- * @param args Command arguments (should be empty).
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleAccountCommand(char* args)
 {
-    // let show subcommands at unexpected data in args
+
     if (*args)
     {
         return false;
@@ -62,18 +43,9 @@ bool ChatHandler::HandleAccountCommand(char* args)
     return true;
 }
 
-/**
- * @brief Changes the account password after verifying the old password.
- *
- * This command is only available through remote administration (RA) and requires
- * the old password to be correct before the new password is accepted.
- *
- * @param args Command arguments: old_password new_password new_password_confirm.
- * @returns True if the password was changed successfully, false otherwise.
- */
 bool ChatHandler::HandleAccountPasswordCommand(char* args)
 {
-    // allow use from RA, but not from console (not have associated account id)
+
     if (!GetAccountId())
     {
         SendSysMessage(LANG_RA_ONLY_COMMAND);
@@ -81,7 +53,6 @@ bool ChatHandler::HandleAccountPasswordCommand(char* args)
         return false;
     }
 
-    // allow or quoted string with possible spaces or literal without spaces
     char* old_pass = ExtractQuotedOrLiteralArg(&args);
     char* new_pass = ExtractQuotedOrLiteralArg(&args);
     char* new_pass_c = ExtractQuotedOrLiteralArg(&args);
@@ -120,30 +91,21 @@ bool ChatHandler::HandleAccountPasswordCommand(char* args)
             SendSysMessage(LANG_PASSWORD_TOO_LONG);
             SetSentErrorMessage(true);
             return false;
-        case AOR_NAME_NOT_EXIST:                            // not possible case, don't want get account name for output
+        case AOR_NAME_NOT_EXIST:
         default:
             SendSysMessage(LANG_COMMAND_NOTCHANGEPASSWORD);
             SetSentErrorMessage(true);
             return false;
     }
 
-    // OK, but avoid normal report for hide passwords, but log use command for anyone
     LogCommand(".account password *** *** ***");
     SetSentErrorMessage(true);
     return false;
 }
 
-/**
- * @brief Locks or unlocks the current account to prevent or allow logins.
- *
- * This command is only available through remote administration (RA).
- *
- * @param args Command arguments: on/off value to lock or unlock the account.
- * @returns True if the lock state was changed successfully, false otherwise.
- */
 bool ChatHandler::HandleAccountLockCommand(char* args)
 {
-    // allow use from RA, but not from console (not have associated account id)
+
     if (!GetAccountId())
     {
         SendSysMessage(LANG_RA_ONLY_COMMAND);
@@ -173,12 +135,6 @@ bool ChatHandler::HandleAccountLockCommand(char* args)
     return true;
 }
 
-/**
- * @brief Displays a list of accounts currently logged in to the realm.
- *
- * @param args Command arguments: optional limit (default 100) for maximum accounts to display.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleAccountOnlineListCommand(char* args)
 {
     uint32 limit;
@@ -187,21 +143,11 @@ bool ChatHandler::HandleAccountOnlineListCommand(char* args)
         return false;
     }
 
-    ///- Get the list of accounts ID logged to the realm
-    //                                                 0   1         2        3        4
     QueryResult* result = LoginDatabase.PQuery("SELECT `id`, `username`, `last_ip`, `gmlevel`, `expansion` FROM `account` WHERE `active_realm_id` = %u", realmID);
 
     return ShowAccountListHelper(result, &limit);
 }
 
-/**
- * @brief Deletes an account and all associated characters in the realm.
- *
- * This command can only delete accounts with lower security level than the executor.
- *
- * @param args Command arguments: account name to delete.
- * @returns True if the account was deleted successfully, false otherwise.
- */
 bool ChatHandler::HandleAccountDeleteCommand(char* args)
 {
     if (!*args)
@@ -216,9 +162,6 @@ bool ChatHandler::HandleAccountDeleteCommand(char* args)
         return false;
     }
 
-    /// Commands not recommended call from chat, but support anyway
-    /// can delete only for account with less security
-    /// This is also reject self apply in fact
     if (HasLowerSecurityAccount(nullptr, account_id, true))
     {
         return false;
@@ -247,15 +190,9 @@ bool ChatHandler::HandleAccountDeleteCommand(char* args)
     return true;
 }
 
-/**
- * @brief Creates a new account with optional expansion level.
- *
- * @param args Command arguments: account_name password [expansion_level].
- * @returns True if the account was created successfully, false otherwise.
- */
 bool ChatHandler::HandleAccountCreateCommand(char* args)
 {
-    ///- %Parse the command line arguments
+
     char* szAcc = ExtractQuotedOrLiteralArg(&args);
     char* szPassword = ExtractQuotedOrLiteralArg(&args);
     if (!szAcc || !szPassword)
@@ -263,7 +200,6 @@ bool ChatHandler::HandleAccountCreateCommand(char* args)
         return false;
     }
 
-    // normalized in accmgr.CreateAccount
     std::string account_name = szAcc;
     std::string password = szPassword;
 
@@ -271,7 +207,7 @@ bool ChatHandler::HandleAccountCreateCommand(char* args)
     uint32 expansion = 0;
     if (ExtractUInt32(&args, expansion))
     {
-        // No point in assigning to result as it's never used on this side of the if/else branch
+
         sAccountMgr.CreateAccount(account_name, password, expansion);
     }
     else
@@ -303,38 +239,25 @@ bool ChatHandler::HandleAccountCreateCommand(char* args)
     return true;
 }
 
-/**
- * @brief Lists all characters for a specified account.
- *
- * @param args Command arguments: optional account name or target player to query their account.
- * @returns True if the character list was displayed successfully, false otherwise.
- */
 bool ChatHandler::HandleAccountCharactersCommand(char* args)
 {
-    ///- Get the command line arguments
+
     std::string account_name;
-    Player* target = nullptr;                                  // only for triggering use targeted player account
+    Player* target = nullptr;
     uint32 account_id = ExtractAccountId(&args, &account_name, &target);
     if (!account_id)
     {
         return false;
     }
 
-    ///- Get the characters for account id
     QueryResult* result = CharacterDatabase.PQuery("SELECT `guid`, `name`, `race`, `class`, `level` FROM `characters` WHERE `account` = %u", account_id);
 
     return ShowPlayerListHelper(result);
 }
 
-/**
- * @brief Sets the expansion level for an account.
- *
- * @param args Command arguments: account_name expansion_level.
- * @returns True if the expansion level was set successfully, false otherwise.
- */
 bool ChatHandler::HandleAccountSetAddonCommand(char* args)
 {
-    ///- Get the command line arguments
+
     char* accountStr = ExtractOptNotLastArg(&args);
 
     std::string account_name;
@@ -344,8 +267,6 @@ bool ChatHandler::HandleAccountSetAddonCommand(char* args)
         return false;
     }
 
-    // Let set addon state only for lesser (strong) security level
-    // or to self account
     if (GetAccountId() && GetAccountId() != account_id && HasLowerSecurityAccount(nullptr, account_id, true))
     {
         return false;
@@ -357,21 +278,11 @@ bool ChatHandler::HandleAccountSetAddonCommand(char* args)
         return false;
     }
 
-    // No SQL injection
     LoginDatabase.PExecute("UPDATE `account` SET `expansion` = '%u' WHERE `id` = '%u'", lev, account_id);
     PSendSysMessage(LANG_ACCOUNT_SETADDON, account_name.c_str(), account_id, lev);
     return true;
 }
 
-/**
- * @brief Sets the GM level (security level) for an account.
- *
- * This command can only set security levels lower than the executor's level.
- * Self-application is not allowed.
- *
- * @param args Command arguments: account_name gm_level.
- * @returns True if the GM level was set successfully, false otherwise.
- */
 bool ChatHandler::HandleAccountSetGmLevelCommand(char* args)
 {
     char* accountStr = ExtractOptNotLastArg(&args);
@@ -384,7 +295,6 @@ bool ChatHandler::HandleAccountSetGmLevelCommand(char* args)
         return false;
     }
 
-    /// only target player different from self allowed
     if (GetAccountId() == targetAccountId)
     {
         return false;
@@ -403,14 +313,11 @@ bool ChatHandler::HandleAccountSetGmLevelCommand(char* args)
         return false;
     }
 
-    /// can set security level only for target with less security and to less security that we have
-    /// This will reject self apply by specify account name
     if (HasLowerSecurityAccount(nullptr, targetAccountId, true))
     {
         return false;
     }
 
-    /// account can't set security to same or grater level, need more power GM or console
     AccountTypes plSecurity = GetAccessLevel();
     if (AccountTypes(gm) >= plSecurity)
     {
@@ -431,18 +338,9 @@ bool ChatHandler::HandleAccountSetGmLevelCommand(char* args)
     return true;
 }
 
-/**
- * @brief Sets the password for a specified account.
- *
- * This command can only set passwords for accounts with lower security level.
- * Both passwords must match to be accepted.
- *
- * @param args Command arguments: account_name new_password new_password_confirm.
- * @returns True if the password was set successfully, false otherwise.
- */
 bool ChatHandler::HandleAccountSetPasswordCommand(char* args)
 {
-    ///- Get the command line arguments
+
     std::string account_name;
     uint32 targetAccountId = ExtractAccountId(&args, &account_name);
     if (!targetAccountId)
@@ -450,7 +348,6 @@ bool ChatHandler::HandleAccountSetPasswordCommand(char* args)
         return false;
     }
 
-    // allow or quoted string with possible spaces or literal without spaces
     char* szPassword1 = ExtractQuotedOrLiteralArg(&args);
     char* szPassword2 = ExtractQuotedOrLiteralArg(&args);
     if (!szPassword1 || !szPassword2)
@@ -458,8 +355,6 @@ bool ChatHandler::HandleAccountSetPasswordCommand(char* args)
         return false;
     }
 
-    /// can set password only for target with less security
-    /// This is also reject self apply in fact
     if (HasLowerSecurityAccount(nullptr, targetAccountId, true))
     {
         return false;
@@ -493,7 +388,6 @@ bool ChatHandler::HandleAccountSetPasswordCommand(char* args)
             return false;
     }
 
-    // OK, but avoid normal report for hide passwords, but log use command for anyone
     char msg[100];
     snprintf(msg, 100, ".account set password %s *** ***", account_name.c_str());
     LogCommand(msg);

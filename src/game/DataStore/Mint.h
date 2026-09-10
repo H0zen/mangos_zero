@@ -23,28 +23,10 @@
 
 #include <atomic>
 
-/**
- * @brief Where the numbers a running world hands out are struck.
- *
- * SEPARATE FROM THE DATA STORE, and that is the whole point. `ARCH.md` §21 says a
- * DataStore is loaded at boot, is immutable afterwards, and is therefore read from
- * any map thread with no lock at all. Every counter here breaks all three: it is
- * written while the world runs, and it is written from PHASE B -- a pet summoned in
- * `SpellEffects`, an item created in `Item`, a corpse in `PlayerDeath` -- which runs
- * one thread per map. Kept alongside the templates, these ten counters made the
- * store's "no lock needed" true of the tables and false of the object.
- *
- * So they live here, and every one of them is atomic.
- */
 class Mint
 {
     public:
-        /**
-         * @brief One counter, handed out to whoever asks next.
-         *
-         * `fetch_add` is the whole mechanism: the value a caller gets is the one
-         * nobody else can get, whichever thread asks and however many ask at once.
-         */
+
         class Counter
         {
             public:
@@ -54,8 +36,6 @@ class Mint
                 void Set(uint32 val) { m_next.store(val, std::memory_order_relaxed); }
                 uint32 NextAfterMaxUsed() const { return m_next.load(std::memory_order_relaxed); }
 
-                /// The next number. Nought when the range is spent, and the server
-                /// is told to stop -- a spent range must never wrap into a live guid.
                 uint32 Next();
 
             private:
@@ -66,7 +46,6 @@ class Mint
 
         Mint();
 
-        /// The numbers a running world strikes.
         Counter& PlayerGuids() { return m_players; }
         Counter& ItemGuids() { return m_items; }
         Counter& CorpseGuids() { return m_corpses; }
@@ -76,18 +55,14 @@ class Mint
         Counter& MailIds() { return m_mails; }
         Counter& PetNumbers() { return m_pets; }
 
-        /// Where the world database's own spawn guids stop and generated ones begin.
-        /// A static spawn added by a command must land below the line.
         uint32 FirstTemporaryCreature() const { return m_firstTemporaryCreature; }
         uint32 FirstTemporaryGameObject() const { return m_firstTemporaryGameObject; }
         void FirstTemporaryCreature(uint32 guid) { m_firstTemporaryCreature = guid; }
         void FirstTemporaryGameObject(uint32 guid) { m_firstTemporaryGameObject = guid; }
 
-        /// A static spawn guid, or nought when the space below the line is spent.
         uint32 StaticCreatureGuid();
         uint32 StaticGameObjectGuid();
 
-        /// The reserved ranges themselves, set once at boot.
         Counter& StaticCreatureGuids() { return m_staticCreatures; }
         Counter& StaticGameObjectGuids() { return m_staticGameObjects; }
 

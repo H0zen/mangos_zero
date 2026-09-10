@@ -197,8 +197,8 @@ TEST_CASE("The queued attempt survives intact")
     HitQueue queue;
 
     Blow a;
-    a.attacker = ObjectGuid(HIGHGUID_PLAYER, static_cast<uint32>(11));
-    a.victim = ObjectGuid(HIGHGUID_UNIT, static_cast<uint32>(7), static_cast<uint32>(22));
+    a.attacker = MakeGuid(HIGHGUID_PLAYER, static_cast<uint32>(11));
+    a.victim = MakeGuid(HIGHGUID_UNIT, static_cast<uint32>(7), static_cast<uint32>(22));
     a.delivery = combat::Delivery::Spell;
     a.spellId = 133;
     a.effectIndex = 1;

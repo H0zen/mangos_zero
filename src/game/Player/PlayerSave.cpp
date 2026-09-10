@@ -97,11 +97,9 @@
 
 void Player::SaveToDB()
 {
-    // we should assure this: ASSERT((m_nextSave != sWorld.getConfig(CONFIG_UINT32_INTERVAL_SAVE)));
-    // delay auto save at any saves (manual, in code, or autosave)
+
     m_nextSave = sWorld.getConfig(CONFIG_UINT32_INTERVAL_SAVE);
 
-    // lets allow only players in world to be saved
     if (IsBeingTeleportedFar())
     {
         ScheduleDelayedOperation(DELAYED_SAVE_PLAYER);
@@ -157,15 +155,7 @@ void Player::SaveToDB()
 
     if (!IsBeingTeleported())
     {
-        // What goes in this row is what the client will be handed at the next login, so it
-        // is the map the ship SAILS and a point on it -- never the deck map, which the
-        // client cannot load. Where he actually stands is the deck position saved in the
-        // transport columns below, and that is the one that survives the voyage intact.
-        //
-        // The vessel is taken from the boarding relationship when it is intact, and from
-        // the map otherwise: a GM `.tele` onto a hull puts him there with no transport at
-        // all. Written once, a deck map in this column is unloadable for ever and the
-        // character is stuck at the loading screen with no way back in.
+
         uint32 savedMap = GetMapId();
         float savedX = Where().X(), savedY = Where().Y();
         float savedZ = Where().Z(), savedO = Where().Facing();
@@ -207,7 +197,7 @@ void Player::SaveToDB()
     }
 
     std::ostringstream ss;
-    ss << m_taxi;                                   // string with TaxiMaskSize numbers
+    ss << m_taxi;
     uberInsert.addString(ss);
 
     uberInsert.addUInt32(IsInWorld() ? 1 : 0);
@@ -220,8 +210,7 @@ void Player::SaveToDB()
     uberInsert.addFloat(finiteAlways(Resting().Bonus()));
     uberInsert.addUInt64(uint64(time(nullptr)));
     uberInsert.addUInt32(HasPlayerFlag(PLAYER_FLAGS_RESTING) ? 1 : 0);
-    // save, far from tavern/city
-    // save, but in tavern/city
+
     uberInsert.addUInt32(m_resetTalentsCost);
     uberInsert.addUInt64(uint64(m_resetTalentsTime));
 
@@ -242,7 +231,7 @@ void Player::SaveToDB()
 
     uberInsert.addUInt32(m_ExtraFlags);
 
-    uberInsert.addUInt32(uint32(GetStableSlots()));         // to prevent save uint8 as char
+    uberInsert.addUInt32(uint32(GetStableSlots()));
 
     uberInsert.addUInt32(uint32(m_atLoginFlags));
 
@@ -250,7 +239,7 @@ void Player::SaveToDB()
 
     uberInsert.addUInt64(uint64(m_deathExpireTime));
 
-    ss << m_taxi.SaveTaxiDestinationsToString();       // string
+    ss << m_taxi.SaveTaxiDestinationsToString();
     uberInsert.addString(ss);
 
     uberInsert.addUInt32(uint32(m_honor.HighestRank().rank));
@@ -259,25 +248,24 @@ void Player::SaveToDB()
     uberInsert.addUInt32(m_honor.Kills(false));
     uberInsert.addUInt32(m_honor.Kills(true));
 
-    // FIXME: at this moment send to DB as unsigned, including unit32(-1)
     uberInsert.addUInt32(GetUInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX));
 
-    uberInsert.addUInt16(static_cast<uint16>(GetDrunkAndGender() & 0xFFFE));   // DrunkState
+    uberInsert.addUInt16(static_cast<uint16>(GetDrunkAndGender() & 0xFFFE));
 
     uberInsert.addUInt32(GetHealth());
 
-    for (uint32 i = 0; i < MAX_POWERS; ++i) // power1 to power5
+    for (uint32 i = 0; i < MAX_POWERS; ++i)
     {
         uberInsert.addUInt32(GetPower(Powers(i)));
     }
 
-    for (uint32 i = 0; i < PLAYER_EXPLORED_ZONES_SIZE; ++i) // string
+    for (uint32 i = 0; i < PLAYER_EXPLORED_ZONES_SIZE; ++i)
     {
         ss << GetExploredZones(i) << " ";
     }
-    uberInsert.addString(ss); // exploredZOnes
+    uberInsert.addString(ss);
 
-    for (uint32 i = 0; i < EQUIPMENT_SLOT_END; ++i)         // string: item id, ench (perm/temp)
+    for (uint32 i = 0; i < EQUIPMENT_SLOT_END; ++i)
     {
         ss << GetUInt32Value(PLAYER_VISIBLE_ITEM_1_0 + i * MAX_VISIBLE_ITEM_OFFSET) << " ";
 
@@ -285,16 +273,16 @@ void Player::SaveToDB()
         uint32 ench2 = GetUInt32Value(PLAYER_VISIBLE_ITEM_1_0 + i * MAX_VISIBLE_ITEM_OFFSET + 1 + TEMP_ENCHANTMENT_SLOT);
         ss << uint32(MAKE_PAIR32(ench1, ench2)) << " ";
     }
-    uberInsert.addString(ss); // EquipmentCache
+    uberInsert.addString(ss);
 
     uberInsert.addUInt32(GetUInt32Value(PLAYER_AMMO_ID));
 
-    uberInsert.addUInt32(uint32(GetActionBars())); // actionbars
+    uberInsert.addUInt32(uint32(GetActionBars()));
     uberInsert.addUInt32(GetCreatedDate());
 
     uberInsert.Execute();
 
-    if (Post().Changed())                                     // save mails only when needed
+    if (Post().Changed())
     {
         SaveMail();
     }
@@ -309,34 +297,27 @@ void Player::SaveToDB()
     _SaveSkills();
     m_reputationMgr.SaveToDB();
     _SaveHonorCP();
-    GetSession()->SaveTutorialsData();                      // changed only while character in game
+    GetSession()->SaveTutorialsData();
 
     CharacterDatabase.CommitTransaction();
 
-    // check if stats should only be saved on logout
-    // save stats can be out of transaction
     if (m_session->isLogingOut() || !sWorld.getConfig(CONFIG_BOOL_STATS_SAVE_ONLY_ON_LOGOUT))
     {
         _SaveStats();
     }
 
-    // save pet (hunter pet level and experience and all type pets health/mana).
     if (Pet* pet = GetPet())
     {
         pet->SavePetToDB(PET_SAVE_AS_CURRENT);
     }
 }
 
-// fast save function for item/money cheating preventing - save only inventory and money state
 void Player::SaveInventoryAndGoldToDB()
 {
     _SaveInventory();
     SaveGoldToDB();
 }
 
-/**
- * @brief Persists the player's current money value to the database.
- */
 void Player::SaveGoldToDB()
 {
     static SqlStatementID updateGold ;
@@ -345,9 +326,6 @@ void Player::SaveGoldToDB()
     stmt.PExecute(GetMoney(), GetGUIDLow());
 }
 
-/**
- * @brief Saves changed action bar bindings to the database.
- */
 void Player::_SaveActions()
 {
     static SqlStatementID insertAction ;
@@ -398,9 +376,6 @@ void Player::_SaveActions()
     }
 }
 
-/**
- * @brief Saves eligible active aura state to the database.
- */
 void Player::_SaveAuras()
 {
     static SqlStatementID deleteAuras ;
@@ -423,8 +398,7 @@ void Player::_SaveAuras()
     for (SpellAuraHolderMap::const_iterator itr = auraHolders.begin(); itr != auraHolders.end(); ++itr)
     {
         SpellAuraHolder* holder = itr->second;
-        // skip all holders from spells that are passive or channeled
-        // save singleTarget auras if self cast.
+
         bool selfCastHolder = holder->GetCasterGuid() == GetObjectGuid();
         TrackedAuraType trackedType = holder->GetTrackedAuraType();
         if (!holder->IsPassive() && !(cast::RecipeOf(*holder->GetSpellProto()).Starts() == cast::Start::Channelled) &&
@@ -441,7 +415,7 @@ void Player::_SaveAuras()
 
                 if (Aura* aur = holder->GetAuraByEffectIndex(SpellEffectIndex(i)))
                 {
-                    // don't save not own area auras
+
                     if (aur->IsAreaAura() && holder->GetCasterGuid() != GetObjectGuid())
                     {
                         continue;
@@ -459,8 +433,8 @@ void Player::_SaveAuras()
             }
 
             stmt.addUInt32(GetGUIDLow());
-            stmt.addUInt64(holder->GetCasterGuid().GetRawValue());
-            stmt.addUInt32(holder->GetCastItemGuid().GetCounter());
+            stmt.addUInt64(holder->GetCasterGuid());
+            stmt.addUInt32(GuidCounter(holder->GetCastItemGuid()));
             stmt.addUInt32(holder->GetId());
             stmt.addUInt32(holder->GetStackAmount());
             stmt.addUInt8(holder->GetAuraCharges());
@@ -483,13 +457,9 @@ void Player::_SaveAuras()
     }
 }
 
-/**
- * @brief Saves inventory state changes and queued item records to the database.
- */
 void Player::_SaveInventory()
 {
-    // force items in buyback slots to new state
-    // and remove those that aren't already
+
     for (uint8 i = BUYBACK_SLOT_START; i < BUYBACK_SLOT_END; ++i)
     {
         Item* item = m_inventory.Own(i);
@@ -512,13 +482,11 @@ void Player::_SaveInventory()
 
     m_inventory.SettleClocks();
 
-    // if no changes
     if (m_inventory.Saves().IsEmpty())
     {
         return;
     }
 
-    // do not save if the update queue is corrupt
     bool error = false;
     for (Item* item : m_inventory.Saves().Waiting())
     {
@@ -595,21 +563,17 @@ void Player::_SaveInventory()
                 break;
         }
 
-        item->SaveToDB();                                   // item have unchanged inventory record and can be save standalone
+        item->SaveToDB();
     }
     m_inventory.Saves().Clear();
 }
 
-/**
- * @brief Saves tracked quest status progress to the database.
- */
 void Player::_SaveQuestStatus()
 {
     static SqlStatementID insertQuestStatus ;
 
     static SqlStatementID updateQuestStatus ;
 
-    // we don't need transactions here.
     for (auto i = m_journal.All().begin(); i != m_journal.All().end(); ++i)
     {
         QuestStatusData &questStatus = i->second;
@@ -666,16 +630,12 @@ void Player::_SaveQuestStatus()
     }
 }
 
-/**
- * @brief Saves skill value changes to the database.
- */
 void Player::_SaveSkills()
 {
     static SqlStatementID delSkills ;
     static SqlStatementID insSkills ;
     static SqlStatementID updSkills ;
 
-    // we don't need transactions here.
     for (SkillStatusMap::iterator itr = mSkillStatus.begin(); itr != mSkillStatus.end();)
     {
         if (itr->second.uState == SKILL_UNCHANGED)
@@ -721,9 +681,6 @@ void Player::_SaveSkills()
     }
 }
 
-/**
- * @brief Saves learned spell state changes to the database.
- */
 void Player::_SaveSpells()
 {
     static SqlStatementID delSpells ;
@@ -741,7 +698,6 @@ void Player::_SaveSpells()
             stmtDel.PExecute(GetGUIDLow(), itr->first);
         }
 
-        // add only changed/new not dependent spells
         if (!playerSpell.dependent && (playerSpell.state == PLAYERSPELL_NEW || playerSpell.state == PLAYERSPELL_CHANGED))
         {
             stmtIns.PExecute(GetGUIDLow(), itr->first, uint8(playerSpell.active ? 1 : 0), uint8(playerSpell.disabled ? 1 : 0));
@@ -759,11 +715,9 @@ void Player::_SaveSpells()
     }
 }
 
-// save player stats -- only for external usage
-// real stats will be recalculated on player login
 void Player::_SaveStats()
 {
-    // check if stat saving is enabled and if char level is high enough
+
     if (!sWorld.getConfig(CONFIG_UINT32_MIN_LEVEL_STAT_SAVE) || getLevel() < sWorld.getConfig(CONFIG_UINT32_MIN_LEVEL_STAT_SAVE))
     {
         return;
@@ -790,7 +744,7 @@ void Player::_SaveStats()
     {
         stmt.addFloat(GetStat(Stats(i)));
     }
-    // armor + school resistances
+
     for (int i = 0; i < MAX_SPELL_SCHOOL; ++i)
     {
         stmt.addUInt32(GetResistance(SpellSchools(i)));
@@ -806,12 +760,9 @@ void Player::_SaveStats()
     stmt.Execute();
 }
 
-/**
- * @brief Writes the player's current combat and stat values to the debug log.
- */
 void Player::outDebugStatsValues() const
 {
-    // optimize disabled debug output
+
     if (!sLog.HasLogLevelOrHigher(LOG_LVL_DEBUG) || sLog.HasLogFilter(LOG_FILTER_PLAYER_STATS))
     {
         return;
@@ -833,7 +784,7 @@ void Player::outDebugStatsValues() const
 
 void Player::UpdateSpeakTime()
 {
-    // ignore chat spam protection for GMs in any mode
+
     if (GetSession()->GetSecurity() > SEC_PLAYER)
     {
         return;
@@ -851,7 +802,7 @@ void Player::UpdateSpeakTime()
         ++m_speakCount;
         if (m_speakCount >= max_count)
         {
-            // prevent overwrite mute time, if message send just before mutes set, for example.
+
             time_t new_mute = current + sWorld.getConfig(CONFIG_UINT32_CHATFLOOD_MUTE_TIME);
             if (GetSession()->m_muteTime < new_mute)
             {
@@ -869,11 +820,6 @@ void Player::UpdateSpeakTime()
     m_speakTime = current + sWorld.getConfig(CONFIG_UINT32_CHATFLOOD_MESSAGE_DELAY);
 }
 
-/**
- * @brief Checks whether the player is currently allowed to send chat messages.
- *
- * @return True if the player's mute timer has expired; otherwise, false.
- */
 bool Player::CanSpeak() const
 {
     return  GetSession()->m_muteTime <= time(nullptr);
@@ -891,48 +837,30 @@ void Player::SendAttackSwingDeadTarget()
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Sends the error packet for a general inability to attack the target.
- */
 void Player::SendAttackSwingCantAttack()
 {
     WorldPacket data(SMSG_ATTACKSWING_CANT_ATTACK, 0);
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Sends the packet that cancels the player's current attack.
- */
 void Player::SendAttackSwingCancelAttack()
 {
     WorldPacket data(SMSG_CANCEL_COMBAT, 0);
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Sends the error packet for attempting to attack while facing the wrong direction.
- */
 void Player::SendAttackSwingBadFacingAttack()
 {
     WorldPacket data(SMSG_ATTACKSWING_BADFACING, 0);
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Sends the packet that cancels auto-repeat attacks for the client.
- */
 void Player::SendAutoRepeatCancel()
 {
     WorldPacket data(SMSG_CANCEL_AUTO_REPEAT, 0);
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Sends an exploration experience reward packet to the client.
- *
- * @param Area The explored area identifier.
- * @param Experience The awarded experience amount.
- */
 void Player::SendExplorationExperience(uint32 Area, uint32 Experience)
 {
     WorldPacket data(SMSG_EXPLORATION_EXPERIENCE, 8);
@@ -941,11 +869,6 @@ void Player::SendExplorationExperience(uint32 Area, uint32 Experience)
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Sends a reset-failed notification for an instance map.
- *
- * @param mapid The map identifier that failed to reset.
- */
 void Player::SendResetFailedNotify(uint32 mapid)
 {
     WorldPacket data(SMSG_RESET_FAILED_NOTIFY, 4);
@@ -953,11 +876,6 @@ void Player::SendResetFailedNotify(uint32 mapid)
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Sends a successful instance reset notification to the client.
- *
- * @param MapId The reset map identifier.
- */
 void Player::SendResetInstanceSuccess(uint32 MapId)
 {
     WorldPacket data(SMSG_INSTANCE_RESET, 4);
@@ -965,15 +883,9 @@ void Player::SendResetInstanceSuccess(uint32 MapId)
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Sends an instance reset failure message to the client.
- *
- * @param reason The reset failure reason code.
- * @param MapId The map identifier that failed to reset.
- */
 void Player::SendResetInstanceFailed(uint32 reason, uint32 MapId)
 {
-    // reason: see enum InstanceResetFailReason
+
     WorldPacket data(SMSG_INSTANCE_RESET_FAILED, 8);
     data << uint32(reason);
     data << uint32(MapId);
@@ -996,11 +908,6 @@ void Player::UpdateContestedPvP(uint32 diff)
     }
 }
 
-/**
- * @brief Updates and clears the player's PvP flag when the timeout expires.
- *
- * @param currTime The current server time.
- */
 void Player::UpdatePvPFlag(time_t currTime)
 {
     if (!IsPvP())
@@ -1015,12 +922,6 @@ void Player::UpdatePvPFlag(time_t currTime)
     UpdatePvP(false);
 }
 
-/**
- * @brief Sends a say chat message from the player to nearby listeners.
- *
- * @param text The message text.
- * @param language The language used for the chat packet.
- */
 void Player::Say(const std::string& text, const uint32 language)
 {
     WorldPacket data;
@@ -1028,12 +929,6 @@ void Player::Say(const std::string& text, const uint32 language)
     Deliver(Audience::Within(*this, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_SAY)).AndSubject(), &data);
 }
 
-/**
- * @brief Sends a yell chat message from the player to nearby listeners.
- *
- * @param text The message text.
- * @param language The language used for the chat packet.
- */
 void Player::Yell(const std::string& text, const uint32 language)
 {
     WorldPacket data;
@@ -1041,11 +936,6 @@ void Player::Yell(const std::string& text, const uint32 language)
     Deliver(Audience::Within(*this, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_YELL)).AndSubject(), &data);
 }
 
-/**
- * @brief Sends a text emote message from the player to nearby listeners.
- *
- * @param text The emote text.
- */
 void Player::TextEmote(const std::string& text)
 {
     WorldPacket data;
@@ -1053,12 +943,6 @@ void Player::TextEmote(const std::string& text)
     Deliver(Audience::Within(*this, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_TEXTEMOTE)).AndSubject().OwnTeamOnly(!sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_CHAT)), &data);
 }
 
-/**
- * @brief Logs a whisper to the database when whisper logging is enabled.
- *
- * @param text The whisper text.
- * @param receiver The recipient player GUID.
- */
 void Player::LogWhisper(const std::string& text, ObjectGuid receiver)
 {
     WhisperLoggingLevels loggingLevel = WhisperLoggingLevels(sWorld.getConfig(CONFIG_UINT32_LOG_WHISPERS));
@@ -1068,7 +952,6 @@ void Player::LogWhisper(const std::string& text, ObjectGuid receiver)
         return;
     }
 
-    //Try to find ticket by either this player or the receiver
     GMTicket* ticket = sTicketMgr.GetGMTicket(GetObjectGuid());
     if (!ticket)
     {
@@ -1083,7 +966,6 @@ void Player::LogWhisper(const std::string& text, ObjectGuid receiver)
 
     bool isSomeoneGM = false;
 
-    //Find out if at least one of them is a GM for ticket logging
     if (GetSession()->GetSecurity() >= SEC_GAMEMASTER)
     {
         isSomeoneGM = true;
@@ -1102,26 +984,19 @@ void Player::LogWhisper(const std::string& text, ObjectGuid receiver)
     {
         static SqlStatementID wlog;
         SqlStatement stmt = CharacterDatabase.CreateStatement(wlog, "INSERT INTO `character_whispers` (`to_guid`, `from_guid`, `message`, `regarding_ticket_id`) VALUES (?, ?, ?, ?)");
-        stmt.addUInt32(receiver.GetCounter());          // to_guid
-        stmt.addUInt32(GetObjectGuid().GetCounter());   // from_guid
-        stmt.addString(text.c_str());                   // message
-        stmt.addUInt32(ticketId);                       // regarding_ticket_id
+        stmt.addUInt32(GuidCounter(receiver));
+        stmt.addUInt32(GuidCounter(GetObjectGuid()));
+        stmt.addString(text.c_str());
+        stmt.addUInt32(ticketId);
         stmt.Execute();
     }
 }
 
-/**
- * @brief Sends a whisper to another player and handles local response messages.
- *
- * @param text The whisper text.
- * @param language The requested chat language.
- * @param receiver The recipient player GUID.
- */
 void Player::Whisper(const std::string& text, uint32 language, ObjectGuid receiver)
 {
-    if (language != LANG_ADDON)                             // if not addon data
+    if (language != LANG_ADDON)
     {
-        language = LANG_UNIVERSAL; // whispers should always be readable
+        language = LANG_UNIVERSAL;
     }
 
     Player* rPlayer = sObjectMgr.GetPlayer(receiver);
@@ -1130,7 +1005,6 @@ void Player::Whisper(const std::string& text, uint32 language, ObjectGuid receiv
     ChatHandler::BuildChatPacket(data, CHAT_MSG_WHISPER, text.c_str(), Language(language), GetChatTag(), GetObjectGuid(), GetName());
     rPlayer->GetSession()->SendPacket(&data);
 
-    // not send confirmation for addon messages
     if (language != LANG_ADDON)
     {
         data.clear();
@@ -1147,19 +1021,16 @@ void Player::Whisper(const std::string& text, uint32 language, ObjectGuid receiv
 
     if (rPlayer->isAFK())
     {
-        /* Announce to the player that the person they're whispering to is afk */
+
         ChatHandler(this).PSendSysMessage(LANG_PLAYER_AFK, rPlayer->GetName(), rPlayer->autoReplyMsg.c_str());
     }
     else if (rPlayer->isDND())
     {
-        /* Announce to the player that the person they're whispering to is dnd */
+
         ChatHandler(this).PSendSysMessage(LANG_PLAYER_DND, rPlayer->GetName(), rPlayer->autoReplyMsg.c_str());
     }
 }
 
-/**
- * @brief Sends the controlled pet's spell bar and cooldown state to the client.
- */
 void Player::PetSpellInitialize()
 {
     Pet* pet = GetPet();
@@ -1178,18 +1049,16 @@ void Player::PetSpellInitialize()
     data << uint32(0);
     data << uint8(charmInfo->GetReactState()) << uint8(charmInfo->GetCommandState()) << uint16(0);
 
-    // action bar loop
     charmInfo->BuildActionBar(&data);
 
     size_t spellsCountPos = data.wpos();
 
-    // spells count
     uint8 addlist = 0;
-    data << uint8(addlist);                                 // placeholder
+    data << uint8(addlist);
 
     if (pet->IsPermanentPetFor(this))
     {
-        // spells loop
+
         for (PetSpellMap::const_iterator itr = pet->m_spells.begin(); itr != pet->m_spells.end(); ++itr)
         {
             if (itr->second.state == PETSPELL_REMOVED)
@@ -1213,28 +1082,25 @@ void Player::PetSpellInitialize()
     {
         time_t const left = down.second > curTime ? (down.second - curTime) * IN_MILLISECONDS : 0;
 
-        data << uint16(down.first);                         // spellid
-        data << uint16(0);                                  // spell category?
-        data << uint32(left);                               // cooldown
-        data << uint32(0);                                  // category cooldown
+        data << uint16(down.first);
+        data << uint16(0);
+        data << uint32(left);
+        data << uint32(0);
     }
 
     for (auto const& held : pet->Knowing().CategoriesUsed())
     {
         time_t const left = held.second > curTime ? (held.second - curTime) * IN_MILLISECONDS : 0;
 
-        data << uint16(held.first);                         // spellid
-        data << uint16(0);                                  // spell category?
-        data << uint32(0);                                  // cooldown
-        data << uint32(left);                               // category cooldown
+        data << uint16(held.first);
+        data << uint16(0);
+        data << uint32(0);
+        data << uint32(left);
     }
 
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Sends the possessed unit's action bar state to the client.
- */
 void Player::PossessSpellInitialize()
 {
     Unit* charm = GetCharm();
@@ -1259,15 +1125,12 @@ void Player::PossessSpellInitialize()
 
     charmInfo->BuildActionBar(&data);
 
-    data << uint8(0);                                       // spells count
-    data << uint8(0);                                       // cooldowns count
+    data << uint8(0);
+    data << uint8(0);
 
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Sends the charmed unit's available actions and spells to the client.
- */
 void Player::CharmSpellInitialize()
 {
     Unit* charm = GetCharm();
@@ -1286,7 +1149,7 @@ void Player::CharmSpellInitialize()
 
     uint8 addlist = 0;
 
-    if (!charm->IsPlayer())
+    if (!IsPlayer(charm))
     {
         CreatureInfo const* cinfo = ((Creature*)charm)->GetCreatureInfo();
 
@@ -1306,13 +1169,13 @@ void Player::CharmSpellInitialize()
     data << charm->GetObjectGuid();
     data << uint32(0x00000000);
 
-    if (!charm->IsPlayer())
+    if (!IsPlayer(charm))
     {
         data << uint8(charmInfo->GetReactState()) << uint8(charmInfo->GetCommandState()) << uint16(0);
     }
     else
     {
-        data << uint8(0) << uint8(0) << uint16(0); // TODO it is exactly the same as uint32(PetModeFlags) from SMSG_PET_MODE
+        data << uint8(0) << uint8(0) << uint16(0);
     }
 
     charmInfo->BuildActionBar(&data);
@@ -1331,12 +1194,11 @@ void Player::CharmSpellInitialize()
         }
     }
 
-    data << uint8(0);                                       // cooldowns count
+    data << uint8(0);
 
     GetSession()->SendPacket(&data);
 }
 
-// send Proficiency
 void Player::SendProficiency(ItemClass itemClass, uint32 itemSubclassMask)
 {
     WorldPacket data(SMSG_SET_PROFICIENCY, 1 + 4);
@@ -1344,26 +1206,20 @@ void Player::SendProficiency(ItemClass itemClass, uint32 itemSubclassMask)
     GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Removes petition ownership and signatures associated with a player.
- *
- * @param guid The player GUID whose petition data should be removed.
- */
 void Player::RemovePetitionsAndSigns(ObjectGuid guid)
 {
-    uint32 lowguid = guid.GetCounter();
+    uint32 lowguid = GuidCounter(guid);
 
     QueryResult* result = CharacterDatabase.PQuery("SELECT `ownerguid`,`petitionguid` FROM `petition_sign` WHERE `playerguid` = '%u'", lowguid);
     if (result)
     {
-        do                                                  // this part effectively does nothing, since the deletion / modification only takes place _after_ the PetitionQuery. Though I don't know if the result remains intact if I execute the delete query beforehand.
+        do
         {
-            // and SendPetitionQueryOpcode reads data from the DB
-            Field* fields = result->Fetch();
-            ObjectGuid ownerguid   = ObjectGuid(HIGHGUID_PLAYER, fields[0].GetUInt32());
-            ObjectGuid petitionguid = ObjectGuid(HIGHGUID_ITEM, fields[1].GetUInt32());
 
-            // send update if charter owner in game
+            Field* fields = result->Fetch();
+            ObjectGuid ownerguid   = MakeGuid(HIGHGUID_PLAYER, fields[0].GetUInt32());
+            ObjectGuid petitionguid = MakeGuid(HIGHGUID_ITEM, fields[1].GetUInt32());
+
             Player* owner = sObjectMgr.GetPlayer(ownerguid);
             if (owner)
             {
@@ -1383,9 +1239,6 @@ void Player::RemovePetitionsAndSigns(ObjectGuid guid)
     CharacterDatabase.CommitTransaction();
 }
 
-/**
- * @brief Updates visibility of nearby stealthed units based on detection checks.
- */
 void Player::HandleStealthedUnitsDetection()
 {
     std::list<Unit*> stealthedUnits;
@@ -1414,11 +1267,9 @@ void Player::HandleStealthedUnitsDetection()
                 (*i)->SendCreateUpdateToPlayer(this);
                 m_clientGUIDs.insert(i_guid);
 
-                DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "UpdateVisibilityOf(): %s is detected in stealth by player %u. Distance = %f", i_guid.GetString().c_str(), GetGUIDLow(), Where().DistanceTo((*i)->Where()));
+                DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "UpdateVisibilityOf(): %s is detected in stealth by player %u. Distance = %f", GuidString(i_guid).c_str(), GetGUIDLow(), Where().DistanceTo((*i)->Where()));
 
-                // target aura duration for caster show only if target exist at caster client
-                // send data at target visibility change (adding to client)
-                if ((*i) != this && (*i)->isType(TYPEMASK_UNIT))
+                if ((*i) != this && IsType(*i, TYPEMASK_UNIT))
                 {
                     SendAuraDurationsForTarget(*i);
                 }
@@ -1435,22 +1286,13 @@ void Player::HandleStealthedUnitsDetection()
     }
 }
 
-/**
- * @brief Starts a taxi flight across a sequence of taxi nodes.
- *
- * @param nodes The ordered taxi node path to travel.
- * @param npc The taxi master providing the route, or nullptr for spell/scripted travel.
- * @param spellid The spell initiating the taxi flight, if any.
- * @return True if the flight started successfully; otherwise, false.
- */
-bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc /*= nullptr*/, uint32 spellid /*= 0*/)
+bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc , uint32 spellid )
 {
     if (nodes.size() < 2)
     {
         return false;
     }
 
-    // not let cheating with start flight in time of logout process || if casting not finished || while in combat || if not use Spell's with EffectSendTaxi
     if (GetSession()->isLogingOut() || IsInCombat())
     {
         GetSession()->SendActivateTaxiReply(ERR_TAXIPLAYERBUSY);
@@ -1462,10 +1304,9 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
         return false;
     }
 
-    // taximaster case
     if (npc)
     {
-        // not let cheating with start flight mounted
+
         if (IsMounted())
         {
             GetSession()->SendActivateTaxiReply(ERR_TAXIPLAYERALREADYMOUNTED);
@@ -1478,14 +1319,13 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
             return false;
         }
 
-        // not let cheating with start flight in time of logout process || if casting not finished || while in combat || if not use Spell's with EffectSendTaxi
         if (IsNonMeleeSpellCasted(false))
         {
             GetSession()->SendActivateTaxiReply(ERR_TAXIPLAYERBUSY);
             return false;
         }
     }
-    // cast case or scripted call case
+
     else
     {
         RemoveAurasOfType(SPELL_AURA_MOUNTED);
@@ -1516,7 +1356,6 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
 
     uint32 sourcenode = nodes[0];
 
-    // starting node too far away (cheat?)
     TaxiNodesEntry const* node = sTaxiNodesStore.LookupEntry(sourcenode);
     if (!node)
     {
@@ -1524,7 +1363,6 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
         return false;
     }
 
-    // check node starting pos data set case if provided
     if (node->x != 0.0f || node->y != 0.0f || node->z != 0.0f)
     {
         if (node->map_id != GetMapId() ||
@@ -1537,28 +1375,21 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
             return false;
         }
     }
-    // node must have pos if taxi master case (npc != nullptr)
+
     else if (npc)
     {
         GetSession()->SendActivateTaxiReply(ERR_TAXIUNSPECIFIEDSERVERERROR);
         return false;
     }
 
-    // Prepare to flight start now
-
-    // stop combat at start taxi flight if any
     CombatStop();
 
-    // stop trade (client cancel trade at taxi map open but cheating tools can be used for reopen it)
     TradeCancel(true);
 
-    // clean not finished taxi path if any
     m_taxi.ClearTaxiDestinations();
 
-    // 0 element current node
     m_taxi.AddTaxiDestination(sourcenode);
 
-    // fill destinations path tail
     uint32 sourcepath = 0;
     uint32 totalcost = 0;
 
@@ -1589,10 +1420,8 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
         prevnode = lastnode;
     }
 
-    // get mount model (in case non taximaster (npc==nullptr) allow more wide lookup)
     uint32 mount_display_id = sObjectMgr.GetTaxiMountDisplayId(sourcenode, GetTeam(), npc == nullptr);
 
-    // in spell case allow 0 model
     if ((mount_display_id == 0 && spellid == 0) || sourcepath == 0)
     {
         GetSession()->SendActivateTaxiReply(ERR_TAXIUNSPECIFIEDSERVERERROR);
@@ -1616,10 +1445,8 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
         return false;
     }
 
-    // Checks and preparations done, DO FLIGHT
     ModifyMoney(-(int32)totalcost);
 
-    // prevent stealth flight
     RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
 
     if (sWorld.getConfig(CONFIG_BOOL_INSTANT_TAXI))
@@ -1638,14 +1465,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
     return true;
 }
 
-/**
- * @brief Starts a taxi flight using a direct taxi path identifier.
- *
- * @param taxi_path_id The taxi path identifier to use.
- * @param spellid The spell initiating the taxi flight, if any.
- * @return True if the flight started successfully; otherwise, false.
- */
-bool Player::ActivateTaxiPathTo(uint32 taxi_path_id, uint32 spellid /*= 0*/)
+bool Player::ActivateTaxiPathTo(uint32 taxi_path_id, uint32 spellid )
 {
     TaxiPathEntry const* entry = sTaxiPathStore.LookupEntry(taxi_path_id);
     if (!entry)
@@ -1662,9 +1482,6 @@ bool Player::ActivateTaxiPathTo(uint32 taxi_path_id, uint32 spellid /*= 0*/)
     return ActivateTaxiPathTo(nodes, nullptr, spellid);
 }
 
-/**
- * @brief Resumes an interrupted taxi flight from the nearest path node.
- */
 void Player::ContinueTaxiFlight()
 {
     uint32 sourceNode = m_taxi.GetTaxiSource();
@@ -1678,7 +1495,6 @@ void Player::ContinueTaxiFlight()
     uint32 mountDisplayId = sObjectMgr.GetTaxiMountDisplayId(sourceNode, GetTeam(), true);
     uint32 path = m_taxi.GetCurrentTaxiPath();
 
-    // search appropriate start path node
     uint32 startNode = 0;
 
     TaxiPathNodeList const& nodeList = sTaxiPathNodesByPath[path];
@@ -1693,7 +1509,6 @@ void Player::ContinueTaxiFlight()
         TaxiPathNodeEntry const& node = nodeList[i];
         TaxiPathNodeEntry const& prevNode = nodeList[i - 1];
 
-        // skip nodes at another map
         if (node.ContinentID != GetMapId())
         {
             continue;
@@ -1721,12 +1536,9 @@ void Player::ContinueTaxiFlight()
     GetSession()->SendDoFlight(mountDisplayId, path, startNode);
 }
 
-/**
- * @brief Saves battleground return position and instance data to the database.
- */
 void Player::_SaveBGData()
 {
-    // nothing save
+
     if (!Battle().Unsaved())
     {
         return;
@@ -1742,7 +1554,7 @@ void Player::_SaveBGData()
     if (Battle().InOne())
     {
         stmt = CharacterDatabase.CreateStatement(insBGData, "INSERT INTO `character_battleground_data` VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        /* guid, bgInstanceID, bgTeam, x, y, z, o, map */
+
         stmt.addUInt32(GetGUIDLow());
         stmt.addUInt32(Battle().Id());
         stmt.addUInt32(uint32(Battle().SideAsSet()));

@@ -23,31 +23,9 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Corpse.h
- * @brief Corpse (player death) class definition.
- *
- * This file defines the Corpse class which represents the remains of a dead player.
- * Corpses can be in different states (bones, resurrectable for PvE/PvP) and have
- * specific mechanics around resurrection, loot, and decay.
- *
- * Key functionality includes:
- * - Corpse creation on player death
- * - Corpse persistence and database storage
- * - Corpse decay and expiration
- * - Resurrection mechanics and timers
- * - Loot management for corpse contents
- * - PvP corpse handling and resurrection rules
- * - Corpse visibility and ghosting
- * - Bones vs. resurrectable corpse states
- *
- * @see Corpse for the main corpse implementation
- * @see Player for player death handling
- * @see ObjectAccessor for corpse registry
- */
-
 #pragma once
 
+#include "Loot/Spoilable.h"
 #include "Platform/Define.h"
 #include <ctime>
 #include "Occupant.h"
@@ -55,9 +33,6 @@
 #include "GridDefines.h"
 #include "LootMgr.h"
 
-/// @brief Corpse type enumeration.
-///
-/// Indicates what state the corpse is in and under what resurrection rules.
 enum CorpseType
 {
     CORPSE_BONES             = 0,
@@ -66,12 +41,8 @@ enum CorpseType
 };
 #define MAX_CORPSE_TYPE        3
 
-// Value equal to client resurrection dialog show radius (in game units)
 #define CORPSE_RECLAIM_RADIUS 39
 
-/// @brief Corpse display and behavior flags.
-///
-/// Controls how the corpse appears and what actions are available.
 enum CorpseFlags
 {
     CORPSE_FLAG_NONE        = 0x00,
@@ -83,11 +54,7 @@ enum CorpseFlags
     CORPSE_FLAG_LOOTABLE    = 0x20
 };
 
-/// @brief Player corpse class.
-///
-/// Represents a player's remains after death. Corpses can be resurrected and
-/// contain the player's items for recovery or looting.
-class Corpse : public Occupant
+class Corpse : public Occupant, public Spoilable
 {
     public:
         explicit Corpse(CorpseType type = CORPSE_BONES);
@@ -107,7 +74,6 @@ class Corpse : public Occupant
 
         ObjectGuid const& GetOwnerGuid() const { return GetGuidValue(CORPSE_FIELD_OWNER); }
 
-        /// Whether the bones still hold something to take.
         bool HasCorpseDynFlag(uint32 flag) const { return HasFlag(CORPSE_FIELD_DYNAMIC_FLAGS, flag); }
         void SetCorpseDynFlag(uint32 flag) { SetFlag(CORPSE_FIELD_DYNAMIC_FLAGS, flag); }
         void RemoveCorpseDynFlag(uint32 flag) { RemoveFlag(CORPSE_FIELD_DYNAMIC_FLAGS, flag); }
@@ -119,10 +85,8 @@ class Corpse : public Occupant
         }
         CorpseType GetType() const { return m_type; }
 
-
         bool IsControlledByPlayer() const override { return true; }
 
-        /// A body waits where it fell for its owner; bones belong to the ground.
         bool OutlivesItsGrid() const override { return m_type != CORPSE_BONES; }
 
         GridPair const& GetGrid() const { return m_grid; }
@@ -130,12 +94,10 @@ class Corpse : public Occupant
 
         bool IsVisibleForInState(Player const* u, Occupant const* viewPoint, bool inVisibleList) const override;
 
-        Loot loot;                                          // remove insignia ONLY at BG
+        Loot loot;
 
         Loot* Spoils() override { return &loot; }
 
-        /// Whoever is standing over it. What may be taken off a body is decided elsewhere;
-        /// this is only about being there.
         bool OpenableBy(Player const& who) const override;
         bool FillSpoilsFor(Player& who, LootType& how, PermissionTypes& permission) override;
         Player* lootRecipient;
@@ -146,12 +108,11 @@ class Corpse : public Occupant
             return m_gridRef;
         }
 
-        /// Is the sweep entitled to take it? Bones lie for an hour, a body for three days.
         bool IsExpired(time_t now) const;
     private:
         GridReference<Corpse> m_gridRef;
 
         CorpseType m_type;
         time_t m_time;
-        GridPair m_grid;                                    // gride for corpse position for fast search
+        GridPair m_grid;
 };

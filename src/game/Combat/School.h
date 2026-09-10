@@ -25,27 +25,11 @@
 
 #pragma once
 
-// The kind of a blow, and a set of kinds.
-//
-// A blow has exactly ONE school. Captures of live 1.8 through 1.12 servers carry
-// a single kind in every attacker-state update, and a spell's damage report has
-// no room for a second one. The five slots the client can parse are capacity
-// nobody fills, so nothing here is a collection.
-//
-// Coverage is the opposite case and the reason SchoolSet exists: an immunity, an
-// absorbing shield or a resistance-piercing effect speaks about several schools
-// at once, and there the set is the nature of the thing rather than an accident.
-//
-// So: School answers "what is this blow", SchoolSet answers "what does this
-// cover". A mask standing in for a single school is the mistake this pair
-// exists to prevent -- it forces a lossy "first bit set" step at every use.
-
 #include "Platform/Define.h"
 
 namespace combat
 {
-    /// Physical is a school like any other; what differs is that armour, rather
-    /// than resistance, is what stands in its way.
+
     enum class School : uint8
     {
         Physical = 0,
@@ -64,26 +48,16 @@ namespace combat
         return school == School::Physical;
     }
 
-    /// The index the wire carries for a school.
     constexpr uint32 WireIndex(School school)
     {
         return static_cast<uint32>(school);
     }
 
-    /// The school a wire index names. An index out of range is physical, which
-    /// is what an absent or malformed school has always meant.
     constexpr School SchoolFromIndex(uint32 index)
     {
         return index < SCHOOL_COUNT ? static_cast<School>(index) : School::Physical;
     }
 
-    /**
-     * @brief The schools something covers.
-     *
-     * Bit per school, in the same order the client's resistance table uses, so
-     * ToMask() and FromMask() are the wire's own representation and need no
-     * translation table.
-     */
     class SchoolSet
     {
         public:
@@ -95,7 +69,6 @@ namespace combat
             {
             }
 
-            /// Reads a mask that arrives from spell data.
             static constexpr SchoolSet FromMask(uint32 mask)
             {
                 return SchoolSet(static_cast<uint8>(mask & ALL_BITS));
@@ -156,14 +129,6 @@ namespace combat
             uint8 m_bits = 0;
     };
 
-    /**
-     * @brief The single school a mask names.
-     *
-     * Spell data stores a mask even where one school is meant. This is the one
-     * place that narrowing happens, so the loss is visible rather than repeated
-     * at every call site. The lowest bit wins, which is the order the client's
-     * own table is indexed in.
-     */
     constexpr School FirstSchoolIn(uint32 mask)
     {
         return (mask & (1u << 0)) ? School::Physical :

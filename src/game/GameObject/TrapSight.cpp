@@ -34,7 +34,7 @@ float TrapNoticedWithin(TrapWatcher const& watcher, float trapRadius)
 
     if (watcher.invisibilityDetection < TRAP_SEEN_THROUGH)
     {
-        // Nobody else finds it at all. A rogue does, but only by walking into it.
+
         if (!watcher.isRogue)
         {
             return -1.0f;
@@ -45,14 +45,12 @@ float TrapNoticedWithin(TrapWatcher const& watcher, float trapRadius)
 
     if (watcher.hasOwner)
     {
-        // Rank 4 stealth is five points a level, and this reads as its counterpart.
+
         noticed -= watcher.ownerLevel / 20.0f;
 
-        // Every level between them is a unit of sight either way.
         noticed += watcher.levelGap;
     }
 
-    // Five points of detection buy a unit; paranoia spends them the other way.
     noticed += watcher.stealthDetect / 5.0f;
 
     if (noticed > MAX_PLAYER_STEALTH_DETECT_RANGE)
@@ -60,8 +58,6 @@ float TrapNoticedWithin(TrapWatcher const& watcher, float trapRadius)
         return MAX_PLAYER_STEALTH_DETECT_RANGE;
     }
 
-    // NEVER INSIDE ITS OWN RADIUS. A trap first seen from where it has already gone
-    // off is a trap that was never hidden, only invisible.
     float const floor = trapRadius + INTERACTION_DISTANCE;
 
     return noticed < floor ? floor : noticed;

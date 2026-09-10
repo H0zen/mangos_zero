@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Utilities/Errors.h"
 #include "Player.h"
 #include "Language.h"
@@ -73,19 +71,17 @@
 #include <cmath>
 #include "Corpse.h"
 
-// Used in triggers for check "Only to targets that grant experience or honor" req
 bool Player::isHonorOrXPTarget(Unit* pVictim) const
 {
     uint32 v_level = pVictim->getLevel();
     uint32 k_grey  = xp::GreyLevel(getLevel());
 
-    // Victim level less gray level
     if (v_level <= k_grey)
     {
         return false;
     }
 
-    if (pVictim->IsCreature())
+    if (IsCreature(pVictim))
     {
         if (((Creature*)pVictim)->IsTotem() ||
             ((Creature*)pVictim)->IsPet() ||
@@ -97,11 +93,6 @@ bool Player::isHonorOrXPTarget(Unit* pVictim) const
     return true;
 }
 
-/**
- * @brief Rewards the player for killing a unit outside group reward distribution.
- *
- * @param pVictim The killed unit.
- */
 void Player::RewardSinglePlayerAtKill(Unit* pVictim)
 {
     bool PvP = pVictim->IsCharmedOwnedByPlayerOrPlayer();
@@ -110,10 +101,8 @@ void Player::RewardSinglePlayerAtKill(Unit* pVictim)
                     : xp::FromKill(getLevel(), xp::QuarryOf(*pVictim),
                                    sWorld.getConfig(CONFIG_FLOAT_RATE_XP_KILL));
 
-    // honor can be in PvP and !PvP (racial leader) cases
     RewardHonor(pVictim, 1);
 
-    // xp and reputation only in !PvP case
     if (!PvP)
     {
         RewardReputation(pVictim, 1);
@@ -124,27 +113,19 @@ void Player::RewardSinglePlayerAtKill(Unit* pVictim)
             pet->GivePetXP(xp);
         }
 
-        // normal creature (not pet/etc) can be only in !PvP case
-        if (pVictim->IsCreature())
+        if (IsCreature(pVictim))
         {
             m_journal.CreatureKilled(((Creature*)pVictim)->GetCreatureInfo(), pVictim->GetObjectGuid());
         }
     }
 }
 
-/**
- * @brief Grants event kill credit to the player or nearby group members.
- *
- * @param creature_id The credited creature entry identifier.
- * @param pRewardSource The world object used for distance checks.
- */
 void Player::RewardPlayerAndGroupAtEvent(uint32 creature_id, Occupant* pRewardSource)
 {
-    MANGOS_ASSERT((!GetGroup() || pRewardSource));              // Player::RewardPlayerAndGroupAtEvent called for Group-Case but no source for range searching provided
+    MANGOS_ASSERT((!GetGroup() || pRewardSource));
 
-    ObjectGuid creature_guid = pRewardSource && pRewardSource->IsCreature() ? pRewardSource->GetObjectGuid() : ObjectGuid();
+    ObjectGuid creature_guid = pRewardSource &&IsCreature(pRewardSource) ? pRewardSource->GetObjectGuid() : 0;
 
-    // prepare data for near group iteration
     if (Group* pGroup = GetGroup())
     {
         for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
@@ -157,31 +138,24 @@ void Player::RewardPlayerAndGroupAtEvent(uint32 creature_id, Occupant* pRewardSo
 
             if (!pGroupGuy->IsAtGroupRewardDistance(pRewardSource))
             {
-                continue; // member (alive or dead) or his corpse at req. distance
+                continue;
             }
 
-            // quest objectives updated only for alive group member or dead but with not released body
             if (pGroupGuy->IsAlive() || !pGroupGuy->HasPlayerFlag(PLAYER_FLAGS_GHOST))
             {
                 pGroupGuy->Journal().KillCredited(creature_id, creature_guid);
             }
         }
     }
-    else                                                    // if (!pGroup)
+    else
     {
         m_journal.KillCredited(creature_id, creature_guid);
     }
 }
 
-/**
- * @brief Grants quest cast credit to the player or nearby group members.
- *
- * @param pRewardSource The credited creature or gameobject.
- * @param spellid The spell that granted the credit.
- */
 void Player::RewardPlayerAndGroupAtCast(Occupant* pRewardSource, uint32 spellid)
 {
-    // prepare data for near group iteration
+
     if (Group* pGroup = GetGroup())
     {
         for (GroupReference* itr = pGroup->GetFirstMember(); itr != nullptr; itr = itr->next())
@@ -194,28 +168,21 @@ void Player::RewardPlayerAndGroupAtCast(Occupant* pRewardSource, uint32 spellid)
 
             if (!pGroupGuy->IsAtGroupRewardDistance(pRewardSource))
             {
-                continue; // member (alive or dead) or his corpse at req. distance
+                continue;
             }
 
-            // quest objectives updated only for alive group member or dead but with not released body
             if (pGroupGuy->IsAlive() || !pGroupGuy->HasPlayerFlag(PLAYER_FLAGS_GHOST))
             {
                 pGroupGuy->Journal().CastCredited(pRewardSource->GetEntry(), pRewardSource->GetObjectGuid(), spellid, pGroupGuy == this);
             }
         }
     }
-    else                                                    // if (!pGroup)
+    else
     {
         m_journal.CastCredited(pRewardSource->GetEntry(), pRewardSource->GetObjectGuid(), spellid);
     }
 }
 
-/**
- * @brief Checks whether the player or corpse is close enough for shared rewards.
- *
- * @param pRewardSource The source object used for the distance check.
- * @return True if the player qualifies for group reward range; otherwise, false.
- */
 bool Player::IsAtGroupRewardDistance(Occupant const* pRewardSource) const
 {
     if (InReach(*pRewardSource, *this, sWorld.getConfig(CONFIG_FLOAT_GROUP_XP_DISTANCE)))

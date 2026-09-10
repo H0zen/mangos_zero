@@ -40,7 +40,7 @@ void Retinue::RemoveGuardians()
 
         if (Pet* guardian = m_owner.GetMap()->GetPet(guid))
         {
-            guardian->Unsummon(PET_SAVE_AS_DELETED, &m_owner);   // this can take the guid out itself
+            guardian->Unsummon(PET_SAVE_AS_DELETED, &m_owner);
         }
 
         m_guardians.erase(guid);
@@ -88,7 +88,7 @@ void Retinue::TakeTotem(Totem& totem)
     {
         if (m_totems[slot] == totem.GetObjectGuid())
         {
-            m_totems[slot].Clear();
+            m_totems[slot] = 0;
             break;
         }
     }

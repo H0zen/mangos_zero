@@ -28,26 +28,6 @@
 
 class Player;
 
-/**
- * What a character is trained to wear and wield, and what he can do so armed.
- *
- * The training is two masks, one over weapon kinds and one over armour kinds. A
- * bit is set when he learns the skill and is never cleared: nothing in the game
- * takes a proficiency away, which is why there is no method to.
- *
- * Parrying and blocking are not the same kind of fact as dual wielding. The
- * first two change how often a blow is turned aside, so setting either has to
- * work the percentage out again; the third only says whether a second weapon may
- * be worn, and nothing is recalculated from it.
- *
- * The loaded ammunition is kept as the damage range it adds rather than as the
- * arrow itself, because that is all a shot needs and it saves looking the
- * prototype up on every swing.
- *
- * The swing error is the last reason a melee swing did not happen -- out of
- * range, facing the wrong way -- kept so the same complaint is not sent to the
- * client twice in a row.
- */
 class Weaponry
 {
     public:
@@ -64,21 +44,17 @@ class Weaponry
         bool CanBlock() const { return m_canBlock; }
         bool CanDualWield() const { return m_canDualWield; }
 
-        /// Both of these work the percentage out again when the answer changes.
         void CanParry(bool can);
         void CanBlock(bool can);
 
         void CanDualWield(bool can) { m_canDualWield = can; }
 
-        /// The damage the loaded ammunition adds, least and most.
         std::pair<float, float> Ammo() const { return { m_ammoLeast, m_ammoMost }; }
         void Ammo(float least, float most) { m_ammoLeast = least; m_ammoMost = most; }
 
-        /// The last reason a melee swing did not happen.
         uint8 SwingError() const { return m_swingError; }
         void SwingError(uint8 why) { m_swingError = why; }
 
-        /// Milliseconds before a newly drawn weapon may be swung.
         uint32 ChangeTimer() const { return m_changeTimer; }
         void ChangeTimer(uint32 left) { m_changeTimer = left; }
 

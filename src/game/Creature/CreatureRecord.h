@@ -30,14 +30,6 @@
 
 struct CreatureInfo;
 
-/**
- * What sort of unit this is, as this core divides them.
- *
- * The wire knows nothing of it: every one of these is TypeID 3 to the client,
- * and a player is too. It is here so that asking what a unit is costs a
- * comparison rather than a cast, and so a player can answer no to all three
- * without being a case.
- */
 enum CreatureSubtype
 {
     CREATURE_SUBTYPE_GENERIC,
@@ -46,108 +38,56 @@ enum CreatureSubtype
     CREATURE_SUBTYPE_TEMPORARY_SUMMON,
 };
 
-/**
- * What the client is told when it asks what kind of thing this is.
- *
- * An empty record answers for a player: no name, no kind, no family, a normal
- * rank, and no to every question about what a creature is. That is what makes it
- * safe to ask any unit anything here without first asking what it is.
- *
- * This is SMSG_CREATURE_QUERY_RESPONSE, field for field and in its order, and it
- * is the whole of what the client keeps about a creature outside the update
- * fields. It hangs off the unit at [unit+0xB30] there, cached by entry, because
- * nothing in it varies between two creatures of the same entry -- which is why
- * the client asks once and never again.
- *
- * Pairing what this core sends with the offsets the client reads settles the
- * layout completely:
- *
- *     +0x00  name              +0x20  rank
- *     +0x10  subname           +0x24  a zero, sent and never read
- *     +0x14  type flags        +0x28  pet spell data id
- *     +0x18  creature type     +0x2C  display id
- *     +0x1C  family            +0x30  civilian, +0x31 racial leader
- *
- * A unit that has no such record is a player: nobody asks what kind of creature
- * a player is, because the answer comes from his race instead.
- */
 class CreatureRecord
 {
     public:
-        /// Nothing to tell.
+
         CreatureRecord() = default;
 
         explicit CreatureRecord(CreatureInfo const& of) : m_of(&of) {}
 
-        /// Whether there is anything here at all.
         explicit operator bool() const { return m_of != nullptr; }
-
-        /* ****************** What goes on the wire ****************** */
 
         char const* Name() const;
 
-        /// The line under the name: <Blacksmith>, <Guard Captain>.
         char const* Title() const;
 
-        /// CreatureType.dbc: beast, humanoid, undead and so on.
         uint32 Kind() const;
 
-        /// CreatureFamily.dbc, and zero for anything that is not a beast.
         uint32 Family() const;
 
-        /// Normal, elite, rare elite, world boss, rare.
         uint32 Rank() const;
 
-        /// CreatureSpellData.dbc, for a pet that comes with spells of its own.
         uint32 PetSpells() const;
 
         uint32 Flags() const;
 
-        /// The flags this core keeps for itself, which the client never sees.
         uint32 ExtraFlags() const;
 
-        /// Ground, water, air: where it may be.
         uint32 Inhabits() const;
 
-        /// Which of health and power it wins back out of combat.
         uint32 RegeneratesWhat() const;
 
-        /// It will not fight back, and killing it is a crime.
         bool IsCivilian() const;
 
-        /// One of the racial leaders, worth a bounty and an announcement.
         bool IsRacialLeader() const;
 
-        /* ****************** What the flags say ****************** */
-
-        /// A hunter may tame it. It has to be a beast, and a beast with a family:
-        /// the client gates on the flag and then reads the family, so one without
-        /// leaves it with nothing to look up.
         bool IsTameable() const;
 
-        /// Its tooltip says Boss where a level would be.
         bool IsBoss() const;
 
-        /// It keeps the peace: it comes when a citizen is attacked.
         bool IsGuard() const;
 
-        /// Its portrait carries the dragon: elite, rare elite, or a world boss.
         bool IsElite() const;
 
-        /// One of the handful that stand alone at the end of a raid.
         bool IsWorldBoss() const;
 
-        /// A dead player can see it: spirit healers, spirit guides, and the few
-        /// others that only have business with the dead.
         bool IsVisibleToGhosts() const;
 
-        /// Anyone may help it in a fight. Every one of these is an escort.
         bool CanBeAssisted() const;
 
-        /// Heard from further off than its size would suggest. Raid bosses.
         bool IsMoreAudible() const;
 
-        /// Which profession opens its corpse.
         SkillType RequiredLootSkill() const;
 
     private:

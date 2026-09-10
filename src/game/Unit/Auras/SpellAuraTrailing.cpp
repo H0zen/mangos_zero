@@ -23,28 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SpellAuras.cpp
- * @brief Spell aura implementation
- *
- * This file implements the SpellAura class which handles spell auras:
- * - Aura application and removal
- * - Aura effect processing (stat modifiers, DoTs, HoTs, etc.)
- * - Aura stacking rules
- * - Aura dispelling mechanics
- * - Aura periodic effects
- * - Aura duration management
- * - Aura visual effects
- *
- * Auras are persistent effects applied by spells that modify
- * unit stats, deal damage over time, or provide other benefits.
- *
- * @see SpellAura for the aura class
- * @see Spell for spell casting
- */
-
-
-
 #include "SpellAuras.h"
 #include "Platform/Define.h"
 #include "Database/DatabaseEnv.h"
@@ -76,12 +54,6 @@
 #include "Language.h"
 #include "TemporarySummon.h"
 
-/**
- * @brief Applies or removes prevention of fleeing on feared targets.
- *
- * @param apply True to prevent fleeing; false to restore it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandlePreventFleeing(bool apply, bool Real)
 {
     if (!Real)
@@ -109,12 +81,6 @@ void Aura::HandlePreventFleeing(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Calculates bonus absorb values for mana shield effects.
- *
- * @param apply True to apply the shield; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleManaShield(bool apply, bool Real)
 {
     if (!Real)
@@ -122,8 +88,7 @@ void Aura::HandleManaShield(bool apply, bool Real)
         return;
     }
 
-    // prevent double apply bonuses
-    if (apply && (!GetTarget()->IsPlayer() || !((Player*)GetTarget())->GetSession()->PlayerLoading()))
+    if (apply && (!IsPlayer(GetTarget()) || !((Player*)GetTarget())->GetSession()->PlayerLoading()))
     {
         if (Unit* caster = GetCaster())
         {
@@ -133,8 +98,7 @@ void Aura::HandleManaShield(bool apply, bool Real)
                 case SPELLFAMILY_MAGE:
                     if (GetSpellProto()->SpellClassMask & UI64LIT(0x0000000000008000))
                     {
-                        // Mana Shield
-                        // +50% from +spd bonus
+
                         DoneActualBenefit = caster->SpellBaseDamageBonusDone(GetSpellSchoolMask(GetSpellProto())) * 0.5f;
                         break;
                     }
@@ -150,13 +114,7 @@ void Aura::HandleManaShield(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Placeholder handler for safe fall aura effects.
- *
- * @param Apply True to apply the aura; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraSafeFall(bool Apply, bool Real)
 {
-    // implemented in WorldSession::HandleMovementOpcodes
+
 }

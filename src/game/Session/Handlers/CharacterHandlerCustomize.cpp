@@ -23,25 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file CharacterHandler.cpp
- * @brief Character creation, deletion, and management handlers
- *
- * This file handles character-related opcodes including:
- * - CMSG_CHAR_ENUM: List characters on account
- * - CMSG_CHAR_CREATE: Create new character
- * - CMSG_CHAR_DELETE: Delete character
- * - CMSG_PLAYER_LOGIN: Login to world with character
- * - CMSG_PLAYER_LOGOUT: Logout from world
- * - CMSG_NAME_QUERY: Query character name
- * - CMSG_CHAR_RENAME: Rename character
- *
- * Character creation includes validation of name, race, class,
- * appearance customization, and starting location setup.
- */
-
-
-
 #include "Common/ServerDefines.h"
 #include "Platform/Define.h"
 #include <string>
@@ -69,20 +50,14 @@
 #include "Chat.h"
 #include "Config/Config.h"
 
-/**
- * @brief Validates and starts the asynchronous character rename flow.
- *
- * @param recv_data The received opcode packet.
- */
 void characters::CharRename(WorldSession& session, WorldPacket& recv_data)
 {
-    ObjectGuid guid;
+    ObjectGuid guid = 0;
     std::string newname;
 
     recv_data >> guid;
     recv_data >> newname;
 
-    // prevent character rename to invalid name
     if (!normalizePlayerName(newname))
     {
         WorldPacket data(SMSG_CHAR_RENAME, 1);
@@ -100,7 +75,6 @@ void characters::CharRename(WorldSession& session, WorldPacket& recv_data)
         return;
     }
 
-    // check name limitations
     if (session.GetSecurity() == SEC_PLAYER && sObjectMgr.IsReservedName(newname))
     {
         WorldPacket data(SMSG_CHAR_RENAME, 1);
@@ -112,25 +86,16 @@ void characters::CharRename(WorldSession& session, WorldPacket& recv_data)
     std::string escaped_newname = newname;
     CharacterDatabase.escape_string(escaped_newname);
 
-    // make sure that the character belongs to the current account, that rename at login is enabled
-    // and that there is no character with the desired new name
     uint32 accountId = session.GetAccountId();
     CharacterDatabase.AsyncPQuery([accountId, newname](QueryResult* result)
                                   {
                                       WorldSession::HandleChangePlayerNameOpcodeCallBack(result, accountId, newname);
                                   },
             "SELECT `guid`, `name` FROM `characters` WHERE `guid` = %u AND `account` = %u AND (`at_login` & %u) = %u AND NOT EXISTS (SELECT NULL FROM `characters` WHERE `name` = '%s')",
-        guid.GetCounter(), session.GetAccountId(), AT_LOGIN_RENAME, AT_LOGIN_RENAME, escaped_newname.c_str()
+        GuidCounter(guid), session.GetAccountId(), AT_LOGIN_RENAME, AT_LOGIN_RENAME, escaped_newname.c_str()
         );
 }
 
-/**
- * @brief Finalizes a character rename after the database validation query completes.
- *
- * @param result The rename validation query result.
- * @param accountId The session account id.
- * @param newname The requested new character name.
- */
 void WorldSession::HandleChangePlayerNameOpcodeCallBack(QueryResult* result, uint32 accountId, std::string newname)
 {
     WorldSession* session = sWorld.FindSession(accountId);
@@ -149,7 +114,7 @@ void WorldSession::HandleChangePlayerNameOpcodeCallBack(QueryResult* result, uin
     }
 
     uint32 guidLow = result->Fetch()[0].GetUInt32();
-    ObjectGuid guid = ObjectGuid(HIGHGUID_PLAYER, guidLow);
+    ObjectGuid guid = MakeGuid(HIGHGUID_PLAYER, guidLow);
     std::string oldname = result->Fetch()[1].GetCppString();
 
     delete result;

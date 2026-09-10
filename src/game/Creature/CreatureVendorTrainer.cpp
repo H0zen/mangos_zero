@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Creature.h"
 #include "ObjectMgr.h"
 #include "LivingWorldAnchorPolicy.h"
@@ -59,33 +57,17 @@
 #include "MovementGenerator.h"
 #include "Policies/Singleton.h"
 
-/**
- * @brief Gets vendor items directly assigned to this creature entry.
- *
- * @return The vendor item list, or null if none exists.
- */
 VendorItemData const* Creature::GetVendorItems() const
 {
     return sObjectMgr.GetNpcVendorItemList(GetEntry());
 }
 
-/**
- * @brief Gets vendor items from this creature's vendor template.
- *
- * @return The vendor template item list, or null if none exists.
- */
 VendorItemData const* Creature::GetVendorTemplateItems() const
 {
     uint32 VendorTemplateId = GetCreatureInfo()->VendorTemplateId;
     return VendorTemplateId ? sObjectMgr.GetNpcVendorTemplateItemList(VendorTemplateId) : nullptr;
 }
 
-/**
- * @brief Gets the current available stock count for a vendor item.
- *
- * @param vItem The vendor item definition.
- * @return The currently available count.
- */
 uint32 Unit::GetVendorItemCurrentCount(VendorItem const* vItem)
 {
     if (!vItem->maxcount)
@@ -129,13 +111,6 @@ uint32 Unit::GetVendorItemCurrentCount(VendorItem const* vItem)
     return vCount->count;
 }
 
-/**
- * @brief Updates and consumes stock count for a limited vendor item.
- *
- * @param vItem The vendor item definition.
- * @param used_count The amount being purchased.
- * @return The remaining count after the update.
- */
 uint32 Unit::UpdateVendorItemCurrentCount(VendorItem const* vItem, uint32 used_count)
 {
     if (!vItem->maxcount)
@@ -183,22 +158,12 @@ uint32 Unit::UpdateVendorItemCurrentCount(VendorItem const* vItem, uint32 used_c
     return vCount->count;
 }
 
-/**
- * @brief Gets trainer spells from the trainer template bound to this creature.
- *
- * @return The trainer template spell list, or null if none exists.
- */
 TrainerSpellData const* Creature::GetTrainerTemplateSpells() const
 {
     uint32 TrainerTemplateId = GetCreatureInfo()->TrainerTemplateId;
     return TrainerTemplateId ? sObjectMgr.GetNpcTrainerTemplateSpells(TrainerTemplateId) : nullptr;
 }
 
-/**
- * @brief Gets trainer spells directly assigned to this creature entry.
- *
- * @return The trainer spell list, or null if none exists.
- */
 TrainerSpellData const* Creature::GetTrainerSpells() const
 {
     return sObjectMgr.GetNpcTrainerSpells(GetEntry());

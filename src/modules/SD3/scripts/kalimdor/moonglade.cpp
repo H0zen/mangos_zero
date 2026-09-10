@@ -192,7 +192,7 @@ struct npc_keeper_remulos : public CreatureScript
         uint32 m_uiShadesummonTimer;
         uint32 m_uiOutroTimer;
 
-        ObjectGuid m_eranikusGuid;
+        ObjectGuid m_eranikusGuid = 0;
 
         uint8 m_uiOutroPhase;
         uint8 m_uiSummonCount;
@@ -207,7 +207,7 @@ struct npc_keeper_remulos : public CreatureScript
                 m_uiOutroPhase = 0;
                 m_uiSummonCount = 0;
 
-                m_eranikusGuid.Clear();
+                m_eranikusGuid = 0;
 
                 m_uiShadesummonTimer = 0;
                 m_uiHealTimer = 10000;
@@ -301,7 +301,7 @@ struct npc_keeper_remulos : public CreatureScript
         {
             if (eventType == AI_EVENT_CUSTOM_A && pSender == m_creature)
             {
-                DoHandleOutro(ToCreature(pInvoker));
+                DoHandleOutro(static_cast<Creature*>(pInvoker));
             }
         }
 
@@ -594,8 +594,8 @@ struct boss_eranikus : public CreatureScript
         uint8 m_uiTyrandeMovePoint;
         uint8 m_uiHealthCheck;
 
-        ObjectGuid m_remulosGuid;
-        ObjectGuid m_tyrandeGuid;
+        ObjectGuid m_remulosGuid = 0;
+        ObjectGuid m_tyrandeGuid = 0;
         GuidList m_lPriestessList;
 
         void Reset() override
@@ -605,8 +605,8 @@ struct boss_eranikus : public CreatureScript
             m_uiShadowboltVolleyTimer = 5000;
             m_uiTyrandeMoveTimer = 0;
 
-            m_remulosGuid.Clear();
-            m_tyrandeGuid.Clear();
+            m_remulosGuid = 0;
+            m_tyrandeGuid = 0;
 
             m_uiHealthCheck = 85;
             m_uiEventPhase = 0;
@@ -657,7 +657,7 @@ struct boss_eranikus : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (!pVictim->IsPlayer())
+            if (!IsPlayer(pVictim))
             {
                 return;
             }

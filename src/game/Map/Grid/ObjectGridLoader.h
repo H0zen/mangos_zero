@@ -31,7 +31,6 @@
 
 class ObjectWorldLoader;
 
-
 class ObjectGridLoader
 {
     friend class ObjectWorldLoader;

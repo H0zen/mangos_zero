@@ -44,17 +44,12 @@ enum ItemModType
 
 enum ItemSpelltriggerType
 {
-    ITEM_SPELLTRIGGER_ON_USE          = 0,                  // use after equip cooldown
+    ITEM_SPELLTRIGGER_ON_USE          = 0,
     ITEM_SPELLTRIGGER_ON_EQUIP        = 1,
     ITEM_SPELLTRIGGER_CHANCE_ON_HIT   = 2,
     ITEM_SPELLTRIGGER_SOULSTONE       = 4,
-    /**
-     * ItemSpelltriggerType 5 might have changed on 2.4.3/3.0.3: Such auras
-     * will be applied on item pickup and removed on item loss - maybe on the
-     * other hand the item is destroyed if the aura is removed ("removed on
-     * death" of spell 57348 makes me think so)
-     */
-    ITEM_SPELLTRIGGER_ON_NO_DELAY_USE = 5,                  // no equip cooldown
+
+    ITEM_SPELLTRIGGER_ON_NO_DELAY_USE = 5,
 };
 
 #define MAX_ITEM_SPELLTRIGGER           6
@@ -66,34 +61,33 @@ enum ItemBondingType
     BIND_WHEN_EQUIPPED                          = 2,
     BIND_WHEN_USE                               = 3,
     BIND_QUEST_ITEM                             = 4,
-    BIND_QUEST_ITEM1                            = 5         // not used in game
+    BIND_QUEST_ITEM1                            = 5
 };
 
 #define MAX_BIND_TYPE                             6
 
-// Mask for ItemPrototype.Flags field
 enum ItemPrototypeFlags
 {
-    ITEM_FLAG_RESERVED_0                      = 0x00000001, // Reserved for later usage
-    ITEM_FLAG_CONJURED                        = 0x00000002, // items created by spells with SPELL_EFFECT_CREATE_ITEM
-    ITEM_FLAG_LOOTABLE                        = 0x00000004, // affect only non container items that can be "open" for loot. It or lockid set enable for client show "Right click to open". See also ITEM_DYNFLAG_UNLOCKED
-    ITEM_FLAG_WRAPPED                         = 0x00000008, // not used in pre-3.x
-    ITEM_FLAG_DEPRECATED                      = 0x00000010, // items is deprecated and no longer equipable
-    ITEM_FLAG_INDESTRUCTIBLE                  = 0x00000020, // used for totem. Item can not be destroyed, except by using spell (item can be reagent for spell and then allowed)
-    ITEM_FLAG_USABLE                          = 0x00000040, // items that can be used via right-click
-    ITEM_FLAG_NO_EQUIP_COOLDOWN               = 0x00000080, // items without an equip cooldown (and usually a _USABLE flag)
-    ITEM_FLAG_RESERVED_1                      = 0x00000100, // reserved for later usage
-    ITEM_FLAG_WRAPPER                         = 0x00000200, // used or not used wrapper
-    ITEM_FLAG_STACKABLE                       = 0x00000400, // items which can be stacked
-    ITEM_FLAG_PARTY_LOOT                      = 0x00000800, // items which can be looted by all party members
-    ITEM_FLAG_RESEVERD_2                      = 0x00001000, // reserved for later usage
-    ITEM_FLAG_CHARTER                         = 0x00002000, // guild charter
-    ITEM_FLAG_LETTER                          = 0x00004000, // readable letter items
-    ITEM_FLAG_PVP_REWARD                      = 0x00008000, // items rewarded for PvP ranks and/or honor standing
-    ITEM_FLAG_UNK16                           = 0x00010000, // a lot of items have this
-    ITEM_FLAG_UNK17                           = 0x00020000, // last used flag in 1.12.1
+    ITEM_FLAG_RESERVED_0                      = 0x00000001,
+    ITEM_FLAG_CONJURED                        = 0x00000002,
+    ITEM_FLAG_LOOTABLE                        = 0x00000004,
+    ITEM_FLAG_WRAPPED                         = 0x00000008,
+    ITEM_FLAG_DEPRECATED                      = 0x00000010,
+    ITEM_FLAG_INDESTRUCTIBLE                  = 0x00000020,
+    ITEM_FLAG_USABLE                          = 0x00000040,
+    ITEM_FLAG_NO_EQUIP_COOLDOWN               = 0x00000080,
+    ITEM_FLAG_RESERVED_1                      = 0x00000100,
+    ITEM_FLAG_WRAPPER                         = 0x00000200,
+    ITEM_FLAG_STACKABLE                       = 0x00000400,
+    ITEM_FLAG_PARTY_LOOT                      = 0x00000800,
+    ITEM_FLAG_RESEVERD_2                      = 0x00001000,
+    ITEM_FLAG_CHARTER                         = 0x00002000,
+    ITEM_FLAG_LETTER                          = 0x00004000,
+    ITEM_FLAG_PVP_REWARD                      = 0x00008000,
+    ITEM_FLAG_UNK16                           = 0x00010000,
+    ITEM_FLAG_UNK17                           = 0x00020000,
 
-    ITEM_FLAG_UNIQUE_EQUIPPED                 = 0x00080000, // custom server side check, in client added in 2.x
+    ITEM_FLAG_UNIQUE_EQUIPPED                 = 0x00080000,
 };
 
 enum BagFamily
@@ -357,13 +351,12 @@ inline uint8 ItemSubClassToDurabilityMultiplierId(uint32 ItemClass, uint32 ItemS
 
 enum ItemExtraFlags
 {
-    ITEM_EXTRA_NON_CONSUMABLE     = 0x01,                   // use as additional flag to spellcharges_N negative values, item not expire at no chanrges
-    ITEM_EXTRA_REAL_TIME_DURATION = 0x02,                   // if set and have Duration time, then offline time included in counting, if not set then counted only in game time
+    ITEM_EXTRA_NON_CONSUMABLE     = 0x01,
+    ITEM_EXTRA_REAL_TIME_DURATION = 0x02,
 
-    ITEM_EXTRA_ALL                = 0x03                    // all used flags, used for check DB data (mask all above flags)
+    ITEM_EXTRA_ALL                = 0x03
 };
 
-// GCC have alternative #pragma pack(N) syntax and old gcc version not support pack(push,N), also any gcc version not support it at some platform
 #if defined( __GNUC__ )
 #pragma pack(1)
 #else
@@ -374,7 +367,7 @@ struct _Damage
 {
     float   DamageMin;
     float   DamageMax;
-    uint32  DamageType;                                     // id from Resistances.dbc
+    uint32  DamageType;
 };
 
 struct _ItemStat
@@ -384,12 +377,12 @@ struct _ItemStat
 };
 struct _Spell
 {
-    uint32 SpellId;                                         // id from Spell.dbc
+    uint32 SpellId;
     uint32 SpellTrigger;
     int32  SpellCharges;
     float  SpellPPMRate;
     int32  SpellCooldown;
-    uint32 SpellCategory;                                   // id from SpellCategory.dbc
+    uint32 SpellCategory;
     int32  SpellCategoryCooldown;
 };
 
@@ -406,10 +399,10 @@ struct _Socket
 struct ItemPrototype
 {
     uint32 ItemId;
-    uint32 Class;                                           // id from ItemClass.dbc
-    uint32 SubClass;                                        // id from ItemSubClass.dbc
+    uint32 Class;
+    uint32 SubClass;
     char*  Name1;
-    uint32 DisplayInfoID;                                   // id from ItemDisplayInfo.dbc
+    uint32 DisplayInfoID;
     uint32 Quality;
     uint32 Flags;
     uint32 BuyCount;
@@ -420,12 +413,12 @@ struct ItemPrototype
     uint32 AllowableRace;
     uint32 ItemLevel;
     uint32 RequiredLevel;
-    uint32 RequiredSkill;                                   // id from SkillLine.dbc
+    uint32 RequiredSkill;
     uint32 RequiredSkillRank;
-    uint32 RequiredSpell;                                   // id from Spell.dbc
+    uint32 RequiredSpell;
     uint32 RequiredHonorRank;
     uint32 RequiredCityRank;
-    uint32 RequiredReputationFaction;                       // id from Faction.dbc
+    uint32 RequiredReputationFaction;
     uint32 RequiredReputationRank;
     uint32 MaxCount;
     uint32 Stackable;
@@ -443,30 +436,29 @@ struct ItemPrototype
     uint32 AmmoType;
     float  RangedModRange;
     _Spell Spells[MAX_ITEM_PROTO_SPELLS];
-    uint32 Bonding;                              ///< See \ref ItemBondingType
+    uint32 Bonding;
     char*  Description;
     uint32 PageText;
     uint32 LanguageID;
     uint32 PageMaterial;
-    uint32 StartQuest;                                      // id from QuestCache.wdb
+    uint32 StartQuest;
     uint32 LockID;
-    uint32 Material;                                        // id from Material.dbc
+    uint32 Material;
     uint32 Sheath;
-    uint32 RandomProperty;                                  // id from ItemRandomProperties.dbc
+    uint32 RandomProperty;
     uint32 Block;
-    uint32 ItemSet;                                         // id from ItemSet.dbc
+    uint32 ItemSet;
     uint32 MaxDurability;
-    uint32 Area;                                            // id from AreaTable.dbc
-    uint32 Map;                                             // id from Map.dbc
-    uint32 BagFamily;                                       // bit mask (1 << id from ItemBagFamily.dbc)
+    uint32 Area;
+    uint32 Map;
+    uint32 BagFamily;
     uint32 DisenchantID;
     uint32 FoodType;
     uint32 MinMoneyLoot;
     uint32 MaxMoneyLoot;
     uint32 Duration;
-    uint32 ExtraFlags;                                      // see ItemExtraFlags
+    uint32 ExtraFlags;
 
-    // helpers
     bool CanChangeEquipStateInCombat() const
     {
         switch (InventoryType)
@@ -512,7 +504,6 @@ struct ItemPrototype
     }
 };
 
-// GCC have alternative #pragma pack() syntax and old gcc version not support pack(pop), also any gcc version not support it at some platform
 #if defined( __GNUC__ )
 #pragma pack()
 #else

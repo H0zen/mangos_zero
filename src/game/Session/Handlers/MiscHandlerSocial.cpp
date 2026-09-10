@@ -23,33 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file MiscHandler.cpp
- * @brief Miscellaneous opcode handlers
- *
- * This file handles miscellaneous opcodes that don't fit into
- * other specific handler categories:
- *
- * - CMSG_NAME_QUERY: Query character name by GUID
- * - CMSG_PING: Client ping/pong
- * - CMSG_LOGOUT_REQUEST: Logout request
- * - CMSG_LOGOUT_CANCEL: Cancel logout
- * - CMSG_ZONE_UPDATE: Zone update
- * - CMSG_SET_ACTIONBAR_TOGGLES: Set action bar toggles
- * - CMSG_SET_ACTIONBAR_TEXT: Set action bar text
- * - CMSG_MOVE_TIME_SKIPPED: Movement time skipped
- * - CMSG_MOVE_FALL_RESET: Fall reset
- * - CMSG_WORLD_STATE_UI_TIMER: UI timer
- * - CMSG_NEXT_CINEMATIC_CAMERA: Cinematic camera
- * - CMSG_COMPLETE_CINEMATIC: Complete cinematic
- * - CMSG_SET_FACTION_AT_WAR: Set faction at war
- * - CMSG_SET_WATCHED_FACTION: Set watched faction
- * - CMSG_TOGGLE_PVP: Toggle PVP flag
- * - CMSG_SET_PLAYER_DECLARED_NAME: Set player name
- */
-
-
-
 #include "Common/ServerDefines.h"
 #include "Platform/Define.h"
 #include <string>
@@ -80,11 +53,6 @@
 #include "DBCEnums.h"
 #include <zlib.h>
 
-/**
- * @brief Starts an asynchronous add-friend lookup.
- *
- * @param recv_data The received opcode packet.
- */
 void social::AddFriend(WorldSession& session, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_ADD_FRIEND");
@@ -98,7 +66,7 @@ void social::AddFriend(WorldSession& session, WorldPacket& recv_data)
         return;
     }
 
-    CharacterDatabase.escape_string(friendName);            // prevent SQL injection - normal name don't must changed by this call
+    CharacterDatabase.escape_string(friendName);
 
     DEBUG_LOG("WORLD: %s asked to add friend : '%s'",
         session.GetPlayer()->GetName(), friendName.c_str());
@@ -110,12 +78,6 @@ void social::AddFriend(WorldSession& session, WorldPacket& recv_data)
                                   }, "SELECT `guid`, `race` FROM `characters` WHERE `name` = '%s'", friendName.c_str());
 }
 
-/**
- * @brief Completes an add-friend request after the character lookup.
- *
- * @param result The async query result.
- * @param accountId The requesting account id.
- */
 void WorldSession::HandleAddFriendOpcodeCallBack(QueryResult* result, uint32 accountId)
 {
     if (!result)
@@ -124,7 +86,7 @@ void WorldSession::HandleAddFriendOpcodeCallBack(QueryResult* result, uint32 acc
     }
 
     uint32 friendLowGuid = (*result)[0].GetUInt32();
-    ObjectGuid friendGuid = ObjectGuid(HIGHGUID_PLAYER, friendLowGuid);
+    ObjectGuid friendGuid = MakeGuid(HIGHGUID_PLAYER, friendLowGuid);
     Team team = Player::TeamForRace((*result)[1].GetUInt8());
 
     delete result;
@@ -181,14 +143,9 @@ void WorldSession::HandleAddFriendOpcodeCallBack(QueryResult* result, uint32 acc
     DEBUG_LOG("WORLD: Sent (SMSG_FRIEND_STATUS)");
 }
 
-/**
- * @brief Removes a friend from the player's social list.
- *
- * @param recv_data The received opcode packet.
- */
 void social::DelFriend(Player& who, WorldPacket& recv_data)
 {
-    ObjectGuid friendGuid;
+    ObjectGuid friendGuid = 0;
 
     DEBUG_LOG("WORLD: Received opcode CMSG_DEL_FRIEND");
 
@@ -201,11 +158,6 @@ void social::DelFriend(Player& who, WorldPacket& recv_data)
     DEBUG_LOG("WORLD: Sent motd (SMSG_FRIEND_STATUS)");
 }
 
-/**
- * @brief Starts an asynchronous add-ignore lookup.
- *
- * @param recv_data The received opcode packet.
- */
 void social::AddIgnore(WorldSession& session, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_ADD_IGNORE");
@@ -219,7 +171,7 @@ void social::AddIgnore(WorldSession& session, WorldPacket& recv_data)
         return;
     }
 
-    CharacterDatabase.escape_string(IgnoreName);            // prevent SQL injection - normal name don't must changed by this call
+    CharacterDatabase.escape_string(IgnoreName);
 
     DEBUG_LOG("WORLD: %s asked to Ignore: '%s'",
         session.GetPlayer()->GetName(), IgnoreName.c_str());
@@ -231,12 +183,6 @@ void social::AddIgnore(WorldSession& session, WorldPacket& recv_data)
                                   }, "SELECT `guid` FROM `characters` WHERE `name` = '%s'", IgnoreName.c_str());
 }
 
-/**
- * @brief Completes an add-ignore request after the character lookup.
- *
- * @param result The async query result.
- * @param accountId The requesting account id.
- */
 void WorldSession::HandleAddIgnoreOpcodeCallBack(QueryResult* result, uint32 accountId)
 {
     if (!result)
@@ -245,7 +191,7 @@ void WorldSession::HandleAddIgnoreOpcodeCallBack(QueryResult* result, uint32 acc
     }
 
     uint32 ignoreLowGuid = (*result)[0].GetUInt32();
-    ObjectGuid ignoreGuid = ObjectGuid(HIGHGUID_PLAYER, ignoreLowGuid);
+    ObjectGuid ignoreGuid = MakeGuid(HIGHGUID_PLAYER, ignoreLowGuid);
 
     delete result;
 
@@ -276,7 +222,6 @@ void WorldSession::HandleAddIgnoreOpcodeCallBack(QueryResult* result, uint32 acc
         {
             ignoreResult = FRIEND_IGNORE_ADDED;
 
-            // ignore list full
             if (!player->GetSocial()->AddToSocialList(ignoreGuid, true))
             {
                 ignoreResult = FRIEND_IGNORE_FULL;
@@ -289,14 +234,9 @@ void WorldSession::HandleAddIgnoreOpcodeCallBack(QueryResult* result, uint32 acc
     DEBUG_LOG("WORLD: Sent (SMSG_FRIEND_STATUS)");
 }
 
-/**
- * @brief Removes an ignored player from the social list.
- *
- * @param recv_data The received opcode packet.
- */
 void social::DelIgnore(Player& who, WorldPacket& recv_data)
 {
-    ObjectGuid ignoreGuid;
+    ObjectGuid ignoreGuid = 0;
 
     DEBUG_LOG("WORLD: Received opcode CMSG_DEL_IGNORE");
 

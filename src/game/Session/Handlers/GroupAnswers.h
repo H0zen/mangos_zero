@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about his party or raid.
 namespace groups
 {
     void GroupInvite(Player& who, WorldPacket& packet);

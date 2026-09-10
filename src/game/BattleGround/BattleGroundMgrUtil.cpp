@@ -23,22 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file BattleGroundMgr.cpp
- * @brief Implementation of the battleground manager and queue system.
- *
- * This file contains the implementation of the BattleGroundMgr singleton class and
- * the BattleGroundQueue class, which handle:
- * - Battleground instance creation and management
- * - Player queue management and matching
- * - Team balancing for battleground invitations
- * - Average wait time calculations
- * - Bracket-based queue organization
- * - Premade group matching
- */
-
-
-
 #include "BattleGroundMgr.h"
 #include "Platform/Define.h"
 #include "SharedDefines.h"
@@ -59,15 +43,6 @@
 #include "Policies/Singleton.h"
 #include "Language.h"
 
-/**
- * @brief Converts a battleground type ID to a queue type ID.
- *
- * Maps a battleground type ID to its corresponding queue type ID. Different queue types
- * have separate queues in the matchmaking system.
- *
- * @param bgTypeId The battleground type ID.
- * @return The corresponding queue type ID, or BATTLEGROUND_QUEUE_NONE if invalid.
- */
 BattleGroundQueueTypeId BattleGroundMgr::BGQueueTypeId(BattleGroundTypeId bgTypeId)
 {
     switch (bgTypeId)
@@ -83,15 +58,6 @@ BattleGroundQueueTypeId BattleGroundMgr::BGQueueTypeId(BattleGroundTypeId bgType
     }
 }
 
-/**
- * @brief Converts a battleground queue type to its template battleground type.
- *
- * Maps queue identifiers back to the battleground template type used to create
- * or reference battleground instances.
- *
- * @param bgQueueTypeId The battleground queue type identifier.
- * @return The corresponding battleground type identifier.
- */
 BattleGroundTypeId BattleGroundMgr::BGTemplateId(BattleGroundQueueTypeId bgQueueTypeId)
 {
     switch (bgQueueTypeId)
@@ -103,15 +69,10 @@ BattleGroundTypeId BattleGroundMgr::BGTemplateId(BattleGroundQueueTypeId bgQueue
         case BATTLEGROUND_QUEUE_AV:
             return BATTLEGROUND_AV;
         default:
-            return BattleGroundTypeId(0);                   // used for unknown template (it exist and do nothing)
+            return BattleGroundTypeId(0);
     }
 }
 
-/**
- * @brief Toggles battleground debug testing mode.
- *
- * Enables or disables testing mode and broadcasts the status change to the world.
- */
 void BattleGroundMgr::ToggleTesting()
 {
     m_Testing = !m_Testing;
@@ -125,20 +86,9 @@ void BattleGroundMgr::ToggleTesting()
     }
 }
 
-/**
- * @brief Schedules a queue update for a specific battleground queue.
- *
- * Adds a queue update to the scheduler so that the next world update cycle will
- * process matchmaking and invitations for this queue. Multiple requests for the same
- * queue are consolidated to avoid duplicate processing.
- *
- * @param bgQueueTypeId The battleground queue type to update.
- * @param bgTypeId The battleground type.
- * @param bracket_id The bracket to update.
- */
 void BattleGroundMgr::ScheduleQueueUpdate(BattleGroundQueueTypeId bgQueueTypeId, BattleGroundTypeId bgTypeId, BattleGroundBracketId bracket_id)
 {
-    // combine bgQueueTypeId, bgTypeId and bracket_id into a single schedule id
+
     uint32 schedule_id = (bgQueueTypeId << 16) | (bgTypeId << 8) | bracket_id;
     bool found = false;
     for (uint8 i = 0; i < m_QueueUpdateScheduler.size(); ++i)
@@ -155,28 +105,14 @@ void BattleGroundMgr::ScheduleQueueUpdate(BattleGroundQueueTypeId bgQueueTypeId,
     }
 }
 
-/**
- * @brief Gets the premature finish timer duration.
- *
- * Returns the configured duration in milliseconds after which a battleground can be
- * finished prematurely if one team is significantly outnumbered or defeated.
- *
- * @return The premature finish timer duration in milliseconds.
- */
 uint32 BattleGroundMgr::GetPrematureFinishTime() const
 {
     return sWorld.getConfig(CONFIG_UINT32_BATTLEGROUND_PREMATURE_FINISH_TIMER);
 }
 
-/**
- * @brief Loads battle master creature entries from the database.
- *
- * Populates the battle master map from the `battlemaster_entry` database table,
- * which maps creature entries to their respective battleground types.
- */
 void BattleGroundMgr::LoadBattleMastersEntry()
 {
-    mBattleMastersMap.clear();                              // need for reload case
+    mBattleMastersMap.clear();
 
     QueryResult* result = WorldDatabase.Query("SELECT `entry`,`bg_template` FROM `battlemaster_entry`");
 
@@ -218,15 +154,6 @@ void BattleGroundMgr::LoadBattleMastersEntry()
     sLog.outString();
 }
 
-/**
- * @brief Converts a battleground type to its weekend holiday ID.
- *
- * Maps battleground types to their associated "Call to Arms" weekend holiday events that
- * provide bonus rewards for participating in that battleground type.
- *
- * @param bgTypeId The battleground type to convert.
- * @return The corresponding holiday ID, or HOLIDAY_NONE if not a recognized type.
- */
 HolidayIds BattleGroundMgr::BGTypeToWeekendHolidayId(BattleGroundTypeId bgTypeId)
 {
     switch (bgTypeId)
@@ -238,14 +165,6 @@ HolidayIds BattleGroundMgr::BGTypeToWeekendHolidayId(BattleGroundTypeId bgTypeId
     }
 }
 
-/**
- * @brief Converts a battleground type to its weekend holiday ID.
- *
- * Maps battleground types to their associated "Call to Arms" weekend holiday events.
- *
- * @param holiday The holiday ID to convert.
- * @return The corresponding battleground type, or BATTLEGROUND_TYPE_NONE if invalid.
- */
 BattleGroundTypeId BattleGroundMgr::WeekendHolidayIdToBGType(HolidayIds holiday)
 {
     switch (holiday)
@@ -257,43 +176,27 @@ BattleGroundTypeId BattleGroundMgr::WeekendHolidayIdToBGType(HolidayIds holiday)
     }
 }
 
-/**
- * @brief Checks if a battleground type is active for the weekend.
- *
- * Determines whether the specified battleground type has an active "Call to Arms"
- * weekend event that provides bonus experience and reputation.
- *
- * @param bgTypeId The battleground type to check.
- * @return true if the battleground is currently featured for the weekend, false otherwise.
- */
 bool BattleGroundMgr::IsBGWeekend(BattleGroundTypeId bgTypeId)
 {
     return sGameEventMgr.IsActiveHoliday(BGTypeToWeekendHolidayId(bgTypeId));
 }
 
-/**
- * @brief Loads battleground event indexes from the database.
- *
- * Populates the game object and creature event index maps from the database,
- * associating spawned objects and creatures with their battleground events.
- * This enables proper spawning and despawning of objectives during battles.
- */
 void BattleGroundMgr::LoadBattleEventIndexes()
 {
     BattleGroundEventIdx events;
     events.event1 = BG_EVENT_NONE;
     events.event2 = BG_EVENT_NONE;
-    m_GameObjectBattleEventIndexMap.clear();             // need for reload case
+    m_GameObjectBattleEventIndexMap.clear();
     m_GameObjectBattleEventIndexMap[-1] = events;
-    m_CreatureBattleEventIndexMap.clear();               // need for reload case
+    m_CreatureBattleEventIndexMap.clear();
     m_CreatureBattleEventIndexMap[-1] = events;
 
     uint32 count = 0;
 
     QueryResult* result =
-    //                                      0             1               2                      3                        4              5                      6
+
         WorldDatabase.Query("SELECT `data`.`typ`, `data`.`guid1`, `data`.`ev1` AS `ev1`, `data`.`ev2` AS ev2, `data`.`map` AS m, `data`.`guid2`, `description`.`map`, "
-    //                  7                       8                       9
+
         "`description`.`event1`, `description`.`event2`, `description`.`description` "
         "FROM "
         "(SELECT '1' AS typ, `a`.`guid` AS `guid1`, `a`.`event1` AS ev1, `a`.`event2` AS ev2, `b`.`map` AS map, `b`.`guid` AS guid2 "
@@ -306,7 +209,7 @@ void BattleGroundMgr::LoadBattleEventIndexes()
         ") data "
         "RIGHT OUTER JOIN `battleground_events` AS `description` ON `data`.`map` = `description`.`map` "
         "AND `data`.`ev1` = `description`.`event1` AND `data`.`ev2` = `description`.`event2` "
-    //  full outer join doesn't work in mysql :-/ so just UNION-select the same again and add a left outer join
+
         "UNION "
         "SELECT `data`.`typ`, `data`.`guid1`, `data`.`ev1`, `data`.`ev2`, `data`.`map`, `data`.`guid2`, `description`.`map`, "
         "`description`.`event1`, `description`.`event2`, `description`.`description` "
@@ -339,7 +242,7 @@ void BattleGroundMgr::LoadBattleEventIndexes()
         Field* fields = result->Fetch();
         if (fields[2].GetUInt8() == BG_EVENT_NONE || fields[3].GetUInt8() == BG_EVENT_NONE)
         {
-            continue; // we don't need to add those to the eventmap
+            continue;
         }
 
         bool gameobject         = (fields[0].GetUInt8() == 1);
@@ -353,7 +256,6 @@ void BattleGroundMgr::LoadBattleEventIndexes()
         uint8 desc_event2 = fields[8].GetUInt8();
         const char* description = fields[9].GetString();
 
-        // checking for nullptr - through right outer join this will mean following:
         if (fields[5].GetUInt32() != dbTableGuidLow)
         {
             sLog.outErrorDb("BattleGroundEvent: %s with nonexistent guid %u for event: map:%u, event1:%u, event2:%u (\"%s\")",
@@ -361,16 +263,15 @@ void BattleGroundMgr::LoadBattleEventIndexes()
             continue;
         }
 
-        // checking for nullptr - through full outer join this can mean 2 things:
         if (desc_map != map)
         {
-            // there is an event missing
+
             if (dbTableGuidLow == 0)
             {
                 sLog.outErrorDb("BattleGroundEvent: missing db-data for map:%u, event1:%u, event2:%u (\"%s\")", desc_map, desc_event1, desc_event2, description);
                 continue;
             }
-            // we have an event which shouldn't exist
+
             else
             {
                 sLog.outErrorDb("BattleGroundEvent: %s with guid %u is registered, for a nonexistent event: map:%u, event1:%u, event2:%u",

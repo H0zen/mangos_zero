@@ -24,7 +24,7 @@ CreatureSheet::CreatureSheet(Creature& whose) : StatSheet(whose), m_owner(whose)
 {
 }
 
-void CreatureSheet::Stat(Stats /*stat*/)
+void CreatureSheet::Stat(Stats )
 {
 }
 
@@ -72,7 +72,6 @@ void CreatureSheet::AttackPower(bool ranged)
         return;
     }
 
-    // what it swings for follows from what it swings with
     Swing(BASE_ATTACK);
     Swing(OFF_ATTACK);
 }
@@ -86,8 +85,6 @@ void CreatureSheet::Swing(WeaponAttackType attType)
 
     UnitMods const unitMod = attType == BASE_ATTACK ? UNIT_MOD_DAMAGE_MAINHAND : UNIT_MOD_DAMAGE_OFFHAND;
 
-    // Only the attack power it has ABOVE the template's counts: what the template
-    // was written with is already in the damage the template gives.
     float const gained = m_owner.GetTotalAttackPowerValue(attType) - m_owner.GetCreatureInfo()->MeleeAttackPower;
 
     stats::Swing const swing = stats::CreatureSwing(

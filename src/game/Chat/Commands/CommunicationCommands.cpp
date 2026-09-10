@@ -23,16 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file CommunicationCommands.cpp
- * @brief Implementation of player communication and messaging chat commands.
- *
- * This file contains chat command handlers for communication features including:
- * - Private messaging between players
- * - System-wide announcements
- * - Chat channel management
- */
-
 #include <string>
 #include "Utterance.h"
 #include "Chat.h"
@@ -40,12 +30,6 @@
 #include "World.h"
 #include "ObjectMgr.h"
 
-/**
- * @brief Handler for HandleAnnounceCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleAnnounceCommand(char* args)
 {
     if (!*args)
@@ -57,12 +41,6 @@ bool ChatHandler::HandleAnnounceCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNotifyCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNotifyCommand(char* args)
 {
     if (!*args)
@@ -80,18 +58,12 @@ bool ChatHandler::HandleNotifyCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleMuteCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleMuteCommand(char* args)
 {
     char* nameStr = ExtractOptNotLastArg(&args);
 
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     std::string target_name;
     if (!ExtractPlayerTarget(&nameStr, &target, &target_guid, &target_name))
     {
@@ -106,7 +78,6 @@ bool ChatHandler::HandleMuteCommand(char* args)
 
     uint32 account_id = target ? target->GetSession()->GetAccountId() : sObjectMgr.GetPlayerAccountIdByGUID(target_guid);
 
-    // find only player from same account if any
     if (!target)
     {
         if (WorldSession* session = sWorld.FindSession(account_id))
@@ -115,7 +86,6 @@ bool ChatHandler::HandleMuteCommand(char* args)
         }
     }
 
-    // must have strong lesser security level
     if (HasLowerSecurity(target, target_guid, true))
     {
         return false;
@@ -141,16 +111,10 @@ bool ChatHandler::HandleMuteCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleUnmuteCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleUnmuteCommand(char* args)
 {
     Player* target;
-    ObjectGuid target_guid;
+    ObjectGuid target_guid = 0;
     std::string target_name;
     if (!ExtractPlayerTarget(&args, &target, &target_guid, &target_name))
     {
@@ -159,7 +123,6 @@ bool ChatHandler::HandleUnmuteCommand(char* args)
 
     uint32 account_id = target ? target->GetSession()->GetAccountId() : sObjectMgr.GetPlayerAccountIdByGUID(target_guid);
 
-    // find only player from same account if any
     if (!target)
     {
         if (WorldSession* session = sWorld.FindSession(account_id))
@@ -168,7 +131,6 @@ bool ChatHandler::HandleUnmuteCommand(char* args)
         }
     }
 
-    // must have strong lesser security level
     if (HasLowerSecurity(target, target_guid, true))
     {
         return false;
@@ -199,12 +161,6 @@ bool ChatHandler::HandleUnmuteCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleWhispersCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleWhispersCommand(char* args)
 {
     if (!*args)
@@ -221,13 +177,12 @@ bool ChatHandler::HandleWhispersCommand(char* args)
         return false;
     }
 
-    // whisper on
     if (value)
     {
         m_session->GetPlayer()->SetAcceptWhispers(true);
         SendSysMessage(LANG_COMMAND_WHISPERON);
     }
-    // whisper off
+
     else
     {
         m_session->GetPlayer()->SetAcceptWhispers(false);
@@ -237,12 +192,6 @@ bool ChatHandler::HandleWhispersCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleGMChatCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleGMChatCommand(char* args)
 {
     if (!*args)
@@ -280,12 +229,6 @@ bool ChatHandler::HandleGMChatCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcSayCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcSayCommand(char* args)
 {
     if (!*args)
@@ -306,12 +249,6 @@ bool ChatHandler::HandleNpcSayCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcYellCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcYellCommand(char* args)
 {
     if (!*args)
@@ -332,12 +269,6 @@ bool ChatHandler::HandleNpcYellCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcTextEmoteCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcTextEmoteCommand(char* args)
 {
     if (!*args)
@@ -359,12 +290,6 @@ bool ChatHandler::HandleNpcTextEmoteCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcWhisperCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcWhisperCommand(char* args)
 {
     Player* target;
@@ -386,7 +311,6 @@ bool ChatHandler::HandleNpcWhisperCommand(char* args)
         return false;
     }
 
-    // check online security
     if (HasLowerSecurity(target))
     {
         return false;
@@ -397,22 +321,15 @@ bool ChatHandler::HandleNpcWhisperCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleSendMessageCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleSendMessageCommand(char* args)
 {
-    ///- Find the player
+
     Player* rPlayer;
     if (!ExtractPlayerTarget(&args, &rPlayer))
     {
         return false;
     }
 
-    ///- message
     if (!*args)
     {
         return false;
@@ -420,7 +337,6 @@ bool ChatHandler::HandleSendMessageCommand(char* args)
 
     WorldSession* rPlayerSession = rPlayer->GetSession();
 
-    ///- Check that he is not logging out.
     if (rPlayerSession->isLogingOut())
     {
         SendSysMessage(LANG_PLAYER_NOT_FOUND);
@@ -428,12 +344,9 @@ bool ChatHandler::HandleSendMessageCommand(char* args)
         return false;
     }
 
-    ///- Send the message
-    // Use SendAreaTriggerMessage for fastest delivery.
     rPlayerSession->SendAreaTriggerMessage("%s", args);
     rPlayerSession->SendAreaTriggerMessage("|cffff0000[Message from administrator]:|r");
 
-    // Confirmation message
     std::string nameLink = GetNameLink(rPlayer);
     PSendSysMessage(LANG_SENDMESSAGE, nameLink.c_str(), args);
     return true;

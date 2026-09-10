@@ -73,7 +73,7 @@ struct npc_dorius_stonetender : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* /*pSender*/, Unit* pInvoker, uint32 uiMiscValue) override
         {
-            if (eventType == AI_EVENT_START_ESCORT && pInvoker->IsPlayer())
+            if (eventType == AI_EVENT_START_ESCORT &&IsPlayer(pInvoker))
             {
                 // ToDo: research if there is any text here
                 m_creature->SetStandState(UNIT_STAND_STATE_STAND);

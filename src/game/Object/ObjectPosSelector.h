@@ -52,7 +52,7 @@ struct ObjectPosSelector
         float angleOffset;
         Occupant const* occupyingObj;
     };
-    // angle pos -> OccupiedArea
+
     typedef std::multimap<float, OccupiedArea> UsedAreaList;
     typedef UsedAreaList::value_type UsedArea;
 
@@ -73,14 +73,14 @@ struct ObjectPosSelector
 
     float m_centerX;
     float m_centerY;
-    float m_searcherDist;                                   // distance for searching pos
-    float m_searchedForReqHAngle;                           // angle size/2 of searcher object (at dist distance)
+    float m_searcherDist;
+    float m_searchedForReqHAngle;
 
-    UsedAreaList m_UsedAreaLists[2];                        // list left/right side used angles (with angle size)
+    UsedAreaList m_UsedAreaLists[2];
 
-    UsedAreaList::const_iterator m_nextUsedAreaItr[2];      // next used used areas for check at left/right side, possible angles selected in range m_smallStepAngle..m_nextUsedAreaItr
+    UsedAreaList::const_iterator m_nextUsedAreaItr[2];
 
-    float m_stepAngle[2];                                   // current checked angle position at sides (less m_nextUsedArea), positive value
+    float m_stepAngle[2];
 
-    Occupant const* m_searchPosFor;                      // For whom a position is searched (can be nullptr)
+    Occupant const* m_searchPosFor;
 };

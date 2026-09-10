@@ -29,21 +29,12 @@
 
 class Creature;
 
-/**
- * @brief Leashed wander: hop to a random reachable point within a radius of a fixed
- *        centre, rest a beat, repeat.
- *
- * The whole generator is that rhythm and nothing else. Picking the point is a question
- * for the mover's frame (world terrain today, a transport deck later); routing and
- * launching the leg is the driver's.
- */
 class RandomMovementGenerator final : public IntentMovementGenerator
 {
     public:
-        /// Wander around the creature's own respawn point, at its DB wander distance.
+
         explicit RandomMovementGenerator(Creature const& creature);
 
-        /// Wander around an explicit centre.
         RandomMovementGenerator(float x, float y, float z, float radius);
 
         void Initialize(Unit& owner) override;
@@ -58,10 +49,10 @@ class RandomMovementGenerator final : public IntentMovementGenerator
                                   uint32 diff) override;
 
     private:
-        Motion::Vector3 m_centre;    ///< What the wander is leashed to.
-        float m_radius;              ///< How far from it the creature may stray.
+        Motion::Vector3 m_centre;
+        float m_radius;
 
-        TimeTracker m_restTime{0};   ///< Time left standing before the next hop.
-        Motion::Vector3 m_hop;       ///< Where the current hop is heading.
-        bool m_haveHop = false;      ///< False before the first point has been picked.
+        TimeTracker m_restTime{0};
+        Motion::Vector3 m_hop;
+        bool m_haveHop = false;
 };

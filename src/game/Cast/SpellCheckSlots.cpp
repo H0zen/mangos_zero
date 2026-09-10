@@ -23,17 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SpellCheckSlots.cpp
- * @brief The refusals that come from what the recipe itself would do.
- *
- * Two passes over the recipe: one asks each slot whether it can run, one asks
- * each aura whether it can hold. The first refusal ends the cast.
- */
-
-
-
-
 #include "Reaction.h"
 #include "Utilities/MathDefines.h"
 #include "Spell.h"
@@ -67,37 +56,26 @@
 #include "DisableMgr.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Asks each slot of the recipe whether it can run at all.
- *
- * A slot refuses for reasons of its own: nothing to skin, no corpse to
- * raise, a beast too strong to tame, a pet already out. The first refusal
- * ends the cast.
- *
- * @return The reason the cast is refused, or SPELL_CAST_OK when every slot is content.
- */
 SpellCastResult Spell::CheckEachSlotCanRun()
 {
     for (const auto& operation : Recipe().Does())
     {
         const int i = operation.slot;
 
-        // for effects of spells that have only one target
         switch (operation.verb)
         {
             case SPELL_EFFECT_DUMMY:
             {
-                if (m_spellInfo->SpellIconID == 1648)       // Execute
+                if (m_spellInfo->SpellIconID == 1648)
                 {
                     if (!m_targets.getUnitTarget() || m_targets.getUnitTarget()->GetHealth() > m_targets.getUnitTarget()->GetMaxHealth() * 0.2)
                     {
                         return SPELL_FAILED_BAD_TARGETS;
                     }
                 }
-                else if (m_spellInfo->SpellIconID == 156)   // Holy Shock
+                else if (m_spellInfo->SpellIconID == 156)
                 {
-                    // spell different for friends and enemies
-                    // hart version required facing
+
                     if (m_targets.getUnitTarget() && !IsFriendly(*m_caster, *m_targets.getUnitTarget()) && !m_caster->Where().HasInArc(m_targets.getUnitTarget()->Where(), M_PI_F))
                     {
                         return SPELL_FAILED_UNIT_NOT_INFRONT;
@@ -105,7 +83,7 @@ SpellCastResult Spell::CheckEachSlotCanRun()
                 }
                 break;
             }
-            case SPELL_EFFECT_DISTRACT:                     // All nearby enemies must not be in combat
+            case SPELL_EFFECT_DISTRACT:
             {
                 if (m_targets.m_targetMask & (TARGET_FLAG_DEST_LOCATION | TARGET_FLAG_SOURCE_LOCATION))
                 {
@@ -131,7 +109,7 @@ SpellCastResult Spell::CheckEachSlotCanRun()
             }
             case SPELL_EFFECT_SCHOOL_DAMAGE:
             {
-                // Hammer of Wrath
+
                 if (m_spellInfo->SpellVisualID == 7250)
                 {
                     if (!m_targets.getUnitTarget())
@@ -144,7 +122,7 @@ SpellCastResult Spell::CheckEachSlotCanRun()
                         return SPELL_FAILED_BAD_TARGETS;
                     }
                 }
-                // Conflagrate
+
                 else if (m_spellInfo->SpellClassSet == SPELLFAMILY_WARLOCK && m_spellInfo->SpellClassMask & UI64LIT(0x0000000000000200))
                 {
                     if (!m_targets.getUnitTarget())
@@ -152,14 +130,13 @@ SpellCastResult Spell::CheckEachSlotCanRun()
                         return SPELL_FAILED_BAD_IMPLICIT_TARGETS;
                     }
 
-                    // for caster applied auras only
                     bool found = false;
                     const auto mPeriodic = m_targets.getUnitTarget()->GetAurasByType(SPELL_AURA_PERIODIC_DAMAGE);
                     for (auto* aura : mPeriodic)
                     {
                         if (aura->GetSpellProto()->SpellClassSet == SPELLFAMILY_WARLOCK &&
                             aura->GetCasterGuid() == m_caster->GetObjectGuid() &&
-                            // Immolate
+
                             (aura->GetSpellProto()->SpellClassMask & UI64LIT(0x0000000000000004)))
                         {
                             found = true;
@@ -259,7 +236,7 @@ SpellCastResult Spell::CheckEachSlotCanRun()
             }
             case SPELL_EFFECT_FEED_PET:
             {
-                if (!m_caster->IsPlayer())
+                if (!IsPlayer(m_caster))
                 {
                     return SPELL_FAILED_BAD_TARGETS;
                 }
@@ -297,8 +274,8 @@ SpellCastResult Spell::CheckEachSlotCanRun()
             case SPELL_EFFECT_POWER_BURN:
             case SPELL_EFFECT_POWER_DRAIN:
             {
-                // Can be area effect, Check only for players and not check if target - caster (spell can have multiply drain/burn effects)
-                if (m_caster->IsPlayer())
+
+                if (IsPlayer(m_caster))
                 {
                     if (Unit* target = m_targets.getUnitTarget())
                     {
@@ -321,7 +298,7 @@ SpellCastResult Spell::CheckEachSlotCanRun()
             }
             case SPELL_EFFECT_SKINNING:
             {
-                if (!m_caster->IsPlayer() || !m_targets.getUnitTarget() || !m_targets.getUnitTarget()->IsCreature())
+                if (!IsPlayer(m_caster) || !m_targets.getUnitTarget() || !IsCreature(m_targets.getUnitTarget()))
                 {
                     return SPELL_FAILED_BAD_TARGETS;
                 }
@@ -347,7 +324,6 @@ SpellCastResult Spell::CheckEachSlotCanRun()
                     return SPELL_FAILED_SKILL_NOT_HIGH_ENOUGH;
                 }
 
-                // chance for fail at orange skinning attempt
                 if (m_spellState != SPELL_STATE_CREATED &&
                     skillValue < sWorld.GetConfigMaxSkillValue() &&
                     (ReqValue < 0 ? 0 : ReqValue) > irand(skillValue - 25, skillValue + 37))
@@ -360,12 +336,11 @@ SpellCastResult Spell::CheckEachSlotCanRun()
             case SPELL_EFFECT_OPEN_LOCK_ITEM:
             case SPELL_EFFECT_OPEN_LOCK:
             {
-                if (!m_caster->IsPlayer()) // only players can open locks, gather etc.
+                if (!IsPlayer(m_caster))
                 {
                     return SPELL_FAILED_BAD_TARGETS;
                 }
 
-                // we need a go target in case of TARGET_GAMEOBJECT (for other targets acceptable GO and items)
                 if (operation.targetA == TARGET_GAMEOBJECT)
                 {
                     if (!m_targets.getGOTarget())
@@ -374,17 +349,15 @@ SpellCastResult Spell::CheckEachSlotCanRun()
                     }
                 }
 
-                // get the lock entry
                 uint32 lockId;
                 if (GameObject* go = m_targets.getGOTarget())
                 {
-                    // Prevent opening two times a chest in same time.
+
                     if (go->GetGoType() == GAMEOBJECT_TYPE_CHEST && go->GetGoState() == GO_STATE_ACTIVE)
                     {
                         return SPELL_FAILED_CHEST_IN_USE;
                     }
 
-                    // In BattleGround players can use only flags and banners
                     if (((Player*)m_caster)->Battle().InOne() &&
                         !((Player*)m_caster)->CanUseBattleGroundObject())
                     {
@@ -397,7 +370,6 @@ SpellCastResult Spell::CheckEachSlotCanRun()
                         return SPELL_FAILED_ALREADY_OPEN;
                     }
 
-                    // Is the lock within the spell max range?
                     if (!IsLockInRange(go) && go->GetGoType() == GAMEOBJECT_TYPE_TRAP)
                     {
                         return SPELL_FAILED_OUT_OF_RANGE;
@@ -405,7 +377,7 @@ SpellCastResult Spell::CheckEachSlotCanRun()
                 }
                 else if (Item* item = m_targets.getItemTarget())
                 {
-                    // not own (trade?)
+
                     if (item->GetOwner() != m_caster)
                     {
                         return SPELL_FAILED_ITEM_GONE;
@@ -413,7 +385,6 @@ SpellCastResult Spell::CheckEachSlotCanRun()
 
                     lockId = item->GetProto()->LockID;
 
-                    // if already unlocked
                     if (!lockId || item->HasItemFlag(ITEM_DYNFLAG_UNLOCKED))
                     {
                         return SPELL_FAILED_ALREADY_OPEN;
@@ -428,21 +399,16 @@ SpellCastResult Spell::CheckEachSlotCanRun()
                 int32 reqSkillValue = 0;
                 int32 skillValue = 0;
 
-                // check lock compatibility
                 SpellCastResult res = CanOpenLock(SpellEffectIndex(i), lockId, skillId, reqSkillValue, skillValue);
                 if (res != SPELL_CAST_OK)
                 {
                     return res;
                 }
 
-                // chance for fail at orange mining/herb/LockPicking gathering attempt
-                // second check prevent fail at rechecks
-                // Check must be executed at the end of  the cast.
                 if (m_spellState != SPELL_STATE_CREATED && skillId != SKILL_NONE)
                 {
                     bool canFailAtMax = skillId != SKILL_HERBALISM && skillId != SKILL_MINING;
 
-                    // chance for failure in orange gather / lockpick (gathering skill can't fail at maxskill)
                     if ((canFailAtMax || skillValue < sWorld.GetConfigMaxSkillValue()) && reqSkillValue > irand(skillValue - 25, skillValue + 37))
                     {
                         return SPELL_FAILED_TRY_AGAIN;
@@ -461,7 +427,7 @@ SpellCastResult Spell::CheckEachSlotCanRun()
 
                 if (!pet)
                 {
-                    if (Player* player = ToPlayer(m_caster))
+                    if (Player* player = static_cast<Player*>(m_caster))
                     {
                         PetDatabaseStatus status = Pet::GetStatusFromDB(player);
                         if (status == PET_DB_NO_PET)
@@ -481,8 +447,7 @@ SpellCastResult Spell::CheckEachSlotCanRun()
 
                 break;
             }
-            // Don't make this check for SPELL_EFFECT_SUMMON_CRITTER, SPELL_EFFECT_SUMMON_WILD or SPELL_EFFECT_SUMMON_GUARDIAN.
-            // These won't show up in m_caster->GetPetGUID()
+
             case SPELL_EFFECT_SUMMON:
             case SPELL_EFFECT_SUMMON_POSSESSED:
             case SPELL_EFFECT_SUMMON_PHANTASM:
@@ -502,8 +467,8 @@ SpellCastResult Spell::CheckEachSlotCanRun()
             }
             case SPELL_EFFECT_SUMMON_PET:
             {
-                Player* plr = ToPlayer(m_caster);
-                if (m_caster->GetPetGuid())                 // let warlock do a replacement summon
+                Player* plr = static_cast<Player*>(m_caster);
+                if (m_caster->GetPetGuid())
                 {
                     if (plr && m_caster->getClass() != CLASS_WARLOCK)
                     {
@@ -532,7 +497,7 @@ SpellCastResult Spell::CheckEachSlotCanRun()
             }
             case SPELL_EFFECT_SUMMON_PLAYER:
             {
-                if (!m_caster->IsPlayer())
+                if (!IsPlayer(m_caster))
                 {
                     return SPELL_FAILED_BAD_TARGETS;
                 }
@@ -547,7 +512,6 @@ SpellCastResult Spell::CheckEachSlotCanRun()
                     return SPELL_FAILED_BAD_TARGETS;
                 }
 
-                // check if our map is dungeon
                 if (sMapStore.LookupEntry(m_caster->GetMapId())->IsDungeon())
                 {
                     InstanceTemplate const* instance = ObjectMgr::GetInstanceTemplate(m_caster->GetMapId());
@@ -574,8 +538,6 @@ SpellCastResult Spell::CheckEachSlotCanRun()
                     return SPELL_FAILED_NOT_ON_TAXI;
                 }
 
-                // Blink has leap first and then removing of auras with root effect
-                // need further research with this
                 if (operation.verb != SPELL_EFFECT_LEAP)
                 {
                     if (m_caster->hasUnitState(UNIT_STAT_ROOT))
@@ -584,14 +546,13 @@ SpellCastResult Spell::CheckEachSlotCanRun()
                     }
                 }
 
-                if (m_caster->IsPlayer())
+                if (IsPlayer(m_caster))
                 {
                     if (((Player*)m_caster)->HasMovementFlag(MOVEFLAG_ONTRANSPORT))
                     {
                         return SPELL_FAILED_NOT_ON_TRANSPORT;
                     }
 
-                    // not allow use this effect at battleground until battleground start
                     if (BattleGround const* bg = ((Player*)m_caster)->Battle().Ground())
                     {
                         if (bg->GetStatus() != STATUS_IN_PROGRESS)
@@ -610,34 +571,24 @@ SpellCastResult Spell::CheckEachSlotCanRun()
     return SPELL_CAST_OK;
 }
 
-/**
- * @brief Asks each aura the recipe would apply whether it can hold here.
- *
- * Where the caster stands and what he is already carrying decide this: a
- * mount will not hold indoors, and a second charm will not hold at all.
- *
- * @return The reason the cast is refused, or SPELL_CAST_OK when every aura is content.
- */
 SpellCastResult Spell::CheckEachAuraCanHold()
 {
     for (const auto& operation : Recipe().Does())
     {
         const int i = operation.slot;
 
-        // Do not check in case of junk in DBC
         if (!IsAuraApplyEffect(m_spellInfo, SpellEffectIndex(i)))
         {
             continue;
         }
 
-        // Possible Unit-target for the spell
         Unit* expectedTarget = m_caster->GetMap() ? m_caster->GetMap()->GetUnit(GetPrefilledOrUnitTargetGuid(SpellEffectIndex(i))) : nullptr;
 
         switch (operation.aura)
         {
             case SPELL_AURA_MOD_POSSESS:
             {
-                if (!m_caster->IsPlayer())
+                if (!IsPlayer(m_caster))
                 {
                     return SPELL_FAILED_UNKNOWN;
                 }
@@ -718,7 +669,7 @@ SpellCastResult Spell::CheckEachAuraCanHold()
             }
             case SPELL_AURA_MOD_POSSESS_PET:
             {
-                if (!m_caster->IsPlayer())
+                if (!IsPlayer(m_caster))
                 {
                     return SPELL_FAILED_UNKNOWN;
                 }
@@ -752,18 +703,17 @@ SpellCastResult Spell::CheckEachAuraCanHold()
                     return SPELL_FAILED_ONLY_ABOVEWATER;
                 }
 
-                if (m_caster->IsPlayer() && ((Player*)m_caster)->GetTransport())
+                if (IsPlayer(m_caster) && ((Player*)m_caster)->GetTransport())
                 {
                     return SPELL_FAILED_NO_MOUNTS_ALLOWED;
                 }
 
-                /// Specific case for Temple of Ahn'Qiraj mounts as they are usable only in AQ40 and are the only mounts allowed here
                 bool isAQ40Mounted = false;
 
                 switch (m_spellInfo->ID)
                 {
-                    case 25863:    // spell used by ingame item for Black Qiraji mount (legendary reward)
-                    case 26655:    // spells also related to Black Qiraji mount but use/trigger unknown
+                    case 25863:
+                    case 26655:
                     case 26656:
                     case 31700:
                         if (m_caster->GetMapId() == 531)
@@ -771,7 +721,7 @@ SpellCastResult Spell::CheckEachAuraCanHold()
                             isAQ40Mounted = true;
                         }
                         break;
-                    case 25953:    // spells of the 4 regular AQ40 mounts
+                    case 25953:
                     case 26054:
                     case 26055:
                     case 26056:
@@ -788,8 +738,7 @@ SpellCastResult Spell::CheckEachAuraCanHold()
                         break;
                 }
 
-                // Ignore map check if spell have AreaId. AreaId already checked and this prevent special mount spells
-                if (!isAQ40Mounted && m_caster->IsPlayer() && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed() && !m_IsTriggeredSpell) //[-ZERO] && !m_spellInfo->AreaId)
+                if (!isAQ40Mounted &&IsPlayer(m_caster) && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed() && !m_IsTriggeredSpell)
                 {
                     return SPELL_FAILED_NO_MOUNTS_ALLOWED;
                 }
@@ -812,7 +761,6 @@ SpellCastResult Spell::CheckEachAuraCanHold()
                     return SPELL_FAILED_BAD_IMPLICIT_TARGETS;
                 }
 
-                // can be casted at non-friendly unit or own pet/charm
                 if (IsFriendly(*m_caster, *expectedTarget))
                 {
                     return SPELL_FAILED_TARGET_FRIENDLY;
@@ -826,7 +774,7 @@ SpellCastResult Spell::CheckEachAuraCanHold()
                     return SPELL_FAILED_BAD_IMPLICIT_TARGETS;
                 }
 
-                if (!m_caster->IsPlayer() || m_CastItem)
+                if (!IsPlayer(m_caster) || m_CastItem)
                 {
                     break;
                 }
@@ -844,11 +792,10 @@ SpellCastResult Spell::CheckEachAuraCanHold()
                     return SPELL_FAILED_BAD_IMPLICIT_TARGETS;
                 }
 
-                if (expectedTarget->IsPlayer())
+                if (IsPlayer(expectedTarget))
                 {
                     Player const* player = static_cast<Player const*>(expectedTarget);
 
-                    // Player is not allowed to cast water walk on shapeshifted/mounted player
                     if (player->GetShapeshiftForm() != FORM_NONE || player->IsMounted())
                     {
                         return SPELL_FAILED_BAD_TARGETS;

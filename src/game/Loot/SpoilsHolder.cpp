@@ -32,9 +32,9 @@
 #include "Map.h"
 #include "Player.h"
 
-Object* spoils::Holder(Player& who, ObjectGuid guid)
+Spoilable* spoils::Holder(Player& who, ObjectGuid guid)
 {
-    switch (guid.GetHigh())
+    switch (GuidHigh(guid))
     {
         case HIGHGUID_UNIT:
             return who.GetMap()->GetCreature(guid);
@@ -45,7 +45,6 @@ Object* spoils::Holder(Player& who, ObjectGuid guid)
         case HIGHGUID_CORPSE:
             return who.GetMap()->GetCorpse(guid);
 
-        // Only ever one of his own: a lockbox is looted out of the bags it sits in.
         case HIGHGUID_ITEM:
             return who.GetItemByGuid(guid);
 
@@ -56,7 +55,7 @@ Object* spoils::Holder(Player& who, ObjectGuid guid)
 
 Loot* spoils::OpenedBy(Player& who, ObjectGuid guid)
 {
-    Object* holder = Holder(who, guid);
+    Spoilable* holder = Holder(who, guid);
 
     return holder ? holder->SpoilsFor(who) : nullptr;
 }

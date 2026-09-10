@@ -9,7 +9,7 @@ namespace cast
 {
     namespace
     {
-        /// Column 6..10 of Spell.dbc, by the bit numbers the measurements used.
+
         constexpr uint32 Bit(uint32 index)
         {
             return 1u << index;
@@ -31,10 +31,6 @@ namespace cast
             }
         }
 
-        /// Passive first, because such a spell is never cast; then the two ways a
-        /// weapon carries a spell, because the weapon is what delivers it; then
-        /// the channel, which owns its own clock; and a cast time last, which is
-        /// the only thing left that can tell Timed from Instant.
         Start StartFrom(const Flags& flags, int32 castTimeMs)
         {
             if (flags.passive)
@@ -48,9 +44,6 @@ namespace cast
                 return Start::NextSwing;
             }
 
-            // One bit is enough: all four rows that carry it also carry the ranged
-            // bit, and no row carries it alone. Two of the four are Auto Shot and
-            // the wand's Shoot; the other two are a retired row and a test row.
             if (flags.autoRepeats)
             {
                 return Start::AutoRepeat;
@@ -192,17 +185,11 @@ namespace cast
             return operations;
         }
 
-        /// A duration as everything downstream wants it: no end stays no end,
-        /// and the two rows that store a negative span mean the span.
         int32 DurationFrom(const Timings& timings)
         {
             return timings.durationMs == -1 ? -1 : std::abs(timings.durationMs);
         }
 
-        /// The cast time a question without a caster gets. The half second is
-        /// what a ranged spell spends being drawn; it is added before the floor,
-        /// because one cast-time row holds -1000000 and clamping first would turn
-        /// that into half a second of draw.
         uint32 BareCastTimeFrom(const SpellEntry& row, const Flags& flags, const Timings& timings)
         {
             int32 castTime = timings.castTimeBaseMs;
@@ -212,8 +199,6 @@ namespace cast
                 castTime += 500;
             }
 
-            // Holy Light carries 2.5 seconds in the table and is instant in the
-            // game. The row is wrong and cannot be fixed where it lives.
             if (row.ID == 19968)
             {
                 castTime = 0;
@@ -253,8 +238,6 @@ namespace cast
             return 6;
         }
 
-        /// What the spell-power share is measured against: a cast time stretched
-        /// or shrunk by what the spell actually does.
         uint32 WeighedCastTime(const Operations& operations, bool channelled, bool overTime,
                                uint32 bareCastTime, int32 duration)
         {
@@ -332,8 +315,6 @@ namespace cast
                 }
             }
 
-            // A spell that both strikes now and burns on shares its power between
-            // the two, in proportion to how long each half lasts.
             if (spread > 0 && weighed > 0 && direct)
             {
                 uint32 original = bareCastTime;
@@ -398,9 +379,6 @@ namespace cast
             return share * spread;
         }
 
-        /// Which weapon a spell reaches for. A wand marked auto-repeat swings the
-        /// ranged slot although its defence class says neither melee nor ranged,
-        /// which is why the wand test sits in the default branch.
         WeaponAttackType SwingsFrom(const SpellEntry& row, const Flags& flags)
         {
             switch (row.DefenseType)
@@ -414,10 +392,6 @@ namespace cast
             }
         }
 
-        /// The four families whose own triggers are let through to the proc
-        /// system: Arcane Missiles and Blizzard, Hellfire and Rain of Fire and
-        /// Seed of Corruption, the four hunter traps, Holy Shock. The masks are
-        /// a list made by hand; nothing in the row marks them.
         bool ProcsThoughTriggeredFrom(const SpellEntry& row)
         {
             switch (row.SpellClassSet)
@@ -454,8 +428,6 @@ namespace cast
         recipe.m_swings = SwingsFrom(row, recipe.m_flags);
         recipe.m_procsThoughTriggered = ProcsThoughTriggeredFrom(row);
 
-        // The raw pair, not Start: a row marked both passive and channelled still
-        // weighed its power as a channel, and two rows are marked exactly that way.
         const bool channelled = recipe.m_flags.channels;
         recipe.m_coefficient[0] = CoefficientFrom(recipe.m_operations, channelled, false,
                                                   recipe.m_bareCastTimeMs, recipe.m_durationMs,

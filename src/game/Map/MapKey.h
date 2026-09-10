@@ -27,13 +27,6 @@
 
 #include "Platform/Define.h"
 
-/**
- * @brief What a live map is filed under: which map, and which copy of it.
- *
- * Instance 0 is the single shared copy a continent has. Ordering is by map id first, so
- * every copy of one map sits together and the half-open range
- * [MapKey(id, 0), MapKey(id + 1, 0)) names exactly those copies.
- */
 struct MapKey
 {
     explicit MapKey(uint32 mapId) : map(mapId), instance(0) {}

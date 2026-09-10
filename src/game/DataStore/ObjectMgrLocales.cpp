@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Common/Locales.h"
 #include <string>
 #include "Utilities/PackedValues.h"
@@ -60,12 +58,9 @@
 #include "DisableMgr.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Loads localized creature names and subnames from the database.
- */
 void ObjectMgr::LoadCreatureLocales()
 {
-    mCreatureLocaleMap.clear();                             // need for reload case
+    mCreatureLocaleMap.clear();
 
     QueryResult* result = WorldDatabase.Query("SELECT `entry`,`name_loc1`,`subname_loc1`,`name_loc2`,`subname_loc2`,`name_loc3`,`subname_loc3`,`name_loc4`,`subname_loc4`,`name_loc5`,`subname_loc5`,`name_loc6`,`subname_loc6`,`name_loc7`,`subname_loc7`,`name_loc8`,`subname_loc8` FROM `locales_creature`");
 
@@ -134,12 +129,9 @@ void ObjectMgr::LoadCreatureLocales()
     sLog.outString();
 }
 
-/**
- * @brief Loads localized gossip menu option and confirmation box text.
- */
 void ObjectMgr::LoadGossipMenuItemsLocales()
 {
-    mGossipMenuItemsLocaleMap.clear();                      // need for reload case
+    mGossipMenuItemsLocaleMap.clear();
 
     QueryResult* result = WorldDatabase.Query("SELECT `menu_id`,`id`,"
         "`option_text_loc1`,`box_text_loc1`,`option_text_loc2`,`box_text_loc2`,"
@@ -232,12 +224,9 @@ void ObjectMgr::LoadGossipMenuItemsLocales()
     sLog.outString();
 }
 
-/**
- * @brief Loads localized point-of-interest icon names.
- */
 void ObjectMgr::LoadPointOfInterestLocales()
 {
-    mPointOfInterestLocaleMap.clear();                      // need for reload case
+    mPointOfInterestLocaleMap.clear();
 
     QueryResult* result = WorldDatabase.Query("SELECT `entry`,`icon_name_loc1`,`icon_name_loc2`,`icon_name_loc3`,`icon_name_loc4`,`icon_name_loc5`,`icon_name_loc6`,`icon_name_loc7`,`icon_name_loc8` FROM `locales_points_of_interest`");
 
@@ -294,12 +283,9 @@ void ObjectMgr::LoadPointOfInterestLocales()
     sLog.outString();
 }
 
-/**
- * @brief Loads localized page text content.
- */
 void ObjectMgr::LoadPageTextLocales()
 {
-    mPageTextLocaleMap.clear();                             // need for reload case
+    mPageTextLocaleMap.clear();
 
     QueryResult* result = WorldDatabase.Query("SELECT `entry`,`text_loc1`,`text_loc2`,`text_loc3`,`text_loc4`,`text_loc5`,`text_loc6`,`text_loc7`,`text_loc8` FROM `locales_page_text`");
 
@@ -356,12 +342,9 @@ void ObjectMgr::LoadPageTextLocales()
     sLog.outString();
 }
 
-/**
- * @brief Loads localized npc gossip text variants.
- */
 void ObjectMgr::LoadGossipTextLocales()
 {
-    mNpcTextLocaleMap.clear();                              // need for reload case
+    mNpcTextLocaleMap.clear();
 
     QueryResult* result = WorldDatabase.Query("SELECT `entry`,"
         "`Text0_0_loc1`,`Text0_1_loc1`,`Text1_0_loc1`,`Text1_1_loc1`,`Text2_0_loc1`,`Text2_1_loc1`,`Text3_0_loc1`,`Text3_1_loc1`,`Text4_0_loc1`,`Text4_1_loc1`,`Text5_0_loc1`,`Text5_1_loc1`,`Text6_0_loc1`,`Text6_1_loc1`,`Text7_0_loc1`,`Text7_1_loc1`,"
@@ -442,12 +425,9 @@ void ObjectMgr::LoadGossipTextLocales()
     sLog.outString();
 }
 
-/**
- * @brief Loads localized gameobject names.
- */
 void ObjectMgr::LoadGameObjectLocales()
 {
-    mGameObjectLocaleMap.clear();                           // need for reload case
+    mGameObjectLocaleMap.clear();
 
     QueryResult* result = WorldDatabase.Query("SELECT `entry`,"
         "`name_loc1`,`name_loc2`,`name_loc3`,`name_loc4`,`name_loc5`,`name_loc6`,`name_loc7`,`name_loc8` FROM `locales_gameobject`");

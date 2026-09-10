@@ -360,7 +360,7 @@ struct is_zulfarrak : public InstanceScript
         private:
             uint64 SelectNearbyShallowGrave()
             {
-                Unit *searcher = instance->GetUnit(ObjectGuid(m_uiGraveyardSearcherGuid));
+                Unit *searcher = instance->GetUnit(static_cast<ObjectGuid>(m_uiGraveyardSearcherGuid));
                 // Get the list of usable graves (not used already by players)
                 std::list<GameObject*> lGravesInRange;
 
@@ -382,7 +382,7 @@ struct is_zulfarrak : public InstanceScript
                 // Sort the graves
                 lGravesInRange.sort(ObjectDistanceOrder(searcher));
 
-                return (*lGravesInRange.begin())->GetObjectGuid().GetRawValue();
+                return (*lGravesInRange.begin())->GetObjectGuid();
             }
 
             uint32 m_auiEncounter[MAX_ENCOUNTER];

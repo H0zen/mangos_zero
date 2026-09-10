@@ -70,7 +70,7 @@ void Tallies::Put(UnitMods group, UnitModifierType which, float amount, bool app
         case BASE_PCT:
         case TOTAL_PCT:
         {
-            if (amount <= -100.0f)                          // small hack-fix for -100% modifiers
+            if (amount <= -100.0f)
             {
                 amount = -200.0f;
             }

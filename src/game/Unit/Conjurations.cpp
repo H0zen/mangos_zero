@@ -38,7 +38,7 @@ DynamicObject* Conjurations::AreaOf(uint32 spellId)
         DynamicObject* area = m_owner.GetMap()->GetDynamicObject(*itr);
         if (!area)
         {
-            itr = m_areas.erase(itr);                       // the map has already taken it
+            itr = m_areas.erase(itr);
             continue;
         }
 
@@ -60,7 +60,7 @@ DynamicObject* Conjurations::AreaOf(uint32 spellId, SpellEffectIndex effect)
         DynamicObject* area = m_owner.GetMap()->GetDynamicObject(*itr);
         if (!area)
         {
-            itr = m_areas.erase(itr);                       // the map has already taken it
+            itr = m_areas.erase(itr);
             continue;
         }
 
@@ -116,14 +116,11 @@ void Conjurations::AddObject(GameObject* object)
     m_objects.push_back(object);
     object->SetOwnerGuid(m_owner.GetObjectGuid());
 
-    if (!m_owner.IsPlayer() || !object->GetSpellId())
+    if (!IsPlayer(&m_owner) || !object->GetSpellId())
     {
         return;
     }
 
-    // A spell that stands only while its object stands cannot be cast again
-    // until the object goes. Item cooldowns and charge mods are not considered;
-    // no such spell is known.
     SpellEntry const* madeBy = sSpellStore.LookupEntry(object->GetSpellId());
     if (madeBy && cast::RecipeOf(*madeBy).Says().spentWhileActive)
     {
@@ -135,13 +132,13 @@ void Conjurations::RemoveObject(GameObject* object, bool destroy)
 {
     MANGOS_ASSERT(object && object->GetOwnerGuid() == m_owner.GetObjectGuid());
 
-    object->SetOwnerGuid(ObjectGuid());
+    object->SetOwnerGuid(0);
 
     if (uint32 spellId = object->GetSpellId())
     {
         m_owner.RemoveAuras(spellId);
 
-        if (m_owner.IsPlayer())
+        if (IsPlayer(&m_owner))
         {
             SpellEntry const* madeBy = sSpellStore.LookupEntry(spellId);
             if (madeBy && cast::RecipeOf(*madeBy).Says().spentWhileActive)
@@ -170,7 +167,7 @@ void Conjurations::RemoveObjects(uint32 spellId, bool destroy)
             continue;
         }
 
-        (*itr)->SetOwnerGuid(ObjectGuid());
+        (*itr)->SetOwnerGuid(0);
         if (destroy)
         {
             (*itr)->SetRespawnTime(0);
@@ -185,7 +182,7 @@ void Conjurations::RemoveAllObjects()
 {
     for (auto itr = m_objects.begin(); itr != m_objects.end();)
     {
-        (*itr)->SetOwnerGuid(ObjectGuid());
+        (*itr)->SetOwnerGuid(0);
         (*itr)->SetRespawnTime(0);
         (*itr)->Delete();
 
@@ -203,7 +200,7 @@ void Conjurations::RemoveDespawnedObjects()
             continue;
         }
 
-        (*itr)->SetOwnerGuid(ObjectGuid());
+        (*itr)->SetOwnerGuid(0);
         (*itr)->SetRespawnTime(0);
         (*itr)->Delete();
 

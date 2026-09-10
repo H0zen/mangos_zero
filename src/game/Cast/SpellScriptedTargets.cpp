@@ -23,14 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SpellScriptedTargets.cpp
- * @brief The targets a spell finds by name rather than by aim.
- * Some spells reach for a particular creature or gameobject entry standing
- * nearby, named in spell_script_target. Finding it is part of deciding
- * whether the cast may go ahead, so the refusals live with the search.
- */
-
 #include "Reaction.h"
 #include "Utilities/MathDefines.h"
 #include "Spell.h"
@@ -64,16 +56,10 @@
 #include "DisableMgr.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Finds the creature or gameobject a scripted spell reaches for and
- * writes it on the roster.
- *
- * @return The reason the cast is refused, or SPELL_CAST_OK.
- */
 SpellCastResult Spell::EnrolScriptedTargets()
 {
-    // Database based targets from spell_target_script
-    if (m_roster.Units().empty())                         // skip second CheckCast apply (for delayed spells for example)
+
+    if (m_roster.Units().empty())
     {
         for (const auto& operation : Recipe().Does())
         {
@@ -109,13 +95,12 @@ SpellCastResult Spell::EnrolScriptedTargets()
                 SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->RangeIndex);
                 float range = GetSpellMaxRange(srange);
 
-                // override range with default when it's not provided
                 if (!range)
                 {
                     range = m_caster->GetMap()->IsDungeon() ? DEFAULT_VISIBILITY_INSTANCE : DEFAULT_VISIBILITY_DISTANCE;
                 }
 
-                Creature* targetExplicit = nullptr;            // used for cases where a target is provided (by script for example)
+                Creature* targetExplicit = nullptr;
                 Creature* creatureScriptTarget = nullptr;
                 GameObject* goScriptTarget = nullptr;
 
@@ -140,13 +125,13 @@ SpellCastResult Spell::EnrolScriptedTargets()
 
                                 if (p_GameObject)
                                 {
-                                    // remember found target and range, next attempt will find more near target with another entry
+
                                     creatureScriptTarget = nullptr;
                                     goScriptTarget = p_GameObject;
                                     range = go_check.GetLastRange();
                                 }
                             }
-                            else if (focusObject)           // Focus Object
+                            else if (focusObject)
                             {
                                 float frange = m_caster->Where().DistanceTo(focusObject->Where());
                                 if (range >= frange)
@@ -164,14 +149,13 @@ SpellCastResult Spell::EnrolScriptedTargets()
                         {
                             Creature* p_Creature = nullptr;
 
-                            // check if explicit target is provided and check it up against database valid target entry/state
                             if (Unit* pTarget = m_targets.getUnitTarget())
                             {
-                                if (pTarget->IsCreature() && pTarget->GetEntry() == i_spellST->targetEntry)
+                                if (IsCreature(pTarget) && pTarget->GetEntry() == i_spellST->targetEntry)
                                 {
                                     if (i_spellST->type == SPELL_TARGET_TYPE_DEAD && ((Creature*)pTarget)->IsCorpse())
                                     {
-                                        // always use spellMaxRange, in case GetLastRange returned different in a previous pass
+
                                         if (InReach(*pTarget, *m_caster, GetSpellMaxRange(srange)))
                                         {
                                             targetExplicit = (Creature*)pTarget;
@@ -179,7 +163,7 @@ SpellCastResult Spell::EnrolScriptedTargets()
                                     }
                                     else if (i_spellST->type == SPELL_TARGET_TYPE_CREATURE && pTarget->IsAlive())
                                     {
-                                        // always use spellMaxRange, in case GetLastRange returned different in a previous pass
+
                                         if (InReach(*pTarget, *m_caster, GetSpellMaxRange(srange)))
                                         {
                                             targetExplicit = (Creature*)pTarget;
@@ -188,19 +172,16 @@ SpellCastResult Spell::EnrolScriptedTargets()
                                 }
                             }
 
-                            // no target provided or it was not valid, so use closest in range
                             if (!targetExplicit)
                             {
                                 MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck u_check(*m_caster, i_spellST->targetEntry, i_spellST->type != SPELL_TARGET_TYPE_DEAD, i_spellST->type == SPELL_TARGET_TYPE_DEAD, range);
                                 MaNGOS::CreatureLastSearcher<MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck> searcher(p_Creature, u_check);
 
-                                // Visit all, need to find also Pet* objects
                                 Cell::VisitAllObjects(m_caster, searcher, range);
 
                                 range = u_check.GetLastRange();
                             }
 
-                            // always prefer provided target if it's valid
                             if (targetExplicit)
                             {
                                 creatureScriptTarget = targetExplicit;
@@ -222,7 +203,7 @@ SpellCastResult Spell::EnrolScriptedTargets()
 
                 if (creatureScriptTarget)
                 {
-                    // store coordinates for TARGET_SCRIPT_COORDINATES
+
                     if (operation.targetA == TARGET_SCRIPT_COORDINATES ||
                         operation.targetB == TARGET_SCRIPT_COORDINATES)
                     {
@@ -233,7 +214,7 @@ SpellCastResult Spell::EnrolScriptedTargets()
                             EnrolUnit(creatureScriptTarget, SpellEffectIndex(j));
                         }
                     }
-                    // store explicit target for TARGET_SCRIPT
+
                     else
                     {
                         if (operation.targetA == TARGET_SCRIPT ||
@@ -245,7 +226,7 @@ SpellCastResult Spell::EnrolScriptedTargets()
                 }
                 else if (goScriptTarget)
                 {
-                    // store coordinates for TARGET_SCRIPT_COORDINATES
+
                     if (operation.targetA == TARGET_SCRIPT_COORDINATES ||
                         operation.targetB == TARGET_SCRIPT_COORDINATES)
                     {
@@ -256,7 +237,7 @@ SpellCastResult Spell::EnrolScriptedTargets()
                             EnrolObject(goScriptTarget, SpellEffectIndex(j));
                         }
                     }
-                    // store explicit target for TARGET_FOCUS_OR_SCRIPTED_GAMEOBJECT
+
                     else
                     {
                         if (operation.targetA == TARGET_FOCUS_OR_SCRIPTED_GAMEOBJECT ||
@@ -266,15 +247,13 @@ SpellCastResult Spell::EnrolScriptedTargets()
                         }
                     }
                 }
-                // Missing DB Entry or targets for this spellEffect.
+
                 else
                 {
-                    /** For TARGET_FOCUS_OR_SCRIPTED_GAMEOBJECT makes DB targets optional not required for now
-                     * TODO: Makes more research for this target type
-                     */
+
                     if (operation.targetA != TARGET_FOCUS_OR_SCRIPTED_GAMEOBJECT)
                     {
-                        // not report target not existence for triggered spells
+
                         if (m_triggeredByAuraSpell || m_IsTriggeredSpell)
                         {
                             return SPELL_FAILED_DONT_REPORT;

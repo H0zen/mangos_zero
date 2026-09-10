@@ -245,7 +245,7 @@ struct is_blackrock_spire : public InstanceScript
                                     if (m_alRoomEventMobGUIDSorted[i].empty())
                                     {
                                         DoUseDoorOrButton(m_aRoomRuneGuid[i]);
-                                        m_aRoomRuneGuid[i].Clear();
+                                        m_aRoomRuneGuid[i] = 0;
                                     }
                                     else
                                     {
@@ -264,8 +264,8 @@ struct is_blackrock_spire : public InstanceScript
                         break;
                     case NPC_DRAKKISATH:
                         SetData(TYPE_DRAKKISATH, DONE);
-                        DoUseDoorOrButton(GO_DRAKKISATH_DOOR_1);
-                        DoUseDoorOrButton(GO_DRAKKISATH_DOOR_2);
+                        DoUseDoorOrButtonByEntry(GO_DRAKKISATH_DOOR_1);
+                        DoUseDoorOrButtonByEntry(GO_DRAKKISATH_DOOR_2);
                         break;
                     case NPC_CHROMATIC_WHELP:
                     case NPC_CHROMATIC_DRAGON:
@@ -355,7 +355,7 @@ struct is_blackrock_spire : public InstanceScript
                     case TYPE_ROOM_EVENT:
                         if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_EMBERSEER_IN);
+                            DoUseDoorOrButtonByEntry(GO_EMBERSEER_IN);
                         }
                         m_auiEncounter[uiType] = uiData;
                         break;
@@ -366,7 +366,7 @@ struct is_blackrock_spire : public InstanceScript
                             break;
                         }
                         // Combat door
-                        DoUseDoorOrButton(GO_DOORS);
+                        DoUseDoorOrButtonByEntry(GO_DOORS);
                         // Respawn all incarcerators and reset the runes on FAIL
                         if (uiData == FAIL)
                         {
@@ -387,7 +387,7 @@ struct is_blackrock_spire : public InstanceScript
                         else if (uiData == DONE)
                         {
                             DoUseEmberseerRunes();
-                            DoUseDoorOrButton(GO_EMBERSEER_OUT);
+                            DoUseDoorOrButtonByEntry(GO_EMBERSEER_OUT);
                         }
                         m_auiEncounter[uiType] = uiData;
                         break;
@@ -406,7 +406,7 @@ struct is_blackrock_spire : public InstanceScript
                             break;
                         }
                         // Combat door
-                        DoUseDoorOrButton(GO_GYTH_ENTRY_DOOR);
+                        DoUseDoorOrButtonByEntry(GO_GYTH_ENTRY_DOOR);
                         // Start event
                         if (uiData == IN_PROGRESS)
                         {
@@ -414,7 +414,7 @@ struct is_blackrock_spire : public InstanceScript
                         }
                         else if (uiData == DONE)
                         {
-                            DoUseDoorOrButton(GO_GYTH_EXIT_DOOR);
+                            DoUseDoorOrButtonByEntry(GO_GYTH_EXIT_DOOR);
                         }
                         else if (uiData == FAIL)
                         {
@@ -491,7 +491,7 @@ struct is_blackrock_spire : public InstanceScript
                 {
                     case NPC_PYROGUARD_EMBERSEER:
                     {
-                        Creature *ember = instance->GetCreature(ObjectGuid(guid));
+                        Creature *ember = instance->GetCreature(static_cast<ObjectGuid>(guid));
 
                         for (GuidList::const_iterator itr = m_lIncarceratorGUIDList.begin(); itr != m_lIncarceratorGUIDList.end(); ++itr)
                         {
@@ -503,7 +503,7 @@ struct is_blackrock_spire : public InstanceScript
                         break;
                     }
                     case MAX_ENCOUNTER:
-                        if (Player* pPlayer = instance->GetPlayer(ObjectGuid(guid)))
+                        if (Player* pPlayer = instance->GetPlayer(static_cast<ObjectGuid>(guid)))
                         {
                             DoOpenUpperDoorIfCan(pPlayer);
                         }
@@ -589,19 +589,19 @@ struct is_blackrock_spire : public InstanceScript
                         switch (m_uiDragonspineGoCount)
                         {
                             case 0:
-                                DoUseDoorOrButton(GO_BRAZIER_1);
-                                DoUseDoorOrButton(GO_BRAZIER_2);
+                                DoUseDoorOrButtonByEntry(GO_BRAZIER_1);
+                                DoUseDoorOrButtonByEntry(GO_BRAZIER_2);
                                 break;
                             case 1:
-                                DoUseDoorOrButton(GO_BRAZIER_3);
-                                DoUseDoorOrButton(GO_BRAZIER_4);
+                                DoUseDoorOrButtonByEntry(GO_BRAZIER_3);
+                                DoUseDoorOrButtonByEntry(GO_BRAZIER_4);
                                 break;
                             case 2:
-                                DoUseDoorOrButton(GO_BRAZIER_5);
-                                DoUseDoorOrButton(GO_BRAZIER_6);
+                                DoUseDoorOrButtonByEntry(GO_BRAZIER_5);
+                                DoUseDoorOrButtonByEntry(GO_BRAZIER_6);
                                 break;
                             case 3:
-                                DoUseDoorOrButton(GO_DRAGONSPINE);
+                                DoUseDoorOrButtonByEntry(GO_DRAGONSPINE);
                                 break;
                         }
                         ++m_uiDragonspineGoCount;
@@ -698,7 +698,7 @@ struct is_blackrock_spire : public InstanceScript
                         }
                     }
 
-                    DoUseDoorOrButton(GO_GYTH_COMBAT_DOOR);
+                    DoUseDoorOrButtonByEntry(GO_GYTH_COMBAT_DOOR);
                 }
                 // All waves are cleared - start Gyth intro
                 else if (m_uiStadiumWaves == MAX_STADIUM_WAVES)
@@ -719,7 +719,7 @@ struct is_blackrock_spire : public InstanceScript
                     // Set this to 2, because Rend will be summoned later during the fight
                     m_uiStadiumMobsAlive = 2;
 
-                    DoUseDoorOrButton(GO_GYTH_COMBAT_DOOR);
+                    DoUseDoorOrButtonByEntry(GO_GYTH_COMBAT_DOOR);
                 }
 
                 ++m_uiStadiumWaves;
@@ -913,7 +913,7 @@ struct is_blackrock_spire : public InstanceScript
             bool m_bUpperDoorOpened;
             uint32 m_uiDragonspineGoCount;
             uint32 m_uiDragonspineDoorTimer;
-            ObjectGuid m_aRoomRuneGuid[MAX_ROOMS];
+            ObjectGuid m_aRoomRuneGuid[MAX_ROOMS] = {};
             GuidList m_alRoomEventMobGUIDSorted[MAX_ROOMS];
             GuidList m_lRoomEventMobGUIDList;
             GuidList m_lIncarceratorGUIDList;
@@ -943,7 +943,7 @@ struct at_blackrock_spire : public AreaTriggerScript
                 if (InstanceData* pInstance = pPlayer->GetInstanceData())
                 {
                     pInstance->SetData(MAX_ENCOUNTER, DO_SORT_MOBS);
-                    pInstance->SetData64(MAX_ENCOUNTER, pPlayer->GetObjectGuid().GetRawValue());
+                    pInstance->SetData64(MAX_ENCOUNTER, pPlayer->GetObjectGuid());
                 }
                 break;
             case AREATRIGGER_STADIUM:
@@ -979,7 +979,7 @@ struct event_spell_altar_emberseer : public MapEventScript
 
     bool OnReceived(uint32 /*uiEventId*/, Object* pSource, Object* /*pTarget*/, bool bIsStart) override
     {
-        if (bIsStart && pSource->IsPlayer())
+        if (bIsStart &&IsPlayer(pSource))
         {
             if (InstanceData* pInstance = ((Unit*)pSource)->GetInstanceData())
             {

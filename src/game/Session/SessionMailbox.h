@@ -31,18 +31,6 @@
 #include <memory>
 #include <mutex>
 
-/**
- * @brief One session's inbox: what the network has read and the tick has not run.
- *
- * The one real thread boundary on the receive path. A network thread enqueues; the
- * serial phase of the tick drains, and is the only consumer -- map-bound packets
- * are routed out of here into the owning map's mailbox rather than being fetched
- * from here by a map thread. So one lock covers the queue and the closed flag
- * together, and a packet crosses one lock, not two.
- *
- * Closing is one-way, and it frees what is still queued: a session whose socket
- * died must not leave packets behind for a drain that will never come.
- */
 class SessionMailbox
 {
     public:
@@ -53,11 +41,8 @@ class SessionMailbox
         SessionMailbox(const SessionMailbox&) = delete;
         SessionMailbox& operator=(const SessionMailbox&) = delete;
 
-        /// Takes the packet unless the mailbox is closed, in which case the
-        /// packet is dropped and the call reports false.
         bool Enqueue(std::unique_ptr<WorldPacket> packet);
 
-        /// The next packet, or nothing when the mailbox is empty or closed.
         std::unique_ptr<WorldPacket> Next();
 
         void Close();

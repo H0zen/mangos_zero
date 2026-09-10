@@ -91,11 +91,11 @@ struct is_scarlet_monastery : public InstanceScript
                 {
                     if (uiData == IN_PROGRESS)
                     {
-                        DoUseDoorOrButton(GO_WHITEMANE_DOOR);
+                        DoUseDoorOrButtonByEntry(GO_WHITEMANE_DOOR);
                     }
                     if (uiData == FAIL)
                     {
-                        DoUseDoorOrButton(GO_WHITEMANE_DOOR);
+                        DoUseDoorOrButtonByEntry(GO_WHITEMANE_DOOR);
                     }
 
                     m_auiEncounter[0] = uiData;

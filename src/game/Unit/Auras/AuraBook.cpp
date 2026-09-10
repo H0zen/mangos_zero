@@ -34,8 +34,7 @@ void AuraBook::Enter(SpellAuraHolder* holder)
 
 bool AuraBook::Strike(SpellAuraHolder* holder)
 {
-    // A walk that is standing on this very holder is moved past it before the entry goes,
-    // so what it holds next is an entry that still exists.
+
     if (m_cursor != m_holders.end() && m_cursor->second == holder)
     {
         ++m_cursor;

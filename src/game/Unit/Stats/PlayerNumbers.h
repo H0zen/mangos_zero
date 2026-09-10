@@ -28,53 +28,27 @@
 #include "CreatureNumbers.h"
 #include "SharedDefines.h"
 
-/**
- * The numbers a player fights with, worked out and nothing else.
- *
- * Where a creature reads most of its numbers straight off its modifiers, a
- * player derives nearly all of them from stats, and the rules for doing so
- * differ by class, by level and by whatever shape a druid happens to be in.
- * None of that can be checked by reading it: it is a table, and a table is
- * either exercised or trusted.
- */
 namespace stats
 {
-    /// What his shield stops: what the shield itself is worth, what his auras
-    /// add to it, and two points for every point of strength above five.
+
     inline uint32 PlayerShieldBlock(float flat, float pct, float strength)
     {
         float const value = (flat + strength / 0.5f - 10.0f) * pct;
         return value < 0.0f ? 0u : uint32(value);
     }
 
-    /**
-     * @brief The health the first twenty stamina buy, and the rest.
-     *
-     * The first twenty points are worth one health each and everything above
-     * them is worth ten. Nobody reaches level ten with twenty stamina, so the
-     * cheap band only ever shows on a fresh character -- which is exactly why
-     * it is easy to drop by accident and never notice.
-     */
     inline float HealthFromStamina(float stamina)
     {
         float const cheap = stamina < 20.0f ? stamina : 20.0f;
         return cheap + (stamina - cheap) * 10.0f;
     }
 
-    /// The same rule for mana, at fifteen a point above the first twenty.
     inline float ManaFromIntellect(float intellect)
     {
         float const cheap = intellect < 20.0f ? intellect : 20.0f;
         return cheap + (intellect - cheap) * 15.0f;
     }
 
-    /**
-     * @brief A player's armour.
-     *
-     * @param fromIntellect What auras that turn a stat into resistance have
-     *        added for the normal school. It lands with the flat additions,
-     *        after the base percentage and before the total one.
-     */
     inline float PlayerArmour(Modifiers const& mods, float agility, float fromIntellect)
     {
         return (mods.Base() + agility * 2.0f + mods.totalValue + fromIntellect) * mods.TotalPct();
@@ -92,32 +66,22 @@ namespace stats
                 + mods.totalValue + fromIntellect) * mods.TotalPct();
     }
 
-    /// Everything about a player that decides what his attack power comes to.
     struct Physique
     {
-        uint8 klass = 0;                                    ///< Classes
+        uint8 klass = 0;
         float level = 0.0f;
         float strength = 0.0f;
         float agility = 0.0f;
-        uint32 form = 0;                                    ///< ShapeshiftForm
-        /// What Predatory Strikes gives per level, as a share. Zero without it.
+        uint32 form = 0;
+
         float predatoryStrikes = 0.0f;
     };
 
-    /// Whether a shape fights with its claws rather than with what it is holding.
     inline bool IsFeral(uint32 form)
     {
         return form == FORM_CAT || form == FORM_BEAR || form == FORM_DIREBEAR;
     }
 
-    /**
-     * @brief The attack power a player's own body is worth, before any modifier.
-     *
-     * Two shapes stand out. A feral druid gets no ranged attack power at all --
-     * not a reduced amount, none -- because there is nothing in its paws. And a
-     * moonkin gets level and a half on top of whatever Predatory Strikes gives,
-     * which is the only place in the table a form adds to the level rate.
-     */
     inline float MeleeAttackPower(Physique const& who)
     {
         switch (who.klass)
@@ -170,7 +134,7 @@ namespace stats
                 return who.level + who.agility - 10.0f;
 
             case CLASS_DRUID:
-                // Nothing in its paws to shoot with.
+
                 return IsFeral(who.form) ? 0.0f : who.agility - 10.0f;
 
             default:

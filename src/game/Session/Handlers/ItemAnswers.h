@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about the things he carries.
 namespace items
 {
     void SplitItem(Player& who, WorldPacket& packet);

@@ -34,19 +34,7 @@
 
 namespace proto
 {
-    /**
-     * @brief Accepts world connections and mints one ClientConnection per client.
-     *
-     * This is all that survives of WorldSocketMgr. Accepting, the thread pool,
-     * socket options, output buffering, backpressure and teardown all moved into
-     * the shared networking engine, so what is left is the two things that were
-     * ever specific to the world server: which port to listen on, and what to make
-     * of a connection once it arrives.
-     *
-     * It is deliberately not a singleton. The old manager was global because the
-     * ACE reactor plumbing had no other way to be reached; nothing needs that now,
-     * and an owned object makes the shutdown order explicit.
-     */
+
     class Listener
     {
         public:
@@ -57,16 +45,8 @@ namespace proto
             Listener(const Listener&) = delete;
             Listener& operator=(const Listener&) = delete;
 
-            /**
-             * @brief Bind and start accepting.
-             *
-             * @param port   TCP port to listen on.
-             * @param bindIp Interface to bind, or empty for every interface.
-             * @return false if the port could not be bound.
-             */
             bool Start(uint16_t port, const std::string& bindIp = std::string());
 
-            /// Stop accepting and tear down every live connection.
             void Stop();
 
         private:

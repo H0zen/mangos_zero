@@ -23,29 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Spell.cpp
- * @brief Spell casting and effect implementation
- *
- * This file implements the Spell class which handles spell casting:
- * - Spell validation and casting requirements
- * - Spell effect execution (damage, healing, summon, etc.)
- * - Spell targeting and area effects
- * - Spell cooldowns and resource costs
- * - Spell interruption and pushback
- * - Spell aura application
- * - Spell hit/miss calculations
- *
- * Spells are the primary combat mechanic in WoW, encompassing
- * abilities, talents, and item effects.
- *
- * @see Spell for the spell class
- * @see SpellAura for spell auras
- * @see SpellMgr for spell management
- */
-
-
-
 #include <list>
 #include "Spell.h"
 #include "Database/DatabaseEnv.h"
@@ -76,17 +53,13 @@
 #include "SQLStorages.h"
 #include "DisableMgr.h"
 
-/**
- * @brief Consumes or updates the cast item after spell use when required.
- */
 void Spell::TakeCastItem()
 {
-    if (!m_CastItem || !m_caster->IsPlayer())
+    if (!m_CastItem || !IsPlayer(m_caster))
     {
         return;
     }
 
-    // not remove cast item at triggered spell (equipping, weapon damage, etc)
     if (m_IsTriggeredSpell && !(m_targets.m_targetMask & TARGET_FLAG_TRADE_ITEM))
     {
         return;
@@ -96,8 +69,7 @@ void Spell::TakeCastItem()
 
     if (!proto)
     {
-        // This code is to avoid a crash
-        // I'm not sure, if this is really an error, but I guess every item needs a prototype
+
         sLog.outError("Cast item (%s) has no item prototype", m_CastItem->GetGuidStr().c_str());
         return;
     }
@@ -109,7 +81,7 @@ void Spell::TakeCastItem()
     {
         if (proto->Spells[i].SpellId)
         {
-            // item has limited charges
+
             if (proto->Spells[i].SpellCharges)
             {
                 if (proto->Spells[i].SpellCharges < 0 && !(proto->ExtraFlags & ITEM_EXTRA_NON_CONSUMABLE))
@@ -119,10 +91,9 @@ void Spell::TakeCastItem()
 
                 int32 charges = m_CastItem->GetSpellCharges(i);
 
-                // item has charges left
                 if (charges)
                 {
-                    (charges > 0) ? --charges : ++charges;  // abs(charges) less at 1 after use
+                    (charges > 0) ? --charges : ++charges;
                     if (proto->Stackable == 1)
                     {
                         m_CastItem->SetSpellCharges(i, charges);
@@ -130,7 +101,6 @@ void Spell::TakeCastItem()
                     m_CastItem->SetState(ITEM_CHANGED, (Player*)m_caster);
                 }
 
-                // all charges used
                 withoutCharges = (charges == 0);
             }
         }
@@ -141,41 +111,33 @@ void Spell::TakeCastItem()
         uint32 count = 1;
         ((Player*)m_caster)->DestroyItemCount(m_CastItem, count, true);
 
-        // prevent crash at access to deleted m_targets.getItemTarget
         ClearCastItem();
     }
 }
 
-/**
- * @brief Deducts the spell power cost from the caster.
- */
 void Spell::TakePower()
 {
-    if (m_CastItem || m_IsTriggeredSpell)   // all triggered spells ignore power req
+    if (m_CastItem || m_IsTriggeredSpell)
     {
         return;
     }
 
-    // health as power used
     if (m_spellInfo->PowerType == POWER_HEALTH)
     {
         m_caster->ModifyHealth(-(int32)m_powerCost);
         return;
     }
 
-    // the static data (m_spellInfo) should be checked elsewhere
-    // [+ZERO] actual DBC power values are 0..3 and uint32(-2)
-
     Powers powerType = Powers(m_spellInfo->PowerType);
 
     bool hit = true;
     for (uint8 j = 0; j < 3; ++j)
     {
-        // Spell targets a single enemy
+
         if (Recipe().At(static_cast<uint8>(j)).targetA == TARGET_CHAIN_DAMAGE ||
             Recipe().At(static_cast<uint8>(j)).targetA == TARGET_CURRENT_ENEMY_COORDINATES)
         {
-            if (m_caster->IsPlayer())
+            if (IsPlayer(m_caster))
             {
                 if (powerType == POWER_ENERGY || powerType == POWER_RAGE)
                 {
@@ -200,24 +162,20 @@ void Spell::TakePower()
         m_caster->ModifyPower(powerType, -(int32)m_powerCost / 5);
     }
 
-    // Set the five second timer
     if (powerType == POWER_MANA && m_powerCost > 0)
     {
         m_caster->SetLastManaUse();
     }
 }
 
-/**
- * @brief Consumes spell reagents from the player caster inventory.
- */
 void Spell::TakeReagents()
 {
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return;
     }
 
-    if (IgnoreItemRequirements())                           // reagents used in triggered spell removed by original spell or don't must be removed.
+    if (IgnoreItemRequirements())
     {
         return;
     }
@@ -238,7 +196,6 @@ void Spell::TakeReagents()
         uint32 itemid = m_spellInfo->Reagent[x];
         uint32 itemcount = m_spellInfo->ReagentCount[x];
 
-        // if CastItem is also spell reagent
         if (m_CastItem)
         {
             ItemPrototype const* proto = m_CastItem->GetProto();
@@ -246,7 +203,7 @@ void Spell::TakeReagents()
             {
                 for (int s = 0; s < MAX_ITEM_PROTO_SPELLS; ++s)
                 {
-                    // CastItem will be used up and does not count as reagent
+
                     int32 charges = m_CastItem->GetSpellCharges(s);
                     if (proto->Spells[s].SpellCharges < 0 && abs(charges) < 2)
                     {
@@ -259,7 +216,6 @@ void Spell::TakeReagents()
             }
         }
 
-        // if getItemTarget is also spell reagent
         if (m_targets.getItemTargetEntry() == itemid)
         {
             m_targets.setItemTarget(nullptr);
@@ -269,9 +225,6 @@ void Spell::TakeReagents()
     }
 }
 
-/**
- * @brief Applies additional configured threat from spell_threat data.
- */
 void Spell::HandleThreatSpells()
 {
     if (m_roster.Units().empty())
@@ -301,8 +254,7 @@ void Spell::HandleThreatSpells()
 
     if (Recipe().UnwantedSlots() & effectMask)
     {
-        // can only handle spells with clearly defined positive/negative effect, check at spell_threat loading probably not perfect
-        // so abort when only some effects are negative.
+
         if ((Recipe().UnwantedSlots() & effectMask) != effectMask)
         {
             DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell %u, rank %u, is not clearly positive or negative, ignoring bonus threat", m_spellInfo->ID, sSpellMgr.GetSpellRank(m_spellInfo->ID));
@@ -311,7 +263,6 @@ void Spell::HandleThreatSpells()
         positive = false;
     }
 
-    // before 2.0.1 threat from positive effects not dependent from targets amount
     if (!positive)
     {
         threat /= m_roster.Units().size();
@@ -330,12 +281,11 @@ void Spell::HandleThreatSpells()
             continue;
         }
 
-        // positive spells distribute threat among all units that are in combat with target, like healing
         if (positive)
         {
-            target->GetHostileRefManager().threatAssist(m_caster /*real_caster ??*/, threat, m_spellInfo);
+            target->GetHostileRefManager().threatAssist(m_caster , threat, m_spellInfo);
         }
-        // for negative spells threat gets distributed among affected targets
+
         else
         {
             if (!target->CanHaveThreatList())

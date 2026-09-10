@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
 #include "Policies/Singleton.h"
@@ -57,12 +55,9 @@
 #include "DisableMgr.h"
 #include "ItemEnchantmentMgr.h"
 
-/**
- * @brief Loads graveyard to zone links from the database.
- */
 void ObjectMgr::LoadGraveyardZones()
 {
-    mGraveYardMap.clear();                                  // need for reload case
+    mGraveYardMap.clear();
 
     QueryResult* result = WorldDatabase.Query("SELECT `id`,`ghost_zone`,`faction` FROM `game_graveyard_zone`");
 
@@ -129,28 +124,11 @@ void ObjectMgr::LoadGraveyardZones()
     sLog.outString();
 }
 
-/**
- * @brief Gets the closest suitable graveyard for a location and faction.
- *
- * @param x The world x coordinate.
- * @param y The world y coordinate.
- * @param z The world z coordinate.
- * @param MapId The map id.
- * @param team The player's faction.
- * @return The closest matching graveyard safe location, or null if none is linked.
- */
 WorldSafeLocsEntry const* ObjectMgr::GetClosestGraveYard(float x, float y, float z, uint32 MapId, Team team)
 {
-    // search for zone associated closest graveyard
+
     uint32 zoneId = sTerrainMgr.GetZoneId(MapId, x, y, z);
 
-    // Simulate std. algorithm:
-    //   found some graveyard associated to (ghost_zone,ghost_map)
-    //
-    //   if mapId == graveyard.mapId (ghost in plain zone or city or battleground) and search graveyard at same map
-    //     then check faction
-    //   if mapId != graveyard.mapId (ghost in instance) and search any graveyard associated
-    //     then check faction
     GraveYardMapBounds bounds = mGraveYardMap.equal_range(zoneId);
 
     if (bounds.first == bounds.second)
@@ -159,17 +137,14 @@ WorldSafeLocsEntry const* ObjectMgr::GetClosestGraveYard(float x, float y, float
         return nullptr;
     }
 
-    // at corpse map
     bool foundNear = false;
     float distNear;
     WorldSafeLocsEntry const* entryNear = nullptr;
 
-    // at entrance map for corpse map
     bool foundEntr = false;
     float distEntr;
     WorldSafeLocsEntry const* entryEntr = nullptr;
 
-    // some where other
     WorldSafeLocsEntry const* entryFar = nullptr;
 
     InstanceTemplate const* tempEntry = GetInstanceTemplate(MapId);
@@ -178,32 +153,26 @@ WorldSafeLocsEntry const* ObjectMgr::GetClosestGraveYard(float x, float y, float
     {
         GraveYardData const& data = itr->second;
 
-        // Checked on load
         WorldSafeLocsEntry const* entry = sWorldSafeLocsStore.LookupEntry(data.safeLocId);
 
-        // skip enemy faction graveyard
-        // team == TEAM_BOTH_ALLOWED case can be at call from .neargrave
-        // TEAM_INVALID != team for all teams
         if (data.team != TEAM_BOTH_ALLOWED && data.team != team && team != TEAM_BOTH_ALLOWED)
         {
             continue;
         }
 
-        // find now nearest graveyard at other (continent) map
         if (MapId != entry->map_id)
         {
-            // if find graveyard at different map from where entrance placed (or no entrance data), use any first
+
             if (!tempEntry ||
                 tempEntry->ghostEntranceMap < 0 ||
                 uint32(tempEntry->ghostEntranceMap) != entry->map_id ||
                 (tempEntry->ghostEntranceX == 0.0f && tempEntry->ghostEntranceY == 0.0f))
             {
-                // not have any coordinates for check distance anyway
+
                 entryFar = entry;
                 continue;
             }
 
-            // at entrance map calculate distance (2D);
             float dist2 = (entry->x - tempEntry->ghostEntranceX) * (entry->x - tempEntry->ghostEntranceX) +
                 (entry->y - tempEntry->ghostEntranceY) * (entry->y - tempEntry->ghostEntranceY);
             if (foundEntr)
@@ -221,7 +190,7 @@ WorldSafeLocsEntry const* ObjectMgr::GetClosestGraveYard(float x, float y, float
                 entryEntr = entry;
             }
         }
-        // find now nearest graveyard at same map
+
         else
         {
             float dist2 = (entry->x - x) * (entry->x - x) + (entry->y - y) * (entry->y - y) + (entry->z - z) * (entry->z - z);
@@ -255,13 +224,6 @@ WorldSafeLocsEntry const* ObjectMgr::GetClosestGraveYard(float x, float y, float
     return entryFar;
 }
 
-/**
- * @brief Finds graveyard link data for a graveyard id and zone.
- *
- * @param id The graveyard safe location id.
- * @param zoneId The zone id.
- * @return The graveyard link data, or null if not found.
- */
 GraveYardData const* ObjectMgr::FindGraveYardData(uint32 id, uint32 zoneId) const
 {
     GraveYardMapBounds bounds = mGraveYardMap.equal_range(zoneId);
@@ -277,30 +239,19 @@ GraveYardData const* ObjectMgr::FindGraveYardData(uint32 id, uint32 zoneId) cons
     return nullptr;
 }
 
-/**
- * @brief Adds a graveyard link for a zone and optional database persistence.
- *
- * @param id The graveyard safe location id.
- * @param zoneId The zone id.
- * @param team The faction restriction for the link.
- * @param inDB true to also insert the link into the database.
- * @return true if the link was added; otherwise, false.
- */
 bool ObjectMgr::AddGraveYardLink(uint32 id, uint32 zoneId, Team team, bool inDB)
 {
-    if (FindGraveYardData(id, zoneId))                      // This ensures that (safeLoc)Id,  zoneId is unique in mGraveYardMap
+    if (FindGraveYardData(id, zoneId))
     {
         return false;
     }
 
-    // add link to loaded data
     GraveYardData data;
     data.safeLocId = id;
     data.team = team;
 
     mGraveYardMap.insert(GraveYardMap::value_type(zoneId, data));
 
-    // add link to DB
     if (inDB)
     {
         WorldDatabase.PExecuteLog("INSERT INTO `game_graveyard_zone` (`id`,`ghost_zone`,`faction`) VALUES ('%u', '%u','%u')", id, zoneId, uint32(team));
@@ -309,13 +260,6 @@ bool ObjectMgr::AddGraveYardLink(uint32 id, uint32 zoneId, Team team, bool inDB)
     return true;
 }
 
-/**
- * @brief Updates the faction restriction for an existing graveyard link.
- *
- * @param id The graveyard safe location id.
- * @param zoneId The zone id.
- * @param team The faction restriction to set.
- */
 void ObjectMgr::SetGraveYardLinkTeam(uint32 id, uint32 zoneId, Team team)
 {
     std::pair<GraveYardMap::iterator, GraveYardMap::iterator> bounds = mGraveYardMap.equal_range(zoneId);
@@ -324,13 +268,12 @@ void ObjectMgr::SetGraveYardLinkTeam(uint32 id, uint32 zoneId, Team team)
     {
         GraveYardData& data = itr->second;
 
-        // skip not matching safezone id
         if (data.safeLocId != id)
         {
             continue;
         }
 
-        data.team = team;                                   // Validate link
+        data.team = team;
         return;
     }
 
@@ -339,7 +282,6 @@ void ObjectMgr::SetGraveYardLinkTeam(uint32 id, uint32 zoneId, Team team)
         return;
     }
 
-    // Link expected but not exist.
     sLog.outErrorDb("ObjectMgr::SetGraveYardLinkTeam called for safeLoc %u, zoneId %u, but no graveyard link for this found in database.", id, zoneId);
-    AddGraveYardLink(id, zoneId, team);                     // Add to prevent further error message and correct mechanismn
+    AddGraveYardLink(id, zoneId, team);
 }

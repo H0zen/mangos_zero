@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Utterance.h"
 #include "GameObject.h"
 #include "Kinds.h"
@@ -54,23 +52,13 @@
 #include "GameObjectAI.h"
 #include "Geometry/Quat.h"
 
-/**
- * @brief Updates game object state, timers, loot state, and AI.
- *
- * @param update_diff The elapsed AI update time in milliseconds.
- * @param p_time The elapsed world time step in milliseconds.
- */
 void GameObject::Update(uint32 update_diff, uint32 p_time)
 {
-    if (GetObjectGuid().IsMOTransport())
+    if ((GuidHigh(GetObjectGuid()) == HIGHGUID_MO_TRANSPORT))
     {
         return;
     }
 
-    // THE MACHINE IS THE SAME FOR EVERY GAMEOBJECT: it is made ready, it stands
-    // ready until its clock or somebody takes it, it is in use, and then it is
-    // spent and put back. What each KIND does at those five moments is its own,
-    // and is asked of its behaviour.
     switch (m_lootState)
     {
         case GO_NOT_READY:
@@ -91,14 +79,10 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     return;
                 }
 
-                // A thing that only ever goes away is gone; one that belongs to the
-                // world comes back into it.
                 if (!m_spawn.IsPermanent())
                 {
                     SetLootState(GO_JUST_DEACTIVATED);
 
-                    // Summoned by a spell rather than placed by the data: nobody owns
-                    // the row it would go back to, so there is nothing to put back.
                     if (!HasStaticDBSpawnData())
                     {
                         if (Unit* owner = GetOwner())
@@ -125,9 +109,6 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     break;
                 }
 
-                // USES ARE COUNTED ONLY WHERE THE TEMPLATE SAYS THEY ARE. A charge
-                // count of zero is not "no uses left", it is "this one is never used
-                // up", which is why nothing with a zero here is ever despawned.
                 if (uint32 const charges = GetGOInfo()->GetCharges())
                 {
                     auto* counted = Behaves<CountingBehaviour>();
@@ -155,7 +136,6 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                 return;
             }
 
-            // Wild-summoned things are not put back, they are done with.
             if (!HasStaticDBSpawnData() && (!GetSpellId() || GetGOInfo()->GetDespawnPossibility() || GetGOInfo()->IsDespawnAtAction()))
             {
                 if (Unit* owner = GetOwner())
@@ -166,14 +146,13 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                 return;
             }
 
-            // burning flags in some battlegrounds, if you find better condition, just add it
             if (GetGOInfo()->IsDespawnAtAction() || GetGoAnimProgress() > 0)
             {
                 SendDespawnAnimation(*this);
 
                 if (GetMap()->Instanceable())
                 {
-                    // In Instances GO_FLAG_LOCKED, GO_FLAG_INTERACT_COND or GO_FLAG_NO_INTERACT are not changed
+
                     uint32 currentLockOrInteractFlags = GetGoFlags() & (GO_FLAG_LOCKED | GO_FLAG_INTERACT_COND | GO_FLAG_NO_INTERACT);
                     SetAllGoFlags((GetGOInfo()->flags & ~(GO_FLAG_LOCKED | GO_FLAG_INTERACT_COND | GO_FLAG_NO_INTERACT)) | currentLockOrInteractFlags);
                 }
@@ -192,22 +171,18 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                 return;
             }
 
-            // since pool system can fail to roll unspawned object, this one can remain spawned, so must set respawn nevertheless
             m_spawn.ChangesAt(m_spawn.IsPermanent() ? time(nullptr) + m_spawn.Delay() : 0);
 
-            // if option not set then object will be saved at grid unload
             if (sWorld.getConfig(CONFIG_BOOL_SAVE_RESPAWN_TIME_IMMEDIATELY))
             {
                 SaveRespawnTime();
             }
 
-            // if part of pool, let pool system schedule new spawn instead of just scheduling respawn
             if (uint16 poolid = sPoolMgr.IsPartOfAPool<GameObject>(GetGUIDLow()))
             {
                 sPoolMgr.UpdatePool<GameObject>(*GetMap()->GetPersistentState(), poolid, GetGUIDLow());
             }
 
-            // can be not in world at pool despawn
             if (IsInWorld())
             {
                 UpdateObjectVisibility();
@@ -221,9 +196,9 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
 
     if (AI())
     {
-        // do not allow the AI to be changed during update
+
         m_AI_locked = true;
-        AI()->UpdateAI(update_diff);   // AI not react good at real update delays (while freeze in non-active part of map)
+        AI()->UpdateAI(update_diff);
         m_AI_locked = false;
     }
 }

@@ -23,17 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file ListCommands.cpp
- * @brief Implementation of listing and information display chat commands.
- *
- * This file contains chat command handlers for displaying lists including:
- * - Aura listing
- * - Item list display
- * - NPC and creature listing
- * - Quest and achievement lists
- */
-
 #include <sstream>
 #include <string>
 #include "Chat.h"
@@ -41,13 +30,7 @@
 #include "SpellAuras.h"
 #include "PlayerRegistry.h"
 
-/**
- * @brief Handler for HandleListAurasCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleListAurasCommand(char* /*args*/)
+bool ChatHandler::HandleListAurasCommand(char* )
 {
     Unit* unit = getSelectedUnit();
     if (!unit)
@@ -86,7 +69,7 @@ bool ChatHandler::HandleListAurasCommand(char* /*args*/)
                     aur->GetModifier()->m_auraname, aur->GetAuraDuration(), aur->GetAuraMaxDuration(),
                     ss_name.str().c_str(),
                     (holder->IsPassive() ? passiveStr : ""), (talent ? talentStr : ""),
-                    holder->GetCasterGuid().GetString().c_str(), aur->GetStackAmount());
+                    GuidString(holder->GetCasterGuid()).c_str(), aur->GetStackAmount());
             }
             else
             {
@@ -94,7 +77,7 @@ bool ChatHandler::HandleListAurasCommand(char* /*args*/)
                     aur->GetModifier()->m_auraname, aur->GetAuraDuration(), aur->GetAuraMaxDuration(),
                     name,
                     (holder->IsPassive() ? passiveStr : ""), (talent ? talentStr : ""),
-                    holder->GetCasterGuid().GetString().c_str(), aur->GetStackAmount());
+                    GuidString(holder->GetCasterGuid()).c_str(), aur->GetStackAmount());
             }
         }
     }
@@ -119,26 +102,20 @@ bool ChatHandler::HandleListAurasCommand(char* /*args*/)
 
                 PSendSysMessage(LANG_COMMAND_TARGET_AURASIMPLE, aura->GetId(), aura->GetEffIndex(),
                     ss_name.str().c_str(), (aura->GetHolder()->IsPassive() ? passiveStr : ""), (talent ? talentStr : ""),
-                    aura->GetCasterGuid().GetString().c_str());
+                    GuidString(aura->GetCasterGuid()).c_str());
             }
             else
             {
                 PSendSysMessage(LANG_COMMAND_TARGET_AURASIMPLE, aura->GetId(), aura->GetEffIndex(),
                     name, (aura->GetHolder()->IsPassive() ? passiveStr : ""), (talent ? talentStr : ""),
-                    aura->GetCasterGuid().GetString().c_str());
+                    GuidString(aura->GetCasterGuid()).c_str());
             }
         }
     }
     return true;
 }
 
-/**
- * @brief Handler for HandleListTalentsCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleListTalentsCommand(char* /*args*/)
+bool ChatHandler::HandleListTalentsCommand(char* )
 {
     Player* player = getSelectedPlayer();
     if (!player)
@@ -181,12 +158,6 @@ bool ChatHandler::HandleListTalentsCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleListItemCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleListItemCommand(char* args)
 {
     uint32 item_id;
@@ -218,7 +189,6 @@ bool ChatHandler::HandleListItemCommand(char* args)
 
     QueryResult* result;
 
-    // inventory case
     uint32 inv_count = 0;
     result = CharacterDatabase.PQuery("SELECT COUNT(`item_template`) FROM `character_inventory` WHERE `item_template`='%u'", item_id);
     if (result)
@@ -228,7 +198,7 @@ bool ChatHandler::HandleListItemCommand(char* args)
     }
 
     result = CharacterDatabase.PQuery(
-        //                0               1                   2            3                    4                      5
+
             "SELECT `ci`.`item`, `cibag`.`slot` AS bag, `ci`.`slot`, `ci`.`guid`, `characters`.`account`,`characters`.`name` "
             "FROM `character_inventory` AS `ci` LEFT JOIN `character_inventory` AS cibag ON (`cibag`.`item`=`ci`.`bag`),`characters` "
             "WHERE `ci`.`item_template`='%u' AND `ci`.`guid` = `characters`.`guid` LIMIT %u ",
@@ -283,7 +253,6 @@ bool ChatHandler::HandleListItemCommand(char* args)
         }
     }
 
-    // mail case
     uint32 mail_count = 0;
     result = CharacterDatabase.PQuery("SELECT COUNT(`item_template`) FROM `mail_items` WHERE `item_template`='%u'", item_id);
     if (result)
@@ -295,7 +264,7 @@ bool ChatHandler::HandleListItemCommand(char* args)
     if (count > 0)
     {
         result = CharacterDatabase.PQuery(
-            //                        0                   1                2                    3                   4                5                   6
+
                 "SELECT `mail_items`.`item_guid`, `mail`.`sender`, `mail`.`receiver`, `char_s`.`account`, `char_s`.`name`, `char_r`.`account`, `char_r`.`name` "
                 "FROM `mail`,`mail_items`,`characters` as char_s,`characters` as char_r "
                 "WHERE `mail_items`.`item_template`='%u' AND `char_s`.`guid` = `mail`.`sender` AND `char_r`.`guid` = `mail`.`receiver` AND `mail`.`id`=`mail_items`.`mail_id` LIMIT %u",
@@ -340,7 +309,6 @@ bool ChatHandler::HandleListItemCommand(char* args)
         }
     }
 
-    // auction case
     uint32 auc_count = 0;
     result = CharacterDatabase.PQuery("SELECT COUNT(`item_template`) FROM `auction` WHERE `item_template`='%u'", item_id);
     if (result)
@@ -352,7 +320,7 @@ bool ChatHandler::HandleListItemCommand(char* args)
     if (count > 0)
     {
         result = CharacterDatabase.PQuery(
-            //                      0                     1                         2                       3
+
                 "SELECT  `auction`.`itemguid`, `auction`.`itemowner`, `characters`.`account`, `characters`.`name` "
                 "FROM `auction`,`characters` WHERE `auction`.`item_template`='%u' AND `characters`.`guid` = `auction`.`itemowner` LIMIT %u",
             item_id, uint32(count));
@@ -393,12 +361,6 @@ bool ChatHandler::HandleListItemCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleListPlayersCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleListPlayersCommand(char* args)
 {
     uint32 limit;
@@ -438,15 +400,9 @@ bool ChatHandler::HandleListPlayersCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleListObjectCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleListObjectCommand(char* args)
 {
-    // number or [name] Shift-click form |color|Hgameobject_entry:go_id|h[name]|h|r
+
     uint32 go_id;
     if (!ExtractUint32KeyFromLink(&args, "Hgameobject_entry", go_id))
     {
@@ -525,15 +481,9 @@ bool ChatHandler::HandleListObjectCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleListCreatureCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleListCreatureCommand(char* args)
 {
-    // number or [name] Shift-click form |color|Hcreature_entry:creature_id|h[name]|h|r
+
     uint32 cr_id;
     if (!ExtractUint32KeyFromLink(&args, "Hcreature_entry", cr_id))
     {

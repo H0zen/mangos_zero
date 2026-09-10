@@ -92,7 +92,7 @@ struct boss_ayamiss : public CreatureScript
 
         bool m_bHasFrenzy;
 
-        ObjectGuid m_paralyzeTarget;
+        ObjectGuid m_paralyzeTarget = 0;
         GuidList m_lSwarmersGuidList;
 
         void Reset() override

@@ -32,8 +32,7 @@ namespace combat
 {
     namespace
     {
-        /// A blow the shield stopped entirely, and one it only softened, are the
-        /// same event to everything that asks "was this blocked".
+
         bool WasBlocked(const Outcome& outcome)
         {
             return outcome.strike.blocked || outcome.Ending() == Result::Blocked;
@@ -49,8 +48,6 @@ namespace combat
             info |= HITINFO_MISS;
         }
 
-        // The amplifiers are independent of the ending: a critical blow that was
-        // partly blocked says both.
         if (outcome.strike.crit)
         {
             info |= HITINFO_CRITICALHIT;
@@ -68,8 +65,6 @@ namespace combat
             info |= HITINFO_BLOCK;
         }
 
-        // These two are about what happened to the damage, not about how the
-        // blow ended, so they stack on top of any of the above.
         if (outcome.absorbed > 0)
         {
             info |= HITINFO_ABSORB;
@@ -119,16 +114,11 @@ namespace combat
             case Result::Absorbed:  procEx |= PROC_EX_ABSORB;  break;
 
             case Result::Landed:
-                // Glancing and crushing are ordinary hits as far as a proc is
-                // concerned: they change the damage, not whether the blow
-                // connected.
+
                 procEx |= outcome.strike.crit ? PROC_EX_CRITICAL_HIT : PROC_EX_NORMAL_HIT;
                 break;
         }
 
-        // A blow that landed through a shield still procs as blocked. Losing
-        // this is one missing line, and every ability that keys on a block goes
-        // quiet without anything failing.
         if (outcome.strike.blocked && outcome.Ending() == Result::Landed)
         {
             procEx |= PROC_EX_BLOCK;

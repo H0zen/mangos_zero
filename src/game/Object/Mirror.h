@@ -29,17 +29,6 @@
 
 #include <vector>
 
-/**
- * The copy of an object that a client keeps, and what has moved in it.
- *
- * The client calls this block a mirror, and that is what it is: a run of dwords
- * whose meaning comes from the field table, plus one bit per dword saying
- * whether the copy out there is still current.
- *
- * It is a store and nothing more. It does not know what a health point is, who
- * may be told about one, or when a packet goes out -- those belong to the field
- * table, the audience and the map's tick respectively.
- */
 class Mirror
 {
     public:
@@ -49,34 +38,29 @@ class Mirror
         Mirror(Mirror const&) = delete;
         Mirror& operator=(Mirror const&) = delete;
 
-        /// Size the block for a class of object. The width comes from the field
-        /// table, so a class does not get to declare its own.
         void Open(uint8 typeId);
 
         bool IsOpen() const { return m_values != nullptr; }
         uint16 Count() const { return m_count; }
 
+        uint16 Blocks() const { return uint16(m_dirty.size()); }
+
         uint32 Read(uint16 index) const { return m_values[index]; }
         float ReadFloat(uint16 index) const;
 
-        /// The address of a dword, for the two that make a guid.
         uint32 const* At(uint16 index) const { return m_values + index; }
 
-        /// Store a value. Answers whether it was different from what was there,
-        /// which is what decides whether anyone needs telling.
         bool Write(uint16 index, uint32 value);
         bool WriteFloat(uint16 index, float value);
 
-        /// Mark a dword as needing to go out again although it did not change.
-        void Touch(uint16 index) { m_dirty[index] = true; }
+        void Touch(uint16 index) { m_dirty[index >> 5] |= 1u << (index & 31); }
 
-        bool Changed(uint16 index) const { return m_dirty[index]; }
+        uint32 const* Dirty() const { return m_dirty.data(); }
 
-        /// Every copy out there is current again.
         void Settle();
 
     private:
         uint32* m_values = nullptr;
-        std::vector<bool> m_dirty;
+        std::vector<uint32> m_dirty;
         uint16 m_count = 0;
 };

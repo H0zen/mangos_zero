@@ -23,28 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file ItemHandler.cpp
- * @brief Item inventory and interaction opcode handlers
- *
- * This file handles item-related opcodes including:
- * - CMSG_SPLIT_ITEM: Split item stack
- * - CMSG_SWAP_ITEM: Swap items between inventory slots
- * - CMSG_SWAP_INV_ITEM: Swap inventory items
- * - CMSG_DESTROYITEM: Destroy item
- * - CMSG_AUTOEQUIP_ITEM: Auto-equip item
- * - CMSG_ITEM_NAME_QUERY: Query item name
- * - CMSG_READ_ITEM: Read item (books, scrolls)
- * - CMSG_WRAP_ITEM: Wrap item with gift wrap
- * - CMSG_USE_ITEM: Use item (consume, equip, etc.)
- * - CMSG_OPEN_ITEM: Open item (containers)
- * - CMSG_BUY_ITEM: Buy item from vendor
- * - CMSG_SELL_ITEM: Sell item to vendor
- * - CMSG_REPAIR_ITEM: Repair item
- */
-
-
-
 #include "Platform/Define.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
@@ -58,58 +36,36 @@
 #include "Chat.h"
 #include "World.h"
 
-/**
- * @brief Sends an enchantment log packet to the client.
- *
- * @param targetGuid The enchanted target guid.
- * @param casterGuid The caster guid.
- * @param itemId The item entry id.
- * @param spellId The enchantment spell id.
- */
 void WorldSession::SendEnchantmentLog(ObjectGuid targetGuid, ObjectGuid casterGuid, uint32 itemId, uint32 spellId)
 {
-    WorldPacket data(SMSG_ENCHANTMENTLOG, (8 + 8 + 4 + 4 + 1)); // last check 2.0.10
-    data << ObjectGuid(targetGuid);
-    data << ObjectGuid(casterGuid);
+    WorldPacket data(SMSG_ENCHANTMENTLOG, (8 + 8 + 4 + 4 + 1));
+    data << static_cast<ObjectGuid>(targetGuid);
+    data << static_cast<ObjectGuid>(casterGuid);
     data << uint32(itemId);
     data << uint32(spellId);
     data << uint8(0);
     SendPacket(&data);
 }
 
-/**
- * @brief Sends a temporary enchantment timer update.
- *
- * @param playerGuid The owning player guid.
- * @param itemGuid The enchanted item guid.
- * @param slot The equipment slot index.
- * @param duration The remaining duration in milliseconds.
- */
 void WorldSession::SendItemEnchantTimeUpdate(ObjectGuid playerGuid, ObjectGuid itemGuid, uint32 slot, uint32 duration)
 {
-    // last check 2.0.10
+
     WorldPacket data(SMSG_ITEM_ENCHANT_TIME_UPDATE, (8 + 4 + 4 + 8));
-    data << ObjectGuid(itemGuid);
+    data << static_cast<ObjectGuid>(itemGuid);
     data << uint32(slot);
     data << uint32(duration);
-    data << ObjectGuid(playerGuid);
+    data << static_cast<ObjectGuid>(playerGuid);
     SendPacket(&data);
 }
 
-/**
- * @brief Wraps an item using wrapping paper.
- *
- * @param recv_data The received opcode packet.
- */
 void items::WrapItem(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("Received opcode CMSG_WRAP_ITEM");
 
     uint8 gift_bag, gift_slot, item_bag, item_slot;
-    // recv_data.hexlike();
 
-    recv_data >> gift_bag >> gift_slot;                     // paper
-    recv_data >> item_bag >> item_slot;                     // item
+    recv_data >> gift_bag >> gift_slot;
+    recv_data >> item_bag >> item_slot;
 
     DEBUG_LOG("WRAP: receive gift_bag = %u, gift_slot = %u, item_bag = %u, item_slot = %u", gift_bag, gift_slot, item_bag, item_slot);
 
@@ -120,7 +76,6 @@ void items::WrapItem(Player& who, WorldPacket& recv_data)
         return;
     }
 
-    // cheating: non-wrapper wrapper (all empty wrappers is stackable)
     if (!(gift->GetProto()->Flags & ITEM_FLAG_WRAPPER) || gift->GetMaxStackCount() == 1)
     {
         who.SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, gift, nullptr);
@@ -135,7 +90,7 @@ void items::WrapItem(Player& who, WorldPacket& recv_data)
         return;
     }
 
-    if (item == gift)                                       // not possible with packet from real client
+    if (item == gift)
     {
         who.SendEquipError(EQUIP_ERR_WRAPPED_CANT_BE_WRAPPED, item, nullptr);
         return;
@@ -147,7 +102,6 @@ void items::WrapItem(Player& who, WorldPacket& recv_data)
         return;
     }
 
-    // HasItemFlag(ITEM_DYNFLAG_WRAPPED)
     if (item->GetGiftCreatorGuid())
     {
         who.SendEquipError(EQUIP_ERR_WRAPPED_CANT_BE_WRAPPED, item, nullptr);
@@ -172,7 +126,6 @@ void items::WrapItem(Player& who, WorldPacket& recv_data)
         return;
     }
 
-    // maybe not correct check  (it is better than nothing)
     if (item->GetProto()->MaxCount > 0)
     {
         who.SendEquipError(EQUIP_ERR_UNIQUE_CANT_BE_WRAPPED, item, nullptr);
@@ -180,7 +133,7 @@ void items::WrapItem(Player& who, WorldPacket& recv_data)
     }
 
     CharacterDatabase.BeginTransaction();
-    CharacterDatabase.PExecute("INSERT INTO `character_gifts` VALUES ('%u', '%u', '%u', '%u')", item->GetOwnerGuid().GetCounter(), item->GetGUIDLow(), item->GetEntry(), item->GetItemFlags());
+    CharacterDatabase.PExecute("INSERT INTO `character_gifts` VALUES ('%u', '%u', '%u', '%u')", GuidCounter(item->GetOwnerGuid()), item->GetGUIDLow(), item->GetEntry(), item->GetItemFlags());
     item->SetEntry(gift->GetEntry());
 
     switch (item->GetEntry())
@@ -196,11 +149,11 @@ void items::WrapItem(Player& who, WorldPacket& recv_data)
     item->SetAllItemFlags(ITEM_DYNFLAG_WRAPPED);
     item->SetState(ITEM_CHANGED, &who);
 
-    if (item->GetState() == ITEM_NEW)                       // save new item, to have alway for `character_gifts` record in `item_instance`
+    if (item->GetState() == ITEM_NEW)
     {
-        // after save it will be impossible to remove the item from the queue
+
         who.ItemSaves().Forget(item);
-        item->SaveToDB();                                   // item gave inventory record unchanged and can be save standalone
+        item->SaveToDB();
     }
     CharacterDatabase.CommitTransaction();
 
@@ -208,11 +161,6 @@ void items::WrapItem(Player& who, WorldPacket& recv_data)
     who.DestroyItemCount(gift, count, true);
 }
 
-/**
- * @brief Cancels a temporary weapon enchantment.
- *
- * @param recv_data The received opcode packet.
- */
 void items::CancelTempEnchantment(Player& who, WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CANCEL_TEMP_ENCHANTMENT");
@@ -221,7 +169,6 @@ void items::CancelTempEnchantment(Player& who, WorldPacket& recv_data)
 
     recv_data >> eslot;
 
-    // apply only to equipped item
     if (!Inventory::IsWorn(INVENTORY_SLOT_BAG_0, eslot))
     {
         return;

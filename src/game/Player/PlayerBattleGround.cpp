@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -70,15 +68,9 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Checks whether the player's level fits a battleground's allowed range.
- *
- * @param bgTypeId The battleground type to evaluate.
- * @return True if the player's level is within range; otherwise, false.
- */
 bool Player::GetBGAccessByLevel(BattleGroundTypeId bgTypeId) const
 {
-    // get a template bg instead of running one
+
     BattleGround* bg = sBattleGroundMgr.GetBattleGroundTemplate(bgTypeId);
     if (!bg)
     {
@@ -93,15 +85,9 @@ bool Player::GetBGAccessByLevel(BattleGroundTypeId bgTypeId) const
     return true;
 }
 
-/**
- * @brief Moves the player into a battleground raid group.
- *
- * @param group The battleground raid group.
- * @param subgroup The battleground subgroup index.
- */
 void Player::SetBattleGroundRaid(Group* group, int8 subgroup)
 {
-    // we must move references from m_group to m_originalGroup
+
     SetOriginalGroup(GetGroup(), GetSubGroup());
 
     m_group.unlink();
@@ -109,12 +95,9 @@ void Player::SetBattleGroundRaid(Group* group, int8 subgroup)
     m_group.setSubGroup((uint8)subgroup);
 }
 
-/**
- * @brief Restores the player's original group after leaving a battleground raid.
- */
 void Player::RemoveFromBattleGroundRaid()
 {
-    // remove existing reference
+
     m_group.unlink();
     if (Group* group = GetOriginalGroup())
     {
@@ -124,18 +107,12 @@ void Player::RemoveFromBattleGroundRaid()
     SetOriginalGroup(nullptr);
 }
 
-/**
- * @brief Checks whether the player can interact with a battleground object.
- *
- * @return True if the player can use the object; otherwise, false.
- */
 bool Player::CanUseBattleGroundObject()
 {
-    // TODO : some spells gives player ForceReaction to one faction (ReputationMgr::ApplyForceReaction)
-    // maybe gameobject code should handle that ForceReaction usage
-    return (IsAlive() &&                                    // living
-        // the following two are incorrect, because invisible/stealthed players should get visible when they click on flag
-        !HasStealthAura() &&                            // not stealthed
-        !HasInvisibilityAura() &&                       // visible
-        !isTotalImmune());                              // vulnerable (not immune)
+
+    return (IsAlive() &&
+
+        !HasStealthAura() &&
+        !HasInvisibilityAura() &&
+        !isTotalImmune());
 }

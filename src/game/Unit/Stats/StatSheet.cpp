@@ -22,7 +22,7 @@
 
 void StatSheet::Resistance(uint32 school)
 {
-    // The normal school is armour, and armour is kept in its own field.
+
     if (school == SPELL_SCHOOL_NORMAL)
     {
         Armour();

@@ -48,14 +48,6 @@
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 
-/**
- * @brief Where a unit ACTUALLY is: map, frame, pose, and whether anything can move it.
- *
- * Every pet symptom aboard looks the same from the client -- it stands there, or it is gone --
- * and every one of them is a different answer to this line. The frame matters as much as the
- * map: a pet whose placement still says `deck` while it sits on a world map is infinitely far
- * from its master, so nothing reaches it and no rule fires.
- */
 std::string DescribeSpatially(Unit* u)
 {
     if (!u)
@@ -83,9 +75,7 @@ std::string DescribeSpatially(Unit* u)
 
 namespace
 {
-    /// Two points in one grid. A vessel's audience is the grid she sits in, so this is the
-    /// only question her pose is ever asked, and a wrong answer costs one grid either way
-    /// rather than a wrong distance.
+
     bool InSameGrid(Geometry::Placement const& a, Geometry::Placement const& b)
     {
         uint32 ax = 0, ay = 0, bx = 0, by = 0;
@@ -94,54 +84,19 @@ namespace
         return ax == bx && ay == by;
     }
 
-    /// How far above and below a point to look for a surface when placing something on it.
     constexpr float HULL_SEARCH_UP = 3.0f;
     constexpr float HULL_SEARCH_DOWN = 6.0f;
 
-    /// Chest height for the obstruction probe, so the plating a unit stands ON is not itself
-    /// read as the thing blocking it.
     constexpr float HULL_PROBE_HEIGHT = 1.0f;
 
-    /// Bearings tried when sweeping for a free spot around a master.
     constexpr int HULL_SPOT_BEARINGS = 8;
 
-    /**
-     * @brief A totem rides the ship it was planted on for as long as it lives, whoever its
-     *        master is and wherever they have got to.
-     *
-     * A shaman who drops a totem on the pier and then sails has left it on the pier, which is
-     * exactly right, and one dropped on the forecastle sails with the ship. Death or despawn
-     * is what takes it off the boat.
-     */
     bool IsPlanted(Unit const* minion)
     {
-        return minion->IsCreature() &&
+        return IsCreature(minion) &&
                static_cast<Creature const*>(minion)->IsTotem();
     }
 
-    /**
-     * @brief THE TWO BITS THAT KILL A CLIENT ABOARD A MOVING SHIP.
-     *
-     * `CreatureTypeFlags & (0x100000 | 0x400000)`, and it takes BOTH -- either one alone is
-     * harmless, proven by putting each on a deck on its own and sailing. Together, every
-     * client that can see the creature dies in its render path the moment the ship gets
-     * under way. Stationary, nothing happens: the client only walks a transport's
-     * attachments while it is moving.
-     *
-     * These are `UNK21` and `UNK23` in SharedDefines, and our own notes on them read "may be
-     * related to rendering" and "probably controls some creature visual". They reach the
-     * client in SMSG_CREATURE_QUERY_RESPONSE, cached per ENTRY -- so this cannot be papered
-     * over per creature on the wire, and the creature simply does not sail.
-     *
-     * This is why `.wp add` was lethal on a deck: the waypoint marker carried them. Nothing
-     * to do with its entry, which is where this hunt spent an evening -- a copy of it under a
-     * different entry killed the client just the same until the flags came off.
-     *
-     * Disproved on the way here, so nobody repeats it: CreatureModelData.Flags (both crashing
-     * models carried 0x1|0x2, and so do 2644 ordinary templates), InhabitType (never sent,
-     * and orthogonal in the data), UnitFlags, NpcFlags and DynamicFlags (cross-tabulated bit
-     * by bit over 29912 templates; nothing separates the samples).
-     */
     bool CanRide(Creature const* crew)
     {
         CreatureInfo const* info = crew->GetCreatureInfo();
@@ -150,11 +105,9 @@ namespace
                         != CREATURE_TYPEFLAGS_TRANSPORT_FORBIDDEN;
     }
 
-    /// Drop a minion from one client, both halves: the packet AND the server's record that
-    /// the client holds it. Either one alone leaves the two disagreeing.
     void ForgetMinion(Creature* minion, Unit* watcher)
     {
-        Player* client = watcher && watcher->IsPlayer()
+        Player* client = watcher &&IsPlayer(watcher)
                              ? static_cast<Player*>(watcher) : nullptr;
         if (!client)
         {
@@ -165,13 +118,6 @@ namespace
         client->m_clientGUIDs.erase(minion->GetObjectGuid());
     }
 
-    /**
-     * @brief Move a minion to the map its master is on, beside him.
-     *
-     * Aboard-to-ashore and ashore-to-aboard are the same call: the destination map decides
-     * every coordinate the moment the minion is added to it. There is nothing to board and no
-     * frame to change, because the ship IS the frame.
-     */
     void DrawMinionTo(Unit* minion, Unit* master, Map* dest)
     {
         if (!minion || !master || !dest)
@@ -191,7 +137,7 @@ namespace
 
         if (minion->FindMap() == dest)
         {
-            return;                         // the ordinary case, once a tick, per minion
+            return;
         }
 
         Creature* c = static_cast<Creature*>(minion);
@@ -206,22 +152,8 @@ namespace
         ClosePointNear(*master, x, y, z, minion->Where().Extent(), PET_FOLLOW_DIST,
                        PET_FOLLOW_ANGLE);
 
-        // Whatever leg it was on was planned in the map it is leaving; none of it survives.
         c->StopMoving();
 
-        // TELL EVERY CLIENT TO DROP IT FIRST, and MAKE THE SERVER AGREE. Without this the
-        // ones already holding it get only a heartbeat at the far side and interpolate the
-        // difference -- which a player sees as his pet swimming up through the hull.
-        //
-        // The packet alone is not enough and that is the whole trap: DestroyForPlayer does
-        // not touch m_clientGUIDs, so the server still believes the client holds it, and the
-        // visibility pass at the far side takes the HaveAtClient branch and sends NO CREATE.
-        // The client is left drawing its last copy -- for a pet coming off a ship, still
-        // attached to the ship. Erasing the guid is what makes the arrival a real CREATE.
-        //
-        // And THE MASTER MUST BE IN THE LIST. He is the one client that has to re-create it,
-        // and he is the one this loop cannot reach: by the time a minion is drawn ashore he
-        // has already been taken off the deck map it is walking.
         ForgetMinion(c, master);
 
         for (Map::PlayerList::const_iterator itr = c->GetMap()->GetPlayers().begin();
@@ -234,14 +166,6 @@ namespace
         c->Place().MoveTo(x, y, z, master->Where().Facing());
         dest->Add(c);
 
-        // AND THE MOTION, in the frame it now stands in. Initialize() alone restores the
-        // creature's DEFAULT generator -- for a pet that is not following anybody, which is
-        // a pet teleported neatly to its master's side and then standing there.
-        //
-        // MoveFollow and MoveIdle each clear the stack themselves, and correctly. Clearing
-        // it here first with all=true emptied it down to and including the idle generator,
-        // and the Clear inside MoveFollow then asserted on !empty() -- a crash on every
-        // step ashore, from MotionMaster::DirectClean.
         if (c->GetCharmInfo() && c->GetCharmInfo()->HasCommandState(COMMAND_STAY))
         {
             c->GetMotionMaster()->MoveIdle();
@@ -257,9 +181,6 @@ namespace
                          "DrawMinionTo: DONE %s", DescribeSpatially(c).c_str());
     }
 
-    /// Every minion this master controls, moved to `dest` beside him. The reconciler does
-    /// the same sweep once per tick; this is the immediate half, so nothing is ever seen
-    /// standing where its master no longer is.
     void DrawMinionsTo(Player* master, Map* dest)
     {
         if (!master || !dest)
@@ -267,8 +188,6 @@ namespace
             return;
         }
 
-        // A ZERO HERE IS THE ANSWER, not a quiet success: the sweep found nothing to move,
-        // which means the master no longer owns what is standing on the other map.
         int seen = 0;
         master->CallForAllControlledUnits(
             [master, dest, &seen](Unit* minion) { ++seen; DrawMinionTo(minion, master, dest); },
@@ -278,11 +197,9 @@ namespace
                          "DrawMinionsTo: %s -> map=%u%s, %d controlled unit(s), petguid=%s",
                          master->GetGuidStr().c_str(), dest->GetId(),
                          dest->AsTransport() ? "[deck]" : "", seen,
-                         master->GetPetGuid().GetString().c_str());
+                         GuidString(master->GetPetGuid()).c_str());
     }
 }
-
-/* ******************************** The hull ******************************************* */
 
 bool TransportMap::Commission()
 {
@@ -300,18 +217,12 @@ bool TransportMap::Commission()
         const float hy = std::max(std::fabs(b.lo.y), std::fabs(b.hi.y));
         m_hullRadius = std::sqrt(hx * hx + hy * hy);
 
-        // A SHIP IS ALWAYS LOADED. Its grids are pinned at start-up and never unloaded: no
-        // player ever "enters" this map to trigger a load, and a hull whose grid had expired
-        // would answer no height, no collision and no route -- silently, and only once she
-        // was already at sea. The bounds are walked corner to corner because a hull straddles
-        // the map centre and so spans up to four grids.
         uint32 pinned = 0;
         for (float gx = b.lo.x; gx < b.hi.x + SIZE_OF_GRIDS; gx += SIZE_OF_GRIDS)
         {
             for (float gy = b.lo.y; gy < b.hi.y + SIZE_OF_GRIDS; gy += SIZE_OF_GRIDS)
             {
-                // Clamped to the hull: stepping a whole grid past it pinned cells the ship
-                // does not occupy, half a kilometre off the bow.
+
                 ForceLoadGrid(std::min(gx, b.hi.x), std::min(gy, b.hi.y));
                 ++pinned;
             }
@@ -321,10 +232,6 @@ bool TransportMap::Commission()
                    goinfo->id, GetId(), pinned, b.lo.x, b.hi.x, b.lo.y, b.hi.y);
     }
 
-    // A map with no baked tile is no ship, whatever Map.dbc says. Left standing it swallows
-    // whoever steps aboard: Map::Add cannot load a grid that has no terrain, so a passenger
-    // is removed from the world he was in and added to nothing, and ends up at (0,0)
-    // belonging nowhere.
     if (!GetTerrain()->ColumnAt(0.0f, 0.0f, m_hullRadius * 3.0f, -m_hullRadius * 3.0f)
                      .HighestSolid())
     {
@@ -342,8 +249,7 @@ bool TransportMap::Commission()
 std::optional<float> TransportMap::SurfaceAt(float x, float y, float z,
                                              float searchUp, float searchDown) const
 {
-    // The window is the point: an open hatch must refuse rather than answer with the deck two
-    // levels down.
+
     return GetTerrain()->ColumnAt(x, y, z + searchUp, z - searchDown)
            .HighestSolidAtOrBelow(z + searchUp);
 }
@@ -362,8 +268,7 @@ bool TransportMap::IsBlocked(Geometry::Vector3 const& from, Geometry::Vector3 co
 
 std::optional<Geometry::Placement> TransportMap::PositionOf(Occupant const& obj) const
 {
-    // ABOARD, ITS POSITION IS ITS POSITION. Nothing to look up and nothing to convert: this
-    // map's coordinates are the answer for a crew member, a pet, a totem and a player alike.
+
     if (obj.GetMap() == this)
     {
         return obj.Where();
@@ -378,11 +283,9 @@ std::optional<Position> TransportMap::FreeSpotNear(Occupant const& master, float
     const auto anchor = PositionOf(master);
     if (!anchor)
     {
-        return std::nullopt;                        // its master is not aboard after all
+        return std::nullopt;
     }
 
-    // The requested bearing first, then swept around the master: a ship is small and
-    // cluttered, and the one spot the caller asked for is very often out over the rail.
     for (int step = 0; step < HULL_SPOT_BEARINGS; ++step)
     {
         const float bearing = anchor->Facing() + angle +
@@ -394,11 +297,9 @@ std::optional<Position> TransportMap::FreeSpotNear(Occupant const& master, float
         const auto z = SurfaceAt(x, y, anchor->Z(), HULL_SEARCH_UP, HULL_SEARCH_DOWN);
         if (!z)
         {
-            continue;                               // out over the rail
+            continue;
         }
 
-        // ...and nothing solid in between, or we would set a pet down on the far side of a
-        // bulkhead from the master it is supposed to be heeling.
         if (IsBlocked(Geometry::Vector3(anchor->X(), anchor->Y(), anchor->Z() + HULL_PROBE_HEIGHT),
                       Geometry::Vector3(x, y, *z + HULL_PROBE_HEIGHT)))
         {
@@ -411,12 +312,9 @@ std::optional<Position> TransportMap::FreeSpotNear(Occupant const& master, float
     return std::nullopt;
 }
 
-/* ******************************** Who is aboard ************************************** */
-
 bool TransportMap::Add(Player* passenger, InitialWorldEntryHook* initialEntry)
 {
-    // WHERE HE REALLY STANDS. The wire calls it an offset; the moment it is ours it is a
-    // position on this map, composed with nothing.
+
     Position const* aboard = passenger->m_movementInfo.GetTransportPos();
     passenger->Place().MoveTo(aboard->x, aboard->y, aboard->z, aboard->o);
 
@@ -428,15 +326,11 @@ bool TransportMap::Add(Player* passenger, InitialWorldEntryHook* initialEntry)
     EnsureGridLoadedAtEnter(cell, passenger);
     passenger->AddToWorld();
 
-    // As on an ordinary map, derive the client-visible world anchor only after
-    // membership commits and before vessel/passenger blocks are accumulated.
     if (initialEntry)
     {
         initialEntry->AfterAddToWorld(*passenger);
     }
 
-    // Match ordinary map login: only the passenger's own initial camera may
-    // coalesce this data. Seam crossings keep their established send path.
     std::optional<InitialWorldUpdateBatch> initialUpdates;
     if (passenger->GetSession()->PlayerLoading() && passenger->GetCamera().GetBody() == passenger)
     {
@@ -444,9 +338,6 @@ bool TransportMap::Add(Player* passenger, InitialWorldEntryHook* initialEntry)
     }
     auto* batch = initialUpdates ? &*initialUpdates : nullptr;
 
-    // The ship, then the man standing on her. Nothing else: no world to introduce, no map
-    // id he could be told. Her block is not stamped into his client set -- possession of a
-    // vessel is map membership, and the elimination sweep must never learn she exists.
     UpdateData localData;
     UpdateData& data = batch ? batch->Data() : localData;
     m_vessel->BuildCreateUpdateBlockForPlayer(&data, passenger);
@@ -459,19 +350,11 @@ bool TransportMap::Add(Player* passenger, InitialWorldEntryHook* initialEntry)
     else
     {
         WorldPacket packet;
-        // hasTransport, and it must be true: this packet carries the vessel and a
-        // passenger whose own block names her. Omitting the argument tells the client
-        // there is no transport in a packet that is nothing but transport. It then has
-        // nothing to compose him against and never leaves the loading screen.
+
         data.BuildPacket(&packet);
         passenger->GetSession()->SendPacket(&packet);
     }
 
-    // And the OTHER ships on the water she is crossing. His client is drawing that map, so
-    // they are his to see, and no sweep of his will ever reach them: he is not on it.
-    //
-    // Never while she is between two maps: she would name the one she is leaving, and he
-    // would be handed a continent's worth of ships that are not on the water he can see.
     if (Map* sailed = m_vessel->IsCrossing() ? nullptr : m_vessel->GetMap())
     {
         for (Transport* other : sFleet.On(sailed->GetId()))
@@ -495,8 +378,6 @@ bool TransportMap::Add(Player* passenger, InitialWorldEntryHook* initialEntry)
     passenger->GetViewPoint().Event_AddedToWorld(
         &(*grid)(cell.CellX(), cell.CellY()), passenger, batch);
 
-    // The owner camera must flush exactly once before normal visibility can
-    // proceed; otherwise the client would enter with a partial deck world.
     if (batch && !batch->WasSent())
     {
         if (!batch->FlushAttempted())
@@ -520,19 +401,12 @@ void TransportMap::Embark(Player* passenger)
         return;
     }
 
-    // He WALKED aboard: he really was ashore a moment ago, so he really does leave that map.
-    // Login and the far side of a seam do not come through here -- they never touch the
-    // world's grid at all, they are added straight to this map.
     DEBUG_FILTER_LOG(LOG_FILTER_DECK_MINIONS, "Embark: %s",
                      DescribeSpatially(passenger).c_str());
 
     Rebind(passenger, passenger->Where().X(), passenger->Where().Y(),
            passenger->Where().Z(), passenger->Where().Facing());
 
-    // His minions come with him, NOW. UpdateMinions reconciles this once per tick and is
-    // the safety net for the half-dozen other ways one arrives -- but a pet that waits a
-    // tick is a pet standing at the rail while its master walks off, which is what a player
-    // actually sees. Retail teleports it beside him on the spot; so does this.
     DrawMinionsTo(passenger, this);
 }
 
@@ -545,11 +419,6 @@ bool TransportMap::Board(Player* passenger, float x, float y, float z, float o, 
         return false;
     }
 
-    // BETWEEN TWO WORLD MAPS: refused, and refused HERE, before anything has been written.
-    // The map she names is the one she is leaving, so the client would be sent to load
-    // terrain she is about to be off; and the crossing completes past the map ticker's barrier
-    // by walking her passenger list, which this man is not yet on and would not be carried
-    // by. Nothing has moved at the point of this return, so he is still at his source.
     if (m_vessel->IsCrossing())
     {
         return false;
@@ -559,14 +428,9 @@ bool TransportMap::Board(Player* passenger, float x, float y, float z, float o, 
     ObjectGuid const wasGuid = passenger->m_movementInfo.GetTransportGuid();
     Position const wasAt = *passenger->m_movementInfo.GetTransportPos();
 
-    // Set BEFORE the teleport, and both of them: TeleportTo reads m_transport to decide it is
-    // a far port that keeps its passenger, and writes the offset below into the transfer and
-    // the new-world packet. The order is the same one login uses.
     passenger->SetTransport(m_vessel);
     passenger->m_movementInfo.SetTransportData(m_vessel->GetObjectGuid(), x, y, z, o, 0);
 
-    // Her world pose, coarse and temporary -- it names the grid the client must load and
-    // nothing else. The deck offset above is what actually places him.
     if (passenger->TeleportTo(sailed->GetId(),
                               m_vessel->Where().X(), m_vessel->Where().Y(),
                               m_vessel->Where().Z(), m_vessel->Where().Facing(),
@@ -575,8 +439,6 @@ bool TransportMap::Board(Player* passenger, float x, float y, float z, float o, 
         return true;
     }
 
-    // A refused teleport must not leave him holding a ship he is not standing on: every
-    // question about where he is would answer from her deck while his body is elsewhere.
     passenger->SetTransport(wasOn);
     if (wasOn)
     {
@@ -606,13 +468,10 @@ void TransportMap::Disembark(Player* passenger, float x, float y, float z, float
     DEBUG_FILTER_LOG(LOG_FILTER_DECK_MINIONS, "Disembark: %s",
                      DescribeSpatially(passenger).c_str());
 
-    // The ship goes out of his hands before he is off her, so every question about where
-    // he stands answers ashore from here on.
     passenger->SetTransport(nullptr);
 
     sailed->Rebind(passenger, x, y, z, o);
 
-    // And they follow him ashore in the same tick, for the same reason.
     DrawMinionsTo(passenger, sailed);
 }
 
@@ -624,8 +483,6 @@ void TransportMap::VesselLeavingWorld(Map* oldWorld, uint32 newMapId,
         return;
     }
 
-    // From EVERYONE there, not from a range: possession of a vessel is map membership, and
-    // this is the moment membership ends.
     PlayerList const& ashore = oldWorld->GetPlayers();
     for (PlayerList::const_iterator itr = ashore.begin(); itr != ashore.end(); ++itr)
     {
@@ -635,8 +492,6 @@ void TransportMap::VesselLeavingWorld(Map* oldWorld, uint32 newMapId,
         }
     }
 
-    // Snapshotted: TeleportTo takes the player off this map, and the reference manager being
-    // walked is the one it edits.
     std::vector<Player*> aboard;
     for (PlayerList::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
     {
@@ -653,10 +508,6 @@ void TransportMap::VesselLeavingWorld(Map* oldWorld, uint32 newMapId,
             passenger->ResurrectPlayer(1.0);
         }
 
-        // His CLIENT is sent to the new world map because it has to load that terrain; he
-        // himself never leaves this one -- Player::BoardingMap puts him straight back aboard
-        // on the far side. The vessel has NOT moved yet, so the transfer packet still names
-        // the map he is really leaving.
         passenger->TeleportTo(newMapId, x, y, z, o, TELE_TO_NOT_LEAVE_TRANSPORT);
     }
 }
@@ -668,8 +519,6 @@ void TransportMap::VesselEnteredWorld(Map* newWorld)
         return;
     }
 
-    // The same channel that took her away gives her back: everyone on the new map gains her
-    // by membership, here and now, with no distance asked.
     PlayerList const& arriving = newWorld->GetPlayers();
     for (PlayerList::const_iterator itr = arriving.begin(); itr != arriving.end(); ++itr)
     {
@@ -687,9 +536,6 @@ void TransportMap::EnlistCrew(Creature* crew)
         return;
     }
 
-    // REFUSED AT THE GANGWAY. One of these aboard is not a creature that looks wrong, it is
-    // every client watching the ship crashing the moment she gets under way -- so it is put
-    // off rather than carried, and the log says which one.
     if (!CanRide(crew))
     {
         sLog.outErrorDb("Transport map %u: creature %u (guid %u) carries CreatureTypeFlags "
@@ -708,8 +554,6 @@ void TransportMap::EnlistCrew(Creature* crew)
         m_crew.push_back(crew);
     }
 
-    // Active, because this map's grids are pinned and no player is required to be on it to
-    // keep it awake -- the observers are ashore, watching through the vessel.
     crew->SetActiveObjectState(true);
 
 }
@@ -721,8 +565,7 @@ void TransportMap::DelistCrew(Creature* crew)
 
 void TransportMap::UpdateMinions()
 {
-    // A MINION FOLLOWS ITS MASTER ACROSS A MAP BOUNDARY. That is the whole of it, and it is
-    // the same move a pet makes following its master through a portal.
+
     for (PlayerList::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
     {
         Player* master = itr->getSource();
@@ -736,14 +579,6 @@ void TransportMap::UpdateMinions()
             CONTROLLED_PET | CONTROLLED_MINIPET | CONTROLLED_GUARDIANS | CONTROLLED_TOTEMS);
     }
 
-    // And the reverse: anything aboard whose master has left.
-    //
-    // NOT `m_crew`. A pet is not crew and must never be enlisted as one -- crew are exempt
-    // from the visibility sweep, and a pet that is exempt is a pet no client ever destroys,
-    // which is how one came to swim up through the hull. So the roster it is looked for in
-    // is the MAP'S OWN pet store: everything of the kind that is standing here, crew or not.
-    // Scanning m_crew asked a container pets are not in, found nothing, and left every pet
-    // whose master had walked ashore standing on the deck for good.
     std::vector<Creature*> stranded;
 
     for (auto const& entry : GetObjectsStore().GetElements<Pet>())
@@ -751,7 +586,7 @@ void TransportMap::UpdateMinions()
         Creature* aboard = entry.second;
         if (!aboard || !aboard->IsInWorld() || IsPlanted(aboard))
         {
-            continue;                       // a totem rides the ship it was planted on
+            continue;
         }
 
         Unit* master = aboard->GetOwner();
@@ -769,8 +604,6 @@ void TransportMap::UpdateMinions()
         DrawMinionTo(minion, master, master->FindMap());
     }
 }
-
-/* ******************************** What the shore is told ***************************** */
 
 void TransportMap::AppendCrewCreateBlocks(UpdateData& data, Player* observer)
 {
@@ -823,9 +656,6 @@ void TransportMap::AppendVesselCreateBlocks(Transport* vessel, Player* observer,
         return;
     }
 
-    // The hull AND everyone on her. The observer's own visibility sweep would find the crew
-    // too, but only when HE moves -- and a man standing on a pier watching a ship come in
-    // does not move. Leaving it to the sweep gave him an empty deck until he stepped aboard.
     vessel->BuildCreateUpdateBlockForPlayer(&data, observer);
 
     if (TransportMap* hull = vessel->AsMap())
@@ -856,8 +686,6 @@ void TransportMap::RetractVessel(Transport* vessel, Player* observer)
         return;
     }
 
-    // The CREW FIRST, the hull last. Reversed, the client loses the ship while it still holds
-    // them, and they hang in the air at the last place it was drawn.
     UpdateData data;
 
     if (TransportMap* hull = vessel->AsMap())
@@ -881,9 +709,6 @@ void TransportMap::CollectRelaySources(Occupant const* viewer, float visibility,
         return;
     }
 
-    // Aboard: his own pass walks the ship, and the shore he reaches is the whole grid she
-    // sits in. Her pose names that grid and is used for nothing else -- it is a waypoint
-    // guess, and measuring a radius around it would be measuring against the guess.
     if (TransportMap const* hull = viewer->GetMap()->AsTransport())
     {
         Transport* vessel = hull->Vessel();
@@ -902,15 +727,11 @@ void TransportMap::CollectRelaySources(Occupant const* viewer, float visibility,
             continue;
         }
 
-        // Ashore: the vessels that concern him are the ones sharing his grid. Which grid
-        // she is in is all her pose is asked for.
         if (!InSameGrid(vessel->Where(), viewer->Where()))
         {
             continue;
         }
 
-        // The whole ship, swept from her origin. Her space is small and a crew is a few
-        // dozen, so a radius that certainly covers the hull is cheaper than being exact.
         out.push_back({hull, 0.0f, 0.0f, hull->HullRadius() * 2.0f + visibility});
     }
 }
@@ -923,10 +744,6 @@ void TransportMap::GatherObservers()
         return;
     }
 
-    // THE GRID IS THE AUDIENCE. The estimate names which grid the vessel is in and is
-    // used for nothing else: everyone in that grid hears her and she hears them, however
-    // far across it they stand. Measuring a distance here instead would be measuring
-    // against the estimate, which is a waypoint guess and not a position.
     struct AnyoneInTheGrid
     {
         Occupant const* focus;
@@ -939,18 +756,12 @@ void TransportMap::GatherObservers()
     MaNGOS::PlayerListSearcher<AnyoneInTheGrid> searcher(found, check);
     Cell::VisitWorldObjectsInGrid(m_vessel->Where().X(), m_vessel->Where().Y(), world, searcher);
 
-    // For BROADCAST only -- a spline, an emote, a spell go, anything said aboard while
-    // nobody's visibility pass happens to be running. Visibility itself is decided by each
-    // viewer's own sweep, which reaches across through CollectRelaySources.
     SetExternalObservers(std::vector<Player*>(found.begin(), found.end()));
 }
 
 uint32 TransportMap::Across(Audience const& who, MapBroadcaster::Listener const& tell)
 {
-    // A deckhand's own map is the hull, and no cell ashore will ever hold him, so a packet
-    // that stays inside his map is never seen from the pier. His audience there is whoever
-    // the vessel gathered at the top of this tick -- membership of her grid, not a distance,
-    // which is why even a shout crosses.
+
     uint32 told = 0;
 
     for (Player* observer : ExternalObservers())
@@ -969,11 +780,9 @@ uint32 TransportMap::Across(Audience const& who, MapBroadcaster::Listener const&
 
 void TransportMap::Update(const uint32& t_diff)
 {
-    // Phase one, on the thread of the map the vessel sails and with her pose already advanced
-    // for this tick: who ashore is watching, and who aboard should not be.
+
     GatherObservers();
     UpdateMinions();
 
-    // Then an ordinary map tick: grids, active objects, everyone aboard.
     Map::Update(t_diff);
 }

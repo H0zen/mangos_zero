@@ -27,12 +27,6 @@
 
 #include "Platform/Define.h"
 
-/**
- * Loads the random enchantment modifier table from the configured data source.
- */
 void LoadRandomEnchantmentsTable();
 
-/**
- * Returns the random enchantment modifier value for the specified entry.
- */
 uint32 GetItemEnchantMod(uint32 entry);

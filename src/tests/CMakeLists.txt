@@ -72,6 +72,8 @@ set(TEST_SOURCES
     combat/test_manashield.cpp
 
     spells/test_auraindex.cpp
+
+    client/test_inflate.cpp
     spells/test_recipe.cpp
     spells/test_coefficient.cpp
     spells/test_roster.cpp

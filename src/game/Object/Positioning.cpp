@@ -23,25 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Object.cpp
- * @brief Base implementation for all game objects
- *
- * This file implements the Object class, which is the base class for all
- * entities in the game world. It provides:
- * - Update field management (synchronized with clients)
- * - Object GUID handling
- * - Update data building for network transmission
- * - Object visibility and spawning
- * - Type identification
- *
- * The Object class uses an array of uint32 values (update fields) that
- * mirror the client's object state. Changes to these values are sent to
- * players who can see the object.
- */
-
-
-
 #include "Geometry/Placement.h"
 #include <cmath>
 #include "Utilities/Errors.h"
@@ -72,40 +53,24 @@
 #include "GameTime.h"
 #include "Corpse.h"
 
-// how much space should be left in front of/ behind a mob that already uses a space
 #define OCCUPY_POS_DEPTH_FACTOR                          1.8f
 
 namespace MaNGOS
 {
 
-    /**
-     * @brief Near used position functor
-     *
-     * Checks for used positions near an object for position selection.
-     */
     class NearUsedPosDo
     {
         public:
-            /**
-             * @brief Constructor
-             * @param obj Source object
-             * @param searcher Object searching for position
-             * @param absAngle Absolute angle
-             * @param selector Position selector
-             */
+
             NearUsedPosDo(Occupant const& obj, Occupant const* searcher, float absAngle, ObjectPosSelector& selector)
                 : i_object(obj), i_searcher(searcher), i_absAngle(Geometry::Placement::NormalizeOrientation(absAngle)), i_selector(selector) {}
 
             void operator()(Corpse*) const {}
             void operator()(DynamicObject*) const {}
 
-            /**
-             * @brief Process creature
-             * @param c Creature to process
-             */
             void operator()(Creature* c) const
             {
-                // skip self or target
+
                 if (c == i_searcher || c == &i_object)
                 {
                     return;
@@ -122,14 +87,10 @@ namespace MaNGOS
                 add(c, x, y);
             }
 
-            /**
-             * @brief Process generic unit
-             * @param u Unit to process
-             */
             template<class T>
                 void operator()(T* u) const
             {
-                // skip self or target
+
                 if (u == i_searcher || u == &i_object)
                 {
                     return;
@@ -143,30 +104,20 @@ namespace MaNGOS
                 add(u, x, y);
             }
 
-            /**
-             * @brief Add used position
-             * @param u Object to add
-             * @param x X coordinate
-             * @param y Y coordinate
-             *
-             * Adds a used position to the selector.
-             */
             void add(Occupant* u, float x, float y) const
             {
                 float dx = i_object.Where().X() - x;
                 float dy = i_object.Where().Y() - y;
                 float dist2d = sqrt((dx * dx) + (dy * dy));
 
-                // It is ok for the objects to require a bit more space
                 float delta = u->Where().Extent();
                 if (i_selector.m_searchPosFor && i_selector.m_searchPosFor != u)
                 {
                     delta += i_selector.m_searchPosFor->Where().Extent();
                 }
 
-                delta *= OCCUPY_POS_DEPTH_FACTOR;           // Increase by factor
+                delta *= OCCUPY_POS_DEPTH_FACTOR;
 
-                // u is too near/far away from i_object. Do not consider it to occupy space
                 if (fabs(i_selector.m_searcherDist - dist2d) > delta)
                 {
                     return;
@@ -174,7 +125,6 @@ namespace MaNGOS
 
                 float angle = i_object.Where().BearingTo(u->Where()) - i_absAngle;
 
-                // move angle to range -pi ... +pi, range before is -2Pi..2Pi
                 if (angle > M_PI_F)
                 {
                     angle -= 2.0f * M_PI_F;
@@ -192,10 +142,8 @@ namespace MaNGOS
             float              i_absAngle;
             ObjectPosSelector& i_selector;
     };
-}                                                           // namespace MaNGOS
+}
 
-// A point the component constructed, pulled back inside the map's coordinate bounds --
-// which is the map's business, not the geometry's.
 Geometry::Vector3 PointNear(Occupant const& anchor, float distance2d, float absAngle)
 {
     Geometry::Vector3 point = anchor.Where().PointAt(distance2d, absAngle);
@@ -204,17 +152,6 @@ Geometry::Vector3 PointNear(Occupant const& anchor, float distance2d, float absA
     return point;
 }
 
-/**
- * @brief Finds a nearby point while accounting for collisions and line of sight.
- *
- * @param searcher The object requesting the position.
- * @param x Receives the resulting x coordinate.
- * @param y Receives the resulting y coordinate.
- * @param z Receives the resulting z coordinate.
- * @param searcher_bounding_radius The requester's bounding radius.
- * @param distance2d The desired distance from the anchor.
- * @param absAngle The preferred absolute angle.
- */
 void FindFreeSpotNear(Occupant const& anchor, Occupant const* searcher, float& x, float& y, float& z,
                       float searcher_bounding_radius, float distance2d, float absAngle)
 {
@@ -223,12 +160,11 @@ void FindFreeSpotNear(Occupant const& anchor, Occupant const* searcher, float& x
     y = first.y;
     const float init_z = z = anchor.Where().Z();
 
-    // if detection disabled, return first point
     if (!sWorld.getConfig(CONFIG_BOOL_DETECT_POS_COLLISION))
     {
         if (searcher)
         {
-            ClampToAllowedZ(*searcher, x, y, z, anchor.GetMap());       // update to LOS height if available
+            ClampToAllowedZ(*searcher, x, y, z, anchor.GetMap());
         }
         else
         {
@@ -237,17 +173,14 @@ void FindFreeSpotNear(Occupant const& anchor, Occupant const* searcher, float& x
         return;
     }
 
-    // or remember first point
     float first_x = x;
     float first_y = y;
-    bool first_los_conflict = false;                        // first point LOS problems
+    bool first_los_conflict = false;
 
     const float dist = distance2d + searcher_bounding_radius + anchor.Where().Extent();
 
-    // prepare selector for work
     ObjectPosSelector selector(anchor.Where().X(), anchor.Where().Y(), distance2d, searcher_bounding_radius, searcher);
 
-    // adding used positions around object
     {
         MaNGOS::NearUsedPosDo u_do(anchor, searcher, absAngle, selector);
         MaNGOS::OccupantWorker<MaNGOS::NearUsedPosDo> worker(u_do);
@@ -255,12 +188,11 @@ void FindFreeSpotNear(Occupant const& anchor, Occupant const* searcher, float& x
         Cell::VisitAllObjects(&anchor, worker, dist);
     }
 
-    // maybe can just place in primary position
     if (selector.CheckOriginalAngle())
     {
         if (searcher)
         {
-            ClampToAllowedZ(*searcher, x, y, z, anchor.GetMap());       // update to LOS height if available
+            ClampToAllowedZ(*searcher, x, y, z, anchor.GetMap());
         }
         else
         {
@@ -272,16 +204,14 @@ void FindFreeSpotNear(Occupant const& anchor, Occupant const* searcher, float& x
             return;
         }
 
-        first_los_conflict = true;                          // first point have LOS problems
+        first_los_conflict = true;
     }
 
-    // set first used pos in lists
     selector.InitializeAngle();
 
-    float angle;                                            // candidate of angle for free pos
+    float angle;
 
-    // select in positions after current nodes (selection one by one)
-    while (selector.NextAngle(angle))                       // angle for free pos
+    while (selector.NextAngle(angle))
     {
         const Geometry::Vector3 candidate = PointNear(anchor, distance2d, absAngle + angle);
         x = candidate.x;
@@ -290,7 +220,7 @@ void FindFreeSpotNear(Occupant const& anchor, Occupant const* searcher, float& x
 
         if (searcher)
         {
-            ClampToAllowedZ(*searcher, x, y, z, anchor.GetMap());       // update to LOS height if available
+            ClampToAllowedZ(*searcher, x, y, z, anchor.GetMap());
         }
         else
         {
@@ -303,8 +233,6 @@ void FindFreeSpotNear(Occupant const& anchor, Occupant const* searcher, float& x
         }
     }
 
-    // BAD NEWS: not free pos (or used or have LOS problems)
-    // Attempt find _used_ pos without LOS problem
     if (!first_los_conflict)
     {
         x = first_x;
@@ -312,7 +240,7 @@ void FindFreeSpotNear(Occupant const& anchor, Occupant const* searcher, float& x
 
         if (searcher)
         {
-            ClampToAllowedZ(*searcher, x, y, z, anchor.GetMap());       // update to LOS height if available
+            ClampToAllowedZ(*searcher, x, y, z, anchor.GetMap());
         }
         else
         {
@@ -321,11 +249,9 @@ void FindFreeSpotNear(Occupant const& anchor, Occupant const* searcher, float& x
         return;
     }
 
-    // set first used pos in lists
     selector.InitializeAngle();
 
-    // select in positions after current nodes (selection one by one)
-    while (selector.NextUsedAngle(angle))                   // angle for used pos but maybe without LOS problem
+    while (selector.NextUsedAngle(angle))
     {
         const Geometry::Vector3 candidate = PointNear(anchor, distance2d, absAngle + angle);
         x = candidate.x;
@@ -334,7 +260,7 @@ void FindFreeSpotNear(Occupant const& anchor, Occupant const* searcher, float& x
 
         if (searcher)
         {
-            ClampToAllowedZ(*searcher, x, y, z, anchor.GetMap());       // update to LOS height if available
+            ClampToAllowedZ(*searcher, x, y, z, anchor.GetMap());
         }
         else
         {
@@ -347,13 +273,12 @@ void FindFreeSpotNear(Occupant const& anchor, Occupant const* searcher, float& x
         }
     }
 
-    // BAD BAD NEWS: all found pos (free and used) have LOS problem :(
     x = first_x;
     y = first_y;
 
     if (searcher)
     {
-        ClampToAllowedZ(*searcher, x, y, z, anchor.GetMap());           // update to LOS height if available
+        ClampToAllowedZ(*searcher, x, y, z, anchor.GetMap());
     }
     else
     {
@@ -377,4 +302,3 @@ void ContactPointNear(Occupant const& anchor, Occupant const* obj, float& x, flo
                                                         obj->Where().Extent()),
                      anchor.Where().BearingTo(obj->Where()));
 }
-

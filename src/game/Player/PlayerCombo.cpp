@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Player.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
@@ -71,12 +69,6 @@
 #include "CinematicFlyover.h"
 #include <cmath>
 
-/**
- * @brief Adds combo points on a target and updates combo point ownership.
- *
- * @param target The unit receiving combo points.
- * @param count The number of combo points to add.
- */
 void Player::AddComboPoints(Unit* target, int8 count)
 {
     if (!count)
@@ -84,7 +76,6 @@ void Player::AddComboPoints(Unit* target, int8 count)
         return;
     }
 
-    // without combo points lost (duration checked in aura)
     RemoveAurasOfType(SPELL_AURA_RETAIN_COMBO_POINTS);
 
     if (target->GetObjectGuid() == m_comboTargetGuid)
@@ -119,9 +110,6 @@ void Player::AddComboPoints(Unit* target, int8 count)
     SetComboPoints();
 }
 
-/**
- * @brief Clears the player's combo points and current combo target.
- */
 void Player::ClearComboPoints()
 {
     if (!m_comboTargetGuid)
@@ -129,7 +117,6 @@ void Player::ClearComboPoints()
         return;
     }
 
-    // without combopoints lost (duration checked in aura)
     RemoveAurasOfType(SPELL_AURA_RETAIN_COMBO_POINTS);
 
     m_comboPoints = 0;
@@ -141,5 +128,5 @@ void Player::ClearComboPoints()
         target->RemoveComboPointHolder(GetGUIDLow());
     }
 
-    m_comboTargetGuid.Clear();
+    m_comboTargetGuid = 0;
 }

@@ -33,13 +33,13 @@
 
 enum FactionFlags
 {
-    FACTION_FLAG_VISIBLE            = 0x01,                 // makes visible in client (set or can be set at interaction with target of this faction)
-    FACTION_FLAG_AT_WAR             = 0x02,                 // enable AtWar-button in client. player controlled (except opposition team always war state), Flag only set on initial creation
-    FACTION_FLAG_HIDDEN             = 0x04,                 // hidden faction from reputation pane in client (player can gain reputation, but this update not sent to client)
-    FACTION_FLAG_INVISIBLE_FORCED   = 0x08,                 // always overwrite FACTION_FLAG_VISIBLE and hide faction in rep.list, used for hide opposite team factions
-    FACTION_FLAG_PEACE_FORCED       = 0x10,                 // always overwrite FACTION_FLAG_AT_WAR, used for prevent war with own team factions
-    FACTION_FLAG_INACTIVE           = 0x20,                 // player controlled, state stored in characters.data ( CMSG_SET_FACTION_INACTIVE )
-    FACTION_FLAG_RIVAL              = 0x40,                 // flag for the two competing outland factions
+    FACTION_FLAG_VISIBLE            = 0x01,
+    FACTION_FLAG_AT_WAR             = 0x02,
+    FACTION_FLAG_HIDDEN             = 0x04,
+    FACTION_FLAG_INVISIBLE_FORCED   = 0x08,
+    FACTION_FLAG_PEACE_FORCED       = 0x10,
+    FACTION_FLAG_INACTIVE           = 0x20,
+    FACTION_FLAG_RIVAL              = 0x40,
 };
 
 typedef uint32 RepListID;
@@ -63,19 +63,19 @@ class QueryResult;
 
 class ReputationMgr
 {
-    public:                                                 // constructors and global modifiers
+    public:
         explicit ReputationMgr(Player* owner) : m_player(owner) {}
         ~ReputationMgr() {}
 
         void SaveToDB();
         void LoadFromDB(QueryResult* result);
-    public:                                                 // statics
+    public:
         static const int32 PointsInRank[MAX_REPUTATION_RANK];
         static const int32 Reputation_Cap    =  42999;
         static const int32 Reputation_Bottom = -42000;
 
         static ReputationRank ReputationToRank(int32 standing);
-    public:                                                 // accessors
+    public:
         FactionStateList const& GetStateList() const { return m_factions; }
 
         FactionState const* GetState(FactionEntry const* factionEntry) const
@@ -102,7 +102,7 @@ class ReputationMgr
             return forceItr != m_forcedReactions.end() ? &forceItr->second : nullptr;
         }
 
-    public:                                                 // modifiers
+    public:
         bool SetReputation(FactionEntry const* factionEntry, int32 standing)
         {
             return SetReputation(factionEntry, standing, false);
@@ -119,12 +119,12 @@ class ReputationMgr
 
         void ApplyForceReaction(uint32 faction_id, ReputationRank rank, bool apply);
 
-    public:                                                 // senders
+    public:
         void SendInitialReputations();
         void SendForceReactions();
         void SendState(FactionState const* faction);
 
-    private:                                                // internal helper functions
+    private:
         void Initialize();
         uint32 GetDefaultStateFlags(const FactionEntry* factionEntry) const;
         bool SetReputation(FactionEntry const* factionEntry, int32 standing, bool incremental);

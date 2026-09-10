@@ -48,5 +48,5 @@ class TotemAI : public CreatureAI
         Totem& getTotem();
 
     private:
-        ObjectGuid i_victimGuid;
+        ObjectGuid i_victimGuid = 0;
 };

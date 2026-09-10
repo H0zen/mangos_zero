@@ -23,26 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file GridNotifiers.cpp
- * @brief Visitor pattern implementations for grid object notifications
- *
- * This file implements visitor classes that notify objects within
- * a grid of changes and events. Notifiers handle:
- *
- * - Visibility changes (objects entering/leaving view)
- * - Object creation/destruction
- * - Movement updates
- * - AI updates for creatures
- * - Player presence notifications
- *
- * The visitor pattern allows efficient iteration over grid objects
- * without coupling the grid to specific object types.
- *
- * @see GridNotifiers for notifier declarations
- * @see Map for grid management
- */
-
 #include <set>
 #include "Reaction.h"
 #include "GridNotifiers.h"
@@ -59,11 +39,6 @@
 
 using namespace MaNGOS;
 
-/**
- * @brief Updates visibility for cameras affected by an object's visible changes.
- *
- * @param m The camera map to visit.
- */
 void VisibleChangesNotifier::Visit(CameraMapType& m)
 {
     for (CameraMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
@@ -72,17 +47,12 @@ void VisibleChangesNotifier::Visit(CameraMapType& m)
     }
 }
 
-/**
- * @brief Finalizes visibility updates for a player camera and sends the resulting packets.
- */
 void VisibleNotifier::Notify()
 {
     Player& player = *i_camera.GetOwner();
-    // Initial login aliases the earlier self/transport accumulator; every
-    // other visibility pass continues to use this notifier's local data.
+
     UpdateData& data = Data();
-    // at this moment i_clientGUIDs have guids that not iterate at grid level checks
-    // but exist one case when this possible and object not out of range: transports
+
     if (player.GetMap()->AsTransport())
     {
         Map::PlayerList const& aboard = player.GetMap()->GetPlayers();
@@ -91,7 +61,7 @@ void VisibleNotifier::Notify()
             Player* mate = itr->getSource();
             if (mate && i_clientGUIDs.find(mate->GetObjectGuid()) != i_clientGUIDs.end())
             {
-                // ignore far sight case
+
                 mate->UpdateVisibilityOf(mate, &player);
                 player.UpdateVisibilityOf(&player, mate, data, i_visibleNow);
                 i_clientGUIDs.erase(mate->GetObjectGuid());
@@ -99,24 +69,18 @@ void VisibleNotifier::Notify()
         }
     }
 
-    // Nothing here about the shore, or about a deck. Both arrived as ordinary candidates
-    // from the extra cell sources the camera swept, so they are already erased from the
-    // leftovers below by having been re-found -- which is what makes their out-of-range
-    // correct without anybody keeping a list.
-
-    // generate outOfRange for not iterate objects
     data.AddOutOfRangeGUID(i_clientGUIDs);
     for (GuidSet::iterator itr = i_clientGUIDs.begin(); itr != i_clientGUIDs.end(); ++itr)
     {
         player.m_clientGUIDs.erase(*itr);
 
         DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "%s is out of range (no in active cells set) now for %s",
-            itr->GetString().c_str(), player.GetGuidStr().c_str());
+            GuidString(*itr).c_str(), player.GetGuidStr().c_str());
     }
 
     if (data.HasData())
     {
-        // send create/outofrange packet to player (except player create updates that already sent using SendUpdateToPlayer)
+
         WorldPacket packet;
         bool const built = BuildPacket(&packet);
         if (i_initialBatch && !built)
@@ -127,11 +91,10 @@ void VisibleNotifier::Notify()
         }
         player.GetSession()->SendPacket(&packet);
 
-        // send out of range to other players if need
         GuidSet const& oor = data.GetOutOfRangeGUIDs();
         for (GuidSet::const_iterator iter = oor.begin(); iter != oor.end(); ++iter)
         {
-            if (!iter->IsPlayer())
+            if (!(GuidHigh(*iter) == HIGHGUID_PLAYER))
             {
                 continue;
             }
@@ -144,19 +107,15 @@ void VisibleNotifier::Notify()
 
         if (i_initialBatch)
         {
-            // Consume the shared batch only after its one packet was built and
-            // sent; Map::Add fails closed if this acknowledgement is absent.
+
             i_initialBatch->MarkSent();
         }
     }
 
-    // Now do operations that required done at object visibility change to visible
-
-    // send data at target visibility change (adding to client)
     for (std::set<Occupant*>::const_iterator vItr = i_visibleNow.begin(); vItr != i_visibleNow.end(); ++vItr)
     {
-        // target aura duration for caster show only if target exist at caster client
-        if ((*vItr) != &player && (*vItr)->isType(TYPEMASK_UNIT))
+
+        if ((*vItr) != &player && IsType(*vItr, TYPEMASK_UNIT))
         {
             player.SendAuraDurationsForTarget((Unit*)(*vItr));
         }
@@ -165,12 +124,6 @@ void VisibleNotifier::Notify()
 
 template<class T>
 
-/**
- * @brief Updates all world objects referenced by a grid manager.
- *
- * @tparam T The grid object type.
- * @param m The grid reference manager.
- */
 void ObjectUpdater::Visit(GridRefManager<T>& m)
 {
     for (typename GridRefManager<T>::iterator iter = m.begin(); iter != m.end(); ++iter)
@@ -180,15 +133,9 @@ void ObjectUpdater::Visit(GridRefManager<T>& m)
     }
 }
 
-/**
- * @brief Checks whether a corpse is a valid cannibalize target.
- *
- * @param u The corpse candidate.
- * @return true if the corpse can be cannibalized.
- */
 bool CannibalizeObjectCheck::operator()(Corpse* u)
 {
-    // ignore bones
+
     if (u->GetType() == CORPSE_BONES)
     {
         return false;
@@ -209,14 +156,9 @@ bool CannibalizeObjectCheck::operator()(Corpse* u)
     return false;
 }
 
-/**
- * @brief Respawns a creature if battleground event rules allow it.
- *
- * @param u The creature to respawn.
- */
 void MaNGOS::RespawnDo::operator()(Creature* u) const
 {
-    // prevent respawn creatures for not active BG event
+
     Map* map = u->GetMap();
     if (map->IsBattleGround())
     {
@@ -230,14 +172,9 @@ void MaNGOS::RespawnDo::operator()(Creature* u) const
     u->Respawn();
 }
 
-/**
- * @brief Respawns a game object if battleground event rules allow it.
- *
- * @param u The game object to respawn.
- */
 void MaNGOS::RespawnDo::operator()(GameObject* u) const
 {
-    // prevent respawn gameobject for not active BG event
+
     Map* map = u->GetMap();
     if (map->IsBattleGround())
     {
@@ -251,11 +188,6 @@ void MaNGOS::RespawnDo::operator()(GameObject* u) const
     u->Respawn();
 }
 
-/**
- * @brief Calls nearby assist-capable creatures to attack an enemy.
- *
- * @param u The nearby creature to test.
- */
 void MaNGOS::CallOfHelpCreatureInRangeDo::operator()(Creature* u)
 {
     if (u == i_funit)
@@ -268,13 +200,11 @@ void MaNGOS::CallOfHelpCreatureInRangeDo::operator()(Creature* u)
         return;
     }
 
-    // too far
     if (!InReach(*i_funit, *u, i_range))
     {
         return;
     }
 
-    // only if see assisted creature
     if (!HasLineOfSight(*i_funit, *u))
     {
         return;
@@ -286,12 +216,6 @@ void MaNGOS::CallOfHelpCreatureInRangeDo::operator()(Creature* u)
     }
 }
 
-/**
- * @brief Checks whether a nearby creature can assist against an enemy.
- *
- * @param u The nearby creature to test.
- * @return true if the creature can assist.
- */
 bool MaNGOS::AnyAssistCreatureInRangeCheck::operator()(Creature* u)
 {
     if (u == i_funit)
@@ -304,13 +228,11 @@ bool MaNGOS::AnyAssistCreatureInRangeCheck::operator()(Creature* u)
         return false;
     }
 
-    // too far
     if (!InReach(*i_funit, *u, i_range))
     {
         return false;
     }
 
-    // only if see assisted creature
     if (!HasLineOfSight(*i_funit, *u))
     {
         return false;

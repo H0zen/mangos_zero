@@ -27,27 +27,6 @@
 #include <mutex>
 #include "Utilities/Errors.h"
 
-/**
- * @file GridMap.cpp
- * @brief Map grid data loading and management
- *
- * This file implements GridMap which loads and manages terrain data
- * for a single map grid (64x64 yard cell). Features:
- *
- * - Height map loading from .map files
- * - Area/zone ID loading
- * - Liquid data (water, lava) loading
- * - Hole data for terrain gaps
- * - Terrain height queries
- * - Area ID queries
- * - Liquid level queries
- *
- * GridMaps are loaded on-demand and cached by the Map system.
- *
- * @see GridMap for the grid class
- * @see Map for the map container
- */
-
 #include "Log.h"
 #include "GridStates.h"
 #include "CellImpl.h"
@@ -75,16 +54,11 @@ namespace
     using world::terrain::FusedTerrain;
     using world::terrain::LiquidInfo;
 
-    // Ids the client hard-codes rather than reads from the DBC.
     const uint32 OUTLAND_MAP_ID = 530;
     const uint32 LIQUID_OCEAN_ROW = 2;
     const uint32 LIQUID_OUTLAND_OCEAN_ROW = 15;
     const uint32 LIQUID_FIRST_OVERRIDABLE_ROW = 21;
 
-    // MAP_LIQUID_TYPE_* is one bit per family in the order water, ocean, magma, slime.
-    // 1.12 has no SoundBank column -- that arrives in 3.3.5a -- so the family comes from
-    // LiquidType.dbc's Type, which uses a DIFFERENT encoding: 0 magma, 2 slime, 3 water.
-    // Ocean is not expressible there at all and the row id decides it instead.
     uint32 LiquidFlagsOfRow(uint32 entry, uint32& soundBank)
     {
         soundBank = 0;
@@ -92,8 +66,8 @@ namespace
         {
             switch (liq->Type)
             {
-                case 0:  soundBank = 2; break;              // magma
-                case 2:  soundBank = 3; break;              // slime
+                case 0:  soundBank = 2; break;
+                case 2:  soundBank = 3; break;
                 default: soundBank = (entry == LIQUID_OCEAN_ROW ||
                                       entry == LIQUID_OUTLAND_OCEAN_ROW) ? 1 : 0; break;
             }
@@ -101,7 +75,6 @@ namespace
         return 1u << soundBank;
     }
 
-    // The tile names an area by its AreaTable.dbc id; the server passes area BITS.
     uint16 AreaBitOfId(uint16 areaId)
     {
         if (!areaId)
@@ -115,9 +88,7 @@ namespace
     bool IsOutdoorWMO(uint32 mogpFlags, WMOAreaTableEntry const* wmoEntry,
                       AreaTableEntry const* atEntry)
     {
-        // 3.3.5a lets AreaTable.dbc override the WMO's own answer through
-        // AREA_FLAG_INSIDE/OUTSIDE. Those bits do not exist in 1.12 -- its area flags stop
-        // at 0x00100000 -- so the WMO's group flags are the only authority here.
+
         (void)atEntry;
 
         bool outdoor = (mogpFlags & 0x8) != 0;
@@ -150,8 +121,6 @@ TerrainInfo::TerrainInfo(uint32 mapid) : m_mapId(mapid), m_terrain(mapid), m_ref
     i_timer.SetInterval(60 * 1000);
     i_timer.SetCurrent(urand(20, 40) * 1000);
 
-    // Map the whole thing now. The cost is paid here, once, instead of as a
-    // file open on whichever map thread first walks into each cell.
     const auto stats = m_terrain.PreloadAll();
     sLog.outString("Terrain map %u: %u tiles mapped, %u cells empty.",
                    mapid, stats.mapped, stats.absent);
@@ -179,13 +148,6 @@ bool TerrainInfo::Load(const uint32 x, const uint32 y)
     MANGOS_ASSERT(x < MAX_NUMBER_OF_GRIDS);
     MANGOS_ASSERT(y < MAX_NUMBER_OF_GRIDS);
 
-    // What decides a load is whether the tile is in memory, not whether this is
-    // the first referent. A count that fell to zero does not unload anything by
-    // itself -- the sweep does, a minute later -- so between the two a fresh
-    // referent looks like the first one and asks for a tile that never left.
-    //
-    // The flag and the count are set together under the one lock, so two threads
-    // arriving at an empty grid cannot both decide they are the ones to load it.
     bool needsLoad = false;
     {
         std::lock_guard<LOCK_TYPE> lock(m_refMutex);
@@ -209,7 +171,6 @@ void TerrainInfo::Unload(const uint32 x, const uint32 y)
     MANGOS_ASSERT(x < MAX_NUMBER_OF_GRIDS);
     MANGOS_ASSERT(y < MAX_NUMBER_OF_GRIDS);
 
-    // The count is what CleanUpGrids reads to decide a navmesh tile is free.
     std::lock_guard<LOCK_TYPE> lock(m_refMutex);
     if (m_GridRef[x][y] > 0)
     {
@@ -219,21 +180,13 @@ void TerrainInfo::Unload(const uint32 x, const uint32 y)
 
 void TerrainInfo::CleanUpGrids(const uint32 diff)
 {
-    // Terrain tiles are mapped and stay mapped. What ages out here is the
-    // navmesh, which the pathfinder's own manager holds in memory.
+
     i_timer.Update(diff);
     if (!i_timer.Passed())
     {
         return;
     }
 
-    // Only grids that actually hold a navmesh tile, and only those nobody wants
-    // any more. Asking for the rest is four thousand calls a minute per map that
-    // can do nothing but be refused.
-    //
-    // Chosen under the lock and released outside it: unloading is the mmap
-    // manager's work, and holding a map's reference lock across it would put
-    // every grid activation behind the sweep.
     std::vector<std::pair<uint32, uint32>> releasable;
     {
         std::lock_guard<LOCK_TYPE> lock(m_refMutex);
@@ -365,8 +318,7 @@ GridMapLiquidStatus TerrainInfo::getLiquidStatus(float x, float y, float z,
                                                  uint8 ReqLiquidType,
                                                  GridMapLiquidData* data) const
 {
-    // One sweep answers both halves of this: the liquid surface AND the floor under it,
-    // which the depth and the "is there really water here" test below both need.
+
     const world::terrain::Column column =
         ColumnAt(x, y, z + FLOOR_BURIED_LIFT, z - FLOOR_SEARCH_DOWN);
 
@@ -378,7 +330,7 @@ GridMapLiquidStatus TerrainInfo::getLiquidStatus(float x, float y, float z,
     const LiquidInfo info = liquid->AsLiquid();
 
     uint32 entry = info.entry;
-    // Hard-coded in the client: Outland's ocean is its own row.
+
     if (m_mapId == OUTLAND_MAP_ID && entry == LIQUID_OCEAN_ROW)
     {
         entry = LIQUID_OUTLAND_OCEAN_ROW;
@@ -387,8 +339,6 @@ GridMapLiquidStatus TerrainInfo::getLiquidStatus(float x, float y, float z,
     uint32 soundBank = 0;
     uint32 typeFlags = LiquidFlagsOfRow(entry, soundBank);
 
-    // An area may override the liquid row for its own family, which is what gives a
-    // zone's water its aura. Only the canonical rows are overridable.
     if (entry < LIQUID_FIRST_OVERRIDABLE_ROW)
     {
         if (AreaTableEntry const* area =
@@ -435,7 +385,6 @@ GridMapLiquidStatus TerrainInfo::getLiquidStatus(float x, float y, float z,
         data->type_flags = typeFlags;
     }
 
-    // Compared as ints for speed, exactly as the original did.
     const int delta = int((info.level - z) * 10);
     if (delta > 20)
     {
@@ -555,12 +504,6 @@ TerrainManager::~TerrainManager()
     }
 }
 
-/**
- * @brief Loads or creates terrain information for a map.
- *
- * @param mapId The map id.
- * @return The terrain info instance.
- */
 TerrainInfo* TerrainManager::LoadTerrain(const uint32 mapId)
 {
     std::lock_guard<LOCK_TYPE> _guard(m_mutex);
@@ -576,11 +519,6 @@ TerrainInfo* TerrainManager::LoadTerrain(const uint32 mapId)
     return (*iter).second;
 }
 
-/**
- * @brief Unloads terrain information for a map when no longer referenced.
- *
- * @param mapId The map id.
- */
 void TerrainManager::UnloadTerrain(const uint32 mapId)
 {
     if (sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD) == 0)
@@ -594,7 +532,7 @@ void TerrainManager::UnloadTerrain(const uint32 mapId)
     if (iter != i_TerrainMap.end())
     {
         TerrainInfo* ptr = (*iter).second;
-        // lets check if this object can be actually freed
+
         if (ptr->IsReferenced() == false)
         {
             i_TerrainMap.erase(iter);
@@ -603,23 +541,15 @@ void TerrainManager::UnloadTerrain(const uint32 mapId)
     }
 }
 
-/**
- * @brief Updates terrain cleanup timers for all loaded maps.
- *
- * @param diff Elapsed update time in milliseconds.
- */
 void TerrainManager::Update(const uint32 diff)
 {
-    // global garbage collection for GridMap objects and VMaps
+
     for (TerrainDataMap::iterator iter = i_TerrainMap.begin(); iter != i_TerrainMap.end(); ++iter)
     {
         iter->second->CleanUpGrids(diff);
     }
 }
 
-/**
- * @brief Unloads all cached terrain information.
- */
 void TerrainManager::UnloadAll()
 {
     for (TerrainDataMap::iterator it = i_TerrainMap.begin(); it != i_TerrainMap.end(); ++it)
@@ -630,13 +560,6 @@ void TerrainManager::UnloadAll()
     i_TerrainMap.clear();
 }
 
-/**
- * @brief Resolves an area id from an explore flag and map id.
- *
- * @param areaflag The area explore flag.
- * @param map_id The map id.
- * @return The resolved area id.
- */
 uint32 TerrainManager::GetAreaIdByAreaFlag(uint16 areaflag, uint32 map_id)
 {
     AreaTableEntry const* entry = GetAreaEntryByAreaFlagAndMap(areaflag, map_id);
@@ -651,13 +574,6 @@ uint32 TerrainManager::GetAreaIdByAreaFlag(uint16 areaflag, uint32 map_id)
     }
 }
 
-/**
- * @brief Resolves a zone id from an explore flag and map id.
- *
- * @param areaflag The area explore flag.
- * @param map_id The map id.
- * @return The resolved zone id.
- */
 uint32 TerrainManager::GetZoneIdByAreaFlag(uint16 areaflag, uint32 map_id)
 {
     AreaTableEntry const* entry = GetAreaEntryByAreaFlagAndMap(areaflag, map_id);
@@ -672,14 +588,6 @@ uint32 TerrainManager::GetZoneIdByAreaFlag(uint16 areaflag, uint32 map_id)
     }
 }
 
-/**
- * @brief Resolves both zone id and area id from an explore flag and map id.
- *
- * @param zoneid Receives the zone id.
- * @param areaid Receives the area id.
- * @param areaflag The area explore flag.
- * @param map_id The map id.
- */
 void TerrainManager::GetZoneAndAreaIdByAreaFlag(uint32& zoneid, uint32& areaid, uint16 areaflag, uint32 map_id)
 {
     AreaTableEntry const* entry = GetAreaEntryByAreaFlagAndMap(areaflag, map_id);

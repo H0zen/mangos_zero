@@ -36,7 +36,6 @@ class WorldPacket;
 class Player;
 class InitialWorldUpdateBatch;
 
-/// Camera - object-receiver. Receives broadcast packets from nearby occupants, object visibility changes and sends them to client
 class Camera
 {
     friend class ViewPoint;
@@ -56,12 +55,8 @@ class Camera
             return &m_owner;
         }
 
-        // set camera's view to any occupant
-        // Note: this occupant must be in same map, in same phase with camera's owner(player)
-        // client supports only unit and dynamic objects as farsight objects
         void SetView(Occupant* obj, bool update_far_sight_field = true);
 
-        // set view to camera's owner
         void ResetView(bool update_far_sight_field = true);
 
         void UpdateVisibilityOf(Occupant* obj, UpdateData& d, std::set<Occupant*>& vis);
@@ -69,11 +64,10 @@ class Camera
 
         void ReceivePacket(WorldPacket* data);
 
-        // updates visibility of occupants around viewpoint for camera's owner
         void UpdateVisibilityForOwner();
 
     private:
-        // called when viewpoint changes visibility state
+
         void Event_AddedToWorld(InitialWorldUpdateBatch* batch);
         void Event_RemovedFromWorld();
         void Event_Moved();
@@ -96,7 +90,6 @@ class Camera
         GridReference<Camera> m_gridRef;
 };
 
-/// Object-observer, notifies farsight object state to cameras that attached to it
 class ViewPoint
 {
     friend class Camera;
@@ -128,13 +121,11 @@ class ViewPoint
 
         bool hasViewers() const { return !m_cameras.empty(); }
 
-        // these events are called when viewpoint changes visibility state
         void Event_AddedToWorld(GridType* grid, Player* batchOwner = nullptr,
                                 InitialWorldUpdateBatch* batch = nullptr)
         {
             m_grid = grid;
-            // A viewpoint may have several cameras. Only the logging-in
-            // player's own camera may consume the shared initial batch.
+
             for (CameraList::iterator itr = m_cameras.begin(); itr != m_cameras.end();)
             {
                 Camera* c = *(itr++);

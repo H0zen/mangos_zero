@@ -23,27 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Opcodes.cpp
- * @brief Network opcode handler registration
- *
- * This file registers all network packet handlers for the world server.
- * It maps each opcode to its corresponding handler function in WorldSession,
- * along with session status requirements and processing mode.
- *
- * Opcode processing modes:
- * - PROCESS_INPLACE: Process immediately in network thread
- * - PROCESS_THREADUNSAFE: Process in world update thread
- *
- * Session status requirements:
- * - STATUS_NEVER: Never process (deprecated/debug opcodes)
- * - STATUS_LOGGEDIN: Require player to be logged in
- * - STATUS_UNHANDLED: No handler assigned
- *
- * @see Opcodes.h for opcode definitions
- * @see WorldSession for packet handler implementations
- */
-
 #include "OpcodeTable.h"
 #include "PetAnswers.h"
 #include "ProtocolAnswers.h"
@@ -77,16 +56,6 @@
 #include "QuestHandler.h"
 #include "Corpse.h"
 
-/**
- * @brief Define opcode handler
- * @param opcode Opcode number
- * @param name Opcode name string
- * @param status Required session status
- * @param packetProcessing Processing mode
- * @param handler Handler function pointer
- *
- * Registers an opcode with its handler in the opcode table.
- */
 static void DefineOpcode(uint16 opcode, const char* name, SessionStatus status, PacketProcessing packetProcessing, void (WorldSession::*handler)(WorldPacket& recvPacket))
 {
     opcodeTable[opcode].name = name;
@@ -107,16 +76,8 @@ static void DefineOpcode(uint16 opcode, const char* name, SessionStatus status, 
 
 #define OPCODE( name, status, packetProcessing, handler ) DefineOpcode( name, #name, status, packetProcessing, handler )
 
-/// Correspondence between opcodes and their names
 OpcodeHandler opcodeTable[NUM_MSG_TYPES];
 
-/**
- * @brief Initialize opcode table
- *
- * Registers all packet handlers for the world server.
- * Initializes all opcodes to STATUS_UNHANDLED, then registers
- * specific handlers for each supported opcode.
- */
 void InitializeOpcodes()
 {
     for (uint16 i = 0; i < NUM_MSG_TYPES; ++i)
@@ -954,77 +915,77 @@ void InitializeOpcodes()
     OPCODE(CMSG_MOVE_FLIGHT_ACK,                           STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
     OPCODE(MSG_MOVE_START_SWIM_CHEAT,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
     OPCODE(MSG_MOVE_STOP_SWIM_CHEAT,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
-    OPCODE(CMSG_CANCEL_MOUNT_AURA,                         STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleCancelMountAuraOpcode);     /// 0x375: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_CANCEL_TEMP_ENCHANTMENT,                   STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<items::CancelTempEnchantment>);       /// 0x379: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_SET_TAXI_BENCHMARK_MODE,                   STATUS_AUTHED,   PROCESS_THREADUNSAFE, &WorldSession::HandleSetTaxiBenchmarkOpcode);        /// 0x389: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_MOVE_CHNG_TRANSPORT,                       STATUS_LOGGEDIN, PROCESS_THREADSAFE,   movement::MovementOpcodes);       /// 0x38D: @TODO need to check usage in vanilla WoW
-    OPCODE(MSG_PARTY_ASSIGNMENT,                           STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<groups::PartyAssignment>);     /// 0x38E: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_OFFER_PETITION_ERROR,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x38F: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_RESET_FAILED_NOTIFY,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x396: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_REAL_GROUP_UPDATE,                         STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x397: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_INIT_EXTRA_AURA_INFO,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3A3: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_SET_EXTRA_AURA_INFO,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3A4: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_SET_EXTRA_AURA_INFO_NEED_UPDATE,           STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3A5: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_SPELL_CHANCE_PROC_LOG,                     STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3AA: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_MOVE_SET_RUN_SPEED,                        STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x3AB: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_DISMOUNT,                                  STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3AC: @TODO need to check usage in vanilla WoW
-    OPCODE(MSG_RAID_READY_CHECK_CONFIRM,                   STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x3AE: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_CLEAR_TARGET,                              STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3BE: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_BOT_DETECTED,                              STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x3BF: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_KICK_REASON,                               STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3C4: @TODO need to check usage in vanilla WoW
-    OPCODE(MSG_RAID_READY_CHECK_FINISHED,                  STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<groups::RaidReadyCheckFinished>);      /// 0x3C5: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_TARGET_CAST,                               STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x3CF: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_TARGET_SCRIPT_CAST,                        STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x3D0: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_CHANNEL_DISPLAY_LIST,                      STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<channels::ChannelDisplayListQuery>);     /// 0x3D1: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_GET_CHANNEL_MEMBER_COUNT,                  STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<channels::GetChannelMemberCount>);       /// 0x3D3: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_CHANNEL_MEMBER_COUNT,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3D4: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_DEBUG_LIST_TARGETS,                        STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x3D7: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_DEBUG_LIST_TARGETS,                        STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3D8: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_PARTY_SILENCE,                             STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x3DC: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_PARTY_UNSILENCE,                           STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x3DD: @TODO need to check usage in vanilla WoW
-    OPCODE(MSG_NOTIFY_PARTY_SQUELCH,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x3DE: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_COMSAT_RECONNECT_TRY,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3DF: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_COMSAT_DISCONNECT,                         STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3E0: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_COMSAT_CONNECT_FAIL,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3E1: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_SET_CHANNEL_WATCH,                         STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<channels::SetChannelWatch>);     /// 0x3EE: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_USERLIST_ADD,                              STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3EF: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_USERLIST_REMOVE,                           STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3F0: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_USERLIST_UPDATE,                           STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3F1: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_CLEAR_CHANNEL_WATCH,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x3F2: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_GOGOGO_OBSOLETE,                           STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3F4: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_ECHO_PARTY_SQUELCH,                        STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3F5: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_SPELLCLICK,                                STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x3F7: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_LOOT_LIST,                                 STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x3F8: @TODO need to check usage in vanilla WoW
-    OPCODE(MSG_GUILD_EVENT_LOG_QUERY,                      STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<guilds::GuildEventLogQuery>);      /// 0x3FE: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_MAELSTROM_RENAME_GUILD,                    STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x3FF: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_GET_MIRRORIMAGE_DATA,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x400: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_MIRRORIMAGE_DATA,                          STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x401: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_FORCE_DISPLAY_UPDATE,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x402: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_SPELL_CHANCE_RESIST_PUSHBACK,              STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);      /// 0x403: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_IGNORE_DIMINISHING_RETURNS_CHEAT,          STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x404: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_IGNORE_DIMINISHING_RETURNS_CHEAT,          STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x405: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_KEEP_ALIVE,                                STATUS_AUTHED,   PROCESS_THREADUNSAFE, protocol::KeepAlive);       /// 0x406: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_RAID_READY_CHECK_ERROR,                    STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x407: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_OPT_OUT_OF_LOOT,                           STATUS_AUTHED,   PROCESS_THREADUNSAFE, groups::OptOutOfLoot);        /// 0x408: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_SET_GRANTABLE_LEVELS,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x40B: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_GRANT_LEVEL,                               STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x40C: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_DECLINE_CHANNEL_INVITE,                    STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x40F: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_GROUPACTION_THROTTLED,                     STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x410: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_OVERRIDE_LIGHT,                            STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x411: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_TOTEM_CREATED,                             STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x412: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_TOTEM_DESTROYED,                           STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<spells::TotemDestroyed>);        /// 0x413: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_EXPIRE_RAID_INSTANCE,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x414: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_NO_SPELL_VARIANCE,                         STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x415: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_QUESTGIVER_STATUS_MULTIPLE_QUERY,          STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<quests::QuestgiverStatusMultipleQuery>);     /// 0x416: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_QUESTGIVER_STATUS_MULTIPLE,                STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x417: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_QUERY_SERVER_BUCK_DATA,                    STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x41A: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_CLEAR_SERVER_BUCK_DATA,                    STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x41B: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_SERVER_BUCK_DATA,                          STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x41C: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_SEND_UNLEARN_SPELLS,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x41D: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_PROPOSE_LEVEL_GRANT,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x41E: @TODO need to check usage in vanilla WoW
-    OPCODE(CMSG_ACCEPT_LEVEL_GRANT,                        STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);     /// 0x41F: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_REFER_A_FRIEND_FAILURE,                    STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x420: @TODO need to check usage in vanilla WoW
-    OPCODE(SMSG_SUMMON_CANCEL,                             STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);       /// 0x423: @TODO need to check usage in vanilla WoW
+    OPCODE(CMSG_CANCEL_MOUNT_AURA,                         STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleCancelMountAuraOpcode);
+    OPCODE(CMSG_CANCEL_TEMP_ENCHANTMENT,                   STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<items::CancelTempEnchantment>);
+    OPCODE(CMSG_SET_TAXI_BENCHMARK_MODE,                   STATUS_AUTHED,   PROCESS_THREADUNSAFE, &WorldSession::HandleSetTaxiBenchmarkOpcode);
+    OPCODE(CMSG_MOVE_CHNG_TRANSPORT,                       STATUS_LOGGEDIN, PROCESS_THREADSAFE,   movement::MovementOpcodes);
+    OPCODE(MSG_PARTY_ASSIGNMENT,                           STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<groups::PartyAssignment>);
+    OPCODE(SMSG_OFFER_PETITION_ERROR,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_RESET_FAILED_NOTIFY,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_REAL_GROUP_UPDATE,                         STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_INIT_EXTRA_AURA_INFO,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_SET_EXTRA_AURA_INFO,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_SET_EXTRA_AURA_INFO_NEED_UPDATE,           STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_SPELL_CHANCE_PROC_LOG,                     STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(CMSG_MOVE_SET_RUN_SPEED,                        STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(SMSG_DISMOUNT,                                  STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(MSG_RAID_READY_CHECK_CONFIRM,                   STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(SMSG_CLEAR_TARGET,                              STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(CMSG_BOT_DETECTED,                              STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(SMSG_KICK_REASON,                               STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(MSG_RAID_READY_CHECK_FINISHED,                  STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<groups::RaidReadyCheckFinished>);
+    OPCODE(CMSG_TARGET_CAST,                               STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(CMSG_TARGET_SCRIPT_CAST,                        STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(CMSG_CHANNEL_DISPLAY_LIST,                      STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<channels::ChannelDisplayListQuery>);
+    OPCODE(CMSG_GET_CHANNEL_MEMBER_COUNT,                  STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<channels::GetChannelMemberCount>);
+    OPCODE(SMSG_CHANNEL_MEMBER_COUNT,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(CMSG_DEBUG_LIST_TARGETS,                        STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(SMSG_DEBUG_LIST_TARGETS,                        STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(CMSG_PARTY_SILENCE,                             STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(CMSG_PARTY_UNSILENCE,                           STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(MSG_NOTIFY_PARTY_SQUELCH,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(SMSG_COMSAT_RECONNECT_TRY,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_COMSAT_DISCONNECT,                         STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_COMSAT_CONNECT_FAIL,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(CMSG_SET_CHANNEL_WATCH,                         STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<channels::SetChannelWatch>);
+    OPCODE(SMSG_USERLIST_ADD,                              STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_USERLIST_REMOVE,                           STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_USERLIST_UPDATE,                           STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(CMSG_CLEAR_CHANNEL_WATCH,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(SMSG_GOGOGO_OBSOLETE,                           STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_ECHO_PARTY_SQUELCH,                        STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(CMSG_SPELLCLICK,                                STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(SMSG_LOOT_LIST,                                 STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(MSG_GUILD_EVENT_LOG_QUERY,                      STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<guilds::GuildEventLogQuery>);
+    OPCODE(CMSG_MAELSTROM_RENAME_GUILD,                    STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(CMSG_GET_MIRRORIMAGE_DATA,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(SMSG_MIRRORIMAGE_DATA,                          STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_FORCE_DISPLAY_UPDATE,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_SPELL_CHANCE_RESIST_PUSHBACK,              STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(CMSG_IGNORE_DIMINISHING_RETURNS_CHEAT,          STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(SMSG_IGNORE_DIMINISHING_RETURNS_CHEAT,          STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(CMSG_KEEP_ALIVE,                                STATUS_AUTHED,   PROCESS_THREADUNSAFE, protocol::KeepAlive);
+    OPCODE(SMSG_RAID_READY_CHECK_ERROR,                    STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(CMSG_OPT_OUT_OF_LOOT,                           STATUS_AUTHED,   PROCESS_THREADUNSAFE, groups::OptOutOfLoot);
+    OPCODE(CMSG_SET_GRANTABLE_LEVELS,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(CMSG_GRANT_LEVEL,                               STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(CMSG_DECLINE_CHANNEL_INVITE,                    STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(CMSG_GROUPACTION_THROTTLED,                     STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(SMSG_OVERRIDE_LIGHT,                            STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_TOTEM_CREATED,                             STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(CMSG_TOTEM_DESTROYED,                           STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<spells::TotemDestroyed>);
+    OPCODE(CMSG_EXPIRE_RAID_INSTANCE,                      STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(CMSG_NO_SPELL_VARIANCE,                         STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(CMSG_QUESTGIVER_STATUS_MULTIPLE_QUERY,          STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, PlayerAnswers<quests::QuestgiverStatusMultipleQuery>);
+    OPCODE(SMSG_QUESTGIVER_STATUS_MULTIPLE,                STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(CMSG_QUERY_SERVER_BUCK_DATA,                    STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(CMSG_CLEAR_SERVER_BUCK_DATA,                    STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(SMSG_SERVER_BUCK_DATA,                          STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_SEND_UNLEARN_SPELLS,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_PROPOSE_LEVEL_GRANT,                       STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(CMSG_ACCEPT_LEVEL_GRANT,                        STATUS_NEVER,    PROCESS_INPLACE,      protocol::_NULL);
+    OPCODE(SMSG_REFER_A_FRIEND_FAILURE,                    STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
+    OPCODE(SMSG_SUMMON_CANCEL,                             STATUS_NEVER,    PROCESS_INPLACE,      protocol::_ServerSide);
 
     return;
 };

@@ -36,16 +36,10 @@
 #include "Policies/Singleton.h"
 #include "Player.h"
 
-
-/**
- * @brief Stores GM survey answers from a received packet.
- *
- * @param recvData The packet containing survey responses and optional comments.
- */
 void GMTicket::SaveSurveyData(WorldPacket& recvData) const
 {
     uint32 x;
-    recvData >> x;                                         // answer range? (6 = 0-5?)
+    recvData >> x;
     DEBUG_LOG("SURVEY: X = %u", x);
 
     uint8 result[10];
@@ -53,7 +47,7 @@ void GMTicket::SaveSurveyData(WorldPacket& recvData) const
     for (int i = 0; i < 10; ++i)
     {
         uint32 questionID;
-        recvData >> questionID;                            // GMSurveyQuestions.dbc
+        recvData >> questionID;
         if (!questionID)
         {
             break;
@@ -61,29 +55,19 @@ void GMTicket::SaveSurveyData(WorldPacket& recvData) const
 
         uint8 value;
         std::string unk_text;
-        recvData >> value;                                 // answer
-        recvData >> unk_text;                              // always empty?
+        recvData >> value;
+        recvData >> unk_text;
 
         result[i] = value;
         DEBUG_LOG("SURVEY: ID %u, value %u, text %s", questionID, value, unk_text.c_str());
     }
 
     std::string comment;
-    recvData >> comment;                                   // addional comment
+    recvData >> comment;
     DEBUG_LOG("SURVEY: comment %s", comment.c_str());
 
-    // TODO: chart this data in some way in DB
 }
 
-/**
- * @brief Initializes ticket data from loaded or newly created values.
- *
- * @param guid The player GUID owning the ticket.
- * @param text The ticket text.
- * @param responseText The GM response text.
- * @param update The last update time.
- * @param ticketId The ticket identifier.
- */
 void GMTicket::Init(ObjectGuid guid, const std::string& text, const std::string& responseText, time_t update, uint32 ticketId)
 {
     m_guid = guid;
@@ -93,11 +77,6 @@ void GMTicket::Init(ObjectGuid guid, const std::string& text, const std::string&
     m_lastUpdate = update;
 }
 
-/**
- * @brief Updates the ticket text and persists it to the database.
- *
- * @param text The new ticket text.
- */
 void GMTicket::SetText(const char* text)
 {
     m_text = text ? text : "";
@@ -107,19 +86,13 @@ void GMTicket::SetText(const char* text)
     CharacterDatabase.escape_string(escapedString);
     CharacterDatabase.PExecute("UPDATE `character_ticket` SET `ticket_text` = '%s' "
         "WHERE `guid` = '%u' AND `ticket_id` = %u",
-        escapedString.c_str(), m_guid.GetCounter(), m_ticketId);
+        escapedString.c_str(), GuidCounter(m_guid), m_ticketId);
 }
 
-/**
- * @brief Updates the GM response text and persists it to the database.
- *
- * @param text The new response text.
- */
 void GMTicket::SetResponseText(const char* text)
 {
     m_responseText = text ? text : "";
 
-    // Perform action in DB only if text is not empty
     if (m_responseText != "")
     {
         m_lastUpdate = time(nullptr);
@@ -128,39 +101,25 @@ void GMTicket::SetResponseText(const char* text)
         CharacterDatabase.escape_string(escapedString);
         CharacterDatabase.PExecute("UPDATE `character_ticket` SET `response_text` = '%s' "
             "WHERE `guid` = '%u' and `ticket_id` = %u",
-            escapedString.c_str(), m_guid.GetCounter(), m_ticketId);
+            escapedString.c_str(), GuidCounter(m_guid), m_ticketId);
     }
 }
 
-/**
- * @brief Closes the ticket and requests a survey from the client.
- */
 void GMTicket::CloseWithSurvey() const
 {
     _Close(GM_TICKET_STATUS_SURVEY);
 }
 
-/**
- * @brief Closes the ticket from the client side without further action.
- */
 void GMTicket::CloseByClient() const
 {
     _Close(GM_TICKET_STATUS_DO_NOTHING);
 }
 
-/**
- * @brief Closes the ticket with the standard close status.
- */
 void GMTicket::Close() const
 {
     _Close(GM_TICKET_STATUS_CLOSE);
 }
 
-/**
- * @brief Marks the ticket resolved and optionally notifies the player.
- *
- * @param statusCode The client status code to send on closure.
- */
 void GMTicket::_Close(GMTicketStatus statusCode) const
 {
     Player* pPlayer = sObjectMgr.GetPlayer(m_guid);
@@ -168,7 +127,7 @@ void GMTicket::_Close(GMTicketStatus statusCode) const
     CharacterDatabase.PExecute("UPDATE `character_ticket` "
         "SET `resolved` = 1 "
         "WHERE `guid` = %u AND `resolved` = 0",
-        m_guid.GetCounter());
+        GuidCounter(m_guid));
 
     if (pPlayer && statusCode != GM_TICKET_STATUS_DO_NOTHING)
     {
@@ -176,15 +135,12 @@ void GMTicket::_Close(GMTicketStatus statusCode) const
     }
 }
 
-/**
- * @brief Loads unresolved GM tickets from the database.
- */
 void GMTicketMgr::LoadGMTickets()
 {
-    m_GMTicketMap.clear();                                  // For reload case
+    m_GMTicketMap.clear();
 
     QueryResult* result = CharacterDatabase.Query(
-        //           0       1              2                3                                    4
+
             "SELECT `guid`, `ticket_text`, `response_text`, UNIX_TIMESTAMP(`ticket_lastchange`), `ticket_id` "
             "FROM `character_ticket` "
             "WHERE `resolved` = 0 "
@@ -213,7 +169,7 @@ void GMTicketMgr::LoadGMTickets()
             continue;
         }
 
-        ObjectGuid guid = ObjectGuid(HIGHGUID_PLAYER, guidlow);
+        ObjectGuid guid = MakeGuid(HIGHGUID_PLAYER, guidlow);
         GMTicket& ticket = m_GMTicketMap[guid];
 
         ticket.Init(guid, fields[1].GetCppString(), fields[2].GetCppString(), time_t(fields[3].GetUInt64()), fields[4].GetUInt32());
@@ -226,31 +182,22 @@ void GMTicketMgr::LoadGMTickets()
     sLog.outString();
 }
 
-/**
- * @brief Creates a new GM ticket for a player.
- *
- * @param guid The GUID of the player creating the ticket.
- * @param text The ticket text.
- */
 void GMTicketMgr::Create(ObjectGuid guid, const char* text)
 {
     std::string escapedText = text;
     CharacterDatabase.escape_string(escapedText);
     CharacterDatabase.BeginTransaction();
-    //This needs to be Direct (not placed in queue) as we need the id of it soon afterwards
+
     CharacterDatabase.DirectPExecute("INSERT INTO `character_ticket` "
         "(`guid`, `ticket_text`) "
         "VALUES "
         "(%u,   '%s')",
-        guid.GetCounter(), escapedText.c_str());
+        GuidCounter(guid), escapedText.c_str());
 
-    // Get the id of the ticket, needed for logging whispers
-    // Limiting to the the most recent ticket of the player and avoid potential multiple returns
-    // if there is inconsistent data in table (e.g : more than 1 ticket unsolved for the same player (should never happen but..who knows..)
     QueryResult* result = CharacterDatabase.PQuery("SELECT `ticket_id`, `guid`, `resolved` "
         "FROM `character_ticket` "
         "WHERE `guid` = %u AND `resolved` = 0 ORDER BY `ticket_id` DESC LIMIT 1;",
-        guid.GetCounter());
+        GuidCounter(guid));
 
     CharacterDatabase.CommitTransaction();
 
@@ -262,21 +209,16 @@ void GMTicketMgr::Create(ObjectGuid guid, const char* text)
     Field* fields = result->Fetch();
     uint32 ticketId = fields[0].GetUInt32();
 
-    //This implicitly creates a new instance since we're using operator[]
     GMTicket& ticket = m_GMTicketMap[guid];
     if (ticket.GetPlayerGuid())
     {
         m_GMTicketIdMap.erase(ticketId);
     }
 
-    //Lets reinitialize with new data
     ticket.Init(guid, text, "", time(nullptr), ticketId);
     m_GMTicketIdMap[ticketId] = &ticket;
 }
 
-/**
- * @brief Deletes all GM tickets and notifies affected online players.
- */
 void GMTicketMgr::DeleteAll()
 {
     for (GMTicketMap::const_iterator itr = m_GMTicketMap.begin(); itr != m_GMTicketMap.end(); ++itr)

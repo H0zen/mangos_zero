@@ -200,7 +200,7 @@ struct npc_snufflenose_gopher : public CreatureScript
 
         bool m_bIsMovementActive;
 
-        ObjectGuid m_targetTubberGuid;
+        ObjectGuid m_targetTubberGuid = 0;
 
         void Reset() override
         {
@@ -294,9 +294,9 @@ struct spell_npc_snufflenose_gopher : public SpellScript
         {
             if (pCreatureTarget->GetEntry() == NPC_SNUFFLENOSE_GOPHER)
             {
-                if (CreatureAI* pGopherAI = ToCreature(pCreatureTarget)->AI())
+                if (CreatureAI* pGopherAI = static_cast<Creature*>(pCreatureTarget)->AI())
                 {
-                    pGopherAI->SendAIEvent(AI_EVENT_CUSTOM_A, ToCreature(pCreatureTarget), ToCreature(pCreatureTarget));
+                    pGopherAI->SendAIEvent(AI_EVENT_CUSTOM_A, static_cast<Creature*>(pCreatureTarget), static_cast<Creature*>(pCreatureTarget));
                 }
             }
 

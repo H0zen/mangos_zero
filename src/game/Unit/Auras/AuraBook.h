@@ -40,38 +40,16 @@ class PetAura;
 class SpellAuraHolder;
 struct SpellEntry;
 
-typedef std::multimap<uint32 /*spellId*/, SpellAuraHolder*> SpellAuraHolderMap;
+typedef std::multimap<uint32 , SpellAuraHolder*> SpellAuraHolderMap;
 typedef std::pair<SpellAuraHolderMap::iterator, SpellAuraHolderMap::iterator> SpellAuraHolderBounds;
 typedef std::pair<SpellAuraHolderMap::const_iterator, SpellAuraHolderMap::const_iterator> SpellAuraHolderConstBounds;
 typedef std::list<SpellAuraHolder*> SpellAuraHolderList;
 typedef std::list<Aura*> AuraList;
 
-/// The one target a tracked spell is on, per spell. A caster may hold only one at a time.
-typedef std::map<SpellEntry const*, ObjectGuid /*targetGuid*/> TrackedAuraTargetMap;
+typedef std::map<SpellEntry const*, ObjectGuid > TrackedAuraTargetMap;
 
 typedef std::set<PetAura const*> PetAuraSet;
 
-/**
- * @brief What a unit is carrying, kept by the spell that put it there.
- *
- * One entry per holder, filed under its spell id, and a spell may have several -- one per
- * caster -- which is why this is a multimap rather than a map.
- *
- * The whole difficulty of this book is that it is written in while it is being read. An
- * aura's own tick removes it, an effect handler applies another, a holder taken off takes
- * others with it. Three things answer that, and they are the reason this is a type of its
- * own rather than a container on the unit:
- *
- *  - the update walk keeps a cursor here, so a holder struck off while the walk is under
- *    way moves the cursor on instead of leaving it dangling;
- *  - a removal that has to happen while somebody still holds the object is deferred, and
- *    the deferred are destroyed at the end of the tick;
- *  - a sweep that removes by a test restarts after every removal, because removing one
- *    holder can take others with it, and what is left behind is not what the walk saw.
- *
- * What a removal MEANS -- the modifiers undone, the statue unsummoned, the client told --
- * is the unit's, and none of it is here.
- */
 class AuraBook
 {
     public:
@@ -81,14 +59,10 @@ class AuraBook
         AuraBook(AuraBook const&) = delete;
         AuraBook& operator=(AuraBook const&) = delete;
 
-        /// File a holder under its spell.
         void Enter(SpellAuraHolder* holder);
 
-        /// Strike one holder off. The cursor of a walk in progress steps past it first.
-        /// @return true when the holder was found and struck.
         bool Strike(SpellAuraHolder* holder);
 
-        /// Every holder of one spell, from every caster.
         SpellAuraHolderBounds Of(uint32 spellId) { return m_holders.equal_range(spellId); }
         SpellAuraHolderConstBounds Of(uint32 spellId) const { return m_holders.equal_range(spellId); }
 
@@ -100,12 +74,6 @@ class AuraBook
         SpellAuraHolderMap& All() { return m_holders; }
         SpellAuraHolderMap const& All() const { return m_holders; }
 
-        /**
-         * @brief Hand every holder to `tick` once.
-         *
-         * The cursor moves on before the holder is handed over, so a holder that removes
-         * itself -- or the one after it -- while ticking leaves the walk on solid ground.
-         */
         template<typename Tick>
         void EachHolder(Tick&& tick)
         {
@@ -119,15 +87,6 @@ class AuraBook
             m_cursor = m_holders.end();
         }
 
-        /**
-         * @brief Take off every holder the test asks for.
-         *
-         * Starts again from the beginning after each removal: taking one holder off can
-         * take others with it, so nothing after it can be trusted to still be there.
-         *
-         * @param test   asked of each holder; true means take it off.
-         * @param strike does the taking off -- the unit's own removal, with all it means.
-         */
         template<typename Test, typename Strike>
         void RemoveWhere(Test&& test, Strike&& strike)
         {
@@ -147,34 +106,23 @@ class AuraBook
             }
         }
 
-        /**
-         * @brief Whom this unit's tracked spells of one kind are on.
-         *
-         * A few spells may be on only one target at a time from one caster -- a soul link,
-         * a hunter's mark -- so the caster keeps the target here and takes the old one off
-         * when it puts a new one on.
-         */
         TrackedAuraTargetMap&       Tracked(TrackedAuraType type)       { return m_tracked[type]; }
         TrackedAuraTargetMap const& Tracked(TrackedAuraType type) const { return m_tracked[type]; }
 
-        /// What this unit hands to the pet at its heel, whichever pet that turns out to be.
         PetAuraSet&       ForItsPet()       { return m_petAuras; }
         PetAuraSet const& ForItsPet() const { return m_petAuras; }
 
-        /// Somebody is still holding it, so it cannot be destroyed until the tick is over.
         void Defer(Aura* aura) { m_deferredAuras.push_back(aura); }
         void Defer(SpellAuraHolder* holder) { m_deferredHolders.push_back(holder); }
 
         bool NothingDeferred() const { return m_deferredAuras.empty() && m_deferredHolders.empty(); }
 
-        /// Destroy what was deferred. Nobody is holding any of it by now.
         void SweepDeferred();
 
     private:
 
         SpellAuraHolderMap m_holders;
 
-        /// Where the update walk has got to, or end() when no walk is under way.
         SpellAuraHolderMap::iterator m_cursor;
 
         AuraList m_deferredAuras;

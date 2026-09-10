@@ -134,7 +134,7 @@ struct is_zulgurub : public InstanceScript
                         break;
                     case TYPE_ARLOKK:
                         m_auiEncounter[uiType] = uiData;
-                        DoUseDoorOrButton(GO_FORCEFIELD);
+                        DoUseDoorOrButtonByEntry(GO_FORCEFIELD);
                         if (uiData == DONE)
                         {
                             DoLowerHakkarHitPoints();
@@ -204,7 +204,7 @@ struct is_zulgurub : public InstanceScript
                     case TYPE_SIGNAL_3:
                         if (Creature *p = (const_cast<instance_zulgurub*>(this))->SelectRandomPantherTrigger(type == TYPE_SIGNAL_2))
                         {
-                            return p->GetObjectGuid().GetRawValue();
+                            return p->GetObjectGuid();
                         }
                         break;
                     default:

@@ -25,15 +25,6 @@
 
 #pragma once
 
-// The counters that belong to the process rather than to any one map, and the
-// line they are reported on.
-//
-// These exist to answer questions that are otherwise arguments. Chiefly: does
-// visibility oscillate? A viewer standing still while creates and destroys run
-// at the same steady rate is an object flapping in and out of his known set, and
-// no amount of reading the sweep will show it as reliably as the two numbers
-// side by side.
-
 #include "Metrics/Rate.h"
 
 #include <string>
@@ -42,8 +33,7 @@ namespace metrics
 {
     struct ServerMetrics
     {
-        /// Objects appearing and disappearing for viewers. Equal, non-zero and
-        /// steady with a still population is the signature of oscillation.
+
         Rate sightCreates;
         Rate sightDestroys;
 
@@ -51,14 +41,7 @@ namespace metrics
         Rate casts;
     };
 
-    /// The one instance. Written from map threads, read by the reporter.
     ServerMetrics& Server();
 
-    /**
-     * @brief Consume the window and render it as one line.
-     *
-     * Reading is destructive, which is why there is a single reporter: two would
-     * each get part of the truth.
-     */
     std::string Report(uint32 elapsedMs);
 }

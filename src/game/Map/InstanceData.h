@@ -36,16 +36,15 @@ class GameObject;
 class Creature;
 class Occupant;
 
-enum InstanceConditionIDs                                   // Suggested values used with CONDITION_INSTANCE_SCRIPT for some generic uses
+enum InstanceConditionIDs
 {
-    // for hard-mode loot (0 normal; 1,2... hard,harder... mode)
+
     INSTANCE_CONDITION_ID_NORMAL_MODE       = 0,
     INSTANCE_CONDITION_ID_HARD_MODE         = 1,
     INSTANCE_CONDITION_ID_HARD_MODE_2       = 2,
     INSTANCE_CONDITION_ID_HARD_MODE_3       = 3,
     INSTANCE_CONDITION_ID_HARD_MODE_4       = 4,
 
-    // to check for which team the instance is doing scripts
     INSTANCE_CONDITION_ID_TEAM_HORDE        = 67,
     INSTANCE_CONDITION_ID_TEAM_ALLIANCE     = 469,
 };
@@ -59,70 +58,48 @@ class InstanceData
 
         Map* instance;
 
-        // On creation, NOT load.
         virtual void Initialize() {}
 
-        // On load
-        virtual void Load(const char* /*data*/) {}
+        virtual void Load(const char* ) {}
 
-        // When save is needed, this function generates the data
         virtual const char* Save() const { return ""; }
 
         void SaveToDB() const;
 
-        // Called every map update
-        virtual void Update(uint32 /*diff*/) {}
+        virtual void Update(uint32 ) {}
 
-        // This is to prevent players from entering during boss encounters.
         virtual bool IsEncounterInProgress() const { return false; };
 
-        // Called when a player successfully enters the instance (after really added to map)
         virtual void OnPlayerEnter(Player*) {}
 
-        // Called when a player dies inside instance
         virtual void OnPlayerDeath(Player*) {}
 
-        // Called when a player leaves the instance (before really removed from map (or possibly world))
         virtual void OnPlayerLeave(Player*) {}
 
-        // Called when a gameobject is created
         virtual void OnObjectCreate(GameObject*) {}
 
-        // called on creature creation
-        virtual void OnCreatureCreate(Creature* /*creature*/) {}
+        virtual void OnCreatureCreate(Creature* ) {}
 
-        // called on creature enter combat
-        virtual void OnCreatureEnterCombat(Creature* /*creature*/) {}
+        virtual void OnCreatureEnterCombat(Creature* ) {}
 
-        // called on creature evade
-        virtual void OnCreatureEvade(Creature* /*creature*/) {}
+        virtual void OnCreatureEvade(Creature* ) {}
 
-        // called on creature death
-        virtual void OnCreatureDeath(Creature* /*creature*/) {}
+        virtual void OnCreatureDeath(Creature* ) {}
 
-        // called on creature despawn
-        virtual void OnCreatureDespawn(Creature* /*creature*/) {}
+        virtual void OnCreatureDespawn(Creature* ) {}
 
-        // called on game event
-        virtual void OnEventHappened(uint16 /*event_id*/, bool /*activate*/, bool /*resume*/) {}
+        virtual void OnEventHappened(uint16 , bool , bool ) {}
 
-        // called on creature looted
-        virtual void OnCreatureLooted(Creature* /*creature*/, LootType) {}
+        virtual void OnCreatureLooted(Creature* , LootType) {}
 
-        // All-purpose data storage 64 bit
-        virtual uint64 GetData64(uint32 /*Data*/) const { return 0; }
-        virtual void SetData64(uint32 /*Data*/, uint64 /*Value*/) {}
+        virtual uint64 GetData64(uint32 ) const { return 0; }
+        virtual void SetData64(uint32 , uint64 ) {}
 
-        // Guid data storage (wrapper for set/get from uint64 storage
-        ObjectGuid GetGuid(uint32 dataIdx) const { return ObjectGuid(GetData64(dataIdx)); }
-        void SetGuid(uint32 dataIdx, ObjectGuid value) { SetData64(dataIdx, value.GetRawValue()); }
+        ObjectGuid GetGuid(uint32 dataIdx) const { return static_cast<ObjectGuid>(GetData64(dataIdx)); }
+        void SetGuid(uint32 dataIdx, ObjectGuid value) { SetData64(dataIdx, value); }
 
-        // All-purpose data storage 32 bit
-        virtual uint32 GetData(uint32 /*Type*/) const { return 0; }
-        virtual void SetData(uint32 /*Type*/, uint32 /*Data*/) {}
+        virtual uint32 GetData(uint32 ) const { return 0; }
+        virtual void SetData(uint32 , uint32 ) {}
 
-        // Condition criteria additional requirements check
-        // This is used for such things are heroic loot
-        // See ObjectMgr.h enum ConditionSource for possible values of conditionSourceType
         virtual bool CheckConditionCriteriaMeet(Player const* source, uint32 instance_condition_id, Occupant const* conditionSource, uint32 conditionSourceType) const;
 };

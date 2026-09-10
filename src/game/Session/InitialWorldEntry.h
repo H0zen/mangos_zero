@@ -33,7 +33,6 @@
 
 class Player;
 
-/** Packets emitted after map admission and before the first object update. */
 enum class InitialWorldEntryPacket
 {
     InitWorldStates,
@@ -46,8 +45,7 @@ enum class InitialWorldEntryPacket
 inline std::vector<InitialWorldEntryPacket>
 InitialWorldEntryPacketOrder(bool cinematic)
 {
-    // Keep the observed Classic wire order explicit. First-login cinematic
-    // packets occupy the same pre-object-batch window but are otherwise absent.
+
     std::vector<InitialWorldEntryPacket> order = {
         InitialWorldEntryPacket::InitWorldStates
     };
@@ -61,7 +59,6 @@ InitialWorldEntryPacketOrder(bool cinematic)
     return order;
 }
 
-/** Facts established by the one-shot entry hook and consumed after map add. */
 struct InitialWorldEntryContext
 {
     uint32 anchorMapId = 0;
@@ -71,8 +68,6 @@ struct InitialWorldEntryContext
     bool cinematicStarted = false;
 };
 
-// Separate scheduling lets START wait for world presentation while the +1 ms
-// GO delay guarantees a following eligible EventProcessor tick.
 enum class LoginEffectPhase
 {
     Start,
@@ -82,15 +77,13 @@ enum class LoginEffectPhase
 
 constexpr uint32 LoginEffectDelayBefore(LoginEffectPhase phase)
 {
-    // The one-second START grace is presentation time, not spell cast time: it
-    // keeps the short visual from being consumed behind the loading transition.
+
     return phase == LoginEffectPhase::Start ? 1000 : 1;
 }
 
 class LoginEffectSequenceState
 {
-    // START and GO are separate wire packets; this state prevents either phase
-    // from being emitted twice and makes world loss terminal for the sequence.
+
     public:
         std::optional<LoginEffectPhase> TakeNext(bool inWorld)
         {
@@ -115,11 +108,6 @@ class LoginEffectSequenceState
         LoginEffectPhase m_phase = LoginEffectPhase::Start;
 };
 
-/**
- * Owns only the temporary root applied for a first-login cinematic. The
- * one-shot release prevents completion and timeout from unrooting twice or
- * clearing a root owned by another mechanic.
- */
 class LoginCinematicRootOwnership
 {
     public:
@@ -131,9 +119,7 @@ class LoginCinematicRootOwnership
 
         bool ReleaseOnce(bool canRelease)
         {
-            // Do not consume ownership while Player cannot emit the matching
-            // unroot. Unit::Update stops before m_Events.Update out of world,
-            // so this timeout cannot fire until the player has re-entered.
+
             if (!canRelease)
             {
                 return false;
@@ -155,10 +141,6 @@ class LoginCinematicRootOwnership
         std::atomic_bool m_owned{false};
 };
 
-/**
- * Runs once after committed map membership and before initial object batching,
- * then exposes the emitted preamble state to the post-add login path.
- */
 class InitialWorldEntryHook
 {
     public:
@@ -179,5 +161,4 @@ class InitialWorldEntryHook
         std::optional<InitialWorldEntryContext> m_context;
 };
 
-// Failsafe for clients that never report cinematic completion.
 constexpr uint32 LOGIN_CINEMATIC_ROOT_TIMEOUT_MS = 120000;

@@ -34,8 +34,7 @@
 
 namespace
 {
-    /// A contribution is a kill when it names something that can be killed. A
-    /// battleground objective names nothing, so it is worth points and no kill.
+
     bool NamesAKill(uint8 victimType)
     {
         return victimType == TYPEID_UNIT || victimType == TYPEID_PLAYER;
@@ -78,8 +77,7 @@ bool HonorLedger::Add(float honor, uint8 kind, uint32 victimId, uint8 victimType
 
     if (kind == DISHONORABLE)
     {
-        // The cost comes off at once rather than at the week's reckoning, and it
-        // stops at nothing rather than digging into a negative standing.
+
         m_stored = m_points > entry.honorPoints ? m_points - entry.honorPoints : 0.0f;
     }
 
@@ -109,8 +107,6 @@ void HonorLedger::Reckon()
 
     m_lastWeekPlace = sObjectMgr.GetHonorStandingPositionByGUID(m_owner.GetGUIDLow(), m_owner.GetTeam());
 
-    // What is stored is every week already reckoned; this week's earnings sit in
-    // the standing table until the next reckoning folds them in.
     float points = m_stored;
     if (HonorStanding* standing = sObjectMgr.GetHonorStandingByGUID(m_owner.GetGUIDLow(), m_owner.GetTeam()))
     {
@@ -237,8 +233,7 @@ void HonorLedger::LoadFromDB(QueryResult* result)
 
 void HonorLedger::SaveToDB()
 {
-    // An entry struck out is dropped rather than written; the kills it stood for
-    // are already carried by the two counts in the character's own row.
+
     for (auto itr = m_entries.begin(); itr != m_entries.end();)
     {
         switch (itr->state)

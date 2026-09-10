@@ -258,7 +258,7 @@ struct npc_doctor : public CreatureScript
     {
         npc_doctorAI(Creature* pCreature) : ScriptedAI(pCreature) {}
 
-        ObjectGuid m_playerGuid;
+        ObjectGuid m_playerGuid = 0;
 
         uint32 m_uiSummonPatientTimer;
         uint32 m_uiSummonPatientCount;
@@ -272,7 +272,7 @@ struct npc_doctor : public CreatureScript
 
         void Reset() override
         {
-            m_playerGuid.Clear();
+            m_playerGuid = 0;
 
             m_uiSummonPatientTimer = 10000;
             m_uiSummonPatientCount = 0;
@@ -398,9 +398,9 @@ struct npc_doctor : public CreatureScript
             loc->y = pSender->Where().Y();
             loc->z = pSender->Where().Z();
             loc->o = pSender->Where().Facing();
-            if (eventType == AI_EVENT_CUSTOM_A && pInvoker->IsPlayer())
+            if (eventType == AI_EVENT_CUSTOM_A &&IsPlayer(pInvoker))
             {
-                PatientSaved(pSender, ToPlayer(pInvoker), loc);
+                PatientSaved(pSender, static_cast<Player*>(pInvoker), loc);
             }
             else if (eventType == AI_EVENT_CUSTOM_B && pInvoker == pSender)
             {
@@ -494,12 +494,12 @@ struct npc_injured_patient : public CreatureScript
     {
         npc_injured_patientAI(Creature* pCreature) : ScriptedAI(pCreature) {}
 
-        ObjectGuid m_doctorGuid;
+        ObjectGuid m_doctorGuid = 0;
         Location* m_pCoord;
 
         void Reset() override
         {
-            m_doctorGuid.Clear();
+            m_doctorGuid = 0;
             m_pCoord = nullptr;
 
             // no select
@@ -529,7 +529,7 @@ struct npc_injured_patient : public CreatureScript
 
         void SpellHit(Unit* pCaster, const SpellEntry* pSpell) override
         {
-            if (pCaster->IsPlayer() && m_creature->IsAlive() && SD3_SpellId(pSpell) == 20804)
+            if (IsPlayer(pCaster) && m_creature->IsAlive() && SD3_SpellId(pSpell) == 20804)
             {
                 Player* pPlayer = static_cast<Player*>(pCaster);
                 if (pPlayer->GetQuestStatus(6624) == QUEST_STATUS_INCOMPLETE || pPlayer->GetQuestStatus(6622) == QUEST_STATUS_INCOMPLETE)
@@ -677,7 +677,7 @@ struct npc_garments_of_quests : public CreatureScript
     {
         npc_garments_of_questsAI(Creature* pCreature) : npc_escortAI(pCreature) {}
 
-        ObjectGuid m_playerGuid;
+        ObjectGuid m_playerGuid = 0;
 
         bool m_bIsHealed;
         bool m_bCanRun;
@@ -686,7 +686,7 @@ struct npc_garments_of_quests : public CreatureScript
 
         void Reset() override
         {
-            m_playerGuid.Clear();
+            m_playerGuid = 0;
 
             m_bIsHealed = false;
             m_bCanRun = false;
@@ -715,7 +715,7 @@ struct npc_garments_of_quests : public CreatureScript
                     return;
                 }
 
-                if (pCaster->IsPlayer())
+                if (IsPlayer(pCaster))
                 {
                     switch (m_creature->GetEntry())
                     {
@@ -1010,7 +1010,7 @@ struct npc_redemption_target : public CreatureScript
         uint32 m_uiEvadeTimer;
         uint32 m_uiHealTimer;
 
-        ObjectGuid m_playerGuid;
+        ObjectGuid m_playerGuid = 0;
 
         void Reset() override
         {
@@ -1100,9 +1100,9 @@ struct spell_npc_redemption_target : public SpellScript
         // always check spellid and effectindex
         if ((uiSpellId == SPELL_SYMBOL_OF_LIFE || uiSpellId == SPELL_SHIMMERING_VESSEL) && uiEffIndex == EFFECT_INDEX_0)
         {
-            if (CreatureAI* pTargetAI = ToCreature(pCreatureTarget)->AI())
+            if (CreatureAI* pTargetAI = static_cast<Creature*>(pCreatureTarget)->AI())
             {
-                pTargetAI->SendAIEvent(AI_EVENT_CUSTOM_A, pCaster, ToCreature(pCreatureTarget));//>DoReviveSelf(pCaster->GetObjectGuid());
+                pTargetAI->SendAIEvent(AI_EVENT_CUSTOM_A, pCaster, static_cast<Creature*>(pCreatureTarget));//>DoReviveSelf(pCaster->GetObjectGuid());
             }
 
             // always return true when we are handling this spell and effect

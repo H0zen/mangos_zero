@@ -32,32 +32,15 @@ namespace Movement
 {
     class MoveSpline;
 
-    /**
-     * @brief The PacketBuilder class is responsible for constructing movement-related packets.
-     */
     class PacketBuilder
     {
-        /**
-         * @brief Writes the common part of a monster move packet.
-         * @param mov The MoveSpline object containing movement data.
-         * @param data The WorldPacket to write the data to.
-         */
+
         static void WriteCommonMonsterMovePart(const MoveSpline& mov, WorldPacket& data);
 
         public:
 
-            /**
-             * @brief Writes a monster move packet.
-             * @param mov The MoveSpline object containing movement data.
-             * @param data The WorldPacket to write the data to.
-             */
             static void WriteMonsterMove(const MoveSpline& mov, WorldPacket& data);
 
-            /**
-             * @brief Writes the creation data of a MoveSpline to a ByteBuffer.
-             * @param mov The MoveSpline object containing movement data.
-             * @param data The ByteBuffer to write the data to.
-             */
             static void WriteCreate(const MoveSpline& mov, ByteBuffer& data);
     };
 }

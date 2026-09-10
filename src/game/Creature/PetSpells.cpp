@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Pet.h"
 #include "Database/DatabaseEnv.h"
 #include "Log.h"
@@ -41,9 +39,6 @@
 #include "Movement/Spline/MoveSplineInit.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Loads saved pet spell cooldowns from the database.
- */
 void Pet::_LoadSpellCooldowns()
 {
     Knowing().Clear();
@@ -55,7 +50,7 @@ void Pet::_LoadSpellCooldowns()
         time_t curTime = time(nullptr);
 
         WorldPacket data(SMSG_SPELL_COOLDOWN, (8 + size_t(result->GetRowCount()) * 8));
-        data << ObjectGuid(GetObjectGuid());
+        data << static_cast<ObjectGuid>(GetObjectGuid());
 
         do
         {
@@ -70,7 +65,6 @@ void Pet::_LoadSpellCooldowns()
                 continue;
             }
 
-            // skip outdated cooldown
             if (db_time <= curTime)
             {
                 continue;
@@ -94,9 +88,6 @@ void Pet::_LoadSpellCooldowns()
     }
 }
 
-/**
- * @brief Saves active pet spell cooldowns to the database.
- */
 void Pet::_SaveSpellCooldowns()
 {
     static SqlStatementID delSpellCD ;
@@ -107,7 +98,6 @@ void Pet::_SaveSpellCooldowns()
 
     time_t curTime = time(nullptr);
 
-    // what has already come back is not worth writing down
     Knowing().ForgetExpired(curTime);
 
     for (auto const& down : Knowing().StillDown())
@@ -117,9 +107,6 @@ void Pet::_SaveSpellCooldowns()
     }
 }
 
-/**
- * @brief Loads pet spells from the database.
- */
 void Pet::_LoadSpells()
 {
     QueryResult* result = CharacterDatabase.PQuery("SELECT `spell`,`active` FROM `pet_spell` WHERE `guid` = '%u'", m_charmInfo->GetPetNumber());
@@ -138,9 +125,6 @@ void Pet::_LoadSpells()
     }
 }
 
-/**
- * @brief Saves pet spells to the database.
- */
 void Pet::_SaveSpells()
 {
     static SqlStatementID delSpell ;
@@ -150,7 +134,6 @@ void Pet::_SaveSpells()
     {
         ++next;
 
-        // prevent saving family passives to DB
         if (itr->second.type == PETSPELL_FAMILY)
         {
             continue;
@@ -188,16 +171,10 @@ void Pet::_SaveSpells()
     }
 }
 
-/**
- * @brief Loads persistent pet auras from the database.
- *
- * @param timediff Time elapsed since last save, in seconds.
- */
 void Pet::_LoadAuras(uint32 timediff)
 {
     RemoveAllAuras();
 
-    // all aura related fields
     for (int i = UNIT_FIELD_AURA; i <= UNIT_FIELD_AURASTATE; ++i)
     {
         SetUInt32Value(i, 0);
@@ -210,7 +187,7 @@ void Pet::_LoadAuras(uint32 timediff)
         do
         {
             Field* fields = result->Fetch();
-            ObjectGuid casterGuid = ObjectGuid(fields[0].GetUInt64());
+            ObjectGuid casterGuid = static_cast<ObjectGuid>(fields[0].GetUInt64());
             uint32 item_lowguid = fields[1].GetUInt32();
             uint32 spellid = fields[2].GetUInt32();
             uint32 stackcount = fields[3].GetUInt32();
@@ -235,7 +212,6 @@ void Pet::_LoadAuras(uint32 timediff)
                 continue;
             }
 
-            // do not load single target auras (unless they were cast by the player)
             if (casterGuid != GetObjectGuid() && IsSingleTargetSpell(spellproto))
             {
                 continue;
@@ -251,7 +227,6 @@ void Pet::_LoadAuras(uint32 timediff)
                 remaintime -= timediff * IN_MILLISECONDS;
             }
 
-            // prevent wrong values of remaincharges
             if (spellproto->ProcCharges == 0)
             {
                 remaincharges = 0;
@@ -271,7 +246,7 @@ void Pet::_LoadAuras(uint32 timediff)
             }
 
             SpellAuraHolder* holder = CreateSpellAuraHolder(spellproto, this, nullptr);
-            holder->SetLoadedState(casterGuid, ObjectGuid(HIGHGUID_ITEM, item_lowguid), stackcount, remaincharges, maxduration, remaintime);
+            holder->SetLoadedState(casterGuid, MakeGuid(HIGHGUID_ITEM, item_lowguid), stackcount, remaincharges, maxduration, remaintime);
 
             for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
             {
@@ -305,9 +280,6 @@ void Pet::_LoadAuras(uint32 timediff)
     }
 }
 
-/**
- * @brief Saves persistent pet auras to the database.
- */
 void Pet::_SaveAuras()
 {
     static SqlStatementID delAuras ;
@@ -343,8 +315,6 @@ void Pet::_SaveAuras()
             }
         }
 
-        // skip all holders from spells that are passive or channeled
-        // do not save single target holders (unless they were cast by the player)
         if (save && !holder->IsPassive() && !(cast::RecipeOf(*holder->GetSpellProto()).Starts() == cast::Start::Channelled) && (holder->GetCasterGuid() == GetObjectGuid() || holder->GetTrackedAuraType() != TRACK_AURA_TYPE_NOT_TRACKED))
         {
             int32  damage[MAX_EFFECT_INDEX];
@@ -358,7 +328,7 @@ void Pet::_SaveAuras()
 
                 if (Aura* aur = holder->GetAuraByEffectIndex(SpellEffectIndex(i)))
                 {
-                    // don't save not own area auras
+
                     if (aur->IsAreaAura() && holder->GetCasterGuid() != GetObjectGuid())
                     {
                         continue;
@@ -376,8 +346,8 @@ void Pet::_SaveAuras()
             }
 
             stmt.addUInt32(m_charmInfo->GetPetNumber());
-            stmt.addUInt64(holder->GetCasterGuid().GetRawValue());
-            stmt.addUInt32(holder->GetCastItemGuid().GetCounter());
+            stmt.addUInt64(holder->GetCasterGuid());
+            stmt.addUInt32(GuidCounter(holder->GetCastItemGuid()));
             stmt.addUInt32(holder->GetId());
             stmt.addUInt32(holder->GetStackAmount());
             stmt.addUInt8(holder->GetAuraCharges());
@@ -400,22 +370,13 @@ void Pet::_SaveAuras()
     }
 }
 
-/**
- * @brief Adds a spell to the pet spellbook.
- *
- * @param spell_id The spell to add.
- * @param active The desired active state.
- * @param state The persistence state of the spell.
- * @param type The pet spell category.
- * @return true if the spell was added; otherwise, false.
- */
-bool Pet::addSpell(uint32 spell_id, ActiveStates active /*= ACT_DECIDE*/, PetSpellState state /*= PETSPELL_NEW*/, PetSpellType type /*= PETSPELL_NORMAL*/)
+bool Pet::addSpell(uint32 spell_id, ActiveStates active , PetSpellState state , PetSpellType type )
 {
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(spell_id);
     if (!spellInfo)
     {
-        // do pet spell book cleanup
-        if (state == PETSPELL_UNCHANGED)                    // spell load case
+
+        if (state == PETSPELL_UNCHANGED)
         {
             sLog.outError("Pet::addSpell: nonexistent in SpellStore spell #%u request, deleting for all pets in `pet_spell`.", spell_id);
             CharacterDatabase.PExecute("DELETE FROM `pet_spell` WHERE `spell` = '%u'", spell_id);
@@ -438,7 +399,7 @@ bool Pet::addSpell(uint32 spell_id, ActiveStates active /*= ACT_DECIDE*/, PetSpe
         }
         else if (state == PETSPELL_UNCHANGED && itr->second.state != PETSPELL_UNCHANGED)
         {
-            // can be in case spell loading but learned at some previous spell loading
+
             itr->second.state = PETSPELL_UNCHANGED;
 
             if (active == ACT_ENABLED)
@@ -462,7 +423,7 @@ bool Pet::addSpell(uint32 spell_id, ActiveStates active /*= ACT_DECIDE*/, PetSpe
     newspell.state = state;
     newspell.type = type;
 
-    if (active == ACT_DECIDE)                               // active was not used before, so we save it's autocast/passive state here
+    if (active == ACT_DECIDE)
     {
         if ((cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive))
         {
@@ -491,7 +452,7 @@ bool Pet::addSpell(uint32 spell_id, ActiveStates active /*= ACT_DECIDE*/, PetSpe
 
             if (sSpellMgr.IsRankSpellDueToSpell(spellInfo, oldspell_id))
             {
-                // replace by new high rank
+
                 if (sSpellMgr.IsHighRankOfSpell(spell_id, oldspell_id))
                 {
                     newspell.active = itr2->second.active;
@@ -504,7 +465,7 @@ bool Pet::addSpell(uint32 spell_id, ActiveStates active /*= ACT_DECIDE*/, PetSpe
                     unlearnSpell(oldspell_id, false, false);
                     break;
                 }
-                // ignore new lesser rank
+
                 else if (sSpellMgr.IsHighRankOfSpell(oldspell_id, spell_id))
                 {
                     return false;
@@ -532,15 +493,9 @@ bool Pet::addSpell(uint32 spell_id, ActiveStates active /*= ACT_DECIDE*/, PetSpe
     return true;
 }
 
-/**
- * @brief Learns a spell for the pet.
- *
- * @param spell_id The spell to learn.
- * @return true if the spell was learned; otherwise, false.
- */
 bool Pet::learnSpell(uint32 spell_id)
 {
-    // prevent duplicated entires in spell book
+
     if (!addSpell(spell_id))
     {
         return false;
@@ -549,7 +504,7 @@ bool Pet::learnSpell(uint32 spell_id)
     if (!m_loading)
     {
         Unit* owner = GetOwner();
-        if (owner && owner->IsPlayer())
+        if (owner &&IsPlayer(owner))
         {
             ((Player*)owner)->PetSpellInitialize();
         }
@@ -557,14 +512,6 @@ bool Pet::learnSpell(uint32 spell_id)
     return true;
 }
 
-/**
- * @brief Unlearns a pet spell.
- *
- * @param spell_id The spell to remove.
- * @param learn_prev true to relearn the previous rank.
- * @param clear_ab true to clear the action bar slot when needed.
- * @return true if the spell was removed; otherwise, false.
- */
 bool Pet::unlearnSpell(uint32 spell_id, bool learn_prev, bool clear_ab)
 {
     if (removeSpell(spell_id, learn_prev, clear_ab))
@@ -574,14 +521,6 @@ bool Pet::unlearnSpell(uint32 spell_id, bool learn_prev, bool clear_ab)
     return false;
 }
 
-/**
- * @brief Removes a spell from the pet spellbook.
- *
- * @param spell_id The spell to remove.
- * @param learn_prev true to relearn the previous rank.
- * @param clear_ab true to clear the action bar slot when needed.
- * @return true if the spell was removed; otherwise, false.
- */
 bool Pet::removeSpell(uint32 spell_id, bool learn_prev, bool clear_ab)
 {
     PetSpellMap::iterator itr = m_spells.find(spell_id);
@@ -618,15 +557,14 @@ bool Pet::removeSpell(uint32 spell_id, bool learn_prev, bool clear_ab)
         }
     }
 
-    // if remove last rank or non-ranked then update action bar at server and client if need
     if (clear_ab && !learn_prev && m_charmInfo->RemoveSpellFromActionBar(spell_id))
     {
         if (!m_loading)
         {
-            // need update action bar for last removed rank
+
             if (Unit* owner = GetOwner())
             {
-                if (owner->IsPlayer())
+                if (IsPlayer(owner))
                 {
                     ((Player*)owner)->PetSpellInitialize();
                 }
@@ -637,9 +575,6 @@ bool Pet::removeSpell(uint32 spell_id, bool learn_prev, bool clear_ab)
     return true;
 }
 
-/**
- * @brief Removes unknown spells from the pet action bar.
- */
 void Pet::CleanupActionBar()
 {
     for (int i = 0; i < MAX_UNIT_ACTION_BAR_INDEX; ++i)
@@ -657,9 +592,6 @@ void Pet::CleanupActionBar()
     }
 }
 
-/**
- * @brief Initializes the pet spellbook and action bar for a newly created pet.
- */
 void Pet::InitPetCreateSpells()
 {
     m_charmInfo->InitPetActionBar();
@@ -672,7 +604,7 @@ void Pet::InitPetCreateSpells()
     if (CreateSpells)
     {
         Unit* owner = GetOwner();
-        Player* p_owner = owner && owner->IsPlayer() ? (Player*)owner : nullptr;
+        Player* p_owner = owner &&IsPlayer(owner) ? (Player*)owner : nullptr;
 
         for (uint8 i = 0; i < 4; ++i)
         {
@@ -692,7 +624,7 @@ void Pet::InitPetCreateSpells()
                 petspellid = learn_spellproto->EffectTriggerSpell[0];
                 if (p_owner && !p_owner->HasSpell(learn_spellproto->ID))
                 {
-                    if (cast::Recipes().StartsAs(petspellid, cast::Start::Passive))         // learn passive skills when tamed, not sure if thats right
+                    if (cast::Recipes().StartsAs(petspellid, cast::Start::Passive))
                     {
                         p_owner->learnSpell(learn_spellproto->ID, false);
                     }
@@ -726,43 +658,31 @@ void Pet::InitPetCreateSpells()
     SetTP(-usedtrainpoints);
 }
 
-/**
- * @brief Computes the current pet talent reset cost.
- *
- * @return The reset cost in copper.
- */
 uint32 Pet::resetTalentsCost() const
 {
     uint32 days = uint32(sWorld.GetGameTime() - m_resetTalentsTime) / DAY;
 
-    // The first time reset costs 10 silver; after 1 day cost is reset to 10 silver
     if (m_resetTalentsCost < 10 * SILVER || days > 0)
     {
         return 10 * SILVER;
     }
-    // then 50 silver
+
     else if (m_resetTalentsCost < 50 * SILVER)
     {
         return 50 * SILVER;
     }
-    // then 1 gold
+
     else if (m_resetTalentsCost < 1 * GOLD)
     {
         return 1 * GOLD;
     }
-    // then increasing at a rate of 1 gold; cap 10 gold
+
     else
     {
         return (m_resetTalentsCost + 1 * GOLD > 10 * GOLD ? 10 * GOLD : m_resetTalentsCost + 1 * GOLD);
     }
 }
 
-/**
- * @brief Enables or disables autocast for a pet spell.
- *
- * @param spellid The spell to update.
- * @param apply true to enable autocast; false to disable it.
- */
 void Pet::ToggleAutocast(uint32 spellid, bool apply)
 {
     if (cast::Recipes().StartsAs(spellid, cast::Start::Passive))
@@ -779,7 +699,7 @@ void Pet::ToggleAutocast(uint32 spellid, bool apply)
     {
         for (i = 0; i < m_autospells.size() && m_autospells[i] != spellid; ++i)
         {
-            ;                                                // just search
+            ;
         }
 
         if (i == m_autospells.size())
@@ -801,7 +721,7 @@ void Pet::ToggleAutocast(uint32 spellid, bool apply)
         AutoSpellList::iterator itr2 = m_autospells.begin();
         for (i = 0; i < m_autospells.size() && m_autospells[i] != spellid; ++i, ++itr2)
         {
-            ;                                                // just search
+            ;
         }
 
         if (i < m_autospells.size())

@@ -23,28 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SpellAuras.cpp
- * @brief Spell aura implementation
- *
- * This file implements the SpellAura class which handles spell auras:
- * - Aura application and removal
- * - Aura effect processing (stat modifiers, DoTs, HoTs, etc.)
- * - Aura stacking rules
- * - Aura dispelling mechanics
- * - Aura periodic effects
- * - Aura duration management
- * - Aura visual effects
- *
- * Auras are persistent effects applied by spells that modify
- * unit stats, deal damage over time, or provide other benefits.
- *
- * @see SpellAura for the aura class
- * @see Spell for spell casting
- */
-
-
-
 #include "SpellAuras.h"
 #include "Platform/Define.h"
 #include "Common/TimeConstants.h"
@@ -82,12 +60,6 @@
 
 static AuraType const frozenAuraTypes[] = { SPELL_AURA_MOD_ROOT, SPELL_AURA_MOD_STUN, SPELL_AURA_NONE };
 
-/**
- * @brief Applies or removes direct possession control over the target.
- *
- * @param apply True to possess the target; false to release it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleModPossess(bool apply, bool Real)
 {
     if (!Real)
@@ -97,14 +69,13 @@ void Aura::HandleModPossess(bool apply, bool Real)
 
     Unit* target = GetTarget();
 
-    // not possess yourself
     if (GetCasterGuid() == target->GetObjectGuid())
     {
         return;
     }
 
     Unit* caster = GetCaster();
-    if (!caster || !caster->IsPlayer())
+    if (!caster || !IsPlayer(caster))
     {
         return;
     }
@@ -120,8 +91,6 @@ void Aura::HandleModPossess(bool apply, bool Real)
         target->SetCharmerGuid(p_caster->GetObjectGuid());
         target->setFaction(p_caster->getFaction());
 
-        // target should became visible at SetView call(if not visible before):
-        // otherwise client\p_caster will ignore packets from the target(SetClientControl for example)
         camera.SetView(target);
 
         p_caster->SetCharm(target);
@@ -139,11 +108,11 @@ void Aura::HandleModPossess(bool apply, bool Real)
 
         p_caster->PossessSpellInitialize();
 
-        if (target->IsCreature())
+        if (IsCreature(target))
         {
             ((Creature*)target)->AIM_Initialize();
         }
-        else if (target->IsPlayer())
+        else if (IsPlayer(target))
         {
             ((Player*)target)->SetClientControl(target, 0);
         }
@@ -155,13 +124,10 @@ void Aura::HandleModPossess(bool apply, bool Real)
         p_caster->SetClientControl(target, 0);
         p_caster->SetMover(nullptr);
 
-        // there is a possibility that target became invisible for client\p_caster at ResetView call:
-        // it must be called after movement control unapplying, not before! the reason is same as at aura applying
         camera.ResetView();
 
         p_caster->RemovePetActionBar();
 
-        // on delete only do caster related effects
         if (m_removeMode == AURA_REMOVE_BY_DELETE)
         {
             return;
@@ -175,20 +141,20 @@ void Aura::HandleModPossess(bool apply, bool Real)
 
         target->RemoveUnitFlag(UNIT_FLAG_POSSESSED);
 
-        target->SetCharmerGuid(ObjectGuid());
+        target->SetCharmerGuid(0);
 
-        if (target->IsPlayer())
+        if (IsPlayer(target))
         {
             ((Player*)target)->setFactionForRace(target->getRace());
             ((Player*)target)->SetClientControl(target, 1);
         }
-        else if (target->IsCreature())
+        else if (IsCreature(target))
         {
             CreatureInfo const* cinfo = ((Creature*)target)->GetCreatureInfo();
             target->setFaction(cinfo->FactionAlliance);
         }
 
-        if (target->IsCreature())
+        if (IsCreature(target))
         {
             ((Creature*)target)->AIM_Initialize();
             target->AttackedBy(caster);
@@ -196,12 +162,6 @@ void Aura::HandleModPossess(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Applies or removes possession control over a pet.
- *
- * @param apply True to possess the pet; false to release it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleModPossessPet(bool apply, bool Real)
 {
     if (!Real)
@@ -210,13 +170,13 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
     }
 
     Unit* caster = GetCaster();
-    if (!caster || !caster->IsPlayer())
+    if (!caster || !IsPlayer(caster))
     {
         return;
     }
 
     Unit* target = GetTarget();
-    if (!target->IsCreature() || !((Creature*)target)->IsPet())
+    if (!IsCreature(target) || !((Creature*)target)->IsPet())
     {
         return;
     }
@@ -230,8 +190,6 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
     {
         pet->addUnitState(UNIT_STAT_CONTROLLED);
 
-        // target should became visible at SetView call(if not visible before):
-        // otherwise client\p_caster will ignore packets from the target(SetClientControl for example)
         camera.SetView(pet);
 
         p_caster->SetCharm(pet);
@@ -250,11 +208,8 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
         p_caster->SetClientControl(pet, 0);
         p_caster->SetMover(nullptr);
 
-        // there is a possibility that target became invisible for client\p_caster at ResetView call:
-        // it must be called after movement control unapplying, not before! the reason is same as at aura applying
         camera.ResetView();
 
-        // on delete only do caster related effects
         if (m_removeMode == AURA_REMOVE_BY_DELETE)
         {
             return;
@@ -266,7 +221,6 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
 
         pet->AttackStop();
 
-        // out of range pet dismissed
         if (!InReach(*pet, *p_caster, pet->GetMap()->GetVisibilityDistance()))
         {
             p_caster->RemovePet(PET_SAVE_REAGENTS);
@@ -278,12 +232,6 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Applies or removes charm control over the target.
- *
- * @param apply True to charm the target; false to release it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleModCharm(bool apply, bool Real)
 {
     if (!Real)
@@ -297,7 +245,6 @@ void Aura::HandleModCharm(bool apply, bool Real)
         return;
     }
 
-    // not charm yourself
     if (GetCasterGuid() == target->GetObjectGuid())
     {
         return;
@@ -311,7 +258,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
 
     if (apply)
     {
-        // is it really need after spell check checks?
+
         target->RemoveAurasOfType(SPELL_AURA_MOD_CHARM, GetHolder());
         target->RemoveAurasOfType(SPELL_AURA_MOD_POSSESS, GetHolder());
 
@@ -325,19 +272,19 @@ void Aura::HandleModCharm(bool apply, bool Real)
         target->GetHostileRefManager().deleteReferences();
         target->GetMotionMaster()->MovementExpired(true);
 
-        if (target->IsCreature())
+        if (IsCreature(target))
         {
             ((Creature*)target)->AIM_Initialize();
             CharmInfo& charmInfo = target->InitCharmInfo();
             charmInfo.InitCharmCreateSpells();
             charmInfo.SetReactState(REACT_DEFENSIVE);
 
-            if (caster->IsPlayer() && caster->getClass() == CLASS_WARLOCK)
+            if (IsPlayer(caster) && caster->getClass() == CLASS_WARLOCK)
             {
                 CreatureInfo const* cinfo = ((Creature*)target)->GetCreatureInfo();
                 if (cinfo && cinfo->CreatureType == CREATURE_TYPE_DEMON)
                 {
-                    // creature with pet number expected have class set
+
                     if (target->getClass() == 0)
                     {
                         if (cinfo->UnitClass == 0)
@@ -352,28 +299,27 @@ void Aura::HandleModCharm(bool apply, bool Real)
                         target->SetClass(CLASS_MAGE);
                     }
 
-                    // just to enable stat window
                     charmInfo.SetPetNumber(sMint.PetNumbers().Next(), true);
-                    // if charmed two demons the same session, the 2nd gets the 1st one's name
+
                     target->SetUInt32Value(UNIT_FIELD_PET_NAME_TIMESTAMP, uint32(time(nullptr)));
                 }
             }
         }
-        else if (Player *plTarget = ToPlayer(target))
+        else if (Player *plTarget = static_cast<Player*>(target))
         {
             plTarget->SetClientControl(plTarget, 0);
         }
 
-        if (caster->IsPlayer())
+        if (IsPlayer(caster))
         {
             ((Player*)caster)->CharmSpellInitialize();
         }
     }
     else
     {
-        target->SetCharmerGuid(ObjectGuid());
+        target->SetCharmerGuid(0);
 
-        if (Player *plTarget = ToPlayer(target))
+        if (Player *plTarget = static_cast<Player*>(target))
         {
             plTarget->SetClientControl(plTarget, 1);
             plTarget->setFactionForRace(target->getRace());
@@ -382,7 +328,6 @@ void Aura::HandleModCharm(bool apply, bool Real)
         {
             CreatureInfo const* cinfo = ((Creature*)target)->GetCreatureInfo();
 
-            // restore faction
             if (((Creature*)target)->IsPet())
             {
                 if (Unit* owner = target->GetOwner())
@@ -394,16 +339,13 @@ void Aura::HandleModCharm(bool apply, bool Real)
                     target->setFaction(cinfo->FactionAlliance);
                 }
             }
-            else if (cinfo)                             // normal creature
+            else if (cinfo)
             {
                 target->setFaction(cinfo->FactionAlliance);
             }
 
-            // restore UNIT_FIELD_BYTES_0
-            if (cinfo && caster->IsPlayer() && caster->getClass() == CLASS_WARLOCK && cinfo->CreatureType == CREATURE_TYPE_DEMON)
+            if (cinfo &&IsPlayer(caster) && caster->getClass() == CLASS_WARLOCK && cinfo->CreatureType == CREATURE_TYPE_DEMON)
             {
-                // DB must have proper class set in field at loading, not req. restore, including workaround case at apply
-                // m_target->SetClass(cinfo->unit_class);
 
                 if (target->GetCharmInfo())
                 {
@@ -418,7 +360,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
 
         caster->SetCharm(nullptr);
 
-        if (caster->IsPlayer())
+        if (IsPlayer(caster))
         {
             ((Player*)caster)->RemovePetActionBar();
         }
@@ -428,20 +370,14 @@ void Aura::HandleModCharm(bool apply, bool Real)
         target->GetHostileRefManager().deleteReferences();
         target->GetMotionMaster()->MovementExpired(true);
 
-        if (target->IsCreature())
+        if (IsCreature(target))
         {
             ((Creature*)target)->AIM_Initialize();
-            //target->AttackedBy(caster);
+
         }
     }
 }
 
-/**
- * @brief Applies or removes the confused control state.
- *
- * @param apply True to apply confusion; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleModConfuse(bool apply, bool Real)
 {
     if (!Real)
@@ -449,7 +385,6 @@ void Aura::HandleModConfuse(bool apply, bool Real)
         return;
     }
 
-    // Do not remove it yet if more effects are up, do it for the last effect
     if (!apply && GetTarget()->HasAuraType(SPELL_AURA_MOD_CONFUSE))
     {
         return;
@@ -458,12 +393,6 @@ void Aura::HandleModConfuse(bool apply, bool Real)
     GetTarget()->SetConfused(apply, GetCasterGuid(), GetId());
 }
 
-/**
- * @brief Applies or removes the feared control state.
- *
- * @param apply True to apply fear; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleModFear(bool apply, bool Real)
 {
     if (!Real)
@@ -471,7 +400,6 @@ void Aura::HandleModFear(bool apply, bool Real)
         return;
     }
 
-    // Do not remove it yet if more effects are up, do it for the last effect
     if (!apply && GetTarget()->HasAuraType(SPELL_AURA_MOD_FEAR))
     {
         return;
@@ -480,12 +408,6 @@ void Aura::HandleModFear(bool apply, bool Real)
     GetTarget()->SetFeared(apply, GetCasterGuid(), GetId());
 }
 
-/**
- * @brief Applies or removes feign death handling on the target.
- *
- * @param apply True to apply feign death; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleFeignDeath(bool apply, bool Real)
 {
     if (!Real)
@@ -496,12 +418,6 @@ void Aura::HandleFeignDeath(bool apply, bool Real)
     GetTarget()->SetFeignDeath(apply, GetCasterGuid());
 }
 
-/**
- * @brief Applies or removes the disarmed state and updates attack timing.
- *
- * @param apply True to disarm; false to remove disarm.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraModDisarm(bool apply, bool Real)
 {
     if (!Real)
@@ -518,12 +434,11 @@ void Aura::HandleAuraModDisarm(bool apply, bool Real)
 
     target->ApplyUnitFlag(UNIT_FLAG_DISARMED, apply);
 
-    if (!target->IsPlayer())
+    if (!IsPlayer(target))
     {
         return;
     }
 
-    // main-hand attack speed already set to special value for feral form already and don't must change and reset at remove.
     if (target->IsInFeralForm())
     {
         return;
@@ -541,12 +456,6 @@ void Aura::HandleAuraModDisarm(bool apply, bool Real)
     target->Sheet().Swing(BASE_ATTACK);
 }
 
-/**
- * @brief Applies or removes the stunned state and related frozen handling.
- *
- * @param apply True to stun; false to remove stun.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraModStun(bool apply, bool Real)
 {
     if (!Real)
@@ -558,7 +467,7 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
 
     if (apply)
     {
-        // Frost stun aura -> freeze/unfreeze target
+
         if (GetSpellSchoolMask(GetSpellProto()) & SPELL_SCHOOL_MASK_FROST)
         {
             target->ModifyAuraState(AURA_STATE_FROZEN, apply);
@@ -568,7 +477,7 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
     }
     else
     {
-        // Frost stun aura -> freeze/unfreeze target
+
         if (GetSpellSchoolMask(GetSpellProto()) & SPELL_SCHOOL_MASK_FROST)
         {
             bool found_another = false;
@@ -595,7 +504,6 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
             }
         }
 
-        // Real remove called after current aura remove from lists, check if other similar auras active
         if (target->HasAuraType(SPELL_AURA_MOD_STUN))
         {
             return;
@@ -603,11 +511,10 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
 
         target->SetStunned(false);
 
-        // Wyvern Sting
         if (GetSpellProto()->SpellClassSet == SPELLFAMILY_HUNTER && GetSpellProto()->SpellClassMask & UI64LIT(0x00010000))
         {
             Unit* caster = GetCaster();
-            if (!caster || !caster->IsPlayer())
+            if (!caster || !IsPlayer(caster))
             {
                 return;
             }
@@ -634,7 +541,7 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
             return;
         }
     }
-    // special rule for allowing Improved Sap
+
     if (GetSpellProto()->IsFitToFamily(SPELLFAMILY_ROGUE, UI64LIT(0x80)))
     {
         target->SetInDummyCombatState(apply);
@@ -646,40 +553,31 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Applies or removes stealth flags and visibility changes.
- *
- * @param apply True to enter stealth; false to leave it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleModStealth(bool apply, bool Real)
 {
     Unit* target = GetTarget();
 
     if (apply)
     {
-        // drop flag at stealth in bg
+
         target->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION);
 
-        // only at real aura add
         if (Real)
         {
             target->SetCreeping(true);
 
-            if (Player* player = ToPlayer(target))
+            if (Player* player = static_cast<Player*>(target))
             {
                 player->ApplyAuraVision(AURA_VISION_STEALTH, true);
             }
 
-            // apply only if not in GM invisibility (and overwrite invisibility state)
             if (target->GetVisibility() != VISIBILITY_OFF)
             {
                 target->SetVisibility(VISIBILITY_GROUP_NO_DETECT);
                 target->SetVisibility(VISIBILITY_GROUP_STEALTH);
             }
 
-            // for RACE_NIGHTELF stealth
-            if (target->IsPlayer() && GetId() == 20580)
+            if (IsPlayer(target) && GetId() == 20580)
             {
                 target->CastSpell(target, 21009, true, nullptr, this);
             }
@@ -687,32 +585,29 @@ void Aura::HandleModStealth(bool apply, bool Real)
     }
     else
     {
-        // for RACE_NIGHTELF stealth
-        if (Real && target->IsPlayer() && GetId() == 20580)
+
+        if (Real &&IsPlayer(target) && GetId() == 20580)
         {
             target->RemoveAuras(21009);
         }
 
-        // Remove vanish buff if user cancel stealth
         if (m_removeMode == AURA_REMOVE_BY_CANCEL)
         {
             target->RemoveAurasOfType(SPELL_AURA_MOD_STEALTH);
         }
 
-        // only at real aura remove of _last_ SPELL_AURA_MOD_STEALTH
         if (Real && !target->HasAuraType(SPELL_AURA_MOD_STEALTH))
         {
-            // if no GM invisibility
+
             if (target->GetVisibility() != VISIBILITY_OFF)
             {
                 target->SetCreeping(false);
 
-                if (Player* player = ToPlayer(target))
+                if (Player* player = static_cast<Player*>(target))
                 {
                     player->ApplyAuraVision(AURA_VISION_STEALTH, false);
                 }
 
-                // restore invisibility if any
                 if (target->HasAuraType(SPELL_AURA_MOD_INVISIBILITY))
                 {
                     target->SetVisibility(VISIBILITY_GROUP_NO_DETECT);
@@ -727,12 +622,6 @@ void Aura::HandleModStealth(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Applies or removes invisibility state and visibility flags.
- *
- * @param apply True to apply invisibility; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleInvisibility(bool apply, bool Real)
 {
     Unit* target = GetTarget();
@@ -745,23 +634,22 @@ void Aura::HandleInvisibility(bool apply, bool Real)
 
         if (Real)
         {
-            if (Player* player = ToPlayer(target))
+            if (Player* player = static_cast<Player*>(target))
             {
                 player->ApplyAuraVision(AURA_VISION_INVISIBILITY, true);
             }
         }
 
-        // apply only if not in GM invisibility and not stealth
         if (target->GetVisibility() == VISIBILITY_ON)
         {
-            // Aura not added yet but visibility code expect temporary add aura
+
             target->SetVisibility(VISIBILITY_GROUP_NO_DETECT);
             target->SetVisibility(VISIBILITY_GROUP_INVISIBILITY);
         }
     }
     else
     {
-        // recalculate value at modifier remove (current aura already removed)
+
         target->m_invisibilityMask = 0;
         const auto auras = target->GetAurasByType(SPELL_AURA_MOD_INVISIBILITY);
         for (auto* aura : auras)
@@ -769,18 +657,16 @@ void Aura::HandleInvisibility(bool apply, bool Real)
             target->m_invisibilityMask |= (1 << aura->GetModifier()->m_miscvalue);
         }
 
-        // only at real aura remove and if not have different invisibility auras.
         if (Real && target->m_invisibilityMask == 0)
         {
-            if (Player* player = ToPlayer(target))
+            if (Player* player = static_cast<Player*>(target))
             {
                 player->ApplyAuraVision(AURA_VISION_INVISIBILITY, false);
             }
 
-            // apply only if not in GM invisibility & not stealthed while invisible
             if (target->GetVisibility() != VISIBILITY_OFF)
             {
-                // if have stealth aura then already have stealth visibility
+
                 if (!target->HasAuraType(SPELL_AURA_MOD_STEALTH))
                 {
                     target->SetVisibility(VISIBILITY_ON);
@@ -790,12 +676,6 @@ void Aura::HandleInvisibility(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Applies or removes invisibility detection masks.
- *
- * @param apply True to apply detection; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleInvisibilityDetect(bool apply, bool Real)
 {
     Unit* target = GetTarget();
@@ -806,7 +686,7 @@ void Aura::HandleInvisibilityDetect(bool apply, bool Real)
     }
     else
     {
-        // recalculate value at modifier remove (current aura already removed)
+
         target->m_detectInvisibilityMask = 0;
         const auto auras = target->GetAurasByType(SPELL_AURA_MOD_INVISIBILITY_DETECTION);
         for (auto* aura : auras)
@@ -814,35 +694,23 @@ void Aura::HandleInvisibilityDetect(bool apply, bool Real)
             target->m_detectInvisibilityMask |= (1 << aura->GetModifier()->m_miscvalue);
         }
     }
-    if (Real && target->IsPlayer())
+    if (Real &&IsPlayer(target))
     {
         ((Player*)target)->GetCamera().UpdateVisibilityForOwner();
     }
 }
 
-/**
- * @brief Grants or withdraws sight of one marked kind of aura.
- *
- * @param apply True to grant the sight; false to withdraw it.
- * @param real Unused.
- */
-void Aura::HandleDetectAmore(bool apply, bool /*real*/)
+void Aura::HandleDetectAmore(bool apply, bool )
 {
-    if (Player* player = ToPlayer(GetTarget()))
+    if (Player* player = static_cast<Player*>(GetTarget()))
     {
         player->ApplyAuraVision(uint8(AURA_VISION_AMORE_0 << m_modifier.m_amount), apply);
     }
 }
 
-/**
- * @brief Applies or removes the root state and related frozen handling.
- *
- * @param apply True to root the target; false to unroot it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraModRoot(bool apply, bool Real)
 {
-    // only at real add/remove aura
+
     if (!Real)
     {
         return;
@@ -852,7 +720,7 @@ void Aura::HandleAuraModRoot(bool apply, bool Real)
 
     if (apply)
     {
-        // Frost root aura -> freeze/unfreeze target
+
         if (GetSpellSchoolMask(GetSpellProto()) & SPELL_SCHOOL_MASK_FROST)
         {
             target->ModifyAuraState(AURA_STATE_FROZEN, apply);
@@ -860,11 +728,10 @@ void Aura::HandleAuraModRoot(bool apply, bool Real)
 
         target->addUnitState(UNIT_STAT_ROOT);
 
-        if (target->IsPlayer())
+        if (IsPlayer(target))
         {
             target->SetRoot(true);
 
-            // Clear unit movement flags
             ((Player*)target)->m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
         }
         else
@@ -874,7 +741,7 @@ void Aura::HandleAuraModRoot(bool apply, bool Real)
     }
     else
     {
-        // Frost root aura -> freeze/unfreeze target
+
         if (GetSpellSchoolMask(GetSpellProto()) & SPELL_SCHOOL_MASK_FROST)
         {
             bool found_another = false;
@@ -901,7 +768,6 @@ void Aura::HandleAuraModRoot(bool apply, bool Real)
             }
         }
 
-        // Real remove called after current aura remove from lists, check if other similar auras active
         if (target->HasAuraType(SPELL_AURA_MOD_ROOT))
         {
             return;
@@ -912,15 +778,9 @@ void Aura::HandleAuraModRoot(bool apply, bool Real)
     target->SetImmobilizedState(apply);
 }
 
-/**
- * @brief Applies or removes the silenced state and interrupts affected casts.
- *
- * @param apply True to apply silence; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraModSilence(bool apply, bool Real)
 {
-    // only at real add/remove aura
+
     if (!Real)
     {
         return;
@@ -931,13 +791,13 @@ void Aura::HandleAuraModSilence(bool apply, bool Real)
     if (apply)
     {
         target->SetUnitFlag(UNIT_FLAG_SILENCED);
-        // Stop cast only spells vs PreventionType == SPELL_PREVENTION_TYPE_SILENCE
+
         for (uint32 i = CURRENT_MELEE_SPELL; i < CURRENT_MAX_SPELL; ++i)
         {
             if (Spell* spell = target->GetCurrentSpell(CurrentSpellTypes(i)))
             {
                 if (spell->m_spellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE)
-                    // Stop spells on prepare or casting state
+
                 {
                     target->InterruptSpell(CurrentSpellTypes(i), false);
                 }
@@ -946,7 +806,7 @@ void Aura::HandleAuraModSilence(bool apply, bool Real)
     }
     else
     {
-        // Real remove called after current aura remove from lists, check if other similar auras active
+
         if (target->HasAuraType(SPELL_AURA_MOD_SILENCE))
         {
             return;
@@ -956,15 +816,9 @@ void Aura::HandleAuraModSilence(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Applies or removes school-based threat generation modifiers.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleModThreat(bool apply, bool Real)
 {
-    // only at real add/remove aura
+
     if (!Real)
     {
         return;
@@ -981,12 +835,12 @@ void Aura::HandleModThreat(bool apply, bool Real)
     int multiplier = 0;
     switch (GetId())
     {
-        // Arcane Shroud
+
         case 26400:
             level_diff = target->getLevel() - 60;
             multiplier = 2;
             break;
-        // The Eye of Diminution
+
         case 28862:
             level_diff = target->getLevel() - 60;
             multiplier = 1;
@@ -998,7 +852,7 @@ void Aura::HandleModThreat(bool apply, bool Real)
         m_modifier.m_amount += multiplier * level_diff;
     }
 
-    if (target->IsPlayer())
+    if (IsPlayer(target))
     {
         for (int8 x = 0; x < MAX_SPELL_SCHOOL; ++x)
         {
@@ -1010,15 +864,9 @@ void Aura::HandleModThreat(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Adds or removes a flat threat amount toward the caster.
- *
- * @param apply True to add threat; false to subtract it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraModTotalThreat(bool apply, bool Real)
 {
-    // only at real add/remove aura
+
     if (!Real)
     {
         return;
@@ -1026,7 +874,7 @@ void Aura::HandleAuraModTotalThreat(bool apply, bool Real)
 
     Unit* target = GetTarget();
 
-    if (!target->IsAlive() || !target->IsPlayer())
+    if (!target->IsAlive() || !IsPlayer(target))
     {
         return;
     }
@@ -1043,15 +891,9 @@ void Aura::HandleAuraModTotalThreat(bool apply, bool Real)
     target->GetHostileRefManager().threatAssist(caster, threatMod, GetSpellProto());
 }
 
-/**
- * @brief Applies or removes taunt behavior on the target.
- *
- * @param apply True to taunt the target; false to fade the taunt.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleModTaunt(bool apply, bool Real)
 {
-    // only at real add/remove aura
+
     if (!Real)
     {
         return;
@@ -1077,17 +919,14 @@ void Aura::HandleModTaunt(bool apply, bool Real)
     }
     else
     {
-        // When taunt aura fades out, mob will switch to previous target if current has less than 1.1 * secondthreat
+
         target->TauntFadeOut(caster);
     }
 }
 
-/*********************************************************/
-/***                  MODIFY SPEED                     ***/
-/*********************************************************/
-void Aura::HandleAuraModIncreaseSpeed(bool /*apply*/, bool Real)
+void Aura::HandleAuraModIncreaseSpeed(bool , bool Real)
 {
-    // all applied/removed only at real aura add/remove
+
     if (!Real)
     {
         return;
@@ -1104,15 +943,9 @@ void Aura::HandleAuraModIncreaseSpeed(bool /*apply*/, bool Real)
     GetTarget()->Pacing().Reckon(MOVE_RUN, true);
 }
 
-/**
- * @brief Refreshes mounted movement speed after aura changes.
- *
- * @param apply Unused.
- * @param Real True when processing the real aura state change.
- */
-void Aura::HandleAuraModIncreaseMountedSpeed(bool /*apply*/, bool Real)
+void Aura::HandleAuraModIncreaseMountedSpeed(bool , bool Real)
 {
-    // all applied/removed only at real aura add/remove
+
     if (!Real)
     {
         return;
@@ -1121,15 +954,9 @@ void Aura::HandleAuraModIncreaseMountedSpeed(bool /*apply*/, bool Real)
     GetTarget()->Pacing().Reckon(MOVE_RUN, true);
 }
 
-/**
- * @brief Refreshes swim speed after aura changes.
- *
- * @param apply Unused.
- * @param Real True when processing the real aura state change.
- */
-void Aura::HandleAuraModIncreaseSwimSpeed(bool /*apply*/, bool Real)
+void Aura::HandleAuraModIncreaseSwimSpeed(bool , bool Real)
 {
-    // all applied/removed only at real aura add/remove
+
     if (!Real)
     {
         return;
@@ -1138,15 +965,9 @@ void Aura::HandleAuraModIncreaseSwimSpeed(bool /*apply*/, bool Real)
     GetTarget()->Pacing().Reckon(MOVE_SWIM, true);
 }
 
-/**
- * @brief Applies or removes movement slowing effects and refreshes speeds.
- *
- * @param apply True to apply the slow; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraModDecreaseSpeed(bool apply, bool Real)
 {
-    // all applied/removed only at real aura add/remove
+
     if (!Real)
     {
         return;
@@ -1166,15 +987,9 @@ void Aura::HandleAuraModDecreaseSpeed(bool apply, bool Real)
     target->Pacing().Reckon(MOVE_SWIM, true);
 }
 
-/**
- * @brief Refreshes movement to normal-speed handling after aura changes.
- *
- * @param apply Unused.
- * @param Real True when processing the real aura state change.
- */
-void Aura::HandleAuraModUseNormalSpeed(bool /*apply*/, bool Real)
+void Aura::HandleAuraModUseNormalSpeed(bool , bool Real)
 {
-    // all applied/removed only at real aura add/remove
+
     if (!Real)
     {
         return;
@@ -1186,7 +1001,7 @@ void Aura::HandleAuraModUseNormalSpeed(bool /*apply*/, bool Real)
     target->Pacing().Reckon(MOVE_SWIM, true);
 }
 
-void Aura::HandleModMechanicImmunity(bool apply, bool /*Real*/)
+void Aura::HandleModMechanicImmunity(bool apply, bool )
 {
     uint32 misc  = m_modifier.m_miscvalue;
     Unit* target = GetTarget();
@@ -1201,13 +1016,7 @@ void Aura::HandleModMechanicImmunity(bool apply, bool /*Real*/)
     target->ApplySpellImmune(GetId(), IMMUNITY_MECHANIC, misc, apply);
 }
 
-/**
- * @brief Applies or removes immunity to a mechanic mask.
- *
- * @param apply True to apply immunity; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleModMechanicImmunityMask(bool apply, bool /*Real*/)
+void Aura::HandleModMechanicImmunityMask(bool apply, bool )
 {
     uint32 mechanic  = m_modifier.m_miscvalue;
 
@@ -1216,16 +1025,13 @@ void Aura::HandleModMechanicImmunityMask(bool apply, bool /*Real*/)
         GetTarget()->RemoveAurasAtMechanicImmunity(mechanic, GetId());
     }
 
-    // check implemented in Unit::IsImmuneToSpell and Unit::IsImmuneToSpellEffect
 }
 
-// this method is called whenever we add / remove aura which gives m_target some imunity to some spell effect
-void Aura::HandleAuraModEffectImmunity(bool apply, bool /*Real*/)
+void Aura::HandleAuraModEffectImmunity(bool apply, bool )
 {
     Unit* target = GetTarget();
 
-    // when removing flag aura, handle flag drop
-    if (!apply && target->IsPlayer() &&
+    if (!apply &&IsPlayer(target) &&
         (GetSpellProto()->AuraInterruptFlags & AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION))
     {
         Player* player = (Player*)target;
@@ -1242,19 +1048,13 @@ void Aura::HandleAuraModEffectImmunity(bool apply, bool /*Real*/)
     target->ApplySpellImmune(GetId(), IMMUNITY_EFFECT, m_modifier.m_miscvalue, apply);
 }
 
-/**
- * @brief Applies or removes immunity to a specific aura state.
- *
- * @param apply True to apply immunity; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraModStateImmunity(bool apply, bool Real)
 {
     if (apply && Real && Recipe().Says().dispelsOnImmunity)
     {
         for (const auto* aura : GetTarget()->GetAurasByType(static_cast<AuraType>(m_modifier.m_miscvalue)))
         {
-            if (aura != this)                               // this aura was just added
+            if (aura != this)
             {
                 GetTarget()->RemoveAuras(aura->GetId());
             }
@@ -1264,27 +1064,19 @@ void Aura::HandleAuraModStateImmunity(bool apply, bool Real)
     GetTarget()->ApplySpellImmune(GetId(), IMMUNITY_STATE, m_modifier.m_miscvalue, apply);
 }
 
-/**
- * @brief Applies or removes spell school immunity and clears affected auras when needed.
- *
- * @param apply True to apply immunity; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraModSchoolImmunity(bool apply, bool Real)
 {
     Unit* target = GetTarget();
     target->ApplySpellImmune(GetId(), IMMUNITY_SCHOOL, m_modifier.m_miscvalue, apply);
 
-    // remove all flag auras (they are positive, but they must be removed when you are immune)
     if (Recipe().Says().dispelsOnImmunity && Recipe().Says().shieldReducesDamage)
     {
         target->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION);
     }
 
-    // TODO: optimalize this cycle - use RemoveAurasWithInterruptFlags call or something else
     if (Real && apply &&
         Recipe().Says().dispelsOnImmunity &&
-        cast::Recipes().IsPositive(GetId()))                    // Only positive immunity removes auras
+        cast::Recipes().IsPositive(GetId()))
     {
         uint32 school_mask = m_modifier.m_miscvalue;
         Unit::SpellAuraHolderMap& Auras = target->GetSpellAuraHolderMap();
@@ -1293,10 +1085,10 @@ void Aura::HandleAuraModSchoolImmunity(bool apply, bool Real)
             next = iter;
             ++next;
             SpellEntry const* spell = iter->second->GetSpellProto();
-            if ((GetSpellSchoolMask(spell) & school_mask) &&   // Check for school mask
-                !cast::RecipeOf(*spell).Says().ignoresInvulnerability &&   // Spells unaffected by invulnerability
-                !iter->second->IsPositive() &&         // Don't remove positive spells
-                spell->ID != GetId())                  // Don't remove self
+            if ((GetSpellSchoolMask(spell) & school_mask) &&
+                !cast::RecipeOf(*spell).Says().ignoresInvulnerability &&
+                !iter->second->IsPositive() &&
+                spell->ID != GetId())
             {
                 target->RemoveAuras(spell->ID);
                 if (Auras.empty())
@@ -1323,26 +1115,14 @@ void Aura::HandleAuraModSchoolImmunity(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Applies or removes immunity to a damage school mask.
- *
- * @param apply True to apply immunity; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraModDmgImmunity(bool apply, bool /*Real*/)
+void Aura::HandleAuraModDmgImmunity(bool apply, bool )
 {
     GetTarget()->ApplySpellImmune(GetId(), IMMUNITY_DAMAGE, m_modifier.m_miscvalue, apply);
 }
 
-/**
- * @brief Applies or removes dispel immunity for the aura's dispel type.
- *
- * @param apply True to apply immunity; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraModDispelImmunity(bool apply, bool Real)
 {
-    // all applied/removed only at real aura add/remove
+
     if (!Real)
     {
         return;

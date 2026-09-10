@@ -20,7 +20,7 @@
 
 namespace
 {
-    /// Spends what it can and says whether nothing was left to spend.
+
     bool Spend(uint32& left, uint32 elapsed)
     {
         if (left <= elapsed)
@@ -48,8 +48,7 @@ tenure::Verdict tenure::Tick(TempSpawnType rule, uint32 left, uint32 granted, ui
             break;
 
         case TEMPSPAWN_TIMED_OOC_DESPAWN:
-            // A fight puts the clock back to full, so the term is measured from
-            // the end of the last fight rather than from the summoning.
+
             if (body.inCombat)
             {
                 said.left = granted;

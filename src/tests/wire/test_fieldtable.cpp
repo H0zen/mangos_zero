@@ -223,11 +223,11 @@ TEST_CASE("audience: an item tells a stranger what it is, not what it holds")
 
 TEST_CASE("health: the unit and its owner read the real figure, nobody else does")
 {
-    ObjectGuid const hunter(HIGHGUID_PLAYER, uint32(1));
-    ObjectGuid const passerby(HIGHGUID_PLAYER, uint32(2));
-    ObjectGuid const pet(HIGHGUID_PET, uint32(300), uint32(3));
-    ObjectGuid const wildBoar(HIGHGUID_UNIT, uint32(301), uint32(4));
-    ObjectGuid const none;
+    ObjectGuid const hunter = MakeGuid(HIGHGUID_PLAYER, uint32(1));
+    ObjectGuid const passerby = MakeGuid(HIGHGUID_PLAYER, uint32(2));
+    ObjectGuid const pet = MakeGuid(HIGHGUID_PET, uint32(300), uint32(3));
+    ObjectGuid const wildBoar = MakeGuid(HIGHGUID_UNIT, uint32(301), uint32(4));
+    ObjectGuid const none = 0;
 
     // A hunter reads their own pool, and their pet's -- the pet frame shows
     // exact figures and no other message carries them.

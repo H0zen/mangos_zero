@@ -39,37 +39,21 @@
 
 static_assert(MAXIMAL_AI_EVENT_EVENTAI <= 32, "Maximal 32 AI_EVENTs supported with EventAI");
 
-/**
- * @brief Creates a base creature AI instance.
- *
- * @param creature The creature controlled by this AI.
- */
 CreatureAI::CreatureAI(Creature* creature) : m_creature(creature), m_combatMovement(COMBAT_MOVEMENT_SCRIPT),
     m_attackDistance(0.0f), m_attackAngle(0.0f), m_meleeAttack(true), m_uiCastingDelay(0)
 {
     SetSpellsList(creature->GetCreatureInfo()->SpellListId);
 }
 
-/**
- * @brief Destroys the creature AI instance.
- */
 CreatureAI::~CreatureAI()
 {
 }
 
-/**
- * @brief Resets basic combat state when the creature evades.
- */
 void CreatureAI::EnterEvadeMode()
 {
     m_creature->Taking().DamageOwed(m_creature->GetHealth() / 2);
 }
 
-/**
- * @brief Reacts to being attacked.
- *
- * @param attacker The unit that attacked the creature.
- */
 void CreatureAI::AttackedBy(Unit* attacker)
 {
     if (!m_creature->getVictim())
@@ -78,20 +62,12 @@ void CreatureAI::AttackedBy(Unit* attacker)
     }
 }
 
-/**
- * @brief Checks whether the creature can cast a spell on a target.
- *
- * @param pTarget The intended target.
- * @param pSpell The spell entry being evaluated.
- * @param isTriggered true if the cast is triggered.
- * @return The cast validation result.
- */
 CanCastResult CreatureAI::CanCastSpell(Unit* pTarget, const SpellEntry* pSpell, bool isTriggered)
 {
-    // If not triggered, we check
+
     if (!isTriggered)
     {
-        // State does not allow
+
         if (m_creature->hasUnitState(UNIT_STAT_CAN_NOT_REACT_OR_LOST_CONTROL))
         {
             return CAST_FAIL_STATE;
@@ -112,7 +88,6 @@ CanCastResult CreatureAI::CanCastSpell(Unit* pTarget, const SpellEntry* pSpell, 
             return CAST_FAIL_STATE;
         }
 
-        // Check for power (also done by Spell::CheckCast())
         if (m_creature->GetPower((Powers)pSpell->PowerType) < Spell::CalculatePowerCost(pSpell, m_creature))
         {
             return CAST_FAIL_POWER;
@@ -128,7 +103,7 @@ CanCastResult CreatureAI::CanCastSpell(Unit* pTarget, const SpellEntry* pSpell, 
     {
         if (pTarget != m_creature)
         {
-            // pTarget is out of range of this spell (also done by Spell::CheckCast())
+
             float fDistance = CombatDistanceBetween(*m_creature, *pTarget, pSpell->RangeIndex == SPELL_RANGE_IDX_COMBAT);
 
             if (fDistance > pSpellRange->RangeMax)
@@ -152,15 +127,6 @@ CanCastResult CreatureAI::CanCastSpell(Unit* pTarget, const SpellEntry* pSpell, 
     }
 }
 
-/**
- * @brief Attempts to cast a spell if all conditions are met.
- *
- * @param pTarget The intended target.
- * @param uiSpell The spell identifier.
- * @param uiCastFlags Casting behavior flags.
- * @param uiOriginalCasterGUID The original caster GUID for forwarded casts.
- * @return The cast validation or execution result.
- */
 CanCastResult CreatureAI::DoCastSpellIfCan(Unit* pTarget, uint32 uiSpell, uint32 uiCastFlags, ObjectGuid uiOriginalCasterGUID)
 {
     Unit* pCaster = m_creature;
@@ -170,7 +136,7 @@ CanCastResult CreatureAI::DoCastSpellIfCan(Unit* pTarget, uint32 uiSpell, uint32
         pCaster = pTarget;
     }
 
-    if (uiSpell == 53 || uiSpell == 2589 || uiSpell == 7159 || uiSpell == 15657) // All Backstab variants
+    if (uiSpell == 53 || uiSpell == 2589 || uiSpell == 7159 || uiSpell == 15657)
     {
         if (pTarget && pTarget->Where().HasInArc(pCaster->Where(), M_PI_F))
         {
@@ -182,7 +148,7 @@ CanCastResult CreatureAI::DoCastSpellIfCan(Unit* pTarget, uint32 uiSpell, uint32
     {
         if (const SpellEntry* pSpell = sSpellStore.LookupEntry(uiSpell))
         {
-            // If cast flag CAST_AURA_NOT_PRESENT is active, check if target already has aura on them
+
             if (uiCastFlags & CAST_AURA_NOT_PRESENT)
             {
                 if (pTarget->HasAura(uiSpell))
@@ -191,7 +157,6 @@ CanCastResult CreatureAI::DoCastSpellIfCan(Unit* pTarget, uint32 uiSpell, uint32
                 }
             }
 
-            // Check if can not cast spell
             if (!(uiCastFlags & (CAST_FORCE_TARGET_SELF | CAST_FORCE_CAST)))
             {
                 CanCastResult castResult = CanCastSpell(pTarget, pSpell, uiCastFlags & CAST_TRIGGERED);
@@ -221,38 +186,31 @@ CanCastResult CreatureAI::DoCastSpellIfCan(Unit* pTarget, uint32 uiSpell, uint32
     return CAST_FAIL_IS_CASTING;
 }
 
-// Values used in target_type column
 enum CreatureSpellTarget
 {
-    TARGET_T_PROVIDED_TARGET                = 0,            //Object that was provided to the command.
+    TARGET_T_PROVIDED_TARGET                = 0,
 
-    TARGET_T_HOSTILE                        = 1,            //Our current target (ie: highest aggro).
-    TARGET_T_HOSTILE_SECOND_AGGRO           = 2,            //Second highest aggro (generaly used for cleaves and some special attacks).
-    TARGET_T_HOSTILE_LAST_AGGRO             = 3,            //Dead last on aggro (no idea what this could be used for).
-    TARGET_T_HOSTILE_RANDOM                 = 4,            //Just any random target on our threat list.
-    TARGET_T_HOSTILE_RANDOM_NOT_TOP         = 5,            //Any random target except top threat.
+    TARGET_T_HOSTILE                        = 1,
+    TARGET_T_HOSTILE_SECOND_AGGRO           = 2,
+    TARGET_T_HOSTILE_LAST_AGGRO             = 3,
+    TARGET_T_HOSTILE_RANDOM                 = 4,
+    TARGET_T_HOSTILE_RANDOM_NOT_TOP         = 5,
 
-    TARGET_T_FRIENDLY                       = 14,           //Random friendly unit.
-    //Param1 = search_radius
-    //Param2 = (bool) exclude_target
-    TARGET_T_FRIENDLY_INJURED               = 15,           //Friendly unit missing the most health.
-    //Param1 = search_radius
-    //Param2 = hp_percent
-    TARGET_T_FRIENDLY_INJURED_EXCEPT        = 16,           //Friendly unit missing the most health but not provided target.
-    //Param1 = search_radius
-    //Param2 = hp_percent
-    TARGET_T_FRIENDLY_MISSING_BUFF          = 17,           //Friendly unit without aura.
-    //Param1 = search_radius
-    //Param2 = spell_id
-    TARGET_T_FRIENDLY_MISSING_BUFF_EXCEPT   = 18,           //Friendly unit without aura but not provided target.
-    //Param1 = search_radius
-    //Param2 = spell_id
-    TARGET_T_FRIENDLY_CC                    = 19,           //Friendly unit under crowd control.
-    //Param1 = search_radius
+    TARGET_T_FRIENDLY                       = 14,
+
+    TARGET_T_FRIENDLY_INJURED               = 15,
+
+    TARGET_T_FRIENDLY_INJURED_EXCEPT        = 16,
+
+    TARGET_T_FRIENDLY_MISSING_BUFF          = 17,
+
+    TARGET_T_FRIENDLY_MISSING_BUFF_EXCEPT   = 18,
+
+    TARGET_T_FRIENDLY_CC                    = 19,
+
     TARGET_T_END
 };
 
-// Returns a target based on the type specified.
 Unit* GetTargetByType(Unit* pSource, Unit* pTarget, uint8 TargetType, uint32 Param1, uint32 Param2)
 {
     switch (TargetType)
@@ -263,25 +221,25 @@ Unit* GetTargetByType(Unit* pSource, Unit* pTarget, uint8 TargetType, uint32 Par
             return pSource->getVictim();
             break;
         case TARGET_T_HOSTILE_SECOND_AGGRO:
-            if (Creature* pCreatureSource = ToCreature(pSource))
+            if (Creature* pCreatureSource = static_cast<Creature*>(pSource))
             {
                 return pCreatureSource->SelectAttackingTarget(ATTACKING_TARGET_TOPAGGRO, 1);
             }
             break;
         case TARGET_T_HOSTILE_LAST_AGGRO:
-            if (Creature* pCreatureSource = ToCreature(pSource))
+            if (Creature* pCreatureSource = static_cast<Creature*>(pSource))
             {
                 return pCreatureSource->SelectAttackingTarget(ATTACKING_TARGET_BOTTOMAGGRO, 0);
             }
             break;
         case TARGET_T_HOSTILE_RANDOM:
-            if (Creature* pCreatureSource = ToCreature(pSource))
+            if (Creature* pCreatureSource = static_cast<Creature*>(pSource))
             {
                 return pCreatureSource->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0);
             }
             break;
         case TARGET_T_HOSTILE_RANDOM_NOT_TOP:
-            if (Creature* pCreatureSource = ToCreature(pSource))
+            if (Creature* pCreatureSource = static_cast<Creature*>(pSource))
             {
                 return pCreatureSource->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 1);
             }
@@ -302,11 +260,6 @@ Unit* GetTargetByType(Unit* pSource, Unit* pTarget, uint8 TargetType, uint32 Par
     return nullptr;
 }
 
-/**
- * @brief Applies a creature spell list template by entry ID.
- *
- * @param entry The spell list template entry identifier.
- */
 void CreatureAI::SetSpellsList(uint32 entry)
 {
     if (entry == 0)
@@ -323,11 +276,6 @@ void CreatureAI::SetSpellsList(uint32 entry)
     }
 }
 
-/**
- * @brief Applies a creature spell list template directly.
- *
- * @param pSpellsList The spell list template to copy.
- */
 void CreatureAI::SetSpellsList(CreatureSpellsList const* pSpellsList)
 {
     m_CreatureSpells.clear();
@@ -339,15 +287,8 @@ void CreatureAI::SetSpellsList(CreatureSpellsList const* pSpellsList)
     m_uiCastingDelay = 0;
 }
 
-// Creature spell lists should be updated every 1.2 seconds according to research.
-// https://www.reddit.com/r/wowservers/comments/834nt5/felmyst_ai_system_research/
 #define CREATURE_CASTING_DELAY 1200
 
-/**
- * @brief Updates creature spell list cooldown processing.
- *
- * @param uiDiff The elapsed time since the last update in milliseconds.
- */
 void CreatureAI::UpdateSpellsList(uint32 const uiDiff)
 {
     if (m_uiCastingDelay <= uiDiff)
@@ -362,11 +303,6 @@ void CreatureAI::UpdateSpellsList(uint32 const uiDiff)
     }
 }
 
-/**
- * @brief Processes pending creature spell list casts.
- *
- * @param uiDiff The effective elapsed time for cooldown processing.
- */
 void CreatureAI::DoSpellsListCasts(uint32 const uiDiff)
 {
     bool bDontCast = false;
@@ -374,10 +310,9 @@ void CreatureAI::DoSpellsListCasts(uint32 const uiDiff)
     {
         if (spell.cooldown <= uiDiff)
         {
-            // Cooldown has expired.
+
             spell.cooldown = 0;
 
-            // Prevent casting multiple spells in the same update. Only update timers.
             if (!(spell.castFlags & (CF_TRIGGERED | CF_INTERRUPT_PREVIOUS)))
             {
                 if (bDontCast || m_creature->IsNonMeleeSpellCasted(false))
@@ -386,7 +321,6 @@ void CreatureAI::DoSpellsListCasts(uint32 const uiDiff)
                 }
             }
 
-            // Checked on startup.
             SpellEntry const* pSpellInfo = sSpellStore.LookupEntry(spell.spellId);
 
             Unit* pTarget = GetTargetByType(m_creature, m_creature, spell.castTarget, spell.targetParam1 ? spell.targetParam1 : sSpellRangeStore.LookupEntry(pSpellInfo->RangeIndex)->RangeMax, spell.targetParam2);
@@ -408,10 +342,9 @@ void CreatureAI::DoSpellsListCasts(uint32 const uiDiff)
                         }
 
                         SetCombatMovement(false);
-                        //SetMeleeAttack(false);
+
                     }
 
-                    // If there is a script for this spell, run it.
                     if (spell.scriptId)
                     {
                         m_creature->GetMap()->Scripts().Start(DBS_ON_CREATURE_SPELL, spell.scriptId, m_creature, pTarget);
@@ -421,27 +354,27 @@ void CreatureAI::DoSpellsListCasts(uint32 const uiDiff)
                 case SPELL_FAILED_FLEEING:
                 case SPELL_FAILED_SPELL_IN_PROGRESS:
                 {
-                    // Do nothing so it will try again on next update.
+
                     break;
                 }
                 case SPELL_FAILED_TRY_AGAIN:
                 {
-                    // Chance roll failed, so we reset cooldown.
+
                     spell.cooldown = urand(spell.delayRepeatMin, spell.delayRepeatMax);
                     if (spell.castFlags & CF_MAIN_RANGED_SPELL)
                     {
                         SetCombatMovement(true);
-                        //SetMeleeAttack(true);
+
                     }
                     break;
                 }
                 default:
                 {
-                    // other error
+
                     if (spell.castFlags & CF_MAIN_RANGED_SPELL)
                     {
                         SetCombatMovement(true);
-                        //SetMeleeAttack(true);
+
                     }
                     break;
                 }
@@ -454,38 +387,21 @@ void CreatureAI::DoSpellsListCasts(uint32 const uiDiff)
     }
 }
 
-/**
- * @brief Performs a melee attack if the creature is ready.
- *
- * @return true if an attack action was processed; otherwise, false.
- */
 bool CreatureAI::DoMeleeAttackIfReady()
 {
     return m_creature->UpdateMeleeAttackingState();
 }
 
-/**
- * @brief Enables or disables combat movement behavior.
- *
- * @param enable true to enable combat movement; otherwise, false.
- * @param stopOrStartMovement true to immediately adjust current movement.
- */
-void CreatureAI::SetCombatMovement(bool enable, bool stopOrStartMovement /*=false*/)
+void CreatureAI::SetCombatMovement(bool enable, bool stopOrStartMovement )
 {
     SetCombatMovementFlag(COMBAT_MOVEMENT_SCRIPT, enable);
 
-    if (stopOrStartMovement)     // Only change current movement while in combat
+    if (stopOrStartMovement)
     {
         SetChase(enable);
     }
 }
 
-/**
- * @brief Sets or clears a specific combat movement flag.
- *
- * @param flag The combat movement flag to modify.
- * @param setFlag true to set the flag; false to clear it.
- */
 void CreatureAI::SetCombatMovementFlag(uint8 flag, bool setFlag)
 {
     if (setFlag)
@@ -506,11 +422,6 @@ void CreatureAI::SetCombatMovementFlag(uint8 flag, bool setFlag)
     }
 }
 
-/**
- * @brief Starts or stops chase movement against the current victim.
- *
- * @param chase true to chase the victim; false to stop chasing.
- */
 void CreatureAI::SetChase(bool chase)
 {
     if (IsCombatMovement() && m_creature->getVictim())
@@ -543,11 +454,6 @@ void CreatureAI::SetChase(bool chase)
     }
 }
 
-/**
- * @brief Adjusts movement state when combat begins.
- *
- * @param victim The unit being attacked.
- */
 void CreatureAI::HandleMovementOnAttackStart(Unit* victim)
 {
     MotionMaster* creatureMotion = m_creature->GetMotionMaster();
@@ -558,17 +464,12 @@ void CreatureAI::HandleMovementOnAttackStart(Unit* victim)
         creatureMotion->MoveChase(victim, m_attackDistance, m_attackAngle);
     }
 
-    // TODO - adapt this to only stop OOC-MMGens when MotionMaster rewrite is finished
     else if (mmgen == WAYPOINT_MOTION_TYPE || mmgen == RANDOM_MOTION_TYPE)
     {
         creatureMotion->MoveIdle();
         m_creature->StopMoving();
     }
 }
-
-// ////////////////////////////////////////////////////////////////////////////////////////////////
-//                                      Event system
-// ////////////////////////////////////////////////////////////////////////////////////////////////
 
 class AiDelayEventAround : public BasicEvent
 {
@@ -580,7 +481,7 @@ class AiDelayEventAround : public BasicEvent
             m_owner(owner),
             m_miscValue(miscValue)
         {
-            // Pushing guids because in delay can happen some creature gets despawned => invalid pointer
+
             m_receiverGuids.reserve(receivers.size());
             for (std::list<Creature*>::const_iterator itr = receivers.begin(); itr != receivers.end(); ++itr)
             {
@@ -588,7 +489,7 @@ class AiDelayEventAround : public BasicEvent
             }
         }
 
-        bool Execute(uint64 /*e_time*/, uint32 /*p_time*/) override
+        bool Execute(uint64 , uint32 ) override
         {
             Unit* pInvoker = m_owner.GetMap()->GetUnit(m_invokerGuid);
 
@@ -597,7 +498,7 @@ class AiDelayEventAround : public BasicEvent
                 if (Creature* pReceiver = m_owner.GetMap()->GetAnyTypeCreature(*itr))
                 {
                     pReceiver->AI()->ReceiveAIEvent(m_eventType, &m_owner, pInvoker, m_miscValue);
-                    // Special case for type 0 (call-assistance)
+
                     if (m_eventType == AI_EVENT_CALL_ASSISTANCE && pInvoker && pReceiver->CanAssistTo(&m_owner, pInvoker))
                     {
                         pReceiver->SetNoCallAssistance(true);
@@ -614,29 +515,19 @@ class AiDelayEventAround : public BasicEvent
         AiDelayEventAround();
 
         AIEventType m_eventType;
-        ObjectGuid m_invokerGuid;
+        ObjectGuid m_invokerGuid = 0;
         Creature&  m_owner;
         uint32 m_miscValue;
 
         GuidVector m_receiverGuids;
 };
 
-/**
- * @brief Sends an AI event to nearby creatures after an optional delay.
- *
- * @param eventType The event type to broadcast.
- * @param pInvoker The unit that triggered the event.
- * @param uiDelay The delay before delivery in milliseconds.
- * @param fRadius The search radius for receivers.
- * @param miscValue Additional event data.
- */
-void CreatureAI::SendAIEventAround(AIEventType eventType, Unit* pInvoker, uint32 uiDelay, float fRadius, uint32 miscValue /*=0*/) const
+void CreatureAI::SendAIEventAround(AIEventType eventType, Unit* pInvoker, uint32 uiDelay, float fRadius, uint32 miscValue ) const
 {
     if (fRadius > 0)
     {
         std::list<Creature*> receiverList;
 
-        // Allow sending custom AI events to all units in range
         if (eventType == AI_EVENT_CUSTOM_EVENTAI_A || eventType == AI_EVENT_CUSTOM_EVENTAI_B)
         {
             MaNGOS::AnyUnitInObjectRangeCheck u_check(m_creature, fRadius);
@@ -645,7 +536,7 @@ void CreatureAI::SendAIEventAround(AIEventType eventType, Unit* pInvoker, uint32
         }
         else
         {
-            // Use this check here to collect only assitable creatures in case of CALL_ASSISTANCE, else be less strict
+
             MaNGOS::AnyAssistCreatureInRangeCheck u_check(m_creature, eventType == AI_EVENT_CALL_ASSISTANCE ? pInvoker : nullptr, fRadius);
             MaNGOS::CreatureListSearcher<MaNGOS::AnyAssistCreatureInRangeCheck> searcher(receiverList, u_check);
             Cell::VisitGridObjects(m_creature, searcher, fRadius);
@@ -653,21 +544,13 @@ void CreatureAI::SendAIEventAround(AIEventType eventType, Unit* pInvoker, uint32
 
         if (!receiverList.empty())
         {
-            AiDelayEventAround* e = new AiDelayEventAround(eventType, pInvoker ? pInvoker->GetObjectGuid() : ObjectGuid(), *m_creature, receiverList, miscValue);
+            AiDelayEventAround* e = new AiDelayEventAround(eventType, pInvoker ? pInvoker->GetObjectGuid() : 0, *m_creature, receiverList, miscValue);
             m_creature->m_Events.AddEvent(e, m_creature->m_Events.CalculateTime(uiDelay));
         }
     }
 }
 
-/**
- * @brief Sends an AI event directly to a specific creature.
- *
- * @param eventType The event type to send.
- * @param pInvoker The unit that triggered the event.
- * @param pReceiver The creature receiving the event.
- * @param miscValue Additional event data.
- */
-void CreatureAI::SendAIEvent(AIEventType eventType, Unit* pInvoker, Creature* pReceiver, uint32 miscValue /*=0*/) const
+void CreatureAI::SendAIEvent(AIEventType eventType, Unit* pInvoker, Creature* pReceiver, uint32 miscValue ) const
 {
     MANGOS_ASSERT(pReceiver);
     pReceiver->AI()->ReceiveAIEvent(eventType, m_creature, pInvoker, miscValue);

@@ -23,25 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Chat.cpp
- * @brief Chat system implementation
- *
- * This file implements the chat system including:
- * - Message formatting and color codes
- * - Shift-link parsing (item, spell, quest links)
- * - Channel message routing
- * - Whisper, say, yell, emote handling
- * - GM command parsing and execution
- * - Language filtering
- *
- * The chat system supports various message types with different
- * visibility ranges and formatting requirements.
- *
- * @see ChatHandler for command handling
- * @see Channel for channel chat
- */
-
 #include "Common/Locales.h"
 #include "Utilities/Errors.h"
 #include <sstream>
@@ -68,36 +49,9 @@
 #include "ObjectLookup.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-
-// Supported shift-links (client generated and server side)
-// |color|Harea:area_id|h[name]|h|r
-// |color|Hareatrigger:id|h[name]|h|r
-// |color|Hareatrigger_target:id|h[name]|h|r
-// |color|Hcreature:creature_guid|h[name]|h|r
-// |color|Hcreature_entry:creature_id|h[name]|h|r
-// |color|Henchant:recipe_spell_id|h[prof_name: recipe_name]|h|r          - client, at shift click in recipes list dialog
-// |color|Hgameevent:id|h[name]|h|r
-// |color|Hgameobject:go_guid|h[name]|h|r
-// |color|Hgameobject_entry:go_id|h[name]|h|r
-// |color|Hitem:item_id:perm_ench_id:gem1:gem2:gem3:0:0:0:0|h[name]|h|r   - client, item icon shift click
-// |color|Hitemset:itemset_id|h[name]|h|r
-// |color|Hplayer:name|h[name]|h|r                                        - client, in some messages, at click copy only name instead link, so no way generate it in client string send to server
-// |color|Hpool:pool_id|h[name]|h|r
-// |color|Hquest:quest_id:quest_level|h[name]|h|r                         - client, quest list name shift-click
-// |color|Hskill:skill_id|h[name]|h|r
-// |color|Hspell:spell_id|h[name]|h|r                                     - client, spellbook spell icon shift-click
-// |color|Htalent:talent_id,rank|h[name]|h|r                              - client, talent icon shift-click rank==-1 if shift-copy unlearned talent
-// |color|Htaxinode:id|h[name]|h|r
-// |color|Htele:id|h[name]|h|r
-
 bool ChatHandler::load_command_table = true;
 std::map<uint32, ObjectGuid> ChatHandler::m_consoleSelectedPlayers;
 
-/**
- * @brief Builds and returns the root command table used by the chat handler.
- *
- * @return ChatCommand* The top-level command table.
- */
 ChatCommand* ChatHandler::getCommandTable()
 {
     static ChatCommand accountSetCommandTable[] =
@@ -817,7 +771,6 @@ ChatCommand* ChatHandler::getCommandTable()
     {
         load_command_table = false;
 
-        // check hardcoded part integrity
         CheckIntegrity(commandTable, nullptr);
 
         QueryResult* result = WorldDatabase.Query("SELECT `id`, `command_text`,`security`,`help_text` FROM `command`");
@@ -844,78 +797,37 @@ ChatHandler::ChatHandler(Player* player) : m_session(player->GetSession()) {}
 
 ChatHandler::~ChatHandler() {}
 
-/**
- * @brief Returns a localized MaNGOS string for the current session.
- *
- * @param entry The string table entry identifier.
- * @return const char* The localized string.
- */
 const char* ChatHandler::GetMangosString(int32 entry) const
 {
     return m_session->GetMangosString(entry);
 }
 
-/**
- * @brief Returns the localized on or off label.
- *
- * @param value The boolean value to convert.
- * @return const char* The localized on/off string.
- */
 const char* ChatHandler::GetOnOffStr(bool value) const
 {
     return value ?  GetMangosString(LANG_ON) : GetMangosString(LANG_OFF);
 }
 
-/**
- * @brief Returns the account id associated with this chat handler.
- *
- * @return uint32 The current account id.
- */
 uint32 ChatHandler::GetAccountId() const
 {
     return m_session->GetAccountId();
 }
 
-/**
- * @brief Returns the security level of the current session.
- *
- * @return AccountTypes The current access level.
- */
 AccountTypes ChatHandler::GetAccessLevel() const
 {
     return m_session->GetSecurity();
 }
 
-/**
- * @brief Checks whether a command is available at the current access level.
- *
- * @param cmd The command to test.
- * @return true if the command is available; otherwise false.
- */
 bool ChatHandler::isAvailable(ChatCommand const& cmd) const
 {
-    // check security level only for simple  command (without child commands)
+
     return GetAccessLevel() >= (AccountTypes)cmd.SecurityLevel;
 }
 
-/**
- * @brief Builds a clickable name link for the current player.
- *
- * @return std::string The formatted player link.
- */
 std::string ChatHandler::GetNameLink() const
 {
     return GetNameLink(m_session->GetPlayer());
 }
 
-/**
- * @brief Checks whether the handler has lower security than a target player or account.
- *
- * @param target The online target player, if available.
- * @param guid The target player GUID when no player pointer is available.
- * @param strong True to require strictly greater access.
- * @return true if the handler lacks sufficient security; otherwise false.
- */
 bool ChatHandler::HasLowerSecurity(Player* target, ObjectGuid guid, bool strong)
 {
     WorldSession* target_session = nullptr;
@@ -940,19 +852,10 @@ bool ChatHandler::HasLowerSecurity(Player* target, ObjectGuid guid, bool strong)
     return HasLowerSecurityAccount(target_session, target_account, strong);
 }
 
-/**
- * @brief Checks whether the handler has lower security than a target account or session.
- *
- * @param target The online target session, if available.
- * @param target_account The target account id when no session is available.
- * @param strong True to require strictly greater access.
- * @return true if the handler lacks sufficient security; otherwise false.
- */
 bool ChatHandler::HasLowerSecurityAccount(WorldSession* target, uint32 target_account, bool strong)
 {
     AccountTypes target_sec;
 
-    // ignore only for non-players for non strong checks (when allow apply command at least to same sec level)
     if (GetAccessLevel() > SEC_PLAYER && !strong && !sWorld.getConfig(CONFIG_BOOL_GM_LOWER_SECURITY))
     {
         return false;
@@ -968,7 +871,7 @@ bool ChatHandler::HasLowerSecurityAccount(WorldSession* target, uint32 target_ac
     }
     else
     {
-        return true;                                         // caller must report error for (target==nullptr && target_account==0)
+        return true;
     }
 
     if (GetAccessLevel() < target_sec || (strong && GetAccessLevel() <= target_sec))
@@ -981,19 +884,12 @@ bool ChatHandler::HasLowerSecurityAccount(WorldSession* target, uint32 target_ac
     return false;
 }
 
-/**
- * @brief Checks whether one string is a valid abbreviation of another.
- *
- * @param name The full command name.
- * @param part The abbreviation to test.
- * @return true if the abbreviation matches; otherwise false.
- */
 bool ChatHandler::hasStringAbbr(const char* name, const char* part)
 {
-    // non "" command
+
     if (*name)
     {
-        // "" part from non-"" command
+
         if (!*part)
         {
             return false;
@@ -1016,23 +912,10 @@ bool ChatHandler::hasStringAbbr(const char* name, const char* part)
             ++name; ++part;
         }
     }
-    // allow with any for ""
 
     return true;
 }
 
-
-
-
-
-
-
-/**
- * @brief Validates command table structure and reports inconsistencies.
- *
- * @param table The command table to validate.
- * @param parentCommand The parent command, or nullptr for the root table.
- */
 void ChatHandler::CheckIntegrity(ChatCommand* table, ChatCommand* parentCommand)
 {
     for (uint32 i = 0; table[i].Name != nullptr; ++i)
@@ -1089,13 +972,6 @@ void ChatHandler::CheckIntegrity(ChatCommand* table, ChatCommand* parentCommand)
     }
 }
 
-/**
- * Search (sub)command for command line available for chat handler access level
- *
- * @param text  Command line string that will parsed for (sub)command search
- *
- * @return Pointer to found command structure or nullptr if appropriate command not found
- */
 ChatCommand const* ChatHandler::FindCommand(char const* text)
 {
     ChatCommand* command = nullptr;
@@ -1104,41 +980,10 @@ ChatCommand const* ChatHandler::FindCommand(char const* text)
     return FindCommand(getCommandTable(), textPtr, command) == CHAT_COMMAND_OK ? command : nullptr;
 }
 
-/**
- * Search (sub)command for command line available for chat handler access level with options and fail case additional info
- *
- * @param table         Pointer to command C-style array first level command where will be searched
- * @param text          Command line string that will parsed for (sub)command search,
- *                      it modified at return from function and pointed to not parsed tail
- * @param command       At success this is found command, at other cases this is last found parent command
- *                      before subcommand search fail
- * @param parentCommand Output arg for optional return parent command for command arg.
- * @param cmdNamePtr    Output arg for optional return last parsed command name.
- * @param allAvailable  Optional arg (with false default value) control use command access level checks while command search.
- * @param exactlyName   Optional arg (with false default value) control use exactly name in checks while command search.
- *
- * @return one from enum value of ChatCommandSearchResult. Output args return values highly dependent from this return result:
- *
- *      CHAT_COMMAND_OK       - Command found!
- *                              text point to non parsed tail with possible command specific data, command store found command pointer,
- *                              parentCommand have parent of found command or nullptr if command found in table array directly
- *                              cmdNamePtr store found command name in original form from command line
- *      CHAT_COMMAND_UNKNOWN  - Command not found in table directly
- *                              text only skip possible whitespaces,
- *                              command is nullptr
- *                              parentCommand is nullptr
- *                              cmdNamePtr store command name that not found as it extracted from command line
- *      CHAT_COMMAND_UNKNOWN_SUBCOMMAND - Subcommand not found in some deed subcomand lists
- *                              text point to non parsed tail including not found command name in command line,
- *                              command store last found parent command if any
- *                              parentCommand have parent of command in command arg or nullptr
- *                              cmdNamePtr store command name that not found as it extracted from command line
- */
-ChatCommandSearchResult ChatHandler::FindCommand(ChatCommand* table, char const*& text, ChatCommand*& command, ChatCommand** parentCommand /*= nullptr*/, std::string* cmdNamePtr /*= nullptr*/, bool allAvailable /*= false*/, bool exactlyName /*= false*/)
+ChatCommandSearchResult ChatHandler::FindCommand(ChatCommand* table, char const*& text, ChatCommand*& command, ChatCommand** parentCommand , std::string* cmdNamePtr , bool allAvailable , bool exactlyName )
 {
     std::string cmd = "";
 
-    // skip whitespaces
     while (*text != ' ' && *text != '\0')
     {
         cmd += *text;
@@ -1150,7 +995,6 @@ ChatCommandSearchResult ChatHandler::FindCommand(ChatCommand* table, char const*
         ++text;
     }
 
-    // search first level command in table
     for (uint32 i = 0; table[i].Name != nullptr; ++i)
     {
         if (exactlyName)
@@ -1168,7 +1012,7 @@ ChatCommandSearchResult ChatHandler::FindCommand(ChatCommand* table, char const*
                 continue;
             }
         }
-        // select subcommand from child commands list
+
         if (table[i].ChildCommands != nullptr)
         {
             char const* oldchildtext = text;
@@ -1179,13 +1023,12 @@ ChatCommandSearchResult ChatHandler::FindCommand(ChatCommand* table, char const*
             {
                 case CHAT_COMMAND_OK:
                 {
-                    // if subcommand success search not return parent command, then this parent command is owner of child commands
+
                     if (parentCommand)
                     {
                         *parentCommand = parentSubcommand ? parentSubcommand : &table[i];
                     }
 
-                    // Name == "" is special case: restore original command text for next level "" (where parentSubcommand==nullptr)
                     if (strlen(command->Name) == 0 && !parentSubcommand)
                     {
                         text = oldchildtext;
@@ -1195,20 +1038,20 @@ ChatCommandSearchResult ChatHandler::FindCommand(ChatCommand* table, char const*
                 }
                 case CHAT_COMMAND_UNKNOWN:
                 {
-                    // command not found directly in child command list, return child command list owner
+
                     command = &table[i];
                     if (parentCommand)
                     {
-                        *parentCommand = nullptr;               // we don't known parent of table list at this point
+                        *parentCommand = nullptr;
                     }
 
-                    text = oldchildtext;                    // restore text to stated just after parse found parent command
-                    return CHAT_COMMAND_UNKNOWN_SUBCOMMAND; // we not found subcommand for table[i]
+                    text = oldchildtext;
+                    return CHAT_COMMAND_UNKNOWN_SUBCOMMAND;
                 }
                 case CHAT_COMMAND_UNKNOWN_SUBCOMMAND:
                 default:
                 {
-                    // some deep subcommand not found, if this second level subcommand then parentCommand can be nullptr, use known value for it
+
                     if (parentCommand)
                     {
                         *parentCommand = parentSubcommand ? parentSubcommand : &table[i];
@@ -1218,22 +1061,18 @@ ChatCommandSearchResult ChatHandler::FindCommand(ChatCommand* table, char const*
             }
         }
 
-        // must be available (not checked for subcommands case because parent command expected have most low access that all subcommands always
         if (!allAvailable && !isAvailable(table[i]))
         {
             continue;
         }
 
-        // must be have handler is explicitly selected
         if (!table[i].Handler)
         {
             continue;
         }
 
-        // command found directly in to table
         command = &table[i];
 
-        // unknown table owner at this point
         if (parentCommand)
         {
             *parentCommand = nullptr;
@@ -1247,10 +1086,8 @@ ChatCommandSearchResult ChatHandler::FindCommand(ChatCommand* table, char const*
         return CHAT_COMMAND_OK;
     }
 
-    // command not found in table directly
     command = nullptr;
 
-    // unknown table owner at this point
     if (parentCommand)
     {
         *parentCommand = nullptr;
@@ -1264,16 +1101,9 @@ ChatCommandSearchResult ChatHandler::FindCommand(ChatCommand* table, char const*
     return CHAT_COMMAND_UNKNOWN;
 }
 
-/**
- * Execute (sub)command available for chat handler access level with options in command line string
- *
- * @param text  Command line string that will parsed for (sub)command search and command specific data
- *
- * Command output and errors in command execution will send to chat handler.
- */
 void ChatHandler::ExecuteCommand(const char* text)
 {
-    std::string fullcmd = text;                             // original `text` can't be used. It content destroyed in command code processing.
+    std::string fullcmd = text;
 
     ChatCommand* command = nullptr;
     ChatCommand* parentCommand = nullptr;
@@ -1285,21 +1115,20 @@ void ChatHandler::ExecuteCommand(const char* text)
         case CHAT_COMMAND_OK:
         {
             SetSentErrorMessage(false);
-            if ((this->*(command->Handler))((char*)text))   // text content destroyed at call
+            if ((this->*(command->Handler))((char*)text))
             {
                 if (command->SecurityLevel > SEC_PLAYER)
                 {
                     LogCommand(fullcmd.c_str());
                 }
             }
-            // some commands have custom error messages. Don't send the default one in these cases.
+
             else if (!HasSentErrorMessage())
             {
                 if (!command->Help.empty())
                 {
                     std::string helpText = command->Help;
 
-                    // Attemp to localize help text if not in CLI mode
                     if (m_session)
                     {
                         int loc_idx = m_session->GetSessionDbLocaleIndex();
@@ -1341,21 +1170,9 @@ void ChatHandler::ExecuteCommand(const char* text)
     }
 }
 
-/**
- * Function find appropriate command and update command security level and help text
- *
- * @param commandTable  Table for first level command search
- * @param text          Command line string that will parsed for (sub)command search
- * @param security      New security level for command
- * @param help          New help text  for command
- *
- * @return true if command has been found, and false in other case
- *
- * All problems found while command search and updated output as to DB errors log
- */
 bool ChatHandler::SetDataForCommandInTable(ChatCommand* commandTable, uint32 id, const char* text, uint32 security, std::string const& help)
 {
-    std::string fullcommand = text;                         // original `text` can't be used. It content destroyed in command code processing.
+    std::string fullcommand = text;
 
     ChatCommand* command = nullptr;
     std::string cmdName;
@@ -1379,7 +1196,7 @@ bool ChatHandler::SetDataForCommandInTable(ChatCommand* commandTable, uint32 id,
         }
         case CHAT_COMMAND_UNKNOWN_SUBCOMMAND:
         {
-            // command have subcommands, but not '' subcommand and then any data in `command` useless for it.
+
             if (cmdName.empty())
             {
                 sLog.outErrorDb("Table `command` have command '%s' that only used with some subcommand selection, it can't have help or overwritten access level, skip.", cmdName.c_str());
@@ -1400,18 +1217,11 @@ bool ChatHandler::SetDataForCommandInTable(ChatCommand* commandTable, uint32 id,
     return false;
 }
 
-/**
- * @brief Detects and executes a command entered through chat or console input.
- *
- * @param text The raw input text.
- * @return true if the text was treated as a command; otherwise false.
- */
 bool ChatHandler::ParseCommands(const char* text)
 {
     MANGOS_ASSERT(text);
     MANGOS_ASSERT(*text);
 
-    /// chat case (.command or !command format)
     if (m_session)
     {
         if (m_session->GetSecurity() == SEC_PLAYER && !sWorld.getConfig(CONFIG_BOOL_PLAYER_COMMANDS))
@@ -1424,20 +1234,17 @@ bool ChatHandler::ParseCommands(const char* text)
             return false;
         }
 
-        /// ignore single . and ! in line
         if (strlen(text) < 2)
         {
             return false;
         }
     }
 
-    /// ignore messages staring from many dots.
     if ((text[0] == '.' && text[1] == '.') || (text[0] == '!' && text[1] == '!'))
     {
         return false;
     }
 
-    /// skip first . or ! (in console allowed use command with . and ! and without its)
     if (text[0] == '!' || text[0] == '.')
     {
         ++text;
@@ -1448,19 +1255,11 @@ bool ChatHandler::ParseCommands(const char* text)
     return true;
 }
 
-
-
-
-/**
- * @brief Returns the currently selected player, or the session player if nothing is selected.
- *
- * @return Player* The selected player, or nullptr when no player can be resolved.
- */
 Player* ChatHandler::getSelectedPlayer()
 {
     if (!m_session)
     {
-        uint32 accountId = GetAccountId(); // check for console selection
+        uint32 accountId = GetAccountId();
         auto itr = m_consoleSelectedPlayers.find(accountId);
         if (itr != m_consoleSelectedPlayers.end())
         {
@@ -1479,16 +1278,11 @@ Player* ChatHandler::getSelectedPlayer()
     return sObjectMgr.GetPlayer(guid);
 }
 
-/**
- * @brief Returns the currently selected unit, or the session player if nothing is selected.
- *
- * @return Unit* The selected unit, or nullptr when no unit can be resolved.
- */
 Unit* ChatHandler::getSelectedUnit()
 {
     if (!m_session)
     {
-        uint32 accountId = GetAccountId(); // check for console selection
+        uint32 accountId = GetAccountId();
         auto itr = m_consoleSelectedPlayers.find(accountId);
         if (itr != m_consoleSelectedPlayers.end())
         {
@@ -1504,15 +1298,9 @@ Unit* ChatHandler::getSelectedUnit()
         return m_session->GetPlayer();
     }
 
-    // can be selected player at another map
     return ObjectLookup::GetUnit(*m_session->GetPlayer(), guid);
 }
 
-/**
- * @brief Returns the currently selected creature on the player's map.
- *
- * @return Creature* The selected creature, or nullptr if selection is not a creature.
- */
 Creature* ChatHandler::getSelectedCreature()
 {
     if (!m_session)
@@ -1523,190 +1311,81 @@ Creature* ChatHandler::getSelectedCreature()
     return m_session->GetPlayer()->GetMap()->GetAnyTypeCreature(m_session->GetPlayer()->GetSelectionGuid());
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * @brief Builds a clickable name link for a specific player.
- *
- * @param chr The player to represent.
- * @return std::string The formatted player link.
- */
 std::string ChatHandler::GetNameLink(Player* chr) const
 {
     return playerLink(chr->GetName());
 }
 
-/**
- * @brief Checks whether command output should also be reported to the target player.
- *
- * @param chr The target player.
- * @return true if the target should receive a report; otherwise false.
- */
 bool ChatHandler::needReportToTarget(Player* chr) const
 {
     Player* pl = m_session->GetPlayer();
     return pl != chr && pl->IsVisibleGloballyFor(chr);
 }
 
-/**
- * @brief Returns the DBC locale used by the current session.
- *
- * @return LocaleConstant The session DBC locale.
- */
 LocaleConstant ChatHandler::GetSessionDbcLocale() const
 {
     return m_session->GetSessionDbcLocale();
 }
 
-/**
- * @brief Returns the database locale index used by the current session.
- *
- * @return int The session database locale index.
- */
 int ChatHandler::GetSessionDbLocaleIndex() const
 {
     return m_session->GetSessionDbLocaleIndex();
 }
 
-/**
- * @brief Returns a localized MaNGOS string for console output.
- *
- * @param entry The string table entry identifier.
- * @return const char* The localized string.
- */
 const char* CliHandler::GetMangosString(int32 entry) const
 {
     return sObjectMgr.GetMangosStringForDBCLocale(entry);
 }
 
-/**
- * @brief Returns the account id associated with the CLI handler.
- *
- * @return uint32 The CLI account id.
- */
 uint32 CliHandler::GetAccountId() const
 {
     return m_accountId;
 }
 
-/**
- * @brief Returns the console login access level.
- *
- * @return AccountTypes The CLI access level.
- */
 AccountTypes CliHandler::GetAccessLevel() const
 {
     return m_loginAccessLevel;
 }
 
-/**
- * @brief Checks whether a command is available to the console handler.
- *
- * @param cmd The command to test.
- * @return true if the command can be used from console at the current access level; otherwise false.
- */
 bool CliHandler::isAvailable(ChatCommand const& cmd) const
 {
-    // skip non-console commands in console case
+
     if (!cmd.AllowConsole)
     {
         return false;
     }
 
-    // normal case
     return GetAccessLevel() >= (AccountTypes)cmd.SecurityLevel;
 }
 
-/**
- * @brief Sends a system message to the CLI output callback.
- *
- * @param str The message text to print.
- */
 void CliHandler::SendSysMessage(const char* str)
 {
     m_print(m_callbackArg, str);
     m_print(m_callbackArg, "\r\n");
 }
 
-/**
- * @brief Returns the localized console command source label.
- *
- * @return std::string The console label.
- */
 std::string CliHandler::GetNameLink() const
 {
     return GetMangosString(LANG_CONSOLE_COMMAND);
 }
 
-/**
- * @brief Indicates that CLI commands always report output to the target context.
- *
- * @param chr Unused target player pointer.
- * @return true Always true for CLI handling.
- */
-bool CliHandler::needReportToTarget(Player* /*chr*/) const
+bool CliHandler::needReportToTarget(Player* ) const
 {
     return true;
 }
 
-/**
- * @brief Returns the default DBC locale used for console output.
- *
- * @return LocaleConstant The default DBC locale.
- */
 LocaleConstant CliHandler::GetSessionDbcLocale() const
 {
     return sWorld.GetDefaultDbcLocale();
 }
 
-/**
- * @brief Returns the database locale index used for console output.
- *
- * @return int The console database locale index.
- */
 int CliHandler::GetSessionDbLocaleIndex() const
 {
     return sObjectMgr.GetDBCLocaleIndex();
 }
 
-// Check/ Output if a NPC or GO (by guid) is part of a pool or game event
 template <typename T>
 
-/**
- * @brief Reports pool and game event ownership information for a creature or game object spawn.
- *
- * @tparam T The spawn type, such as Creature or GameObject.
- * @param guid The low GUID of the spawn.
- */
 void ChatHandler::ShowNpcOrGoSpawnInformation(uint32 guid)
 {
     if (uint16 pool_id = sPoolMgr.IsPartOfAPool<T>(guid))
@@ -1752,16 +1431,8 @@ void ChatHandler::ShowNpcOrGoSpawnInformation(uint32 guid)
     }
 }
 
-// Prepare ShortString for a NPC or GO (by guid) with pool or game event IDs
 template <typename T>
 
-/**
- * @brief Builds a short descriptive string about pool or game event ownership for a spawn.
- *
- * @tparam T The spawn type, such as Creature or GameObject.
- * @param guid The low GUID of the spawn.
- * @return std::string The formatted ownership description, or an empty string.
- */
 std::string ChatHandler::PrepareStringNpcOrGoSpawnInformation(uint32 guid)
 {
     std::string str = "";
@@ -1794,36 +1465,28 @@ std::string ChatHandler::PrepareStringNpcOrGoSpawnInformation(uint32 guid)
     return str;
 }
 
-/**
- * @brief Logs an executed command together with its execution context.
- *
- * @param fullcmd The full command text.
- */
 void ChatHandler::LogCommand(char const* fullcmd)
 {
-    // chat case
+
     if (m_session)
     {
         Player* p = m_session->GetPlayer();
         ObjectGuid sel_guid = p->GetSelectionGuid();
         sLog.outCommand(GetAccountId(), "Command: %s [Player: %s (Account: %u) X: %f Y: %f Z: %f Map: %u Selected: %s]",
             fullcmd, p->GetName(), GetAccountId(), p->Where().X(), p->Where().Y(), p->Where().Z(), p->GetMapId(),
-            sel_guid.GetString().c_str());
+            GuidString(sel_guid).c_str());
     }
-    else                                        // 0 account -> console
+    else
     {
         sLog.outCommand(GetAccountId(), "Command: %s [Account: %u from %s]",
             fullcmd, GetAccountId(), GetAccountId() ? "RA-connection" : "Console");
     }
 }
 
-
-// Shared Helpers between command implementation files
-void ChatHandler::ShowFactionListHelper(FactionEntry const* factionEntry, LocaleConstant loc, FactionState const* repState /*= nullptr*/, Player* target /*= nullptr */)
+void ChatHandler::ShowFactionListHelper(FactionEntry const* factionEntry, LocaleConstant loc, FactionState const* repState , Player* target )
 {
     std::string name = factionEntry->Name_lang[loc];
-    // send faction in "id - [faction] rank reputation [visible] [at war] [own team] [unknown] [invisible] [inactive]" format
-    // or              "id - [faction] [no reputation]" format
+
     std::ostringstream ss;
     if (m_session)
     {
@@ -1834,7 +1497,7 @@ void ChatHandler::ShowFactionListHelper(FactionEntry const* factionEntry, Locale
         ss << factionEntry->ID << " - " << name << " " << localeNames[loc];
     }
 
-    if (repState)                               // and then target!=nullptr also
+    if (repState)
     {
         ReputationRank rank = target->GetReputationMgr().GetRank(factionEntry);
         std::string rankName = GetMangosString(ReputationRankStrIndex[rank]);
@@ -1874,13 +1537,6 @@ void ChatHandler::ShowFactionListHelper(FactionEntry const* factionEntry, Locale
     SendSysMessage(ss.str().c_str());
 }
 
-/**
- * @brief Formats and sends one spell entry line for spell list style commands.
- *
- * @param target The target player whose spell state is being inspected.
- * @param spellInfo The spell definition to display.
- * @param loc The locale used for spell names.
- */
 void ChatHandler::ShowSpellListHelper(Player* target, SpellEntry const* spellInfo, LocaleConstant loc)
 {
     uint32 id = spellInfo->ID;
@@ -1894,11 +1550,8 @@ void ChatHandler::ShowSpellListHelper(Player* target, SpellEntry const* spellInf
     bool passive = (cast::RecipeOf(*spellInfo).Starts() == cast::Start::Passive);
     bool active = target && target->HasAura(id);
 
-    // unit32 used to prevent interpreting uint8 as char at output
-    // find rank of learned spell for learning spell, or talent rank
     uint32 rank = talentCost ? talentCost : sSpellMgr.GetSpellRank(learn ? spellInfo->EffectTriggerSpell[EFFECT_INDEX_0] : id);
 
-    // send spell in "id - [name, rank N] [talent] [passive] [learn] [known]" format
     std::ostringstream ss;
     if (m_session)
     {
@@ -1909,7 +1562,6 @@ void ChatHandler::ShowSpellListHelper(Player* target, SpellEntry const* spellInf
         ss << id << " - " << spellInfo->Name_lang[loc];
     }
 
-    // include rank in link name
     if (rank)
     {
         ss << GetMangosString(LANG_SPELL_RANK) << rank;
@@ -1948,15 +1600,6 @@ void ChatHandler::ShowSpellListHelper(Player* target, SpellEntry const* spellInf
     SendSysMessage(ss.str().c_str());
 }
 
-/**
- * @brief Displays a player list query result in chat or console format.
- *
- * @param result The query result containing player rows.
- * @param limit Optional maximum row count to display.
- * @param title True to print console table headers.
- * @param error True to emit an error message when no rows are found.
- * @return true if any output was produced; otherwise false.
- */
 bool ChatHandler::ShowPlayerListHelper(QueryResult* result, uint32* limit, bool title, bool error)
 {
     if (!result)
@@ -1978,10 +1621,10 @@ bool ChatHandler::ShowPlayerListHelper(QueryResult* result, uint32* limit, bool 
 
     if (result)
     {
-        ///- Circle through them. Display username and GM level
+
         do
         {
-            // check limit
+
             if (limit)
             {
                 if (*limit == 0)
@@ -2025,28 +1668,15 @@ bool ChatHandler::ShowPlayerListHelper(QueryResult* result, uint32* limit, bool 
     return true;
 }
 
-// Instantiate template for helper function
 template void ChatHandler::ShowNpcOrGoSpawnInformation<Creature>(uint32 guid);
 template void ChatHandler::ShowNpcOrGoSpawnInformation<GameObject>(uint32 guid);
 
 template std::string ChatHandler::PrepareStringNpcOrGoSpawnInformation<Creature>(uint32 guid);
 template std::string ChatHandler::PrepareStringNpcOrGoSpawnInformation<GameObject>(uint32 guid);
 
-/**
- * @brief Creates and applies all aura effects from a spell entry to a target unit.
- *
- * @param spellInfo The spell definition containing aura effects.
- * @param target The target unit receiving the aura holder.
- * @param caster The world object treated as the aura caster.
- * @return true if the aura holder was created and applied; otherwise false.
- */
 bool AddAuraToPlayer(const SpellEntry* spellInfo, Unit* target, Occupant* caster)
 {
-    // We assume the spellInfo has been checked and the spell has aura effects
-    /**
-     * if (!IsSpellAppliesAura(spellInfo, (1 << EFFECT_INDEX_0) | (1 << EFFECT_INDEX_1) | (1 << EFFECT_INDEX_2)) &&
-     * !spellInfo->HasSpellEffect(SPELL_EFFECT_PERSISTENT_AREA_AURA))
-     */
+
     if (!spellInfo)
     {
         return false;

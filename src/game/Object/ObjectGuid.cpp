@@ -31,132 +31,134 @@
 
 #include <sstream>
 
-/**
- * @brief Gets a human-readable type name for a high GUID category.
- *
- * @param high The high GUID type.
- * @return The textual type name.
- */
-char const* ObjectGuid::GetTypeName(HighGuid high)
+static bool HasEntry(HighGuid high)
 {
     switch (high)
     {
-        case HIGHGUID_ITEM:         return "Item";
-        case HIGHGUID_PLAYER:       return "Player";
-        case HIGHGUID_GAMEOBJECT:   return "Gameobject";
-        case HIGHGUID_TRANSPORT:    return "Transport";
-        case HIGHGUID_UNIT:         return "Creature";
-        case HIGHGUID_PET:          return "Pet";
-        case HIGHGUID_DYNAMICOBJECT: return "DynObject";
-        case HIGHGUID_CORPSE:       return "Corpse";
-        case HIGHGUID_MO_TRANSPORT: return "MoTransport";
+        case HIGHGUID_ITEM:
+        case HIGHGUID_PLAYER:
+        case HIGHGUID_DYNAMICOBJECT:
+        case HIGHGUID_CORPSE:
+        case HIGHGUID_MO_TRANSPORT:
+            return false;
         default:
-            return "<unknown>";
+            return true;
     }
 }
 
-/**
- * @brief Builds a readable string representation of the object GUID.
- *
- * @return The formatted GUID string.
- */
-std::string ObjectGuid::GetString() const
+static char const* TypeName(HighGuid high)
 {
-    std::ostringstream str;
-    str << GetTypeName();
+    switch (high)
+    {
+        case HIGHGUID_ITEM:          return "Item";
+        case HIGHGUID_PLAYER:        return "Player";
+        case HIGHGUID_GAMEOBJECT:    return "Gameobject";
+        case HIGHGUID_TRANSPORT:     return "Transport";
+        case HIGHGUID_UNIT:          return "Creature";
+        case HIGHGUID_PET:           return "Pet";
+        case HIGHGUID_DYNAMICOBJECT: return "DynObject";
+        case HIGHGUID_CORPSE:        return "Corpse";
+        case HIGHGUID_MO_TRANSPORT:  return "MoTransport";
+        default:                     return "<unknown>";
+    }
+}
 
-    if (IsPlayer())
+uint32 GuidEntry(ObjectGuid guid)
+{
+    return HasEntry(GuidHigh(guid)) ? uint32((guid >> 24) & UI64LIT(0x0000000000FFFFFF)) : 0;
+}
+
+uint32 GuidCounter(ObjectGuid guid)
+{
+    return HasEntry(GuidHigh(guid))
+           ? uint32(guid & UI64LIT(0x0000000000FFFFFF))
+           : uint32(guid & UI64LIT(0x00000000FFFFFFFF));
+}
+
+uint32 GuidMaxCounter(HighGuid high)
+{
+    return HasEntry(high) ? uint32(0x00FFFFFF) : uint32(0xFFFFFFFF);
+}
+
+ObjectGuid MakeGuid(HighGuid high, uint32 entry, uint32 counter)
+{
+    return counter ? uint64(counter) | (uint64(entry) << 24) | (uint64(high) << 48) : 0;
+}
+
+ObjectGuid MakeGuid(HighGuid high, uint32 counter)
+{
+    return counter ? uint64(counter) | (uint64(high) << 48) : 0;
+}
+
+TypeID GuidTypeId(HighGuid high)
+{
+    switch (high)
+    {
+        case HIGHGUID_ITEM:          return TYPEID_ITEM;
+        case HIGHGUID_UNIT:          return TYPEID_UNIT;
+        case HIGHGUID_PET:           return TYPEID_UNIT;
+        case HIGHGUID_PLAYER:        return TYPEID_PLAYER;
+        case HIGHGUID_GAMEOBJECT:    return TYPEID_GAMEOBJECT;
+        case HIGHGUID_DYNAMICOBJECT: return TYPEID_DYNAMICOBJECT;
+        case HIGHGUID_CORPSE:        return TYPEID_CORPSE;
+        case HIGHGUID_MO_TRANSPORT:  return TYPEID_GAMEOBJECT;
+        case HIGHGUID_TRANSPORT:     return TYPEID_GAMEOBJECT;
+        default:                     return TYPEID_OBJECT;
+    }
+}
+
+std::string GuidString(ObjectGuid guid)
+{
+    if (!guid)
+    {
+        return "None";
+    }
+
+    HighGuid const high = GuidHigh(guid);
+
+    std::ostringstream str;
+    str << TypeName(high);
+
+    if (high == HIGHGUID_PLAYER)
     {
         std::string name;
-        if (sObjectMgr.GetPlayerNameByGUID(*this, name))
+        if (sObjectMgr.GetPlayerNameByGUID(guid, name))
         {
             str << " " << name;
         }
     }
 
     str << " (";
-    if (HasEntry())
+    if (HasEntry(high))
     {
-        str << (IsPet() ? "Petnumber: " : "Entry: ") << GetEntry() << " ";
+        str << (high == HIGHGUID_PET ? "Petnumber: " : "Entry: ") << GuidEntry(guid) << " ";
     }
-    str << "Guid: " << GetCounter() << ")";
+    str << "Guid: " << GuidCounter(guid) << ")";
     return str.str();
 }
 
 template<HighGuid high>
-
-/**
- * @brief Generates the next GUID counter for a specific high GUID type.
- *
- * @return The generated counter value.
- */
 uint32 ObjectGuidGenerator<high>::Generate()
 {
-    if (m_nextGuid >= ObjectGuid::GetMaxCounter(high) - 1)
+    if (m_nextGuid >= GuidMaxCounter(high) - 1)
     {
-        sLog.outError("%s guid overflow!! Can't continue, shutting down server. ", ObjectGuid::GetTypeName(high));
+        sLog.outError("%s guid overflow!! Can't continue, shutting down server. ", TypeName(high));
         World::StopNow(ERROR_EXIT_CODE);
-        // World::StopNow() only sets a deferred stop flag, so this call still
-        // returns. Do NOT hand out m_nextGuid here: at the overflow boundary it
-        // equals GetMaxCounter-1, which for players is the reserved AH bot
-        // system-owner GUID (0xFFFFFFFE) -- returning it could brand a real
-        // character with the forged owner's GUID before the shutdown takes
-        // effect. Return the top-of-range value instead (never the reserved one);
-        // the server is stopping regardless.
-        return ObjectGuid::GetMaxCounter(high);
+
+        return GuidMaxCounter(high);
     }
     return m_nextGuid++;
 }
 
-/**
- * @brief Writes an object GUID to a byte buffer.
- *
- * @param buf The destination buffer.
- * @param guid The GUID to write.
- * @return The updated buffer.
- */
-ByteBuffer& operator<< (ByteBuffer& buf, ObjectGuid const& guid)
-{
-    buf << uint64(guid.GetRawValue());
-    return buf;
-}
-
-/**
- * @brief Reads an object GUID from a byte buffer.
- *
- * @param buf The source buffer.
- * @param guid The GUID to populate.
- * @return The updated buffer.
- */
-ByteBuffer& operator>>(ByteBuffer& buf, ObjectGuid& guid)
-{
-    guid.Set(buf.read<uint64>());
-    return buf;
-}
-
-/**
- * @brief Writes a packed GUID to a byte buffer.
- *
- * @param buf The destination buffer.
- * @param guid The packed GUID wrapper.
- * @return The updated buffer.
- */
 ByteBuffer& operator<< (ByteBuffer& buf, PackedGuid const& guid)
 {
     buf.append(guid.m_packedGuid);
     return buf;
 }
 
-/**
- * @brief Reads a packed GUID from a byte buffer.
- *
- * @param buf The source buffer.
- * @param guid The packed GUID reader wrapper.
- * @return The updated buffer.
- */
 ByteBuffer& operator>>(ByteBuffer& buf, PackedGuidReader const& guid)
 {
-    guid.m_guidPtr->Set(buf.readPackGUID());
+    *guid.m_guidPtr = buf.readPackGUID();
     return buf;
 }
 

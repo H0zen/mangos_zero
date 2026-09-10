@@ -34,43 +34,23 @@
 
 class Item;
 
-/**
- * The items one player has touched since their last save.
- *
- * An item knows whether it has changed; it does not know that anyone is keeping
- * a list of the changed ones, and it does not know where in that list it sits.
- * The queue holds both, so an item can be dropped out of it in one step without
- * carrying a cursor of its own.
- *
- * A dropped item leaves an empty place rather than shifting the rest along, so
- * that a walk already in progress keeps its footing. Reading the queue therefore
- * means skipping the empty places.
- *
- * While loading a character the queue is shut: everything read from the database
- * is by definition already saved, and noting it would write it straight back.
- */
 class ItemSaveQueue
 {
     public:
-        /// Whose queue this is. An item owned by anyone else is refused, which
-        /// is why the answer belongs here rather than at each call.
+
         void Belongs(ObjectGuid const& owner) { m_owner = owner; }
 
-        /// The item has changed and must be written before the player leaves.
         void Note(Item* item);
 
-        /// The item must not be written -- it is gone, or already saved.
         void Forget(Item* item);
 
         bool Holds(Item const* item) const { return m_place.find(item) != m_place.end(); }
 
-        /// Where the item sits, for the consistency check behind a GM command.
         std::size_t PlaceOf(Item const* item) const;
 
         void Shut(bool shut) { m_shut = shut; }
         bool IsShut() const { return m_shut; }
 
-        /// The places, empty ones included; a reader skips the nulls.
         std::vector<Item*> const& Waiting() const { return m_waiting; }
         bool IsEmpty() const { return m_waiting.empty(); }
 
@@ -81,6 +61,6 @@ class ItemSaveQueue
 
         std::vector<Item*>                        m_waiting;
         std::unordered_map<Item const*, std::size_t> m_place;
-        ObjectGuid                                m_owner;
+        ObjectGuid                                m_owner = 0;
         bool                                      m_shut = false;
 };

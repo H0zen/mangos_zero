@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks at a meeting stone.
 namespace meetingstones
 {
     void MeetingStoneJoin(Player& who, WorldPacket& packet);

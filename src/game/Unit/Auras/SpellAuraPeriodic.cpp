@@ -23,28 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file SpellAuras.cpp
- * @brief Spell aura implementation
- *
- * This file implements the SpellAura class which handles spell auras:
- * - Aura application and removal
- * - Aura effect processing (stat modifiers, DoTs, HoTs, etc.)
- * - Aura stacking rules
- * - Aura dispelling mechanics
- * - Aura periodic effects
- * - Aura duration management
- * - Aura visual effects
- *
- * Auras are persistent effects applied by spells that modify
- * unit stats, deal damage over time, or provide other benefits.
- *
- * @see SpellAura for the aura class
- * @see Spell for spell casting
- */
-
-
-
 #include <cmath>
 #include "SpellAuras.h"
 #include "Platform/Define.h"
@@ -78,12 +56,6 @@
 #include "TemporarySummon.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Applies special proc-trigger spell setup for specific aura spells.
- *
- * @param apply True to apply the proc aura; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraProcTriggerSpell(bool apply, bool Real)
 {
     if (!Real)
@@ -97,14 +69,14 @@ void Aura::HandleAuraProcTriggerSpell(bool apply, bool Real)
     {
         switch (GetId())
         {
-            // some spell have charges by functionality not have its in spell data
-            case 28200:                                    // Ascendance (Talisman of Ascendance trinket)
+
+            case 28200:
                 GetHolder()->SetAuraCharges(6);
                 break;
-            case 8179:                                     // Grounding Totem
+            case 8179:
                 target->CastSpell(target, 8178, true, 0, this);
                 return;
-            case 6474:                                     // Earthbind Totem
+            case 6474:
                 target->CastSpell(target, 3600, true, 0, this);
                 return;
             default:
@@ -113,15 +85,9 @@ void Aura::HandleAuraProcTriggerSpell(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Applies or removes the tracked-unit dynamic flag.
- *
- * @param apply True to mark the unit as tracked; false to clear it.
- * @param Real Unused.
- */
-void Aura::HandleAuraModStalked(bool apply, bool /*Real*/)
+void Aura::HandleAuraModStalked(bool apply, bool )
 {
-    // used by spells: Hunter's Mark, Mind Vision, Syndicate Tracker (MURP) DND
+
     if (apply)
     {
         GetTarget()->SetDynFlag(UNIT_DYNFLAG_TRACK_UNIT);
@@ -132,7 +98,7 @@ void Aura::HandleAuraModStalked(bool apply, bool /*Real*/)
     }
 }
 
-void Aura::HandlePeriodicTriggerSpell(bool apply, bool /*Real*/)
+void Aura::HandlePeriodicTriggerSpell(bool apply, bool )
 {
     m_isPeriodic = apply;
 
@@ -140,9 +106,9 @@ void Aura::HandlePeriodicTriggerSpell(bool apply, bool /*Real*/)
     {
         switch (GetId())
         {
-            case 29213:                                     // Curse of the Plaguebringer
+            case 29213:
                 if (m_removeMode != AURA_REMOVE_BY_DISPEL)
-                    // Cast Wrath of the Plaguebringer if not dispelled
+
                 {
                     Unit* target = GetTarget();
                     target->CastSpell(target, 29214, true, 0, this);
@@ -154,55 +120,29 @@ void Aura::HandlePeriodicTriggerSpell(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Enables or disables periodic trigger handling with an explicit value.
- *
- * @param apply True to enable periodic processing; false to disable it.
- * @param Real Unused.
- */
-void Aura::HandlePeriodicTriggerSpellWithValue(bool apply, bool /*Real*/)
+void Aura::HandlePeriodicTriggerSpellWithValue(bool apply, bool )
 {
     m_isPeriodic = apply;
 }
 
-/**
- * @brief Enables or disables periodic energize processing.
- *
- * @param apply True to enable periodic processing; false to disable it.
- * @param Real Unused.
- */
-void Aura::HandlePeriodicEnergize(bool apply, bool /*Real*/)
+void Aura::HandlePeriodicEnergize(bool apply, bool )
 {
     m_isPeriodic = apply;
 }
 
-/**
- * @brief Enables or disables periodic power burn processing.
- *
- * @param apply True to enable periodic processing; false to disable it.
- * @param Real Unused.
- */
-void Aura::HandleAuraPowerBurn(bool apply, bool /*Real*/)
+void Aura::HandleAuraPowerBurn(bool apply, bool )
 {
     m_isPeriodic = apply;
 }
 
-/**
- * @brief Enables periodic healing and precalculates healing bonuses when applied.
- *
- * @param apply True to enable periodic healing; false to disable it.
- * @param Real Unused.
- */
-void Aura::HandlePeriodicHeal(bool apply, bool /*Real*/)
+void Aura::HandlePeriodicHeal(bool apply, bool )
 {
     m_isPeriodic = apply;
 
     Unit* target = GetTarget();
 
-    // For prevent double apply bonuses
-    bool loading = (target->IsPlayer() && ((Player*)target)->GetSession()->PlayerLoading());
+    bool loading = (IsPlayer(target) && ((Player*)target)->GetSession()->PlayerLoading());
 
-    // Custom damage calculation after
     if (apply)
     {
         if (loading)
@@ -220,15 +160,9 @@ void Aura::HandlePeriodicHeal(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Enables periodic damage and precalculates damage bonuses when applied.
- *
- * @param apply True to enable periodic damage; false to disable it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandlePeriodicDamage(bool apply, bool Real)
 {
-    // spells required only Real aura add/remove
+
     if (!Real)
     {
         return;
@@ -239,10 +173,8 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
     Unit* target = GetTarget();
     SpellEntry const* spellProto = GetSpellProto();
 
-    // For prevent double apply bonuses
-    bool loading = (target->IsPlayer() && ((Player*)target)->GetSession()->PlayerLoading());
+    bool loading = (IsPlayer(target) && ((Player*)target)->GetSession()->PlayerLoading());
 
-    // Custom damage calculation after
     if (apply)
     {
         if (loading)
@@ -260,11 +192,11 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
         {
             case SPELLFAMILY_DRUID:
             {
-                // Rip
+
                 if (spellProto->SpellClassMask & UI64LIT(0x000000000000800000))
                 {
-                    // $AP * min(0.06*$cp, 0.24)/6 [Yes, there is no difference, whether 4 or 5 CPs are being used]
-                    if (caster->IsPlayer())
+
+                    if (IsPlayer(caster))
                     {
                         uint8 cp = ((Player*)caster)->GetComboPoints();
 
@@ -279,14 +211,14 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
             }
             case SPELLFAMILY_ROGUE:
             {
-                // Rupture
+
                 if (spellProto->SpellClassMask & UI64LIT(0x000000000000100000))
                 {
-                    if (!caster->IsPlayer())
+                    if (!IsPlayer(caster))
                     {
                         break;
                     }
-                    // Dmg/tick = $AP*min(0.01*$cp, 0.03) [Like Rip: only the first three CP increase the contribution from AP]
+
                     uint8 cp = ((Player*)caster)->GetComboPoints();
                     if (cp > 3)
                     {
@@ -302,12 +234,12 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
 
         if (m_modifier.m_auraname == SPELL_AURA_PERIODIC_DAMAGE)
         {
-            // SpellDamageBonusDone for magic spells
+
             if (spellProto->DefenseType == SPELL_DAMAGE_CLASS_NONE || spellProto->DefenseType == SPELL_DAMAGE_CLASS_MAGIC)
             {
                 m_modifier.m_amount = caster->SpellDamageBonusDone(target, GetSpellProto(), m_modifier.m_amount, DOT, GetStackAmount());
             }
-            // MeleeDamagebonusDone for weapon based spells
+
             else
             {
                 WeaponAttackType attackType = Recipe().Swings();
@@ -317,31 +249,17 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Enables or disables periodic percentage-based damage processing.
- *
- * @param apply True to enable periodic processing; false to disable it.
- * @param Real Unused.
- */
-void Aura::HandlePeriodicDamagePCT(bool apply, bool /*Real*/)
+void Aura::HandlePeriodicDamagePCT(bool apply, bool )
 {
     m_isPeriodic = apply;
 }
 
-/**
- * @brief Enables periodic health leech and precalculates spell bonuses when applied.
- *
- * @param apply True to enable periodic leeching; false to disable it.
- * @param Real Unused.
- */
-void Aura::HandlePeriodicLeech(bool apply, bool /*Real*/)
+void Aura::HandlePeriodicLeech(bool apply, bool )
 {
     m_isPeriodic = apply;
 
-    // For prevent double apply bonuses
-    bool loading = (GetTarget()->IsPlayer() && ((Player*)GetTarget())->GetSession()->PlayerLoading());
+    bool loading = (IsPlayer(GetTarget()) && ((Player*)GetTarget())->GetSession()->PlayerLoading());
 
-    // Custom damage calculation after
     if (apply)
     {
         if (loading)
@@ -359,31 +277,17 @@ void Aura::HandlePeriodicLeech(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Enables or disables periodic mana leech processing.
- *
- * @param apply True to enable periodic processing; false to disable it.
- * @param Real Unused.
- */
-void Aura::HandlePeriodicManaLeech(bool apply, bool /*Real*/)
+void Aura::HandlePeriodicManaLeech(bool apply, bool )
 {
     m_isPeriodic = apply;
 }
 
-/**
- * @brief Enables periodic health funnel processing and precalculates bonuses when applied.
- *
- * @param apply True to enable periodic processing; false to disable it.
- * @param Real Unused.
- */
-void Aura::HandlePeriodicHealthFunnel(bool apply, bool /*Real*/)
+void Aura::HandlePeriodicHealthFunnel(bool apply, bool )
 {
     m_isPeriodic = apply;
 
-    // For prevent double apply bonuses
-    bool loading = (GetTarget()->IsPlayer() && ((Player*)GetTarget())->GetSession()->PlayerLoading());
+    bool loading = (IsPlayer(GetTarget()) && ((Player*)GetTarget())->GetSession()->PlayerLoading());
 
-    // Custom damage calculation after
     if (apply)
     {
         if (loading)
@@ -401,14 +305,14 @@ void Aura::HandlePeriodicHealthFunnel(bool apply, bool /*Real*/)
     }
 }
 
-void Aura::HandleAuraModResistanceExclusive(bool apply, bool /*Real*/)
+void Aura::HandleAuraModResistanceExclusive(bool apply, bool )
 {
     for (int8 x = SPELL_SCHOOL_NORMAL; x < MAX_SPELL_SCHOOL; ++x)
     {
         if (m_modifier.m_miscvalue & int32(1 << x))
         {
             stats::Apply(*GetTarget(), UnitMods(UNIT_MOD_RESISTANCE_START + x), BASE_VALUE, float(m_modifier.m_amount), apply);
-            if (GetTarget()->IsPlayer())
+            if (IsPlayer(GetTarget()))
             {
                 ((Player*)GetTarget())->ApplyResistanceBuffModsMod(SpellSchools(x), m_positive, float(m_modifier.m_amount), apply);
             }
@@ -416,13 +320,7 @@ void Aura::HandleAuraModResistanceExclusive(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Applies or removes flat resistance modifiers.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraModResistance(bool apply, bool /*Real*/)
+void Aura::HandleAuraModResistance(bool apply, bool )
 {
     Unit* target = GetTarget();
     SpellEntry const* spellProto = GetSpellProto();
@@ -432,14 +330,13 @@ void Aura::HandleAuraModResistance(bool apply, bool /*Real*/)
         if (m_modifier.m_miscvalue & int32(1 << x))
         {
             stats::Apply(*target, UnitMods(UNIT_MOD_RESISTANCE_START + x), TOTAL_VALUE, float(m_modifier.m_amount), apply);
-            if (target->IsPlayer())
+            if (IsPlayer(target))
             {
                 ((Player*)target)->ApplyResistanceBuffModsMod(SpellSchools(x), m_positive, float(m_modifier.m_amount), apply);
             }
         }
     }
 
-    // Faerie Fire (druid versions)
     if (spellProto->SpellIconID == 109 &&
         spellProto->SpellClassSet == SPELLFAMILY_DRUID &&
         spellProto->SpellClassMask & UI64LIT(0x0000000000000400))
@@ -449,18 +346,12 @@ void Aura::HandleAuraModResistance(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Applies or removes percentage modifiers to base resistances.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraModBaseResistancePCT(bool apply, bool /*Real*/)
+void Aura::HandleAuraModBaseResistancePCT(bool apply, bool )
 {
-    // only players have base stats
-    if (!GetTarget()->IsPlayer())
+
+    if (!IsPlayer(GetTarget()))
     {
-        // pets only have base armor
+
         if (((Creature*)GetTarget())->IsPet() && (m_modifier.m_miscvalue & SPELL_SCHOOL_MASK_NORMAL))
         {
             stats::Apply(*GetTarget(), UNIT_MOD_ARMOR, BASE_PCT, float(m_modifier.m_amount), apply);
@@ -478,13 +369,7 @@ void Aura::HandleAuraModBaseResistancePCT(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Applies or removes percentage modifiers to total resistances.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleModResistancePercent(bool apply, bool /*Real*/)
+void Aura::HandleModResistancePercent(bool apply, bool )
 {
     Unit* target = GetTarget();
 
@@ -493,7 +378,7 @@ void Aura::HandleModResistancePercent(bool apply, bool /*Real*/)
         if (m_modifier.m_miscvalue & int32(1 << i))
         {
             stats::Apply(*target, UnitMods(UNIT_MOD_RESISTANCE_START + i), TOTAL_PCT, float(m_modifier.m_amount), apply);
-            if (target->IsPlayer())
+            if (IsPlayer(target))
             {
                 ((Player*)target)->ApplyResistanceBuffModsPercentMod(SpellSchools(i), true, float(m_modifier.m_amount), apply);
                 ((Player*)target)->ApplyResistanceBuffModsPercentMod(SpellSchools(i), false, float(m_modifier.m_amount), apply);
@@ -502,18 +387,12 @@ void Aura::HandleModResistancePercent(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Applies or removes flat modifiers to base resistances.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleModBaseResistance(bool apply, bool /*Real*/)
+void Aura::HandleModBaseResistance(bool apply, bool )
 {
-    // only players have base stats
-    if (!GetTarget()->IsPlayer())
+
+    if (!IsPlayer(GetTarget()))
     {
-        // only pets have base stats
+
         if (((Creature*)GetTarget())->IsPet() && (m_modifier.m_miscvalue & SPELL_SCHOOL_MASK_NORMAL))
         {
             stats::Apply(*GetTarget(), UNIT_MOD_ARMOR, TOTAL_VALUE, float(m_modifier.m_amount), apply);
@@ -531,7 +410,7 @@ void Aura::HandleModBaseResistance(bool apply, bool /*Real*/)
     }
 }
 
-void Aura::HandleAuraModStat(bool apply, bool /*Real*/)
+void Aura::HandleAuraModStat(bool apply, bool )
 {
     if (m_modifier.m_miscvalue < -2 || m_modifier.m_miscvalue > 4)
     {
@@ -541,12 +420,12 @@ void Aura::HandleAuraModStat(bool apply, bool /*Real*/)
 
     for (int32 i = STAT_STRENGTH; i < MAX_STATS; ++i)
     {
-        // -1 or -2 is all stats ( misc < -2 checked in function beginning )
+
         if (m_modifier.m_miscvalue < 0 || m_modifier.m_miscvalue == i)
         {
-            // m_target->ApplyStatMod(Stats(i), m_modifier.m_amount,apply);
+
             stats::Apply(*GetTarget(), UnitMods(UNIT_MOD_STAT_START + i), TOTAL_VALUE, float(m_modifier.m_amount), apply);
-            if (GetTarget()->IsPlayer())
+            if (IsPlayer(GetTarget()))
             {
                 ((Player*)GetTarget())->ApplyStatBuffMod(Stats(i), float(m_modifier.m_amount), apply);
             }
@@ -554,13 +433,7 @@ void Aura::HandleAuraModStat(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Applies or removes percentage modifiers to player base stats.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleModPercentStat(bool apply, bool /*Real*/)
+void Aura::HandleModPercentStat(bool apply, bool )
 {
     if (m_modifier.m_miscvalue < -1 || m_modifier.m_miscvalue > 4)
     {
@@ -568,8 +441,7 @@ void Aura::HandleModPercentStat(bool apply, bool /*Real*/)
         return;
     }
 
-    // only players have base stats
-    if (!GetTarget()->IsPlayer())
+    if (!IsPlayer(GetTarget()))
     {
         return;
     }
@@ -583,66 +455,37 @@ void Aura::HandleModPercentStat(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Refreshes player spell damage and healing data derived from stats.
- *
- * @param apply Unused.
- * @param Real Unused.
- */
-void Aura::HandleModSpellDamagePercentFromStat(bool /*apply*/, bool /*Real*/)
+void Aura::HandleModSpellDamagePercentFromStat(bool , bool )
 {
-    if (!GetTarget()->IsPlayer())
+    if (!IsPlayer(GetTarget()))
     {
         return;
     }
 
-    // Magic damage modifiers implemented in Unit::SpellDamageBonusDone
-    // This information for client side use only
-    // Recalculate bonus
     ((Player*)GetTarget())->Sheet().SpellDamageAndHealing();
 }
 
-/**
- * @brief Refreshes player healing data derived from stats.
- *
- * @param apply Unused.
- * @param Real Unused.
- */
-void Aura::HandleModSpellHealingPercentFromStat(bool /*apply*/, bool /*Real*/)
+void Aura::HandleModSpellHealingPercentFromStat(bool , bool )
 {
-    if (!GetTarget()->IsPlayer())
+    if (!IsPlayer(GetTarget()))
     {
         return;
     }
 
-    // Recalculate bonus
     ((Player*)GetTarget())->Sheet().SpellDamageAndHealing();
 }
 
-/**
- * @brief Refreshes player healing bonus data exposed to the client.
- *
- * @param apply Unused.
- * @param Real Unused.
- */
-void Aura::HandleModHealingDone(bool /*apply*/, bool /*Real*/)
+void Aura::HandleModHealingDone(bool , bool )
 {
-    if (!GetTarget()->IsPlayer())
+    if (!IsPlayer(GetTarget()))
     {
         return;
     }
-    // implemented in Unit::SpellHealingBonusDone
-    // this information is for client side only
+
     ((Player*)GetTarget())->Sheet().SpellDamageAndHealing();
 }
 
-/**
- * @brief Applies or removes percentage modifiers to total stats and preserves health ratios when required.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleModTotalPercentStat(bool apply, bool /*Real*/)
+void Aura::HandleModTotalPercentStat(bool apply, bool )
 {
     if (m_modifier.m_miscvalue < -1 || m_modifier.m_miscvalue > 4)
     {
@@ -652,7 +495,6 @@ void Aura::HandleModTotalPercentStat(bool apply, bool /*Real*/)
 
     Unit* target = GetTarget();
 
-    // save current and max HP before applying aura
     uint32 curHPValue = target->GetHealth();
     uint32 maxHPValue = target->GetMaxHealth();
 
@@ -661,62 +503,44 @@ void Aura::HandleModTotalPercentStat(bool apply, bool /*Real*/)
         if (m_modifier.m_miscvalue == i || m_modifier.m_miscvalue == -1)
         {
             stats::Apply(*target, UnitMods(UNIT_MOD_STAT_START + i), TOTAL_PCT, float(m_modifier.m_amount), apply);
-            if (target->IsPlayer())
+            if (IsPlayer(target))
             {
                 ((Player*)target)->ApplyStatPercentBuffMod(Stats(i), float(m_modifier.m_amount), apply);
             }
         }
     }
 
-    // recalculate current HP/MP after applying aura modifications (only for spells with 0x10 flag)
     if (m_modifier.m_miscvalue == STAT_STAMINA && maxHPValue > 0 && Recipe().Says().ability)
     {
-        // newHP = (curHP / maxHP) * newMaxHP = (newMaxHP * curHP) / maxHP -> which is better because no int -> double -> int conversion is needed
+
         uint32 newHPValue = (target->GetMaxHealth() * curHPValue) / maxHPValue;
         target->SetHealth(newHPValue);
     }
 }
 
-/**
- * @brief Refreshes armor-from-stat style resistance data for players.
- *
- * @param apply Unused.
- * @param Real Unused.
- */
-void Aura::HandleAuraModResistenceOfStatPercent(bool /*apply*/, bool /*Real*/)
+void Aura::HandleAuraModResistenceOfStatPercent(bool , bool )
 {
-    if (!GetTarget()->IsPlayer())
+    if (!IsPlayer(GetTarget()))
     {
         return;
     }
 
     if (m_modifier.m_miscvalue != SPELL_SCHOOL_MASK_NORMAL)
     {
-        // Only armour reads this aura: the sheet works a school's resistance
-        // out from modifiers alone and never asks a stat for a share of it.
+
         sLog.outError("Aura SPELL_AURA_MOD_RESISTANCE_OF_STAT_PERCENT(182) need adding support for non-armor resistances!");
         return;
     }
 
-    // Recalculate Armor
     GetTarget()->Sheet().Armour();
 }
 
-/********************************/
-/***      HEAL & ENERGIZE     ***/
-/********************************/
-void Aura::HandleAuraModTotalHealthPercentRegen(bool apply, bool /*Real*/)
+void Aura::HandleAuraModTotalHealthPercentRegen(bool apply, bool )
 {
     m_isPeriodic = apply;
 }
 
-/**
- * @brief Enables periodic total mana regeneration using a one-second tick when needed.
- *
- * @param apply True to enable the periodic effect; false to disable it.
- * @param Real Unused.
- */
-void Aura::HandleAuraModTotalManaPercentRegen(bool apply, bool /*Real*/)
+void Aura::HandleAuraModTotalManaPercentRegen(bool apply, bool )
 {
     if (m_modifier.periodictime == 0)
     {
@@ -727,7 +551,7 @@ void Aura::HandleAuraModTotalManaPercentRegen(bool apply, bool /*Real*/)
     m_isPeriodic = apply;
 }
 
-void Aura::HandleModRegen(bool apply, bool /*Real*/)        // eating
+void Aura::HandleModRegen(bool apply, bool )
 {
     if (m_modifier.periodictime == 0)
     {
@@ -738,7 +562,7 @@ void Aura::HandleModRegen(bool apply, bool /*Real*/)        // eating
     m_isPeriodic = apply;
 }
 
-void Aura::HandleModPowerRegen(bool apply, bool Real)       // drinking
+void Aura::HandleModPowerRegen(bool apply, bool Real)
 {
     if (!Real)
     {
@@ -748,7 +572,7 @@ void Aura::HandleModPowerRegen(bool apply, bool Real)       // drinking
     Powers powerType = GetTarget()->GetPowerType();
     if (m_modifier.periodictime == 0)
     {
-        // Anger Management (only spell use this aura for rage)
+
         if (powerType == POWER_RAGE)
         {
             m_modifier.periodictime = 3000;
@@ -761,7 +585,7 @@ void Aura::HandleModPowerRegen(bool apply, bool Real)       // drinking
 
     m_periodicTimer = 5000;
 
-    if (GetTarget()->IsPlayer() && m_modifier.m_miscvalue == POWER_MANA)
+    if (IsPlayer(GetTarget()) && m_modifier.m_miscvalue == POWER_MANA)
     {
         ((Player*)GetTarget())->Sheet().ManaRegen();
     }
@@ -769,51 +593,33 @@ void Aura::HandleModPowerRegen(bool apply, bool Real)       // drinking
     m_isPeriodic = apply;
 }
 
-/**
- * @brief Refreshes player mana regeneration after percentage-based regen changes.
- *
- * @param apply Unused.
- * @param Real True when processing the real aura state change.
- */
-void Aura::HandleModPowerRegenPCT(bool /*apply*/, bool Real)
+void Aura::HandleModPowerRegenPCT(bool , bool Real)
 {
-    // spells required only Real aura add/remove
+
     if (!Real)
     {
         return;
     }
 
-    if (!GetTarget()->IsPlayer())
+    if (!IsPlayer(GetTarget()))
     {
         return;
     }
 
-    // Update manaregen value
     if (m_modifier.m_miscvalue == POWER_MANA)
     {
         ((Player*)GetTarget())->Sheet().ManaRegen();
     }
 }
 
-/**
- * @brief Applies or removes maximum health increases, including special temporary-health cases.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraModIncreaseHealth(bool apply, bool Real)
 {
     Unit* target = GetTarget();
 
     switch (GetId())
     {
-        // Special case with temporary increase max/current health
-        // Cases where we need to manually calculate the amount for the spell (by percentage)
-        // recalculate to full amount at apply for proper remove
-        // no break here
 
-        // Cases where m_amount already has the correct value (spells cast with CastCustomSpell or absolute values)
-        case 12976:                                         // Warrior Last Stand triggered spell (Cast with percentage-value by CastCustomSpell)
+        case 12976:
         {
             if (Real)
             {
@@ -837,9 +643,9 @@ void Aura::HandleAuraModIncreaseHealth(bool apply, bool Real)
             }
             return;
         }
-        // Case with temp increase health, where total percentage is kept
-        case 1178:                                          // Bear Form (Passive)
-        case 9635:                                          // Dire Bear Form (Passive)
+
+        case 1178:
+        case 9635:
         {
             if (Real)
             {
@@ -849,19 +655,13 @@ void Aura::HandleAuraModIncreaseHealth(bool apply, bool Real)
             }
             return;
         }
-        // generic case
+
         default:
             stats::Apply(*target, UNIT_MOD_HEALTH, TOTAL_VALUE, float(m_modifier.m_amount), apply);
     }
 }
 
-/**
- * @brief Applies or removes a flat increase to the current power type's maximum value.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraModIncreaseEnergy(bool apply, bool /*Real*/)
+void Aura::HandleAuraModIncreaseEnergy(bool apply, bool )
 {
     Unit* target = GetTarget();
     Powers powerType = target->GetPowerType();
@@ -875,13 +675,7 @@ void Aura::HandleAuraModIncreaseEnergy(bool apply, bool /*Real*/)
     stats::Apply(*target, unitMod, TOTAL_VALUE, float(m_modifier.m_amount), apply);
 }
 
-/**
- * @brief Applies or removes a percentage increase to the current power type.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraModIncreaseEnergyPercent(bool apply, bool /*Real*/)
+void Aura::HandleAuraModIncreaseEnergyPercent(bool apply, bool )
 {
     Powers powerType = GetTarget()->GetPowerType();
     if (int32(powerType) != m_modifier.m_miscvalue)
@@ -894,20 +688,14 @@ void Aura::HandleAuraModIncreaseEnergyPercent(bool apply, bool /*Real*/)
     stats::Apply(*GetTarget(), unitMod, TOTAL_PCT, float(m_modifier.m_amount), apply);
 }
 
-/**
- * @brief Applies or removes a percentage increase to maximum health.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraModIncreaseHealthPercent(bool apply, bool /*Real*/)
+void Aura::HandleAuraModIncreaseHealthPercent(bool apply, bool )
 {
     stats::Apply(*GetTarget(), UNIT_MOD_HEALTH, TOTAL_PCT, float(m_modifier.m_amount), apply);
 }
 
-void Aura::HandleAuraModParryPercent(bool /*apply*/, bool /*Real*/)
+void Aura::HandleAuraModParryPercent(bool , bool )
 {
-    if (!GetTarget()->IsPlayer())
+    if (!IsPlayer(GetTarget()))
     {
         return;
     }
@@ -915,38 +703,26 @@ void Aura::HandleAuraModParryPercent(bool /*apply*/, bool /*Real*/)
     ((Player*)GetTarget())->Sheet().Parry();
 }
 
-/**
- * @brief Refreshes player dodge percentage after aura changes.
- *
- * @param apply Unused.
- * @param Real Unused.
- */
-void Aura::HandleAuraModDodgePercent(bool /*apply*/, bool /*Real*/)
+void Aura::HandleAuraModDodgePercent(bool , bool )
 {
-    if (!GetTarget()->IsPlayer())
+    if (!IsPlayer(GetTarget()))
     {
         return;
     }
 
     ((Player*)GetTarget())->Sheet().Dodge();
-    // sLog.outError("BONUS DODGE CHANCE: + %f", float(m_modifier.m_amount));
+
 }
 
-/**
- * @brief Refreshes player mana regeneration rules after regen-interrupt changes.
- *
- * @param apply Unused.
- * @param Real True when processing the real aura state change.
- */
-void Aura::HandleAuraModRegenInterrupt(bool /*apply*/, bool Real)
+void Aura::HandleAuraModRegenInterrupt(bool , bool Real)
 {
-    // spells required only Real aura add/remove
+
     if (!Real)
     {
         return;
     }
 
-    if (!GetTarget()->IsPlayer())
+    if (!IsPlayer(GetTarget()))
     {
         return;
     }
@@ -954,22 +730,15 @@ void Aura::HandleAuraModRegenInterrupt(bool /*apply*/, bool Real)
     ((Player*)GetTarget())->Sheet().ManaRegen();
 }
 
-/**
- * @brief Applies or removes melee and ranged critical strike bonuses.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleAuraModCritPercent(bool apply, bool Real)
 {
     Unit* target = GetTarget();
 
-    if (!target->IsPlayer())
+    if (!IsPlayer(target))
     {
         return;
     }
 
-    // apply item specific bonuses for already equipped weapon
     if (Real)
     {
         for (int i = 0; i < MAX_ATTACK; ++i)
@@ -981,10 +750,6 @@ void Aura::HandleAuraModCritPercent(bool apply, bool Real)
         }
     }
 
-    // mods must be applied base at equipped weapon class and subclass comparison
-    // with spell->EquippedItemClass and  EquippedItemSubclass and EquippedItemInvTypes
-    // m_modifier.m_miscvalue comparison with item generated damage types
-
     if (GetSpellProto()->EquippedItemClass == -1)
     {
         ((Player*)target)->HandleBaseModValue(CRIT_PERCENTAGE,         FLAT_MOD, float(m_modifier.m_amount), apply);
@@ -993,17 +758,11 @@ void Aura::HandleAuraModCritPercent(bool apply, bool Real)
     }
     else
     {
-        // done in Player::_ApplyWeaponDependentAuraMods
+
     }
 }
 
-/**
- * @brief Applies or removes melee and ranged hit chance modifiers.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleModHitChance(bool apply, bool /*Real*/)
+void Aura::HandleModHitChance(bool apply, bool )
 {
     Unit* target = GetTarget();
 
@@ -1022,32 +781,20 @@ void Aura::HandleModHitChance(bool apply, bool /*Real*/)
     }
 }
 
-/**
- * @brief Applies or removes spell hit chance modifiers.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleModSpellHitChance(bool apply, bool /*Real*/)
+void Aura::HandleModSpellHitChance(bool apply, bool )
 {
     GetTarget()->m_modSpellHitChance += apply ? m_modifier.m_amount : (-m_modifier.m_amount);
 }
 
-/**
- * @brief Applies or removes spell critical strike chance bonuses.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleModSpellCritChance(bool apply, bool Real)
 {
-    // spells required only Real aura add/remove
+
     if (!Real)
     {
         return;
     }
 
-    if (GetTarget()->IsPlayer())
+    if (IsPlayer(GetTarget()))
     {
         ((Player*)GetTarget())->Sheet().AllSpellCrits();
     }
@@ -1057,21 +804,15 @@ void Aura::HandleModSpellCritChance(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Refreshes per-school spell critical strike chance for players.
- *
- * @param apply Unused.
- * @param Real True when processing the real aura state change.
- */
-void Aura::HandleModSpellCritChanceShool(bool /*apply*/, bool Real)
+void Aura::HandleModSpellCritChanceShool(bool , bool Real)
 {
-    // spells required only Real aura add/remove
+
     if (!Real)
     {
         return;
     }
 
-    if (!GetTarget()->IsPlayer())
+    if (!IsPlayer(GetTarget()))
     {
         return;
     }
@@ -1085,7 +826,7 @@ void Aura::HandleModSpellCritChanceShool(bool /*apply*/, bool Real)
     }
 }
 
-void Aura::HandleModCastingSpeed(bool apply, bool /*Real*/)
+void Aura::HandleModCastingSpeed(bool apply, bool )
 {
     if (apply)
     {
@@ -1101,13 +842,7 @@ void Aura::HandleModCastingSpeed(bool apply, bool /*Real*/)
     GetTarget()->ApplyCastTimePercentMod(m_modifier.m_amount, apply);
 }
 
-/**
- * @brief Applies or removes haste effects to main-hand attack speed.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleModAttackSpeed(bool apply, bool /*Real*/)
+void Aura::HandleModAttackSpeed(bool apply, bool )
 {
     if (apply)
     {
@@ -1123,13 +858,7 @@ void Aura::HandleModAttackSpeed(bool apply, bool /*Real*/)
     GetTarget()->ApplyAttackTimePercentMod(BASE_ATTACK, m_modifier.m_amount, apply);
 }
 
-/**
- * @brief Applies or removes haste effects to both melee attack speeds.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleModMeleeSpeedPct(bool apply, bool /*Real*/)
+void Aura::HandleModMeleeSpeedPct(bool apply, bool )
 {
     if (apply)
     {
@@ -1147,13 +876,7 @@ void Aura::HandleModMeleeSpeedPct(bool apply, bool /*Real*/)
     target->ApplyAttackTimePercentMod(OFF_ATTACK, m_modifier.m_amount, apply);
 }
 
-/**
- * @brief Applies or removes haste effects to ranged attack speed.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraModRangedHaste(bool apply, bool /*Real*/)
+void Aura::HandleAuraModRangedHaste(bool apply, bool )
 {
     if (apply)
     {
@@ -1169,21 +892,14 @@ void Aura::HandleAuraModRangedHaste(bool apply, bool /*Real*/)
     GetTarget()->ApplyAttackTimePercentMod(RANGED_ATTACK, m_modifier.m_amount, apply);
 }
 
-/**
- * @brief Applies or removes ammo-based ranged haste when the equipped weapon uses ammunition.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleRangedAmmoHaste(bool apply, bool /*Real*/)
+void Aura::HandleRangedAmmoHaste(bool apply, bool )
 {
-    if (!GetTarget()->IsPlayer())
+    if (!IsPlayer(GetTarget()))
     {
         return;
     }
 
-    // Quivers should not increase attack speed for ranged weapons which do not require any ammo.
-    Item* ranged_weapon = ToPlayer(GetTarget())->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_RANGED);
+    Item* ranged_weapon = static_cast<Player*>(GetTarget())->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_RANGED);
     if (!ranged_weapon || ranged_weapon->GetProto()->AmmoType == 0)
     {
         return;
@@ -1203,7 +919,7 @@ void Aura::HandleRangedAmmoHaste(bool apply, bool /*Real*/)
     GetTarget()->ApplyAttackTimePercentMod(RANGED_ATTACK, m_modifier.m_amount, apply);
 }
 
-void Aura::HandleAuraModAttackPower(bool apply, bool /*Real*/)
+void Aura::HandleAuraModAttackPower(bool apply, bool )
 {
     if (apply)
     {
@@ -1219,13 +935,7 @@ void Aura::HandleAuraModAttackPower(bool apply, bool /*Real*/)
     stats::Apply(*GetTarget(), UNIT_MOD_ATTACK_POWER, TOTAL_VALUE, m_modifier.m_amount, apply);
 }
 
-/**
- * @brief Applies or removes flat ranged attack power bonuses.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraModRangedAttackPower(bool apply, bool /*Real*/)
+void Aura::HandleAuraModRangedAttackPower(bool apply, bool )
 {
     if ((GetTarget()->getClassMask() & CLASSMASK_WAND_USERS) != 0)
     {
@@ -1246,13 +956,7 @@ void Aura::HandleAuraModRangedAttackPower(bool apply, bool /*Real*/)
     stats::Apply(*GetTarget(), UNIT_MOD_ATTACK_POWER_RANGED, TOTAL_VALUE, m_modifier.m_amount, apply);
 }
 
-/**
- * @brief Applies or removes percentage modifiers to melee attack power.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraModAttackPowerPercent(bool apply, bool /*Real*/)
+void Aura::HandleAuraModAttackPowerPercent(bool apply, bool )
 {
     if (apply)
     {
@@ -1265,17 +969,10 @@ void Aura::HandleAuraModAttackPowerPercent(bool apply, bool /*Real*/)
         }
     }
 
-    // UNIT_FIELD_ATTACK_POWER_MULTIPLIER = multiplier - 1
     stats::Apply(*GetTarget(), UNIT_MOD_ATTACK_POWER, TOTAL_PCT, m_modifier.m_amount, apply);
 }
 
-/**
- * @brief Applies or removes percentage modifiers to ranged attack power.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real Unused.
- */
-void Aura::HandleAuraModRangedAttackPowerPercent(bool apply, bool /*Real*/)
+void Aura::HandleAuraModRangedAttackPowerPercent(bool apply, bool )
 {
     if ((GetTarget()->getClassMask() & CLASSMASK_WAND_USERS) != 0)
     {
@@ -1292,19 +989,14 @@ void Aura::HandleAuraModRangedAttackPowerPercent(bool apply, bool /*Real*/)
         }
     }
 
-    // UNIT_FIELD_RANGED_ATTACK_POWER_MULTIPLIER = multiplier - 1
     stats::Apply(*GetTarget(), UNIT_MOD_ATTACK_POWER_RANGED, TOTAL_PCT, amount, apply);
 }
 
-/********************************/
-/***        DAMAGE BONUS      ***/
-/********************************/
 void Aura::HandleModDamageDone(bool apply, bool Real)
 {
     Unit* target = GetTarget();
 
-    // apply item specific bonuses for already equipped weapon
-    if (Real && target->IsPlayer())
+    if (Real &&IsPlayer(target))
     {
         for (int i = 0; i < MAX_ATTACK; ++i)
         {
@@ -1315,19 +1007,10 @@ void Aura::HandleModDamageDone(bool apply, bool Real)
         }
     }
 
-    // m_modifier.m_miscvalue is bitmask of spell schools
-    // 1 ( 0-bit ) - normal school damage (SPELL_SCHOOL_MASK_NORMAL)
-    // 126 - full bitmask all magic damages (SPELL_SCHOOL_MASK_MAGIC) including wands
-    // 127 - full bitmask any damages
-    //
-    // mods must be applied base at equipped weapon class and subclass comparison
-    // with spell->EquippedItemClass and  EquippedItemSubclass and EquippedItemInvTypes
-    // m_modifier.m_miscvalue comparison with item generated damage types
-
     if ((m_modifier.m_miscvalue & SPELL_SCHOOL_MASK_NORMAL) != 0)
     {
-        // apply generic physical damage bonuses including wand case
-        if (GetSpellProto()->EquippedItemClass == -1 || !target->IsPlayer())
+
+        if (GetSpellProto()->EquippedItemClass == -1 || !IsPlayer(target))
         {
             stats::Apply(*target, UNIT_MOD_DAMAGE_MAINHAND, TOTAL_VALUE, float(m_modifier.m_amount), apply);
             stats::Apply(*target, UNIT_MOD_DAMAGE_OFFHAND, TOTAL_VALUE, float(m_modifier.m_amount), apply);
@@ -1335,10 +1018,10 @@ void Aura::HandleModDamageDone(bool apply, bool Real)
         }
         else
         {
-            // done in Player::_ApplyWeaponDependentAuraMods
+
         }
 
-        if (target->IsPlayer())
+        if (IsPlayer(target))
         {
             if (m_positive)
             {
@@ -1351,7 +1034,6 @@ void Aura::HandleModDamageDone(bool apply, bool Real)
         }
     }
 
-    // Skip non magic case for speedup
     if ((m_modifier.m_miscvalue & SPELL_SCHOOL_MASK_MAGIC) == 0)
     {
         return;
@@ -1359,16 +1041,11 @@ void Aura::HandleModDamageDone(bool apply, bool Real)
 
     if (GetSpellProto()->EquippedItemClass != -1 || GetSpellProto()->EquippedItemInvTypes != 0)
     {
-        // wand magic case (skip generic to all item spell bonuses)
-        // done in Player::_ApplyWeaponDependentAuraMods
 
-        // Skip item specific requirements for not wand magic damage
         return;
     }
 
-    // Magic damage modifiers implemented in Unit::SpellDamageBonusDone
-    // This information for client side use only
-    if (target->IsPlayer())
+    if (IsPlayer(target))
     {
         if (m_positive)
         {
@@ -1398,19 +1075,12 @@ void Aura::HandleModDamageDone(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Applies or removes percentage damage bonuses for physical and magical damage.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleModDamagePercentDone(bool apply, bool Real)
 {
     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "AURA MOD DAMAGE type:%u negative:%u", m_modifier.m_miscvalue, m_positive ? 0 : 1);
     Unit* target = GetTarget();
 
-    // apply item specific bonuses for already equipped weapon
-    if (Real && target->IsPlayer())
+    if (Real &&IsPlayer(target))
     {
         for (int i = 0; i < MAX_ATTACK; ++i)
         {
@@ -1421,19 +1091,10 @@ void Aura::HandleModDamagePercentDone(bool apply, bool Real)
         }
     }
 
-    // m_modifier.m_miscvalue is bitmask of spell schools
-    // 1 ( 0-bit ) - normal school damage (SPELL_SCHOOL_MASK_NORMAL)
-    // 126 - full bitmask all magic damages (SPELL_SCHOOL_MASK_MAGIC) including wand
-    // 127 - full bitmask any damages
-    //
-    // mods must be applied base at equipped weapon class and subclass comparison
-    // with spell->EquippedItemClass and  EquippedItemSubclass and EquippedItemInvTypes
-    // m_modifier.m_miscvalue comparison with item generated damage types
-
     if ((m_modifier.m_miscvalue & SPELL_SCHOOL_MASK_NORMAL) != 0)
     {
-        // apply generic physical damage bonuses including wand case
-        if (GetSpellProto()->EquippedItemClass == -1 || !target->IsPlayer())
+
+        if (GetSpellProto()->EquippedItemClass == -1 || !IsPlayer(target))
         {
             stats::Apply(*target, UNIT_MOD_DAMAGE_MAINHAND, TOTAL_PCT, float(m_modifier.m_amount), apply);
             stats::Apply(*target, UNIT_MOD_DAMAGE_OFFHAND, TOTAL_PCT, float(m_modifier.m_amount), apply);
@@ -1441,16 +1102,15 @@ void Aura::HandleModDamagePercentDone(bool apply, bool Real)
         }
         else
         {
-            // done in Player::_ApplyWeaponDependentAuraMods
+
         }
-        // For show in client
-        if (Player* player = ToPlayer(target))
+
+        if (Player* player = static_cast<Player*>(target))
         {
             player->ApplyDamageDonePercent(SPELL_SCHOOL_NORMAL, m_modifier.m_amount / 100.0f, apply);
         }
     }
 
-    // Skip non magic case for speedup
     if ((m_modifier.m_miscvalue & SPELL_SCHOOL_MASK_MAGIC) == 0)
     {
         return;
@@ -1458,16 +1118,11 @@ void Aura::HandleModDamagePercentDone(bool apply, bool Real)
 
     if (GetSpellProto()->EquippedItemClass != -1 || GetSpellProto()->EquippedItemInvTypes != 0)
     {
-        // wand magic case (skip generic to all item spell bonuses)
-        // done in Player::_ApplyWeaponDependentAuraMods
 
-        // Skip item specific requirements for not wand magic damage
         return;
     }
 
-    // Magic damage percent modifiers implemented in Unit::SpellDamageBonusDone
-    // Send info to client
-    if (Player* player = ToPlayer(target))
+    if (Player* player = static_cast<Player*>(target))
     {
         for (int i = SPELL_SCHOOL_HOLY; i < MAX_SPELL_SCHOOL; ++i)
         {
@@ -1476,15 +1131,9 @@ void Aura::HandleModDamagePercentDone(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Applies or removes percentage damage bonuses to offhand attacks.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleModOffhandDamagePercent(bool apply, bool Real)
 {
-    // spells required only Real aura add/remove
+
     if (!Real)
     {
         return;
@@ -1497,7 +1146,7 @@ void Aura::HandleModOffhandDamagePercent(bool apply, bool Real)
 
 void Aura::HandleModPowerCostPCT(bool apply, bool Real)
 {
-    // spells required only Real aura add/remove
+
     if (!Real)
     {
         return;
@@ -1513,15 +1162,9 @@ void Aura::HandleModPowerCostPCT(bool apply, bool Real)
     }
 }
 
-/**
- * @brief Applies or removes flat spell power cost modifiers by school.
- *
- * @param apply True to apply the modifier; false to remove it.
- * @param Real True when processing the real aura state change.
- */
 void Aura::HandleModPowerCost(bool apply, bool Real)
 {
-    // spells required only Real aura add/remove
+
     if (!Real)
     {
         return;

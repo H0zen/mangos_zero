@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include "Creature.h"
 #include "WorldPacket.h"
 #include "Opcodes.h"
@@ -59,12 +57,6 @@
 #include "MovementGenerator.h"
 #include "Policies/Singleton.h"
 
-/**
- * @brief Enables or disables walk mode for the creature.
- *
- * @param enable true to walk; false to run.
- * @param asDefault true to also update the default running state.
- */
 void Creature::SetWalk(bool enable, bool asDefault)
 {
     if (asDefault)
@@ -79,7 +71,6 @@ void Creature::SetWalk(bool enable, bool asDefault)
         }
     }
 
-    // Nothing changed?
     if (enable == m_movementInfo.HasMovementFlag(MOVEFLAG_WALK_MODE))
     {
         return;
@@ -99,11 +90,6 @@ void Creature::SetWalk(bool enable, bool asDefault)
     Deliver(Audience::Around(*this).AndSubject(), &data);
 }
 
-/**
- * @brief Enables or disables levitation movement flags.
- *
- * @param enable true to levitate; false to clear the flag.
- */
 void Creature::SetLevitate(bool enable)
 {
     if (enable)
@@ -116,11 +102,6 @@ void Creature::SetLevitate(bool enable)
     }
 }
 
-/**
- * @brief Enables or disables swim movement flags and broadcasts the change.
- *
- * @param enable true to swim; false to stop swimming.
- */
 void Creature::SetSwim(bool enable)
 {
     if (enable)
@@ -137,21 +118,11 @@ void Creature::SetSwim(bool enable)
     Deliver(Audience::Around(*this).AndSubject(), &data);
 }
 
-/**
- * @brief Placeholder for enabling or disabling flight.
- *
- * @param enable Unused flight toggle.
- */
-void Creature::SetCanFly(bool /*enable*/)
+void Creature::SetCanFly(bool )
 {
-    //     TODO: check if there is something similar for 1.12.x (dragons and other flying NPCs)
+
 }
 
-/**
- * @brief Enables or disables feather-fall movement behavior.
- *
- * @param enable true to enable feather fall; false to restore normal falling.
- */
 void Creature::SetFeatherFall(bool enable)
 {
     if (enable)
@@ -168,11 +139,6 @@ void Creature::SetFeatherFall(bool enable)
     Deliver(Audience::Around(*this).AndSubject(), &data);
 }
 
-/**
- * @brief Enables or disables hover movement behavior.
- *
- * @param enable true to hover; false to unset hover.
- */
 void Creature::SetHover(bool enable)
 {
     if (enable)
@@ -189,11 +155,6 @@ void Creature::SetHover(bool enable)
     Deliver(Audience::Around(*this), &data);
 }
 
-/**
- * @brief Enables or disables root movement behavior.
- *
- * @param enable true to root; false to unroot.
- */
 void Creature::SetRoot(bool enable)
 {
     if (enable)
@@ -210,11 +171,6 @@ void Creature::SetRoot(bool enable)
     Deliver(Audience::Around(*this).AndSubject(), &data);
 }
 
-/**
- * @brief Enables or disables water-walking behavior.
- *
- * @param enable true to water walk; false to restore land walking.
- */
 void Creature::SetWaterWalk(bool enable)
 {
     if (enable)

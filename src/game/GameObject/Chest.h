@@ -31,25 +31,14 @@
 
 class Player;
 
-/// How long a chest stands about after the last thing is taken out of it.
 uint32 const CHEST_LINGER = 5 * MINUTE;
 
-/**
- * What becomes of a chest once players have started taking from it.
- *
- * Two things outlive the opening. It waits a while before vanishing, so that a
- * group finishing a fight is not robbed of the box in front of them. And it
- * remembers who has already learned something by opening it: a lock picked, a
- * vein mined, a herb gathered teaches a player once and never again, however
- * many times they come back to the same one.
- */
 class Chest
 {
     public:
-        /// It is empty and should go at this moment, not before.
+
         void EmptyAt(time_t when) { m_emptyAt = when; }
 
-        /// @return true when that moment has come and it was ever set.
         bool IsEmptyingDue(time_t now) const { return m_emptyAt != 0 && m_emptyAt <= now; }
 
         bool HasTaught(ObjectGuid const& learner) const
@@ -59,7 +48,6 @@ class Chest
 
         void Taught(ObjectGuid const& learner) { m_taught.insert(learner); }
 
-        /// Everyone may learn from it again, which is what a fresh one is.
         void ForgetLearners() { m_taught.clear(); }
 
     private:

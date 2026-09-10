@@ -26,44 +26,38 @@
 #pragma once
 
 #include "Object.h"
+#include "Position.h"
 #include "Tenure.h"
+#include "Camera.h"
+#include "GameTime.h"
+#include "Geometry/Placement.h"
+
+class TerrainInfo;
+class Map;
+class InstanceData;
+class Player;
 
 #define CONTACT_DISTANCE            0.5f
 #define INTERACTION_DISTANCE        5.0f
 #define ATTACK_DISTANCE             5.0f
-#define TRADE_DISTANCE              11.11f                  // max distance for trading
-#define MAX_VISIBILITY_DISTANCE     333.0f                  // max distance for visible object show, limited in 333 yards
-#define DEFAULT_VISIBILITY_DISTANCE 90.0f                   // default visible distance, 90 yards on continents
-#define DEFAULT_VISIBILITY_INSTANCE 120.0f                  // default visible distance in instances, 120 yards
-#define DEFAULT_VISIBILITY_BGARENAS 180.0f                  // default visible distance in BG/Arenas, 180 yards
+#define TRADE_DISTANCE              11.11f
+#define MAX_VISIBILITY_DISTANCE     333.0f
+#define DEFAULT_VISIBILITY_DISTANCE 90.0f
+#define DEFAULT_VISIBILITY_INSTANCE 120.0f
+#define DEFAULT_VISIBILITY_BGARENAS 180.0f
 
-#define DEFAULT_WORLD_OBJECT_SIZE   0.388999998569489f      // currently used (correctly?) for any non Unit world objects. This is actually the bounding_radius, like player/creature from creature_model_data
+#define DEFAULT_WORLD_OBJECT_SIZE   0.388999998569489f
 #define MAX_STEALTH_DETECT_RANGE    45.0f
 
-// How far a deck map extends from its origin. A deck map is the hull, so its bounds are
-// the hull's. Used only when the vessel cannot be resolved and its real extent read; the
-// job is to reject the absolute continent coordinates a leaving zeppelin sometimes reports.
 #define MAX_DECK_EXTENT             250.0f
 #define DECK_EDGE_MARGIN            10.0f
 
-/**
- * @brief World update counter
- *
- * Measures time between world update ticks.
- * Essential for units updating their spells after cells become active.
- */
 class WorldUpdateCounter
 {
     public:
-        /**
-         * @brief Constructor
-         */
+
         WorldUpdateCounter() : m_tmStart(0) {}
 
-        /**
-         * @brief Get elapsed time since start
-         * @return Elapsed time in milliseconds
-         */
         time_t timeElapsed()
         {
             if (!m_tmStart)
@@ -74,16 +68,13 @@ class WorldUpdateCounter
             return getMSTimeDiff(m_tmStart, GameTime::GetGameTimeMS());
         }
 
-        /**
-         * @brief Reset the counter
-         */
         void Reset()
         {
             m_tmStart = GameTime::GetGameTimeMS();
         }
 
     private:
-        uint32 m_tmStart; ///< Start time in milliseconds
+        uint32 m_tmStart;
 };
 
 struct OccupantChangeAccumulator;
@@ -94,8 +85,6 @@ class Occupant : public Object
 
     public:
 
-        // class is used to manipulate with WorldUpdateCounter
-        // it is needed in order to get time diff between two object's Update() calls
         class UpdateHelper
         {
             public:
@@ -117,21 +106,14 @@ class Occupant : public Object
 
         virtual ~Occupant();
 
-        virtual void Update(uint32 update_diff, uint32 /*time_diff*/);
+        virtual void Update(uint32 update_diff, uint32 );
 
         void _Create(uint32 guidlow, HighGuid guidhigh);
 
-        /// WHERE THIS OBJECT IS -- the whole spatial API. An object HAS a placement; it
-        /// is not a bag of coordinates with geometry methods bolted on, so there are no
-        /// GetPositionX/GetDistance/HasInArc here and there never will be. Ask the
-        /// component: obj->Where().DistanceTo(other->Where()).
         Geometry::Placement const& Where() const { return m_placement; }
 
-        /// Mutation of the pose. Movement drives this; nobody else should need it.
         Geometry::Placement& Place() { return m_placement; }
 
-        /// The extent lives in the component; this only pushes a new value in when the
-        /// per-class formula's inputs change (a model, a scale -- rarely).
         void RefreshBoundingRadius() { m_placement.Resize(ComputeBoundingRadius()); }
 
         void OnScaleChanged() override { RefreshBoundingRadius(); }
@@ -139,50 +121,31 @@ class Occupant : public Object
         uint32 GetMapId() const { return m_mapId; }
         uint32 GetInstanceId() const { return m_InstanceId; }
 
-
         InstanceData* GetInstanceData() const;
 
         const char* GetName() const { return m_name.c_str(); }
         void SetName(const std::string& newname) { m_name = newname; }
 
-        virtual const char* GetNameForLocaleIdx(int32 /*locale_idx*/) const { return GetName(); }
+        virtual const char* GetNameForLocaleIdx(int32 ) const { return GetName(); }
 
-        virtual void CleanupsBeforeDelete();                // used in destructor or explicitly before mass creature delete to remove cross-references to already deleted units
-
-
-
-
+        virtual void CleanupsBeforeDelete();
 
         virtual bool IsControlledByPlayer() const { return false; }
 
-        /**
-         * @brief Does the grid take it along when it goes?
-         *
-         * A cell files what stands in it in one of two stores, and the difference between
-         * them is what happens when the ground is unloaded. A creature, a chest, an area
-         * effect and a set of bones belong to that ground and are torn down with it. A
-         * player, the pet at his heel and a body still waiting for its owner are filed in
-         * the same cell and must survive it.
-         */
         virtual bool OutlivesItsGrid() const { return false; }
 
         void AddObjectToRemoveList();
 
         void UpdateObjectVisibility();
-        virtual void UpdateVisibilityAndView();             // update visibility for object and object for all around
+        virtual void UpdateVisibilityAndView();
 
-        // main visibility check function in normal case (ignore grey zone distance check)
         bool IsVisibleFor(Player const* u, Occupant const* viewPoint) const { return IsVisibleForInState(u, viewPoint, false); }
 
-        // low level function for visibility change code, must be define in all main world object subclasses
         virtual bool IsVisibleForInState(Player const* u, Occupant const* viewPoint, bool inVisibleList) const = 0;
 
         void SetMap(Map* map);
         Map* GetMap() const { MANGOS_ASSERT(m_currMap); return m_currMap; }
 
-        /// The map, or nullptr, for the paths that legitimately run on an object which never
-        /// reached one -- a destructor after LoadFromDB failed, above all. GetMap() asserts
-        /// there, so `if (GetMap())` is not a guard, it is the crash.
         Map* FindMap() const { return m_currMap; }
 
         TerrainInfo const* GetTerrain() const;
@@ -191,14 +154,10 @@ class Occupant : public Object
         void RemoveFromClientUpdateList() override;
         void BuildUpdateData(UpdateDataMapType&) override;
 
-
         bool IsActiveObject() const { return m_isActiveObject || m_viewPoint.hasViewers(); }
 
         void SetActiveObjectState(bool active);
 
-        // Per-object visibility distance. 0 means use the map default; a positive
-        // value overrides it when this object is the viewpoint (e.g. the cinematic
-        // flyover body widens the populate radius without touching the map).
         float GetVisibilityDistanceOverride() const { return m_visibilityDistanceOverride; }
         void SetVisibilityDistanceOverride(float dist) { m_visibilityDistanceOverride = dist; }
 
@@ -207,40 +166,28 @@ class Occupant : public Object
             return m_viewPoint;
         }
 
-        // ASSERT print helper
         bool PrintCoordinatesError(float x, float y, float z, char const* descr) const;
-
-
-
 
     protected:
         explicit Occupant();
 
-        /// The per-class spatial extent. Overridden where the object is not a default
-        /// blob: a unit reads its model, a gameobject its geometry box.
         virtual float ComputeBoundingRadius() const { return DEFAULT_WORLD_OBJECT_SIZE; }
 
-        // these functions are used mostly for Relocate() and Corpse/Player specific stuff...
-        // use them ONLY in LoadFromDB()/Create() funcs and nowhere else!
-        // mapId/instanceId should be set in SetMap() function!
         void SetLocationMapId(uint32 _mapId) { m_mapId = _mapId; RefreshFrame(); }
         void SetLocationInstanceId(uint32 _instanceId) { m_InstanceId = _instanceId; RefreshFrame(); }
 
-        /// Re-anchor the component to the frame the object's map identity names. The
-        /// pose is untouched: this says where the numbers are measured, not what they are.
         void RefreshFrame()
         {
             m_placement.Rebase(m_mapId, m_InstanceId);
         }
 
-
         std::string m_name;
 
     private:
-        Map* m_currMap;                                     // current object's Map location
+        Map* m_currMap;
 
-        uint32 m_mapId;                                     // object at map with map_id
-        uint32 m_InstanceId;                                // in map copy with instance id
+        uint32 m_mapId;
+        uint32 m_InstanceId;
 
         Geometry::Placement m_placement;
         ViewPoint m_viewPoint;
@@ -249,17 +196,10 @@ class Occupant : public Object
         float m_visibilityDistanceOverride;
 };
 
-// Tests that are NOT geometry, so they are not the component's and never the object's:
-// world membership is game state, line of sight is a terrain question, and a map's
-// coordinate bounds belong to the map. Each asks the placement for the geometry and adds
-// only what the placement must not know.
-/// Can A reach B -- a common frame is required. Melee, spells, threat, aggro.
 bool CanInteract(Occupant const& a, Occupant const& b);
 
-/// Can B be shown A -- the wider question, and never the same one as reaching it.
 bool CanBeSeen(Occupant const& seen, Occupant const& viewer);
 
-/// CanBeSeen plus "near enough to bother".
 bool SeenWithin(Occupant const& seen, Occupant const& viewer, float dist, bool is3D = true);
 
 bool InReach(Occupant const& a, Occupant const& b, float dist, bool is3D = true);
@@ -269,8 +209,6 @@ bool HasLineOfSight(Occupant const& a, Occupant const& b);
 bool HasLineOfSight(Occupant const& a, Geometry::Vector3 const& point);
 bool IsPlaceable(Occupant const& obj);
 
-// Terrain and grid answers about a position. The component supplies the geometry; the
-// height, the collision sweep and the map's bounds come from the engines that own them.
 Geometry::Vector3 PointNear(Occupant const& anchor, float distance2d, float absAngle);
 void DropToGround(Occupant const& obj, float x, float y, float& z);
 void ClampToAllowedZ(Occupant const& obj, float x, float y, float& z, Map* atMap = nullptr);
@@ -282,4 +220,3 @@ void ClosePointNear(Occupant const& anchor, float& x, float& y, float& z, float 
                     float distance2d = 0.0f, float angle = 0.0f, Occupant const* searcher = nullptr);
 void ContactPointNear(Occupant const& anchor, Occupant const* obj, float& x, float& y, float& z,
                       float distance2d = CONTACT_DISTANCE);
-

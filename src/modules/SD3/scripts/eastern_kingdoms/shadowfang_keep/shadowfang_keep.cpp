@@ -258,7 +258,7 @@ struct mob_arugal_voidwalker : public CreatureScript
 
         uint32 m_uiResetTimer, m_uiDarkOffering;
         uint8 m_uiCurrentPoint, m_uiPosition;                   // 0 - leader, 1 - behind-right, 2 - behind, 3 - behind-left
-        ObjectGuid m_leaderGuid;
+        ObjectGuid m_leaderGuid = 0;
         ScriptedInstance* m_pInstance;
         bool m_bIsLeader, m_bReverse, m_bWPDone;
 
@@ -321,7 +321,7 @@ struct mob_arugal_voidwalker : public CreatureScript
         {
             if (eventType == AI_EVENT_CUSTOM_A && pSender->GetEntry() == NPC_ARCHMAGE_ARUGAL)
             {
-                SetPosition(data, ToCreature(pInvoker));
+                SetPosition(data, static_cast<Creature*>(pInvoker));
             }
         }
 
@@ -423,7 +423,7 @@ struct mob_arugal_voidwalker : public CreatureScript
                 }
                 else
                 {
-                    m_leaderGuid.Clear();
+                    m_leaderGuid = 0;
                 }
             }
 
@@ -567,7 +567,7 @@ struct boss_arugal : public CreatureScript
 
         void KilledUnit(Unit* pVictim) override
         {
-            if (pVictim->IsPlayer())
+            if (IsPlayer(pVictim))
             {
                 DoScriptText(YELL_KILLED_PLAYER, m_creature);
             }

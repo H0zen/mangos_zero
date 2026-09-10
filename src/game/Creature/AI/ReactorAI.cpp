@@ -31,12 +31,6 @@
 
 #define REACTOR_VISIBLE_RANGE (26.46f)
 
-/**
- * @brief Checks whether ReactorAI should be used for a creature.
- *
- * @param creature The creature being evaluated.
- * @return The AI permissibility score.
- */
 int ReactorAI::Permissible(const Creature* creature)
 {
     if ((creature->GetCreatureInfo()->ExtraFlags & CREATURE_FLAG_EXTRA_NO_AGGRO) || NeutralToAll(*creature))
@@ -47,20 +41,10 @@ int ReactorAI::Permissible(const Creature* creature)
     return PERMIT_BASE_NO;
 }
 
-/**
- * @brief Ignores passive line-of-sight reactions for reactor AI.
- *
- * @param Unused line-of-sight unit.
- */
 void ReactorAI::MoveInLineOfSight(Unit*)
 {
 }
 
-/**
- * @brief Starts combat against a target and records the victim.
- *
- * @param p The target to attack.
- */
 void ReactorAI::AttackStart(Unit* p)
 {
     if (!p)
@@ -81,25 +65,14 @@ void ReactorAI::AttackStart(Unit* p)
     }
 }
 
-/**
- * @brief Checks whether a unit is visible to this AI.
- *
- * @param Unused target unit.
- * @return Always false for reactor AI visibility checks here.
- */
 bool ReactorAI::IsVisible(Unit*) const
 {
     return false;
 }
 
-/**
- * @brief Updates victim tracking, spell timers, and melee attacks.
- *
- * @param diff The elapsed update time in milliseconds.
- */
 void ReactorAI::UpdateAI(const uint32 diff)
 {
-    // update i_victimGuid if i_creature.getVictim() !=0 and changed
+
     if (!m_creature->SelectHostileTarget() || !m_creature->getVictim())
     {
         return;
@@ -115,9 +88,6 @@ void ReactorAI::UpdateAI(const uint32 diff)
     DoMeleeAttackIfReady();
 }
 
-/**
- * @brief Clears combat state and returns the creature home when evading.
- */
 void ReactorAI::EnterEvadeMode()
 {
     if (!m_creature->IsAlive())
@@ -125,7 +95,7 @@ void ReactorAI::EnterEvadeMode()
         DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking, he is dead [guid=%u]", m_creature->GetGUIDLow());
         m_creature->GetMotionMaster()->MovementExpired();
         m_creature->GetMotionMaster()->MoveIdle();
-        i_victimGuid.Clear();
+        i_victimGuid = 0;
         m_creature->CombatStop(true);
         m_creature->DeleteThreatList();
         return;
@@ -152,16 +122,14 @@ void ReactorAI::EnterEvadeMode()
 
     m_creature->RemoveAllAurasOnEvade();
     m_creature->DeleteThreatList();
-    i_victimGuid.Clear();
+    i_victimGuid = 0;
     m_creature->CombatStop(true);
     m_creature->Claim().StakedBy(nullptr);
 
-    // Remove ChaseMovementGenerator from MotionMaster stack list, and add HomeMovementGenerator instead
     if (m_creature->GetMotionMaster()->GetCurrentMovementGeneratorType() == CHASE_MOTION_TYPE)
     {
         m_creature->GetMotionMaster()->MoveTargetedHome();
     }
 
-    // Reset back to default spells template. This also resets timers.
     SetSpellsList(m_creature->GetCreatureInfo()->SpellListId);
 }

@@ -25,17 +25,10 @@
 
 #pragma once
 
-// Client expected level limitation, like as used in DBC item max levels for "until max player level"
-// use as default max player level, must be fit max level for used client
-// also see MAX_LEVEL and STRONG_MAX_LEVEL define
 #define DEFAULT_MAX_LEVEL 60
 
-// client supported max level for player/pets/etc. Avoid overflow or client stability affected.
-// also see GT_MAX_LEVEL define
 #define MAX_LEVEL    100
 
-// Server side limitation. Base at used code requirements.
-// also see MAX_LEVEL and GT_MAX_LEVEL define
 #define STRONG_MAX_LEVEL 255
 
 enum AreaTeams
@@ -47,39 +40,39 @@ enum AreaTeams
 
 enum AreaFlags
 {
-    AREA_FLAG_SNOW                  = 0x00000001,           // snow (only Dun Morogh, Naxxramas, Razorfen Downs and Winterspring)
-    AREA_FLAG_UNK1                  = 0x00000002,           // unknown, (only Naxxramas and Razorfen Downs)
-    AREA_FLAG_UNK2                  = 0x00000004,           // Only used on development map
-    AREA_FLAG_SLAVE_CAPITAL         = 0x00000008,           // slave capital city flag?
-    AREA_FLAG_UNK3                  = 0x00000010,           // unknown
-    AREA_FLAG_SLAVE_CAPITAL2        = 0x00000020,           // slave capital city flag?
-    AREA_FLAG_DUEL                  = 0x00000040,           // zones where duels allowed
-    AREA_FLAG_ARENA                 = 0x00000080,           // arena, both instanced and world arenas
-    AREA_FLAG_CAPITAL               = 0x00000100,           // main capital city flag
-    AREA_FLAG_CITY                  = 0x00000200,           // only for one zone named "City" (where it located?)
+    AREA_FLAG_SNOW                  = 0x00000001,
+    AREA_FLAG_UNK1                  = 0x00000002,
+    AREA_FLAG_UNK2                  = 0x00000004,
+    AREA_FLAG_SLAVE_CAPITAL         = 0x00000008,
+    AREA_FLAG_UNK3                  = 0x00000010,
+    AREA_FLAG_SLAVE_CAPITAL2        = 0x00000020,
+    AREA_FLAG_DUEL                  = 0x00000040,
+    AREA_FLAG_ARENA                 = 0x00000080,
+    AREA_FLAG_CAPITAL               = 0x00000100,
+    AREA_FLAG_CITY                  = 0x00000200,
 };
 
 enum FactionTemplateFlags
 {
-    FACTION_TEMPLATE_FLAG_PVP               = 0x00000800,   // flagged for PvP
-    FACTION_TEMPLATE_FLAG_CONTESTED_GUARD   = 0x00001000,   // faction will attack players that were involved in PvP combats
+    FACTION_TEMPLATE_FLAG_PVP               = 0x00000800,
+    FACTION_TEMPLATE_FLAG_CONTESTED_GUARD   = 0x00001000,
 };
 
 enum FactionMasks
 {
-    FACTION_MASK_PLAYER   = 1,                              // any player
-    FACTION_MASK_ALLIANCE = 2,                              // player or creature from alliance team
-    FACTION_MASK_HORDE    = 4,                              // player or creature from horde team
-    FACTION_MASK_MONSTER  = 8                               // aggressive creature from monster team
-    // if none flags set then non-aggressive creature
+    FACTION_MASK_PLAYER   = 1,
+    FACTION_MASK_ALLIANCE = 2,
+    FACTION_MASK_HORDE    = 4,
+    FACTION_MASK_MONSTER  = 8
+
 };
 
-enum MapTypes                                               // Lua_IsInInstance
+enum MapTypes
 {
-    MAP_COMMON          = 0,                                // none
-    MAP_INSTANCE        = 1,                                // party
-    MAP_RAID            = 2,                                // raid
-    MAP_BATTLEGROUND    = 3,                                // pvp
+    MAP_COMMON          = 0,
+    MAP_INSTANCE        = 1,
+    MAP_RAID            = 2,
+    MAP_BATTLEGROUND    = 3,
 };
 
 enum AbilytyLearnType
@@ -104,43 +97,33 @@ enum ItemEnchantmentType
     ITEM_ENCHANTMENT_TYPE_TOTEM            = 6
 };
 
-/**
- * See \ref SpellEntry::Targets member for some use of these flags
- * \todo Properly document this
- */
 enum SpellCastTargetFlags
 {
     TARGET_FLAG_SELF            = 0x00000000,
-    TARGET_FLAG_UNUSED1         = 0x00000001,       ///< not used in any spells (can be set dynamically)
-    TARGET_FLAG_UNIT            = 0x00000002,       ///< pguid
-    TARGET_FLAG_UNUSED2         = 0x00000004,       ///< not used in any spells (can be set dynamically)
-    TARGET_FLAG_UNUSED3         = 0x00000008,       ///< not used in any spells (can be set dynamically)
-    TARGET_FLAG_ITEM            = 0x00000010,       ///< pguid
-    TARGET_FLAG_SOURCE_LOCATION = 0x00000020,       ///< 3 float
-    TARGET_FLAG_DEST_LOCATION   = 0x00000040,       ///< 3 float
-    TARGET_FLAG_OBJECT_UNK      = 0x00000080,       ///< used in 7 spells only
-    TARGET_FLAG_UNIT_UNK        = 0x00000100,       ///< looks like self target (389 spells)
-    TARGET_FLAG_PVP_CORPSE      = 0x00000200,       ///< pguid
-    TARGET_FLAG_UNIT_CORPSE     = 0x00000400,       ///< 10 spells (gathering professions)
-    TARGET_FLAG_OBJECT          = 0x00000800,       ///< pguid, 0 spells
-    TARGET_FLAG_TRADE_ITEM      = 0x00001000,       ///< pguid, 0 spells
-    TARGET_FLAG_STRING          = 0x00002000,       ///< string, 0 spells
-    TARGET_FLAG_GAMEOBJECT_ITEM = 0x00004000,       ///< 199 spells, opening object/lock
-    TARGET_FLAG_CORPSE          = 0x00008000,       ///< pguid, resurrection spells
-    TARGET_FLAG_UNK2            = 0x00010000,       ///< pguid, not used in any spells (can be set dynamically)
+    TARGET_FLAG_UNUSED1         = 0x00000001,
+    TARGET_FLAG_UNIT            = 0x00000002,
+    TARGET_FLAG_UNUSED2         = 0x00000004,
+    TARGET_FLAG_UNUSED3         = 0x00000008,
+    TARGET_FLAG_ITEM            = 0x00000010,
+    TARGET_FLAG_SOURCE_LOCATION = 0x00000020,
+    TARGET_FLAG_DEST_LOCATION   = 0x00000040,
+    TARGET_FLAG_OBJECT_UNK      = 0x00000080,
+    TARGET_FLAG_UNIT_UNK        = 0x00000100,
+    TARGET_FLAG_PVP_CORPSE      = 0x00000200,
+    TARGET_FLAG_UNIT_CORPSE     = 0x00000400,
+    TARGET_FLAG_OBJECT          = 0x00000800,
+    TARGET_FLAG_TRADE_ITEM      = 0x00001000,
+    TARGET_FLAG_STRING          = 0x00002000,
+    TARGET_FLAG_GAMEOBJECT_ITEM = 0x00004000,
+    TARGET_FLAG_CORPSE          = 0x00008000,
+    TARGET_FLAG_UNK2            = 0x00010000,
 };
 
-/**
- * Used in \ref Unit::HasAura for example, also used in \ref Spell::m_currentBasePoints. These
- * reference the three effects a \ref Spell can have which do different things, for instance it
- * can be applying a \ref Aura. For a reference see QSW which you can get at
- * https://bitbucket.org/sidsukana/qsw
- */
 enum SpellEffectIndex
 {
-    EFFECT_INDEX_0     = 0, ///< The first spell effect
-    EFFECT_INDEX_1     = 1, ///< The second spell effect
-    EFFECT_INDEX_2     = 2  ///< The third spell effect
+    EFFECT_INDEX_0     = 0,
+    EFFECT_INDEX_1     = 1,
+    EFFECT_INDEX_2     = 2
 };
 
 #define MAX_EFFECT_INDEX 3
@@ -148,8 +131,8 @@ enum SpellEffectIndex
 enum SpellFamily
 {
     SPELLFAMILY_GENERIC     = 0,
-    SPELLFAMILY_ENVIRONMENT = 1,                            // events, holidays, mostly aura related spells
-    // 2 - unused
+    SPELLFAMILY_ENVIRONMENT = 1,
+
     SPELLFAMILY_MAGE        = 3,
     SPELLFAMILY_WARRIOR     = 4,
     SPELLFAMILY_WARLOCK     = 5,
@@ -159,6 +142,6 @@ enum SpellFamily
     SPELLFAMILY_HUNTER      = 9,
     SPELLFAMILY_PALADIN     = 10,
     SPELLFAMILY_SHAMAN      = 11,
-    // 12 - unused
+
     SPELLFAMILY_POTION      = 13,
 };

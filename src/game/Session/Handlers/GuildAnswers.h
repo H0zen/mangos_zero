@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about his guild.
 namespace guilds
 {
     void GuildQuery(WorldSession& session, WorldPacket& packet);

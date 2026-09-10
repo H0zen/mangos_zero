@@ -43,8 +43,7 @@ namespace MaNGOS
     struct VisibleNotifier
     {
         Camera& i_camera;
-        // Non-null only for the login owner's camera; its visibility sweep
-        // appends to the packet already holding self and transport blocks.
+
         InitialWorldUpdateBatch* i_initialBatch;
         UpdateData i_data;
         GuidSet i_clientGUIDs;
@@ -58,7 +57,7 @@ namespace MaNGOS
             return i_initialBatch ? i_initialBatch->BuildPacket(packet) : i_data.BuildPacket(packet);
         }
         template<class T> void Visit(GridRefManager<T>& m);
-        void Visit(CameraMapType& /*m*/) {}
+        void Visit(CameraMapType& ) {}
         void Notify(void);
     };
 
@@ -123,44 +122,6 @@ namespace MaNGOS
 
         void VisitHelper(Unit* target);
     };
-
-    // SEARCHERS & LIST SEARCHERS & WORKERS
-
-    /** Model Searcher class:
-     *  template<class Check>
-     *  struct SomeSearcher
-     *  {
-     *      ResultType& i_result;
-     *      Check & i_check;
-
-     *      SomeSearcher(ResultType& result, Check & check)
-     *      : i_phaseMask(check.GetFocusObject().GetPhaseMask()), i_result(result), i_check(check) {}
-
-     *      void Visit(CreatureMapType &m);
-     *      {
-     *          ..some code fast return if result found
-
-     *          for (CreatureMapType::iterator itr = m.begin(); itr != m.end(); ++itr)
-     *          {
-     *              if (!itr->getSource()->InSamePhase(i_phaseMask))
-     *              {
-     *                  continue;
-     *              }
-
-     *              if (!i_check(itr->getSource()))
-     *              {
-     *                  continue;
-     *              }
-
-     *              ..some code for update result and possible stop search
-     *          }
-     *      }
-
-     *      template<class NOT_INTERESTED> void Visit(GridRefManager<NOT_INTERESTED> &) {}
-     *  };
-     */
-
-    // Occupant searchers & workers
 
     template<class Check>
         struct OccupantSearcher
@@ -262,8 +223,6 @@ namespace MaNGOS
         template<class NOT_INTERESTED> void Visit(GridRefManager<NOT_INTERESTED>&) {}
     };
 
-    // Gameobject searchers
-
     template<class Check>
         struct GameObjectSearcher
     {
@@ -277,7 +236,6 @@ namespace MaNGOS
         template<class NOT_INTERESTED> void Visit(GridRefManager<NOT_INTERESTED>&) {}
     };
 
-    // Last accepted by Check GO if any (Check can change requirements at each call)
     template<class Check>
         struct GameObjectLastSearcher
     {
@@ -304,9 +262,6 @@ namespace MaNGOS
         template<class NOT_INTERESTED> void Visit(GridRefManager<NOT_INTERESTED>&) {}
     };
 
-    // Unit searchers
-
-    // First accepted by Check Unit if any
     template<class Check>
         struct UnitSearcher
     {
@@ -321,7 +276,6 @@ namespace MaNGOS
         template<class NOT_INTERESTED> void Visit(GridRefManager<NOT_INTERESTED>&) {}
     };
 
-    // Last accepted by Check Unit if any (Check can change requirements at each call)
     template<class Check>
         struct UnitLastSearcher
     {
@@ -336,7 +290,6 @@ namespace MaNGOS
         template<class NOT_INTERESTED> void Visit(GridRefManager<NOT_INTERESTED>&) {}
     };
 
-    // All accepted by Check units if any
     template<class Check>
         struct UnitListSearcher
     {
@@ -351,7 +304,6 @@ namespace MaNGOS
         template<class NOT_INTERESTED> void Visit(GridRefManager<NOT_INTERESTED>&) {}
     };
 
-    // unit worker
     template<class Do>
         struct UnitWorker
     {
@@ -377,8 +329,6 @@ namespace MaNGOS
         template<class NOT_INTERESTED> void Visit(GridRefManager<NOT_INTERESTED>&) {}
     };
 
-    // Creature searchers
-
     template<class Check>
         struct CreatureSearcher
     {
@@ -392,7 +342,6 @@ namespace MaNGOS
         template<class NOT_INTERESTED> void Visit(GridRefManager<NOT_INTERESTED>&) {}
     };
 
-    // Last accepted by Check Creature if any (Check can change requirements at each call)
     template<class Check>
         struct CreatureLastSearcher
     {
@@ -436,8 +385,6 @@ namespace MaNGOS
 
         template<class NOT_INTERESTED> void Visit(GridRefManager<NOT_INTERESTED>&) {}
     };
-
-    // Player searchers
 
     template<class Check>
         struct PlayerSearcher
@@ -508,26 +455,6 @@ namespace MaNGOS
         template<class NOT_INTERESTED> void Visit(GridRefManager<NOT_INTERESTED>&) {}
     };
 
-    // CHECKS && DO classes
-
-    /* Model Check class:
-    class SomeCheck
-    {
-        public:
-            SomeCheck(SomeObjecType const* fobj, ..some other args) : i_fobj(fobj), ...other inits {}
-            Occupant const& GetFocusObject() const { return *i_fobj; }
-            bool operator()(Creature* u)                    and for other intresting typs (Player/GameObject/Camera
-            {
-                return ..(code return true if Object fit to requirenment);
-            }
-            template<class NOT_INTERESTED> bool operator()(NOT_INTERESTED*) { return false; }
-        private:
-            SomeObjecType const* i_fobj;                    // Focus object used for check distance from, phase, so place in world
-                ..other values need for check
-    };
-    */
-
-    // Occupant check classes
     class CannibalizeObjectCheck
     {
         public:
@@ -559,8 +486,6 @@ namespace MaNGOS
             float i_range;
     };
 
-    // Occupant do classes
-
     class RespawnDo
     {
         public:
@@ -570,8 +495,6 @@ namespace MaNGOS
             void operator()(Occupant*) const {}
             void operator()(Corpse*) const {}
     };
-
-    // GameObject checks
 
     class GameObjectFocusCheck
     {
@@ -600,7 +523,6 @@ namespace MaNGOS
             uint32 i_focusId;
     };
 
-    // Find the nearest Fishing hole and return true only if source object is in range of hole
     class NearestGameObjectFishingHoleCheck
     {
         public:
@@ -620,11 +542,9 @@ namespace MaNGOS
             Occupant const& i_obj;
             float  i_range;
 
-            // prevent clone
             NearestGameObjectFishingHoleCheck(NearestGameObjectFishingHoleCheck const&);
     };
 
-    // Success at unit in range, range update for next check (this can be use with GameobjectLastSearcher to find nearest GO)
     class NearestGameObjectEntryInObjectRangeCheck
     {
         public:
@@ -634,7 +554,7 @@ namespace MaNGOS
             {
                 if (go->GetEntry() == i_entry && InReach(i_obj, *go, i_range))
                 {
-                    i_range = i_obj.Where().DistanceTo(go->Where());        // use found GO range as new range limit for next check
+                    i_range = i_obj.Where().DistanceTo(go->Where());
                     return true;
                 }
                 return false;
@@ -645,11 +565,9 @@ namespace MaNGOS
             uint32 i_entry;
             float  i_range;
 
-            // prevent clone this object
             NearestGameObjectEntryInObjectRangeCheck(NearestGameObjectEntryInObjectRangeCheck const&);
     };
 
-    // Success at gameobject in range of xyz, range update for next check (this can be use with GameobjectLastSearcher to find nearest GO)
     class NearestGameObjectEntryInPosRangeCheck
     {
         public:
@@ -662,7 +580,7 @@ namespace MaNGOS
             {
                 if (go->GetEntry() == i_entry && go->Where().WithinDist(Geometry::Vector3(i_x, i_y, i_z), i_range))
                 {
-                    // use found GO range as new range limit for next check
+
                     i_range = go->Where().DistanceTo(Geometry::Vector3(i_x, i_y, i_z));
                     return true;
                 }
@@ -678,11 +596,9 @@ namespace MaNGOS
             float i_x, i_y, i_z;
             float i_range;
 
-            // prevent clone this object
             NearestGameObjectEntryInPosRangeCheck(NearestGameObjectEntryInPosRangeCheck const&);
     };
 
-    // Success at gameobject with entry in range of provided xyz
     class GameObjectEntryInPosRangeCheck
     {
         public:
@@ -709,11 +625,8 @@ namespace MaNGOS
             float i_x, i_y, i_z;
             float i_range;
 
-            // prevent clone this object
             GameObjectEntryInPosRangeCheck(GameObjectEntryInPosRangeCheck const&);
     };
-
-    // Unit checks
 
     class MostHPMissingInRangeCheck
     {
@@ -864,7 +777,6 @@ namespace MaNGOS
             float i_range;
     };
 
-    // Success at unit in range, range update for next check (this can be use with UnitLastSearcher to find nearest unit)
     class NearestAttackableUnitInObjectRangeCheck
     {
         public:
@@ -875,7 +787,7 @@ namespace MaNGOS
                 if (u->IsTargetableForAttack() && InReach(*i_obj, *u, i_range) &&
                     !IsFriendly(*i_funit, *u) && u->IsVisibleForOrDetect(i_funit, i_funit, false))
                 {
-                    i_range = i_obj->Where().DistanceTo(u->Where());        // use found unit range as new range limit for next check
+                    i_range = i_obj->Where().DistanceTo(u->Where());
                     return true;
                 }
 
@@ -886,7 +798,6 @@ namespace MaNGOS
             Unit const* i_funit;
             float i_range;
 
-            // prevent clone this object
             NearestAttackableUnitInObjectRangeCheck(NearestAttackableUnitInObjectRangeCheck const&);
     };
 
@@ -896,25 +807,23 @@ namespace MaNGOS
             AnyAoEVisibleTargetUnitInObjectRangeCheck(Occupant const* obj, Occupant const* originalCaster, float range)
                 : i_obj(obj), i_originalCaster(originalCaster), i_range(range)
             {
-                i_targetForUnit = i_originalCaster->isType(TYPEMASK_UNIT);
-                i_targetForPlayer = (i_originalCaster->IsPlayer());
+                i_targetForUnit = IsType(i_originalCaster, TYPEMASK_UNIT);
+                i_targetForPlayer = IsPlayer(i_originalCaster);
             }
             Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
-                // Check contains checks for: live, non-selectable, non-attackable flags, flight check and GM check, ignore totems
+
                 if (!u->IsTargetableForAttack())
                 {
                     return false;
                 }
 
-                // ignore totems as AoE targets
-                if (u->IsCreature() && ((Creature*)u)->IsTotem())
+                if (IsCreature(u) && ((Creature*)u)->IsTotem())
                 {
                     return false;
                 }
 
-                // check visibility only for unit-like original casters
                 if (i_targetForUnit && !u->IsVisibleForOrDetect((Unit const*)i_originalCaster, i_originalCaster, false))
                 {
                     return false;
@@ -946,13 +855,13 @@ namespace MaNGOS
             Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
-                // Check contains checks for: live, non-selectable, non-attackable flags, flight check and GM check, ignore totems
+
                 if (!u->IsTargetableForAttack())
                 {
                     return false;
                 }
 
-                if (u->IsCreature() && ((Creature*)u)->IsTotem())
+                if (IsCreature(u) && ((Creature*)u)->IsTotem())
                 {
                     return false;
                 }
@@ -981,13 +890,13 @@ namespace MaNGOS
             Occupant const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
-                // Check contains checks for: live, non-selectable, non-attackable flags, flight check and GM check, ignore totems
+
                 if (!u->IsTargetableForAttack())
                 {
                     return false;
                 }
 
-                if (u->IsCreature() && ((Creature*)u)->IsTotem())
+                if (IsCreature(u) && ((Creature*)u)->IsTotem())
                 {
                     return false;
                 }
@@ -1015,13 +924,13 @@ namespace MaNGOS
             Occupant const& GetFocusObject() const { return *i_obj; }
             void operator()(Unit* u)
             {
-                // Check contains checks for: live, non-selectable, non-attackable flags, flight check and GM check, ignore totems
+
                 if (!u->IsTargetableForAttack())
                 {
                     return;
                 }
 
-                if (u->IsCreature() && ((Creature*)u)->IsTotem())
+                if (IsCreature(u) && ((Creature*)u)->IsTotem())
                 {
                     return;
                 }
@@ -1037,7 +946,6 @@ namespace MaNGOS
             bool                i_isFriendly;
     };
 
-    // do attack at call of help to friendly crearture
     class CallOfHelpCreatureInRangeDo
     {
         public:
@@ -1071,8 +979,6 @@ namespace MaNGOS
         private:
             Occupant const* i_fobj;
     };
-
-    // Creature checks
 
     class InAttackDistanceFromAnyHostileCreatureCheck
     {
@@ -1135,7 +1041,7 @@ namespace MaNGOS
                     return false;
                 }
 
-                i_range = i_obj->Where().DistanceTo(u->Where());            // use found unit range as new range limit for next check
+                i_range = i_obj->Where().DistanceTo(u->Where());
                 return true;
             }
             float GetLastRange() const { return i_range; }
@@ -1144,11 +1050,9 @@ namespace MaNGOS
             Unit* const i_enemy;
             float  i_range;
 
-            // prevent clone this object
             NearestAssistCreatureInCreatureRangeCheck(NearestAssistCreatureInCreatureRangeCheck const&);
     };
 
-    // Success at unit in range, range update for next check (this can be use with CreatureLastSearcher to find nearest creature)
     class NearestCreatureEntryWithLiveStateInObjectRangeCheck
     {
         public:
@@ -1160,7 +1064,7 @@ namespace MaNGOS
                 if (u->GetEntry() == i_entry && ((i_onlyAlive && u->IsAlive()) || (i_onlyDead && u->IsCorpse()) || (!i_onlyAlive && !i_onlyDead)) &&
                     (!i_excludeSelf || &i_obj != u) && InReach(i_obj, *u, i_range))
                 {
-                    i_range = i_obj.Where().DistanceTo(u->Where());         // use found unit range as new range limit for next check
+                    i_range = i_obj.Where().DistanceTo(u->Where());
                     return true;
                 }
                 return false;
@@ -1174,7 +1078,6 @@ namespace MaNGOS
             bool   i_excludeSelf;
             float  i_range;
 
-            // prevent clone this object
             NearestCreatureEntryWithLiveStateInObjectRangeCheck(NearestCreatureEntryWithLiveStateInObjectRangeCheck const&);
     };
 
@@ -1198,11 +1101,8 @@ namespace MaNGOS
             uint32 m_uiEntry;
             float m_fRange;
 
-            // prevent clone this object
             AllCreaturesOfEntryInRangeCheck(AllCreaturesOfEntryInRangeCheck const&);
     };
-
-    // Player checks and do
 
     class AnyPlayerInObjectRangeCheck
     {
@@ -1257,7 +1157,6 @@ namespace MaNGOS
             float i_range;
     };
 
-    // Prepare using Builder localized packets with caching and send to player
     template<class Builder>
         class LocalizedPacketDo
     {
@@ -1275,10 +1174,9 @@ namespace MaNGOS
 
         private:
             Builder& i_builder;
-            std::vector<WorldPacket*> i_data_cache;         // 0 = default, i => i-1 locale index
+            std::vector<WorldPacket*> i_data_cache;
     };
 
-    // Prepare using Builder localized packets with caching and send to player
     template<class Builder>
         class LocalizedPacketListDo
     {
@@ -1301,7 +1199,7 @@ namespace MaNGOS
         private:
             Builder& i_builder;
             std::vector<WorldPacketList> i_data_cache;
-            // 0 = default, i => i-1 locale index
+
     };
 
 #ifndef WIN32

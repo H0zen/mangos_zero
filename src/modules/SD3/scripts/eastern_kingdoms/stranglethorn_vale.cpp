@@ -68,7 +68,7 @@ struct mob_yenniku : public CreatureScript
 
         void SpellHit(Unit* pCaster, const SpellEntry* pSpell) override
         {
-            if (SD3_SpellId(pSpell) == SPELL_YENNIKUS_RELEASE && pCaster->IsPlayer())
+            if (SD3_SpellId(pSpell) == SPELL_YENNIKUS_RELEASE &&IsPlayer(pCaster))
             {
                 if (!m_uiResetTimer && ((Player*)pCaster)->GetQuestStatus(QUEST_ID_SAVING_YENNIKU) == QUEST_STATUS_INCOMPLETE)
                 {

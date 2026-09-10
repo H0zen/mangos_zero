@@ -57,7 +57,6 @@ struct WMOAreaTableTripple
         return memcmp(this, &b, sizeof(WMOAreaTableTripple)) < 0;
     }
 
-    // ordered by entropy; that way memcmp will have a minimal medium runtime
     int32 groupId;
     int32 rootId;
     int32 adtId;
@@ -67,7 +66,7 @@ typedef std::map<WMOAreaTableTripple, WMOAreaTableEntry const*> WMOAreaInfoByTri
 
 DBCStorage <AreaTableEntry> sAreaStore(AreaTableEntryfmt);
 static AreaIDByAreaFlag sAreaIDByAreaFlag;
-static AreaFlagByMapID  sAreaFlagByMapID;                   // for instances without generated *.map files
+static AreaFlagByMapID  sAreaFlagByMapID;
 
 static WMOAreaInfoByTripple sWMOAreaInfoByTripple;
 
@@ -133,41 +132,30 @@ DBCStorage <TalentEntry> sTalentStore(TalentEntryfmt);
 TalentSpellPosMap sTalentSpellPosMap;
 DBCStorage <TalentTabEntry> sTalentTabStore(TalentTabEntryfmt);
 
-// store absolute bit position for first rank for talent inspect
 typedef std::map<uint32, uint32> TalentInspectMap;
 static TalentInspectMap sTalentPosInInspect;
 static TalentInspectMap sTalentTabSizeInInspect;
-static uint32 sTalentTabPages[12/*MAX_CLASSES*/][3];
+static uint32 sTalentTabPages[12][3];
 
 DBCStorage <TaxiNodesEntry> sTaxiNodesStore(TaxiNodesEntryfmt);
 TaxiMask sTaxiNodesMask;
 
-// DBC used only for initialization sTaxiPathSetBySource at startup.
 TaxiPathSetBySource sTaxiPathSetBySource;
 DBCStorage <TaxiPathEntry> sTaxiPathStore(TaxiPathEntryfmt);
 
-// DBC store data but sTaxiPathNodesByPath used for fast access to entries (it's not owner pointed data).
 TaxiPathNodesByPath sTaxiPathNodesByPath;
 static DBCStorage <TaxiPathNodeEntry> sTaxiPathNodeStore(TaxiPathNodeEntryfmt);
 
-// Same arrangement for lifts: the rows are read once and then only ever reached
-// through the by-entry index, which points into the store.
 TransportAnimationsByEntry sTransportAnimationsByEntry;
 static DBCStorage <TransportAnimationEntry> sTransportAnimationStore(TransportAnimationEntryfmt);
 
 DBCStorage <WMOAreaTableEntry>  sWMOAreaTableStore(WMOAreaTableEntryfmt);
 DBCStorage <WorldMapAreaEntry>  sWorldMapAreaStore(WorldMapAreaEntryfmt);
-// DBCStorage <WorldMapOverlayEntry> sWorldMapOverlayStore(WorldMapOverlayEntryfmt);
+
 DBCStorage <WorldSafeLocsEntry> sWorldSafeLocsStore(WorldSafeLocsEntryfmt);
 
 typedef std::list<std::string> StoreProblemList;
 
-/**
- * @brief Checks whether a client build is supported by the server.
- *
- * @param build The client build number.
- * @return true if the build is accepted; otherwise false.
- */
 bool IsAcceptableClientBuild(uint32 build)
 {
     int accepted_versions[] = EXPECTED_MANGOSD_CLIENT_BUILD;
@@ -181,11 +169,6 @@ bool IsAcceptableClientBuild(uint32 build)
     return false;
 }
 
-/**
- * @brief Builds a space-separated list of supported client builds.
- *
- * @return std::string The formatted build list.
- */
 std::string AcceptableClientBuildsListStr()
 {
     std::ostringstream data;
@@ -197,38 +180,18 @@ std::string AcceptableClientBuildsListStr()
     return data.str();
 }
 
-/**
- * @brief Reports a DBC structure size mismatch before asserting.
- *
- * @param fsize The record size defined by the format string.
- * @param rsize The size of the C++ structure.
- * @param filename The DBC file being validated.
- * @return false Always returns false so the assert condition fails.
- */
 static bool LoadDBC_assert_print(uint32 fsize, uint32 rsize, const std::string& filename)
 {
     sLog.outError("Size of '%s' setted by format string (%u) not equal size of C++ structure (%u).", filename.c_str(), fsize, rsize);
 
-    // ASSERT must fail after function call
     return false;
 }
 
 template<class T>
 
-/**
- * @brief Loads a DBC file and its localized string tables.
- *
- * @tparam T The DBC record type.
- * @param availableDbcLocales Bitmask of still-available locales.
- * @param bar The startup progress indicator.
- * @param errlist The list collecting missing or incompatible files.
- * @param storage The storage receiving loaded records.
- * @param dbc_path The base DBC directory.
- * @param filename The DBC filename to load.
- */
 inline void LoadDBC(uint32& availableDbcLocales, BarGoLink& bar, StoreProblemList& errlist, DBCStorage<T>& storage, const std::string& dbc_path, const std::string& filename)
 {
-    // compatibility format and C++ structure sizes
+
     MANGOS_ASSERT(DBCFileLoader::GetFormatRecordSize(storage.GetFormat()) == sizeof(T) || LoadDBC_assert_print(DBCFileLoader::GetFormatRecordSize(storage.GetFormat()), sizeof(T), filename));
 
     std::string dbc_filename = dbc_path + filename;
@@ -245,13 +208,13 @@ inline void LoadDBC(uint32& availableDbcLocales, BarGoLink& bar, StoreProblemLis
             std::string dbc_filename_loc = dbc_path + fullLocaleNameList[i].name + "/" + filename;
             if (!storage.LoadStringsFrom(dbc_filename_loc.c_str()))
             {
-                availableDbcLocales &= ~(1 << i); // mark as not available for speedup next checks
+                availableDbcLocales &= ~(1 << i);
             }
         }
     }
     else
     {
-        // sort problematic dbc to (1) non compatible and (2) nonexistent
+
         FILE* f = fopen(dbc_filename.c_str(), "rb");
         if (f)
         {
@@ -267,11 +230,6 @@ inline void LoadDBC(uint32& availableDbcLocales, BarGoLink& bar, StoreProblemLis
     }
 }
 
-/**
- * @brief Loads all required DBC stores and initializes lookup helpers.
- *
- * @param dataPath The base data directory containing DBC files.
- */
 void LoadDBCStores(const std::string& dataPath)
 {
     std::string dbcPath = dataPath + "dbc/";
@@ -282,20 +240,17 @@ void LoadDBCStores(const std::string& dataPath)
 
     StoreProblemList bad_dbc_files;
 
-    // bitmask for index of fullLocaleNameList
     uint32 availableDbcLocales = 0xFFFFFFFF;
 
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sAreaStore,                dbcPath, "AreaTable.dbc");
 
-    // must be after sAreaStore loading
-    for (uint32 i = 1; i <= sAreaStore.GetNumRows(); ++i)   // areaid numbered from 1
+    for (uint32 i = 1; i <= sAreaStore.GetNumRows(); ++i)
     {
         if (AreaTableEntry const* area = sAreaStore.LookupEntry(i))
         {
-            // fill AreaId->DBC records
+
             sAreaIDByAreaFlag.insert(AreaIDByAreaFlag::value_type(uint16(area->AreaBit), area->ID));
 
-            // fill MapId->DBC records ( skip sub zones and continents )
             if (area->ParentAreaID == 0 && area->ContinentID != 0 && area->ContinentID != 1)
             {
                 sAreaFlagByMapID.insert(AreaFlagByMapID::value_type(area->ContinentID, area->AreaBit));
@@ -356,8 +311,6 @@ void LoadDBCStores(const std::string& dataPath)
             sSpellCategoryStore[spell->Category].insert(i);
         }
 
-        // DBC not support uint64 fields but SpellEntry have SpellFamilyFlags mapped at 2 uint32 fields
-        // uint32 field already converted to bigendian if need, but must be swapped for correct uint64 bigendian view
 #if MANGOS_ENDIAN == MANGOS_BIGENDIAN
         std::swap(*((uint32*)(&spell->SpellFamilyFlags)), *(((uint32*)(&spell->SpellFamilyFlags)) + 1));
 #endif
@@ -403,7 +356,6 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sStableSlotPricesStore,    dbcPath, "StableSlotPrices.dbc");
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sTalentStore,              dbcPath, "Talent.dbc");
 
-    // create talent spells set
     for (unsigned int i = 0; i < sTalentStore.GetNumRows(); ++i)
     {
         TalentEntry const* talentInfo = sTalentStore.LookupEntry(i);
@@ -422,10 +374,8 @@ void LoadDBCStores(const std::string& dataPath)
 
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sTalentTabStore,           dbcPath, "TalentTab.dbc");
 
-    // prepare fast data access to bit pos of talent ranks for use at inspecting
     {
-        // fill table by amount of talent ranks and fill sTalentTabBitSizeInInspect
-        // store in with (row,col,talent)->size key for correct sorting by (row,col)
+
         typedef std::map<uint32, uint32> TalentBitSize;
         TalentBitSize sTalentBitSize;
         for (uint32 i = 1; i < sTalentStore.GetNumRows(); ++i)
@@ -442,7 +392,6 @@ void LoadDBCStores(const std::string& dataPath)
                 continue;
             }
 
-            // find talent rank
             uint32 curtalent_maxrank = 0;
             for (uint32 k = 5; k > 0; --k)
             {
@@ -457,7 +406,6 @@ void LoadDBCStores(const std::string& dataPath)
             sTalentTabSizeInInspect[talentInfo->TalentTab] += curtalent_maxrank;
         }
 
-        // now have all max ranks (and then bit amount used for store talent ranks in inspect)
         for (uint32 talentTabId = 1; talentTabId < sTalentTabStore.GetNumRows(); ++talentTabId)
         {
             TalentTabEntry const* talentTabInfo = sTalentTabStore.LookupEntry(talentTabId);
@@ -466,22 +414,19 @@ void LoadDBCStores(const std::string& dataPath)
                 continue;
             }
 
-            // prevent memory corruption; otherwise cls will become 12 below
             if ((talentTabInfo->ClassMask & CLASSMASK_ALL_PLAYABLE) == 0)
             {
                 continue;
             }
 
-            // store class talent tab pages
             uint32 cls = 1;
-            for (uint32 m = 1; !(m & talentTabInfo->ClassMask) && cls < 12 /*MAX_CLASSES*/; m <<= 1, ++cls)
+            for (uint32 m = 1; !(m & talentTabInfo->ClassMask) && cls < 12 ; m <<= 1, ++cls)
             {
-                // TODO: WHAT, WHY... surely this is a mistake
+
             }
 
             sTalentTabPages[cls][talentTabInfo->OrderIndex] = talentTabId;
 
-            // add total amount bits for first rank starting from talent tab first talent rank pos.
             uint32 pos = 0;
             for (TalentBitSize::iterator itr = sTalentBitSize.begin(); itr != sTalentBitSize.end(); ++itr)
             {
@@ -515,11 +460,10 @@ void LoadDBCStores(const std::string& dataPath)
     }
     uint32 pathCount = sTaxiPathStore.GetNumRows();
 
-    //## TaxiPathNode.dbc ## Loaded only for initialization different structures
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sTaxiPathNodeStore,        dbcPath, "TaxiPathNode.dbc");
-    // Calculate path nodes count
+
     std::vector<uint32> pathLength;
-    pathLength.resize(pathCount);                           // 0 and some other indexes not used
+    pathLength.resize(pathCount);
     for (uint32 i = 1; i < sTaxiPathNodeStore.GetNumRows(); ++i)
     {
         if (TaxiPathNodeEntry const* entry = sTaxiPathNodeStore.LookupEntry(i))
@@ -530,13 +474,13 @@ void LoadDBCStores(const std::string& dataPath)
             }
         }
     }
-    // Set path length
-    sTaxiPathNodesByPath.resize(pathCount);                 // 0 and some other indexes not used
+
+    sTaxiPathNodesByPath.resize(pathCount);
     for (uint32 i = 1; i < sTaxiPathNodesByPath.size(); ++i)
     {
         sTaxiPathNodesByPath[i].resize(pathLength[i]);
     }
-    // fill data (pointers to sTaxiPathNodeStore elements
+
     for (uint32 i = 1; i < sTaxiPathNodeStore.GetNumRows(); ++i)
     {
         if (TaxiPathNodeEntry const* entry = sTaxiPathNodeStore.LookupEntry(i))
@@ -545,7 +489,6 @@ void LoadDBCStores(const std::string& dataPath)
         }
     }
 
-    //## TransportAnimation.dbc ## Loaded only to build the per-lift keyframe lists
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sTransportAnimationStore, dbcPath, "TransportAnimation.dbc");
     for (uint32 i = 1; i < sTransportAnimationStore.GetNumRows(); ++i)
     {
@@ -554,8 +497,7 @@ void LoadDBCStores(const std::string& dataPath)
             sTransportAnimationsByEntry[frame->TransportID].push_back(frame);
         }
     }
-    // The client trusts the file to be in loop order and searches it linearly. We sort
-    // instead of trusting, because a lift read out of order would stutter rather than fail.
+
     for (auto& lift : sTransportAnimationsByEntry)
     {
         std::sort(lift.second.begin(), lift.second.end(),
@@ -563,8 +505,6 @@ void LoadDBCStores(const std::string& dataPath)
                   { return a->TimeIndex < b->TimeIndex; });
     }
 
-    // Initialize global taxinodes mask
-    // include existing nodes that have at least single not spell base (scripted) path
     {
         std::set<uint32> spellPaths;
         for (uint32 i = 1; i < sSpellStore.GetNumRows(); ++i)
@@ -573,7 +513,7 @@ void LoadDBCStores(const std::string& dataPath)
             {
                 for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
                 {
-                    if (sInfo->Effect[j] == 123 /*SPELL_EFFECT_SEND_TAXI*/)
+                    if (sInfo->Effect[j] == 123 )
                     {
                         spellPaths.insert(sInfo->EffectMiscValue[j]);
                     }
@@ -595,7 +535,7 @@ void LoadDBCStores(const std::string& dataPath)
                 bool ok = false;
                 for (TaxiPathSetForSource::const_iterator dest_i = src_i->second.begin(); dest_i != src_i->second.end(); ++dest_i)
                 {
-                    // not spell path
+
                     if (spellPaths.find(dest_i->second.ID) == spellPaths.end())
                     {
                         ok = true;
@@ -609,7 +549,6 @@ void LoadDBCStores(const std::string& dataPath)
                 }
             }
 
-            // valid taxi network node
             uint8  field   = (uint8)((i - 1) / 32);
             uint32 submask = 1 << ((i - 1) % 32);
             sTaxiNodesMask[field] |= submask;
@@ -625,10 +564,9 @@ void LoadDBCStores(const std::string& dataPath)
             sWMOAreaInfoByTripple.insert(WMOAreaInfoByTripple::value_type(WMOAreaTableTripple(entry->WMOID, entry->NameSetID, entry->WMOGroupID), entry));
         }
     }
-    // LoadDBC(availableDbcLocales,bar,bad_dbc_files,sWorldMapOverlayStore,     dbcPath,"WorldMapOverlay.dbc");
+
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sWorldSafeLocsStore,       dbcPath, "WorldSafeLocs.dbc");
 
-    // error checks
     if (bad_dbc_files.size() >= DBCFilesCount)
     {
         sLog.outError("\nIncorrect DataDir value in mangosd.conf or ALL required *.dbc files (%d) not found by path: %sdbc", DBCFilesCount, dataPath.c_str());
@@ -648,7 +586,6 @@ void LoadDBCStores(const std::string& dataPath)
         exit(1);
     }
 
-    // Check loaded DBC files proper version
     if (!sSpellStore.LookupEntry(33392)            ||
         !sSkillLineAbilityStore.LookupEntry(15030) ||
         !sMapStore.LookupEntry(533)                ||
@@ -663,12 +600,6 @@ void LoadDBCStores(const std::string& dataPath)
     sLog.outString();
 }
 
-/**
- * @brief Gets the faction list associated with a faction team id.
- *
- * @param faction The faction team id.
- * @return SimpleFactionsList const* The faction list, or null if none exists.
- */
 SimpleFactionsList const* GetFactionTeamList(uint32 faction)
 {
     FactionTeamMap::const_iterator itr = sFactionTeamMap.find(faction);
@@ -679,13 +610,6 @@ SimpleFactionsList const* GetFactionTeamList(uint32 faction)
     return &itr->second;
 }
 
-/**
- * @brief Gets the localized pet family name.
- *
- * @param petfamily The creature family id.
- * @param dbclang The locale index.
- * @return char const* The localized pet name, or null if unavailable.
- */
 char const* GetPetName(uint32 petfamily, uint32 dbclang)
 {
     if (!petfamily)
@@ -700,12 +624,6 @@ char const* GetPetName(uint32 petfamily, uint32 dbclang)
     return pet_family->Name_lang[dbclang] ? pet_family->Name_lang[dbclang] : nullptr;
 }
 
-/**
- * @brief Finds the talent position metadata for a spell id.
- *
- * @param spellId The talent spell id.
- * @return TalentSpellPos const* The talent position, or null if not found.
- */
 TalentSpellPos const* GetTalentSpellPos(uint32 spellId)
 {
     TalentSpellPosMap::const_iterator itr = sTalentSpellPosMap.find(spellId);
@@ -717,12 +635,6 @@ TalentSpellPos const* GetTalentSpellPos(uint32 spellId)
     return &itr->second;
 }
 
-/**
- * @brief Computes the talent point cost from a talent position.
- *
- * @param pos The talent spell position.
- * @return uint32 The talent point cost.
- */
 uint32 GetTalentSpellCost(TalentSpellPos const* pos)
 {
     if (pos)
@@ -733,23 +645,11 @@ uint32 GetTalentSpellCost(TalentSpellPos const* pos)
     return 0;
 }
 
-/**
- * @brief Computes the talent point cost for a spell id.
- *
- * @param spellId The talent spell id.
- * @return uint32 The talent point cost.
- */
 uint32 GetTalentSpellCost(uint32 spellId)
 {
     return GetTalentSpellCost(GetTalentSpellPos(spellId));
 }
 
-/**
- * @brief Gets the explore flag for an area id.
- *
- * @param area_id The area id.
- * @return int32 The explore flag, or -1 if the area is unknown.
- */
 int32 GetAreaFlagByAreaID(uint32 area_id)
 {
     AreaTableEntry const* AreaEntry = sAreaStore.LookupEntry(area_id);
@@ -761,14 +661,6 @@ int32 GetAreaFlagByAreaID(uint32 area_id)
     return AreaEntry->AreaBit;
 }
 
-/**
- * @brief Finds WMO area data by root, ADT, and group identifiers.
- *
- * @param rootid The WMO root id.
- * @param adtid The ADT id.
- * @param groupid The group id.
- * @return WMOAreaTableEntry const* The matching area entry, or null if not found.
- */
 WMOAreaTableEntry const* GetWMOAreaTableEntryByTripple(int32 rootid, int32 adtid, int32 groupid)
 {
     WMOAreaInfoByTripple::iterator i = sWMOAreaInfoByTripple.find(WMOAreaTableTripple(rootid, adtid, groupid));
@@ -779,27 +671,14 @@ WMOAreaTableEntry const* GetWMOAreaTableEntryByTripple(int32 rootid, int32 adtid
     return i->second;
 }
 
-/**
- * @brief Gets an area table entry by area id.
- *
- * @param area_id The area id.
- * @return AreaTableEntry const* The matching area entry, or null if not found.
- */
 AreaTableEntry const* GetAreaEntryByAreaID(uint32 area_id)
 {
     return sAreaStore.LookupEntry(area_id);
 }
 
-/**
- * @brief Finds an area entry by explore flag and map id.
- *
- * @param area_flag The explore flag.
- * @param map_id The map id.
- * @return AreaTableEntry const* The best matching area entry, or null if none exists.
- */
 AreaTableEntry const* GetAreaEntryByAreaFlagAndMap(uint32 area_flag, uint32 map_id)
 {
-    // 1.12.1 areatable have duplicates for areaflag
+
     static std::map<uint64, AreaTableEntry const*> cache;
     uint64 cacheKey = (static_cast<uint64>(area_flag) << 32) | static_cast<uint64>(map_id);
     auto it = cache.find(cacheKey);
@@ -817,13 +696,13 @@ AreaTableEntry const* GetAreaEntryByAreaFlagAndMap(uint32 area_flag, uint32 map_
             {
                 if (AreaEntry->AreaBit == area_flag)
                 {
-                    // area_flag found but it lets test map_id too
+
                     if (AreaEntry->ContinentID == map_id)
                     {
                         cache[cacheKey] = AreaEntry;
-                        return AreaEntry; // area_flag and map_id are ok so we can return value
+                        return AreaEntry;
                     }
-                    // not same map_id so we store this entry and continue searching another better one
+
                     aEntry = AreaEntry;
                 }
             }
@@ -833,7 +712,7 @@ AreaTableEntry const* GetAreaEntryByAreaFlagAndMap(uint32 area_flag, uint32 map_
     if (aEntry)
     {
         cache[cacheKey] = aEntry;
-        return aEntry;  // return last entry found if exist (not same map_id but it seem ok in some places)
+        return aEntry;
     }
 
     if (MapEntry const* mapEntry = sMapStore.LookupEntry(map_id))
@@ -847,12 +726,6 @@ AreaTableEntry const* GetAreaEntryByAreaFlagAndMap(uint32 area_flag, uint32 map_
     return nullptr;
 }
 
-/**
- * @brief Gets the default area flag associated with a map id.
- *
- * @param mapid The map id.
- * @return uint32 The area flag, or 0 if none is mapped.
- */
 uint32 GetAreaFlagByMapId(uint32 mapid)
 {
     AreaFlagByMapID::iterator i = sAreaFlagByMapID.find(mapid);
@@ -866,15 +739,9 @@ uint32 GetAreaFlagByMapId(uint32 mapid)
     }
 }
 
-/**
- * @brief Finds a chat channel entry by channel id.
- *
- * @param channel_id The channel id.
- * @return ChatChannelsEntry const* The matching channel entry, or null if not found.
- */
 ChatChannelsEntry const* GetChannelEntryFor(uint32 channel_id)
 {
-    // not sorted, numbering index from 0
+
     for (uint32 i = 0; i < sChatChannelsStore.GetNumRows(); ++i)
     {
         ChatChannelsEntry const* ch = sChatChannelsStore.LookupEntry(i);
@@ -888,21 +755,15 @@ ChatChannelsEntry const* GetChannelEntryFor(uint32 channel_id)
 
 static ChatChannelsEntry worldCh = { 26, 4, "world" };
 
-/**
- * @brief Finds a chat channel entry by display name.
- *
- * @param name The channel name.
- * @return ChatChannelsEntry const* The matching channel entry, or null if not found.
- */
 ChatChannelsEntry const* GetChannelEntryFor(const std::string& name)
 {
-    // not sorted, numbering index from 0
+
     for (uint32 i = 0; i < sChatChannelsStore.GetNumRows(); ++i)
     {
         ChatChannelsEntry const* ch = sChatChannelsStore.LookupEntry(i);
         if (ch)
         {
-            // need to remove %s from entryName if it exists before we match
+
             std::string entryName(ch->Name_lang[0]);
             std::size_t removeString = entryName.find("%s");
 
@@ -918,7 +779,7 @@ ChatChannelsEntry const* GetChannelEntryFor(const std::string& name)
         }
     }
 
-    bool compare = true;        // hack for world channel, TODO smth!
+    bool compare = true;
     std::string world = "world";
     for (uint8 i = 0; i < name.length(); ++i)
     {
@@ -937,62 +798,38 @@ ChatChannelsEntry const* GetChannelEntryFor(const std::string& name)
     return nullptr;
 }
 
-/**
- * @brief Converts zone map percentages into world map coordinates.
- *
- * @param x The X coordinate to convert.
- * @param y The Y coordinate to convert.
- * @param zone The world map area id.
- * @return true if conversion succeeded; otherwise false.
- */
 bool Zone2MapCoordinates(float& x, float& y, uint32 zone)
 {
     WorldMapAreaEntry const* maEntry = sWorldMapAreaStore.LookupEntry(zone);
 
-    // if not listed then map coordinates (instance)
     if (!maEntry || maEntry->LocBottom == maEntry->LocTop || maEntry->LocRight == maEntry->LocLeft)
     {
         return false;
     }
 
-    std::swap(x, y);                                        // at client map coords swapped
+    std::swap(x, y);
     x = x * ((maEntry->LocBottom - maEntry->LocTop) / 100) + maEntry->LocTop;
-    y = y * ((maEntry->LocRight - maEntry->LocLeft) / 100) + maEntry->LocLeft; // client y coord from top to down
+    y = y * ((maEntry->LocRight - maEntry->LocLeft) / 100) + maEntry->LocLeft;
 
     return true;
 }
 
-/**
- * @brief Converts world map coordinates into zone map percentages.
- *
- * @param x The X coordinate to convert.
- * @param y The Y coordinate to convert.
- * @param zone The world map area id.
- * @return true if conversion succeeded; otherwise false.
- */
 bool Map2ZoneCoordinates(float& x, float& y, uint32 zone)
 {
     WorldMapAreaEntry const* maEntry = sWorldMapAreaStore.LookupEntry(zone);
 
-    // if not listed then map coordinates (instance)
     if (!maEntry || maEntry->LocBottom == maEntry->LocTop || maEntry->LocRight == maEntry->LocLeft)
     {
         return false;
     }
 
     x = (x - maEntry->LocTop) / ((maEntry->LocBottom - maEntry->LocTop) / 100);
-    y = (y - maEntry->LocLeft) / ((maEntry->LocRight - maEntry->LocLeft) / 100); // client y coord from top to down
-    std::swap(x, y);                                        // client have map coords swapped
+    y = (y - maEntry->LocLeft) / ((maEntry->LocRight - maEntry->LocLeft) / 100);
+    std::swap(x, y);
 
     return true;
 }
 
-/**
- * @brief Gets the inspect bit position for a talent within its tab.
- *
- * @param talentId The talent id.
- * @return uint32 The bit position within inspect data.
- */
 uint32 GetTalentInspectBitPosInTab(uint32 talentId)
 {
     TalentInspectMap::const_iterator itr = sTalentPosInInspect.find(talentId);
@@ -1004,12 +841,6 @@ uint32 GetTalentInspectBitPosInTab(uint32 talentId)
     return itr->second;
 }
 
-/**
- * @brief Gets the number of inspect bits used by a talent tab.
- *
- * @param talentTabId The talent tab id.
- * @return uint32 The inspect bit size for the tab.
- */
 uint32 GetTalentTabInspectBitSize(uint32 talentTabId)
 {
     TalentInspectMap::const_iterator itr = sTalentTabSizeInInspect.find(talentTabId);
@@ -1021,28 +852,11 @@ uint32 GetTalentTabInspectBitSize(uint32 talentTabId)
     return itr->second;
 }
 
-/**
- * @brief Gets the talent tab pages for a class.
- *
- * @param cls The class id.
- * @return uint32 const* The three talent tab page ids for the class.
- */
 uint32 const* GetTalentTabPages(uint32 cls)
 {
     return sTalentTabPages[cls];
 }
 
-/**
- * @brief Checks whether a point lies inside an area trigger volume.
- *
- * @param atEntry The area trigger definition.
- * @param mapid The current map id.
- * @param x The X coordinate.
- * @param y The Y coordinate.
- * @param z The Z coordinate.
- * @param delta Extra tolerance applied to the trigger bounds.
- * @return true if the point is inside the trigger; otherwise false.
- */
 bool IsPointInAreaTriggerZone(AreaTriggerEntry const* atEntry, uint32 mapid, float x, float y, float z, float delta)
 {
     if (mapid != atEntry->mapid)
@@ -1052,7 +866,7 @@ bool IsPointInAreaTriggerZone(AreaTriggerEntry const* atEntry, uint32 mapid, flo
 
     if (atEntry->radius > 0)
     {
-        // if we have radius check it
+
         float dist2 = (x - atEntry->x) * (x - atEntry->x) + (y - atEntry->y) * (y - atEntry->y) + (z - atEntry->z) * (z - atEntry->z);
         if (dist2 > (atEntry->radius + delta) * (atEntry->radius + delta))
         {
@@ -1061,12 +875,7 @@ bool IsPointInAreaTriggerZone(AreaTriggerEntry const* atEntry, uint32 mapid, flo
     }
     else
     {
-        // we have only extent
 
-        // rotate the players position instead of rotating the whole cube, that way we can make a simplified
-        // is-in-cube check and we have to calculate only one point instead of 4
-
-        // 2PI = 360, keep in mind that ingame orientation is counter-clockwise
         double rotation = 2 * M_PI - atEntry->box_yaw;
         double sinVal = sin(rotation);
         double cosVal = cos(rotation);
@@ -1077,7 +886,6 @@ bool IsPointInAreaTriggerZone(AreaTriggerEntry const* atEntry, uint32 mapid, flo
         float rotPlayerX = float(atEntry->x + playerBoxDistX * cosVal - playerBoxDistY * sinVal);
         float rotPlayerY = float(atEntry->y + playerBoxDistY * cosVal + playerBoxDistX * sinVal);
 
-        // box edges are parallel to coordiante axis, so we can treat every dimension independently :D
         float dz = z - atEntry->z;
         float dx = rotPlayerX - atEntry->x;
         float dy = rotPlayerY - atEntry->y;
@@ -1092,12 +900,6 @@ bool IsPointInAreaTriggerZone(AreaTriggerEntry const* atEntry, uint32 mapid, flo
     return true;
 }
 
-/**
- * @brief Gets the race id associated with a creature display model.
- *
- * @param model_id The creature model display id.
- * @return uint32 The race id, or 0 if no race data is available.
- */
 uint32 GetCreatureModelRace(uint32 model_id)
 {
     CreatureDisplayInfoEntry const* displayEntry = sCreatureDisplayInfoStore.LookupEntry(model_id);
@@ -1109,7 +911,6 @@ uint32 GetCreatureModelRace(uint32 model_id)
     return extraEntry ? extraEntry->Race : 0;
 }
 
-// script support functions
 DBCStorage <SoundEntriesEntry>  const* GetSoundEntriesStore()   { return &sSoundEntriesStore;   }
 DBCStorage <SpellEntry>         const* GetSpellStore()          { return &sSpellStore;          }
 DBCStorage <SpellRangeEntry>    const* GetSpellRangeStore()     { return &sSpellRangeStore;     }

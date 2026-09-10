@@ -23,32 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Map.h
- * @brief Map class representing a game world or instance.
- *
- * This file defines the Map class which represents a playable game world or instance.
- * Maps are divided into grids for efficient spatial partitioning and object management.
- *
- * Key responsibilities:
- * - Grid and cell-based spatial management
- * - Object tracking and visibility updates
- * - Dynamic object loading/unloading
- * - Player and creature management
- * - Area effect and broadcast messaging
- * - Instance-specific scripting and state management
- * - Weather and environmental effects
- * - Transport system management
- *
- * The file also contains InstanceTemplate structure for storing instance configuration
- * data from the DBC files.
- *
- * @see Map for the main map implementation
- * @see GridMap for grid-based terrain and collision data
- * @see Cell for the cell structure
- * @see InstanceTemplate for instance configuration
- */
-
 #pragma once
 
 #include "MapBroadcaster.h"
@@ -105,35 +79,25 @@ class Transport;
 
 namespace MaNGOS { struct ObjectUpdater; }
 
-// GCC have alternative #pragma pack(N) syntax and old gcc version not support pack(push,N), also any gcc version not support it at some platform
 #if defined( __GNUC__ )
 #pragma pack(1)
 #else
 #pragma pack(push,1)
 #endif
 
-/// @brief Instance template configuration structure.
-///
-/// Contains static configuration data for dungeon/raid instances loaded from DBC files.
-/// Defines instance properties like player limits, reset times, level requirements, and
-/// entrance locations for resurrection.
-///
-/// @note Data is loaded from DBC at server startup and is read-only during runtime
 struct InstanceTemplate
 {
-    uint32 map;               ///> Map ID of the instance
-    /// Parent instance map ID (for nested instances, 0 for continent-rooted instances)
-    /// Non-continent parent instance (for instance with entrance in another instances)
-    /// or 0 (not related to continent 0 map id)
+    uint32 map;
+
     uint32 parent;
-    uint32 levelMin;          ///> Minimum level recommended for the instance
-    uint32 levelMax;          ///> Maximum level for players in the instance (scaling cap)
-    uint32 maxPlayers;        ///> Maximum number of players allowed in instance
-    uint32 reset_delay;       ///> Instance reset timer in days (0 = no reset)
-    int32 ghostEntranceMap;   ///> Ghost entrance map ID for spirit healer resurrection (< 0 if no entrance)
-    float ghostEntranceX;     ///> Ghost entrance X coordinate
-    float ghostEntranceY;     ///> Ghost entrance Y coordinate
-    uint32 script_id;         ///> Script ID for instance-specific scripting
+    uint32 levelMin;
+    uint32 levelMax;
+    uint32 maxPlayers;
+    uint32 reset_delay;
+    int32 ghostEntranceMap;
+    float ghostEntranceX;
+    float ghostEntranceY;
+    uint32 script_id;
 };
 
 #if defined( __GNUC__ )
@@ -142,7 +106,7 @@ struct InstanceTemplate
 #pragma pack(pop)
 #endif
 
-#define MIN_UNLOAD_DELAY      1                             // immediate unload
+#define MIN_UNLOAD_DELAY      1
 
 class Map : public GridRefManager<NGridType>, public MapBroadcaster
 {
@@ -156,7 +120,6 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
     public:
         virtual ~Map();
 
-        // currently unused for normal maps
         bool CanUnload(uint32 diff)
         {
             if (!m_unloadTimer)
@@ -174,67 +137,31 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
         virtual bool Add(Player*, InitialWorldEntryHook* initialEntry = nullptr);
         virtual void Remove(Player*, bool);
 
-        /**
-         * @brief Moves a player into this map without taking him out of the world.
-         *
-         * Stepping across a vessel's boundary changes which container holds him and which
-         * grid he is filed in. It is not a departure and not an arrival: he keeps his
-         * totems, his duel, his charm, his camera and everything his client already holds.
-         *
-         * Remove and Add cannot do this. Between them they run RemoveFromWorld and
-         * AddToWorld, which exist to tear a player down and build him again -- and the
-         * watchers on the far side, who never lost sight of him, were told to destroy him
-         * and then to build him back.
-         *
-         * Only the cameras on THIS map are told. The ones he is leaving keep what they
-         * hold, and whoever really lost sight of him is cleared by the ordinary
-         * elimination in his own next sweep.
-         *
-         * @param player The player crossing.
-         * @param x The pose he stands in once he is here.
-         */
         bool Rebind(Player* player, float x, float y, float z, float o);
         template<class T> void Add(T*);
         template<class T> void Remove(T*, bool);
 
-        static void DeleteFromWorld(Player* player);        // player object will deleted at call
+        static void DeleteFromWorld(Player* player);
 
         virtual void Update(const uint32&);
 
-        /// Route a map-bound packet here. Serial phase only.
         void PostPacket(WorldSession* session, ObjectGuid player,
                         std::unique_ptr<WorldPacket> packet)
         {
             m_mailbox.Post(session, player, std::move(packet));
         }
 
-        /// Packets waiting for this map's next tick.
-
-        /// How long this map's ticks take, and where the time went.
         metrics::TickRecord& Ticks() { return m_ticks; }
         metrics::TickRecord const& Ticks() const { return m_ticks; }
 
-        /// How many objects keep themselves awake here. A continent with nobody
-        /// on it should have very few, and the number says whether the grid
-        /// phase has a reason to be busy.
         size_t ActiveObjectCount() const { return m_activeNonPlayers.size(); }
 
         float GetVisibilityDistance() const { return m_VisibleDistance; }
-        // function for setting up visibility distance for maps on per-type/per-Id basis
+
         virtual void InitVisibilityDistance();
 
-        /**
-         * Packet delivery radius: the map visibility distance, extended while a
-         * cinematic flyover viewer on this map watches from beyond it so that
-         * movement/update packets still reach that viewer's remote camera.
-         * Without this, creatures revealed by the wide flyover radius receive no
-         * further movement packets until the camera closes to the default
-         * distance, and the client visibly fast-walks them to catch up.
-         */
         float GetBroadcastRadius() const;
-        /// Registration of cinematic flyover viewers. Each Add must be paired
-        /// with a Remove of the same radius on the same map; the effective
-        /// radius is the largest among the currently registered viewers.
+
         void AddCinematicViewer(float radius);
         void RemoveCinematicViewer(float radius);
 
@@ -255,10 +182,6 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
             return loaded(p);
         }
 
-        // Read-only: true if the grid at the given grid indices is resident
-        // with its object data loaded. Index-based companion to IsLoaded(x,y);
-        // never loads or creates a grid. Caller must keep gridX/gridY within
-        // [0, MAX_NUMBER_OF_GRIDS).
         bool IsGridLoaded(uint32 gridX, uint32 gridY) const { return loaded(GridPair(gridX, gridY)); }
 
         bool GetUnloadLock(const GridPair& p) const { return getNGrid(p.x_coord, p.y_coord)->getUnloadLock(); }
@@ -275,12 +198,9 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
         time_t GetGridExpiry(void) const { return i_gridExpiry; }
         uint32 GetId(void) const { return i_id; }
 
-        // some calls like isInWater should not use vmaps due to processor power
-        // can return INVALID_HEIGHT if under z+2 z coord not found height
-
         virtual void RemoveAllObjectsInRemoveList();
 
-        bool CreatureRespawnRelocation(Creature* c);        // used only in CreatureRelocation and ObjectGridUnloader
+        bool CreatureRespawnRelocation(Creature* c);
 
         bool CheckGridIntegrity(Creature* c, bool moved) const;
 
@@ -294,14 +214,9 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
         bool IsBattleGround() const { return i_mapEntry && i_mapEntry->IsBattleGround(); }
         bool IsContinent() const { return i_mapEntry && i_mapEntry->IsContinent(); }
 
-        /// This map AS A VESSEL, or nullptr. Asked of the map itself rather than of its id, so
-        /// the answer comes from what the map IS -- and the caller gets the thing it wanted
-        /// rather than a boolean plus a downcast.
         virtual TransportMap* AsTransport() { return nullptr; }
         virtual TransportMap const* AsTransport() const { return nullptr; }
 
-
-        // can't be nullptr for loaded map
         MapPersistentState* GetPersistentState() const { return m_persistentState; }
 
         void AddObjectToRemoveList(Occupant* obj);
@@ -323,23 +238,21 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
         typedef MapRefManager PlayerList;
         PlayerList const& GetPlayers() const { return m_mapRefManager; }
 
-        /// The script steps queued on this map, and the hour each falls due.
         ScriptSchedule& Scripts() { return m_scripts; }
 
-        // must called with AddToWorld
         void AddToActive(Occupant* obj);
-        // must called with RemoveFromWorld
+
         void RemoveFromActive(Occupant* obj);
 
         Player* GetPlayer(ObjectGuid guid);
         Creature* GetCreature(ObjectGuid guid);
         Pet* GetPet(ObjectGuid guid);
-        Creature* GetAnyTypeCreature(ObjectGuid guid);      // normal creature or pet
+        Creature* GetAnyTypeCreature(ObjectGuid guid);
         GameObject* GetGameObject(ObjectGuid guid);
         DynamicObject* GetDynamicObject(ObjectGuid guid);
-        Corpse* GetCorpse(ObjectGuid guid);                 // !!! find corpse can be not in world
-        Unit* GetUnit(ObjectGuid guid);                     // only use if sure that need objects at current map, specially for player case
-        Occupant* GetOccupant(ObjectGuid guid);       // only use if sure that need objects at current map, specially for player case
+        Corpse* GetCorpse(ObjectGuid guid);
+        Unit* GetUnit(ObjectGuid guid);
+        Occupant* GetOccupant(ObjectGuid guid);
 
         using MapStoredObjectTypesContainer = TypeUnorderedMapContainer<ObjectGuid, TypeList<Creature, Pet, GameObject, DynamicObject>> ;
         MapStoredObjectTypesContainer& GetObjectsStore()
@@ -347,24 +260,12 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
             return m_objectsStore;
         }
 
-        /// The objects here whose changed fields still owe their observers a packet.
         UpdateBacklog& Backlog() { return m_backlog; }
 
-        // DynObjects currently
         uint32 GenerateLocalLowGuid(HighGuid guidhigh);
 
-        // get corresponding TerrainData object for this particular map
         const TerrainInfo* GetTerrain() const { return m_TerrainData; }
 
-        /**
-         * @brief The players OUTSIDE this map who must nonetheless HEAR what happens on it.
-         *
-         * Only a deck map has them, refreshed by the vessel at the top of its tick. This is
-         * a BROADCAST channel, not a visibility one: a spline, an emote, a spell go -- the
-         * things a crew member says when nobody's visibility pass happens to be running.
-         * Who can SEE the deck is decided by each viewer's own sweep, which reaches across
-         * the boundary itself.
-         */
         std::vector<Player*> const& ExternalObservers() const { return m_externalObservers; }
         void SetExternalObservers(std::vector<Player*>&& observers)
         {
@@ -375,17 +276,6 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
         InstanceData* GetInstanceData() const { return i_data; }
         virtual uint32 GetScriptId() const { return sScriptMgr.GetBoundScriptId(SCRIPTED_MAP, GetId()); }
 
-
-        // Dynamic VMaps
-        /// The floor under (x, y, z), or nothing where the map has none. Core code asks
-        /// this and never GetHeight: an absent floor must not arrive as a number that
-        /// arithmetic will consume, which is the whole reason INVALID_HEIGHT leaked.
-        /// Every surface stacked over (x, y) between zTop and zBottom, static and
-        /// live geometry fused. A scalar height cannot say "there is an open hatch
-        /// here, refuse" rather than "the deck two levels down".
-        /// Vanilla has no phasing, so every body is in the only phase there is.
-        /// The live-geometry interface is shared with the cores that do phase, and
-        /// a named constant says which of the two this is rather than a bare 1.
         static const uint32 PHASE_ANY = 1;
 
         world::terrain::Column ColumnAt(float x, float y, float zTop, float zBottom) const;
@@ -397,42 +287,29 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
         bool IsInLineOfSight(float x1, float y1, float z1, float x2, float y2, float z2) const;
         bool GetHitPosition(float srcX, float srcY, float srcZ, float& destX, float& destY, float& destZ, float modifyDist) const;
 
-        // Object Model insertion/remove/test for dynamic vmaps use
         void InsertGameObjectModel(const GameObjectModel& mdl);
         void RemoveGameObjectModel(const GameObjectModel& mdl);
         bool ContainsGameObjectModel(const GameObjectModel& mdl) const;
         void RefreshGameObjectModel(GameObjectModel& mdl);
 
-        // Get Holder for Creature Linking
         CreatureLinkingHolder* GetCreatureLinkingHolder()
         {
             return &m_creatureLinkingHolder;
         }
 
-        // Teleport all players in that map to choosed location
         void TeleportAllPlayersTo(TeleportLocation loc);
 
-        // WeatherSystem
         WeatherSystem* GetWeatherSystem() const { return m_weatherSystem; }
 
-        /** Set the weather in a zone on this map
-         * @param zoneId set the weather for which zone
-         * @param type What weather to set
-         * @param grade how strong the weather should be
-         * @param permanently set the weather permanently?
-         */
         void SetWeather(uint32 zoneId, WeatherType type, float grade, bool permanently);
 
-        // Random on map generation
         bool GetReachableRandomPosition(Unit* unit, float& x, float& y, float& z, float radius);
         bool GetReachableRandomPointOnGround(float& x, float& y, float& z, float radius);
         bool GetRandomPointInTheAir(float& x, float& y, float& z, float radius);
         bool GetRandomPointUnderWater(float& x, float& y, float& z, float radius, GridMapLiquidData& liquid_status);
 
-
         bool HasPlayerInOrAroundGrid(uint32 gridX, uint32 gridY) const;
         bool IsCellLoaded(float x, float y) const;
-
 
     private:
         void LoadMapAndVMap(int gx, int gy);
@@ -452,7 +329,6 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
 
         void buildNGridLinkage(NGridType* pNGridType) { pNGridType->link(this); }
 
-
         void VisitNearbyCellsOf(Occupant* obj,
             TypeContainerVisitor<MaNGOS::ObjectUpdater, GridTypeMapContainer> &gridVisitor,
             TypeContainerVisitor<MaNGOS::ObjectUpdater, WorldTypeMapContainer> &worldVisitor);
@@ -462,18 +338,12 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
 
         void setNGrid(NGridType* grid, uint32 x, uint32 y);
 
-
     protected:
-        /// The listeners standing on this map: the cells around the subject, or the roll.
+
         uint32 Hearers(Audience const& who, Listener const& tell) override;
 
-        /// The decks crossing this map. A packet cut to a distance stays ashore: the only
-        /// object that could measure that distance is the vessel, whose pose is a waypoint
-        /// estimate nothing is allowed to decide anything by.
         uint32 Across(Audience const& who, Listener const& tell) override;
 
-        /// A vessel writes her own Add(Player*): her passengers arrive on a map their client
-        /// has never heard of, so nothing an ordinary map sends on entry applies.
         void EnsureGridLoadedAtEnter(Cell const&, Player* player = nullptr);
 
         NGridType* getNGrid(uint32 x, uint32 y) const
@@ -485,14 +355,13 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
 
         MapEntry const* i_mapEntry;
 
-        /// Players off this map who must hear it -- see ExternalObservers().
         std::vector<Player*> m_externalObservers;
         uint32 i_id;
         uint32 i_InstanceId;
         uint32 m_unloadTimer;
         float m_VisibleDistance;
-        std::multiset<float> m_cinematicViewerRadii;  ///< radii of active cinematic flyover viewers on this map
-        float m_cinematicViewerRadius;                ///< cached largest of m_cinematicViewerRadii (0 when none)
+        std::multiset<float> m_cinematicViewerRadii;
+        float m_cinematicViewerRadius;
         MapPersistentState* m_persistentState;
 
         MapRefManager m_mapRefManager;
@@ -506,17 +375,13 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
     private:
         time_t i_gridExpiry;
 
-        /// Written in the serial phase, drained by this map in the parallel one.
         MapMailbox m_mailbox;
         UpdateBacklog m_backlog;
 
-        /// The last few hundred ticks of this map, and how many ran long.
         metrics::TickRecord m_ticks;
-
 
         NGridType* i_grids[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 
-        // Shared geodata object with map coord info...
         TerrainInfo* const m_TerrainData;
         bool m_bLoadedGrids[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 
@@ -528,25 +393,21 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
 
         InstanceData* i_data;
 
-        // Map local low guid counters
         ObjectGuidGenerator<HIGHGUID_UNIT> m_CreatureGuids;
         ObjectGuidGenerator<HIGHGUID_GAMEOBJECT> m_GameObjectGuids;
         ObjectGuidGenerator<HIGHGUID_DYNAMICOBJECT> m_DynObjectGuids;
         ObjectGuidGenerator<HIGHGUID_PET> m_PetGuids;
 
-        // Type specific code for add/remove to/from grid
         template<class T>
             void AddToGrid(T*, NGridType*, Cell const&);
 
         template<class T>
             void RemoveFromGrid(T*, NGridType*, Cell const&);
-        // Holder for information about linked mobs
+
         CreatureLinkingHolder m_creatureLinkingHolder;
 
-        // Dynamic Map tree object
         DynamicCollision m_dyn_tree;
 
-        // WeatherSystem
         WeatherSystem* m_weatherSystem;
 
 };
@@ -554,19 +415,18 @@ class Map : public GridRefManager<NGridType>, public MapBroadcaster
 class WorldMap : public Map
 {
     private:
-        using Map::GetPersistentState;                      // hide in subclass for overwrite
+        using Map::GetPersistentState;
     public:
         WorldMap(uint32 id, time_t expiry) : Map(id, expiry, 0) {}
         ~WorldMap() {}
 
-        // can't be nullptr for loaded map
         WorldPersistentState* GetPersistanceState() const;
 };
 
 class DungeonMap : public Map
 {
     private:
-        using Map::GetPersistentState;                      // hide in subclass for overwrite
+        using Map::GetPersistentState;
     public:
         DungeonMap(uint32 id, time_t, uint32 InstanceId);
         ~DungeonMap();
@@ -582,7 +442,6 @@ class DungeonMap : public Map
 
         uint32 GetScriptId() const override { return sScriptMgr.GetBoundScriptId(SCRIPTED_INSTANCE, GetId()); }
 
-        // can't be nullptr for loaded map
         DungeonPersistentState* GetPersistanceState() const;
 
         void InitVisibilityDistance() override;
@@ -594,7 +453,7 @@ class DungeonMap : public Map
 class BattleGroundMap : public Map
 {
     private:
-        using Map::GetPersistentState;                      // hide in subclass for overwrite
+        using Map::GetPersistentState;
     public:
         BattleGroundMap(uint32 id, time_t, uint32 InstanceId);
         ~BattleGroundMap();
@@ -613,9 +472,8 @@ class BattleGroundMap : public Map
         }
         void SetBG(BattleGround* bg) { m_bg = bg; }
 
-        uint32 GetScriptId() const override { return sScriptMgr.GetBoundScriptId(SCRIPTED_BATTLEGROUND, GetId()); } //TODO bind BG scripts through script_binding, now these are broken!
+        uint32 GetScriptId() const override { return sScriptMgr.GetBoundScriptId(SCRIPTED_BATTLEGROUND, GetId()); }
 
-        // can't be nullptr for loaded map
         BattleGroundPersistentState* GetPersistanceState() const;
 
     private:
@@ -637,11 +495,7 @@ template<class T, class CONTAINER>
     }
     else if (NGridType* ng = getNGrid(x, y))
     {
-        // B-Cell: the grid is not fully loaded, but this individual cell may be resident
-        // as part of an anchor's envelope. Tick its objects (AI/movement/respawn) in place
-        // WITHOUT promoting the grid to FULL -- otherwise envelope grids would be resident
-        // yet never updated (anchors frozen, no background respawn). Visiting only the
-        // already-loaded cell keeps it partial. No-op when no envelope cells exist.
+
         if (ng->isCellObjectDataLoaded(cell_x, cell_y))
         {
             ng->Visit(cell_x, cell_y, visitor);

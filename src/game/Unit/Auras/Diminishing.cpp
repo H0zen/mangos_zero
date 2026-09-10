@@ -29,10 +29,8 @@ namespace unit
 {
     namespace
     {
-        constexpr uint8 MAX_HITS = 3;   ///< Fade::Immune
+        constexpr uint8 MAX_HITS = 3;
 
-        /// Wrap-safe elapsed time, for a clock that is a rolling millisecond
-        /// counter rather than a date.
         uint32 Since(uint32 then, uint32 now)
         {
             return now >= then ? now - then : (0xFFFFFFFFu - then) + now;
@@ -59,8 +57,6 @@ namespace unit
             return Fade::Full;
         }
 
-        // Nothing of this group is on the unit and it has been quiet long
-        // enough: the history is spent and the next one lands in full.
         if (entry->held == 0 && entry->releasedAt != 0 &&
             Since(entry->releasedAt, now) > RESET_WINDOW_MS)
         {
@@ -108,8 +104,7 @@ namespace unit
         --entry->held;
         if (entry->held == 0)
         {
-            // The quiet window starts when the last one comes off, not when the
-            // first one landed.
+
             entry->releasedAt = now;
         }
     }

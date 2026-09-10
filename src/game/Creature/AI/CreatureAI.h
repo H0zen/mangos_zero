@@ -59,56 +59,53 @@ enum CanCastResult
 
 enum CastFlags
 {
-    CAST_INTERRUPT_PREVIOUS     = 0x01,                     // Interrupt any spell casting
-    CAST_TRIGGERED              = 0x02,                     // Triggered (this makes spell cost zero mana and have no cast time)
-    CAST_FORCE_CAST             = 0x04,                     // Forces cast even if creature is out of mana or out of range
-    CAST_NO_MELEE_IF_OOM        = 0x08,                     // Prevents creature from entering melee if out of mana or out of range
-    CAST_FORCE_TARGET_SELF      = 0x10,                     // Forces the target to cast this spell on itself
-    CAST_AURA_NOT_PRESENT       = 0x20,                     // Only casts the spell if the target does not have an aura from the spell
+    CAST_INTERRUPT_PREVIOUS     = 0x01,
+    CAST_TRIGGERED              = 0x02,
+    CAST_FORCE_CAST             = 0x04,
+    CAST_NO_MELEE_IF_OOM        = 0x08,
+    CAST_FORCE_TARGET_SELF      = 0x10,
+    CAST_AURA_NOT_PRESENT       = 0x20,
 };
 
 enum SpellListCastFlags
 {
-    CF_INTERRUPT_PREVIOUS     = 0x01,                     // Interrupt any spell casting
-    CF_TRIGGERED              = 0x02,                     // Triggered (this makes spell cost zero mana and have no cast time)
-    CF_FORCE_CAST             = 0x04,                     // Forces cast even if creature is out of mana or out of range
-    CF_MAIN_RANGED_SPELL      = 0x08,                     // To be used by ranged mobs only. Creature will not chase target until cast fails.
-    CF_TARGET_UNREACHABLE     = 0x10,                     // Will only use the ability if creature cannot currently get to target
-    CF_AURA_NOT_PRESENT       = 0x20,                     // Only casts the spell if the target does not have an aura from the spell
-    CF_ONLY_IN_MELEE          = 0x40,                     // Only casts if the creature is in melee range of the target
-    CF_NOT_IN_MELEE           = 0x80,                     // Only casts if the creature is not in melee range of the target
+    CF_INTERRUPT_PREVIOUS     = 0x01,
+    CF_TRIGGERED              = 0x02,
+    CF_FORCE_CAST             = 0x04,
+    CF_MAIN_RANGED_SPELL      = 0x08,
+    CF_TARGET_UNREACHABLE     = 0x10,
+    CF_AURA_NOT_PRESENT       = 0x20,
+    CF_ONLY_IN_MELEE          = 0x40,
+    CF_NOT_IN_MELEE           = 0x80,
 };
 
 enum CombatMovementFlags
 {
-    COMBAT_MOVEMENT_SCRIPT      = 0x01,                      // Combat movement enforced by script
+    COMBAT_MOVEMENT_SCRIPT      = 0x01,
     CM_SPELL  = 0x02,
 };
 
 enum AIEventType
 {
-    // Usable with Event AI
-    AI_EVENT_JUST_DIED          = 0,                        // Sender = Killed Npc, Invoker = Killer
-    AI_EVENT_CRITICAL_HEALTH    = 1,                        // Sender = Hurt Npc, Invoker = DamageDealer - Expected to be sent by 10% health
-    AI_EVENT_LOST_HEALTH        = 2,                        // Sender = Hurt Npc, Invoker = DamageDealer - Expected to be sent by 50% health
-    AI_EVENT_LOST_SOME_HEALTH   = 3,                        // Sender = Hurt Npc, Invoker = DamageDealer - Expected to be sent by 90% health
-    AI_EVENT_GOT_FULL_HEALTH    = 4,                        // Sender = Healed Npc, Invoker = Healer
-    AI_EVENT_CUSTOM_EVENTAI_A   = 5,                        // Sender = Npc that throws custom event, Invoker = TARGET_T_ACTION_INVOKER (if exists)
-    AI_EVENT_CUSTOM_EVENTAI_B   = 6,                        // Sender = Npc that throws custom event, Invoker = TARGET_T_ACTION_INVOKER (if exists)
-    AI_EVENT_GOT_CCED           = 7,                        // Sender = CCed Npc, Invoker = Caster that CCed
+
+    AI_EVENT_JUST_DIED          = 0,
+    AI_EVENT_CRITICAL_HEALTH    = 1,
+    AI_EVENT_LOST_HEALTH        = 2,
+    AI_EVENT_LOST_SOME_HEALTH   = 3,
+    AI_EVENT_GOT_FULL_HEALTH    = 4,
+    AI_EVENT_CUSTOM_EVENTAI_A   = 5,
+    AI_EVENT_CUSTOM_EVENTAI_B   = 6,
+    AI_EVENT_GOT_CCED           = 7,
     MAXIMAL_AI_EVENT_EVENTAI    = 8,
 
-    // Internal Use
-    AI_EVENT_CALL_ASSISTANCE    = 10,                       // Sender = Attacked Npc, Invoker = Enemy
+    AI_EVENT_CALL_ASSISTANCE    = 10,
 
-    // Predefined for SD3
-    AI_EVENT_START_ESCORT       = 100,                      // Invoker = Escorting Player
-    AI_EVENT_START_ESCORT_B     = 101,                      // Invoker = Escorting Player
-    AI_EVENT_START_EVENT        = 102,                      // Invoker = EventStarter
-    AI_EVENT_START_EVENT_A      = 103,                      // Invoker = EventStarter
-    AI_EVENT_START_EVENT_B      = 104,                      // Invoker = EventStarter
+    AI_EVENT_START_ESCORT       = 100,
+    AI_EVENT_START_ESCORT_B     = 101,
+    AI_EVENT_START_EVENT        = 102,
+    AI_EVENT_START_EVENT_A      = 103,
+    AI_EVENT_START_EVENT_B      = 104,
 
-    // Some IDs for special cases in SD3
     AI_EVENT_CUSTOM_A           = 1000,
     AI_EVENT_CUSTOM_B           = 1001,
     AI_EVENT_CUSTOM_C           = 1002,
@@ -129,261 +126,87 @@ class CreatureAI
         explicit CreatureAI(Creature* creature);
         virtual ~CreatureAI();
 
-        ///== Information about AI ========================
+        virtual void GetAIInformation(ChatHandler& ) {}
 
-        /**
-         * This function is used to display information about the AI.
-         * It is called when the .npc aiinfo command is used.
-         * Use this for on-the-fly debugging
-         * @param reader is a ChatHandler to send messages to.
-         */
-        virtual void GetAIInformation(ChatHandler& /*reader*/) {}
+        virtual void MoveInLineOfSight(Unit* ) {}
 
-        ///== Reactions At =================================
+        virtual void EnterCombat(Unit* ) {}
 
-        /**
-         * Called if IsVisible(Unit* pWho) is true at each (relative) override pWho move, reaction at visibility zone enter
-         * Note: The Unit* pWho can be out of Line of Sight, usually this is only visibiliy (by state) and range dependendend
-         * Note: This function is not called for creatures who are in evade mode
-         * @param pWho Unit* who moved in the visibility range and is visisble
-         */
-        virtual void MoveInLineOfSight(Unit* /*pWho*/) {}
-
-        /**
-         * Called for reaction at enter to combat if not in combat yet
-         * @param pEnemy Unit* of whom the Creature enters combat with, can be nullptr
-         */
-        virtual void EnterCombat(Unit* /*pEnemy*/) {}
-
-        /**
-         * Called for reaction at stopping attack at no attackers or targets
-         * This is called usually in Unit::SelectHostileTarget, if no more target exists
-         */
         virtual void EnterEvadeMode();
 
-        /**
-         * Called at reaching home after MoveTargetedHome
-         */
         virtual void JustReachedHome() {}
 
-        /**
-         * Called at any Heal received from any Unit
-         * @param pHealer Unit* which deals the heal
-         * @param uiHealedAmount Amount of healing received
-         */
-        virtual void HealedBy(Unit * /*pHealer*/, uint32& /*uiHealedAmount*/) {}
+        virtual void HealedBy(Unit * , uint32& ) {}
 
-        /**
-         * Called at any Damage to any victim (before damage apply)
-         * @param pDoneTo Unit* to whom Damage of amount uiDamage will be dealt
-         * @param uiDamage Amount of Damage that will be dealt, can be changed here
-         */
-        virtual void DamageDeal(Unit* /*pDoneTo*/, uint32& /*uiDamage*/) {}
+        virtual void DamageDeal(Unit* , uint32& ) {}
 
-        /**
-         * Called at any Damage from any attacker (before damage apply)
-         * Note:    Use for recalculation damage or special reaction at damage
-         *          for attack reaction use AttackedBy called for not DOT damage in Unit::DealDamage also
-         * @param pDealer Unit* who will deal Damage to the creature
-         * @param uiDamage Amount of Damage that will be dealt, can be changed here
-         */
-        virtual void DamageTaken(Unit* /*pDealer*/, uint32& /*uiDamage*/) {}
+        virtual void DamageTaken(Unit* , uint32& ) {}
 
-        /**
-         * Called when the creature is killed
-         * @param pKiller Unit* who killed the creature
-         */
-        virtual void JustDied(Unit* /*pKiller*/) {}
+        virtual void JustDied(Unit* ) {}
 
-        /**
-         * Called when the corpse of this creature gets removed
-         * @param uiRespawnDelay Delay (in seconds). If != 0, then this is the time after which the creature will respawn, if = 0 the default respawn-delay will be used
-         */
-        virtual void CorpseRemoved(uint32& /*uiRespawnDelay*/) {}
+        virtual void CorpseRemoved(uint32& ) {}
 
-        /**
-         * Called when a summoned creature is killed
-         * @param pSummoned Summoned Creature* that got killed
-         */
-        virtual void SummonedCreatureJustDied(Creature* /*pSummoned*/) {}
+        virtual void SummonedCreatureJustDied(Creature* ) {}
 
-        /**
-         * Called when the creature kills a unit
-         * @param pVictim Victim that got killed
-         */
-        virtual void KilledUnit(Unit* /*pVictim*/) {}
+        virtual void KilledUnit(Unit* ) {}
 
-        /**
-         * Called when owner of m_creature (if m_creature is PROTECTOR_PET) kills a unit
-         * @param pVictim Victim that got killed (by owner of creature)
-         */
-        virtual void OwnerKilledUnit(Unit* /*pVictim*/) {}
+        virtual void OwnerKilledUnit(Unit* ) {}
 
-        /**
-         * Called when the creature summon successfully other creature
-         * @param pSummoned Creature that got summoned
-         */
-        virtual void JustSummoned(Creature* /*pSummoned*/) {}
+        virtual void JustSummoned(Creature* ) {}
 
-        /**
-         * Called when the creature summon successfully a gameobject
-         * @param pGo GameObject that was summoned
-         */
-        virtual void JustSummoned(GameObject* /*pGo*/) {}
+        virtual void JustSummoned(GameObject* ) {}
 
-        /**
-         * Called when a summoned creature gets TemporarySummon::UnSummon ed
-         * @param pSummoned Summoned creature that despawned
-         */
-        virtual void SummonedCreatureDespawn(Creature* /*pSummoned*/) {}
+        virtual void SummonedCreatureDespawn(Creature* ) {}
 
-        /**
-         * Called when hit by a spell
-         * @param pCaster Caster who casted the spell
-         * @param pSpell The spell that hit the creature
-         */
-        virtual void SpellHit(Unit* /*pCaster*/, const SpellEntry* /*pSpell*/) {}
+        virtual void SpellHit(Unit* , const SpellEntry* ) {}
 
-        /**
-         * Called when the current casted spell is processed
-         * @param pSpell The spell that is casted currently
-         * @param reason The spell state (see SpellCastResult enum)
-         */
-        virtual void OnSpellCastChange(const SpellEntry* /*pSpell*/, SpellCastResult /*reason*/) {}
+        virtual void OnSpellCastChange(const SpellEntry* , SpellCastResult ) {}
 
-        /**
-         * Called when spell hits creature's target
-         * @param pTarget Target that we hit with the spell
-         * @param pSpell Spell with which we hit pTarget
-         */
-        virtual void SpellHitTarget(Unit* /*pTarget*/, const SpellEntry* /*pSpell*/) {}
+        virtual void SpellHitTarget(Unit* , const SpellEntry* ) {}
 
-        /**
-         * Called when the creature is target of hostile action: swing, hostile spell landed, fear/etc)
-         * @param pAttacker Unit* who attacked the creature
-         */
         virtual void AttackedBy(Unit* pAttacker);
 
-        /**
-         * Called when creature is respawned (for reseting variables)
-         */
         virtual void JustRespawned() {}
 
-        /**
-         * Called at waypoint reached or point movement finished
-         * @param uiMovementType Type of the movement (enum MovementGeneratorType)
-         * @param uiData Data related to the finished movement (ie point-id)
-         */
-        virtual void MovementInform(uint32 /*uiMovementType*/, uint32 /*uiData*/) {}
+        virtual void MovementInform(uint32 , uint32 ) {}
 
-        /**
-         * Called if a temporary summoned of m_creature reach a move point
-         * @param pSummoned Summoned Creature that finished some movement
-         * @param uiMotionType Type of the movement (enum MovementGeneratorType)
-         * @param uiData Data related to the finished movement (ie point-id)
-         */
-        virtual void SummonedMovementInform(Creature* /*pSummoned*/, uint32 /*uiMotionType*/, uint32 /*uiData*/) {}
+        virtual void SummonedMovementInform(Creature* , uint32 , uint32 ) {}
 
-        /**
-         * Called at text emote receive from player
-         * @param pPlayer Player* who sent the emote
-         * @param uiEmote ID of the emote the player used with the creature as target
-         */
-        virtual void ReceiveEmote(Player* /*pPlayer*/, uint32 /*uiEmote*/) {}
+        virtual void ReceiveEmote(Player* , uint32 ) {}
 
-        ///== Triggered Actions Requested ==================
+        virtual void AttackStart(Unit* ) {}
 
-        /**
-         * Called when creature attack expected (if creature can and no have current victim)
-         * Note: for reaction at hostile action must be called AttackedBy function.
-         * Note: Usually called by MoveInLineOfSight, in Unit::SelectHostileTarget or when the AI is forced to attack an enemy
-         * @param pWho Unit* who is possible target
-         */
-        virtual void AttackStart(Unit* /*pWho*/) {}
+        virtual void UpdateAI(const uint32 ) {}
 
-        /**
-         * Called at World update tick, by default every 100ms
-         * This setting is dependend on CONFIG_UINT32_INTERVAL_MAPUPDATE
-         * Note: Use this function to handle Timers, Threat-Management and MeleeAttacking
-         * @param uiDiff Passed time since last call
-         */
-        virtual void UpdateAI(const uint32 /*uiDiff*/) {}
+        virtual bool IsVisible(Unit* ) const { return false; }
 
-        ///== State checks =================================
-
-        /**
-         * Check if unit is visible for MoveInLineOfSight
-         * Note: This check is by default only the state-depending (visibility, range), NOT LineOfSight
-         * @param pWho Unit* who is checked if it is visisble for the creature
-         */
-        virtual bool IsVisible(Unit* /*pWho*/) const { return false; }
-
-        // Called when victim entered water and creature can not enter water
-        // TODO: rather unused
         virtual bool canReachByRangeAttack(Unit*) { return false; }
 
-        ///== Helper functions =============================
-
-        /// This function is used to do the actual melee damage (if possible)
         bool DoMeleeAttackIfReady();
 
-        /// Internal helper function, to check if a spell can be cast
         CanCastResult CanCastSpell(Unit* pTarget, const SpellEntry* pSpell, bool isTriggered);
 
-        /**
-         * Function to cast a spell if possible
-         * @param pTarget Unit* onto whom the spell should be cast
-         * @param uiSpell ID of the spell that the creature will try to cast
-         * @param uiCastFlags Some flags to define how to cast, see enum CastFlags
-         * @param OriginalCasterGuid the original caster of the spell if required, empty by default
-         */
-        virtual CanCastResult DoCastSpellIfCan(Unit* pTarget, uint32 uiSpell, uint32 uiCastFlags = 0, ObjectGuid OriginalCasterGuid = ObjectGuid());
+        virtual CanCastResult DoCastSpellIfCan(Unit* pTarget, uint32 uiSpell, uint32 uiCastFlags = 0, ObjectGuid OriginalCasterGuid = 0);
 
-        // Assigns a creature_spells list to the AI.
         void SetSpellsList(uint32 entry);
         void SetSpellsList(CreatureSpellsList const* pSpellsList);
 
-        // Goes through the creature's spells list to update timers and cast spells.
         void UpdateSpellsList(uint32 const uiDiff);
         void DoSpellsListCasts(uint32 const uiDiff);
 
-        // Enables or disables melee attacks.
         void SetMeleeAttack(bool enabled);
 
-        /// Combat movement functions
         void SetCombatMovement(bool enable, bool stopOrStartMovement = false);
         bool IsCombatMovement() const { return m_combatMovement != 0; }
         uint8 GetCombatMovementFlags() const { return m_combatMovement; }
         void SetCombatMovementFlag(uint8 flag, bool setFlag = true);
 
-        ///== Event Handling ===============================
-
-        /**
-         * Send an AI Event to nearby Creatures around
-         * @param uiType number to specify the event, default cases listed in enum AIEventType
-         * @param pInvoker Unit that triggered this event (like an attacker)
-         * @param uiDelay  delay time until the Event will be triggered
-         * @param fRadius  range in which for receiver is searched
-         */
         void SendAIEventAround(AIEventType eventType, Unit* pInvoker, uint32 uiDelay, float fRadius, uint32 miscValue = 0) const;
 
-        /**
-         * Send an AI Event to a Creature
-         * @param eventType to specify the event, default cases listed in enum AIEventType
-         * @param pInvoker Unit that triggered this event (like an attacker)
-         * @param pReceiver Creature to receive this event
-         */
         void SendAIEvent(AIEventType eventType, Unit* pInvoker, Creature* pReceiver, uint32 miscValue = 0) const;
 
-        /**
-         * Called when an AI Event is received
-         * @param eventType to specify the event, default cases listed in enum AIEventType
-         * @param pSender Creature that sent this event
-         * @param pInvoker Unit that triggered this event (like an attacker)
-         */
-        virtual void ReceiveAIEvent(AIEventType /*eventType*/, Creature* /*pSender*/, Unit* /*pInvoker*/, uint32 /*miscValue*/) {}
+        virtual void ReceiveAIEvent(AIEventType , Creature* , Unit* , uint32 ) {}
 
-        // Reset should be defined here, as it is called from out the AI ctor now
         virtual void Reset()
         {
             m_combatMovement = COMBAT_MOVEMENT_SCRIPT;
@@ -393,20 +216,15 @@ class CreatureAI
         void HandleMovementOnAttackStart(Unit* victim);
         void SetChase(bool chase);
 
-        ///== Fields =======================================
-
-        /// Pointer to the Creature controlled by this AI
         Creature* const m_creature;
 
-        /// How should an enemy be chased
         float m_attackDistance;
         float m_attackAngle;
 
-        /// Combat movement currently enabled
-        bool m_meleeAttack;                                     // If we allow melee auto attack
-        uint8 m_combatMovement;                                 // If we allow targeted movement gen (chasing target)
-        uint32 m_uiCastingDelay;                                // Cooldown before updating spell list again
-        std::vector<CreatureAISpellsEntry> m_CreatureSpells;    // Contains the currently used creature_spells template
+        bool m_meleeAttack;
+        uint8 m_combatMovement;
+        uint32 m_uiCastingDelay;
+        std::vector<CreatureAISpellsEntry> m_CreatureSpells;
 };
 
 struct SelectableAI : public FactoryHolder<CreatureAI>, public Permissible<Creature>

@@ -74,16 +74,7 @@ void Player::ApplyEnchantment(Item* item, bool apply)
     }
 }
 
-/**
- * @brief Applies or removes a specific enchantment slot on an equipped item.
- *
- * @param item The equipped item whose enchantment should be processed.
- * @param slot The enchantment slot to process.
- * @param apply True to apply the enchantment; false to remove it.
- * @param apply_dur True to update tracked enchantment duration state.
- * @param ignore_condition Unused flag for conditional processing.
- */
-void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool apply_dur, bool /*ignore_condition*/)
+void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool apply_dur, bool )
 {
     if (!item)
     {
@@ -125,7 +116,7 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                 case ITEM_ENCHANTMENT_TYPE_NONE:
                     break;
                 case ITEM_ENCHANTMENT_TYPE_COMBAT_SPELL:
-                    // processed in Player::CastItemCombatSpell
+
                     break;
                 case ITEM_ENCHANTMENT_TYPE_DAMAGE:
                     if (item->GetSlot() == EQUIPMENT_SLOT_MAINHAND)
@@ -202,7 +193,7 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                     }
                     break;
                 }
-                case ITEM_ENCHANTMENT_TYPE_TOTEM:           // Shaman Rockbiter Weapon
+                case ITEM_ENCHANTMENT_TYPE_TOTEM:
                 {
                     if (getClass() == CLASS_SHAMAN)
                     {
@@ -223,8 +214,8 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                 default:
                     sLog.outError("Unknown item enchantment (id = %d) display type: %d", enchant_id, enchant_display_type);
                     break;
-            }                                               /*switch (enchant_display_type)*/
-        }                                                   /*for*/
+            }
+        }
     }
 
     m_inventory.ShowsEnchant(item, slot, apply ? item->GetEnchantmentId(slot) : 0);
@@ -233,7 +224,7 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
     {
         if (apply)
         {
-            // set duration
+
             uint32 duration = item->GetEnchantmentDuration(slot);
             if (duration > 0)
             {
@@ -242,32 +233,31 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
         }
         else
         {
-            // duration == 0 will remove EnchantDuration
+
             m_inventory.StartEnchantClock(item, slot, 0);
         }
     }
 }
 
-void Player::SendNewItem(Item* item, uint32 count, bool received, bool created, bool broadcast /*=false*/, bool showInChat /*=true*/)
+void Player::SendNewItem(Item* item, uint32 count, bool received, bool created, bool broadcast , bool showInChat )
 {
-    if (!item)                                              // prevent crash
+    if (!item)
     {
         return;
     }
 
-    // last check 2.0.10
     WorldPacket data(SMSG_ITEM_PUSH_RESULT, (8 + 4 + 4 + 4 + 1 + 4 + 4 + 4 + 4 + 4));
-    data << GetObjectGuid();                                // player GUID
-    data << uint32(received);                               // 0=looted, 1=from npc
-    data << uint32(created);                                // 0=received, 1=created
-    data << uint32(showInChat);                             // showInChat
-    data << uint8(item->GetBagSlot());                      // bagslot
-    // item slot, but when added to stack: 0xFFFFFFFF
+    data << GetObjectGuid();
+    data << uint32(received);
+    data << uint32(created);
+    data << uint32(showInChat);
+    data << uint8(item->GetBagSlot());
+
     data << uint32((item->GetCount() == count) ? item->GetSlot() : -1);
-    data << uint32(item->GetEntry());                       // item id
-    data << uint32(item->GetItemSuffixFactor());            // SuffixFactor
-    data << uint32(item->GetItemRandomPropertyId());        // random item property id
-    data << uint32(count);                                  // count of items
+    data << uint32(item->GetEntry());
+    data << uint32(item->GetItemSuffixFactor());
+    data << uint32(item->GetItemRandomPropertyId());
+    data << uint32(count);
 
     if (broadcast && GetGroup())
     {

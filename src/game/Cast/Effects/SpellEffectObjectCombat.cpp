@@ -23,8 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-
-
 #include <cmath>
 #include <random>
 #include "Summoning.h"
@@ -68,12 +66,7 @@
 #include "Geometry/Vector3.h"
 #include "Cast/Recipe/RecipeBook.h"
 
-/**
- * @brief Adds flat threat from the caster to the unit target.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectThreat(const cast::Operation& /*operation*/)
+void Spell::EffectThreat(const cast::Operation& )
 {
     if (!unitTarget || !unitTarget->IsAlive() || !m_caster->IsAlive())
     {
@@ -88,12 +81,7 @@ void Spell::EffectThreat(const cast::Operation& /*operation*/)
     unitTarget->AddThreat(m_caster, float(damage), false, GetSpellSchoolMask(m_spellInfo), m_spellInfo);
 }
 
-/**
- * @brief Heals the target for an amount equal to the caster's maximum health.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectHealMaxHealth(const cast::Operation& /*operation*/)
+void Spell::EffectHealMaxHealth(const cast::Operation& )
 {
     if (!unitTarget)
     {
@@ -109,12 +97,7 @@ void Spell::EffectHealMaxHealth(const cast::Operation& /*operation*/)
     m_healing += heal;
 }
 
-/**
- * @brief Interrupts interruptible non-melee spells on the unit target.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectInterruptCast(const cast::Operation& /*operation*/)
+void Spell::EffectInterruptCast(const cast::Operation& )
 {
     if (!unitTarget)
     {
@@ -125,14 +108,12 @@ void Spell::EffectInterruptCast(const cast::Operation& /*operation*/)
         return;
     }
 
-    // TODO: not all spells that used this effect apply cooldown at school spells
-    // also exist case: apply cooldown to interrupted cast only and to all spells
     for (uint32 i = CURRENT_FIRST_NON_MELEE_SPELL; i < CURRENT_MAX_SPELL; ++i)
     {
         if (Spell* spell = unitTarget->GetCurrentSpell(CurrentSpellTypes(i)))
         {
             SpellEntry const* curSpellInfo = spell->m_spellInfo;
-            // check if we can interrupt spell
+
             if ((curSpellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_INTERRUPT) && curSpellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE)
             {
                 unitTarget->ProhibitSpellSchool(GetSpellSchoolMask(curSpellInfo), Recipe().DurationMs());
@@ -142,11 +123,6 @@ void Spell::EffectInterruptCast(const cast::Operation& /*operation*/)
     }
 }
 
-/**
- * @brief Summons a wild game object at the destination or near the caster.
- *
- * @param eff_idx The summon object effect index.
- */
 void Spell::EffectSummonObjectWild(const cast::Operation& operation)
 {
     uint32 gameobject_id = operation.miscValue;
@@ -183,18 +159,17 @@ void Spell::EffectSummonObjectWild(const cast::Operation& operation)
     pGameObj->SetRespawnTime(duration > 0 ? duration / IN_MILLISECONDS : 0);
     pGameObj->SetSpellId(m_spellInfo->ID);
 
-    // Wild object not have owner and check clickable by players
     map->Add(pGameObj);
     pGameObj->AIM_Initialize();
 
-    if (pGameObj->GetGoType() == GAMEOBJECT_TYPE_FLAGDROP && m_caster->IsPlayer())
+    if (pGameObj->GetGoType() == GAMEOBJECT_TYPE_FLAGDROP &&IsPlayer(m_caster))
     {
         Player* pl = (Player*)m_caster;
         BattleGround* bg = ((Player*)m_caster)->Battle().Ground();
 
         switch (pGameObj->GetMapId())
         {
-            case 489:                                       // WS
+            case 489:
             {
                 if (bg && bg->GetTypeID() == BATTLEGROUND_WS && bg->GetStatus() == STATUS_IN_PROGRESS)
                 {
@@ -209,42 +184,34 @@ void Spell::EffectSummonObjectWild(const cast::Operation& operation)
 
     pGameObj->SummonLinkedTrapIfAny();
 
-    if (m_caster->IsCreature() && ((Creature*)m_caster)->AI())
+    if (IsCreature(m_caster) && ((Creature*)m_caster)->AI())
     {
         ((Creature*)m_caster)->AI()->JustSummoned(pGameObj);
     }
-    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->IsCreature() && ((Creature*)m_originalCaster)->AI())
+    if (m_originalCaster && m_originalCaster != m_caster &&IsCreature(m_originalCaster) && ((Creature*)m_originalCaster)->AI())
     {
         ((Creature*)m_originalCaster)->AI()->JustSummoned(pGameObj);
     }
 }
 
-/**
- * @brief Clears combat and threat state for the target.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectSanctuary(const cast::Operation& /*operation*/)
+void Spell::EffectSanctuary(const cast::Operation& )
 {
     if (!unitTarget)
     {
         return;
     }
-    // unitTarget->CombatStop();
 
     unitTarget->CombatStop();
-    unitTarget->GetHostileRefManager().deleteReferences();  // stop all fighting
+    unitTarget->GetHostileRefManager().deleteReferences();
 
-    // Vanish allows to remove all threat and cast regular stealth so other spells can be used
     if (m_spellInfo->IsFitToFamily(SPELLFAMILY_ROGUE, UI64LIT(0x0000000000000800)))
     {
         ((Player*)m_caster)->RemoveAurasOfType(SPELL_AURA_MOD_ROOT);
     }
 
-    // Improved Sap: a hacky way
-    if (m_triggeredByAuraSpell && m_spellInfo->ID == 14093 && unitTarget->IsPlayer())
+    if (m_triggeredByAuraSpell && m_spellInfo->ID == 14093 &&IsPlayer(unitTarget))
     {
-        // find highest rank Stealth spell cooldown
+
         uint32 stealth_id = 0;
         SpellCooldowns const scm = ((Player*)unitTarget)->GetSpellCooldownMap();
         for (SpellCooldowns::const_reverse_iterator it = scm.rbegin(); it != scm.rend(); ++it)
@@ -259,25 +226,20 @@ void Spell::EffectSanctuary(const cast::Operation& /*operation*/)
         {
             return;
         }
-        // drop cooldown and prepare to recast the aura
+
         ((Player*)unitTarget)->RemoveSpellCooldown(stealth_id);
         unitTarget->CastSpell(unitTarget, stealth_id, true);
     }
 }
 
-/**
- * @brief Adds combo points to the caster for the unit target.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectAddComboPoints(const cast::Operation& /*operation*/)
+void Spell::EffectAddComboPoints(const cast::Operation& )
 {
     if (!unitTarget)
     {
         return;
     }
 
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return;
     }
@@ -290,14 +252,9 @@ void Spell::EffectAddComboPoints(const cast::Operation& /*operation*/)
     ((Player*)m_caster)->AddComboPoints(unitTarget, damage);
 }
 
-/**
- * @brief Creates a duel flag object and starts a duel request between two players.
- *
- * @param eff_idx The effect index containing the duel flag game object id.
- */
 void Spell::EffectDuel(const cast::Operation& operation)
 {
-    if (!m_caster || !unitTarget || !m_caster->IsPlayer() || !unitTarget->IsPlayer())
+    if (!m_caster || !unitTarget || !IsPlayer(m_caster) || !IsPlayer(unitTarget))
     {
         return;
     }
@@ -305,28 +262,25 @@ void Spell::EffectDuel(const cast::Operation& operation)
     Player* caster = (Player*)m_caster;
     Player* target = (Player*)unitTarget;
 
-    // caster or target already have requested duel
     if (caster->Duelling().Stands() || target->Duelling().Stands() || !target->GetSocial() || target->GetSocial()->HasIgnore(caster->GetObjectGuid()))
     {
         return;
     }
 
-    // Players can only fight a duel with each other outside (=not inside dungeons and not in capital cities)
     AreaTableEntry const* casterAreaEntry = GetAreaEntryByAreaID(caster->GetTerrain()->GetAreaId(caster->Where().X(), caster->Where().Y(), caster->Where().Z()));
     if (casterAreaEntry && !(casterAreaEntry->Flags & AREA_FLAG_DUEL))
     {
-        SendCastResult(SPELL_FAILED_NO_DUELING);            // Dueling isn't allowed here
+        SendCastResult(SPELL_FAILED_NO_DUELING);
         return;
     }
 
     AreaTableEntry const* targetAreaEntry = GetAreaEntryByAreaID(target->GetTerrain()->GetAreaId(target->Where().X(), target->Where().Y(), target->Where().Z()));
     if (targetAreaEntry && !(targetAreaEntry->Flags & AREA_FLAG_DUEL))
     {
-        SendCastResult(SPELL_FAILED_NO_DUELING);            // Dueling isn't allowed here
+        SendCastResult(SPELL_FAILED_NO_DUELING);
         return;
     }
 
-    // CREATE DUEL FLAG OBJECT
     GameObject* pGameObj = new GameObject;
 
     uint32 gameobject_id = operation.miscValue;
@@ -351,16 +305,13 @@ void Spell::EffectDuel(const cast::Operation& operation)
     m_caster->Conjured().AddObject(pGameObj);
     map->Add(pGameObj);
     pGameObj->AIM_Initialize();
-    // END
 
-    // Send request
     WorldPacket data(SMSG_DUEL_REQUESTED, 8 + 8);
     data << pGameObj->GetObjectGuid();
     data << caster->GetObjectGuid();
     caster->GetSession()->SendPacket(&data);
     target->GetSession()->SendPacket(&data);
 
-    // each man keeps his own side of it; the challenged man's opponent is the challenger
     caster->Duelling().Offered(caster, target);
     target->Duelling().Offered(caster, caster);
 
@@ -369,14 +320,9 @@ void Spell::EffectDuel(const cast::Operation& operation)
 
 }
 
-/**
- * @brief Teleports a player target to its homebind as an unstuck action.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectStuck(const cast::Operation& /*operation*/)
+void Spell::EffectStuck(const cast::Operation& )
 {
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }
@@ -396,10 +342,8 @@ void Spell::EffectStuck(const cast::Operation& /*operation*/)
         return;
     }
 
-    // homebind location is loaded always
     pTarget->TeleportToHomebind(unitTarget == m_caster ? TELE_TO_SPELL : 0);
 
-    // Stuck spell trigger Hearthstone cooldown
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(8690);
     if (!spellInfo)
     {
@@ -409,19 +353,13 @@ void Spell::EffectStuck(const cast::Operation& /*operation*/)
     spell.SendSpellCooldown();
 }
 
-/**
- * @brief Sends a summon request to a player target.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectSummonPlayer(const cast::Operation& /*operation*/)
+void Spell::EffectSummonPlayer(const cast::Operation& )
 {
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }
 
-    // Evil Twin (ignore player summon, but hide this for summoner)
     if (unitTarget->GetDummyAura(23445))
     {
         return;
@@ -433,17 +371,12 @@ void Spell::EffectSummonPlayer(const cast::Operation& /*operation*/)
     ((Player*)unitTarget)->SetSummonPoint(m_caster->GetMapId(), x, y, z);
 
     WorldPacket data(SMSG_SUMMON_REQUEST, 8 + 4 + 4);
-    data << m_caster->GetObjectGuid();                      // summoner guid
-    data << uint32(m_caster->GetTerrain()->GetZoneId(m_caster->Where().X(), m_caster->Where().Y(), m_caster->Where().Z()));                  // summoner zone
-    data << uint32(MAX_PLAYER_SUMMON_DELAY * IN_MILLISECONDS); // auto decline after msecs
+    data << m_caster->GetObjectGuid();
+    data << uint32(m_caster->GetTerrain()->GetZoneId(m_caster->Where().X(), m_caster->Where().Y(), m_caster->Where().Z()));
+    data << uint32(MAX_PLAYER_SUMMON_DELAY * IN_MILLISECONDS);
     ((Player*)unitTarget)->GetSession()->SendPacket(&data);
 }
 
-/**
- * @brief Builds the default script command used to activate a game object.
- *
- * @return ScriptInfo Preconfigured activation command data.
- */
 static ScriptInfo generateActivateCommand()
 {
     ScriptInfo si;
@@ -455,11 +388,6 @@ static ScriptInfo generateActivateCommand()
     return si;
 }
 
-/**
- * @brief Activates or manipulates the targeted game object based on the effect misc value.
- *
- * @param eff_idx The activation effect index.
- */
 void Spell::EffectActivateObject(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
@@ -473,13 +401,13 @@ void Spell::EffectActivateObject(const cast::Operation& operation)
 
     switch (misc_value)
     {
-        case 1:                     // GO simple use
-        case 2:                     // unk - 2 spells
-        case 4:                     // unk - 1 spell
-        case 5:                     // GO trap usage
-        case 7:                     // unk - 2 spells
-        case 8:                     // GO usage with TargetB = none or random
-        case 10:                    // unk - 2 spells
+        case 1:
+        case 2:
+        case 4:
+        case 5:
+        case 7:
+        case 8:
+        case 10:
         {
             static ScriptInfo activateCommand = generateActivateCommand();
 
@@ -488,34 +416,34 @@ void Spell::EffectActivateObject(const cast::Operation& operation)
             gameObjTarget->GetMap()->Scripts().StartCommand(activateCommand, delay_secs, m_caster, gameObjTarget);
             break;
         }
-        case 3:                     // GO custom anim - found mostly in Lunar Fireworks spells
+        case 3:
             gameObjTarget->SendGameObjectCustomAnim();
             break;
-        case 12:                    // GO state active alternative - found mostly in Simon Game spells
+        case 12:
             gameObjTarget->UseDoorOrButton(0, true);
             break;
-        case 15:                    // GO destroy
+        case 15:
             gameObjTarget->SetLootState(GO_JUST_DEACTIVATED);
             break;
-        case 16:                    // GO custom use - found mostly in Wind Stones spells, Simon Game spells and other GO target summoning spells
+        case 16:
         {
             switch (m_spellInfo->ID)
             {
-                case 24734:         // Summon Templar Random
-                case 24744:         // Summon Templar (fire)
-                case 24756:         // Summon Templar (air)
-                case 24758:         // Summon Templar (earth)
-                case 24760:         // Summon Templar (water)
-                case 24763:         // Summon Duke Random
-                case 24765:         // Summon Duke (fire)
-                case 24768:         // Summon Duke (air)
-                case 24770:         // Summon Duke (earth)
-                case 24772:         // Summon Duke (water)
-                case 24784:         // Summon Royal Random
-                case 24786:         // Summon Royal (fire)
-                case 24788:         // Summon Royal (air)
-                case 24789:         // Summon Royal (earth)
-                case 24790:         // Summon Royal (water)
+                case 24734:
+                case 24744:
+                case 24756:
+                case 24758:
+                case 24760:
+                case 24763:
+                case 24765:
+                case 24768:
+                case 24770:
+                case 24772:
+                case 24784:
+                case 24786:
+                case 24788:
+                case 24789:
+                case 24790:
                 {
                     uint32 npcEntry = 0;
                     uint32 templars[] = {15209, 15211, 15212, 15307};
@@ -554,17 +482,11 @@ void Spell::EffectActivateObject(const cast::Operation& operation)
     }
 }
 
-/**
- * @brief Applies a temporary enchantment to the main-hand item of the player target.
- *
- * @param eff_idx The enchant effect index.
- */
 void Spell::EffectEnchantHeldItem(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
 
-    // this is only item spell effect applied to main-hand weapon of target player (players in area)
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }
@@ -577,7 +499,6 @@ void Spell::EffectEnchantHeldItem(const cast::Operation& operation)
         return;
     }
 
-    // must be equipped
     if (!item ->IsEquipped())
     {
         return;
@@ -586,14 +507,14 @@ void Spell::EffectEnchantHeldItem(const cast::Operation& operation)
     if (operation.miscValue)
     {
         uint32 enchant_id = operation.miscValue;
-        int32 duration = Recipe().DurationMs();     // Try duration index first...
+        int32 duration = Recipe().DurationMs();
         if (!duration)
         {
-            duration = m_currentBasePoints[eff_idx];         // Base points after...
+            duration = m_currentBasePoints[eff_idx];
         }
         if (!duration)
         {
-            duration = 10 * IN_MILLISECONDS;                 // 10 seconds for enchants which don't have listed duration
+            duration = 10 * IN_MILLISECONDS;
         }
 
         SpellItemEnchantmentEntry const* pEnchant = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
@@ -602,29 +523,21 @@ void Spell::EffectEnchantHeldItem(const cast::Operation& operation)
             return;
         }
 
-        // Always go to temp enchantment slot
         EnchantmentSlot slot = TEMP_ENCHANTMENT_SLOT;
 
-        // Enchantment will not be applied if a different one already exists
         if (item->GetEnchantmentId(slot) && item->GetEnchantmentId(slot) != enchant_id)
         {
             return;
         }
 
-        // Apply the temporary enchantment
         item->SetEnchantment(slot, enchant_id, duration, 0);
         item_owner->ApplyEnchantment(item, slot, true);
     }
 }
 
-/**
- * @brief Starts disenchanting loot generation for the target item.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectDisEnchant(const cast::Operation& /*operation*/)
+void Spell::EffectDisEnchant(const cast::Operation& )
 {
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return;
     }
@@ -639,17 +552,11 @@ void Spell::EffectDisEnchant(const cast::Operation& /*operation*/)
 
     ((Player*)m_caster)->SendLoot(itemTarget->GetObjectGuid(), LOOT_DISENCHANTING);
 
-    // item will be removed at disenchanting end
 }
 
-/**
- * @brief Increases the drunk state of a player target.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectInebriate(const cast::Operation& /*operation*/)
+void Spell::EffectInebriate(const cast::Operation& )
 {
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }
@@ -668,14 +575,9 @@ void Spell::EffectInebriate(const cast::Operation& /*operation*/)
     player->Drinking().Amount(currentDrunk);
 }
 
-/**
- * @brief Feeds the caster's pet and triggers the associated benefit spell.
- *
- * @param eff_idx The effect index containing the triggered spell id.
- */
 void Spell::EffectFeedPet(const cast::Operation& operation)
 {
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return;
     }
@@ -707,26 +609,19 @@ void Spell::EffectFeedPet(const cast::Operation& operation)
 
     uint32 count = 1;
     _player->DestroyItemCount(foodItem, count, true);
-    // TODO: fix crash when a spell has two effects, both pointed at the same item target
 
     m_caster->CastCustomSpell(m_caster, operation.triggerSpell, &benefit, nullptr, nullptr, true);
 }
 
-/**
- * @brief Dismisses the caster's living pet.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectDismissPet(const cast::Operation& /*operation*/)
+void Spell::EffectDismissPet(const cast::Operation& )
 {
-    if (!m_caster->IsPlayer())
+    if (!IsPlayer(m_caster))
     {
         return;
     }
 
     Pet* pet = m_caster->GetPet();
 
-    // not let dismiss dead pet
     if (!pet || !pet->IsAlive())
     {
         return;
@@ -735,11 +630,6 @@ void Spell::EffectDismissPet(const cast::Operation& /*operation*/)
     pet->Unsummon(PET_SAVE_NOT_IN_SLOT, m_caster);
 }
 
-/**
- * @brief Summons a persistent object into one of the caster's object slots.
- *
- * @param eff_idx The summon object effect index.
- */
 void Spell::EffectSummonObject(const cast::Operation& operation)
 {
     uint32 go_id = operation.miscValue;
@@ -760,18 +650,18 @@ void Spell::EffectSummonObject(const cast::Operation& operation)
         {
             obj->SetLootState(GO_JUST_DEACTIVATED);
         }
-        m_caster->m_ObjectSlotGuid[slot].Clear();
+        m_caster->m_ObjectSlotGuid[slot] = 0;
     }
 
     GameObject* pGameObj = new GameObject;
 
     float x, y, z;
-    // If dest location if present
+
     if (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
     {
         m_targets.getDestination(x, y, z);
     }
-    // Summon in random point all other units if location present
+
     else
     {
         ClosePointNear(*m_caster, x, y, z, DEFAULT_WORLD_OBJECT_SIZE);
@@ -794,31 +684,26 @@ void Spell::EffectSummonObject(const cast::Operation& operation)
     map->Add(pGameObj);
     pGameObj->AIM_Initialize();
     WorldPacket data(SMSG_GAMEOBJECT_SPAWN_ANIM_OBSOLETE, 8);
-    data << ObjectGuid(pGameObj->GetObjectGuid());
+    data << static_cast<ObjectGuid>(pGameObj->GetObjectGuid());
     Deliver(Audience::Around(*m_caster).AndSubject(), &data);
 
     m_caster->m_ObjectSlotGuid[slot] = pGameObj->GetObjectGuid();
 
     pGameObj->SummonLinkedTrapIfAny();
 
-    if (m_caster->IsCreature() && ((Creature*)m_caster)->AI())
+    if (IsCreature(m_caster) && ((Creature*)m_caster)->AI())
     {
         ((Creature*)m_caster)->AI()->JustSummoned(pGameObj);
     }
-    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->IsCreature() && ((Creature*)m_originalCaster)->AI())
+    if (m_originalCaster && m_originalCaster != m_caster &&IsCreature(m_originalCaster) && ((Creature*)m_originalCaster)->AI())
     {
         ((Creature*)m_originalCaster)->AI()->JustSummoned(pGameObj);
     }
 }
 
-/**
- * @brief Sends a resurrection request with percentage-based health and mana restoration.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectResurrect(const cast::Operation& /*operation*/)
+void Spell::EffectResurrect(const cast::Operation& )
 {
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }
@@ -830,8 +715,8 @@ void Spell::EffectResurrect(const cast::Operation& /*operation*/)
 
     switch (m_spellInfo->ID)
     {
-        case 8342:                                          // Defibrillate (Goblin Jumper Cables) has 33% chance on success
-        case 22999:                                         // Defibrillate (Goblin Jumper Cables XL) has 50% chance on success
+        case 8342:
+        case 22999:
         {
             uint32 failChance = 0;
             uint32 failSpellId = 0;
@@ -857,7 +742,7 @@ void Spell::EffectResurrect(const cast::Operation& /*operation*/)
 
     Player* pTarget = ((Player*)unitTarget);
 
-    if (pTarget->isRessurectRequested())      // already have one active request
+    if (pTarget->isRessurectRequested())
     {
         return;
     }
@@ -869,12 +754,7 @@ void Spell::EffectResurrect(const cast::Operation& /*operation*/)
     SendResurrectRequest(pTarget);
 }
 
-/**
- * @brief Adds queued extra attacks to the target unit.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectAddExtraAttacks(const cast::Operation& /*operation*/)
+void Spell::EffectAddExtraAttacks(const cast::Operation& )
 {
     if (!unitTarget || !unitTarget->IsAlive())
     {
@@ -885,7 +765,7 @@ void Spell::EffectAddExtraAttacks(const cast::Operation& /*operation*/)
     {
         if (m_spellInfo->ID == 20178 && unitTarget->m_extraAttacks < 4)
         {
-            ++unitTarget->m_extraAttacks;   // += damage would be more logical
+            ++unitTarget->m_extraAttacks;
         }
     }
     else
@@ -894,41 +774,26 @@ void Spell::EffectAddExtraAttacks(const cast::Operation& /*operation*/)
     }
 }
 
-/**
- * @brief Grants the ability to parry to a player target.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectParry(const cast::Operation& /*operation*/)
+void Spell::EffectParry(const cast::Operation& )
 {
-    if (unitTarget && unitTarget->IsPlayer())
+    if (unitTarget &&IsPlayer(unitTarget))
     {
         ((Player*)unitTarget)->Arms().CanParry(true);
     }
 }
 
-/**
- * @brief Grants the ability to block to a player target.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectBlock(const cast::Operation& /*operation*/)
+void Spell::EffectBlock(const cast::Operation& )
 {
-    if (unitTarget && unitTarget->IsPlayer())
+    if (unitTarget &&IsPlayer(unitTarget))
     {
         ((Player*)unitTarget)->Arms().CanBlock(true);
     }
 }
 
-/**
- * @brief Teleports the target forward while avoiding steep terrain, water edges, and obstacles.
- *
- * @param eff_idx The effect index providing the leap distance.
- */
 void Spell::EffectLeapForward(const cast::Operation& operation)
 {
     float dist = GetSpellRadius(sSpellRadiusStore.LookupEntry(operation.radiusIndex));
-    const float IN_OR_UNDER_LIQUID_RANGE = 0.8f;                // range to make player under liquid or on liquid surface from liquid level
+    const float IN_OR_UNDER_LIQUID_RANGE = 0.8f;
 
     Geometry::Vector3 prevPos, nextPos;
     float orientation = unitTarget->Where().Facing();
@@ -940,14 +805,12 @@ void Spell::EffectLeapForward(const cast::Operation& operation)
     float groundZ = prevPos.z;
     bool isPrevInLiquid = false;
 
-    // falling case
     if (!unitTarget->GetMap()->GetHeightInRange(prevPos.x, prevPos.y, groundZ, 3.0f) && unitTarget->m_movementInfo.HasMovementFlag(MOVEFLAG_FALLING))
     {
         nextPos.x = prevPos.x + dist * cos(orientation);
         nextPos.y = prevPos.y + dist * sin(orientation);
-        nextPos.z = prevPos.z - 2.0f; // little hack to avoid the impression to go up when teleporting instead of continue to fall. This value may need some tweak
+        nextPos.z = prevPos.z - 2.0f;
 
-        //
         GridMapLiquidData liquidData;
         if (unitTarget->GetMap()->GetTerrain()->IsInWater(nextPos.x, nextPos.y, nextPos.z, &liquidData))
         {
@@ -958,31 +821,26 @@ void Spell::EffectLeapForward(const cast::Operation& operation)
         }
         else
         {
-            // fix z to ground if near of it
+
             unitTarget->GetMap()->GetHeightInRange(nextPos.x, nextPos.y, nextPos.z, 10.0f);
         }
 
-        // check any obstacle and fix coords
         unitTarget->GetMap()->GetHitPosition(prevPos.x, prevPos.y, prevPos.z + 0.5f, nextPos.x, nextPos.y, nextPos.z, -0.5f);
 
-        // teleport
         unitTarget->NearTeleportTo(nextPos.x, nextPos.y, nextPos.z, orientation, unitTarget == m_caster);
 
-        //sLog.outString("Falling BLINK!");
         return;
     }
 
-    // fix origin position if player was jumping and near of the ground but not in ground
     if (fabs(prevPos.z - groundZ) > 0.5f)
     {
         prevPos.z = groundZ;
     }
 
-    //check if in liquid
     isPrevInLiquid = unitTarget->GetMap()->GetTerrain()->IsInWater(prevPos.x, prevPos.y, prevPos.z);
 
-    const float step = 2.0f;                                    // step length before next check slope/edge/water
-    const float maxSlope = 50.0f;                               // 50(degree) max seem best value for walkable slope
+    const float step = 2.0f;
+    const float maxSlope = 50.0f;
     const float MAX_SLOPE_IN_RADIAN = maxSlope / 180.0f * M_PI_F;
     float nextZPointEstimation = 1.0f;
     float destx = prevPos.x + dist * cos(orientation);
@@ -993,7 +851,7 @@ void Spell::EffectLeapForward(const cast::Operation& operation)
 
     for (uint32 i = 1; i < numChecks + 1; ++i)
     {
-        // compute next point average position
+
         nextPos.x = prevPos.x + DELTA_X;
         nextPos.y = prevPos.y + DELTA_Y;
         nextPos.z = prevPos.z + nextZPointEstimation;
@@ -1003,14 +861,12 @@ void Spell::EffectLeapForward(const cast::Operation& operation)
         bool isOnGround = false;
         GridMapLiquidData liquidData;
 
-        // try fix height for next position
         if (!unitTarget->GetMap()->GetHeightInRange(nextPos.x, nextPos.y, nextPos.z))
         {
-            // we cant so test if we are on water
+
             if (!unitTarget->GetMap()->GetTerrain()->IsInWater(nextPos.x, nextPos.y, nextPos.z, &liquidData))
             {
-                // not in water and cannot get correct height, maybe flying?
-                //sLog.outString("Can't get height of point %u, point value %s", i, nextPos.toString().c_str());
+
                 nextPos = prevPos;
                 break;
             }
@@ -1022,26 +878,25 @@ void Spell::EffectLeapForward(const cast::Operation& operation)
         }
         else
         {
-            isOnGround = true;                                  // player is on ground
+            isOnGround = true;
         }
 
         if (isInLiquid || (!isInLiquidTested && unitTarget->GetMap()->GetTerrain()->IsInWater(nextPos.x, nextPos.y, nextPos.z, &liquidData)))
         {
             if (!isPrevInLiquid && fabs(liquidData.level - prevPos.z) > 2.0f)
             {
-                // on edge of water with difference a bit to high to continue
-                //sLog.outString("Ground vs liquid edge detected!");
+
                 nextPos = prevPos;
                 break;
             }
 
             if ((liquidData.level - IN_OR_UNDER_LIQUID_RANGE) > nextPos.z)
             {
-                nextPos.z = prevPos.z;                                      // we are under water so next z equal prev z
+                nextPos.z = prevPos.z;
             }
             else
             {
-                nextPos.z = liquidData.level - IN_OR_UNDER_LIQUID_RANGE;    // we are on water surface, so next z equal liquid level
+                nextPos.z = liquidData.level - IN_OR_UNDER_LIQUID_RANGE;
             }
 
             isInLiquid = true;
@@ -1052,39 +907,35 @@ void Spell::EffectLeapForward(const cast::Operation& operation)
                 if (nextPos.z < ground)
                 {
                     nextPos.z = ground;
-                    isOnGround = true;                          // player is on ground of the water
+                    isOnGround = true;
                 }
             }
         }
 
-        //SummonCreature(*unitTarget, VISUAL_WAYPOINT, nextPos.x, nextPos.y, nextPos.z, 0, TEMPSUMMON_TIMED_DESPAWN, 15000);
         float hitZ = nextPos.z + 1.5f;
         if (unitTarget->GetMap()->GetHitPosition(prevPos.x, prevPos.y, prevPos.z + 1.5f, nextPos.x, nextPos.y, hitZ, -1.0f))
         {
-            //sLog.outString("Blink collision detected!");
+
             nextPos = prevPos;
             break;
         }
 
         if (isOnGround)
         {
-            // project vector to get only positive value
+
             float ac = fabs(prevPos.z - nextPos.z);
 
-            // compute slope (in radian)
             float slope = atan(ac / step);
 
-            // check slope value
             if (slope > MAX_SLOPE_IN_RADIAN)
             {
-                //sLog.outString("bad slope detected! %4.2f max %4.2f, ac(%4.2f)", slope * 180 / M_PI_F, maxSlope, ac);
+
                 nextPos = prevPos;
                 break;
             }
-            //sLog.outString("slope is ok! %4.2f max %4.2f, ac(%4.2f)", slope * 180 / M_PI_F, maxSlope, ac);
+
         }
 
-        //sLog.outString("point %u is ok, coords %s", i, nextPos.toString().c_str());
         nextZPointEstimation = (nextPos.z - prevPos.z) / 2.0f;
         isPrevInLiquid = isInLiquid;
         prevPos = nextPos;
@@ -1093,16 +944,11 @@ void Spell::EffectLeapForward(const cast::Operation& operation)
     unitTarget->NearTeleportTo(nextPos.x, nextPos.y, nextPos.z, orientation, unitTarget == m_caster);
 }
 
-/**
- * @brief Modifies player reputation for the faction referenced by the effect.
- *
- * @param eff_idx The effect index containing faction and reputation values.
- */
 void Spell::EffectReputation(const cast::Operation& operation)
 {
     const SpellEffectIndex eff_idx = SpellEffectIndex(operation.slot);
 
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }
@@ -1124,14 +970,9 @@ void Spell::EffectReputation(const cast::Operation& operation)
     _player->GetReputationMgr().ModifyReputation(factionEntry, rep_change);
 }
 
-/**
- * @brief Marks the referenced quest objective as completed for the player target.
- *
- * @param eff_idx The effect index containing the quest id.
- */
 void Spell::EffectQuestComplete(const cast::Operation& operation)
 {
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }
@@ -1140,18 +981,13 @@ void Spell::EffectQuestComplete(const cast::Operation& operation)
     ((Player*)unitTarget)->Journal().Explored(quest_id);
 }
 
-/**
- * @brief Resurrects the target player with flat or percentage-based health and mana.
- *
- * @param eff_idx The effect index containing resurrection resource data.
- */
 void Spell::EffectSelfResurrect(const cast::Operation& operation)
 {
     if (!unitTarget || unitTarget->IsAlive())
     {
         return;
     }
-    if (!unitTarget->IsPlayer())
+    if (!IsPlayer(unitTarget))
     {
         return;
     }
@@ -1163,13 +999,12 @@ void Spell::EffectSelfResurrect(const cast::Operation& operation)
     uint32 health = 0;
     uint32 mana = 0;
 
-    // flat case
     if (damage < 0)
     {
         health = uint32(-damage);
         mana = operation.miscValue;
     }
-    // percent case
+
     else
     {
         health = uint32(damage / 100.0f * unitTarget->GetMaxHealth());
@@ -1190,18 +1025,13 @@ void Spell::EffectSelfResurrect(const cast::Operation& operation)
     plr->SpawnCorpseBones();
 }
 
-/**
- * @brief Opens skinning loot for a creature and updates the player's gathering skill.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectSkinning(const cast::Operation& /*operation*/)
+void Spell::EffectSkinning(const cast::Operation& )
 {
-    if (!unitTarget->IsCreature())
+    if (!IsCreature(unitTarget))
     {
         return;
     }
-    if (!m_caster || !m_caster->IsPlayer())
+    if (!m_caster || !IsPlayer(m_caster))
     {
         return;
     }
@@ -1219,50 +1049,35 @@ void Spell::EffectSkinning(const cast::Operation& /*operation*/)
 
     int32 skillValue = ((Player*)m_caster)->GetPureSkillValue(skill);
 
-    // Double chances for elites
     ((Player*)m_caster)->UpdateGatherSkill(skill, skillValue, reqValue, creature->IsElite() ? 2 : 1);
 }
 
-/**
- * @brief Moves the caster into melee contact with the target and starts attacking if appropriate.
- *
- * @param eff_idx Unused effect index.
- */
-void Spell::EffectCharge(const cast::Operation& /*operation*/)
+void Spell::EffectCharge(const cast::Operation& )
 {
     if (!unitTarget)
     {
         return;
     }
 
-    // TODO: research more ContactPoint/attack distance.
-    // 3.666666 instead of ATTACK_DISTANCE(5.0f) in below seem to give more accurate result.
     float x, y, z;
     ContactPointNear(*unitTarget, m_caster, x, y, z, 3.666666f);
 
-    if (!unitTarget->IsPlayer())
+    if (!IsPlayer(unitTarget))
     {
         ((Creature*)unitTarget)->StopMoving();
     }
 
-    // Only send MOVEMENTFLAG_WALK_MODE, client has strange issues with other move flags
     m_caster->MonsterMoveWithSpeed(x, y, z, 24.f, true, true);
 
-    // not all charge effects used in negative spells
     if (unitTarget != m_caster && !Recipe().IsPositive())
     {
         m_caster->Attack(unitTarget, true);
     }
 }
 
-/**
- * @brief Applies a knockback to a player target.
- *
- * @param eff_idx The effect index containing horizontal speed data.
- */
 void Spell::EffectKnockBack(const cast::Operation& operation)
 {
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }
@@ -1270,14 +1085,9 @@ void Spell::EffectKnockBack(const cast::Operation& operation)
     ((Player*)unitTarget)->KnockBackFrom(m_caster, float(operation.miscValue) / 10, float(damage) / 10);
 }
 
-/**
- * @brief Starts the taxi path referenced by the spell effect for a player target.
- *
- * @param eff_idx The effect index containing the taxi path id.
- */
 void Spell::EffectSendTaxi(const cast::Operation& operation)
 {
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }
@@ -1285,14 +1095,9 @@ void Spell::EffectSendTaxi(const cast::Operation& operation)
     ((Player*)unitTarget)->ActivateTaxiPathTo(operation.miscValue, m_spellInfo->ID);
 }
 
-/**
- * @brief Pulls a player target toward the caster using reverse knockback.
- *
- * @param eff_idx The effect index containing vertical speed data.
- */
 void Spell::EffectPlayerPull(const cast::Operation& operation)
 {
-    if (!unitTarget || !unitTarget->IsPlayer())
+    if (!unitTarget || !IsPlayer(unitTarget))
     {
         return;
     }

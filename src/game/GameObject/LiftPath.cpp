@@ -41,7 +41,7 @@ uint32 LiftPath::Period() const
 
 std::size_t LiftPath::FrameAt(uint32 phaseMs) const
 {
-    // The frame in force is the last one whose moment has already passed.
+
     auto const after = std::upper_bound(m_frames->begin(), m_frames->end(), phaseMs,
                                         [](uint32 when, TransportAnimationEntry const* frame)
                                         { return when < frame->TimeIndex; });
@@ -66,9 +66,6 @@ Geometry::Vector3 LiftPath::OffsetAt(uint32 phaseMs) const
     TransportAnimationEntry const* from = (*m_frames)[at];
     Geometry::Vector3 const here(from->PosX, from->PosY, from->PosZ);
 
-    // The last keyframe closes the loop at exactly the period, so a phase inside the
-    // loop always has a keyframe after it to slide towards. A pair sharing one moment
-    // has no span to slide along.
     if (at + 1 >= m_frames->size())
     {
         return here;

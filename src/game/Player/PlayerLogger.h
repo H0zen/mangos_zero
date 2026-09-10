@@ -29,7 +29,7 @@
 #include <vector>
 
 class Player;
-class ObjectGuid;
+#include "ObjectGuid.h"
 
 enum PlayerLogEntity
 {
@@ -71,11 +71,11 @@ struct PlayerLogBase
 };
 typedef std::vector<PlayerLogBase> PlayerLogBaseType;
 
-struct PlayerLogDamage : public PlayerLogBase       // 10 bytes
+struct PlayerLogDamage : public PlayerLogBase
 {
-    uint16 dmgUnit{};     // guid for player, entry with highest bit set for mob incl. pet/guardian
-    int16 damage{};       // if negative then it's heal
-    uint16 spell{};       // 0 for melee autoattack
+    uint16 dmgUnit{};
+    int16 damage{};
+    uint16 spell{};
 
     void SetCreature(bool on) { if (on) dmgUnit |= 0x8000; else dmgUnit &= 0x7FFF; }
     bool IsPlayer() const { return (dmgUnit & 0x8000) == 0; }
@@ -95,11 +95,11 @@ enum LootSourceType
     LOOTSOURCE_LETTER       = 4,
 };
 
-struct PlayerLogLooting : public PlayerLogBase      // 16 bytes
+struct PlayerLogLooting : public PlayerLogBase
 {
-    uint32 droppedBy;   // entry of object, depends on sourceType
-    uint32 itemGuid;    // item GUIDlow
-    uint32 itemEntry;   // item entry, packet with LootSourceType
+    uint32 droppedBy;
+    uint32 itemGuid;
+    uint32 itemEntry;
 
     LootSourceType GetLootSourceType() const { return LootSourceType((itemEntry >> 24) & 0xFF); }
     void SetLootSourceType(LootSourceType ltype) { itemEntry &= 0x00FFFFFF; itemEntry |= ltype << 24; }
@@ -108,11 +108,11 @@ struct PlayerLogLooting : public PlayerLogBase      // 16 bytes
     PlayerLogLooting(uint32 _time) : PlayerLogBase(_time) {}
 };
 
-struct PlayerLogTrading : public PlayerLogBase      // 14 bytes
+struct PlayerLogTrading : public PlayerLogBase
 {
-    uint32 itemGuid;    // item GUIDlow
-    uint32 itemEntry;   // item entry, with highest bit: =1 item lost, =0 item aquired
-    uint16 partner;     // GUID of the player - trade partner; 0 if no partner (item sold/destroyed)
+    uint32 itemGuid;
+    uint32 itemEntry;
+    uint16 partner;
 
     bool IsItemAquired() const { return (itemEntry & 0x80000000) == 0; }
     void SetItemAquired(bool aquired) { if (aquired) itemEntry &= 0x7FFFFFFF; else itemEntry |= 0x80000000; }
@@ -121,10 +121,10 @@ struct PlayerLogTrading : public PlayerLogBase      // 14 bytes
     PlayerLogTrading(uint32 _time) : PlayerLogBase(_time) {}
 };
 
-struct PlayerLogKilling : public PlayerLogBase      // 12 bytes
+struct PlayerLogKilling : public PlayerLogBase
 {
-    uint32 unitGuid;    // GUID of unit
-    uint32 unitEntry;   // entry of the unit (highest bit: 1 unit is killer, 0 unit is victim)
+    uint32 unitGuid;
+    uint32 unitEntry;
 
     bool IsKill() const { return (unitEntry & 0x80000000) == 0; }
     void SetKill(bool on) { if (on) unitEntry &= 0x7FFFFFFF; else unitEntry |= 0x80000000; }
@@ -133,7 +133,7 @@ struct PlayerLogKilling : public PlayerLogBase      // 12 bytes
     PlayerLogKilling(uint32 _time) : PlayerLogBase(_time) {}
 };
 
-struct PlayerLogPosition : public PlayerLogBase     // 18 bytes
+struct PlayerLogPosition : public PlayerLogBase
 {
     float x, y, z;
     uint16 map;
@@ -141,11 +141,11 @@ struct PlayerLogPosition : public PlayerLogBase     // 18 bytes
     PlayerLogPosition(uint32 _time) : PlayerLogBase(_time) {}
 };
 
-struct PlayerLogProgress : public PlayerLogPosition // 18+4=22 bytes
+struct PlayerLogProgress : public PlayerLogPosition
 {
-    uint8 progressType; // enum ProgressType
-    uint8 level;        // level achieved
-    uint16 data;        // misc data, depends on ProgressType (like faction ID for reputation)
+    uint8 progressType;
+    uint8 level;
+    uint16 data;
 
     PlayerLogProgress(uint32 _time) : PlayerLogPosition(_time) {}
 };
@@ -158,32 +158,23 @@ class PlayerLogger
 
         static inline PlayerLogMask CalcLogMask(PlayerLogEntity entity) { return PlayerLogMask(1 << entity); }
 
-        // active logs check
         bool IsLoggingActive(PlayerLogMask mask) const { return (mask & logActiveMask) != 0; }
         bool IsLoggingActive(PlayerLogEntity entity) const { return IsLoggingActive(CalcLogMask(entity)); }
 
-        // check active loggers and init missing ones
         void Initialize(PlayerLogEntity, uint32 maxLength = 0);
 
-        // remove entries of type PlayerLogEntity
         void Clean(PlayerLogMask);
 
-        // save to DB entries
         bool SaveToDB(PlayerLogMask, bool removeSaved = true, bool insideTransaction = false);
 
-        // start logging for PLAYER_LOG_DAMAGE
         void StartCombatLogging();
 
-        // start logging for strictly timed logs
         void StartLogging(PlayerLogEntity);
 
-        // stop logging - returns number of entries logged currently
         uint32 Stop(PlayerLogEntity);
 
-        // check and limit the total size of the log dropping older entries
         void CheckAndTruncate(PlayerLogMask, uint32 maxRecords);
 
-        // logging itself
         void LogDamage(bool done, uint16 damage, uint16 heal, ObjectGuid const & unitGuid, uint16 spell);
         void LogLooting(LootSourceType type, ObjectGuid const & droppedBy, ObjectGuid const & itemGuid, uint32 id);
         void LogTrading(bool aquire, ObjectGuid const & partner, ObjectGuid const & itemGuid);

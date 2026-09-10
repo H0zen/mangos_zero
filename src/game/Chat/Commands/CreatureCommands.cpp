@@ -23,17 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file CreatureCommands.cpp
- * @brief Implementation of creature spawning and management chat commands.
- *
- * This file contains chat command handlers for creature operations including:
- * - Creature spawning and removal
- * - Creature property modification
- * - Creature behavior control
- * - Creature database management
- */
-
 #include <string>
 #include "Chat.h"
 #include "SpawnRecord.h"
@@ -42,30 +31,17 @@
 #include "Mint.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
-#include "TargetedMovementGenerator.h"                      // for HandleNpcUnFollowCommand
+#include "TargetedMovementGenerator.h"
 #include "TemporarySummon.h"
 #include "WaypointManager.h"
-#include "PathFinder.h"                                     // for mmap commands
+#include "PathFinder.h"
 #include "Totem.h"
 #include "ObjectLookup.h"
 
 #ifdef _DEBUG_VMAPS
 #endif
 
-/**********************************************************************
- CommandTable : commandTable
- ***********************************************************************/
-
-/**
- * @brief Moves the selected creature to the handler's location.
- *
- * This command is kept available for external scripting libraries that depend on
- * PointMovementGenerator linkage.
- *
- * @param args Unused command arguments.
- * @return true if the command completed successfully; otherwise false.
- */
-bool ChatHandler::HandleComeToMeCommand(char* /*args*/)
+bool ChatHandler::HandleComeToMeCommand(char* )
 {
     Creature* caster = getSelectedCreature();
 
@@ -82,21 +58,14 @@ bool ChatHandler::HandleComeToMeCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleRespawnCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleRespawnCommand(char* /*args*/)
+bool ChatHandler::HandleRespawnCommand(char* )
 {
     Player* pl = m_session->GetPlayer();
 
-    // accept only explicitly selected target (not implicitly self targeting case)
     Unit* target = getSelectedUnit();
     if (pl->GetSelectionGuid() && target)
     {
-        if (!target->IsCreature())
+        if (!IsCreature(target))
         {
             SendSysMessage(LANG_SELECT_CREATURE);
             SetSentErrorMessage(true);
@@ -116,12 +85,6 @@ bool ChatHandler::HandleRespawnCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleModifyFactionCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleModifyFactionCommand(char* args)
 {
     Creature* chr = getSelectedCreature();
@@ -193,12 +156,6 @@ bool ChatHandler::HandleModifyFactionCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcAddCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcAddCommand(char* args)
 {
     if (!*args)
@@ -226,7 +183,6 @@ bool ChatHandler::HandleNpcAddCommand(char* args)
 
     Creature* pCreature = new Creature;
 
-    // used guids from specially reserved range (can be 0 if no free values)
     uint32 lowguid = sMint.StaticCreatureGuid();
     if (!lowguid)
     {
@@ -245,18 +201,11 @@ bool ChatHandler::HandleNpcAddCommand(char* args)
 
     uint32 db_guid = pCreature->GetGUIDLow();
 
-    // To call _LoadGoods(); _LoadQuests(); CreateTrainerSpells();
     pCreature->LoadFromDB(db_guid, map);
 
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcAddVendorItemCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcAddVendorItemCommand(char* args)
 {
     uint32 itemId;
@@ -297,12 +246,6 @@ bool ChatHandler::HandleNpcAddVendorItemCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcDelVendorItemCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcDelVendorItemCommand(char* args)
 {
     if (!*args)
@@ -339,13 +282,7 @@ bool ChatHandler::HandleNpcDelVendorItemCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcAIInfoCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleNpcAIInfoCommand(char* /*args*/)
+bool ChatHandler::HandleNpcAIInfoCommand(char* )
 {
     Creature* pTarget = getSelectedCreature();
 
@@ -378,12 +315,6 @@ bool ChatHandler::HandleNpcAIInfoCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcChangeLevelCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcChangeLevelCommand(char* args)
 {
     if (!*args)
@@ -426,12 +357,6 @@ bool ChatHandler::HandleNpcChangeLevelCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcFlagCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcFlagCommand(char* args)
 {
     if (!*args)
@@ -459,19 +384,13 @@ bool ChatHandler::HandleNpcFlagCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcDeleteCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcDeleteCommand(char* args)
 {
     Creature* unit = nullptr;
 
     if (*args)
     {
-        // number or [name] Shift-click form |color|Hcreature:creature_guid|h[name]|h|r
+
         uint32 lowguid;
         if (!ExtractUint32KeyFromLink(&args, "Hcreature", lowguid))
         {
@@ -534,12 +453,6 @@ bool ChatHandler::HandleNpcDeleteCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcMoveCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcMoveCommand(char* args)
 {
     uint32 lowguid = 0;
@@ -548,7 +461,7 @@ bool ChatHandler::HandleNpcMoveCommand(char* args)
     Creature* pCreature = getSelectedCreature();
     if (!pCreature)
     {
-        // number or [name] Shift-click form |color|Hcreature:creature_guid|h[name]|h|r
+
         if (!ExtractUint32KeyFromLink(&args, "Hcreature", lowguid))
         {
             return false;
@@ -592,7 +505,7 @@ bool ChatHandler::HandleNpcMoveCommand(char* args)
         }
         pCreature->GetMap()->CreatureRelocation(pCreature, x, y, z, o);
         pCreature->GetMotionMaster()->Initialize();
-        if (pCreature->IsAlive())                           // dead creature will reset movement generator at respawn
+        if (pCreature->IsAlive())
         {
             pCreature->SetDeathState(JUST_DIED);
             pCreature->Respawn();
@@ -604,31 +517,12 @@ bool ChatHandler::HandleNpcMoveCommand(char* args)
     return true;
 }
 
-/**HandleNpcSetMoveTypeCommand
- * Set the movement type for an NPC.<br/>
- * <br/>
- * Valid movement types are:
- * <ul>
- * <li> stay - NPC wont move </li>
- * <li> random - NPC will move randomly according to the spawndist </li>
- * <li> way - NPC will move with given waypoints set </li>
- * </ul>
- * additional parameter: NODEL - so no waypoints are deleted, if you
- *                       change the movement type
- */
 bool ChatHandler::HandleNpcSetMoveTypeCommand(char* args)
 {
-    // 3 arguments:
-    // GUID (optional - you can also select the creature)
-    // stay|random|way (determines the kind of movement)
-    // NODEL (optional - tells the system NOT to delete any waypoints)
-    //        this is very handy if you want to do waypoints, that are
-    //        later switched on/off according to special events (like escort
-    //        quests, etc)
 
     uint32 lowguid;
     Creature* pCreature;
-    if (!ExtractUInt32(&args, lowguid))                     // case .setmovetype $move_type (with selected creature)
+    if (!ExtractUInt32(&args, lowguid))
     {
         pCreature = getSelectedCreature();
         if (!pCreature || !npcs::Listed(*pCreature))
@@ -637,7 +531,7 @@ bool ChatHandler::HandleNpcSetMoveTypeCommand(char* args)
         }
         lowguid = pCreature->GetGUIDLow();
     }
-    else                                                    // case .setmovetype #creature_guid $move_type (with guid)
+    else
     {
         CreatureData const* data = sObjectMgr.GetCreatureData(lowguid);
         if (!data)
@@ -684,15 +578,11 @@ bool ChatHandler::HandleNpcSetMoveTypeCommand(char* args)
     }
 
     bool doNotDelete = ExtractLiteralArg(&args, "NODEL") != nullptr;
-    if (!doNotDelete && *args)                              // need fail if false in result wrong literal
+    if (!doNotDelete && *args)
     {
         return false;
     }
 
-    // now lowguid is low guid really existing creature
-    // and pCreature point (maybe) to this creature or nullptr
-
-    // update movement type
     if (!doNotDelete)
     {
         sWaypointMgr.DeletePath(lowguid);
@@ -702,7 +592,7 @@ bool ChatHandler::HandleNpcSetMoveTypeCommand(char* args)
     {
         pCreature->SetDefaultMovementType(move_type);
         pCreature->GetMotionMaster()->Initialize();
-        if (pCreature->IsAlive())                           // dead creature will reset movement generator at respawn
+        if (pCreature->IsAlive())
         {
             pCreature->SetDeathState(JUST_DIED);
             pCreature->Respawn();
@@ -722,12 +612,6 @@ bool ChatHandler::HandleNpcSetMoveTypeCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcSetModelCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcSetModelCommand(char* args)
 {
     if (!*args)
@@ -764,12 +648,6 @@ bool ChatHandler::HandleNpcSetModelCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcFactionIdCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcFactionIdCommand(char* args)
 {
     if (!*args)
@@ -797,27 +675,17 @@ bool ChatHandler::HandleNpcFactionIdCommand(char* args)
 
     pCreature->setFaction(factionId);
 
-    // faction is set in creature_template - not inside creature
-
-    // update in memory
     if (CreatureInfo const* cinfo = pCreature->GetCreatureInfo())
     {
         const_cast<CreatureInfo*>(cinfo)->FactionAlliance = factionId;
         const_cast<CreatureInfo*>(cinfo)->FactionHorde = factionId;
     }
 
-    // and DB
     WorldDatabase.PExecuteLog("UPDATE `creature_template` SET `FactionAlliance` = '%u', `FactionHorde` = '%u' WHERE `entry` = '%u'", factionId, factionId, pCreature->GetEntry());
 
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcSpawnDistCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcSpawnDistCommand(char* args)
 {
     if (!*args)
@@ -848,7 +716,7 @@ bool ChatHandler::HandleNpcSpawnDistCommand(char* args)
     pCreature->SetRespawnRadius((float)option);
     pCreature->SetDefaultMovementType(mtype);
     pCreature->GetMotionMaster()->Initialize();
-    if (pCreature->IsAlive())                               // dead creature will reset movement generator at respawn
+    if (pCreature->IsAlive())
     {
         pCreature->SetDeathState(JUST_DIED);
         pCreature->Respawn();
@@ -859,12 +727,6 @@ bool ChatHandler::HandleNpcSpawnDistCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcSpawnTimeCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcSpawnTimeCommand(char* args)
 {
     uint32 stime;
@@ -890,13 +752,7 @@ bool ChatHandler::HandleNpcSpawnTimeCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcFollowCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleNpcFollowCommand(char* /*args*/)
+bool ChatHandler::HandleNpcFollowCommand(char* )
 {
     Player* player = m_session->GetPlayer();
     Creature* creature = getSelectedCreature();
@@ -908,20 +764,13 @@ bool ChatHandler::HandleNpcFollowCommand(char* /*args*/)
         return false;
     }
 
-    // Follow player - Using pet's default dist and angle
     creature->GetMotionMaster()->MoveFollow(player, PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);
 
     PSendSysMessage(LANG_CREATURE_FOLLOW_YOU_NOW, creature->GetName());
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcUnFollowCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleNpcUnFollowCommand(char* /*args*/)
+bool ChatHandler::HandleNpcUnFollowCommand(char* )
 {
     Player* player = m_session->GetPlayer();
     Creature* creature = getSelectedCreature();
@@ -951,20 +800,13 @@ bool ChatHandler::HandleNpcUnFollowCommand(char* /*args*/)
         return false;
     }
 
-    // reset movement
     creatureMotion->MovementExpired(true);
 
     PSendSysMessage(LANG_CREATURE_NOT_FOLLOW_YOU_NOW, creature->GetName());
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcTameCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleNpcTameCommand(char* /*args*/)
+bool ChatHandler::HandleNpcTameCommand(char* )
 {
     Creature* creatureTarget = getSelectedCreature();
 
@@ -984,16 +826,10 @@ bool ChatHandler::HandleNpcTameCommand(char* /*args*/)
         return false;
     }
 
-    player->CastSpell(creatureTarget, 13481, true);         // Tame Beast, triggered effect
+    player->CastSpell(creatureTarget, 13481, true);
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcSetDeathStateCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcSetDeathStateCommand(char* args)
 {
     bool value;
@@ -1027,14 +863,7 @@ bool ChatHandler::HandleNpcSetDeathStateCommand(char* args)
     return true;
 }
 
-
-/**
- * @brief Handler for HandleNpcAllowMovementCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleNpcAllowMovementCommand(char* /*args*/)
+bool ChatHandler::HandleNpcAllowMovementCommand(char* )
 {
     if (sWorld.getAllowMovement())
     {
@@ -1049,12 +878,6 @@ bool ChatHandler::HandleNpcAllowMovementCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcChangeEntryCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcChangeEntryCommand(char* args)
 {
     if (!*args)
@@ -1069,7 +892,7 @@ bool ChatHandler::HandleNpcChangeEntryCommand(char* args)
     }
 
     Unit* unit = getSelectedUnit();
-    if (!unit || !unit->IsCreature())
+    if (!unit || !IsCreature(unit))
     {
         SendSysMessage(LANG_SELECT_CREATURE);
         SetSentErrorMessage(true);
@@ -1089,12 +912,7 @@ bool ChatHandler::HandleNpcChangeEntryCommand(char* args)
 
 namespace
 {
-    /**
-     * @brief Prints read-only LivingWorld target diagnostics for an in-memory unit.
-     *
-     * Uses only the supplied live pointer and current map state. Does not look up
-     * objects, load grids, create maps, or mutate movement/combat/AI state.
-     */
+
     void PrintNpcWatchUnitDetails(ChatHandler& handler, char const* label,
                                   Creature const* watched, Unit const* unit)
     {
@@ -1111,7 +929,7 @@ namespace
 
         handler.PSendSysMessage("  %s=%s", label, unit->GetGuidStr().c_str());
 
-        if (unit->IsCreature())
+        if (IsCreature(unit))
         {
             handler.PSendSysMessage("    creature entry=%u name=\"%s\"",
                                     unit->GetEntry(), unit->GetName());
@@ -1145,13 +963,11 @@ namespace
     Unit* GetNpcWatchMapStoreTarget(Creature const* watched,
                                     ObjectGuid const& guid)
     {
-        if (!guid.IsAnyTypeCreature())
+        if (!(GuidHigh(guid) == HIGHGUID_UNIT || GuidHigh(guid) == HIGHGUID_PET))
         {
             return nullptr;
         }
 
-        // Creature/pet object-store lookup only. Avoid Map::GetUnit because its
-        // player path uses ObjectAccessor rather than the map object store.
         return watched->GetMap()->GetAnyTypeCreature(guid);
     }
 
@@ -1164,8 +980,8 @@ namespace
 
         GridPair gridPair = MaNGOS::ComputeGridPair(x, y);
         CellPair cellPair = MaNGOS::ComputeCellPair(x, y);
-        bool gridLoaded = target->GetMap()->IsLoaded(x, y); // read-only: does NOT load the grid
-        bool cellLoaded = target->GetMap()->IsCellLoaded(x, y); // read-only: per-cell envelope state
+        bool gridLoaded = target->GetMap()->IsLoaded(x, y);
+        bool cellLoaded = target->GetMap()->IsCellLoaded(x, y);
 
         handler.PSendSysMessage("[LivingWorld] watch %s \"%s\"",
                                 target->GetGuidStr().c_str(), target->GetName());
@@ -1194,12 +1010,12 @@ namespace
         }
 
         ObjectGuid const& watchTargetGuid = target->GetTargetGuid();
-        if (!watchTargetGuid.IsEmpty())
+        if (!(watchTargetGuid == 0))
         {
             if (victim && watchTargetGuid == victim->GetObjectGuid())
             {
                 handler.PSendSysMessage("  target=%s (same as victim; details above)",
-                                        watchTargetGuid.GetString().c_str());
+                                        GuidString(watchTargetGuid).c_str());
             }
             else if (Unit* watchTarget =
                          GetNpcWatchMapStoreTarget(target, watchTargetGuid))
@@ -1208,7 +1024,7 @@ namespace
             }
             else
             {
-                handler.PSendSysMessage("  target=%s", watchTargetGuid.GetString().c_str());
+                handler.PSendSysMessage("  target=%s", GuidString(watchTargetGuid).c_str());
                 handler.SendSysMessage("    target-details=details unavailable from safe current-map context");
             }
         }
@@ -1219,17 +1035,6 @@ namespace
     }
 }
 
-/**
- * @brief Handler for the .npc watch command (LivingWorld diagnostic).
- *
- * Read-only, one-shot snapshot of the currently selected creature or the last
- * watched creature if still resident in the current map object store. Inspects
- * already-loaded state only via in-memory getters; performs no grid load, no
- * map creation, and no movement/combat/AI/grid-state mutation.
- *
- * @param args Optional "last" argument.
- * @returns True on success; false (with the select-creature error) when nothing is selected.
- */
 bool ChatHandler::HandleNpcWatchCommand(char* args)
 {
     if (char* watchArg = ExtractLiteralArg(&args))
@@ -1244,7 +1049,7 @@ bool ChatHandler::HandleNpcWatchCommand(char* args)
             }
 
             ObjectGuid const& lastGuid = m_session->GetNpcWatchLastGuid();
-            if (lastGuid.IsEmpty())
+            if ((lastGuid == 0))
             {
                 SendSysMessage("[LivingWorld] watch last: no last watched creature for this session. Select a creature and run .npc watch first.");
                 return true;
@@ -1254,7 +1059,7 @@ bool ChatHandler::HandleNpcWatchCommand(char* args)
             if (!target)
             {
                 PSendSysMessage("[LivingWorld] watch last %s: not resident in safe current-map context",
-                                lastGuid.GetString().c_str());
+                                GuidString(lastGuid).c_str());
                 SendSysMessage("  details unavailable from safe current-map context");
                 return true;
             }
@@ -1281,13 +1086,7 @@ bool ChatHandler::HandleNpcWatchCommand(char* args)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcInfoCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
-bool ChatHandler::HandleNpcInfoCommand(char* /*args*/)
+bool ChatHandler::HandleNpcInfoCommand(char* )
 {
     Creature* target = getSelectedCreature();
 
@@ -1335,12 +1134,6 @@ bool ChatHandler::HandleNpcInfoCommand(char* /*args*/)
     return true;
 }
 
-/**
- * @brief Handler for HandleNpcPlayEmoteCommand command.
- *
- * @param args Command arguments.
- * @returns True if the command executed successfully, false otherwise.
- */
 bool ChatHandler::HandleNpcPlayEmoteCommand(char* args)
 {
     uint32 emote = atoi(args);
@@ -1357,7 +1150,3 @@ bool ChatHandler::HandleNpcPlayEmoteCommand(char* args)
 
     return true;
 }
-
-
-
-//----------------------------------------------------------

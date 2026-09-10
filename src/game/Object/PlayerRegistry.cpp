@@ -31,8 +31,7 @@
 
 #include <cstring>
 
-
-Player* PlayerRegistry::Find(ObjectGuid guid, bool inWorld /* = true */) const
+Player* PlayerRegistry::Find(ObjectGuid guid, bool inWorld ) const
 {
     WorkSentry::Reached("the roster of everyone online");
 
@@ -41,11 +40,6 @@ Player* PlayerRegistry::Find(ObjectGuid guid, bool inWorld /* = true */) const
         return nullptr;
     }
 
-    // A hashed lookup, which is what the container was always for. The version
-    // this replaces called FindWith() and walked the entire map comparing every
-    // key to `guid` -- a linear scan of every online player, on the single
-    // hottest lookup in the server, purely so the inWorld filter could be folded
-    // into the predicate. Fetch first, then filter.
     Player* player = m_players.Find(guid);
     if (!player)
     {
@@ -64,8 +58,6 @@ Player* PlayerRegistry::FindByName(const char* name) const
         return nullptr;
     }
 
-    // Genuinely linear: names are not indexed. Callers are commands, mail and
-    // trade, none of them hot.
     return m_players.FindWith([name](const ObjectGuid&, Player* player) -> bool
     {
         return player->IsInWorld() && std::strcmp(name, player->GetName()) == 0;
@@ -74,20 +66,18 @@ Player* PlayerRegistry::FindByName(const char* name) const
 
 void PlayerRegistry::Kick(ObjectGuid guid) const
 {
-    // inWorld = false: a player still loading is exactly the sort we may need to
-    // kick, and would be invisible to the filtered lookup.
+
     if (Player* player = Find(guid, false))
     {
         WorldSession* session = player->GetSession();
-        session->KickPlayer();          // mark for removal at the next session update
-        session->LogoutPlayer(false);   // and log out now rather than waiting for it
+        session->KickPlayer();
+        session->LogoutPlayer(false);
     }
 }
 
 void PlayerRegistry::SaveAll() const
 {
-    // Driven from the session list rather than this index: a session can exist
-    // without its player being registered here yet, and those still need saving.
+
     for (const auto& iter : sWorld.GetAllSessions())
     {
         if (Player* player = iter.second->GetPlayer())

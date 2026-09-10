@@ -29,7 +29,6 @@ class Player;
 class WorldPacket;
 class WorldSession;
 
-/// What the client asks about quests.
 namespace quests
 {
     void QuestgiverStatusQuery(Player& who, WorldPacket& packet);

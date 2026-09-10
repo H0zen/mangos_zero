@@ -28,11 +28,6 @@
 #include "CreatureAI.h"
 #include "Corpse.h"
 
-/**
- * @brief Creates a temporary summon instance.
- *
- * @param summoner The GUID of the summoning object.
- */
 TemporarySummon::TemporarySummon(ObjectGuid summoner)
     : Creature(CREATURE_SUBTYPE_TEMPORARY_SUMMON)
 {
@@ -40,12 +35,6 @@ TemporarySummon::TemporarySummon(ObjectGuid summoner)
     Term().Grant(TEMPSPAWN_TIMED_OOC_OR_CORPSE_DESPAWN, 0);
 }
 
-/**
- * @brief Reads the term against the clock, and the charm against sight.
- *
- * @param update_diff The elapsed time since the last update in milliseconds.
- * @param diff The world update time forwarded to the base creature update.
- */
 void TemporarySummon::Update(uint32 update_diff,  uint32 diff)
 {
     if (Term().RunsOut(update_diff, tenure::BodyOf(*this)))
@@ -54,7 +43,6 @@ void TemporarySummon::Update(uint32 update_diff,  uint32 diff)
         return;
     }
 
-    // One held on a charm goes when whoever holds it is out of sight.
     if (IsAlive() && GetCharmerGuid())
     {
         Unit* charmer = GetCharmer();
@@ -68,12 +56,6 @@ void TemporarySummon::Update(uint32 update_diff,  uint32 diff)
     Creature::Update(update_diff, diff);
 }
 
-/**
- * @brief Activates the summon with a despawn policy and lifetime.
- *
- * @param type The temporary spawn despawn policy.
- * @param lifetime The lifetime in milliseconds.
- */
 void TemporarySummon::Summon(TempSpawnType type, uint32 lifetime)
 {
     Term().Grant(type, lifetime);
@@ -82,12 +64,9 @@ void TemporarySummon::Summon(TempSpawnType type, uint32 lifetime)
     AIM_Initialize();
 }
 
-/**
- * @brief Unsummons the creature and notifies the summoner AI.
- */
 void TemporarySummon::UnSummon()
 {
-    if (GetSummonerGuid().IsCreature())
+    if ((GuidHigh(GetSummonerGuid()) == HIGHGUID_UNIT))
     {
         if (Creature* sum = GetMap()->GetCreature(GetSummonerGuid()))
         {
@@ -100,9 +79,6 @@ void TemporarySummon::UnSummon()
     AddObjectToRemoveList();
 }
 
-/**
- * @brief Removes the summon from the world and clears charm control if needed.
- */
 void TemporarySummon::RemoveFromWorld()
 {
     if (IsInWorld())
@@ -111,7 +87,7 @@ void TemporarySummon::RemoveFromWorld()
         if (charmer && charmer->GetCharmGuid() == GetObjectGuid())
         {
             charmer->Uncharm();
-            if (charmer->GetCharmGuid() == GetObjectGuid() && charmer->IsPlayer())
+            if (charmer->GetCharmGuid() == GetObjectGuid() &&IsPlayer(charmer))
             {
                 Player* player = (Player*)charmer;
                 Camera& camera = player->GetCamera();
@@ -127,14 +103,6 @@ void TemporarySummon::RemoveFromWorld()
     Creature::RemoveFromWorld();
 }
 
-/**
- * @brief Creates a waypoint-based temporary summon instance.
- *
- * @param summoner The GUID of the summoning object.
- * @param waypoint_id The starting waypoint identifier.
- * @param path_id The path identifier.
- * @param pathOrigin The origin source for the waypoint path.
- */
 TemporarySummonWaypoint::TemporarySummonWaypoint(ObjectGuid summoner, uint32 waypoint_id, int32 path_id, uint32 pathOrigin)
     : TemporarySummon(summoner),
     m_waypoint_id(waypoint_id),

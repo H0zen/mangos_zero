@@ -32,15 +32,12 @@
 
 namespace
 {
-    /// Bestial Swiftness, which pays a hunter's pet only while it is fighting.
+
     uint32 const SPELL_BESTIAL_SWIFTNESS = 19582;
     uint32 const AURA_BESTIAL_SWIFTNESS_HELD = 19596;
 
-    /// The client draws a pet running a seventh faster than its master.
     float const PET_RUN_AHEAD = 1.14286f;
 
-    /// The message pairs for each way of moving: one the client must accept,
-    /// one it is merely told.
     uint16 const SPEED_OPCODES[MAX_MOVE_TYPE][2] =
     {
         { SMSG_FORCE_WALK_SPEED_CHANGE,      SMSG_SPLINE_SET_WALK_SPEED },
@@ -51,8 +48,6 @@ namespace
         { SMSG_FORCE_TURN_RATE_CHANGE,       SMSG_SPLINE_SET_TURN_RATE },
     };
 
-    /// An aura can pin a pace to a flat number of yards a second, whatever else
-    /// is on the unit. Nothing may exceed it.
     void PinToNormal(Unit& who, UnitMoveType how, float& pace)
     {
         if (how != MOVE_RUN && how != MOVE_SWIM)
@@ -73,7 +68,6 @@ namespace
         }
     }
 
-    /// The strongest slow it carries, applied last of all.
     void ApplySlow(Unit& who, float& pace)
     {
         if (int32 const slow = who.GetMaxNegativeAuraModifier(SPELL_AURA_MOD_DECREASE_SPEED))
@@ -107,9 +101,9 @@ float Pace::At(UnitMoveType how) const
 
 void Pace::Reckon(UnitMoveType how, bool forced, float ratio)
 {
-    int32 hastest = 0;                                      // the strongest single haste
-    float stacking = 1.0f;                                  // the hastes that add up
-    float lonely = 1.0f;                                    // the strongest haste that does not
+    int32 hastest = 0;
+    float stacking = 1.0f;
+    float lonely = 1.0f;
 
     switch (how)
     {
@@ -137,7 +131,7 @@ void Pace::Reckon(UnitMoveType how, bool forced, float ratio)
 
         case MOVE_RUN_BACK:
         case MOVE_SWIM_BACK:
-            return;                                         // never anything but the ordinary
+            return;
 
         default:
             sLog.outError("Pace::Reckon: unsupported move type (%d)", how);
@@ -149,9 +143,9 @@ void Pace::Reckon(UnitMoveType how, bool forced, float ratio)
 
     PinToNormal(m_owner, how, pace);
 
-    if (Creature* creature = ToCreature(&m_owner))
+    if (Creature* creature = static_cast<Creature*>(&m_owner))
     {
-        // one that has called for help gives up a third of its pace doing so
+
         if (creature->HasSearchedAssistance())
         {
             pace *= 0.66f;
@@ -166,9 +160,9 @@ void Pace::Reckon(UnitMoveType how, bool forced, float ratio)
 
     ApplySlow(m_owner, pace);
 
-    if (Creature* creature = ToCreature(&m_owner))
+    if (Creature* creature = static_cast<Creature*>(&m_owner))
     {
-        // what its row says it moves at
+
         if (how == MOVE_RUN)
         {
             pace *= creature->GetCreatureInfo()->SpeedRun;
@@ -195,15 +189,15 @@ void Pace::SetRate(UnitMoveType how, float rate, bool forced)
 
         m_owner.PropagateSpeedChange();
 
-        if (forced && m_owner.IsPlayer())
+        if (forced && IsPlayer(&m_owner))
         {
-            // the acknowledgement is counted, because the client answers each one
+
             Player& who = static_cast<Player&>(m_owner);
             ++who.m_forced_speed_changes[how];
 
             WorldPacket data(SPEED_OPCODES[how][0], 18);
             data << m_owner.GetPackGUID();
-            data << uint32(0);                              // moveEvent, NUM_PMOVE_EVTS = 0x39
+            data << uint32(0);
             data << float(At(how));
             who.GetSession()->SendPacket(&data);
         }
@@ -221,10 +215,10 @@ void Pace::SetRate(UnitMoveType how, float rate, bool forced)
 void PetPace::Reckon(UnitMoveType how, bool forced, float ratio)
 {
     Unit* master = m_owner.GetOwner();
-    Player* owner = master ? ToPlayer(master) : nullptr;
+    Player* owner = master ? static_cast<Player*>(master) : nullptr;
     if (!owner)
     {
-        Pace::Reckon(how, forced, ratio);                   // one nobody owns is a plain creature
+        Pace::Reckon(how, forced, ratio);
         return;
     }
 
@@ -238,8 +232,7 @@ void PetPace::Reckon(UnitMoveType how, bool forced, float ratio)
             break;
 
         case MOVE_RUN:
-            // Bestial Swiftness pays the pet only while it is fighting, so while
-            // it is merely following, that one haste is left out of the reckoning.
+
             if (!m_owner.getVictim() && owner->HasAura(AURA_BESTIAL_SWIFTNESS_HELD))
             {
                 for (auto* aura : m_owner.GetAurasByType(SPELL_AURA_MOD_INCREASE_SPEED))
@@ -272,7 +265,6 @@ void PetPace::Reckon(UnitMoveType how, bool forced, float ratio)
             return;
     }
 
-    // It keeps up with its master, but a dazed master does not daze his pet.
     float masterPace = owner->Pacing().RateOf(how);
     if (int32 const mastersSlow = owner->GetMaxNegativeAuraModifier(SPELL_AURA_MOD_DECREASE_SPEED))
     {

@@ -29,13 +29,6 @@
 
 namespace metrics
 {
-    /**
-     * @brief The tick tail of the maps that are actually busy, one line each.
-     *
-     * Only maps with a tail worth reading are named: a hundred idle dungeon copies ticking
-     * in under a millisecond would bury the one continent that is struggling. Each line
-     * names the phase that cost the most, because a tick time says a map is slow and only
-     * the breakdown says which part of it is awake.
-     */
+
     std::string MapTickLines();
 }

@@ -37,7 +37,7 @@
 
 namespace
 {
-    /// The three maps that are open before anyone logs in: the two continents and the tram.
+
     const uint32 s_continents[] = { 0, 1, 369 };
 }
 
@@ -68,8 +68,6 @@ void LivingWorld::PinActiveGrids(Map& map)
     uint32 alreadyLoaded = 0;
     std::set<std::pair<uint32, uint32>> grids;
 
-    // Counted on its own: on a force-loaded map these are pinned anyway as part of every
-    // spawn, and the number is still what says how much of the map has to stay awake.
     uint32 activeCreatures = 0;
     auto const active = sObjectMgr.GetActiveCreatureGuids()->equal_range(map.GetId());
     for (auto itr = active.first; itr != active.second; ++itr)

@@ -66,12 +66,6 @@
 #include "SQLStorages.h"
 #include "DisableMgr.h"
 
-/**
- * @brief Updates a visible virtual weapon slot and consumes temporary enchant charges when needed.
- *
- * @param i The virtual slot index.
- * @param item The item to reflect in the virtual slot.
- */
 void Player::SetVirtualItemSlot(uint8 i, Item* item)
 {
     MANGOS_ASSERT(i < 3);
@@ -98,27 +92,22 @@ void Player::SetVirtualItemSlot(uint8 i, Item* item)
     }
 }
 
-/**
- * @brief Updates the player's sheathed weapon state and visible weapon slots.
- *
- * @param sheathed The new sheath state.
- */
 void Player::SetSheath(SheathState sheathed)
 {
     switch (sheathed)
     {
-        case SHEATH_STATE_UNARMED:                          // no prepared weapon
+        case SHEATH_STATE_UNARMED:
             SetVirtualItemSlot(0, nullptr);
             SetVirtualItemSlot(1, nullptr);
             SetVirtualItemSlot(2, nullptr);
             break;
-        case SHEATH_STATE_MELEE:                            // prepared melee weapon
+        case SHEATH_STATE_MELEE:
         {
             SetVirtualItemSlot(0, GetWeaponForAttack(BASE_ATTACK, true, true));
             SetVirtualItemSlot(1, GetWeaponForAttack(OFF_ATTACK, true, true));
             SetVirtualItemSlot(2, nullptr);
         };  break;
-        case SHEATH_STATE_RANGED:                           // prepared ranged weapon
+        case SHEATH_STATE_RANGED:
             SetVirtualItemSlot(0, nullptr);
             SetVirtualItemSlot(1, nullptr);
             SetVirtualItemSlot(2, GetWeaponForAttack(RANGED_ATTACK, true, true));
@@ -129,17 +118,9 @@ void Player::SetSheath(SheathState sheathed)
             SetVirtualItemSlot(2, nullptr);
             break;
     }
-    Unit::SetSheath(sheathed);                              // this must visualize Sheath changing for other players...
+    Unit::SetSheath(sheathed);
 }
 
-/**
- * @brief Finds an appropriate equipment slot for an item prototype.
- *
- * @param proto The item prototype to equip.
- * @param slot The preferred slot, or NULL_SLOT to auto-select.
- * @param swap True to allow replacing an occupied slot.
- * @return The chosen slot, or NULL_SLOT if none fits.
- */
 uint8 Player::FindEquipSlot(ItemPrototype const* proto, uint32 slot, bool swap) const
 {
     uint8 pClass = getClass();
@@ -199,8 +180,6 @@ uint8 Player::FindEquipSlot(ItemPrototype const* proto, uint32 slot, bool swap) 
         {
             slots[0] = EQUIPMENT_SLOT_MAINHAND;
 
-            // suggest offhand slot only if know dual wielding
-            // (this will be replace mainhand weapon at auto equip instead unwonted "you don't known dual wielding" ...
             if (Arms().CanDualWield())
             {
                 slots[1] = EQUIPMENT_SLOT_OFFHAND;
@@ -290,12 +269,12 @@ uint8 Player::FindEquipSlot(ItemPrototype const* proto, uint32 slot, bool swap) 
     }
     else
     {
-        // search free slot at first
+
         for (int i = 0; i < 4; ++i)
         {
             if (slots[i] != NULL_SLOT && !GetItemByPos(INVENTORY_SLOT_BAG_0, slots[i]))
             {
-                // in case 2hand equipped weapon offhand slot empty but not free
+
                 if (slots[i] != EQUIPMENT_SLOT_OFFHAND || !IsTwoHandUsed())
                 {
                     return slots[i];
@@ -303,7 +282,6 @@ uint8 Player::FindEquipSlot(ItemPrototype const* proto, uint32 slot, bool swap) 
             }
         }
 
-        // if not found free and can swap return first appropriate from used
         for (int i = 0; i < 4; ++i)
         {
             if (slots[i] != NULL_SLOT && swap)
@@ -313,17 +291,9 @@ uint8 Player::FindEquipSlot(ItemPrototype const* proto, uint32 slot, bool swap) 
         }
     }
 
-    // no free position
     return NULL_SLOT;
 }
 
-/**
- * @brief Checks whether enough matching items can be unequipped or removed.
- *
- * @param item The item entry to search for.
- * @param count The required total item count.
- * @return The inventory result describing whether the request is allowed.
- */
 InventoryResult Player::CanUnequipItems(uint32 item, uint32 count) const
 {
     Item* pItem;
@@ -396,7 +366,6 @@ InventoryResult Player::CanUnequipItems(uint32 item, uint32 count) const
         }
     }
 
-    // not found req. item count and have unequippable items
     return res;
 }
 
@@ -430,12 +399,6 @@ Item* Player::GetWeaponForAttack(WeaponAttackType attackType, bool nonbroken, bo
     return item;
 }
 
-/**
- * @brief Gets the equipped shield item, if any.
- *
- * @param useable True to require the shield to be usable and not broken.
- * @return The shield item, or null if none qualifies.
- */
 Item* Player::GetShield(bool useable) const
 {
     Item* item = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);

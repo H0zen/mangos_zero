@@ -169,7 +169,7 @@ struct spell_npc_aged_dying_ancient_kodo : public SpellScript
         // always check spellid and effectindex
         if (spellId == SPELL_KODO_KOMBO_ITEM && effIndex == EFFECT_INDEX_0)
         {
-            Creature *pCreatureTarget = ToCreature(pTarget);
+            Creature *pCreatureTarget = static_cast<Creature*>(pTarget);
             // no effect if player/creature already have aura from spells
             if (pCaster->HasAura(SPELL_KODO_KOMBO_PLAYER_BUFF) || pCreatureTarget->HasAura(SPELL_KODO_KOMBO_DESPAWN_BUFF))
             {
@@ -524,7 +524,7 @@ struct npc_cork_gizelton : public CreatureScript
     {
         npc_cork_gizeltonAI(Creature* pCreature) : ScriptedAI(pCreature) { Reset(); }
 
-        ObjectGuid m_playerGuid;
+        ObjectGuid m_playerGuid = 0;
         uint8 uiQuestStatus;
 
         void Reset() override
@@ -534,7 +534,7 @@ struct npc_cork_gizelton : public CreatureScript
 
         void ReceiveAIEvent(AIEventType eventType, Creature* /*pSender*/, Unit* pInvoker, uint32 uiMiscValue) override
         {
-            if (eventType == AI_EVENT_START_ESCORT && pInvoker->IsPlayer())
+            if (eventType == AI_EVENT_START_ESCORT &&IsPlayer(pInvoker))
             {
                 m_playerGuid = pInvoker->GetObjectGuid();
             }
@@ -620,7 +620,7 @@ struct npc_cork_gizelton : public CreatureScript
                             pPlayer->Journal().ExploredWithGroup(QUEST_BODYGUARD_TO_HIRE, m_creature);
                         }
                         // Remove player to avoid adds being spawned again next turn
-                        m_playerGuid.Clear();
+                        m_playerGuid = 0;
                         uiQuestStatus = 0;
                         break;
                 }
@@ -667,7 +667,7 @@ struct npc_cork_gizelton : public CreatureScript
                             pPlayer->Journal().ExploredWithGroup(QUEST_GIZELTON_CARAVAN, m_creature);
                         }
                         // Remove player to avoid adds being spawned again next turn
-                        m_playerGuid.Clear();
+                        m_playerGuid = 0;
                         uiQuestStatus = 0;
                         break;
                 }

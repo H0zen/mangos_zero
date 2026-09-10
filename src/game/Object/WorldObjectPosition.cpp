@@ -23,25 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-/**
- * @file Object.cpp
- * @brief Base implementation for all game objects
- *
- * This file implements the Object class, which is the base class for all
- * entities in the game world. It provides:
- * - Update field management (synchronized with clients)
- * - Object GUID handling
- * - Update data building for network transmission
- * - Object visibility and spawning
- * - Type identification
- *
- * The Object class uses an array of uint32 values (update fields) that
- * mirror the client's object state. Changes to these values are sent to
- * players who can see the object.
- */
-
-
-
 #include "Occupant.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
@@ -69,55 +50,25 @@
 #include "Transports.h"
 #include "TransportMap.h"
 
-/**
- * @brief Cleanups before delete
- *
- * Removes the object from the world before deletion.
- */
 void Occupant::CleanupsBeforeDelete()
 {
     RemoveFromWorld();
 }
 
-/**
- * @brief Update world object
- * @param update_diff Time since last update
- * @param time_diff Time parameter (unused)
- *
- * Updates Eluna events if enabled.
- */
-void Occupant::Update(uint32 update_diff, uint32 /*time_diff*/)
+void Occupant::Update(uint32 update_diff, uint32 )
 {
 }
 
-/**
- * @brief Create world object
- * @param guidlow Low GUID
- * @param guidhigh High GUID type
- *
- * Creates the world object with the specified GUID.
- */
 void Occupant::_Create(uint32 guidlow, HighGuid guidhigh)
 {
     Object::_Create(guidlow, 0, guidhigh);
 }
 
-/**
- * @brief Get instance data
- * @return Instance data pointer
- *
- * Returns the instance data for the map this object is on.
- */
 InstanceData* Occupant::GetInstanceData() const
 {
     return GetMap()->GetInstanceData();
 }
 
-/**
- * @brief A random ground point around a centre, in this object's own frame.
- *
- * The roll is injected rather than drawn here, so the pick stays pinnable in a test.
- */
 Geometry::Vector3 RandomGroundPointNear(Occupant const& obj, Geometry::Vector3 const& centre,
                                         float distance, float minDist, float const* ori)
 {
@@ -138,24 +89,15 @@ Geometry::Vector3 RandomGroundPointNear(Occupant const& obj, Geometry::Vector3 c
     return point;
 }
 
-/**
- * @brief Put z on the floor under (x, y), if there is one.
- *
- * Nothing happens where the map has no floor to offer: an absent answer is absent, not a
- * sentinel height that arithmetic will happily consume.
- */
 void DropToGround(Occupant const& obj, float x, float y, float& z)
 {
     if (auto floor = obj.GetMap()->Floor(x, y, z))
     {
-        z = *floor + 0.05f;                                 // just to be sure that we are not a few pixel under the surface
+        z = *floor + 0.05f;
     }
 }
 
-/**
- * @brief Hold z between the floor and the highest surface this object may occupy.
- */
-void ClampToAllowedZ(Occupant const& obj, float x, float y, float& z, Map* atMap /*=nullptr*/)
+void ClampToAllowedZ(Occupant const& obj, float x, float y, float& z, Map* atMap )
 {
     if (!atMap)
     {
@@ -168,8 +110,7 @@ void ClampToAllowedZ(Occupant const& obj, float x, float y, float& z, Map* atMap
         return;
     }
 
-    // Anything that is not a unit has no say in the matter: it sits on the floor.
-    const bool isUnit = obj.IsCreature() || obj.IsPlayer();
+    const bool isUnit = IsCreature(&obj) || IsPlayer(&obj);
     if (!isUnit)
     {
         z = *floor;
@@ -186,8 +127,6 @@ void ClampToAllowedZ(Occupant const& obj, float x, float y, float& z, Map* atMap
         return;
     }
 
-    // Held between the floor and the highest surface this unit may occupy: the water it
-    // can swim in, or the floor itself when it cannot.
     float ceiling = *floor;
     if (unit.CanSwim())
     {
@@ -205,27 +144,10 @@ void ClampToAllowedZ(Occupant const& obj, float x, float y, float& z, Map* atMap
     }
 }
 
-// ---- not geometry, so neither the object's nor the component's --------------
-//
-// World membership is game state; line of sight and a map's coordinate bounds are the
-// terrain engine's. Each of these asks the placement for the geometry and contributes
-// only the part the placement must never know about.
-
-/**
- * @brief The frame both objects can be answered for, if one exists.
- *
- * Vanilla has no vehicle seats and no vessel-as-map, so every placement is anchored to a
- * map instance and a shared frame is simply the same map. The seam is here rather than
- * inlined at the call sites so that carrying the transport rework across changes this
- * function and nothing else.
- */
 static bool InCommonFrame(Occupant const& a, Occupant const& b,
                           Geometry::Placement& outA, Geometry::Placement& outB)
 {
-    // THE FRAME IS THE AUTHORITY, not the passenger registry. Two things on the same deck
-    // map already speak the same coordinates whether or not either was ever boarded -- a
-    // creature summoned straight onto a deck is exactly that, and asking the roster about
-    // it answers no while the geometry answers yes.
+
     if (a.Where().ShareFrame(b.Where()))
     {
         outA = a.Where();
@@ -260,13 +182,6 @@ static bool InCommonFrame(Occupant const& a, Occupant const& b,
     return true;
 }
 
-/**
- * @brief CAN A REACH B AT ALL -- the question every melee swing, spell, threat entry and
- *        aggro check is really asking.
- *
- * It demands a COMMON FRAME. This is NOT the question "can B see A": seeing a crow
- * overhead is not being able to hit it. For that, ask CanBeSeen.
- */
 bool CanInteract(Occupant const& a, Occupant const& b)
 {
     Geometry::Placement pa, pb;
@@ -274,14 +189,6 @@ bool CanInteract(Occupant const& a, Occupant const& b)
            InCommonFrame(a, b, pa, pb) && pa.ShareFrame(pb);
 }
 
-/**
- * @brief CAN B BE SHOWN A -- a wider question, and a cheaper one.
- *
- * Wider than reach because a thing may be drawn without being touchable. In this core the
- * two coincide, since nothing here is measured in a frame it cannot also be reached in;
- * they are kept apart all the same, because every caller means one or the other and the
- * distinction is what the transport rework needs already drawn.
- */
 bool CanBeSeen(Occupant const& seen, Occupant const& viewer)
 {
     if (!seen.IsInWorld() || !viewer.IsInWorld())
@@ -320,17 +227,11 @@ bool SeenWithin(Occupant const& seen, Occupant const& viewer, float dist, bool i
         return false;
     }
 
-    // Same frame -- the world's, or one deck's. Exact, so measure it and be done.
     if (seen.Where().ShareFrame(viewer.Where()))
     {
         return seen.Where().WithinDist(viewer.Where(), dist, is3D);
     }
 
-    // Across a vessel's boundary there is nothing to measure. CanBeSeen has already
-    // established that the vessel and the other party share a world, and a vessel is
-    // heard by everyone she shares it with however far off they stand. Asking for a
-    // distance here would mean asking where the hull is, and the server only has a
-    // waypoint guess of that.
     return true;
 }
 
@@ -357,7 +258,7 @@ bool InBackPhased(Occupant const& a, Occupant const& b, float dist, float arc)
 
 bool HasLineOfSight(Occupant const& a, Geometry::Vector3 const& point)
 {
-    // The two-yard lift is eye height: a sight line is cast between heads, not feet.
+
     return a.GetMap()->IsInLineOfSight(a.Where().X(), a.Where().Y(), a.Where().Z() + 2.0f,
                                        point.x, point.y, point.z + 2.0f);
 }
@@ -369,8 +270,6 @@ bool HasLineOfSight(Occupant const& a, Occupant const& b)
         return false;
     }
 
-    // Aboard, the sight line is cast through the HULL's own geometry, on the ship's own map,
-    // in the coordinates both passengers already speak.
     if (TransportMap* hull = a.GetMap() ? a.GetMap()->AsTransport() : nullptr)
     {
         Geometry::Placement pa, pb;
