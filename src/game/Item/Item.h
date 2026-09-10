@@ -244,7 +244,7 @@ class Item : public Object, public Spoilable
 
         ItemPrototype const* GetProto() const;
 
-        ObjectGuid const& GetOwnerGuid() const { return GetGuidValue(ITEM_FIELD_OWNER); }
+        ObjectGuid GetOwnerGuid() const { return GetGuidValue(ITEM_FIELD_OWNER); }
         void SetOwnerGuid(ObjectGuid guid) { SetGuidValue(ITEM_FIELD_OWNER, guid); }
         Player* GetOwner()const;
 
@@ -258,10 +258,10 @@ class Item : public Object, public Spoilable
         uint32 GetItemFlags() const { return GetUInt32Value(ITEM_FIELD_FLAGS); }
         void SetAllItemFlags(uint32 flags) { SetUInt32Value(ITEM_FIELD_FLAGS, flags); }
 
-        ObjectGuid const& GetCreatorGuid() const { return GetGuidValue(ITEM_FIELD_CREATOR); }
-        void SetCreatorGuid(ObjectGuid const& guid) { SetGuidValue(ITEM_FIELD_CREATOR, guid); }
-        ObjectGuid const& GetGiftCreatorGuid() const { return GetGuidValue(ITEM_FIELD_GIFTCREATOR); }
-        void SetGiftCreatorGuid(ObjectGuid const& guid) { SetGuidValue(ITEM_FIELD_GIFTCREATOR, guid); }
+        ObjectGuid GetCreatorGuid() const { return GetGuidValue(ITEM_FIELD_CREATOR); }
+        void SetCreatorGuid(ObjectGuid guid) { SetGuidValue(ITEM_FIELD_CREATOR, guid); }
+        ObjectGuid GetGiftCreatorGuid() const { return GetGuidValue(ITEM_FIELD_GIFTCREATOR); }
+        void SetGiftCreatorGuid(ObjectGuid guid) { SetGuidValue(ITEM_FIELD_GIFTCREATOR, guid); }
         bool IsBindedNotWith(Player const* player) const;
         bool IsBoundByEnchant() const;
         virtual void SaveToDB();

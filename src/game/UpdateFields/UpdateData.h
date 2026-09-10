@@ -58,7 +58,7 @@ class UpdateData
         UpdateData();
 
         void AddOutOfRangeGUID(GuidSet& guids);
-        void AddOutOfRangeGUID(ObjectGuid const& guid);
+        void AddOutOfRangeGUID(ObjectGuid guid);
         void AddUpdateBlock()
         {
             ++m_blockCount;

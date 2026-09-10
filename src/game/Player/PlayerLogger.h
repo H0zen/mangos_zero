@@ -153,7 +153,7 @@ struct PlayerLogProgress : public PlayerLogPosition
 class PlayerLogger
 {
     public:
-        PlayerLogger(ObjectGuid const & guid);
+        PlayerLogger(ObjectGuid guid);
         ~PlayerLogger();
 
         static inline PlayerLogMask CalcLogMask(PlayerLogEntity entity) { return PlayerLogMask(1 << entity); }
@@ -175,10 +175,10 @@ class PlayerLogger
 
         void CheckAndTruncate(PlayerLogMask, uint32 maxRecords);
 
-        void LogDamage(bool done, uint16 damage, uint16 heal, ObjectGuid const & unitGuid, uint16 spell);
-        void LogLooting(LootSourceType type, ObjectGuid const & droppedBy, ObjectGuid const & itemGuid, uint32 id);
-        void LogTrading(bool aquire, ObjectGuid const & partner, ObjectGuid const & itemGuid);
-        void LogKilling(bool killedEnemy, ObjectGuid const & unitGuid);
+        void LogDamage(bool done, uint16 damage, uint16 heal, ObjectGuid unitGuid, uint16 spell);
+        void LogLooting(LootSourceType type, ObjectGuid droppedBy, ObjectGuid itemGuid, uint32 id);
+        void LogTrading(bool aquire, ObjectGuid partner, ObjectGuid itemGuid);
+        void LogKilling(bool killedEnemy, ObjectGuid unitGuid);
         void LogPosition();
         void LogProgress(ProgressType type, uint8 achieve, uint16 misc = 0);
 

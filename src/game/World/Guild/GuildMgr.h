@@ -48,7 +48,7 @@ class GuildMgr
 
         Guild* GetGuildById(uint32 guildId) const;
         Guild* GetGuildByName(std::string const& name) const;
-        Guild* GetGuildByLeader(ObjectGuid const& guid) const;
+        Guild* GetGuildByLeader(ObjectGuid guid) const;
         std::string GetGuildNameById(uint32 guildId) const;
 
         void LoadGuilds();

@@ -68,8 +68,8 @@ class CapturePoint
 
         bool IsTickDue(uint32 elapsed);
 
-        bool Arrived(ObjectGuid const& who);
-        void Left(ObjectGuid const& who) { m_standing.erase(who); }
+        bool Arrived(ObjectGuid who);
+        void Left(ObjectGuid who) { m_standing.erase(who); }
         GuidSet const& Standing() const { return m_standing; }
         bool IsDeserted() const { return m_standing.empty(); }
         void Desert() { m_standing.clear(); }

@@ -531,7 +531,7 @@ GameObjectBehaviour::Casting RitualBehaviour::UsedBy(Unit* user, bool scriptSaid
     }
     else
     {
-        ObjectGuid const& firstUser = m_tally.First();
+        ObjectGuid firstUser = m_tally.First();
         if (firstUser && player->GetObjectGuid() != firstUser && info->summoningRitual.castersGrouped)
         {
             if (Group* group = player->GetGroup())

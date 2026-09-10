@@ -90,7 +90,7 @@ class HostileReference : public Reference<Unit, ThreatManager>
 
         bool operator ==(const HostileReference& pHostileReference) const { return pHostileReference.getUnitGuid() == getUnitGuid(); }
 
-        ObjectGuid const& getUnitGuid() const { return iUnitGuid; }
+        ObjectGuid getUnitGuid() const { return iUnitGuid; }
 
         Unit* getSourceUnit();
 

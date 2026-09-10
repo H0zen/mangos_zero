@@ -131,7 +131,7 @@ namespace Fields
         return percent ? percent : 1;
     }
 
-    bool ReadsRealHitPoints(ObjectGuid const& unit, ObjectGuid const& owner, ObjectGuid const& observer)
+    bool ReadsRealHitPoints(ObjectGuid unit, ObjectGuid owner, ObjectGuid observer)
     {
         return unit == observer || (!(owner == 0) && owner == observer);
     }

@@ -149,8 +149,8 @@ void ChatHandler::PSendSysMessage(const char* format, ...)
 }
 
 void ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg msgtype, char const* message, Language language , ChatTagFlags chatTag ,
-    ObjectGuid const& senderGuid , char const* senderName ,
-    ObjectGuid const& targetGuid , char const*  ,
+    ObjectGuid senderGuid , char const* senderName ,
+    ObjectGuid targetGuid , char const*  ,
     char const* channelName , uint8 playerRank )
 {
     data.Initialize(SMSG_MESSAGECHAT);

@@ -78,9 +78,9 @@ class SpellAuraHolder
 
         const cast::Recipe& Recipe() const { return *m_recipe; }
 
-        ObjectGuid const& GetCasterGuid() const { return m_casterGuid; }
+        ObjectGuid GetCasterGuid() const { return m_casterGuid; }
         void SetCasterGuid(ObjectGuid guid) { m_casterGuid = guid; }
-        ObjectGuid const& GetCastItemGuid() const { return m_castItemGuid; }
+        ObjectGuid GetCastItemGuid() const { return m_castItemGuid; }
         Unit* GetCaster() const;
         Unit* GetTarget() const { return m_target; }
         void SetTarget(Unit* target) { m_target = target; }
@@ -162,7 +162,7 @@ class SpellAuraHolder
         time_t GetAuraApplyTime() const { return m_applyTime; }
 
         void SetRemoveMode(AuraRemoveMode mode) { m_removeMode = mode; }
-        void SetLoadedState(ObjectGuid const& casterGUID, ObjectGuid const& itemGUID, uint32 stackAmount, uint32 charges, int32 maxduration, int32 duration)
+        void SetLoadedState(ObjectGuid casterGUID, ObjectGuid itemGUID, uint32 stackAmount, uint32 charges, int32 maxduration, int32 duration)
         {
             m_casterGuid   = casterGUID;
             m_castItemGuid = itemGUID;
@@ -370,8 +370,8 @@ class Aura
         SpellEntry const* GetSpellProto() const { return GetHolder()->GetSpellProto(); }
         const cast::Recipe& Recipe() const { return GetHolder()->Recipe(); }
         uint32 GetId() const { return GetHolder()->GetSpellProto()->ID; }
-        ObjectGuid const& GetCastItemGuid() const { return GetHolder()->GetCastItemGuid(); }
-        ObjectGuid const& GetCasterGuid() const { return GetHolder()->GetCasterGuid(); }
+        ObjectGuid GetCastItemGuid() const { return GetHolder()->GetCastItemGuid(); }
+        ObjectGuid GetCasterGuid() const { return GetHolder()->GetCasterGuid(); }
         Unit* GetCaster() const { return GetHolder()->GetCaster(); }
         Unit* GetTarget() const { return GetHolder()->GetTarget(); }
 

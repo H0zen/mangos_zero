@@ -72,14 +72,11 @@ void Object::SetUInt32Value(uint16 index, uint32 value)
     }
 }
 
-void Object::SetUInt64Value(uint16 index, const uint64& value)
+void Object::SetGuidValue(uint16 index, ObjectGuid value)
 {
     MANGOS_ASSERT(index + 1 < GetValuesCount() || PrintIndexError(index, true));
 
-    bool const low = m_mirror.Write(index, uint32(value));
-    bool const high = m_mirror.Write(index + 1, uint32(value >> 32));
-
-    if (low || high)
+    if (m_mirror.WritePair(index, value))
     {
         MarkForClientUpdate();
     }

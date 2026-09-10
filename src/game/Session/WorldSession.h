@@ -151,11 +151,11 @@ class WorldSession
         {
             return _player;
         }
-        ObjectGuid const& GetNpcWatchLastGuid() const
+        ObjectGuid GetNpcWatchLastGuid() const
         {
             return m_npcWatchLastGuid;
         }
-        void SetNpcWatchLastGuid(ObjectGuid const& guid)
+        void SetNpcWatchLastGuid(ObjectGuid guid)
         {
             m_npcWatchLastGuid = guid;
         }
@@ -177,7 +177,7 @@ class WorldSession
             _player = plr;
         }
 
-        bool HasMatchingCharacterEnumMap(ObjectGuid const& guid, uint32 mapId) const
+        bool HasMatchingCharacterEnumMap(ObjectGuid guid, uint32 mapId) const
         {
             return m_characterEnumMaps.Matches(guid, mapId);
         }

@@ -961,7 +961,7 @@ namespace
     }
 
     Unit* GetNpcWatchMapStoreTarget(Creature const* watched,
-                                    ObjectGuid const& guid)
+                                    ObjectGuid guid)
     {
         if (!(GuidHigh(guid) == HIGHGUID_UNIT || GuidHigh(guid) == HIGHGUID_PET))
         {
@@ -1009,7 +1009,7 @@ namespace
             handler.SendSysMessage("  victim=none");
         }
 
-        ObjectGuid const& watchTargetGuid = target->GetTargetGuid();
+        ObjectGuid watchTargetGuid = target->GetTargetGuid();
         if (!(watchTargetGuid == 0))
         {
             if (victim && watchTargetGuid == victim->GetObjectGuid())
@@ -1048,7 +1048,7 @@ bool ChatHandler::HandleNpcWatchCommand(char* args)
                 return false;
             }
 
-            ObjectGuid const& lastGuid = m_session->GetNpcWatchLastGuid();
+            ObjectGuid lastGuid = m_session->GetNpcWatchLastGuid();
             if ((lastGuid == 0))
             {
                 SendSysMessage("[LivingWorld] watch last: no last watched creature for this session. Select a creature and run .npc watch first.");

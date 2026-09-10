@@ -49,7 +49,7 @@ void Retinue::RemoveGuardians()
 
 Pet* Retinue::GuardianOfEntry(uint32 entry) const
 {
-    for (ObjectGuid const& guid : m_guardians)
+    for (ObjectGuid guid : m_guardians)
     {
         Pet* guardian = m_owner.GetMap()->GetPet(guid);
         if (guardian && guardian->GetEntry() == entry)

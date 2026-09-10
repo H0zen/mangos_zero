@@ -38,7 +38,7 @@ class ItemSaveQueue
 {
     public:
 
-        void Belongs(ObjectGuid const& owner) { m_owner = owner; }
+        void Belongs(ObjectGuid owner) { m_owner = owner; }
 
         void Note(Item* item);
 

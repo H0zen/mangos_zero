@@ -40,7 +40,7 @@ class LootClaim
         bool IsClaimed() const { return m_groupId != 0 || !(m_takerGuid == 0); }
         bool IsGroupClaim() const { return m_groupId != 0; }
 
-        ObjectGuid const& TakerGuid() const { return m_takerGuid; }
+        ObjectGuid TakerGuid() const { return m_takerGuid; }
         uint32 GroupId() const { return m_groupId; }
 
         Player* Taker() const;

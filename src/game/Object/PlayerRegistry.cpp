@@ -58,7 +58,7 @@ Player* PlayerRegistry::FindByName(const char* name) const
         return nullptr;
     }
 
-    return m_players.FindWith([name](const ObjectGuid&, Player* player) -> bool
+    return m_players.FindWith([name](ObjectGuid , Player* player) -> bool
     {
         return player->IsInWorld() && std::strcmp(name, player->GetName()) == 0;
     });

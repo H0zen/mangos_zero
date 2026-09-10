@@ -182,8 +182,8 @@ class ChatHandler
 
         static void BuildChatPacket(
             WorldPacket& data, ChatMsg msgtype, char const* message, Language language = LANG_UNIVERSAL, ChatTagFlags chatTag = CHAT_TAG_NONE,
-            ObjectGuid const& senderGuid = 0, char const* senderName = nullptr,
-            ObjectGuid const& targetGuid = 0, char const* targetName = nullptr,
+            ObjectGuid senderGuid = 0, char const* senderName = nullptr,
+            ObjectGuid targetGuid = 0, char const* targetName = nullptr,
             char const* channelName = nullptr, uint8 playerRank = 0);
     protected:
         explicit ChatHandler() : m_session(nullptr), sentErrorMessage(false) {}

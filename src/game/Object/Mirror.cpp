@@ -55,6 +55,13 @@ float Mirror::ReadFloat(uint16 index) const
     return value;
 }
 
+uint64 Mirror::ReadPair(uint16 index) const
+{
+    uint64 value;
+    std::memcpy(&value, m_values + index, sizeof(value));
+    return value;
+}
+
 bool Mirror::Write(uint16 index, uint32 value)
 {
     if (m_values[index] == value)
@@ -72,6 +79,13 @@ bool Mirror::WriteFloat(uint16 index, float value)
     uint32 bits;
     std::memcpy(&bits, &value, sizeof(bits));
     return Write(index, bits);
+}
+
+bool Mirror::WritePair(uint16 index, uint64 value)
+{
+    bool const low = Write(index, uint32(value));
+    bool const high = Write(index + 1, uint32(value >> 32));
+    return low || high;
 }
 
 void Mirror::Settle()

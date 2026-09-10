@@ -174,7 +174,7 @@ class BattleGroundWS : public BattleGround
 
         void ClearDroppedFlagGuid(Team team)  { m_DroppedFlagGuid[GetTeamIndexByTeamId(team)] = 0;}
 
-        ObjectGuid const& GetDroppedFlagGuid(Team team) const { return m_DroppedFlagGuid[GetTeamIndexByTeamId(team)];}
+        ObjectGuid GetDroppedFlagGuid(Team team) const { return m_DroppedFlagGuid[GetTeamIndexByTeamId(team)];}
 
         void FillInitialWorldStates(WorldPacket& data, uint32& count) override;
 

@@ -431,13 +431,13 @@ class Group
         }
 
         void SendLootStartRoll(uint32 CountDown, const Roll& r);
-        void SendLootRoll(ObjectGuid const& targetGuid, uint8 rollNumber, uint8 rollType, const Roll& r);
-        void SendLootRollWon(ObjectGuid const& targetGuid, uint8 rollNumber, RollVote rollType, const Roll& r);
+        void SendLootRoll(ObjectGuid targetGuid, uint8 rollNumber, uint8 rollType, const Roll& r);
+        void SendLootRollWon(ObjectGuid targetGuid, uint8 rollNumber, RollVote rollType, const Roll& r);
         void SendLootAllPassed(const Roll& r);
         void GroupLoot(Occupant* pSource, Loot* loot);
         void NeedBeforeGreed(Occupant* pSource, Loot* loot);
         void MasterLoot(Occupant* pSource, Loot* loot);
-        bool CountRollVote(Player* player, ObjectGuid const& lootedTarget, uint32 itemSlot, RollVote vote);
+        bool CountRollVote(Player* player, ObjectGuid lootedTarget, uint32 itemSlot, RollVote vote);
         void StartLootRoll(Occupant* lootTarget, LootMethod method, Loot* loot, uint8 itemSlot);
         void EndRoll();
 
@@ -524,7 +524,7 @@ class Group
         }
 
         void CountTheRoll(Rolls::iterator& roll);
-        bool CountRollVote(ObjectGuid const& playerGUID, Rolls::iterator& roll, RollVote vote);
+        bool CountRollVote(ObjectGuid playerGUID, Rolls::iterator& roll, RollVote vote);
 
         uint32              m_Id;
         MemberSlotList      m_memberSlots;

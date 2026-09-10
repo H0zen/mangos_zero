@@ -53,6 +53,18 @@
 #include "GameTime.h"
 #include "Corpse.h"
 
+Occupant::Occupant() :
+    m_currMap(nullptr),
+    m_mapId(0), m_InstanceId(0),
+    m_isActiveObject(false),
+    m_visibilityDistanceOverride(0.0f)
+{
+}
+
+Occupant::~Occupant()
+{
+}
+
 void Occupant::SetMap(Map* map)
 {
     MANGOS_ASSERT(map);

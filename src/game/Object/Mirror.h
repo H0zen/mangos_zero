@@ -47,11 +47,11 @@ class Mirror
 
         uint32 Read(uint16 index) const { return m_values[index]; }
         float ReadFloat(uint16 index) const;
-
-        uint32 const* At(uint16 index) const { return m_values + index; }
+        uint64 ReadPair(uint16 index) const;
 
         bool Write(uint16 index, uint32 value);
         bool WriteFloat(uint16 index, float value);
+        bool WritePair(uint16 index, uint64 value);
 
         void Touch(uint16 index) { m_dirty[index >> 5] |= 1u << (index & 31); }
 

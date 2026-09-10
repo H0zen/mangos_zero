@@ -43,7 +43,7 @@ void UpdateData::AddOutOfRangeGUID(GuidSet& guids)
     m_outOfRangeGUIDs.insert(guids.begin(), guids.end());
 }
 
-void UpdateData::AddOutOfRangeGUID(ObjectGuid const& guid)
+void UpdateData::AddOutOfRangeGUID(ObjectGuid guid)
 {
     m_outOfRangeGUIDs.insert(guid);
 }

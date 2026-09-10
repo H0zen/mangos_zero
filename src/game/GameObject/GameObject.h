@@ -604,7 +604,7 @@ class GameObject : public Occupant, public Spoilable
             m_spawn.Permanent(false);
             SetGuidValue(OBJECT_FIELD_CREATED_BY, ownerGuid);
         }
-        ObjectGuid const& GetOwnerGuid() const { return GetGuidValue(OBJECT_FIELD_CREATED_BY); }
+        ObjectGuid GetOwnerGuid() const { return GetGuidValue(OBJECT_FIELD_CREATED_BY); }
         Unit* GetOwner() const;
 
         bool IsControlledByPlayer() const override

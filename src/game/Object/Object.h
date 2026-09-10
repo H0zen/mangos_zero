@@ -74,7 +74,7 @@ class Object
             m_inWorld = false;
         }
 
-        ObjectGuid const& GetObjectGuid() const { return GetGuidValue(OBJECT_FIELD_GUID); }
+        ObjectGuid GetObjectGuid() const { return GetGuidValue(OBJECT_FIELD_GUID); }
 
         uint32 GetGUIDLow() const { return GuidCounter(GetObjectGuid()); }
 
@@ -129,12 +129,6 @@ class Object
             return m_mirror.Read(index);
         }
 
-        const uint64& GetUInt64Value(uint16 index) const
-        {
-            MANGOS_ASSERT(index + 1 < GetValuesCount() || PrintIndexError(index , false));
-            return *reinterpret_cast<uint64 const*>(m_mirror.At(index));
-        }
-
         float GetFloatValue(uint16 index) const
         {
             MANGOS_ASSERT(index < GetValuesCount() || PrintIndexError(index , false));
@@ -155,16 +149,19 @@ class Object
             return uint16(m_mirror.Read(index) >> (offset * 16));
         }
 
-        ObjectGuid const& GetGuidValue(uint16 index) const { return *reinterpret_cast<ObjectGuid const*>(&GetUInt64Value(index)); }
+        ObjectGuid GetGuidValue(uint16 index) const
+        {
+            MANGOS_ASSERT(index + 1 < GetValuesCount() || PrintIndexError(index , false));
+            return m_mirror.ReadPair(index);
+        }
 
         void SetInt32Value(uint16 index,        int32  value);
         void SetUInt32Value(uint16 index,       uint32  value);
-        void SetUInt64Value(uint16 index, const uint64& value);
         void SetFloatValue(uint16 index,       float   value);
         void SetByteValue(uint16 index, uint8 offset, uint8 value);
         void SetUInt16Value(uint16 index, uint8 offset, uint16 value);
         void SetInt16Value(uint16 index, uint8 offset, int16 value) { SetUInt16Value(index, offset, static_cast<uint16>(value)); }
-        void SetGuidValue(uint16 index, ObjectGuid const& value) { SetUInt64Value(index, value); }
+        void SetGuidValue(uint16 index, ObjectGuid value);
         void SetStatFloatValue(uint16 index, float value);
         void SetStatInt32Value(uint16 index, int32 value);
 

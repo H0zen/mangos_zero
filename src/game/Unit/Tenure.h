@@ -72,7 +72,7 @@ class Tenure
             m_left = howLong;
         }
 
-        ObjectGuid const& Summoner() const { return m_summoner; }
+        ObjectGuid Summoner() const { return m_summoner; }
         TempSpawnType Rule() const { return m_rule; }
         uint32 Left() const { return m_left; }
         uint32 Granted() const { return m_granted; }

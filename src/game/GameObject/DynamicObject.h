@@ -54,7 +54,7 @@ class DynamicObject : public Occupant
         uint32 GetSpellId() const { return m_spellId; }
         SpellEffectIndex GetEffIndex() const { return m_effIndex; }
         uint32 GetDuration() const { return m_life.Left(); }
-        ObjectGuid const& GetCasterGuid() const { return GetGuidValue(DYNAMICOBJECT_CASTER); }
+        ObjectGuid GetCasterGuid() const { return GetGuidValue(DYNAMICOBJECT_CASTER); }
         Unit* GetCaster() const;
         float GetRadius() const { return m_radius; }
         DynamicObjectType GetType() const { return (DynamicObjectType)GetByteValue(DYNAMICOBJECT_BYTES, 0); }

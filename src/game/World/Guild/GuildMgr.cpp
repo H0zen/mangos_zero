@@ -78,7 +78,7 @@ Guild* GuildMgr::GetGuildByName(std::string const& name) const
     return nullptr;
 }
 
-Guild* GuildMgr::GetGuildByLeader(ObjectGuid const& guid) const
+Guild* GuildMgr::GetGuildByLeader(ObjectGuid guid) const
 {
     for (GuildMap::const_iterator itr = m_GuildMap.begin(); itr != m_GuildMap.end(); ++itr)
     {

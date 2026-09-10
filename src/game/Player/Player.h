@@ -761,8 +761,8 @@ class Player : public Unit
             SetUInt32Value(PLAYER_EXPLORED_ZONES_1 + slot, mask);
         }
 
-        ObjectGuid const& GetDuelArbiterGuid() const { return GetGuidValue(PLAYER_DUEL_ARBITER); }
-        void SetDuelArbiterGuid(ObjectGuid const& guid) { SetGuidValue(PLAYER_DUEL_ARBITER, guid); }
+        ObjectGuid GetDuelArbiterGuid() const { return GetGuidValue(PLAYER_DUEL_ARBITER); }
+        void SetDuelArbiterGuid(ObjectGuid guid) { SetGuidValue(PLAYER_DUEL_ARBITER, guid); }
 
         void ApplyDamageDonePercent(uint32 school, float percent, bool apply)
         {
@@ -1284,13 +1284,13 @@ class Player : public Unit
         QuestJournal& Journal() { return m_journal; }
         QuestJournal const& Journal() const { return m_journal; }
 
-        ObjectGuid const& GetSelectionGuid() const { return m_curSelectionGuid; }
+        ObjectGuid GetSelectionGuid() const { return m_curSelectionGuid; }
 
         void SetSelectionGuid(ObjectGuid guid) { m_curSelectionGuid = guid; SetTargetGuid(guid); }
 
         uint8 GetComboPoints() const { return m_comboPoints; }
 
-        ObjectGuid const& GetComboTargetGuid() const { return m_comboTargetGuid; }
+        ObjectGuid GetComboTargetGuid() const { return m_comboTargetGuid; }
 
         void AddComboPoints(Unit* target, int8 count);
 
@@ -1562,12 +1562,12 @@ class Player : public Unit
 
         float OCTRegenMPPerSpirit();
 
-        ObjectGuid const& GetLootGuid() const
+        ObjectGuid GetLootGuid() const
         {
             return m_lootGuid;
         }
 
-        void SetLootGuid(ObjectGuid const& guid)
+        void SetLootGuid(ObjectGuid guid)
         {
             m_lootGuid = guid;
         }
@@ -1935,7 +1935,7 @@ class Player : public Unit
 
         bool IsSelfMover() const { return m_mover == this; }
 
-        ObjectGuid const& GetFarSightGuid() const { return GetGuidValue(PLAYER_FARSIGHT); }
+        ObjectGuid GetFarSightGuid() const { return GetGuidValue(PLAYER_FARSIGHT); }
 
         Transport* GetTransport() const { return m_transport; }
 

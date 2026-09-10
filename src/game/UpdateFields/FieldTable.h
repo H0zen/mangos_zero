@@ -99,7 +99,7 @@ namespace Fields
 
     uint32 HealthAsPercent(uint32 current, uint32 max);
 
-    bool ReadsRealHitPoints(ObjectGuid const& unit, ObjectGuid const& owner, ObjectGuid const& observer);
+    bool ReadsRealHitPoints(ObjectGuid unit, ObjectGuid owner, ObjectGuid observer);
 
     bool LivesOutside(uint8 typeId, uint16 index);
 

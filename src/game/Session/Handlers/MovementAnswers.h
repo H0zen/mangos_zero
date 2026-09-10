@@ -34,7 +34,7 @@ class WorldSession;
 namespace movement
 {
 
-    bool Verify(Player& who, MovementInfo const& movementInfo, ObjectGuid const& guid);
+    bool Verify(Player& who, MovementInfo const& movementInfo, ObjectGuid guid);
     bool Verify(Player& who, MovementInfo const& movementInfo);
 
     void Relocate(Player& who, MovementInfo& movementInfo);

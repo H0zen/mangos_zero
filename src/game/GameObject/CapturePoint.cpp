@@ -94,7 +94,7 @@ bool CapturePoint::IsTickDue(uint32 elapsed)
     return true;
 }
 
-bool CapturePoint::Arrived(ObjectGuid const& who)
+bool CapturePoint::Arrived(ObjectGuid who)
 {
     return m_standing.insert(who).second;
 }

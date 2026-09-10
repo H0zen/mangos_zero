@@ -513,7 +513,7 @@ void movement::MoveTimeSkipped(Player& who, WorldPacket& recv_data)
     DEBUG_LOG("WORLD: Received opcode CMSG_MOVE_TIME_SKIPPED for %s, time_skipped: %u", GuidString(guid).c_str(), time_skipped);
 }
 
-bool movement::Verify(Player& who, MovementInfo const& movementInfo, ObjectGuid const& guid)
+bool movement::Verify(Player& who, MovementInfo const& movementInfo, ObjectGuid guid)
 {
 
     if (guid != who.GetMover()->GetObjectGuid())

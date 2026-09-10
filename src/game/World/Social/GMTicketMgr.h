@@ -53,7 +53,7 @@ class GMTicket
 
         void Init(ObjectGuid guid, const std::string& text, const std::string& responseText, time_t update, uint32 ticketId);
 
-        ObjectGuid const& GetPlayerGuid() const
+        ObjectGuid GetPlayerGuid() const
         {
             return m_guid;
         }

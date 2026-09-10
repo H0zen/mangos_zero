@@ -1839,7 +1839,7 @@ bool Unit::IsClientControlled(Player const* exactClient ) const
         return false;
     }
 
-    if (ObjectGuid const& guid = GetCharmerGuid())
+    if (ObjectGuid guid = GetCharmerGuid())
     {
 
         if (HasUnitFlag(UNIT_FLAG_POSSESSED) && (guid != 0 && GuidHigh(guid) == HIGHGUID_PLAYER))

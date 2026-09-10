@@ -23,29 +23,10 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-#include "Utilities/Errors.h"
+#include "Object.h"
 #include "ObjectKind.h"
-#include "Occupant.h"
-#include "SharedDefines.h"
-#include "WorldPacket.h"
-#include "Opcodes.h"
+#include "Utilities/Errors.h"
 #include "Log.h"
-#include "World.h"
-#include "Creature.h"
-#include "Player.h"
-#include "ObjectMgr.h"
-#include "ObjectGuid.h"
-#include "UpdateData.h"
-#include "Util.h"
-#include "CellImpl.h"
-#include "GridNotifiers.h"
-#include "GridNotifiersImpl.h"
-#include "ObjectPosSelector.h"
-#include "TemporarySummon.h"
-#include "Movement/Spline/packet_builder.h"
-#include "CreatureLinkingMgr.h"
-#include "Chat.h"
-#include "GameTime.h"
 
 Object::Object()
 {
@@ -115,16 +96,4 @@ void Object::ResendField(uint16 index)
 
     m_mirror.Touch(index);
     MarkForClientUpdate();
-}
-
-Occupant::Occupant() :
-    m_currMap(nullptr),
-    m_mapId(0), m_InstanceId(0),
-    m_isActiveObject(false),
-    m_visibilityDistanceOverride(0.0f)
-{
-}
-
-Occupant::~Occupant()
-{
 }

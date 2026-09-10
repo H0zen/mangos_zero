@@ -232,7 +232,7 @@ void CorpseManager::RemoveOldCorpses()
         }
     });
 
-    for (const ObjectGuid& owner : expired)
+    for (ObjectGuid owner : expired)
     {
         ConvertCorpseForPlayer(owner);
     }

@@ -31,7 +31,7 @@
 #include "World.h"
 #include "Log.h"
 
-PlayerLogger::PlayerLogger(ObjectGuid const & guid) : logActiveMask(0), playerGuid(GuidCounter(guid))
+PlayerLogger::PlayerLogger(ObjectGuid guid) : logActiveMask(0), playerGuid(GuidCounter(guid))
 {
     for (uint8 i = 0; i < MAX_PLAYER_LOG_ENTITIES; ++i)
     {
@@ -340,7 +340,7 @@ void PlayerLogger::CheckAndTruncate(PlayerLogMask mask, uint32 maxRecords)
     }
 }
 
-void PlayerLogger::LogDamage(bool done, uint16 damage, uint16 heal, ObjectGuid const & unitGuid, uint16 spell)
+void PlayerLogger::LogDamage(bool done, uint16 damage, uint16 heal, ObjectGuid unitGuid, uint16 spell)
 {
     if (!IsLoggingActive(done ? PLAYER_LOGMASK_DAMAGE_DONE : PLAYER_LOGMASK_DAMAGE_GET))
     {
@@ -354,7 +354,7 @@ void PlayerLogger::LogDamage(bool done, uint16 damage, uint16 heal, ObjectGuid c
     ((std::vector<PlayerLogDamage>*)(data[done ? PLAYER_LOG_DAMAGE_DONE : PLAYER_LOG_DAMAGE_GET]))->push_back(log);
 }
 
-void PlayerLogger::LogLooting(LootSourceType type, ObjectGuid const & droppedBy, ObjectGuid const & itemGuid, uint32 id)
+void PlayerLogger::LogLooting(LootSourceType type, ObjectGuid droppedBy, ObjectGuid itemGuid, uint32 id)
 {
     if (!IsLoggingActive(PLAYER_LOGMASK_LOOTING))
     {
@@ -368,7 +368,7 @@ void PlayerLogger::LogLooting(LootSourceType type, ObjectGuid const & droppedBy,
     ((std::vector<PlayerLogLooting>*)(data[PLAYER_LOG_LOOTING]))->push_back(log);
 }
 
-void PlayerLogger::LogTrading(bool aquire, ObjectGuid const & partner, ObjectGuid const & itemGuid)
+void PlayerLogger::LogTrading(bool aquire, ObjectGuid partner, ObjectGuid itemGuid)
 {
     if (!IsLoggingActive(PLAYER_LOGMASK_TRADE))
     {
@@ -382,7 +382,7 @@ void PlayerLogger::LogTrading(bool aquire, ObjectGuid const & partner, ObjectGui
     ((std::vector<PlayerLogTrading>*)(data[PLAYER_LOG_TRADE]))->push_back(log);
 }
 
-void PlayerLogger::LogKilling(bool killedEnemy, ObjectGuid const & unitGuid)
+void PlayerLogger::LogKilling(bool killedEnemy, ObjectGuid unitGuid)
 {
     if (!IsLoggingActive(PLAYER_LOGMASK_KILL))
     {

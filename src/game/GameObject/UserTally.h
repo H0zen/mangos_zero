@@ -33,7 +33,7 @@ class UserTally
 
         void Used() { ++m_uses; }
 
-        void UsedBy(ObjectGuid const& who)
+        void UsedBy(ObjectGuid who)
         {
             Used();
 
@@ -48,7 +48,7 @@ class UserTally
         uint32 Uses() const { return m_uses; }
         uint32 Distinct() const { return static_cast<uint32>(m_users.size()); }
 
-        ObjectGuid const& First() const { return m_first; }
+        ObjectGuid First() const { return m_first; }
         GuidSet const& Everyone() const { return m_users; }
 
         void Forget()

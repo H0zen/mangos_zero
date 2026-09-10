@@ -72,7 +72,7 @@ class Corpse : public Occupant, public Spoilable
         void DeleteBonesFromWorld();
         void DeleteFromDB();
 
-        ObjectGuid const& GetOwnerGuid() const { return GetGuidValue(CORPSE_FIELD_OWNER); }
+        ObjectGuid GetOwnerGuid() const { return GetGuidValue(CORPSE_FIELD_OWNER); }
 
         bool HasCorpseDynFlag(uint32 flag) const { return HasFlag(CORPSE_FIELD_DYNAMIC_FLAGS, flag); }
         void SetCorpseDynFlag(uint32 flag) { SetFlag(CORPSE_FIELD_DYNAMIC_FLAGS, flag); }

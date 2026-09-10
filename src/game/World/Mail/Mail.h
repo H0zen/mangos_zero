@@ -125,7 +125,7 @@ class MailReceiver
 
         Player* GetPlayer() const { return m_receiver; }
 
-        ObjectGuid const& GetPlayerGuid() const { return m_receiver_guid; }
+        ObjectGuid GetPlayerGuid() const { return m_receiver_guid; }
     private:
         Player* m_receiver;
         ObjectGuid m_receiver_guid = 0;

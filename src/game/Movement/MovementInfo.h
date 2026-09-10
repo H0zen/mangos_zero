@@ -110,7 +110,7 @@ class MovementInfo
             t_pos.o = 0.0f;
             t_time = 0;
         }
-        ObjectGuid const& GetTransportGuid() const { return t_guid; }
+        ObjectGuid GetTransportGuid() const { return t_guid; }
         Position const* GetTransportPos() const { return &t_pos; }
         uint32 GetTime()
         {

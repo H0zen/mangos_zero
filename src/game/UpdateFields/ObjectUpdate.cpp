@@ -199,7 +199,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const
                 victimGuid = victim->GetGuidStr();
             }
 
-            ObjectGuid const& targetGuid = unit->GetTargetGuid();
+            ObjectGuid targetGuid = unit->GetTargetGuid();
             std::string targetGuidString = (targetGuid == 0) ? "none" : GuidString(targetGuid);
             GridPair gridPair = MaNGOS::ComputeGridPair(unit->Where().X(), unit->Where().Y());
             CellPair cellPair = MaNGOS::ComputeCellPair(unit->Where().X(), unit->Where().Y());

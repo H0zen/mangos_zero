@@ -741,7 +741,7 @@ void Group::SendLootStartRoll(uint32 CountDown, const Roll& r)
     }
 }
 
-void Group::SendLootRoll(ObjectGuid const& targetGuid, uint8 rollNumber, uint8 rollType, const Roll& r)
+void Group::SendLootRoll(ObjectGuid targetGuid, uint8 rollNumber, uint8 rollType, const Roll& r)
 {
     WorldPacket data(SMSG_LOOT_ROLL, (8 + 4 + 8 + 4 + 4 + 4 + 1 + 1));
     data << r.lootedTargetGUID;
@@ -768,7 +768,7 @@ void Group::SendLootRoll(ObjectGuid const& targetGuid, uint8 rollNumber, uint8 r
     }
 }
 
-void Group::SendLootRollWon(ObjectGuid const& targetGuid, uint8 rollNumber, RollVote rollType, const Roll& r)
+void Group::SendLootRollWon(ObjectGuid targetGuid, uint8 rollNumber, RollVote rollType, const Roll& r)
 {
     WorldPacket data(SMSG_LOOT_ROLL_WON, (8 + 4 + 4 + 4 + 4 + 8 + 1 + 1));
     data << r.lootedTargetGUID;
@@ -914,7 +914,7 @@ void Group::MasterLoot(Occupant* pSource, Loot* loot)
     }
 }
 
-bool Group::CountRollVote(Player* player, ObjectGuid const& lootedTarget, uint32 itemSlot, RollVote vote)
+bool Group::CountRollVote(Player* player, ObjectGuid lootedTarget, uint32 itemSlot, RollVote vote)
 {
     Rolls::iterator rollI = RollId.begin();
     for (; rollI != RollId.end(); ++rollI)
@@ -934,7 +934,7 @@ bool Group::CountRollVote(Player* player, ObjectGuid const& lootedTarget, uint32
     return true;
 }
 
-bool Group::CountRollVote(ObjectGuid const& playerGUID, Rolls::iterator& rollI, RollVote vote)
+bool Group::CountRollVote(ObjectGuid playerGUID, Rolls::iterator& rollI, RollVote vote)
 {
     Roll* roll = *rollI;
 

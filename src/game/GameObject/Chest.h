@@ -41,12 +41,12 @@ class Chest
 
         bool IsEmptyingDue(time_t now) const { return m_emptyAt != 0 && m_emptyAt <= now; }
 
-        bool HasTaught(ObjectGuid const& learner) const
+        bool HasTaught(ObjectGuid learner) const
         {
             return m_taught.find(learner) != m_taught.end();
         }
 
-        void Taught(ObjectGuid const& learner) { m_taught.insert(learner); }
+        void Taught(ObjectGuid learner) { m_taught.insert(learner); }
 
         void ForgetLearners() { m_taught.clear(); }
 
