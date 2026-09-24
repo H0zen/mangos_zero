@@ -26,7 +26,6 @@
 #include <algorithm>
 #include "TestHarness.h"
 
-#include "Auth/ARC4.h"
 #include "Auth/BigNumber.h"
 #include "Auth/HMACSHA1.h"
 #include "Auth/Md5.h"
@@ -268,18 +267,4 @@ TEST(Crypto_bignumber_fixed_width_output_is_always_that_width)
     }
 
     CHECK_EQ(wrong, 0);
-}
-
-TEST(Crypto_arc4_matches_the_published_vector)
-{
-    // The provider test next door asserts that RC4 can be FETCHED. That is not the same
-    // as producing the right keystream: a cipher that initialises and encrypts to
-    // something else still fetches perfectly, and the symptom is a client that connects
-    // and then fails to decode a single packet.
-    uint8 key[] = {'K', 'e', 'y'};
-    uint8 data[] = {'P', 'l', 'a', 'i', 'n', 't', 'e', 'x', 't'};
-
-    ARC4 rc4(key, static_cast<uint8>(sizeof(key)));
-    rc4.UpdateData(sizeof(data), data);
-    CHECK_HEX(data, sizeof(data), "bbf316e8d940af0ad3");
 }

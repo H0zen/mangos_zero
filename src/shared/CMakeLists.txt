@@ -21,8 +21,6 @@
 include(TestBigEndian)
 
 set(SRC_GRP_AUTH
-  Auth/ARC4.cpp
-  Auth/ARC4.h
   Auth/AuthCrypt.cpp
   Auth/AuthCrypt.h
   Auth/BigNumber.cpp
@@ -30,8 +28,6 @@ set(SRC_GRP_AUTH
   Auth/HMACSHA1.cpp
   Auth/HMACSHA1.h
   Auth/Md5.h
-  Auth/OpenSSLProvider.cpp
-  Auth/OpenSSLProvider.h
   Auth/Sha1.cpp
   Auth/Sha1.h
 )
