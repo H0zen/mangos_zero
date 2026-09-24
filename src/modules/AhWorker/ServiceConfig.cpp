@@ -23,7 +23,7 @@
 #include <string>
 #include "ServiceConfig.h"
 #include "Log/Log.h"
-#include "SystemConfig.h"
+#include "Revision.h"
 
 #include <cstring>
 
@@ -40,13 +40,13 @@ bool ServiceConfig::Initialize()
 {
     // The ahbot.conf path comes from the already-loaded ah-service.conf.
     std::string cfgPath = sConfig.GetStringDefault(
-        "AhBot.ConfigPath", AUCTIONHOUSEBOT_CONFIG_NAME);
+        "AhBot.ConfigPath", Revision::GetConfigName(Revision::ConfigFile::AhBot));
 
     if (!m_botCfg.SetSource(cfgPath.c_str()))
     {
         // Try a bare "ahbot.conf" in the current folder as a fallback,
         // mirroring AuctionBotConfig::Initialize().
-        if (!m_botCfg.SetSource(AUCTIONHOUSEBOT_CONFIG_NAME))
+        if (!m_botCfg.SetSource(Revision::GetConfigName(Revision::ConfigFile::AhBot)))
         {
             sLog.outError("ah-service: unable to open AH bot configuration"
                           " file '%s'", cfgPath.c_str());
@@ -67,11 +67,11 @@ bool ServiceConfig::Reload()
 {
     // Re-open the same path that Initialize() used.
     std::string cfgPath = sConfig.GetStringDefault(
-        "AhBot.ConfigPath", AUCTIONHOUSEBOT_CONFIG_NAME);
+        "AhBot.ConfigPath", Revision::GetConfigName(Revision::ConfigFile::AhBot));
 
     if (!m_botCfg.SetSource(cfgPath.c_str()))
     {
-        if (!m_botCfg.SetSource(AUCTIONHOUSEBOT_CONFIG_NAME))
+        if (!m_botCfg.SetSource(Revision::GetConfigName(Revision::ConfigFile::AhBot)))
         {
             sLog.outError("ah-service: Reload: unable to re-open AH bot"
                           " configuration file '%s'", cfgPath.c_str());
@@ -141,7 +141,7 @@ void ServiceConfig::setConfig(AhBotConfigBoolValues index,
 void ServiceConfig::GetConfigFromFile()
 {
     // Check config file version.
-    if (m_botCfg.GetIntDefault("ConfVersion", 0) != AHBOT_CONFIG_VERSION)
+    if (uint32(m_botCfg.GetIntDefault("ConfVersion", 0)) != Revision::GetConfigVersion(Revision::ConfigFile::AhBot))
     {
         sLog.outError("AHBot: Configuration file version doesn't match"
                       " expected version. Some config variables may be wrong"
@@ -150,7 +150,7 @@ void ServiceConfig::GetConfigFromFile()
 
     // The ah-service infra config (sConfig / ah-service.conf) shares the
     // AHBot conf version; warn if it is stale too.
-    if (sConfig.GetIntDefault("ConfVersion", 0) != AHBOT_CONFIG_VERSION)
+    if (uint32(sConfig.GetIntDefault("ConfVersion", 0)) != Revision::GetConfigVersion(Revision::ConfigFile::AhBot))
     {
         sLog.outError("AH-service: ah-service.conf version doesn't match the"
                       " expected version. Some config variables may be wrong"

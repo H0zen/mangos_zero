@@ -2,7 +2,7 @@
 #include <vector>
 #include "../botpch.h"
 #include "AhBotConfig.h"
-#include "SystemConfig.h"
+#include "Revision.h"
 std::vector<std::string> split(const std::string &s, char delim);
 
 using namespace std;
@@ -31,7 +31,7 @@ template <class T>
 
 bool AhBotConfig::Initialize()
 {
-    if (!config.SetSource(AUCTIONHOUSEBOT_CONFIG_NAME))
+    if (!config.SetSource(Revision::GetConfigName(Revision::ConfigFile::AhBot)))
     {
         // Try current folder as fallback
         if (!config.SetSource("ahbot.conf"))

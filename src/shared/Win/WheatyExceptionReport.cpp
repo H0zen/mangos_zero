@@ -17,7 +17,7 @@
 #define _NO_CVCONST_H
 #include <dbghelp.h>
 #include "WheatyExceptionReport.h"
-#include "GitRevision.h"
+#include "Revision.h"
 #include <cstdarg>
 #define CrashFolder _T("Crashes")
 #pragma comment(linker, "/defaultlib:dbghelp.lib")
@@ -352,7 +352,7 @@ void WheatyExceptionReport::GenerateExceptionReport(
     GetLocalTime(&systime);
 
     // Start out with a banner
-    _tprintf(_T("Revision: %s\r\n"), GitRevision::GetProjectRevision());
+    _tprintf(_T("Revision: %s\r\n"), Revision::GetProjectRevision());
     _tprintf(_T("Date %u:%u:%u. Time %u:%u \r\n"), systime.wDay, systime.wMonth, systime.wYear, systime.wHour, systime.wMinute);
     PEXCEPTION_RECORD pExceptionRecord = pExceptionInfo->ExceptionRecord;
 

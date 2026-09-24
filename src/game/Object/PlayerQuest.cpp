@@ -65,7 +65,7 @@
 #include "BattleGround/BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Chat.h"
-#include "revision_data.h"
+#include "Revision.h"
 #include "Spell.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
@@ -838,8 +838,8 @@ void Player::AddQuest(Quest const* pQuest, Object* questGiver)
         SqlStatement stmt = CharacterDatabase.CreateStatement(CHAR_INS_QUEST_TRACK, "INSERT INTO `quest_tracker` (`id`, `character_guid`, `quest_accept_time`, `core_hash`, `core_revision`) VALUES (?, ?, NOW(), ?, ?)");
         stmt.addUInt32(quest_id);
         stmt.addUInt32(GetGUIDLow());
-        stmt.addString(REVISION_HASH);
-        stmt.addString(REVISION_DATE);
+        stmt.addString(Revision::GetHash());
+        stmt.addString(Revision::GetDate());
 
         // add to Quest Tracker
         stmt.Execute();

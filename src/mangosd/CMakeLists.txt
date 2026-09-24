@@ -53,7 +53,7 @@ if(WIN32)
     set(PRODUCT_NAME "mangosd.exe")
     set(PRODUCT_ICON ${CMAKE_CURRENT_SOURCE_DIR}/mangosd.ico)
     set(PRODUCT_DESCRIPTION "${MANGOS_PKG} World Server")
-    configure_file(${CMAKE_SOURCE_DIR}/cmake/win/VersionInfo.h.in ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.h)
+    mangos_configure(${CMAKE_SOURCE_DIR}/cmake/win/VersionInfo.h.in ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.h)
 endif()
 
 
@@ -93,11 +93,7 @@ install(
     DESTINATION ${BIN_DIR}
 )
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mangosd.conf.dist.in ${CMAKE_CURRENT_BINARY_DIR}/mangosd.conf.dist)
-install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/mangosd.conf.dist
-    DESTINATION ${CONF_INSTALL_DIR}
-)
+mangos_install_conf(mangosd.conf.dist.in)
 
 if(WIN32 AND MSVC)
     install(

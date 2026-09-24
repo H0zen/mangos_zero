@@ -34,7 +34,7 @@
 #include "DatabaseEnv.h"
 #include "Config/Config.h"
 #include "Database/SqlOperations.h"
-#include "GitRevision.h"
+#include "Revision.h"
 #include "Utilities/Util.h"
 #include <ctime>
 #include <iostream>
@@ -53,10 +53,15 @@ struct DBVersion
     std::string description;
 };
 
+static DBVersion ToDBVersion(Revision::DbVersion const& db)
+{
+    return { db.name, db.version, db.structure, db.content, db.description };
+}
+
 const DBVersion databaseVersions[COUNT_DATABASES] = {
-    { "World", GitRevision::GetWorldDBVersion(), GitRevision::GetWorldDBStructure(), GitRevision::GetWorldDBContent(), GitRevision::GetWorldDBUpdateDescription() }, // DATABASE_WORLD
-    { "Realmd", GitRevision::GetRealmDBVersion(), GitRevision::GetRealmDBStructure(), GitRevision::GetRealmDBContent(), GitRevision::GetRealmDBUpdateDescription() }, // DATABASE_REALMD
-    { "Character", GitRevision::GetCharDBVersion(), GitRevision::GetCharDBStructure(), GitRevision::GetCharDBContent(), GitRevision::GetCharDBUpdateDescription() }, // DATABASE_CHARACTER
+    ToDBVersion(Revision::GetWorldDb()),    // DATABASE_WORLD
+    ToDBVersion(Revision::GetRealmDb()),    // DATABASE_REALMD
+    ToDBVersion(Revision::GetCharDb()),     // DATABASE_CHARACTER
 };
 
 //////////////////////////////////////////////////////////////////////////

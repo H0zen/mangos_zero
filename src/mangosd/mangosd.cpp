@@ -58,11 +58,10 @@
 #include <string>
 #include "Database/DatabaseEnv.h"
 #include "Config/Config.h"
-#include "GitRevision.h"
+#include "Revision.h"
 #include "ProgressBar.h"
 #include "Console/ConsoleUI.h"
 #include "Log.h"
-#include "SystemConfig.h"
 #include "AuctionHouseBot.h"
 #include "Master.h"
 #include "World.h"
@@ -203,7 +202,7 @@ int main(int argc, char** argv)
 #endif
 
     ///- Command line parsing
-    char const* cfg_file = MANGOSD_CONFIG_LOCATION;
+    char const* cfg_file = Revision::GetConfigPath(Revision::ConfigFile::Mangosd);
 
     char serviceDaemonMode = '\0';
     std::string testMode;
@@ -218,7 +217,7 @@ int main(int argc, char** argv)
 
         if (arg == "-v" || arg == "--version")
         {
-            printf("%s\n", GitRevision::GetProjectRevision());
+            printf("%s\n", Revision::GetProjectRevision());
             return 0;
         }
         else if ((arg == "-c") && hasValue)
@@ -294,14 +293,14 @@ int main(int argc, char** argv)
 #endif
     if (!sConfig.SetSource(cfg_file))
     {
-        // Try current folder as fallback if SYSCONFDIR path fails
-        if (!sConfig.SetSource(MANGOSD_CONFIG_NAME))
+        // Try current folder as fallback if the configured path fails
+        if (!sConfig.SetSource(Revision::GetConfigName(Revision::ConfigFile::Mangosd)))
         {
             sLog.outError("Could not find configuration file %s.", cfg_file);
             Log::WaitBeforeContinueIfNeed();
             return 1;
         }
-        cfg_file = MANGOSD_CONFIG_NAME;
+        cfg_file = Revision::GetConfigName(Revision::ConfigFile::Mangosd);
     }
 
 #ifndef _WIN32
@@ -316,10 +315,10 @@ int main(int argc, char** argv)
     }
 #endif
 
-    sLog.outString("%s [world-daemon]", GitRevision::GetProjectRevision());
-    sLog.outString("%s", GitRevision::GetFullRevision());
-    sLog.outString("%s", GitRevision::GetDepElunaFullRevisionStr());
-    sLog.outString("%s", GitRevision::GetDepSD3FullRevisionStr());
+    sLog.outString("%s [world-daemon]", Revision::GetProjectRevision());
+    sLog.outString("%s", Revision::GetFullRevision());
+    sLog.outString("Eluna submodule revision: %s", Revision::GetElunaRevisionStr());
+    sLog.outString("SD3 submodule revision: %s", Revision::GetSD3RevisionStr());
     print_banner();
     sLog.outString("Using configuration file %s.", cfg_file);
 

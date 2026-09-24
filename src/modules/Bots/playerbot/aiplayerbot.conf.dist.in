@@ -3,7 +3,7 @@
 ##########################################
 
 [AiPlayerbotConf]
-ConfVersion=2026080700
+ConfVersion=@MANGOS_PLAYERBOT_VER@
 
 # Enable or disable AI Playerbot
 AiPlayerbot.Enabled = 1

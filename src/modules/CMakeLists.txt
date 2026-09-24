@@ -25,6 +25,9 @@ if(BUILD_MANGOSD AND SCRIPT_LIB_SD3)
     add_subdirectory(SD3)
     mangos_submodule_compat(mangosscript
         "${CMAKE_SOURCE_DIR}/src/shared/Compat/sd3")
+    # SD3 still includes SystemConfig.h by that name.
+    mangos_submodule_compat(mangosscript
+        "${CMAKE_SOURCE_DIR}/src/shared/Compat/revision")
 endif()
 
 if(BUILD_MANGOSD AND SCRIPT_LIB_ELUNA)

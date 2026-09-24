@@ -33,7 +33,7 @@
 #include "Log.h"
 #include "ObjectMgr.h"
 #include "AuctionHouseMgr.h"
-#include "SystemConfig.h"
+#include "Revision.h"
 #include "SQLStorages.h"
 #include "World.h"
 
@@ -591,7 +591,7 @@ class AuctionBotSeller : public AuctionBotAgent
  * @brief Constructor - initializes AuctionBotConfig with default values
  */
 AuctionBotConfig::AuctionBotConfig()
-    : m_configFileName(AUCTIONHOUSEBOT_CONFIG_LOCATION),
+    : m_configFileName(Revision::GetConfigPath(Revision::ConfigFile::AhBot)),
     m_BotId(0), // Initialize m_BotId
     m_ItemsPerCycleBoost(0), // Initialize m_ItemsPerCycleBoost
     m_ItemsPerCycleNormal(0) // Initialize m_ItemsPerCycleNormal
@@ -612,7 +612,7 @@ bool AuctionBotConfig::Initialize()
     if (!m_AhBotCfg.SetSource(m_configFileName.c_str()))
     {
         // Try current folder as fallback
-        if (!m_AhBotCfg.SetSource(AUCTIONHOUSEBOT_CONFIG_NAME))
+        if (!m_AhBotCfg.SetSource(Revision::GetConfigName(Revision::ConfigFile::AhBot)))
         {
             sLog.outString("AHBOT is Disabled. Unable to open configuration file %s. ", m_configFileName.c_str());
             setConfig(CONFIG_UINT32_AHBOT_ALLIANCE_ITEM_AMOUNT_RATIO, 0);
@@ -620,7 +620,7 @@ bool AuctionBotConfig::Initialize()
             setConfig(CONFIG_UINT32_AHBOT_NEUTRAL_ITEM_AMOUNT_RATIO, 0);
             return false;
         }
-        m_configFileName = AUCTIONHOUSEBOT_CONFIG_NAME;
+        m_configFileName = Revision::GetConfigName(Revision::ConfigFile::AhBot);
     }
     else
     {
@@ -750,7 +750,7 @@ void AuctionBotConfig::setConfig(AuctionBotConfigBoolValues index, char const* f
 void AuctionBotConfig::GetConfigFromFile()
 {
     // Check config file version
-    if (m_AhBotCfg.GetIntDefault("ConfVersion", 0) != AHBOT_CONFIG_VERSION)
+    if (uint32(m_AhBotCfg.GetIntDefault("ConfVersion", 0)) != Revision::GetConfigVersion(Revision::ConfigFile::AhBot))
     {
         sLog.outError("AHBot: Configuration file version doesn't match expected version. Some config variables may be wrong or missing.");
     }

@@ -42,8 +42,8 @@ set(SRC_GRP_COMMON
   Common/Locales.h
   Common/TimeConstants.h
   Common/ServerDefines.h
-  Common/GitRevision.cpp
-  Common/GitRevision.h
+  Common/Revision.cpp
+  Common/Revision.h
 )
 source_group("Common" FILES ${SRC_GRP_COMMON})
 
@@ -231,9 +231,6 @@ set(TGT_INCL
   Policies
 )
 
-configure_file(revision_data.h.in ${CMAKE_CURRENT_BINARY_DIR}/revision_data.h)
-configure_file(SystemConfig.h.in ${CMAKE_CURRENT_BINARY_DIR}/SystemConfig.h)
-
 TEST_BIG_ENDIAN(ENDIAN_VALUE)
 
 add_library(shared STATIC
@@ -253,14 +250,19 @@ add_library(shared STATIC
     ${SRC_GRP_POLICIES}
     ${SRC_GRP_SVC}
     ${SRC_GRP_UTILITIES}
-    ${CMAKE_CURRENT_BINARY_DIR/revision_data.h}
-    ${CMAKE_CURRENT_BINARY_DIR/SystemConfig.h}
 )
+
+# BuildRevision.h (generated out of source by cmake/Revision.cmake) is visible to
+# Revision.cpp alone, so a commit or a version bump recompiles that one file.
+# Never add MANGOS_REVISION_INCLUDE_DIR to a target's include path.
+set_source_files_properties(Common/Revision.cpp PROPERTIES
+    INCLUDE_DIRECTORIES "${MANGOS_REVISION_INCLUDE_DIR}"
+    OBJECT_DEPENDS      "${MANGOS_REVISION_HEADER}")
+add_dependencies(shared revision)
 
 target_include_directories(shared
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_BINARY_DIR}
         ${TGT_INCL}
 )
 

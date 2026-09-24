@@ -11,7 +11,6 @@
 #include "Player.h"
 #include "RandomBotClassPolicy.h"
 #include "RandomPlayerbotFactory.h"
-#include "SystemConfig.h"
 
 /**
  * A static map that stores the available races for each class.

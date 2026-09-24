@@ -7,7 +7,7 @@
 #include "RandomPlayerbotFactory.h"
 #include "RandomBotClassPolicy.h"
 #include "AccountMgr.h"
-#include "SystemConfig.h"
+#include "Revision.h"
 
 using namespace std;
 
@@ -117,10 +117,10 @@ bool PlayerbotAIConfig::Initialize()
 {
     sLog.outString("Initializing AI Playerbot by ike3, based on the original Playerbot by blueboy");
 
-    if (!config.SetSource(SYSCONFDIR"aiplayerbot.conf"))
+    if (!config.SetSource(Revision::GetConfigPath(Revision::ConfigFile::Playerbot)))
     {
         // Try current folder as fallback
-        if (!config.SetSource("aiplayerbot.conf"))
+        if (!config.SetSource(Revision::GetConfigName(Revision::ConfigFile::Playerbot)))
         {
             sLog.outString("AI Playerbot is Disabled. Unable to open configuration file aiplayerbot.conf");
             return false;

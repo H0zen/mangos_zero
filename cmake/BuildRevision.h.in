@@ -1,0 +1,64 @@
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
+
+// Template for BuildRevision.h, written into the BUILD tree by
+// cmake/Revision.cmake, which sets every value. Included by one file only:
+// src/shared/Common/Revision.cpp. Everything else uses Revision.h.
+
+#ifndef MANGOS_BUILD_REVISION_H
+#define MANGOS_BUILD_REVISION_H
+
+#define REVISION_STR                    R"(@MANGOS_REVISION@)"
+#define REVISION_HASH                   R"(@MANGOS_REVISION_hash@)"
+#define REVISION_DATE                   R"(@MANGOS_REVISION_date@)"
+#define REVISION_ELUNA_STR              R"(@MANGOS_ELUNA_REVISION@)"
+#define REVISION_SD3_STR                R"(@MANGOS_SD3_REVISION@)"
+
+#define REVISION_PACKAGE_NAME           "@MANGOS_PKG@"
+#define REVISION_PROJECT_NR             "@MANGOS_REVISION_NR@"
+#define REVISION_BUILD_HOST             R"(@MANGOS_BUILD_HOST@)"
+
+#define REVISION_WORLD_DB_VERSION       "@MANGOS_WORLD_DB_VERSION@"
+#define REVISION_WORLD_DB_STRUCTURE     "@MANGOS_WORLD_DB_STRUCTURE@"
+#define REVISION_WORLD_DB_CONTENT       "@MANGOS_WORLD_DB_CONTENT@"
+#define REVISION_WORLD_DB_UPDATE        "@MANGOS_WORLD_DB_UPDATE@"
+
+#define REVISION_REALMD_DB_VERSION      "@MANGOS_REALMD_DB_VERSION@"
+#define REVISION_REALMD_DB_STRUCTURE    "@MANGOS_REALMD_DB_STRUCTURE@"
+#define REVISION_REALMD_DB_CONTENT      "@MANGOS_REALMD_DB_CONTENT@"
+#define REVISION_REALMD_DB_UPDATE       "@MANGOS_REALMD_DB_UPDATE@"
+
+#define REVISION_CHAR_DB_VERSION        "@MANGOS_CHAR_DB_VERSION@"
+#define REVISION_CHAR_DB_STRUCTURE      "@MANGOS_CHAR_DB_STRUCTURE@"
+#define REVISION_CHAR_DB_CONTENT        "@MANGOS_CHAR_DB_CONTENT@"
+#define REVISION_CHAR_DB_UPDATE         "@MANGOS_CHAR_DB_UPDATE@"
+
+#define REVISION_CONFIG_DIR             R"(@CONF_INSTALL_DIR@/)"
+#define REVISION_MANGOSD_CONF_VERSION   @MANGOS_WORLD_VER@
+#define REVISION_REALMD_CONF_VERSION    @MANGOS_REALM_VER@
+#define REVISION_AHBOT_CONF_VERSION     @MANGOS_AHBOT_VER@
+#define REVISION_PLAYERBOT_CONF_VERSION @MANGOS_PLAYERBOT_VER@
+
+#endif

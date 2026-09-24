@@ -52,7 +52,6 @@
 #include "Database/DatabaseEnv.h"
 #include "Config/Config.h"
 #include "Platform/Define.h"
-#include "SystemConfig.h"
 #include "Log.h"
 #include "OpcodeTable.h"
 #include "WorldSession.h"
@@ -98,7 +97,7 @@
 #include "DisableMgr.h"
 #include "Language.h"
 #include "CommandMgr.h"
-#include "GitRevision.h"
+#include "Revision.h"
 #include "UpdateTime.h"
 #include "GameTime.h"
 #include "ScheduledExit.h"
@@ -1070,8 +1069,9 @@ void World::showFooter(uint32 startupMs)
 #endif
 
     char database[128];
-    snprintf(database, sizeof(database), "Rel%s.%s.%s", GitRevision::GetWorldDBVersion(),
-             GitRevision::GetWorldDBStructure(), GitRevision::GetWorldDBContent());
+    Revision::DbVersion const& worldDb = Revision::GetWorldDb();
+    snprintf(database, sizeof(database), "Rel%s.%s.%s", worldDb.version,
+             worldDb.structure, worldDb.content);
 
     char ready[64];
     if (startupMs >= 60000)
@@ -1087,9 +1087,9 @@ void World::showFooter(uint32 startupMs)
     // layout now, so the same facts go out as ordinary log lines -- which is also
     // what survives a redirected stdout.
     sLog.outString("World initialization complete (%s)", ready);
-    sLog.outString("    server   : %s", GitRevision::GetProductVersionStr());
-    sLog.outString("    eluna    : %s", GitRevision::GetDepElunaFullRevision());
-    sLog.outString("    sd3      : %s", GitRevision::GetDepSD3FullRevision());
+    sLog.outString("    server   : %s", Revision::GetRevisionStr());
+    sLog.outString("    eluna    : %s", Revision::GetElunaRevisionStr());
+    sLog.outString("    sd3      : %s", Revision::GetSD3RevisionStr());
     sLog.outString("    database : %s", database);
     sLog.outString("    clients  : %s", EXPECTED_MANGOSD_CLIENT_VERSION);
     sLog.outString("    builds   : %s", AcceptableClientBuildsListStr().c_str());

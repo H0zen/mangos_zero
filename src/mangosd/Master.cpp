@@ -39,7 +39,7 @@
 #include "MangosdTest.h"
 #include "MapManager.h"
 #include "Server/WorldNetwork.h"
-#include "SystemConfig.h"
+#include "Revision.h"
 #include "Timer.h"
 #include "World.h"
 #include "Server/WardenCheckCatalogLoader.h"
@@ -122,7 +122,7 @@ namespace
 
         char title[128];
         snprintf(title, sizeof(title), "%s (%u Players - %u Connections)",
-                 MANGOS_PACKAGENAME, players, connections);
+                 Revision::GetPackageName(), players, connections);
 
         std::string newTitle(title);
         if (s_lastTitle != newTitle)

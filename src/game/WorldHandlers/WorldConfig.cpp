@@ -95,10 +95,9 @@
 #include "DisableMgr.h"
 #include "Language.h"
 #include "CommandMgr.h"
-#include "GitRevision.h"
+#include "Revision.h"
 #include "UpdateTime.h"
 #include "GameTime.h"
-#include "SystemConfig.h"
 #include "AuctionHouseBot/AuctionIntentExecutor.h"
 #include "AuctionHouseBot/CustodyLedger.h"
 #include "AuctionHouseBot/CustodyService.h"
@@ -152,7 +151,7 @@ void World::LoadConfigSettings(bool reload)
     }
     else
     {
-        if (confVersion < MANGOSD_CONFIG_VERSION)
+        if (confVersion < Revision::GetConfigVersion(Revision::ConfigFile::Mangosd))
         {
             sLog.outError("*****************************************************************************");
             sLog.outError(" WARNING: Your mangosd.conf version indicates your conf file is out of date!");
@@ -385,9 +384,9 @@ void World::LoadConfigSettings(bool reload)
 
     setConfig(CONFIG_UINT32_INTERVAL_CHANGEWEATHER, "ChangeWeatherInterval", 10 * MINUTE * IN_MILLISECONDS);
 
-    if (configNoReload(reload, CONFIG_UINT32_PORT_WORLD, "WorldServerPort", DEFAULT_WORLDSERVER_PORT))
+    if (configNoReload(reload, CONFIG_UINT32_PORT_WORLD, "WorldServerPort", 8085))
     {
-        setConfig(CONFIG_UINT32_PORT_WORLD, "WorldServerPort", DEFAULT_WORLDSERVER_PORT);
+        setConfig(CONFIG_UINT32_PORT_WORLD, "WorldServerPort", 8085);
     }
 
     if (configNoReload(reload, CONFIG_UINT32_GAME_TYPE, "GameType", 0))

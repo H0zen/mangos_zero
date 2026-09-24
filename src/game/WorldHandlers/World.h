@@ -66,6 +66,9 @@ class QueryResult;
 class WorkerSupervisor;
 class IpcMessage;
 
+/// PlayerLimit when mangosd.conf does not set it.
+constexpr int32 DEFAULT_PLAYER_LIMIT = 100;
+
 // ServerMessages.dbc
 enum ServerMessageType
 {

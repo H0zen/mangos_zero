@@ -31,22 +31,9 @@
 #   extractor_mpq     the StormLib container reader.
 # =============================================================================
 
-# =============================================================================
-# WHICH CLIENT THIS BAKER IS FOR. MANGOS_EXP (cmake/MangosParams.cmake) is the one
-# place the expansion is named; this maps it to something a person reads, so the
-# window and the --help banner cannot drift from what the tool actually parses.
-# =============================================================================
-if("${MANGOS_EXP}" STREQUAL "CLASSIC")
-    set(MANGOS_CLIENT_NAME "World of Warcraft 1.12.x")
-elseif("${MANGOS_EXP}" STREQUAL "TBC")
-    set(MANGOS_CLIENT_NAME "The Burning Crusade 2.4.3")
-elseif("${MANGOS_EXP}" STREQUAL "WOTLK")
-    set(MANGOS_CLIENT_NAME "Wrath of the Lich King 3.3.5a")
-elseif("${MANGOS_EXP}" STREQUAL "CATA")
-    set(MANGOS_CLIENT_NAME "Cataclysm 4.3.4")
-else()
-    set(MANGOS_CLIENT_NAME "unknown client")
-endif()
+# WHICH CLIENT THIS BAKER IS FOR: MANGOS_CLIENT_NAME is derived from MANGOS_EXP in
+# cmake/Revision.cmake, so the window and the --help banner cannot drift from
+# what the tool actually parses.
 
 set(SRC_GRP_CLIENT
     client/AdtParser.cpp
@@ -158,13 +145,16 @@ target_link_libraries(mangos-extractor
         $<$<BOOL:${WIN32}>:ole32>
 )
 
-# The icon and version block are compiled from revision_data.h, which genrev writes
-# into the build tree.
+# The version block comes from the shared Windows template, configured once for
+# both executables here: cmake/win/VersionInfo.h.in, fed by cmake/Revision.cmake.
+# The .rc files carry their own icon and description, so PRODUCT_* only fill it.
 if(WIN32)
-    target_include_directories(mangos-extractor PRIVATE ${CMAKE_BINARY_DIR}/src/shared)
-    if(TARGET revision_data.h)
-        add_dependencies(mangos-extractor revision_data.h)
-    endif()
+    set(PRODUCT_NAME        "MaNGOS")
+    set(PRODUCT_ICON        "${CMAKE_CURRENT_SOURCE_DIR}/mangos-extractor.ico")
+    set(PRODUCT_DESCRIPTION "MaNGOS client data extractor")
+    mangos_configure(${CMAKE_SOURCE_DIR}/cmake/win/VersionInfo.h.in
+                     ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.h)
+    target_include_directories(mangos-extractor PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 set_target_properties(mangos-extractor PROPERTIES FOLDER "tools")
@@ -193,11 +183,7 @@ if(WIN32)
         ExtractorGui.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mangos-extractor-gui.rc)
     target_link_libraries(mangos-extractor-gui PRIVATE shell32 ole32 oleaut32 comctl32 comdlg32)
-    # The .rc includes revision_data.h, which genrev writes into the build tree.
-    target_include_directories(mangos-extractor-gui PRIVATE ${CMAKE_BINARY_DIR}/src/shared)
-    if(TARGET revision_data.h)
-        add_dependencies(mangos-extractor-gui revision_data.h)
-    endif()
+    target_include_directories(mangos-extractor-gui PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     target_compile_definitions(mangos-extractor-gui
         PRIVATE MANGOS_CLIENT_NAME="${MANGOS_CLIENT_NAME}")
     set_target_properties(mangos-extractor-gui PROPERTIES FOLDER "tools")

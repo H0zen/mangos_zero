@@ -31,8 +31,6 @@ add_subdirectory(proto)
 # IPC substrate (always built; ah-service and mangosd both link it)
 add_subdirectory(ipc)
 
-add_subdirectory(genrev)
-
 # Needs to link against mangos_world.lib
 if(BUILD_MANGOSD)
     # Build the mangos game library
@@ -56,6 +54,8 @@ endif()
 # Build the mangos realm authentication server
 if(BUILD_REALMD)
     add_subdirectory(realmd)
+    # realmd still includes GitRevision.h / SystemConfig.h by those names.
+    mangos_submodule_compat(realmd "${CMAKE_SOURCE_DIR}/src/shared/Compat/revision")
 
     # realmd is a SUBMODULE and is never edited here. Its own test executables
     # compile Auth/PatchArtifact.cpp, which includes Auth/Md5.h -- a header this

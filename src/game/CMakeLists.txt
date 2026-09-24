@@ -96,6 +96,9 @@ if(SCRIPT_LIB_ELUNA)
     # open with #include "Common.h".
     mangos_submodule_compat_sources("${SRC_GRP_ELUNA}"
         "${CMAKE_SOURCE_DIR}/src/shared/Compat/eluna")
+    # ElunaIncludes.h still includes GitRevision.h / revision_data.h by those names.
+    set_property(SOURCE ${SRC_GRP_ELUNA} APPEND PROPERTY
+        INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/src/shared/Compat/revision")
 endif()
 
 if(PLAYERBOTS)
@@ -182,11 +185,11 @@ file(GLOB Playerbot_Warrior ${CMAKE_SOURCE_DIR}/src/modules/Bots/playerbot/strat
 source_group("Player Bot\\Strategies\\Warrior" FILES ${Playerbot_Warrior})
 LIST(APPEND SRC_GRP_BOTS ${Playerbot_Warrior})
 
-configure_file(${CMAKE_SOURCE_DIR}/src/modules/Bots/playerbot/aiplayerbot.conf.dist.in ${CMAKE_CURRENT_BINARY_DIR}/aiplayerbot.conf.dist)
+mangos_install_conf(${CMAKE_SOURCE_DIR}/src/modules/Bots/playerbot/aiplayerbot.conf.dist.in)
 
 endif()
 
-configure_file(AuctionHouseBot/ahbot.conf.dist.in ${CMAKE_CURRENT_BINARY_DIR}/AuctionHouseBot/ahbot.conf.dist)
+mangos_install_conf(AuctionHouseBot/ahbot.conf.dist.in)
 
 add_library(game STATIC
     ${SRC_GRP_AHBOT}
@@ -275,19 +278,9 @@ if(PCH)
     add_cxx_pch(game pchdef.h pchdef.cpp)
 endif()
 
-install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/AuctionHouseBot/ahbot.conf.dist
-    DESTINATION ${CONF_INSTALL_DIR}
-)
-
 if(SCRIPT_LIB_ELUNA)
 install(
     DIRECTORY ${CMAKE_SOURCE_DIR}/src/modules/Eluna/extensions
     DESTINATION ${BIN_DIR}/lua_scripts
 )
-endif()
-
-if(PLAYERBOTS)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/aiplayerbot.conf.dist
-    DESTINATION ${CONF_INSTALL_DIR})
 endif()

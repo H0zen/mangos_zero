@@ -23,7 +23,8 @@ cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 # =============================================================================
 # Project setup
 # =============================================================================
-project(MaNGOS VERSION 0.22.0 LANGUAGES C CXX)
+# The version is not given here: cmake/Revision.cmake is its only home.
+project(MaNGOS LANGUAGES C CXX)
 
 # Build artefacts never land in the source tree. This is a test, not hygiene:
 # sources here still carry relative includes like "../../dep/foo.h", and an
@@ -233,9 +234,7 @@ if(NOT WIN32 AND SCRIPT_LIB_ELUNA)
   find_package(Readline REQUIRED)
 endif()
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenRevision.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/EnsureVersion.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MangosParams.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Revision.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/SetDefinitions.cmake)
 
 if(PCH)

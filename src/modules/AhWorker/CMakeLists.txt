@@ -26,10 +26,7 @@ target_link_libraries(ah_usability PUBLIC ah_ipc)   # BrowseMessages.h / Common.
 add_executable(ah-service ${ah_service_SRC} ${ah_service_platform_SRC})
 target_link_libraries(ah-service PRIVATE ah_usability ah_ipc shared Threads::Threads)
 install(TARGETS ah-service DESTINATION ${BIN_DIR}/service-workers/ah-service)
-# Substitute @MANGOS_AHBOT_VER@ (the ConfVersion) like mangosd.conf, then
-# install the generated file (a raw copy would leave the placeholder literal).
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ah-service.conf.dist.in ${CMAKE_CURRENT_BINARY_DIR}/ah-service.conf.dist)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ah-service.conf.dist DESTINATION ${CONF_INSTALL_DIR})
+mangos_install_conf(ah-service.conf.dist.in)
 
 # The CanUseItem differential drift test needs BOTH ah_usability (this worker)
 # and the game-side AhUsabilityRef source, so it builds only when mangosd is in
