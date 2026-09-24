@@ -240,6 +240,14 @@ MaxWhoListReturns                 = 49
 ################################################################################
 # WARDEN
 #
+#    Warden.Enabled
+#        Master switch for the Warden anti-cheat.
+#        0 = disabled: sessions are admitted with no Warden module, no checks,
+#            no audit rows and no enforcement; every Warden.* key below is
+#            ignored. Applies to sessions admitted after the change.
+#        1 = enabled
+#        Default: 1
+#
 #    Warden.EnforcementMode
 #        Response to confirmed Warden violations and protocol failures.
 #        0 = observe and log only
@@ -280,6 +288,7 @@ MaxWhoListReturns                 = 49
 #
 ################################################################################
 
+Warden.Enabled               = 1
 Warden.EnforcementMode       = 2
 Warden.RequireExactProfile   = 1
 Warden.CheckIntervalMin      = 30

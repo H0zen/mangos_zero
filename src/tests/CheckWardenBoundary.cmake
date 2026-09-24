@@ -148,6 +148,15 @@ if(SESSION_CPP MATCHES "m_wardenClientLocale\\.c_str[ \\t]*\\(")
         "Warden boundary: raw authenticated locale bytes must not reach logs")
 endif()
 require_count("${WORLD_CONFIG}"
+    "Warden\\.Enabled\"[ \\t]*,[ \\t]*true" 1
+    "Warden must default on in world configuration")
+file(STRINGS "${SOURCE_ROOT}/src/mangosd/mangosd.conf.dist.in"
+    MANGOSD_ACTIVE_WARDEN_ENABLED
+    REGEX "^[ \\t]*Warden\\.Enabled[ \\t]*=")
+require_count("${MANGOSD_ACTIVE_WARDEN_ENABLED}"
+    "Warden\\.Enabled[ \\t]*=[ \\t]*1" 1
+    "distributed config must carry one active default-on Warden.Enabled")
+require_count("${WORLD_CONFIG}"
     "Warden\\.RequireExactProfile\"[ \\t]*,[ \\t]*true" 1
     "strict exact-profile admission must default on in world configuration")
 require_count("${MANGOSD_ACTIVE_EXACT_PROFILE}"

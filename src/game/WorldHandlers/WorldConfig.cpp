@@ -252,6 +252,9 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_UINT32_MAX_WHOLIST_RETURNS, "MaxWhoListReturns", 49);
     setConfig(CONFIG_UINT32_AUTOBROADCAST_INTERVAL, "AutoBroadcast", 600);
 
+    // Read when a session is admitted, so a reload affects new sessions only.
+    setConfig(CONFIG_BOOL_WARDEN_ENABLED, "Warden.Enabled", true);
+
     // Warden takes one immutable policy snapshot when a session is admitted.
     // Normalize here so no downstream component can observe unsafe ranges.
     setConfig(CONFIG_UINT32_WARDEN_ENFORCEMENT_MODE,
@@ -337,6 +340,11 @@ void World::LoadConfigSettings(bool reload)
         warden::WardenConfigurationCorrection::IncidentWindow))
     {
         sLog.outError("Warden incident window is invalid; using 900 seconds.");
+    }
+    if (!getConfig(CONFIG_BOOL_WARDEN_ENABLED))
+    {
+        sLog.outError("Warden is DISABLED (Warden.Enabled = 0): new sessions "
+            "are admitted without any Warden checks.");
     }
 
     if (getConfig(CONFIG_UINT32_AUTOBROADCAST_INTERVAL) > 0)

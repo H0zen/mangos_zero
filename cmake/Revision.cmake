@@ -77,7 +77,7 @@ set(MANGOS_WORLD_DB_CONTENT     4)
 set(MANGOS_WORLD_DB_UPDATE      "Warden_Locale_Hardening")
 
 # ConfVersion of each shipped .conf.dist, YYYYMMDDRR (RR = revision of the day).
-set(MANGOS_WORLD_VER            2026082000)   # mangosd.conf
+set(MANGOS_WORLD_VER            2026092400)   # mangosd.conf
 set(MANGOS_REALM_VER            2026060300)   # realmd.conf
 set(MANGOS_AHBOT_VER            2026071400)   # ahbot.conf, ah-service.conf
 set(MANGOS_PLAYERBOT_VER        2026080700)   # aiplayerbot.conf

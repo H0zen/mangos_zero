@@ -375,7 +375,12 @@ void WorldSession::OnAuthenticatedAdmission()
         return;
     m_wardenAdmissionHandled = true;
 
-    if (!m_pendingWardenAdmission || !m_pendingWardenAdmission->available)
+    // Warden.Enabled = 0 takes the same exit as a client that supplied no
+    // admission data: no WardenServer is provisioned, and every Warden seam
+    // already treats a missing one as "nothing to do". reset() cleanses the
+    // session key (~AdmissionData).
+    if (!m_pendingWardenAdmission || !m_pendingWardenAdmission->available ||
+        !sWorld.getConfig(CONFIG_BOOL_WARDEN_ENABLED))
     {
         m_pendingWardenAdmission.reset();
         return;
