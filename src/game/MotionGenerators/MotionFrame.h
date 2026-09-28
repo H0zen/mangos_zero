@@ -97,7 +97,7 @@ namespace Motion
              * @brief Route a leg from `start` to `goal` within this frame.
              * @param forceDestination Arrive exactly at `goal` even when it is not
              *        cleanly routable (a pet heeling its master may cheat).
-             * @param lengthLimit Cap the path length in yards (0 = default).
+             * @param lengthLimit Cap the path length in yards (0 = no cap).
              * @return True when usable geometry came out -- which INCLUDES the
              *         straight-line fallback used when routing failed (see Failed).
              */

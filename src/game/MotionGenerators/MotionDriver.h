@@ -111,6 +111,7 @@ class MotionDriver
         bool m_blocked = false;      ///< The last Move could not be laid.
         bool m_speedChanged = false; ///< A speed change invalidated the running leg.
         bool m_wasTraveling = false; ///< Previous tick had a live leg (arrival edge).
+        bool m_legCut = false;
 };
 
 #endif // MANGOS_MOTIONDRIVER_H

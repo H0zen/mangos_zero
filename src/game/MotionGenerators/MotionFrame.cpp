@@ -42,12 +42,6 @@ namespace Motion
 {
     namespace
     {
-        /// The default ceiling on a routed path, in yards. Re-applied on every query
-        /// because the limit is sticky on a reused PathFinder, so an unlimited request
-        /// after a capped one (a flee leg) would otherwise inherit the cap.
-        constexpr float DEFAULT_PATH_LENGTH =
-            float(MAX_POINT_PATH_LENGTH) * SMOOTH_PATH_STEP_SIZE;
-
         /// The world frame's router: the Detour navmesh, behind IPathQuery.
         class WorldPathQuery final : public IPathQuery
         {
@@ -57,8 +51,7 @@ namespace Motion
                 bool Calculate(Vector3 const& start, Vector3 const& goal,
                                bool forceDestination, float lengthLimit) override
                 {
-                    m_path.setPathLengthLimit(lengthLimit > 0.0f ? lengthLimit
-                                                                 : DEFAULT_PATH_LENGTH);
+                    m_path.setPathLengthLimit(lengthLimit);
 
                     if (!m_path.calculate(start.x, start.y, start.z,
                                           goal.x, goal.y, goal.z, forceDestination))
@@ -266,8 +259,7 @@ namespace Motion
                 bool Calculate(Vector3 const& start, Vector3 const& goal,
                                bool forceDestination, float lengthLimit) override
                 {
-                    m_path.setPathLengthLimit(lengthLimit > 0.0f ? lengthLimit
-                                                                 : DEFAULT_PATH_LENGTH);
+                    m_path.setPathLengthLimit(lengthLimit);
 
                     if (!m_path.calculate(start.x, start.y, start.z,
                                           goal.x, goal.y, goal.z, forceDestination))

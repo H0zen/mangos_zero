@@ -32,9 +32,15 @@
 #include "Map.h"
 #include "Player.h"
 #include "Creature.h"
+#include "MotionGenerators/PathPolyline.h"
+
+#include <algorithm>
 
 namespace
 {
+    constexpr float GROUND_SPEED_CAP = 4.0f;
+    constexpr float FLYING_SPEED_CAP = 10.0f;
+
     /// The vessel whose deck this unit is standing on, or an empty guid. Derived from the
     /// map, so a spline goes out as SMSG_MONSTER_MOVE_TRANSPORT for anything on a deck --
     /// crew, pet or totem alike -- without anyone having registered it as anything.
@@ -131,6 +137,18 @@ namespace Movement
         if (args.velocity == 0.f)
         {
             args.velocity = unit.GetSpeed(SelectSpeedType(moveFlags));
+        }
+
+        const float speedCap = unit.GetSpeed(MOVE_RUN) *
+                               (args.flags.isSmooth() ? FLYING_SPEED_CAP : GROUND_SPEED_CAP);
+        if (speedCap > 0.0f)
+        {
+            args.velocity = std::min(args.velocity, speedCap);
+        }
+
+        if (!args.flags.isSmooth())
+        {
+            PathPolyline::FitPackBox(args.path);
         }
 
         if (!args.Validate(&unit))

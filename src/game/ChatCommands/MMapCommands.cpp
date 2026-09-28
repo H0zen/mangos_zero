@@ -75,7 +75,6 @@ bool ChatHandler::HandleMmapPathCommand(char* args)
 
     char* para = strtok(args, " ");
 
-    bool useStraightPath = false;
     bool followPath = false;
     bool unitToPlayer = false;
     if (para)
@@ -83,15 +82,6 @@ bool ChatHandler::HandleMmapPathCommand(char* args)
         if (strcmp(para, "go") == 0)
         {
             followPath = true;
-            para = strtok(NULL, " ");
-            if (para && strcmp(para, "straight") == 0)
-            {
-                useStraightPath = true;
-            }
-        }
-        else if (strcmp(para, "straight") == 0)
-        {
-            useStraightPath = true;
         }
         else if (strcmp(para, "to_me") == 0)
         {
@@ -100,7 +90,6 @@ bool ChatHandler::HandleMmapPathCommand(char* args)
         else
         {
             PSendSysMessage("Use '.mmap path go' to move on target.");
-            PSendSysMessage("Use '.mmap path straight' to generate straight path.");
             PSendSysMessage("Use '.mmap path to_me' to generate path from the target to you.");
         }
     }
@@ -126,12 +115,10 @@ bool ChatHandler::HandleMmapPathCommand(char* args)
 
     // path
     PathFinder path(originUnit);
-    path.setUseStrightPath(useStraightPath);
     path.calculate(x, y, z);
 
     PointsArray pointPath = path.getPath();
     PSendSysMessage("%s's path to %s:", originUnit->GetName(), destinationUnit->GetName());
-    PSendSysMessage("Building %s", useStraightPath ? "StraightPath" : "SmoothPath");
     PSendSysMessage("length %zu type %u", pointPath.size(), path.getPathType());
 
     Vector3 start = path.getStartPosition();

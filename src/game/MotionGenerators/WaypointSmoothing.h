@@ -2,6 +2,7 @@
 #define MANGOS_WAYPOINTSMOOTHING_H
 
 #include "Platform/Define.h"
+#include "PathPolyline.h"
 
 /**
  * @brief Safety ceiling on how many waypoints a single smoothed spline may span.
@@ -23,10 +24,10 @@ constexpr size_t WAYPOINT_SMOOTHING_MAX_LOOKAHEAD = 32;
  * the value wraps and the client renders a wild jump. These spans stay well
  * inside those limits so no offset can wrap.
  */
-constexpr float WAYPOINT_SMOOTHING_MAX_XY_SPAN = 200.0f;
+constexpr float WAYPOINT_SMOOTHING_MAX_XY_SPAN = PathPolyline::PACK_BOX_XY;
 
 /// Maximum Z bounding-box span (yards); see WAYPOINT_SMOOTHING_MAX_XY_SPAN.
-constexpr float WAYPOINT_SMOOTHING_MAX_Z_SPAN = 100.0f;
+constexpr float WAYPOINT_SMOOTHING_MAX_Z_SPAN = PathPolyline::PACK_BOX_Z;
 
 /**
  * @brief Minimum length (in yards) of a segment in a smoothed multi-point spline.

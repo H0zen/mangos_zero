@@ -28,6 +28,7 @@
 #include "Unit.h"
 #include "movement/MoveSpline.h"
 #include "movement/MoveSplineInit.h"
+#include "PathPolyline.h"
 
 #include <cmath>
 
@@ -51,6 +52,7 @@ void MotionDriver::ResetLeg()
     m_blocked = false;
     m_speedChanged = false;
     m_wasTraveling = false;
+    m_legCut = false;
 }
 
 Motion::IPathQuery* MotionDriver::Query(Unit const& owner)
@@ -77,7 +79,11 @@ Motion::MoveStatus MotionDriver::BeginTick(Unit& owner)
 
     Motion::MoveStatus status;
     status.traveling = traveling;
-    status.arrived = m_wasTraveling && !traveling;
+    status.arrived = m_wasTraveling && !traveling && !m_legCut;
+    if (!traveling)
+    {
+        m_legCut = false;
+    }
     status.blocked = m_blocked;
     status.pathIndex = owner.movespline->Initialized() ? owner.movespline->currentPathIdx() : 0;
 
@@ -178,7 +184,9 @@ bool MotionDriver::LayLeg(Unit& owner, Motion::MoveIntent const& intent)
             return false;
         }
 
-        init.MovebyPath(query->Points());
+        Movement::PointsArray points = query->Points();
+        m_legCut = !intent.Has(Motion::MOVE_FLY) && PathPolyline::FitPackBox(points);
+        init.MovebyPath(points);
     }
 
     switch (intent.facing.mode)

@@ -38,15 +38,8 @@ using Movement::PointsArray;
 
 class Unit;
 
-// 74*4.0f=296y  number_of_points*interval = max_path_len
-// this is way more than actual evade range
-// I think we can safely cut those down even more
 #define MAX_PATH_LENGTH         74
-#define MAX_POINT_PATH_LENGTH   74
-
-#define SMOOTH_PATH_STEP_SIZE   4.0f
-#define SMOOTH_PATH_SLOP        0.3f
-#define SMOOTH_PATH_HEIGHT      1.0f
+#define MAX_POINT_PATH_LENGTH   (MAX_PATH_LENGTH + 2)
 
 #define VERTEX_SIZE       3
 #define INVALID_POLYREF   0
@@ -108,19 +101,7 @@ class PathFinder
          */
         bool calculate(float startX, float startY, float startZ, float destX, float destY, float destZ, bool forceDest = false);
 
-        // Option setters - use optional
-
-        /**
-         * @brief Set whether to use a straight path.
-         * @param useStraightPath Whether to use a straight path.
-         */
-        void setUseStrightPath(bool useStraightPath) { m_useStraightPath = useStraightPath; };
-
-        /**
-         * @brief Set the path length limit.
-         * @param distance The path length limit.
-         */
-        void setPathLengthLimit(float distance) { m_pointPathLimit = std::min<uint32>(uint32(distance / SMOOTH_PATH_STEP_SIZE), MAX_POINT_PATH_LENGTH); };
+        void setPathLengthLimit(float distance) { m_pathLengthLimit = distance; }
 
         // Result getters
 
@@ -142,11 +123,7 @@ class PathFinder
          */
         Vector3 getActualEndPosition() const { return m_actualEndPosition; }
 
-        /**
-         * @brief Normalize the path.
-         * @param size The size of the path.
-         */
-        void NormalizePath(uint32& size);
+        void NormalizePath();
 
         /**
          * @brief Get the path points.
@@ -171,9 +148,8 @@ class PathFinder
         PointsArray    m_pathPoints;       // Our actual (x,y,z) path to the target
         PathType       m_type;             // Tells what kind of path this is
 
-        bool           m_useStraightPath;  // Type of path that will be generated
         bool           m_forceDestination; // When set, we will always arrive at the given point
-        uint32         m_pointPathLimit;   // Limit point path size; min(this, MAX_POINT_PATH_LENGTH)
+        float          m_pathLengthLimit;
 
         Vector3        m_startPosition;    // {x, y, z} of current location
         Vector3        m_endPosition;      // {x, y, z} of the destination
@@ -235,15 +211,6 @@ class PathFinder
          */
         float dist3DSqr(const Vector3& p1, const Vector3& p2) const;
 
-        /**
-         * @brief Check if two points are in range in the YZX plane.
-         * @param v1 The first point.
-         * @param v2 The second point.
-         * @param r The range.
-         * @param h The height.
-         * @return True if the points are in range, false otherwise.
-         */
-        bool inRangeYZX(const float* v1, const float* v2, float r, float h) const;
 
         /**
          * @brief Get the path polygon by position.
@@ -307,51 +274,6 @@ class PathFinder
          * @brief Update the query filter.
          */
         void updateFilter();
-
-        // Smooth path auxiliary functions
-
-        /**
-         * @brief Fix up the corridor path.
-         * @param path The path.
-         * @param npath The number of path points.
-         * @param maxPath The maximum path length.
-         * @param visited The visited polygons.
-         * @param nvisited The number of visited polygons.
-         * @return The fixed up path length.
-         */
-        uint32 fixupCorridor(dtPolyRef* path, uint32 npath, uint32 maxPath,
-            const dtPolyRef* visited, uint32 nvisited);
-
-        /**
-         * @brief Get the steer target for the path.
-         * @param startPos The start position.
-         * @param endPos The end position.
-         * @param minTargetDist The minimum target distance.
-         * @param path The path.
-         * @param pathSize The size of the path.
-         * @param steerPos The steer position.
-         * @param steerPosFlag The steer position flag.
-         * @param steerPosRef The steer position reference.
-         * @return True if the steer target was successfully obtained, false otherwise.
-         */
-        bool getSteerTarget(const float* startPos, const float* endPos, float minTargetDist,
-            const dtPolyRef* path, uint32 pathSize, float* steerPos,
-            unsigned char& steerPosFlag, dtPolyRef& steerPosRef);
-
-        /**
-         * @brief Find the smooth path.
-         * @param startPos The start position.
-         * @param endPos The end position.
-         * @param polyPath The polygon path.
-         * @param polyPathSize The size of the polygon path.
-         * @param smoothPath The smooth path.
-         * @param smoothPathSize The size of the smooth path.
-         * @param smoothPathMaxSize The maximum size of the smooth path.
-         * @return The status of the path finding.
-         */
-        dtStatus findSmoothPath(const float* startPos, const float* endPos,
-            const dtPolyRef* polyPath, uint32 polyPathSize,
-            float* smoothPath, int* smoothPathSize, uint32 smoothPathMaxSize);
 };
 
 #endif // MANGOS_PATH_FINDER_H
