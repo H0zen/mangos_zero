@@ -134,16 +134,19 @@ bool PathFinder::calculate(float startX, float startY, float startZ, float destX
         return false;
     }
 
+    const NavAgent agent = Agent();
     MMAP::NavMeshLease lease;
     if (MMAP::MMapFactory::IsPathfindingEnabled(m_mapId, m_sourceUnit))
     {
-        lease = MMAP::MMapFactory::createOrGetMMapManager()->Lease(m_mapId, Agent());
+        lease = MMAP::MMapFactory::createOrGetMMapManager()->Lease(m_mapId, agent);
     }
     m_navMesh = lease.Mesh();
     m_navMeshQuery = lease.Query();
+    m_filter.SetBlocked(&m_sourceUnit->GetMap()->DoorBlocked(agent));
 
     const bool routed = Route(Vector3(startX, startY, startZ), Vector3(destX, destY, destZ), forceDest);
 
+    m_filter.SetBlocked(NULL);
     m_navMesh = NULL;
     m_navMeshQuery = NULL;
     return routed;

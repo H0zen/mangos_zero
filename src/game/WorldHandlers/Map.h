@@ -73,6 +73,9 @@
 #include "ScriptMgr.h"
 #include "CreatureLinkingMgr.h"
 #include "DynamicCollision.h"
+#include "MoveMapSharedDefines.h"
+#include "NavDoors.h"
+#include <array>
 #ifdef ENABLE_ELUNA
 #include "LuaValue.h"
 #endif /* ENABLE_ELUNA */
@@ -392,6 +395,9 @@ class Map : public GridRefManager<NGridType>
         bool ContainsGameObjectModel(const GameObjectModel& mdl) const;
         void RefreshGameObjectModel(GameObjectModel& mdl);
 
+        void SetDoorShut(uintptr_t door, Geometry::Aabb const* box);
+        MMAP::BlockedPolys const& DoorBlocked(NavAgent agent) const { return m_navDoors[size_t(agent)].Blocked(); }
+
         // Get Holder for Creature Linking
         CreatureLinkingHolder* GetCreatureLinkingHolder()
         {
@@ -577,6 +583,7 @@ class Map : public GridRefManager<NGridType>
 
         // Dynamic Map tree object
         DynamicCollision m_dyn_tree;
+        std::array<MMAP::NavDoors, size_t(NavAgent::Count)> m_navDoors;
 
         // WeatherSystem
         WeatherSystem* m_weatherSystem;

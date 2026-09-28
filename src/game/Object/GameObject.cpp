@@ -180,6 +180,8 @@ void GameObject::RemoveFromWorld()
             GetMap()->RemoveGameObjectModel(*m_model);
         }
 
+        GetMap()->SetDoorShut(uintptr_t(this), nullptr);
+
         GetMap()->GetObjectsStore().erase<GameObject>(GetObjectGuid(), (GameObject*)NULL);
     }
 
@@ -1413,6 +1415,10 @@ void GameObject::UpdateCollisionState() const
     }
 
     m_model->SetCollidable(IsCollisionEnabled());
+    if (GetGoType() == GAMEOBJECT_TYPE_DOOR)
+    {
+        GetMap()->SetDoorShut(uintptr_t(this), IsCollisionEnabled() ? &m_model->GetBounds() : nullptr);
+    }
 }
 
 /**

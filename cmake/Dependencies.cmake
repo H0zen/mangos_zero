@@ -67,6 +67,7 @@ endif()
 # Recast and Detour are needed by the server's pathfinder AND by the baker's navmesh
 # stage, and the baker always builds, so this is not gated either.
 add_subdirectory(${MANGOS_DEP_DIR}/recastnavigation dep/recastnavigation)
+target_compile_definitions(Detour PUBLIC DT_VIRTUAL_QUERYFILTER)
 
 # The MPQ reader is not gated: mangos-extractor is what produces the tiles the server
 # reads, so it is always built rather than being an optional extra that a fresh clone

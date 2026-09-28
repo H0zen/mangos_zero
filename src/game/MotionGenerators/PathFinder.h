@@ -31,6 +31,7 @@
 #include "DetourNavMeshQuery.h"
 
 #include "MoveMapSharedDefines.h"
+#include "NavDoors.h"
 #include "movement/MoveSplineInitArgs.h"
 
 using Movement::Vector3;
@@ -161,7 +162,7 @@ class PathFinder
         const dtNavMesh*        m_navMesh;          // The navigation mesh
         const dtNavMeshQuery*   m_navMeshQuery;     // The navigation mesh query used to find the path
 
-        dtQueryFilter m_filter;                     // Use a single filter for all movements, update it when needed
+        MMAP::DoorFilter m_filter;
 
         /**
          * @brief Set the start position of the path.

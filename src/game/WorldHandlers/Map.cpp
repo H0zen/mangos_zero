@@ -3460,6 +3460,24 @@ float Map::GetHeight(float x, float y, float z) const
     return floor ? *floor : INVALID_HEIGHT;
 }
 
+void Map::SetDoorShut(uintptr_t door, Geometry::Aabb const* box)
+{
+    for (size_t agent = 0; agent < m_navDoors.size(); ++agent)
+    {
+        const MMAP::NavMeshLease lease = box
+            ? MMAP::MMapFactory::createOrGetMMapManager()->Lease(GetId(), NavAgent(agent))
+            : MMAP::NavMeshLease();
+        if (!lease)
+        {
+            m_navDoors[agent].Open(door);
+            continue;
+        }
+        const float low[3] = { box->lo.y, box->lo.z, box->lo.x };
+        const float high[3] = { box->hi.y, box->hi.z, box->hi.x };
+        m_navDoors[agent].Shut(door, *lease.Query(), low, high);
+    }
+}
+
 /**
  * @brief Inserts a game object collision model into the dynamic tree.
  *
