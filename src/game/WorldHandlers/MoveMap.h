@@ -26,6 +26,9 @@
 #ifndef MANGOS_H_MOVE_MAP
 #define MANGOS_H_MOVE_MAP
 
+#include <atomic>
+#include <mutex>
+#include <shared_mutex>
 #include <unordered_map>
 #include "../../dep/recastnavigation/Detour/Include/DetourAlloc.h"
 #include "../../dep/recastnavigation/Detour/Include/DetourNavMesh.h"
@@ -70,6 +73,8 @@ namespace MMAP
         }
 
         dtNavMesh* navMesh;
+        std::shared_mutex meshLock;
+        std::mutex queryLock;
 
         // we have to use single dtNavMeshQuery for every instance, since those are not thread safe
         NavMeshQuerySet navMeshQueries;     // instanceId to query
@@ -94,15 +99,18 @@ namespace MMAP
             // the returned [dtNavMeshQuery const*] is NOT threadsafe
             dtNavMeshQuery const* GetNavMeshQuery(uint32 mapId, uint32 instanceId);
             dtNavMesh const* GetNavMesh(uint32 mapId);
+            std::shared_mutex* GetMeshLock(uint32 mapId);
 
             uint32 getLoadedTilesCount() const { return loadedTiles; }
-            uint32 getLoadedMapsCount() const { return loadedMMaps.size(); }
+            uint32 getLoadedMapsCount();
         private:
-            bool loadMapData(uint32 mapId);
+            MMapData* loadMapData(uint32 mapId);
+            MMapData* findMapData(uint32 mapId);
             uint32 packTileID(int32 x, int32 y);
 
             MMapDataSet loadedMMaps;
-            uint32 loadedTiles;
+            std::mutex mapsLock;
+            std::atomic<uint32> loadedTiles;
     };
 
     // static class

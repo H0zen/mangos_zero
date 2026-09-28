@@ -52,7 +52,7 @@ PathFinder::PathFinder(const Unit* owner)
 PathFinder::PathFinder(const Unit* owner, uint32 mapId)
     : m_polyLength(0), m_type(PATHFIND_BLANK),
     m_useStraightPath(false), m_forceDestination(false), m_pointPathLimit(MAX_POINT_PATH_LENGTH),
-    m_sourceUnit(owner), m_navMesh(NULL), m_navMeshQuery(NULL)
+    m_sourceUnit(owner), m_navMesh(NULL), m_navMeshQuery(NULL), m_meshLock(NULL)
 {
     DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ PathFinder::PathFinder for %s \n", m_sourceUnit->GetGuidStr().c_str());
 
@@ -63,6 +63,7 @@ PathFinder::PathFinder(const Unit* owner, uint32 mapId)
         MMAP::MMapManager* mmap = MMAP::MMapFactory::createOrGetMMapManager();
         m_navMesh = mmap->GetNavMesh(mapId);
         m_navMeshQuery = mmap->GetNavMeshQuery(mapId, m_sourceUnit->GetInstanceId());
+        m_meshLock = mmap->GetMeshLock(mapId);
     }
 
     createFilter();
@@ -110,6 +111,12 @@ bool PathFinder::calculate(float startX, float startY, float startZ, float destX
     if (!MaNGOS::IsValidMapCoord(startX, startY, startZ) || !MaNGOS::IsValidMapCoord(destX, destY, destZ))
     {
         return false;
+    }
+
+    std::shared_lock<std::shared_mutex> meshGuard;
+    if (m_meshLock)
+    {
+        meshGuard = std::shared_lock<std::shared_mutex>(*m_meshLock);
     }
 
     Vector3 start(startX, startY, startZ);
@@ -440,7 +447,7 @@ void PathFinder::BuildPolyPath(const Vector3& startPos, const Vector3& endPos)
         }
 
         // generate suffix
-        uint32 suffixPolyLength = 0;
+        int suffixFound = 0;
         dtResult = m_navMeshQuery->findPath(
             suffixStartPoly,    // start polygon
             endPoly,            // end polygon
@@ -448,8 +455,9 @@ void PathFinder::BuildPolyPath(const Vector3& startPos, const Vector3& endPos)
             endPoint,           // end position
             &m_filter,          // polygon search filter
             m_pathPolyRefs + prefixPolyLength - 1,    // [out] path
-            (int*)&suffixPolyLength,
+            &suffixFound,
             MAX_PATH_LENGTH - prefixPolyLength); // max number of polygons in output path
+        const uint32 suffixPolyLength = uint32(suffixFound);
 
         if (!suffixPolyLength || dtStatusFailed(dtResult))
         {
@@ -477,6 +485,7 @@ void PathFinder::BuildPolyPath(const Vector3& startPos, const Vector3& endPos)
         // free and invalidate old path data
         clear();
 
+        int polyFound = 0;
         dtResult = m_navMeshQuery->findPath(
             startPoly,          // start polygon
             endPoly,            // end polygon
@@ -484,8 +493,9 @@ void PathFinder::BuildPolyPath(const Vector3& startPos, const Vector3& endPos)
             endPoint,           // end position
             &m_filter,          // polygon search filter
             m_pathPolyRefs,     // [out] path
-            (int*)&m_polyLength,
+            &polyFound,
             MAX_PATH_LENGTH);   // max number of polygons in output path
+        m_polyLength = uint32(polyFound);
 
         if (!m_polyLength || dtStatusFailed(dtResult))
         {
@@ -519,7 +529,7 @@ void PathFinder::BuildPolyPath(const Vector3& startPos, const Vector3& endPos)
 void PathFinder::BuildPointPath(const float* startPoint, const float* endPoint)
 {
     float pathPoints[MAX_POINT_PATH_LENGTH * VERTEX_SIZE];
-    uint32 pointCount = 0;
+    int pointFound = 0;
     dtStatus dtResult;
     if (m_useStraightPath)
     {
@@ -531,7 +541,7 @@ void PathFinder::BuildPointPath(const float* startPoint, const float* endPoint)
             pathPoints,         // [out] path corner points
             NULL,               // [out] flags
             NULL,               // [out] shortened path
-            (int*)&pointCount,
+            &pointFound,
             m_pointPathLimit);  // maximum number of points/polygons to use
     }
     else
@@ -542,9 +552,10 @@ void PathFinder::BuildPointPath(const float* startPoint, const float* endPoint)
             m_pathPolyRefs,     // current path
             m_polyLength,       // length of current path
             pathPoints,         // [out] path corner points
-            (int*)&pointCount,
+            &pointFound,
             m_pointPathLimit);  // maximum number of points
     }
+    uint32 pointCount = uint32(pointFound);
 
     if (pointCount < 2 || dtStatusFailed(dtResult))
     {
@@ -806,9 +817,10 @@ bool PathFinder::getSteerTarget(const float* startPos, const float* endPos,
     float steerPath[MAX_STEER_POINTS * VERTEX_SIZE];
     unsigned char steerPathFlags[MAX_STEER_POINTS];
     dtPolyRef steerPathPolys[MAX_STEER_POINTS];
-    uint32 nsteerPath = 0;
+    int steerFound = 0;
     dtStatus dtResult = m_navMeshQuery->findStraightPath(startPos, endPos, path, pathSize,
-        steerPath, steerPathFlags, steerPathPolys, (int*)&nsteerPath, MAX_STEER_POINTS);
+        steerPath, steerPathFlags, steerPathPolys, &steerFound, MAX_STEER_POINTS);
+    const uint32 nsteerPath = uint32(steerFound);
     if (!nsteerPath || dtStatusFailed(dtResult))
     {
         return false;
@@ -917,8 +929,9 @@ dtStatus PathFinder::findSmoothPath(const float* startPos, const float* endPos,
         const static uint32 MAX_VISIT_POLY = 16;
         dtPolyRef visited[MAX_VISIT_POLY];
 
-        uint32 nvisited = 0;
-        m_navMeshQuery->moveAlongSurface(polys[0], iterPos, moveTgt, &m_filter, result, visited, (int*)&nvisited, MAX_VISIT_POLY);
+        int visitedFound = 0;
+        m_navMeshQuery->moveAlongSurface(polys[0], iterPos, moveTgt, &m_filter, result, visited, &visitedFound, MAX_VISIT_POLY);
+        const uint32 nvisited = uint32(visitedFound);
         npolys = fixupCorridor(polys, npolys, MAX_PATH_LENGTH, visited, nvisited);
 
         m_navMeshQuery->getPolyHeight(polys[0], result, &result[1]);
