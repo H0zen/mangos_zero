@@ -434,6 +434,12 @@ void PathFinder::BuildPolyPath(const Vector3& startPos, const Vector3& endPos)
         {
             // we can hit offmesh connection as last poly - closestPointOnPoly() don't like that
             // try to recover by using prev polyref
+            if (prefixPolyLength < 2)
+            {
+                BuildShortcut();
+                m_type = PATHFIND_NOPATH;
+                return;
+            }
             --prefixPolyLength;
             suffixStartPoly = m_pathPolyRefs[prefixPolyLength - 1];
             dtResult = m_navMeshQuery->closestPointOnPoly(suffixStartPoly, endPoint, suffixEndPoint, NULL);
@@ -471,7 +477,9 @@ void PathFinder::BuildPolyPath(const Vector3& startPos, const Vector3& endPos)
             m_polyLength, prefixPolyLength, suffixPolyLength, m_sourceUnit->GetGuidStr().c_str());
 
         // new path = prefix + suffix - overlap
-        m_polyLength = prefixPolyLength + suffixPolyLength - 1;
+        m_polyLength = (suffixPolyLength && !dtStatusFailed(dtResult))
+                           ? prefixPolyLength + suffixPolyLength - 1
+                           : prefixPolyLength;
     }
     else
     {
@@ -774,7 +782,7 @@ uint32 PathFinder::fixupCorridor(dtPolyRef* path, uint32 npath, uint32 maxPath,
     // Concatenate paths.
 
     // Adjust beginning of the buffer to include the visited.
-    uint32 req = nvisited - furthestVisited;
+    uint32 req = std::min(nvisited - uint32(furthestVisited), maxPath);
     uint32 orig = uint32(furthestPath + 1) < npath ? furthestPath + 1 : npath;
     uint32 size = npath > orig ? npath - orig : 0;
     if (req + size > maxPath)
