@@ -26,6 +26,7 @@
 #include <memory>
 #include "ExtractorConsole.hpp"
 #include "nav/NavMeshBuilder.hpp"
+#include "MoveMapSharedDefines.h"
 #include "client/ModelLoaders.hpp"
 #include "client/MpqTileSource.hpp"
 #include "client/StormLibArchive.hpp"
@@ -37,6 +38,7 @@
 #include <algorithm>
 #include <chrono>
 #include <climits>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -460,26 +462,32 @@ namespace
 
         g_console.SetStage("nav");
 
-        world::nav::NavConfig cfg;
-        cfg.threads = opt.threads;
-        cfg.offMeshFile = opt.offMesh;
-
-        world::nav::NavMeshBuilder builder(tileDir, opt.dest + "/mmaps", cfg);
-        builder.SetProgress(&NavProgress, nullptr);
-        builder.SetMapDone(&NavMapDone);
-
-        const int written = builder.BakeAll(opt.mapFilter);
-        if (written < 0)
+        for (const NavAgentShape& agent : NAV_AGENTS)
         {
-            g_console.Error("nav: bake failed; inspect the earlier diagnostics and " +
-                            tileDir);
-            return false;
-        }
+            world::nav::NavConfig cfg;
+            cfg.threads = opt.threads;
+            cfg.offMeshFile = opt.offMesh;
+            cfg.maxWalkableAngle = agent.maxSlope;
+            cfg.walkableRadius = int(std::ceil(agent.radius / cfg.cellSize));
 
-        char msg[256];
-        std::snprintf(msg, sizeof(msg), "nav: %d mmtile files -> %s/mmaps", written,
-                      opt.dest.c_str());
-        g_console.Success(msg);
+            const std::string outDir = opt.dest + "/mmaps/" + agent.dir;
+            world::nav::NavMeshBuilder builder(tileDir, outDir, cfg);
+            builder.SetProgress(&NavProgress, nullptr);
+            builder.SetMapDone(&NavMapDone);
+
+            const int written = builder.BakeAll(opt.mapFilter);
+            if (written < 0)
+            {
+                g_console.Error("nav: bake failed; inspect the earlier diagnostics and " +
+                                tileDir);
+                return false;
+            }
+
+            char msg[256];
+            std::snprintf(msg, sizeof(msg), "nav: %d mmtile files -> %s", written,
+                          outDir.c_str());
+            g_console.Success(msg);
+        }
         return true;
     }
 

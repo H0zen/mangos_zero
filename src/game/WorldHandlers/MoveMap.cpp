@@ -47,6 +47,7 @@
 #include "Utilities/Errors.h"
 #include <string>
 #include <set>
+#include <vector>
 #include "Log.h"
 #include "World.h"
 #include "Creature.h"
@@ -57,20 +58,68 @@ namespace
 {
     const int NAV_QUERY_NODES = 1024;
 
-    /// Named from the expansion, never from the format string: a deck map's id is seven
-    /// digits and the old sizing silently cut the extension off.
-    std::string MMapFileName(uint32 mapId)
+    uint64 MeshKey(uint32 mapId, NavAgent agent)
     {
-        char leaf[64];
-        snprintf(leaf, sizeof(leaf), "mmaps/%04u.mmap", mapId);
+        return (uint64(mapId) << 8) | uint64(agent);
+    }
+
+    std::string MMapFileName(uint32 mapId, NavAgent agent)
+    {
+        char leaf[96];
+        snprintf(leaf, sizeof(leaf), "mmaps/%s/%04u.mmap", NAV_AGENTS[size_t(agent)].dir, mapId);
         return sWorld.GetDataPath() + leaf;
     }
 
-    std::string MMapTileFileName(uint32 mapId, int32 x, int32 y)
+    std::string MMapTileFileName(uint32 mapId, NavAgent agent, int32 x, int32 y)
     {
-        char leaf[64];
-        snprintf(leaf, sizeof(leaf), "mmaps/%04u%02i%02i.mmtile", mapId, x, y);
+        char leaf[96];
+        snprintf(leaf, sizeof(leaf), "mmaps/%s/%04u%02i%02i.mmtile", NAV_AGENTS[size_t(agent)].dir, mapId, x, y);
         return sWorld.GetDataPath() + leaf;
+    }
+
+    struct QueryDeleter
+    {
+        void operator()(dtNavMeshQuery* query) const { dtFreeNavMeshQuery(query); }
+    };
+
+    struct ThreadQuery
+    {
+        uint64 serial = 0;
+        std::unique_ptr<dtNavMeshQuery, QueryDeleter> query;
+    };
+
+    dtNavMeshQuery const* QueryOnThisThread(uint64 meshKey, MMAP::MMapData const& data)
+    {
+        thread_local std::unordered_map<uint64, ThreadQuery> queries;
+        ThreadQuery& mine = queries[meshKey];
+        if (mine.serial == data.serial && mine.query)
+        {
+            return mine.query.get();
+        }
+
+        mine.serial = data.serial;
+        mine.query.reset(dtAllocNavMeshQuery());
+        if (!mine.query || dtStatusFailed(mine.query->init(data.navMesh, NAV_QUERY_NODES)))
+        {
+            sLog.outError("MMAP: no query for mesh %llu on this thread", (unsigned long long)meshKey);
+            mine.query.reset();
+        }
+        return mine.query.get();
+    }
+
+    bool ReadTileData(FILE* file, MmapTileHeader const& header, std::vector<unsigned char>& out)
+    {
+        const long dataStart = ftell(file);
+        fseek(file, 0, SEEK_END);
+        const long dataEnd = ftell(file);
+        fseek(file, dataStart, SEEK_SET);
+        if (header.size == 0 || dataStart < 0 || dataEnd < dataStart ||
+            uint64(header.size) > uint64(dataEnd - dataStart))
+        {
+            return false;
+        }
+        out.resize(header.size);
+        return fread(out.data(), header.size, 1, file) == 1;
     }
 }
 
@@ -243,71 +292,28 @@ namespace MMAP
         return false;
     }
 
-    // ######################## MMapManager ########################
-    MMapManager::~MMapManager()
+    std::shared_ptr<MMapData> MMapManager::Find(uint32 mapId, NavAgent agent) const
     {
-        for (MMapDataSet::iterator i = loadedMMaps.begin(); i != loadedMMaps.end(); ++i)
-        {
-            delete i->second;
-        }
-
-        // by now we should not have maps loaded
-        // if we had, tiles in MMapData->mmapLoadedTiles, their actual data is lost!
+        std::shared_lock<std::shared_mutex> guard(mapsLock);
+        MMapDataSet::const_iterator found = loadedMMaps.find(MeshKey(mapId, agent));
+        return found == loadedMMaps.end() ? nullptr : found->second;
     }
 
-    MMapData* MMapManager::findMapData(uint32 mapId)
+    NavMeshLease MMapManager::Lease(uint32 mapId, NavAgent agent)
     {
-        std::lock_guard<std::mutex> guard(mapsLock);
-        MMapDataSet::iterator itr = loadedMMaps.find(mapId);
-        return itr != loadedMMaps.end() ? itr->second : NULL;
+        std::shared_ptr<MMapData> data = Find(mapId, agent);
+        if (!data)
+        {
+            return NavMeshLease();
+        }
+        dtNavMeshQuery const* query = QueryOnThisThread(MeshKey(mapId, agent), *data);
+        return query ? NavMeshLease(std::move(data), query) : NavMeshLease();
     }
 
-    MMapData* MMapManager::loadMapData(uint32 mapId)
+    uint32 MMapManager::getLoadedMapsCount() const
     {
-        std::lock_guard<std::mutex> guard(mapsLock);
-
-        MMapDataSet::iterator itr = loadedMMaps.find(mapId);
-        if (itr != loadedMMaps.end())
-        {
-            return itr->second;
-        }
-
-        const std::string fileName = MMapFileName(mapId);
-
-        FILE* file = fopen(fileName.c_str(), "rb");
-        if (!file)
-        {
-            if (MMapFactory::IsPathfindingEnabled(mapId))
-            {
-                sLog.outError("MMAP:loadMapData: Error: Could not open mmap file '%s'", fileName.c_str());
-            }
-            return NULL;
-        }
-
-        dtNavMeshParams params;
-        size_t file_read = fread(&params, sizeof(dtNavMeshParams), 1, file);
-        fclose(file);
-        if (file_read != 1)
-        {
-            sLog.outError("MMAP:loadMapData: Failed to load mmap %04u from file %s", mapId, fileName.c_str());
-            return NULL;
-        }
-
-        dtNavMesh* mesh = dtAllocNavMesh();
-        MANGOS_ASSERT(mesh);
-        dtStatus dtResult = mesh->init(&params);
-        if (dtStatusFailed(dtResult))
-        {
-            dtFreeNavMesh(mesh);
-            sLog.outError("MMAP:loadMapData: Failed to initialize dtNavMesh for mmap %04u from file %s", mapId, fileName.c_str());
-            return NULL;
-        }
-
-        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:loadMapData: Loaded %04u.mmap", mapId);
-
-        MMapData* mmap_data = new MMapData(mesh);
-        loadedMMaps.insert(std::pair<uint32, MMapData*>(mapId, mmap_data));
-        return mmap_data;
+        std::shared_lock<std::shared_mutex> guard(mapsLock);
+        return uint32(loadedMMaps.size());
     }
 
     uint32 MMapManager::packTileID(int32 x, int32 y)
@@ -315,238 +321,184 @@ namespace MMAP
         return uint32(x << 16 | y);
     }
 
-    uint32 MMapManager::getLoadedMapsCount()
+    std::shared_ptr<MMapData> MMapManager::loadMapData(uint32 mapId, NavAgent agent)
     {
-        std::lock_guard<std::mutex> guard(mapsLock);
-        return uint32(loadedMMaps.size());
+        if (std::shared_ptr<MMapData> loaded = Find(mapId, agent))
+        {
+            return loaded;
+        }
+
+        std::unique_lock<std::shared_mutex> guard(mapsLock);
+        MMapDataSet::const_iterator raced = loadedMMaps.find(MeshKey(mapId, agent));
+        if (raced != loadedMMaps.end())
+        {
+            return raced->second;
+        }
+
+        const std::string fileName = MMapFileName(mapId, agent);
+        FILE* file = fopen(fileName.c_str(), "rb");
+        if (!file)
+        {
+            if (MMapFactory::IsPathfindingEnabled(mapId, NULL))
+            {
+                sLog.outError("MMAP:loadMapData: Could not open mmap file '%s'", fileName.c_str());
+            }
+            return nullptr;
+        }
+
+        dtNavMeshParams params;
+        const size_t fileRead = fread(&params, sizeof(dtNavMeshParams), 1, file);
+        fclose(file);
+        if (fileRead != 1)
+        {
+            sLog.outError("MMAP:loadMapData: Failed to read %s", fileName.c_str());
+            return nullptr;
+        }
+
+        dtNavMesh* mesh = dtAllocNavMesh();
+        MANGOS_ASSERT(mesh);
+        if (dtStatusFailed(mesh->init(&params)))
+        {
+            dtFreeNavMesh(mesh);
+            sLog.outError("MMAP:loadMapData: Failed to initialize dtNavMesh from %s", fileName.c_str());
+            return nullptr;
+        }
+
+        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:loadMapData: Loaded %s", fileName.c_str());
+        std::shared_ptr<MMapData> data = std::make_shared<MMapData>(mesh, nextSerial++);
+        loadedMMaps.emplace(MeshKey(mapId, agent), data);
+        return data;
     }
 
     bool MMapManager::loadMap(uint32 mapId, int32 x, int32 y)
     {
-        MMapData* mmap = loadMapData(mapId);
+        bool loaded = false;
+        for (size_t agent = 0; agent < size_t(NavAgent::Count); ++agent)
+        {
+            loaded |= loadTile(mapId, NavAgent(agent), x, y);
+        }
+        return loaded;
+    }
+
+    bool MMapManager::loadTile(uint32 mapId, NavAgent agent, int32 x, int32 y)
+    {
+        std::shared_ptr<MMapData> const mmap = loadMapData(mapId, agent);
         if (!mmap)
         {
             return false;
         }
 
-        const uint32 packedGridPos = packTileID(x, y);
-        {
-            std::shared_lock<std::shared_mutex> guard(mmap->meshLock);
-            if (mmap->mmapLoadedTiles.find(packedGridPos) != mmap->mmapLoadedTiles.end())
-            {
-                sLog.outError("MMAP:loadMap: Asked to load already loaded navmesh tile. %04u%02i%02i.mmtile", mapId, x, y);
-                return false;
-            }
-        }
-
-        const int32 filenameTileX = y;
-        const int32 filenameTileY = x;
-        const std::string fileName = MMapTileFileName(mapId, filenameTileX, filenameTileY);
-
+        const int32 fileX = y;
+        const int32 fileY = x;
+        const std::string fileName = MMapTileFileName(mapId, agent, fileX, fileY);
         FILE* file = fopen(fileName.c_str(), "rb");
         if (!file)
         {
-            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "ERROR: MMAP:loadMap: Could not open mmtile file '%s'", fileName.c_str());
+            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:loadMap: no tile %s", fileName.c_str());
             return false;
         }
 
         MmapTileHeader fileHeader;
-        if (fread(&fileHeader, sizeof(MmapTileHeader), 1, file) != 1 ||
-            fileHeader.mmapMagic != MMAP_MAGIC)
+        std::vector<unsigned char> bytes;
+        const bool headerOk = fread(&fileHeader, sizeof(MmapTileHeader), 1, file) == 1 &&
+                              fileHeader.mmapMagic == MMAP_MAGIC;
+        const bool versionOk = headerOk && fileHeader.mmapVersion == MMAP_VERSION;
+        const bool dataOk = versionOk && ReadTileData(file, fileHeader, bytes);
+        fclose(file);
+        if (!dataOk)
         {
-            sLog.outError("MMAP:loadMap: Bad header in mmap %04u%02i%02i.mmtile",
-                          mapId, filenameTileX, filenameTileY);
-            fclose(file);
-            return false;
-        }
-
-        if (fileHeader.mmapVersion != MMAP_VERSION)
-        {
-            sLog.outError("MMAP:loadMap: %04u%02i%02i.mmtile was built "
-                          "with generator v%i, expected v%i",
-                          mapId, filenameTileX, filenameTileY,
-                          fileHeader.mmapVersion, MMAP_VERSION);
-            fclose(file);
-            return false;
-        }
-
-        const long dataStart = ftell(file);
-        fseek(file, 0, SEEK_END);
-        const long dataEnd = ftell(file);
-        fseek(file, dataStart, SEEK_SET);
-        if (fileHeader.size == 0 || dataStart < 0 || dataEnd < dataStart ||
-            uint64(fileHeader.size) > uint64(dataEnd - dataStart))
-        {
-            sLog.outError("MMAP:loadMap: Bad data size in mmap %04u%02i%02i.mmtile",
-                          mapId, filenameTileX, filenameTileY);
-            fclose(file);
+            sLog.outError("MMAP:loadMap: %s: %s", fileName.c_str(),
+                          !headerOk ? "bad header" : !versionOk ? "wrong generator version" : "bad data");
             return false;
         }
 
         unsigned char* data = (unsigned char*)dtAlloc(fileHeader.size, DT_ALLOC_PERM);
         MANGOS_ASSERT(data);
+        memcpy(data, bytes.data(), fileHeader.size);
 
-        const size_t result = fread(data, fileHeader.size, 1, file);
-        fclose(file);
-        if (result != 1)
+        const uint32 packedGridPos = packTileID(x, y);
+        std::unique_lock<std::shared_mutex> guard(mmap->tilesLock);
+        if (mmap->mmapLoadedTiles.count(packedGridPos))
         {
-            sLog.outError("MMAP:loadMap: Bad header or data in mmap %04u%02i%02i.mmtile",
-                          mapId, filenameTileX, filenameTileY);
+            sLog.outError("MMAP:loadMap: %s is already loaded", fileName.c_str());
             dtFree(data);
             return false;
         }
 
-        dtMeshHeader* header = (dtMeshHeader*)data;
         dtTileRef tileRef = 0;
-
-        std::unique_lock<std::shared_mutex> guard(mmap->meshLock);
-        dtStatus dtResult = mmap->navMesh->addTile(data, fileHeader.size, DT_TILE_FREE_DATA, 0, &tileRef);
-        if (dtStatusFailed(dtResult))
+        if (dtStatusFailed(mmap->navMesh->addTile(data, fileHeader.size, DT_TILE_FREE_DATA, 0, &tileRef)))
         {
-            sLog.outError("MMAP:loadMap: Could not load %04u%02i%02i.mmtile into navmesh",
-                          mapId, filenameTileX, filenameTileY);
+            sLog.outError("MMAP:loadMap: Could not add %s to the navmesh", fileName.c_str());
             dtFree(data);
             return false;
         }
 
-        mmap->mmapLoadedTiles.insert(std::pair<uint32, dtTileRef>(packedGridPos, tileRef));
+        mmap->mmapLoadedTiles.emplace(packedGridPos, tileRef);
         ++loadedTiles;
-        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING,
-                         "MMAP:loadMap: Loaded mmtile %04u[%02i,%02i] into %04u[%02i,%02i]",
-                         mapId, filenameTileX, filenameTileY, mapId, header->x, header->y);
+        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:loadMap: Loaded %s", fileName.c_str());
         return true;
     }
 
     bool MMapManager::unloadMap(uint32 mapId, int32 x, int32 y)
     {
-        MMapData* mmap = findMapData(mapId);
+        bool unloaded = false;
+        for (size_t agent = 0; agent < size_t(NavAgent::Count); ++agent)
+        {
+            unloaded |= unloadTile(mapId, NavAgent(agent), x, y);
+        }
+        return unloaded;
+    }
+
+    bool MMapManager::unloadTile(uint32 mapId, NavAgent agent, int32 x, int32 y)
+    {
+        std::shared_ptr<MMapData> const mmap = Find(mapId, agent);
         if (!mmap)
         {
-            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:unloadMap: Asked to unload not loaded navmesh map. %04u%02i%02i.mmtile", mapId, x, y);
             return false;
         }
 
-        std::unique_lock<std::shared_mutex> guard(mmap->meshLock);
-        const uint32 packedGridPos = packTileID(x, y);
-        MMapTileSet::iterator tile = mmap->mmapLoadedTiles.find(packedGridPos);
+        std::unique_lock<std::shared_mutex> guard(mmap->tilesLock);
+        MMapTileSet::iterator tile = mmap->mmapLoadedTiles.find(packTileID(x, y));
         if (tile == mmap->mmapLoadedTiles.end())
         {
-            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:unloadMap: Asked to unload not loaded navmesh tile. %04u%02i%02i.mmtile", mapId, x, y);
             return false;
         }
 
-        dtStatus dtResult = mmap->navMesh->removeTile(tile->second, NULL, NULL);
-        if (dtStatusFailed(dtResult))
+        if (dtStatusFailed(mmap->navMesh->removeTile(tile->second, NULL, NULL)))
         {
-            sLog.outError("MMAP:unloadMap: Could not unload %04u%02i%02i.mmtile from navmesh", mapId, x, y);
+            sLog.outError("MMAP:unloadMap: Could not unload %s/%04u%02i%02i.mmtile",
+                          NAV_AGENTS[size_t(agent)].dir, mapId, y, x);
             MANGOS_ASSERT(false);
             return false;
         }
 
         mmap->mmapLoadedTiles.erase(tile);
         --loadedTiles;
-        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:unloadMap: Unloaded mmtile %04u[%02i,%02i] from %04u", mapId, x, y, mapId);
         return true;
     }
 
     bool MMapManager::unloadMap(uint32 mapId)
     {
-        std::lock_guard<std::mutex> mapsGuard(mapsLock);
-        MMapDataSet::iterator itr = loadedMMaps.find(mapId);
-        if (itr == loadedMMaps.end())
+        std::vector<std::shared_ptr<MMapData>> gone;
         {
-            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:unloadMap: Asked to unload not loaded navmesh map %04u", mapId);
-            return false;
-        }
-
-        MMapData* mmap = itr->second;
-        {
-            std::unique_lock<std::shared_mutex> guard(mmap->meshLock);
-            for (MMapTileSet::iterator i = mmap->mmapLoadedTiles.begin(); i != mmap->mmapLoadedTiles.end(); ++i)
+            std::unique_lock<std::shared_mutex> guard(mapsLock);
+            for (size_t agent = 0; agent < size_t(NavAgent::Count); ++agent)
             {
-                uint32 x = (i->first >> 16);
-                uint32 y = (i->first & 0x0000FFFF);
-                dtStatus dtResult = mmap->navMesh->removeTile(i->second, NULL, NULL);
-                if (dtStatusFailed(dtResult))
+                MMapDataSet::iterator const found = loadedMMaps.find(MeshKey(mapId, NavAgent(agent)));
+                if (found != loadedMMaps.end())
                 {
-                    sLog.outError("MMAP:unloadMap: Could not unload %04u%02u%02u.mmtile from navmesh", mapId, x, y);
-                }
-                else
-                {
-                    --loadedTiles;
-                    DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:unloadMap: Unloaded mmtile %04u[%02u,%02u] from %04u", mapId, x, y, mapId);
+                    gone.push_back(std::move(found->second));
+                    loadedMMaps.erase(found);
                 }
             }
         }
 
-        delete mmap;
-        loadedMMaps.erase(itr);
-        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:unloadMap: Unloaded %04u.mmap", mapId);
-        return true;
-    }
-
-    bool MMapManager::unloadMapInstance(uint32 mapId, uint32 instanceId)
-    {
-        MMapData* mmap = findMapData(mapId);
-        if (!mmap)
+        for (std::shared_ptr<MMapData> const& mmap : gone)
         {
-            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:unloadMapInstance: Asked to unload not loaded navmesh map %04u", mapId);
-            return false;
+            std::unique_lock<std::shared_mutex> guard(mmap->tilesLock);
+            loadedTiles -= uint32(mmap->mmapLoadedTiles.size());
         }
-
-        std::lock_guard<std::mutex> guard(mmap->queryLock);
-        NavMeshQuerySet::iterator query = mmap->navMeshQueries.find(instanceId);
-        if (query == mmap->navMeshQueries.end())
-        {
-            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:unloadMapInstance: Asked to unload not loaded dtNavMeshQuery mapId %04u instanceId %u", mapId, instanceId);
-            return false;
-        }
-
-        dtFreeNavMeshQuery(query->second);
-        mmap->navMeshQueries.erase(query);
-        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:unloadMapInstance: Unloaded mapId %04u instanceId %u", mapId, instanceId);
-        return true;
-    }
-
-    dtNavMesh const* MMapManager::GetNavMesh(uint32 mapId)
-    {
-        MMapData* mmap = findMapData(mapId);
-        return mmap ? mmap->navMesh : NULL;
-    }
-
-    std::shared_mutex* MMapManager::GetMeshLock(uint32 mapId)
-    {
-        MMapData* mmap = findMapData(mapId);
-        return mmap ? &mmap->meshLock : NULL;
-    }
-
-    dtNavMeshQuery const* MMapManager::GetNavMeshQuery(uint32 mapId, uint32 instanceId)
-    {
-        MMapData* mmap = findMapData(mapId);
-        if (!mmap)
-        {
-            return NULL;
-        }
-
-        std::lock_guard<std::mutex> guard(mmap->queryLock);
-        NavMeshQuerySet::iterator existing = mmap->navMeshQueries.find(instanceId);
-        if (existing != mmap->navMeshQueries.end())
-        {
-            return existing->second;
-        }
-
-        dtNavMeshQuery* query = dtAllocNavMeshQuery();
-        MANGOS_ASSERT(query);
-        dtStatus dtResult = query->init(mmap->navMesh, NAV_QUERY_NODES);
-        if (dtStatusFailed(dtResult))
-        {
-            dtFreeNavMeshQuery(query);
-            sLog.outError("MMAP:GetNavMeshQuery: Failed to initialize dtNavMeshQuery for mapId %04u instanceId %u", mapId, instanceId);
-            return NULL;
-        }
-
-        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:GetNavMeshQuery: created dtNavMeshQuery for mapId %04u instanceId %u", mapId, instanceId);
-        mmap->navMeshQueries.insert(std::pair<uint32, dtNavMeshQuery*>(instanceId, query));
-        return query;
+        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:unloadMap: Unloaded the meshes of %04u", mapId);
+        return !gone.empty();
     }
 }

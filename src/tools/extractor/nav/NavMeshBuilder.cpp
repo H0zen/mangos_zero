@@ -194,15 +194,13 @@ namespace world::nav
                     {
                         continue;
                     }
-                    if (!tile.liquidDeep.empty() && tile.liquidDeep[cell])
-                    {
-                        continue;
-                    }
-
                     const auto kind = tile.liquidKind.empty()
                                           ? world::terrain::LiquidKind::Water
                                           : world::terrain::LiquidKind(tile.liquidKind[cell]);
-                    const unsigned char area = LiquidArea(kind);
+                    const bool deep = !tile.liquidDeep.empty() && tile.liquidDeep[cell];
+                    const unsigned char area = deep && LiquidArea(kind) == NAV_WATER
+                                                   ? NAV_DEEP_WATER
+                                                   : LiquidArea(kind);
                     if (area == NAV_EMPTY)
                     {
                         continue;
@@ -242,6 +240,35 @@ namespace world::nav
                 return static_cast<const world::terrain::WmoModel&>(model).Soup();
             }
             return static_cast<const world::terrain::CollisionModel&>(model).Soup();
+        }
+
+        bool IsLiquidArea(unsigned int area)
+        {
+            return area == NAV_MAGMA || area == NAV_SLIME || area == NAV_WATER ||
+                   area == NAV_DEEP_WATER;
+        }
+
+        void RemoveLiquidBeds(rcHeightfield& hf)
+        {
+            for (int column = 0; column < hf.width * hf.height; ++column)
+            {
+                rcSpan* bed = nullptr;
+                for (rcSpan* span = hf.spans[column]; span; span = span->next)
+                {
+                    if (IsLiquidArea(span->area))
+                    {
+                        if (bed)
+                        {
+                            bed->area = RC_NULL_AREA;
+                        }
+                        break;
+                    }
+                    if (span->area != RC_NULL_AREA)
+                    {
+                        bed = span;
+                    }
+                }
+            }
         }
 
         void AddModels(const TerrainTile& tile, Soup& out)
@@ -655,6 +682,7 @@ namespace world::nav
                     rcRasterizeTriangles(&ctx, liquid.verts.data(), liquid.VertexCount(),
                                          binTris.data(), binAreas.data(),
                                          int(binAreas.size()), *hf, cfg.walkableClimb);
+                    RemoveLiquidBeds(*hf);
                 }
             }
 
@@ -775,9 +803,9 @@ namespace world::nav
             cfg.borderSize = mb.borderSize;
             cfg.maxVertsPerPoly = DT_VERTS_PER_POLYGON;
             cfg.maxEdgeLen = mb.subTileSize + 1;
-            cfg.minRegionArea = rcSqr(60);
-            cfg.mergeRegionArea = rcSqr(50);
-            cfg.maxSimplificationError = 2.0f;
+            cfg.minRegionArea = rcSqr(8);
+            cfg.mergeRegionArea = rcSqr(20);
+            cfg.maxSimplificationError = 1.3f;
             cfg.detailSampleDist = cfg.cs * 64.0f;
             cfg.detailSampleMaxError = cfg.ch * 2.0f;
             cfg.tileSize = mb.subTileSize;

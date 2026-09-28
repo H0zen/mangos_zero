@@ -27,18 +27,19 @@
 #define MANGOS_H_MOVE_MAP
 
 #include <atomic>
+#include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
 #include "../../dep/recastnavigation/Detour/Include/DetourAlloc.h"
 #include "../../dep/recastnavigation/Detour/Include/DetourNavMesh.h"
 #include "../../dep/recastnavigation/Detour/Include/DetourNavMeshQuery.h"
+#include "MoveMapSharedDefines.h"
 
 #include "Platform/Define.h"
 
 class Unit;
 
-//  memory management
 inline void* dtCustomAlloc(size_t size, dtAllocHint /*hint*/)
 {
     return (void*)new unsigned char[size];
@@ -49,73 +50,67 @@ inline void dtCustomFree(void* ptr)
     delete[](unsigned char*)ptr;
 }
 
-//  move map related classes
 namespace MMAP
 {
     typedef std::unordered_map<uint32, dtTileRef> MMapTileSet;
-    typedef std::unordered_map<uint32, dtNavMeshQuery*> NavMeshQuerySet;
 
-    // dummy struct to hold map's mmap data
     struct MMapData
     {
-        MMapData(dtNavMesh* mesh) : navMesh(mesh) {}
-        ~MMapData()
-        {
-            for (NavMeshQuerySet::iterator i = navMeshQueries.begin(); i != navMeshQueries.end(); ++i)
-            {
-                dtFreeNavMeshQuery(i->second);
-            }
+        MMapData(dtNavMesh* mesh, uint64 serial) : navMesh(mesh), serial(serial) {}
+        ~MMapData() { dtFreeNavMesh(navMesh); }
 
-            if (navMesh)
-            {
-                dtFreeNavMesh(navMesh);
-            }
-        }
+        MMapData(MMapData const&) = delete;
+        MMapData& operator=(MMapData const&) = delete;
 
-        dtNavMesh* navMesh;
-        std::shared_mutex meshLock;
-        std::mutex queryLock;
-
-        // we have to use single dtNavMeshQuery for every instance, since those are not thread safe
-        NavMeshQuerySet navMeshQueries;     // instanceId to query
-        MMapTileSet mmapLoadedTiles;        // maps [map grid coords] to [dtTile]
+        dtNavMesh* const navMesh;
+        uint64 const serial;
+        mutable std::shared_mutex tilesLock;
+        MMapTileSet mmapLoadedTiles;
     };
 
-    typedef std::unordered_map<uint32, MMapData*> MMapDataSet;
+    typedef std::unordered_map<uint64, std::shared_ptr<MMapData>> MMapDataSet;
 
-    // singelton class
-    // holds all all access to mmap loading unloading and meshes
+    class NavMeshLease
+    {
+        public:
+            NavMeshLease() = default;
+            NavMeshLease(std::shared_ptr<MMapData> data, dtNavMeshQuery const* query)
+                : m_data(std::move(data)), m_lock(m_data->tilesLock), m_query(query) {}
+
+            explicit operator bool() const { return m_data && m_query; }
+            dtNavMesh const* Mesh() const { return m_data ? m_data->navMesh : NULL; }
+            dtNavMeshQuery const* Query() const { return m_query; }
+
+        private:
+            std::shared_ptr<MMapData> m_data;
+            std::shared_lock<std::shared_mutex> m_lock;
+            dtNavMeshQuery const* m_query = NULL;
+    };
+
     class MMapManager
     {
         public:
-            MMapManager() : loadedTiles(0) {}
-            ~MMapManager();
-
             bool loadMap(uint32 mapId, int32 x, int32 y);
             bool unloadMap(uint32 mapId, int32 x, int32 y);
             bool unloadMap(uint32 mapId);
-            bool unloadMapInstance(uint32 mapId, uint32 instanceId);
 
-            // the returned [dtNavMeshQuery const*] is NOT threadsafe
-            dtNavMeshQuery const* GetNavMeshQuery(uint32 mapId, uint32 instanceId);
-            dtNavMesh const* GetNavMesh(uint32 mapId);
-            std::shared_mutex* GetMeshLock(uint32 mapId);
+            NavMeshLease Lease(uint32 mapId, NavAgent agent);
 
             uint32 getLoadedTilesCount() const { return loadedTiles; }
-            uint32 getLoadedMapsCount();
+            uint32 getLoadedMapsCount() const;
         private:
-            MMapData* loadMapData(uint32 mapId);
-            MMapData* findMapData(uint32 mapId);
+            std::shared_ptr<MMapData> Find(uint32 mapId, NavAgent agent) const;
+            std::shared_ptr<MMapData> loadMapData(uint32 mapId, NavAgent agent);
+            bool loadTile(uint32 mapId, NavAgent agent, int32 x, int32 y);
+            bool unloadTile(uint32 mapId, NavAgent agent, int32 x, int32 y);
             uint32 packTileID(int32 x, int32 y);
 
+            mutable std::shared_mutex mapsLock;
             MMapDataSet loadedMMaps;
-            std::mutex mapsLock;
-            std::atomic<uint32> loadedTiles;
+            std::atomic<uint32> loadedTiles{0};
+            std::atomic<uint64> nextSerial{1};
     };
 
-    // static class
-    // holds all mmap global data
-    // access point to MMapManager singelton
     class MMapFactory
     {
         public:

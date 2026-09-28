@@ -38,9 +38,9 @@ namespace world::nav
     struct NavConfig
     {
         float cellSize = 0.266666f;
-        float maxWalkableAngle = 60.0f;
-        int walkableHeight = 6;
-        int walkableClimb = 4;
+        float maxWalkableAngle = 80.0f;
+        int walkableHeight = 9;
+        int walkableClimb = 8;
         int walkableRadius = 2;
         int subTileSize = 80;
         int threads = 0;

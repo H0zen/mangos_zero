@@ -30,7 +30,7 @@
 #include "Platform/Define.h"
 
 #define MMAP_MAGIC 0x4d4d4150   // 'MMAP'
-#define MMAP_VERSION 6
+#define MMAP_VERSION 7
 
 struct MmapTileHeader
 {
@@ -53,11 +53,47 @@ enum NavTerrain
     NAV_MAGMA   = 0x02,
     NAV_SLIME   = 0x04,
     NAV_WATER   = 0x08,
-    NAV_UNUSED1 = 0x10,
-    NAV_UNUSED2 = 0x20,
-    NAV_UNUSED3 = 0x40,
-    NAV_UNUSED4 = 0x80
-    // we only have 8 bits
+    NAV_DEEP_WATER = 0x10
 };
+
+enum class NavAgent : uint8
+{
+    Small,
+    Medium,
+    Large,
+    Steered,
+    Count
+};
+
+struct NavAgentShape
+{
+    char const* dir;
+    float radius;
+    float maxSlope;
+};
+
+constexpr NavAgentShape NAV_AGENTS[size_t(NavAgent::Count)] =
+{
+    { "small",   0.5f, 80.0f },
+    { "medium",  1.0f, 80.0f },
+    { "large",   2.0f, 80.0f },
+    { "steered", 0.5f, 50.0f },
+};
+
+constexpr float SMALL_AGENT_MAX_RADIUS = 0.75f;
+constexpr float MEDIUM_AGENT_MAX_RADIUS = 1.5f;
+
+constexpr NavAgent AgentFor(float radius, bool steered)
+{
+    if (steered)
+    {
+        return NavAgent::Steered;
+    }
+    if (radius <= SMALL_AGENT_MAX_RADIUS)
+    {
+        return NavAgent::Small;
+    }
+    return radius <= MEDIUM_AGENT_MAX_RADIUS ? NavAgent::Medium : NavAgent::Large;
+}
 
 #endif  // _MOVE_MAP_SHARED_DEFINES_H

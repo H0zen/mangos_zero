@@ -52,21 +52,34 @@ PathFinder::PathFinder(const Unit* owner)
 PathFinder::PathFinder(const Unit* owner, uint32 mapId)
     : m_polyLength(0), m_type(PATHFIND_BLANK),
     m_useStraightPath(false), m_forceDestination(false), m_pointPathLimit(MAX_POINT_PATH_LENGTH),
-    m_sourceUnit(owner), m_navMesh(NULL), m_navMeshQuery(NULL), m_meshLock(NULL)
+    m_sourceUnit(owner), m_mapId(mapId), m_navMesh(NULL), m_navMeshQuery(NULL)
 {
     DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ PathFinder::PathFinder for %s \n", m_sourceUnit->GetGuidStr().c_str());
 
     memset(m_pathPolyRefs, 0, sizeof(m_pathPolyRefs));
 
-    if (MMAP::MMapFactory::IsPathfindingEnabled(mapId, owner))
-    {
-        MMAP::MMapManager* mmap = MMAP::MMapFactory::createOrGetMMapManager();
-        m_navMesh = mmap->GetNavMesh(mapId);
-        m_navMeshQuery = mmap->GetNavMeshQuery(mapId, m_sourceUnit->GetInstanceId());
-        m_meshLock = mmap->GetMeshLock(mapId);
-    }
-
     createFilter();
+}
+
+NavAgent PathFinder::Agent() const
+{
+    bool steered = m_sourceUnit->GetTypeId() == TYPEID_PLAYER;
+#ifdef ENABLE_PLAYERBOTS
+    steered = steered && !const_cast<Player*>(static_cast<Player const*>(m_sourceUnit))->GetPlayerbotAI();
+#endif
+    return AgentFor(m_sourceUnit->Where().Extent(), steered);
+}
+
+void PathFinder::DropStaleCorridor()
+{
+    for (uint32 i = 0; i < m_polyLength; ++i)
+    {
+        if (!m_navMesh->isValidPolyRef(m_pathPolyRefs[i]))
+        {
+            clear();
+            return;
+        }
+    }
 }
 
 /**
@@ -113,16 +126,24 @@ bool PathFinder::calculate(float startX, float startY, float startZ, float destX
         return false;
     }
 
-    std::shared_lock<std::shared_mutex> meshGuard;
-    if (m_meshLock)
+    MMAP::NavMeshLease lease;
+    if (MMAP::MMapFactory::IsPathfindingEnabled(m_mapId, m_sourceUnit))
     {
-        meshGuard = std::shared_lock<std::shared_mutex>(*m_meshLock);
+        lease = MMAP::MMapFactory::createOrGetMMapManager()->Lease(m_mapId, Agent());
     }
+    m_navMesh = lease.Mesh();
+    m_navMeshQuery = lease.Query();
 
-    Vector3 start(startX, startY, startZ);
+    const bool routed = Route(Vector3(startX, startY, startZ), Vector3(destX, destY, destZ), forceDest);
+
+    m_navMesh = NULL;
+    m_navMeshQuery = NULL;
+    return routed;
+}
+
+bool PathFinder::Route(const Vector3& start, const Vector3& dest, bool forceDest)
+{
     setStartPosition(start);
-
-    Vector3 dest(destX, destY, destZ);
     setEndPosition(dest);
 
     m_forceDestination = forceDest;
@@ -153,6 +174,7 @@ bool PathFinder::calculate(float startX, float startY, float startZ, float destX
 #endif
 
     updateFilter();
+    DropStaleCorridor();
 
     BuildPolyPath(start, dest);
     return true;
@@ -660,19 +682,27 @@ void PathFinder::createFilter()
         Creature* creature = (Creature*)m_sourceUnit;
         if (creature->CanWalk())
         {
-            includeFlags |= NAV_GROUND; // walk
+            includeFlags |= NAV_GROUND;
         }
 
-        // creatures don't take environmental damage
         if (creature->CanSwim())
         {
-            includeFlags |= (NAV_WATER | NAV_MAGMA | NAV_SLIME); // swim
+            includeFlags |= NAV_WATER | NAV_DEEP_WATER;
+        }
+
+        const uint32 immune = creature->GetCreatureInfo()->SchoolImmuneMask;
+        if (immune & SPELL_SCHOOL_MASK_FIRE)
+        {
+            includeFlags |= NAV_MAGMA;
+        }
+        if (immune & SPELL_SCHOOL_MASK_NATURE)
+        {
+            includeFlags |= NAV_SLIME;
         }
     }
     else if (m_sourceUnit->GetTypeId() == TYPEID_PLAYER)
     {
-        // perfect support not possible, just stay 'safe'
-        includeFlags |= (NAV_GROUND | NAV_WATER);
+        includeFlags |= NAV_GROUND | NAV_WATER;
     }
 
     m_filter.setIncludeFlags(includeFlags);
@@ -715,7 +745,7 @@ NavTerrain PathFinder::getNavTerrain(float x, float y, float z)
     {
         case MAP_LIQUID_TYPE_WATER:
         case MAP_LIQUID_TYPE_OCEAN:
-            return NAV_WATER;
+            return NavTerrain(NAV_WATER | NAV_DEEP_WATER);
         case MAP_LIQUID_TYPE_MAGMA:
             return NAV_MAGMA;
         case MAP_LIQUID_TYPE_SLIME:
