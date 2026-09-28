@@ -127,20 +127,35 @@ namespace Movement
      */
     void WriteLinearPath(const Spline<int32>& spline, ByteBuffer& data)
     {
-        Movement::SplineBase::ControlArray const& pathPoint = spline.getPoints(); // get ref of whole path points array
+        Movement::SplineBase::ControlArray const& pathPoint = spline.getPoints();
+        const uint32 first = spline.first();
+        const uint32 last = spline.last();
+        const Vector3 destination = pathPoint[last];
 
-        uint32 pathSize = spline.last() - spline.first() - 1; // -1 as we send destination first and last index is destination
-        MANGOS_ASSERT(pathSize >= 0);                       // should never be less than 0
-
-        Vector3 destination = pathPoint[spline.last()];     // destination of this path should be send right after path size
-        data << pathSize;
+        data << uint32(last - first);
         data << destination;
 
-        for (uint32 i = spline.first(); i < spline.first() + pathSize; i++) // from first real index (this array contain also special data)
+        for (uint32 i = first + 1; i < last; ++i)
         {
-            Vector3 offset = destination - pathPoint[i];    // we have to send offset relative to destination instead of directly path point.
-            data.appendPackXYZ(offset.x, offset.y, offset.z); // we have to pack x,y,z before send
+            const Vector3 offset = destination - pathPoint[i];
+            data.appendPackXYZ(offset.x, offset.y, offset.z);
         }
+    }
+
+    Vector3 CreateGuardPoint(Movement::SplineBase::ControlArray const& path)
+    {
+        const Vector3& start = path[0];
+        Vector3 back(start.x - path[1].x, start.y - path[1].y, 0.0f);
+        const float length = back.length();
+        if (length < 0.001f)
+        {
+            back = Vector3(1.0f, 0.0f, 0.0f);
+        }
+        else
+        {
+            back /= length;
+        }
+        return Vector3(start.x + back.x, start.y + back.y, start.z);
     }
 
     /**
@@ -204,8 +219,10 @@ namespace Movement
     void PacketBuilder::WriteCreate(const MoveSpline& move_spline, ByteBuffer& data)
     {
         MoveSplineFlag splineFlags = move_spline.splineflags;
+        const uint32 clientStateBits =
+            MoveSplineFlag::Done | MoveSplineFlag::Unknown3 | MoveSplineFlag::Unknown31;
 
-        data << splineFlags.raw();
+        data << uint32(splineFlags.raw() & ~clientStateBits);
 
         if (splineFlags.final_point)
         {
@@ -224,9 +241,18 @@ namespace Movement
         data << move_spline.Duration();
         data << move_spline.GetId();
 
-        uint32 nodes = move_spline.getPath().size();
-        data << nodes;
-        data.append<Vector3>(&move_spline.getPath()[0], nodes);
+        Movement::SplineBase::ControlArray const& path = move_spline.getPath();
+        const uint32 nodes = uint32(path.size());
+        if (splineFlags.isSmooth())
+        {
+            data << nodes;
+        }
+        else
+        {
+            data << uint32(nodes + 1);
+            data << CreateGuardPoint(path);
+        }
+        data.append<Vector3>(&path[0], nodes);
         data << (move_spline.isCyclic() ? Vector3::zero() : move_spline.FinalDestination());
     }
 }
