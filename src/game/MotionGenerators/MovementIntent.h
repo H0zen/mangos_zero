@@ -105,22 +105,8 @@ namespace Motion
         MOVE_STRAIGHT     = 0x04, ///< Do not route: go straight there.
         MOVE_FORCE_DEST   = 0x08, ///< Arrive at the exact goal even if unroutable.
 
-        /// Refuse the leg when the router could not find a real path, instead of
-        /// taking its straight-line fallback. Chase, follow, flee and patrol legs all
-        /// want this (a mob must not walk through a wall to reach you); a point,
-        /// wander or home move deliberately does not.
-        MOVE_REQUIRE_PATH = 0x10,
-
-        /// Stricter than MOVE_REQUIRE_PATH: refuse the leg unless the router actually
-        /// ROUTED it. The two differ in one case that matters, and it is the common one
-        /// over long distances. MOVE_REQUIRE_PATH tests Failed(), which is PATHFIND_NOPATH
-        /// alone, so it still accepts PATHFIND_NOT_USING_PATH -- the answer PathFinder gives
-        /// when the destination's mmap tile is not resident, or for the water/line-of-sight
-        /// case. Those come back as a terrain-clamped straight line laid through whatever
-        /// stands in between, and the caller cannot tell from the outcome that it happened.
-        /// Routed() excludes both, which is what a leg that must never cut through geometry
-        /// needs. Costs a refused leg whenever the goal is outside loaded tiles, so it suits
-        /// callers that have somewhere else to go when movement is impossible.
+        /// Refuse the leg unless the router actually ROUTED it: a map without a mesh
+        /// comes back as a straight line (PATHFIND_NOT_USING_PATH).
         MOVE_REQUIRE_ROUTE = 0x20
     };
 

@@ -39,6 +39,13 @@
 
 #include <cfloat>
 
+namespace
+{
+    constexpr float COLLISION_PROBE_HEIGHT = 2.0f;
+    constexpr float COLLISION_STANDOFF = 0.5f;
+    constexpr int TILE_BORDER_STEPS = 16;
+}
+
 ////////////////// PathFinder //////////////////
 
 /**
@@ -52,7 +59,7 @@ PathFinder::PathFinder(const Unit* owner)
 
 PathFinder::PathFinder(const Unit* owner, uint32 mapId)
     : m_polyLength(0), m_type(PATHFIND_BLANK),
-    m_forceDestination(false), m_pathLengthLimit(0.0f),
+    m_forceDestination(false), m_destBeyondMesh(false), m_pathLengthLimit(0.0f),
     m_sourceUnit(owner), m_mapId(mapId), m_navMesh(NULL), m_navMeshQuery(NULL)
 {
     DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ PathFinder::PathFinder for %s \n", m_sourceUnit->GetGuidStr().c_str());
@@ -148,13 +155,11 @@ bool PathFinder::Route(const Vector3& start, const Vector3& dest, bool forceDest
     setEndPosition(dest);
 
     m_forceDestination = forceDest;
+    m_destBeyondMesh = false;
 
     DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ PathFinder::calculate() for %s \n", m_sourceUnit->GetGuidStr().c_str());
 
-    // make sure navMesh works - we can run on map w/o mmap
-    // check if the start and end point have a .mmtile loaded (can we pass via not loaded tile on the way?)
-    if (!m_navMesh || !m_navMeshQuery || m_sourceUnit->hasUnitState(UNIT_STAT_IGNORE_PATHFINDING) ||
-        !HaveTile(start) || !HaveTile(dest))
+    if (!m_navMesh || !m_navMeshQuery || m_sourceUnit->hasUnitState(UNIT_STAT_IGNORE_PATHFINDING))
     {
         BuildShortcut();
         m_type = PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH);
@@ -174,11 +179,59 @@ bool PathFinder::Route(const Vector3& start, const Vector3& dest, bool forceDest
     }
 #endif
 
+    if (!HaveTile(start))
+    {
+        BuildShortcut();
+        m_type = PATHFIND_NOPATH;
+        return true;
+    }
+    m_destBeyondMesh = !HaveTile(dest);
+
     updateFilter();
     DropStaleCorridor();
 
-    BuildPolyPath(start, dest);
+    BuildPolyPath(start, m_destBeyondMesh ? LastLoadedPointToward(start, dest) : dest);
+    if (m_destBeyondMesh && m_type == PATHFIND_NORMAL)
+    {
+        m_type = PATHFIND_INCOMPLETE;
+    }
     return true;
+}
+
+Vector3 PathFinder::LastLoadedPointToward(const Vector3& from, const Vector3& to) const
+{
+    float loaded = 0.0f;
+    float missing = 1.0f;
+    for (int step = 0; step < TILE_BORDER_STEPS; ++step)
+    {
+        const float middle = (loaded + missing) * 0.5f;
+        (HaveTile(from + (to - from) * middle) ? loaded : missing) = middle;
+    }
+    return from + (to - from) * loaded;
+}
+
+void PathFinder::AcceptAgainstWorld()
+{
+    Map const* map = m_sourceUnit->GetMap();
+    for (size_t i = 1; i < m_pathPoints.size(); ++i)
+    {
+        const Vector3 from = m_pathPoints[i - 1];
+        Vector3 hit = m_pathPoints[i];
+        hit.z += COLLISION_PROBE_HEIGHT;
+        if (!map->GetHitPosition(from.x, from.y, from.z + COLLISION_PROBE_HEIGHT, hit.x, hit.y, hit.z, COLLISION_STANDOFF))
+        {
+            continue;
+        }
+
+        hit.z -= COLLISION_PROBE_HEIGHT;
+        m_pathPoints.resize(i);
+        if ((hit - from).length() > COLLISION_STANDOFF)
+        {
+            m_pathPoints.push_back(hit);
+        }
+        m_type = PATHFIND_INCOMPLETE;
+        return;
+    }
 }
 
 /**
@@ -589,25 +642,23 @@ void PathFinder::BuildPointPath(const float* startPoint, const float* endPoint)
     PathPolyline::CutToLength(m_pathPoints, m_pathLengthLimit);
     PathPolyline::Subdivide(m_pathPoints, PathPolyline::MAX_EDGE);
     NormalizePath();
+    AcceptAgainstWorld();
 
     setActualEndPosition(m_pathPoints.back());
 
-    if (m_forceDestination &&
-        (!(m_type & PATHFIND_NORMAL) || !inRange(getEndPosition(), getActualEndPosition(), 1.0f, 1.0f)))
+    if (m_forceDestination && !m_destBeyondMesh &&
+        !inRange(getEndPosition(), getActualEndPosition(), 1.0f, 1.0f))
     {
-        if (dist3DSqr(getActualEndPosition(), getEndPosition()) <
-            0.3f * dist3DSqr(getStartPosition(), getEndPosition()))
+        const Vector3 last = m_pathPoints.back();
+        const Vector3 end = getEndPosition();
+        if (m_sourceUnit->GetMap()->IsInLineOfSight(last.x, last.y, last.z + COLLISION_PROBE_HEIGHT,
+                                                    end.x, end.y, end.z + COLLISION_PROBE_HEIGHT))
         {
-            setActualEndPosition(getEndPosition());
-            m_pathPoints[m_pathPoints.size() - 1] = getEndPosition();
+            m_pathPoints.push_back(end);
+            PathPolyline::Subdivide(m_pathPoints, PathPolyline::MAX_EDGE);
+            setActualEndPosition(end);
+            m_type = PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH);
         }
-        else
-        {
-            setActualEndPosition(getEndPosition());
-            BuildShortcut();
-        }
-
-        m_type = PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH);
     }
 
     DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ PathFinder::BuildPointPath path type %d size %d poly-size %u for %s\n",

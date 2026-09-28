@@ -177,7 +177,7 @@ bool MotionDriver::LayLeg(Unit& owner, Motion::MoveIntent const& intent)
         // that refuses the straight-line fallback through whatever is in the way.
         // Either way no leg is laid, and the generator is told so on its next tick so
         // it can give up or pick somewhere else.
-        if (!routed || (intent.Has(Motion::MOVE_REQUIRE_PATH) && query->Failed()) ||
+        if (!routed || query->Failed() ||
             (intent.Has(Motion::MOVE_REQUIRE_ROUTE) && !query->Routed()))
         {
             m_blocked = true;

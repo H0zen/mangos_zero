@@ -149,6 +149,7 @@ class PathFinder
         PathType       m_type;             // Tells what kind of path this is
 
         bool           m_forceDestination; // When set, we will always arrive at the given point
+        bool           m_destBeyondMesh;
         float          m_pathLengthLimit;
 
         Vector3        m_startPosition;    // {x, y, z} of current location
@@ -192,6 +193,8 @@ class PathFinder
         NavAgent Agent() const;
         void DropStaleCorridor();
         bool Route(const Vector3& start, const Vector3& dest, bool forceDest);
+        Vector3 LastLoadedPointToward(const Vector3& from, const Vector3& to) const;
+        void AcceptAgainstWorld();
 
         /**
          * @brief Check if two points are in range.

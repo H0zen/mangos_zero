@@ -186,7 +186,7 @@ Motion::MoveIntent TargetedMovementGenerator::Intent(Unit& owner,
         return Motion::MoveIntent::Hold(facing);
     }
 
-    uint32 flags = Motion::MOVE_REQUIRE_PATH;
+    uint32 flags = Motion::MOVE_NONE;
 
     if (EnableWalking(owner))
     {

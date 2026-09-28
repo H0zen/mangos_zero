@@ -431,7 +431,7 @@ Motion::MoveIntent WaypointMovementGenerator::WalkPreparedLeg() const
 {
     // The pace rides on the intent: the driver resolves walk/run from MOVE_WALK alone,
     // so the unit-level SetWalk in PrepareMove is not enough to make a patrol walk.
-    uint32 flags = Motion::MOVE_REQUIRE_PATH;
+    uint32 flags = Motion::MOVE_NONE;
     if (m_legWalk)
     {
         flags |= Motion::MOVE_WALK;

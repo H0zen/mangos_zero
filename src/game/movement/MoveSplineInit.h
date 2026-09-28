@@ -240,11 +240,13 @@ namespace Movement
                 path.setPathLengthLimit(maxPathRange);
             }
             path.calculate(dest.x, dest.y, dest.z, forceDestination);
-            if (!(path.getPathType() & PATHFIND_NOPATH))
+            if (path.getPathType() & PATHFIND_NOPATH)
             {
-                MovebyPath(path.getPath());
+                args.path.clear();
                 return;
             }
+            MovebyPath(path.getPath());
+            return;
         }
         args.path_Idx_offset = 0;
         args.path.resize(2);

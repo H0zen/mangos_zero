@@ -34,9 +34,7 @@
 /**
  * @brief Panic: bolt away from a fear source in short bursts, pausing a beat between them.
  *
- * Unlike wander, a flee leg REFUSES the router's straight-line fallback
- * (MOVE_REQUIRE_PATH): a panicking unit that cannot actually get somewhere must pick a
- * different somewhere, not bolt through a wall.
+ * A flee leg that cannot be routed is refused: the unit picks a different somewhere.
  */
 class FleeingMovementGenerator : public IntentMovementGenerator
 {

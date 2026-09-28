@@ -168,7 +168,7 @@ Motion::MoveIntent FleeingMovementGenerator::Intent(Unit& owner,
 
     if (status.traveling && m_haveFleePoint)
     {
-        return Motion::MoveIntent::Move(m_fleePoint, Motion::MOVE_REQUIRE_PATH);
+        return Motion::MoveIntent::Move(m_fleePoint);
     }
 
     // Standing: catch a breath before the next bolt.
@@ -190,7 +190,7 @@ Motion::MoveIntent FleeingMovementGenerator::Intent(Unit& owner,
     m_haveFleePoint = true;
     m_restTime.Reset(urand(REST_AFTER_BOLT_MIN, REST_AFTER_BOLT_MAX));
 
-    return Motion::MoveIntent::Move(m_fleePoint, Motion::MOVE_REQUIRE_PATH)
+    return Motion::MoveIntent::Move(m_fleePoint)
         .WithinLength(FLEE_PATH_LENGTH_LIMIT);
 }
 

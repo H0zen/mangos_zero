@@ -88,11 +88,8 @@ class AssistanceMovementGenerator final : public PointMovementGenerator
  * @brief A point move that refuses to cheat: if the router cannot actually route it,
  *        no leg is laid and the mover stays put.
  *
- * A plain point move takes PathFinder's straight-line fallback silently. That is fine for
- * a short hop, and wrong for anything long: an unloaded destination tile comes back as
- * PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH, and the "path" is then a terrain-clamped line
- * drawn through cliffs, walls and buildings for the whole distance. MOVE_REQUIRE_PATH does
- * not catch that -- it tests NOPATH only -- so this asks for MOVE_REQUIRE_ROUTE instead.
+ * A plain point move still takes a straight line where there is no mesh to route on;
+ * this one asks for MOVE_REQUIRE_ROUTE and does not.
  *
  * The caller must have somewhere else to go when the leg is refused, because it will be.
  */

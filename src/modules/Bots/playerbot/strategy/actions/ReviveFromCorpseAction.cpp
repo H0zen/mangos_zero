@@ -119,23 +119,14 @@ bool ReviveFromCorpseAction::Execute(Event event)
 
         // Two independent guards, because neither alone is enough.
         //
-        // requireRoute is the one that makes this SAFE. PathFinder answers a destination whose
-        // mmap tile is not resident -- which a corpse a thousand yards away usually is -- with
-        // BuildShortcut, marked PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH rather than NOPATH.
-        // Nothing rejects that by default: MOVE_REQUIRE_PATH tests Failed(), which is NOPATH
-        // alone, and a plain MovePoint does not set even that. The result is a terrain-snapped
-        // straight line laid clean through cliffs, walls and buildings for the whole distance --
-        // which is what a bot "porting around the area rather than running" actually is.
-        // MOVE_REQUIRE_ROUTE tests Routed(), which excludes NOT_USING_PATH too, so an unroutable
-        // goal now means the bot does not move rather than moving through the world.
+        // requireRoute is the one that makes this SAFE: MOVE_REQUIRE_ROUTE refuses the
+        // straight line PathFinder draws where there is no mesh to route on, so an unroutable
+        // goal means the bot does not move rather than moving through the world.
         //
-        // The leg cap is a REACH heuristic, not a safety one, and must not be mistaken for a
-        // residency bound: mmap tiles follow 533-yard grids and load by grid lifecycle, so no
-        // constant leg length can guarantee the endpoint's tile is loaded -- the bot may be
-        // standing a yard from the boundary. A shorter leg is simply likelier to land in a
-        // resident tile, so it gets a real route more often and the run reaches further before
-        // the allowance runs out. When it does not, requireRoute refuses and the graveyard
-        // fallback takes over.
+        // The leg cap is a REACH heuristic, not a safety one: a route toward a tile that is not
+        // resident ends where the loaded mesh does, and a shorter leg is likelier to land in a
+        // resident tile, so the run reaches further before the allowance runs out. When it
+        // does not, requireRoute refuses and the graveyard fallback takes over.
         // A leg already in flight is not re-aimed, because the aim itself would move.
         //
         // The leg endpoint computed below is anchored on the bot's LIVE position -- a point

@@ -108,9 +108,7 @@ namespace Motion
             virtual PointsArray const& Points() const = 0;
 
             /**
-             * @brief Routing failed and Points() is only a straight line through
-             *        whatever is in the way. Whether that is acceptable is the
-             *        CALLER's decision -- hence MOVE_REQUIRE_PATH on the intent.
+             * @brief Routing failed; no leg is laid.
              */
             virtual bool Failed() const = 0;
 
