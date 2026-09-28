@@ -51,7 +51,7 @@ namespace world::terrain
             const uint8_t* tag = data + pos;
             const uint32_t csize = RdU32(data + pos + 4);
             const uint8_t* body = data + pos + 8;
-            if (pos + 8 + csize > size)
+            if (uint64_t(pos) + 8 + csize > size)
             {
                 break;
             }

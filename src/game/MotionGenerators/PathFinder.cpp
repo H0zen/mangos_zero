@@ -898,6 +898,8 @@ dtStatus PathFinder::findSmoothPath(const float* startPos, const float* endPos,
     dtVcopy(&smoothPath[nsmoothPath * VERTEX_SIZE], iterPos);
     ++nsmoothPath;
 
+    bool reachedEnd = false;
+
     // Move towards target a small advancement at a time until target reached or
     // when ran out of memory to store the path.
     while (npolys && nsmoothPath < maxSmoothPathSize)
@@ -938,12 +940,18 @@ dtStatus PathFinder::findSmoothPath(const float* startPos, const float* endPos,
         dtPolyRef visited[MAX_VISIT_POLY];
 
         int visitedFound = 0;
-        m_navMeshQuery->moveAlongSurface(polys[0], iterPos, moveTgt, &m_filter, result, visited, &visitedFound, MAX_VISIT_POLY);
+        if (dtStatusFailed(m_navMeshQuery->moveAlongSurface(polys[0], iterPos, moveTgt, &m_filter,
+                                                            result, visited, &visitedFound, MAX_VISIT_POLY)))
+        {
+            break;
+        }
         const uint32 nvisited = uint32(visitedFound);
         npolys = fixupCorridor(polys, npolys, MAX_PATH_LENGTH, visited, nvisited);
 
-        m_navMeshQuery->getPolyHeight(polys[0], result, &result[1]);
-        result[1] += 0.5f;
+        if (dtStatusSucceed(m_navMeshQuery->getPolyHeight(polys[0], result, &result[1])))
+        {
+            result[1] += 0.5f;
+        }
         dtVcopy(iterPos, result);
 
         // Handle end of path and off-mesh links when close enough.
@@ -955,6 +963,7 @@ dtStatus PathFinder::findSmoothPath(const float* startPos, const float* endPos,
             {
                 dtVcopy(&smoothPath[nsmoothPath * VERTEX_SIZE], iterPos);
                 ++nsmoothPath;
+                reachedEnd = true;
             }
             break;
         }
@@ -982,19 +991,23 @@ dtStatus PathFinder::findSmoothPath(const float* startPos, const float* endPos,
             float newStartPos[VERTEX_SIZE], newEndPos[VERTEX_SIZE];
             // Get the endpoints of the off-mesh connection.
             dtResult = m_navMesh->getOffMeshConnectionPolyEndPoints(prevRef, polyRef, newStartPos, newEndPos);
-            if (dtStatusSucceed(dtResult))
+            if (dtStatusFailed(dtResult))
             {
-                // If there is space in the smooth path, add the new start position.
-                if (nsmoothPath < maxSmoothPathSize)
-                {
-                    dtVcopy(&smoothPath[nsmoothPath * VERTEX_SIZE], newStartPos);
-                    ++nsmoothPath;
-                }
-                // Move the iterator position to the other side of the off-mesh link.
-                dtVcopy(iterPos, newEndPos);
+                break;
+            }
 
-                // Adjust the height of the iterator position.
-                m_navMeshQuery->getPolyHeight(polys[0], iterPos, &iterPos[1]);
+            // If there is space in the smooth path, add the new start position.
+            if (nsmoothPath < maxSmoothPathSize)
+            {
+                dtVcopy(&smoothPath[nsmoothPath * VERTEX_SIZE], newStartPos);
+                ++nsmoothPath;
+            }
+            // Move the iterator position to the other side of the off-mesh link.
+            dtVcopy(iterPos, newEndPos);
+
+            // Adjust the height of the iterator position.
+            if (dtStatusSucceed(m_navMeshQuery->getPolyHeight(polys[0], iterPos, &iterPos[1])))
+            {
                 iterPos[1] += 0.5f;
             }
         }
@@ -1008,9 +1021,7 @@ dtStatus PathFinder::findSmoothPath(const float* startPos, const float* endPos,
     }
 
     *smoothPathSize = nsmoothPath;
-
-    // Return success if the smooth path size is within the maximum limit.
-    return nsmoothPath < MAX_POINT_PATH_LENGTH ? DT_SUCCESS : DT_FAILURE;
+    return reachedEnd ? DT_SUCCESS : (DT_SUCCESS | DT_PARTIAL_RESULT);
 }
 
 /**

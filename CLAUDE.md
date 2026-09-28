@@ -10,8 +10,9 @@ this repo. Humans: also read [`doc/CodingStandard.md`](doc/CodingStandard.md).
 
 - **Database changes go in the separate `mangoszero/database` repo**, not here — as transactional, idempotent
   `Rel##_##_###_*.sql` migrations that chain via `db_version`.
-- Clone/update **recursively**: `dep`, `src/realmd`, `src/modules/{SD3,Eluna}`, `src/tools/Extractor_projects`
-  and `win` are submodules. Never shallow-update a submodule to a non-tip pinned SHA.
+- Clone/update **recursively**: `dep`, `src/realmd`, `src/modules/{SD3,Eluna}` and `win` are
+  submodules. Never shallow-update a submodule to a non-tip pinned SHA. The extractor lives
+  in-tree under `src/tools/extractor`.
 - Less-obvious locations: out-of-process services in `src/ipc/` + `src/ah-service/`; scripting in
   `src/modules/` (Eluna = Lua, SD3 = C++, Bots = playerbots).
 

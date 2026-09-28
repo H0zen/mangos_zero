@@ -95,7 +95,7 @@ namespace world::terrain
             while (pos + 8 <= n)
             {
                 const uint32_t sz = RdU32(d + pos + 4);
-                if (pos + 8 + sz > n)
+                if (uint64_t(pos) + 8 + sz > n)
                 {
                     break;
                 }
@@ -191,7 +191,7 @@ namespace world::terrain
         while (pos + 8 <= n)
         {
             const uint32_t sz = RdU32(d + pos + 4);
-            if (pos + 8 + sz > n)
+            if (uint64_t(pos) + 8 + sz > n)
             {
                 break;
             }
@@ -266,7 +266,7 @@ namespace world::terrain
                 mliqSize = sz;
             }
 
-            if (advance != MOGP_HEADER && pos + 8 + sz > n)
+            if (advance != MOGP_HEADER && uint64_t(pos) + 8 + sz > n)
             {
                 break;
             }

@@ -293,12 +293,14 @@ namespace world::terrain
         if (!wdt || !wdt->hasGlobalWmo || wdt->globalWmoName.empty() ||
             !wdt->globalWmoPlacement)
         {
+            m_globalWmoCache.emplace(mapId, nullptr);
             return nullptr;
         }
 
         auto model = m_wmo.Load(wdt->globalWmoName);
         if (!model || model->Empty())
         {
+            m_globalWmoCache.emplace(mapId, nullptr);
             return nullptr;
         }
 

@@ -36,14 +36,20 @@
 
 #include <algorithm>
 #include <chrono>
+#include <climits>
 #include <cstdio>
-#include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#if defined(__FreeBSD__)
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#endif
 
 #ifndef MANGOS_CLIENT_NAME
 #define MANGOS_CLIENT_NAME "unknown client"
@@ -329,17 +335,37 @@ namespace
         uint32_t displayId;
     };
 
+    std::filesystem::path ExecutablePath(const char* argv0)
+    {
+        std::error_code ec;
+#if defined(_WIN32)
+        char* module = nullptr;
+        if (_get_pgmptr(&module) == 0 && module && *module)
+        {
+            return module;
+        }
+#elif defined(__linux__)
+        const std::filesystem::path self = std::filesystem::read_symlink("/proc/self/exe", ec);
+        if (!ec)
+        {
+            return self;
+        }
+#elif defined(__FreeBSD__)
+        int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
+        char buffer[PATH_MAX];
+        size_t size = sizeof(buffer);
+        if (sysctl(mib, 4, buffer, &size, nullptr, 0) == 0)
+        {
+            return buffer;
+        }
+#endif
+        return std::filesystem::absolute(argv0 ? argv0 : "mangos-extractor", ec);
+    }
+
     std::string DefaultDataFile(const char* argv0, const char* name)
     {
         std::error_code ec;
-        std::filesystem::path exe = std::filesystem::absolute(
-            argv0 ? argv0 : "mangos-extractor", ec);
-        if (ec)
-        {
-            return name;
-        }
-
-        const std::filesystem::path beside = exe.parent_path() / name;
+        const std::filesystem::path beside = ExecutablePath(argv0).parent_path() / name;
         return std::filesystem::exists(beside, ec) ? beside.string() : std::string(name);
     }
 
