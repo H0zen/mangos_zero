@@ -1,3 +1,28 @@
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
+
 #include <string>
 #include "WmoParser.hpp"
 #include "ChunkReaders.hpp"
@@ -11,8 +36,6 @@ namespace world::terrain
     {
         using namespace world::terrain::internal;
 
-        // MOPY material flags. An earlier port of this filter had 0x04 as "no collision"
-        // and 0x08 as "hint", and built the rule on that mistake.
         constexpr uint8_t MATERIAL_DETAIL = 0x04;
         constexpr uint8_t MATERIAL_COLLISION = 0x08;
         constexpr uint8_t MATERIAL_RENDER = 0x20;
@@ -32,12 +55,10 @@ namespace world::terrain
         constexpr size_t MOHD_WMO_ID = 0x20;
         constexpr size_t MOHD_FLAGS = 0x3C;
 
-        // 3.3.5a's canonical WMO liquid rows. They are NOT the 1..4 of 2.4.3: reusing
-        // those here makes every WMO lava pool report as the wrong LiquidType.dbc row.
-        constexpr uint32_t ROW_WATER = 13;
-        constexpr uint32_t ROW_OCEAN = 14;
-        constexpr uint32_t ROW_MAGMA = 19;
-        constexpr uint32_t ROW_SLIME = 20;
+        constexpr uint32_t ROW_WATER = 1;
+        constexpr uint32_t ROW_OCEAN = 2;
+        constexpr uint32_t ROW_MAGMA = 3;
+        constexpr uint32_t ROW_SLIME = 4;
 
         uint32_t CanonicalLiquidEntry(uint32_t entry, uint32_t mogpFlags)
         {
@@ -121,7 +142,6 @@ namespace world::terrain
             for (uint32_t i = 0; i < nDefs; ++i)
             {
                 const uint8_t* p = modd + i * 40;
-                // MODD's name field is a BYTE OFFSET into MODN, not an index.
                 const uint32_t nameOfs = RdU32(p + 0) & 0x00FFFFFFu;
 
                 WmoDoodad dd;
@@ -219,8 +239,6 @@ namespace world::terrain
         {
             const uint8_t* tag = d + pos;
             const uint32_t sz = RdU32(d + pos + 4);
-            // MOGP is a container: step into it by its header only, so the geometry
-            // chunks nested inside get walked as if they were top-level.
             uint32_t advance = sz;
             if (TagIs(tag, "MOGP"))
             {
@@ -263,8 +281,6 @@ namespace world::terrain
             out.groupWmoId = RdU32(mogp + MOGP_UNIQUE_ID);
         }
 
-        // MLIQ's trailing uint16 is a materialId, NOT the liquid type. Reading it as
-        // the type is how WMO lava and slime end up classified as water.
         if (mliq && mliqSize >= 30)
         {
             const uint32_t xverts = RdU32(mliq + 0), yverts = RdU32(mliq + 4);
@@ -340,8 +356,6 @@ namespace world::terrain
             const uint8_t flags =
                 (mopy && 2 * t < mopySize) ? static_cast<uint8_t>(mopy[2 * t]) : 0;
 
-            // A face may be both DETAIL and COLLISION (0x0C) and still collide, so the
-            // COLLISION bit must be tested on its own, not merely !DETAIL.
             const bool isRenderFace = (flags & MATERIAL_RENDER) && !(flags & MATERIAL_DETAIL);
             const bool collides = (flags & MATERIAL_COLLISION) || isRenderFace;
             if (mopy && mopySize != 0 && !collides)

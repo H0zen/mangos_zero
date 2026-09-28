@@ -1,3 +1,28 @@
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
+
 #include <string>
 #include <vector>
 #include "nav/NavMeshBuilder.hpp"
@@ -5,9 +30,6 @@
 #include "terrain/TileSerializer.hpp"
 #include "terrain/WmoModel.hpp"
 
-// The on-disk header and the NAV_* area bits are the SERVER's, included rather than
-// copied. A struct that is written here and read there must have exactly one
-// declaration, or the two drift and the drift is silent.
 #include "MoveMapSharedDefines.h"
 
 #include "DetourNavMesh.h"
@@ -38,11 +60,11 @@ namespace world::nav
         constexpr int V9_SIDE = 129;
         constexpr int V8_SIDE = 128;
         constexpr float GRID_PART = GRID_SIZE / float(V8_SIDE);
+        constexpr int MAP_GRID_SIDE = 64;
+        constexpr int MAP_GRID_TILES = MAP_GRID_SIDE * MAP_GRID_SIDE;
 
         std::mutex g_bakeLogMutex;
 
-        // Triangle soup in RECAST space. Vertices go in as world (x, y, z) and come out
-        // as (y, z, x) -- the same permutation the server's PathFinder applies.
         struct Soup
         {
             std::vector<float> verts;
@@ -71,7 +93,6 @@ namespace world::nav
             bool Empty() const { return tris.empty(); }
         };
 
-        // World X of a V9 column on grid gx. Both axes FALL as the index grows.
         inline float WorldX(int gx, float ix) { return (32.0f - float(gx)) * GRID_SIZE - ix * GRID_PART; }
         inline float WorldY(int gy, float iy) { return (32.0f - float(gy)) * GRID_SIZE - iy * GRID_PART; }
 
@@ -83,12 +104,13 @@ namespace world::nav
             bmin[2] = bmax[2] - GRID_SIZE;
         }
 
-        // Recast slope-filters on the triangle normal's Y. In recast space x is world Y
-        // and z is world X, and BOTH fall as the cell index grows, so the ring
-        // a->b->c->d runs clockwise seen from +Y. Emitting (a, m, b) rather than
-        // (a, b, m) is what makes n.y positive -- get it backwards and every ground
-        // triangle is discarded as a ceiling, leaving an empty navmesh.
-        void AddTerrain(const TerrainTile& tile, int gx, int gy, Soup& out)
+        constexpr CellRect FULL_TILE{0, V8_SIDE - 1, 0, V8_SIDE - 1};
+        constexpr uint8_t WMO_LIQUID_DRY = 0x0F;
+        constexpr unsigned char OFFMESH_BIDIRECTIONAL = 1;
+        constexpr unsigned short OFFMESH_ANY_MOVEMENT = 0xFFFF;
+
+        void AddTerrain(const TerrainTile& tile, int gx, int gy, const CellRect& cells,
+                        Soup& out)
         {
             if (!tile.hasTerrain || tile.v9.empty() || tile.v8.empty())
             {
@@ -98,20 +120,24 @@ namespace world::nav
             const auto v9 = [&](int ix, int iy) { return tile.v9[ix * V9_SIDE + iy]; };
             const auto v8 = [&](int ix, int iy) { return tile.v8[ix * V8_SIDE + iy]; };
 
-            const int base9 = out.VertexCount();
-            for (int ix = 0; ix < V9_SIDE; ++ix)
+            const int cornersPerColumn = cells.iyLast - cells.iyFirst + 2;
+            const int base = out.VertexCount();
+            for (int ix = cells.ixFirst; ix <= cells.ixLast + 1; ++ix)
             {
-                for (int iy = 0; iy < V9_SIDE; ++iy)
+                for (int iy = cells.iyFirst; iy <= cells.iyLast + 1; ++iy)
                 {
                     out.AddVertex(Vec3{WorldX(gx, float(ix)), WorldY(gy, float(iy)), v9(ix, iy)});
                 }
             }
 
-            const auto corner = [&](int ix, int iy) { return base9 + ix * V9_SIDE + iy; };
-
-            for (int ix = 0; ix < V8_SIDE; ++ix)
+            const auto corner = [&](int ix, int iy)
             {
-                for (int iy = 0; iy < V8_SIDE; ++iy)
+                return base + (ix - cells.ixFirst) * cornersPerColumn + (iy - cells.iyFirst);
+            };
+
+            for (int ix = cells.ixFirst; ix <= cells.ixLast; ++ix)
+            {
+                for (int iy = cells.iyFirst; iy <= cells.iyLast; ++iy)
                 {
                     if (tile.IsHoleAt(ix, iy))
                     {
@@ -134,54 +160,6 @@ namespace world::nav
             }
         }
 
-        // Recast's ledge filter and walkable-radius erosion need geometry outside the
-        // tile's core bounds. The legacy generator supplied one terrain cell from each
-        // orthogonal neighbour. Emit only that requested cell range here; importing a
-        // neighbour's models as well would duplicate placements which already overlap
-        // the current tile.
-        void AddTerrainCells(const TerrainTile& tile, int gx, int gy,
-                             const CellRect& cells, Soup& out)
-        {
-            if (!tile.hasTerrain || tile.v9.empty() || tile.v8.empty())
-            {
-                return;
-            }
-
-            const auto v9 = [&](int ix, int iy) { return tile.v9[ix * V9_SIDE + iy]; };
-            const auto v8 = [&](int ix, int iy) { return tile.v8[ix * V8_SIDE + iy]; };
-
-            for (int ix = cells.ixFirst; ix <= cells.ixLast; ++ix)
-            {
-                for (int iy = cells.iyFirst; iy <= cells.iyLast; ++iy)
-                {
-                    if (tile.IsHoleAt(ix, iy))
-                    {
-                        continue;
-                    }
-
-                    const int a = out.AddVertex(
-                        Vec3{WorldX(gx, float(ix)), WorldY(gy, float(iy)), v9(ix, iy)});
-                    const int b = out.AddVertex(
-                        Vec3{WorldX(gx, float(ix)), WorldY(gy, float(iy) + 1.f),
-                             v9(ix, iy + 1)});
-                    const int c = out.AddVertex(
-                        Vec3{WorldX(gx, float(ix) + 1.f), WorldY(gy, float(iy) + 1.f),
-                             v9(ix + 1, iy + 1)});
-                    const int d = out.AddVertex(
-                        Vec3{WorldX(gx, float(ix) + 1.f), WorldY(gy, float(iy)),
-                             v9(ix + 1, iy)});
-                    const int m = out.AddVertex(
-                        Vec3{WorldX(gx, float(ix) + 0.5f),
-                             WorldY(gy, float(iy) + 0.5f), v8(ix, iy)});
-
-                    out.AddTriangle(a, m, b, NAV_GROUND);
-                    out.AddTriangle(b, m, c, NAV_GROUND);
-                    out.AddTriangle(c, m, d, NAV_GROUND);
-                    out.AddTriangle(d, m, a, NAV_GROUND);
-                }
-            }
-        }
-
         unsigned char LiquidArea(world::terrain::LiquidKind kind)
         {
             switch (kind)
@@ -194,16 +172,8 @@ namespace world::nav
             }
         }
 
-        // The liquid surface, per cell, and only where a swimmer could actually be.
-        //
-        // Two rules, both taken from the reference generator and both load-bearing:
-        //
-        //   * a surface that lies UNDER the terrain of its own cell is dropped. Emitting
-        //     it anyway buries swimmable polygons inside a hillside, and creatures then
-        //     path through solid ground.
-        //   * DEEP ("dark") water is dropped outright. Players take fatigue there and are
-        //     not meant to be in it, so neither is anything pathing.
-        void AddLiquid(const TerrainTile& tile, int gx, int gy, Soup& out)
+        void AddLiquid(const TerrainTile& tile, int gx, int gy, const CellRect& cells,
+                       Soup& out)
         {
             if (!tile.hasLiquid || tile.liquidHeight.empty() || tile.liquidShow.empty())
             {
@@ -215,9 +185,9 @@ namespace world::nav
             const auto v8 = [&](int ix, int iy) { return tile.v8[ix * V8_SIDE + iy]; };
             const bool haveTerrain = tile.hasTerrain && !tile.v9.empty() && !tile.v8.empty();
 
-            for (int ix = 0; ix < V8_SIDE; ++ix)
+            for (int ix = cells.ixFirst; ix <= cells.ixLast; ++ix)
             {
-                for (int iy = 0; iy < V8_SIDE; ++iy)
+                for (int iy = cells.iyFirst; iy <= cells.iyLast; ++iy)
                 {
                     const size_t cell = size_t(ix) * V8_SIDE + iy;
                     if (!tile.liquidShow[cell])
@@ -265,78 +235,15 @@ namespace world::nav
             }
         }
 
-        void AddLiquidCells(const TerrainTile& tile, int gx, int gy,
-                            const CellRect& cells, Soup& out)
+        const world::terrain::TriSoup& SoupOf(const world::terrain::ICollisionModel& model)
         {
-            if (!tile.hasLiquid || tile.liquidHeight.empty() || tile.liquidShow.empty())
+            if (model.Kind() == world::terrain::ModelKind::Wmo)
             {
-                return;
+                return static_cast<const world::terrain::WmoModel&>(model).Soup();
             }
-
-            const auto lh = [&](int ix, int iy) { return tile.liquidHeight[ix * V9_SIDE + iy]; };
-            const auto v9 = [&](int ix, int iy) { return tile.v9[ix * V9_SIDE + iy]; };
-            const auto v8 = [&](int ix, int iy) { return tile.v8[ix * V8_SIDE + iy]; };
-            const bool haveTerrain = tile.hasTerrain && !tile.v9.empty() && !tile.v8.empty();
-
-            for (int ix = cells.ixFirst; ix <= cells.ixLast; ++ix)
-            {
-                for (int iy = cells.iyFirst; iy <= cells.iyLast; ++iy)
-                {
-                    const size_t cell = size_t(ix) * V8_SIDE + iy;
-                    if (!tile.liquidShow[cell])
-                    {
-                        continue;
-                    }
-                    if (!tile.liquidDeep.empty() && tile.liquidDeep[cell])
-                    {
-                        continue;
-                    }
-
-                    const auto kind = tile.liquidKind.empty()
-                                          ? world::terrain::LiquidKind::Water
-                                          : world::terrain::LiquidKind(tile.liquidKind[cell]);
-                    const unsigned char area = LiquidArea(kind);
-                    if (area == NAV_EMPTY)
-                    {
-                        continue;
-                    }
-
-                    const float h00 = lh(ix, iy), h01 = lh(ix, iy + 1);
-                    const float h11 = lh(ix + 1, iy + 1), h10 = lh(ix + 1, iy);
-
-                    if (haveTerrain && !tile.IsHoleAt(ix, iy))
-                    {
-                        const float maxLiquid =
-                            std::max(std::max(h00, h01), std::max(h11, h10));
-                        const float minTerrain =
-                            std::min(std::min(std::min(v9(ix, iy), v9(ix, iy + 1)),
-                                              std::min(v9(ix + 1, iy + 1),
-                                                       v9(ix + 1, iy))),
-                                     v8(ix, iy));
-                        if (minTerrain > maxLiquid)
-                        {
-                            continue;
-                        }
-                    }
-
-                    const int a = out.AddVertex(
-                        Vec3{WorldX(gx, float(ix)), WorldY(gy, float(iy)), h00});
-                    const int b = out.AddVertex(
-                        Vec3{WorldX(gx, float(ix)), WorldY(gy, float(iy) + 1.f), h01});
-                    const int c = out.AddVertex(
-                        Vec3{WorldX(gx, float(ix) + 1.f), WorldY(gy, float(iy) + 1.f),
-                             h11});
-                    const int d = out.AddVertex(
-                        Vec3{WorldX(gx, float(ix) + 1.f), WorldY(gy, float(iy)), h10});
-
-                    out.AddTriangle(a, c, b, area);
-                    out.AddTriangle(a, d, c, area);
-                }
-            }
+            return static_cast<const world::terrain::CollisionModel&>(model).Soup();
         }
 
-        // Every static WMO/M2 instance, pushed through its placement. The recast
-        // conversion is a cyclic permutation, so the authored winding survives.
         void AddModels(const TerrainTile& tile, Soup& out)
         {
             for (const world::terrain::StaticInstance& inst : tile.instances)
@@ -346,22 +253,13 @@ namespace world::nav
                     continue;
                 }
 
-                const world::terrain::TriSoup* soup = nullptr;
-                if (inst.model->Kind() == world::terrain::ModelKind::Wmo)
-                {
-                    soup = &static_cast<const world::terrain::WmoModel*>(inst.model.get())->Soup();
-                }
-                else
-                {
-                    soup = &static_cast<const world::terrain::CollisionModel*>(inst.model.get())->Soup();
-                }
-
+                const world::terrain::TriSoup& soup = SoupOf(*inst.model);
                 const int base = out.VertexCount();
-                for (const Vec3& v : soup->verts)
+                for (const Vec3& v : soup.verts)
                 {
                     out.AddVertex(inst.xf.localToWorld(v));
                 }
-                for (const auto& tri : soup->tris)
+                for (const auto& tri : soup.tris)
                 {
                     out.AddTriangle(base + int(tri[0]), base + int(tri[1]),
                                     base + int(tri[2]), NAV_GROUND);
@@ -369,19 +267,74 @@ namespace world::nav
             }
         }
 
-        // One jump link, in recast space and already filtered to its tile.
+        void AddWmoLiquid(const world::terrain::WmoModel::Liquid& lq,
+                          const world::terrain::Transform& xf, Soup& out)
+        {
+            const unsigned char area = LiquidArea(world::terrain::LiquidKind(lq.kind));
+            const size_t row = size_t(lq.tilesX) + 1;
+            if (area == NAV_EMPTY || !lq.tilesX || !lq.tilesY ||
+                lq.heights.size() < row * (size_t(lq.tilesY) + 1))
+            {
+                return;
+            }
+
+            const auto vertex = [&](uint32_t a, uint32_t b)
+            {
+                const Vec3 local{lq.corner.x + float(a) * GRID_PART,
+                                 lq.corner.y + float(b) * GRID_PART,
+                                 lq.heights[a + b * row]};
+                return out.AddVertex(xf.localToWorld(local));
+            };
+
+            for (uint32_t ty = 0; ty < lq.tilesY; ++ty)
+            {
+                for (uint32_t tx = 0; tx < lq.tilesX; ++tx)
+                {
+                    const size_t fi = tx + size_t(ty) * lq.tilesX;
+                    if (fi < lq.flags.size() && (lq.flags[fi] & WMO_LIQUID_DRY) == WMO_LIQUID_DRY)
+                    {
+                        continue;
+                    }
+
+                    const int p00 = vertex(tx, ty);
+                    const int p10 = vertex(tx + 1, ty);
+                    const int p11 = vertex(tx + 1, ty + 1);
+                    const int p01 = vertex(tx, ty + 1);
+                    out.AddTriangle(p00, p10, p11, area);
+                    out.AddTriangle(p00, p11, p01, area);
+                }
+            }
+        }
+
+        void AddModelLiquids(const TerrainTile& tile, Soup& out)
+        {
+            for (const world::terrain::StaticInstance& inst : tile.instances)
+            {
+                if (!inst.model || inst.model->Kind() != world::terrain::ModelKind::Wmo)
+                {
+                    continue;
+                }
+
+                const auto& wmo = static_cast<const world::terrain::WmoModel&>(*inst.model);
+                for (const world::terrain::WmoModel::Group& group : wmo.Groups())
+                {
+                    if (group.hasLiquid)
+                    {
+                        AddWmoLiquid(group.liquid, inst.xf, out);
+                    }
+                }
+            }
+        }
+
         struct OffMeshLink
         {
-            float verts[6];
-            float radius;
+            int navTileX = 0;
+            int navTileY = 0;
+            float verts[6] = {};
+            float radius = 0.f;
         };
 
-        // offmesh.txt, one link per line, in the reference generator's format:
-        //   <mapId> <tileX>,<tileY> (x y z) (x y z) <radius>
-        // The tile pair is the FILE-NAME pair, which is the grid pair swapped, so it is
-        // compared against (navTileX, navTileY) rather than (gx, gy).
-        std::vector<OffMeshLink> LoadOffMesh(const std::string& path, uint32_t mapId,
-                                             int navTileX, int navTileY)
+        std::vector<OffMeshLink> LoadOffMesh(const std::string& path, uint32_t mapId)
         {
             std::vector<OffMeshLink> links;
             if (path.empty())
@@ -406,12 +359,14 @@ namespace world::nav
                 {
                     continue;
                 }
-                if (uint32_t(mid) != mapId || tx != navTileX || ty != navTileY)
+                if (uint32_t(mid) != mapId)
                 {
                     continue;
                 }
 
                 OffMeshLink link;
+                link.navTileX = tx;
+                link.navTileY = ty;
                 link.verts[0] = p0[1];
                 link.verts[1] = p0[2];
                 link.verts[2] = p0[0];
@@ -444,6 +399,33 @@ namespace world::nav
             return ok;
         }
 
+        void RemoveMapTiles(const std::string& outDir, uint32_t mapId)
+        {
+            char prefix[16];
+            std::snprintf(prefix, sizeof(prefix), "%04u", mapId);
+            const std::string head = prefix;
+            const std::string tail = ".mmtile";
+            constexpr size_t TILE_DIGITS = 4;
+
+            std::error_code ec;
+            std::vector<std::filesystem::path> stale;
+            for (const auto& entry : std::filesystem::directory_iterator(outDir, ec))
+            {
+                const std::string leaf = entry.path().filename().string();
+                const bool ours = leaf.size() == head.size() + TILE_DIGITS + tail.size() &&
+                                  leaf.compare(0, head.size(), head) == 0 &&
+                                  leaf.compare(leaf.size() - tail.size(), tail.size(), tail) == 0;
+                if (ours)
+                {
+                    stale.push_back(entry.path());
+                }
+            }
+            for (const auto& path : stale)
+            {
+                std::filesystem::remove(path, ec);
+            }
+        }
+
         struct MapBake
         {
             uint32_t mapId = 0;
@@ -455,16 +437,10 @@ namespace world::nav
             int subTilesPerTile = 0;
             int borderSize = 0;
 
-            // Set only for a WMO-only map (a WDT with no ADT grid, e.g. Deeprun Tram):
-            // there is no per-grid t_ tile to read, so every grid this WMO spans bakes
-            // from this one shared tile instead. Null for an ordinary ADT grid.
             std::shared_ptr<const TerrainTile> globalWmo;
+            std::vector<OffMeshLink> offMesh;
         };
 
-        // Grid tiles a global WMO's world footprint touches. Both axes fall as the index
-        // grows -- WorldX(gx,0) = (32 - gx) * GRID_SIZE -- so the high world corner gives
-        // the low index and vice versa. A rectangle over the union bbox can name a grid
-        // the WMO never reaches; that tile just bakes empty and writes nothing.
         std::vector<std::pair<int, int>> GlobalWmoGrids(const TerrainTile& tile)
         {
             Geometry::Aabb box;
@@ -550,28 +526,12 @@ namespace world::nav
                 {
                     return false;
                 }
-                AddTerrainCells(*neighbour, neighbourGx, neighbourGy, cells, solid);
-                AddLiquidCells(*neighbour, neighbourGx, neighbourGy, cells, liquid);
+                AddTerrain(*neighbour, neighbourGx, neighbourGy, cells, solid);
+                AddLiquid(*neighbour, neighbourGx, neighbourGy, cells, liquid);
             }
             return true;
         }
 
-        // Which triangles each sub-tile has to look at.
-        //
-        // A grid tile is 25x25 sub-tiles, and the obvious loop hands the WHOLE tile soup
-        // -- 131k terrain triangles plus every model -- to each of the 625. Recast then
-        // early-outs on a bounds test per triangle, so it is correct, but it is 82
-        // million tests where a few hundred thousand would do, and the slope filter runs
-        // that many times over as well.
-        //
-        // Binning once per tile turns that into: one pass to file each triangle under the
-        // sub-tiles its XZ box spans, then each sub-tile walks only its own list. A
-        // terrain triangle spans one bin, so the pass is O(triangles).
-        //
-        // The span is padded by the sub-tile border, because a triangle just outside a
-        // sub-tile's core still contributes to its border ring. Padding can only ever add
-        // a bin, never drop one -- and dropping one would silently punch a hole in the
-        // navmesh.
         struct TriBins
         {
             int side = 0;
@@ -625,8 +585,6 @@ namespace world::nav
             return out;
         }
 
-        // Gathers one bin's triangles into the flat arrays Recast wants. Vertices are
-        // shared: only the index list is subset, so nothing is copied per sub-tile.
         void GatherBin(const Soup& soup, const std::vector<unsigned char>& areas,
                        const std::vector<int>& bin, std::vector<int>& outTris,
                        std::vector<unsigned char>& outAreas)
@@ -679,7 +637,7 @@ namespace world::nav
             GatherBin(solid, solidAreas, solidBins.At(sx, sy), binTris, binAreas);
             if (binTris.empty())
             {
-                return false;   // nothing of the world reaches this sub-tile
+                return false;
             }
             rcRasterizeTriangles(&ctx, solid.verts.data(), solid.VertexCount(),
                                  binTris.data(), binAreas.data(),
@@ -689,8 +647,6 @@ namespace world::nav
             rcFilterLedgeSpans(&ctx, tcfg.walkableHeight, tcfg.walkableClimb, *hf);
             rcFilterWalkableLowHeightSpans(&ctx, tcfg.walkableHeight, *hf);
 
-            // Liquid is rasterised AFTER the walkability filters so its area id survives
-            // into the query filter -- a swimmable span must not be filtered as a ledge.
             if (!liquid.Empty())
             {
                 GatherBin(liquid, liquid.areas, liquidBins.At(sx, sy), binTris, binAreas);
@@ -748,9 +704,6 @@ namespace world::nav
             return true;
         }
 
-        // Bakes one grid cell into one .mmtile. Workers share no mutable state: each
-        // reads its own tile plus up to four neighbour borders and writes its own file,
-        // which keeps the map bake safe to run one tile per core without a cache lock.
         bool BakeTile(const MapBake& mb, int gx, int gy, bool& tileError)
         {
             tileError = false;
@@ -760,9 +713,8 @@ namespace world::nav
 
             if (mb.globalWmo)
             {
-                // No terrain, no neighbours: the one WMO is the whole map. Each grid it
-                // spans rasterises the shared soup; Recast clips it to the grid bounds.
                 AddModels(*mb.globalWmo, solid);
+                AddModelLiquids(*mb.globalWmo, liquid);
                 if (solid.Empty())
                 {
                     return false;
@@ -782,12 +734,13 @@ namespace world::nav
                     return false;
                 }
 
-                AddTerrain(*tile, gx, gy, solid);
+                AddTerrain(*tile, gx, gy, FULL_TILE, solid);
                 AddModels(*tile, solid);
-                AddLiquid(*tile, gx, gy, liquid);
+                AddLiquid(*tile, gx, gy, FULL_TILE, liquid);
+                AddModelLiquids(*tile, liquid);
                 if (solid.Empty())
                 {
-                    return false;  // ocean tile: nothing to stand on
+                    return false;
                 }
                 if (!AddNeighbourGeometry(mb, gx, gy, solid, liquid))
                 {
@@ -831,8 +784,6 @@ namespace world::nav
 
             rcContext ctx(false);
 
-            // The slope test depends on the triangle alone, not on which sub-tile is
-            // being built, so it runs once for the tile instead of once per sub-tile.
             std::vector<unsigned char> solidAreas(size_t(solid.TriangleCount()), NAV_GROUND);
             rcClearUnwalkableTriangles(&ctx, cfg.walkableSlopeAngle, solid.verts.data(),
                                        solid.VertexCount(), solid.tris.data(),
@@ -884,31 +835,31 @@ namespace world::nav
                 return false;
             }
 
-            // Every walkable poly must carry a flag or the query filter rejects all of
-            // them; the area id is what the server's filter then reads.
             for (int i = 0; i < merged->npolys; ++i)
             {
                 if (merged->areas[i] == RC_WALKABLE_AREA)
                 {
                     merged->areas[i] = NAV_GROUND;
                 }
-                merged->flags[i] = merged->areas[i] ? 1 : 0;
+                merged->flags[i] = merged->areas[i];
             }
 
-            const std::vector<OffMeshLink> links =
-                LoadOffMesh(mb.cfg.offMeshFile, mb.mapId, navTileX, navTileY);
             std::vector<float> offVerts;
             std::vector<float> offRads;
             std::vector<unsigned char> offDirs;
             std::vector<unsigned char> offAreas;
             std::vector<unsigned short> offFlags;
-            for (const OffMeshLink& l : links)
+            for (const OffMeshLink& l : mb.offMesh)
             {
+                if (l.navTileX != navTileX || l.navTileY != navTileY)
+                {
+                    continue;
+                }
                 offVerts.insert(offVerts.end(), l.verts, l.verts + 6);
                 offRads.push_back(l.radius);
-                offDirs.push_back(1);           // bidirectional
+                offDirs.push_back(OFFMESH_BIDIRECTIONAL);
                 offAreas.push_back(NAV_GROUND);
-                offFlags.push_back(0xFFFF);     // usable by every movement mask
+                offFlags.push_back(OFFMESH_ANY_MOVEMENT);
             }
 
             dtNavMeshCreateParams np{};
@@ -933,12 +884,6 @@ namespace world::nav
             np.walkableHeight = mb.cfg.cellSize * float(cfg.walkableHeight);
             np.walkableRadius = mb.cfg.cellSize * float(cfg.walkableRadius);
             np.walkableClimb = mb.cfg.cellSize * float(cfg.walkableClimb);
-            // NOT navTileX/navTileY. Detour finds a tile with calcTileLoc, which is
-            // floor((pos - orig) / tileWidth) -- an index relative to the navmesh ORIGIN,
-            // and the origin is the min corner of the highest-indexed tile, so the two
-            // run in opposite directions. Storing the raw index makes every lookup miss:
-            // 687 tiles load without complaint and every query returns no polygon.
-            // The FILE NAME still uses the raw pair; only this does not.
             np.tileX = int(((cfg.bmin[0] + cfg.bmax[0]) * 0.5f - mb.orig[0]) / GRID_SIZE);
             np.tileY = int(((cfg.bmin[2] + cfg.bmax[2]) * 0.5f - mb.orig[2]) / GRID_SIZE);
             np.tileLayer = 0;
@@ -1037,10 +982,6 @@ namespace world::nav
             navTileYMax = std::max(navTileYMax, g.first);
         }
 
-        // The origin is the min corner of the highest-indexed tile, which is the
-        // convention the server's dtNavMesh is initialised with. Y is unused by Detour
-        // -- it locates tiles in XZ only -- but the reference writes FLT_MIN there and
-        // the file must stay byte-compatible with what the server expects to read.
         float orig[3], originMax[3];
         TileBoundsXZ(navTileXMax, navTileYMax, orig, originMax);
         orig[1] = FLT_MIN;
@@ -1049,8 +990,10 @@ namespace world::nav
         rcVcopy(params.orig, orig);
         params.tileWidth = GRID_SIZE;
         params.tileHeight = GRID_SIZE;
-        params.maxTiles = int(grids.size());
+        params.maxTiles = MAP_GRID_TILES;
         params.maxPolys = 1 << DT_POLY_BITS;
+
+        RemoveMapTiles(m_outDir, mapId);
 
         char name[32];
         std::snprintf(name, sizeof(name), "%04u.mmap", mapId);
@@ -1069,6 +1012,7 @@ namespace world::nav
         mb.subTilesPerTile = int(GRID_SIZE / m_cfg.cellSize + 0.5f) / m_cfg.subTileSize;
         mb.borderSize = m_cfg.walkableRadius + 3;
         mb.globalWmo = std::move(globalWmo);
+        mb.offMesh = LoadOffMesh(m_cfg.offMeshFile, mapId);
 
         unsigned workers = m_cfg.threads > 0 ? unsigned(m_cfg.threads)
                                              : std::thread::hardware_concurrency();
@@ -1082,9 +1026,6 @@ namespace world::nav
         std::atomic<int> written{0};
         std::atomic<int> tileErrors{0};
 
-        // Only the main-thread worker touches the console, so the report reads the shared
-        // dispatch counter rather than adding a lock the pool would contend on. `next`
-        // counts tiles STARTED, which is a fine progress proxy and never stalls at the end.
         auto report = [&](size_t started)
         {
             if (m_progress)
@@ -1148,10 +1089,6 @@ namespace world::nav
         std::error_code ec;
         std::filesystem::create_directories(m_outDir, ec);
 
-        // Which maps and grids exist is read off the baked tiles themselves, so the
-        // navmesh can only ever cover ground the collision engine also has. A map is
-        // either an ADT grid (t_ tiles) or a single global WMO (a lone w_ tile); the
-        // extractor writes one or the other, never both.
         std::map<uint32_t, std::vector<std::pair<int, int>>> byMap;
         std::set<uint32_t> globalWmoMaps;
         for (const auto& entry : std::filesystem::directory_iterator(m_tileDir, ec))

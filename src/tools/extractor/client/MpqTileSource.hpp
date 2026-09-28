@@ -1,10 +1,29 @@
-#pragma once
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
 
-// Assembles one TerrainTile from the client: the ADT's height/liquid grids plus every
-// WMO and M2 placed on it, each as a shared model and its own placement Transform.
-//
-// Tile indexing throughout: tx is the tile index derived from world X, ty from world Y.
-// The ADT file is named the other way round -- "<Map>_<ty>_<tx>.adt".
+#pragma once
 
 #include "IMpqArchive.hpp"
 #include "ModelLoaders.hpp"
@@ -35,7 +54,6 @@ namespace world::terrain
         std::string AdtPath(uint32_t mapId, int tx, int ty) const;
         std::string WdtPath(uint32_t mapId) const;
 
-        // Parsed once per map; the tile bake walks it to know which tiles exist.
         const WdtData* Wdt(uint32_t mapId);
 
     private:

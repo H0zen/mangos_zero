@@ -23,12 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-// The offline baker. One pass over a 1.12.x client's MPQs, producing the caches
-// mangosd reads: the raw DBC set, and the fused terrain + collision tiles.
-//
-// It shares -- does not copy -- the runtime's terrain engine, so the writer and the
-// reader cannot disagree about the tile format.
-
 #include <memory>
 #include "ExtractorConsole.hpp"
 #include "nav/NavMeshBuilder.hpp"
@@ -63,8 +57,8 @@ namespace
     {
         std::string src = "Data";
         std::string dest = "extracted_data";
-        std::string locale;         ///< empty = detect it from the client
-        bool allLocales = false;    ///< --locale all: every language on the disc
+        std::string locale;
+        bool allLocales = false;
         int mapFilter = -1;
         bool dbc = false;
         bool tiles = false;
@@ -73,10 +67,6 @@ namespace
         bool nav = false;
         std::string vesselList;
 
-        // Whether the command line named components itself. Naming them is an
-        // instruction and the menu stays shut. Naming none opens it -- but only
-        // where there is a terminal to open it on: a pipe or a CI log bakes
-        // everything instead, so an unattended run needs no arguments at all.
         bool named = false;
         bool noMenu = false;
         bool help = false;
@@ -94,14 +84,6 @@ namespace
             std::chrono::duration_cast<std::chrono::seconds>(now - g_started).count()));
     }
 
-    /**
-     * @brief Every locale the client under @p dataDir carries, enUS first if present.
-     *
-     * A locale directory is only a locale directory if it holds the archive named after
-     * it, so a stray folder cannot be mistaken for one. Several is normal: a European
-     * install ships nine or more, and until this returned all of them the baker took the
-     * first and silently gave every other language the English strings.
-     */
     std::vector<std::string> FindLocales(const std::string& dataDir)
     {
         std::vector<std::string> found;
@@ -121,8 +103,6 @@ namespace
 
         std::sort(found.begin(), found.end());
 
-        // enUS first when it is there: it is the set that goes in the base dbc/ folder,
-        // and the one the server falls back to for anything a translation is missing.
         const auto en = std::find(found.begin(), found.end(), std::string("enUS"));
         if (en != found.end())
         {
@@ -131,8 +111,6 @@ namespace
         return found;
     }
 
-    /// The one the client is, for everything that is not a DBC -- terrain, models and
-    /// collision live in the locale-independent archives and do not care which it is.
     std::string DetectLocale(const std::string& dataDir)
     {
         const std::vector<std::string> found = FindLocales(dataDir);
@@ -149,7 +127,7 @@ namespace
 "\n"
 "COMPONENTS -- name none and it bakes them all.\n"
 "\n"
-"  dbc        the client databases, .dbc and .db2 both, copied out whole.\n"
+"  dbc        the client databases (.dbc), copied out whole.\n"
 "  gomodels   one collision body per game-object display id. Doors, bridges\n"
 "             and ship hulls are models, not terrain, and this is where they\n"
 "             come from. Needed by tile and by trans.\n"
@@ -219,9 +197,17 @@ namespace
                 out.allLocales = (v == "all");
                 out.locale = out.allLocales ? std::string() : v;
             }
-            else if (a == "--map" && hasValue) { out.mapFilter = std::atoi(argv[++i]); }
+            else if ((a == "--map" || a == "--threads") && hasValue)
+            {
+                const std::string value = argv[++i];
+                int& target = (a == "--map") ? out.mapFilter : out.threads;
+                if (!ExtractorConsole::ParseNonNegative(value, target))
+                {
+                    std::printf("invalid value for %s: %s\n", a.c_str(), value.c_str());
+                    return false;
+                }
+            }
             else if (a == "--offmesh" && hasValue) { out.offMesh = argv[++i]; }
-            else if (a == "--threads" && hasValue) { out.threads = std::atoi(argv[++i]); }
             else if (a == "--no-menu") { out.noMenu = true; }
             else if (a == "-h" || a == "--help") { out.help = true; return false; }
             else
@@ -234,8 +220,7 @@ namespace
         return true;
     }
 
-    int ExtractDbc(StormLibArchive& mpq, const std::string& dest,
-                   const std::string& locale)
+    int ExtractDbc(StormLibArchive& mpq, const std::string& dest)
     {
         std::error_code ec;
         std::filesystem::create_directories(dest, ec);
@@ -266,70 +251,13 @@ namespace
             std::fclose(f);
             written += ok ? 1 : 0;
         }
-        // The build stamp. The server reads it to check the DBCs came from a client it
-        // supports -- extract from the wrong expansion and the column layouts differ
-        // with no other symptom. It is the client's own file, so it is copied, never
-        // synthesised: a stamp this tool made up would assert exactly nothing.
-        int stamps = 0;
-        for (const std::string& name : mpq.FindFiles("component.wow-*.txt"))
-        {
-            std::vector<uint8_t> bytes;
-            if (!mpq.Read(name, bytes))
-            {
-                continue;
-            }
-            const size_t slash = name.find_last_of("\\/");
-            std::string leaf = slash == std::string::npos ? name : name.substr(slash + 1);
-
-            // The archive stores the locale lower-cased; the server fopen()s the name it
-            // built from its own locale string. Windows does not care and Linux does, so
-            // the stamp is written under the spelling the server will actually ask for.
-            std::string lower = leaf;
-            for (char& c : lower)
-            {
-                c = char(std::tolower(static_cast<unsigned char>(c)));
-            }
-            std::string wanted = "component.wow-" + locale + ".txt";
-            std::string wantedLower = wanted;
-            for (char& c : wantedLower)
-            {
-                c = char(std::tolower(static_cast<unsigned char>(c)));
-            }
-            if (lower == wantedLower)
-            {
-                leaf = wanted;
-            }
-
-            if (std::FILE* f = std::fopen((dest + "/" + leaf).c_str(), "wb"))
-            {
-                if (bytes.empty() ||
-                    std::fwrite(bytes.data(), 1, bytes.size(), f) == bytes.size())
-                {
-                    ++stamps;
-                }
-                std::fclose(f);
-            }
-        }
 
         char msg[512];
-        std::snprintf(msg, sizeof(msg), "dbc: %d files, %d build stamps -> %s", written,
-                      stamps, dest.c_str());
-        if (stamps)
-        {
-            g_console.Success(msg);
-        }
-        else
-        {
-            g_console.Warn(msg);
-            g_console.Warn("  no component.wow-<locale>.txt in the client; the server "
-                           "cannot check the DBC build");
-        }
+        std::snprintf(msg, sizeof(msg), "dbc: %d files -> %s", written, dest.c_str());
+        g_console.Success(msg);
         return written;
     }
 
-    // Every collidable game-object model, keyed by GameObjectDisplayInfo id: doors,
-    // lifts, bridges. Written as ordinary one-instance tiles at identity, so the runtime
-    // reads them with the same code that reads terrain.
     void BakeGoModels(WmoLoader& wmo, M2Loader& m2,
                       const world::GameObjectDisplayInfoStore& display,
                       const std::string& dest)
@@ -385,8 +313,6 @@ namespace
         Tick();
     }
 
-    // One durable line per map, so a piped log -- where the moving header prints nothing
-    // -- still shows the bake advancing map by map.
     void NavMapDone(void* ctx, uint32_t, const char* label, int written, size_t total)
     {
         (void)ctx;
@@ -397,22 +323,12 @@ namespace
         Tick();
     }
 
-    // The navmesh is baked from the TILES, never from the MPQs, so the surface the
-    // pathfinder walks is the one the collision engine answers with.
     struct VesselMap
     {
         uint32_t mapId;
         uint32_t displayId;
     };
 
-    /**
-     * @brief The list that ships with the tool: vessels.txt beside the executable.
-     *
-     * Beside the EXECUTABLE, not the working directory, because this is data the build
-     * installs next to the binary and a baker is run from wherever it happens to be run
-     * from. The list changes only when the client does, so having to name it every time was
-     * a flag that only ever took one value.
-     */
     std::string DefaultDataFile(const char* argv0, const char* name)
     {
         std::error_code ec;
@@ -432,15 +348,6 @@ namespace
         return DefaultDataFile(argv0, "vessels.txt");
     }
 
-    /**
-     * @brief The off-mesh links that ship with the tool: offmesh.txt beside the executable.
-     *
-     * These are hand-authored jumps the generated mesh cannot bridge -- the Booty Bay dock,
-     * the Blade's Edge Arena pillars -- and they are per-expansion content, not boilerplate.
-     * They had no default path and no install rule, so a nav bake quietly ran without them
-     * unless somebody remembered --offmesh, which is exactly the kind of omission that
-     * leaves a pathfinder unable to cross a gap nobody thinks to test.
-     */
     std::string DefaultOffMeshList(const char* argv0)
     {
         return DefaultDataFile(argv0, "offmesh.txt");
@@ -475,14 +382,6 @@ namespace
         return out;
     }
 
-    // Blizzard ships a Map.dbc row per vessel and no terrain for it -- a "Transport<entry>"
-    // map with no WDT at all -- because the hull only ever existed as a game object model.
-    // This gives that identity its geometry: the tile the gomodel bake already wrote,
-    // marked global and named for the vessel's own map, so terrain, collision and nav all
-    // reach it by the ordinary WMO-only map path.
-    //
-    // The instance keeps its identity placement. Model space IS the deck, and there is no
-    // world pose to compose with.
     int BakeVesselMaps(const std::string& goDir, const std::string& tileDir,
                        const std::vector<VesselMap>& vessels)
     {
@@ -558,8 +457,27 @@ namespace
         return true;
     }
 
-    // One map's tiles. A map is either an ADT grid or a single global WMO; both end up
-    // as the same payload, so the runtime has nothing to reconcile.
+    void RemoveMapTiles(const std::string& dir, uint32_t mapId)
+    {
+        std::error_code ec;
+        std::vector<std::filesystem::path> stale;
+        for (const auto& entry : std::filesystem::directory_iterator(dir, ec))
+        {
+            const std::string leaf = entry.path().filename().string();
+            unsigned id = 0;
+            int tx = 0, ty = 0;
+            const bool gridTile = std::sscanf(leaf.c_str(), "t_%u_%d_%d.tile", &id, &tx, &ty) == 3;
+            if ((gridTile && id == mapId) || leaf == GlobalWmoFileName(mapId))
+            {
+                stale.push_back(entry.path());
+            }
+        }
+        for (const auto& path : stale)
+        {
+            std::filesystem::remove(path, ec);
+        }
+    }
+
     void BakeMap(MpqTileSource& source, uint32_t mapId, const std::string& name,
                  const std::string& dest)
     {
@@ -568,6 +486,8 @@ namespace
         {
             return;
         }
+
+        RemoveMapTiles(dest, mapId);
 
         if (!wdt->HasAnyAdt())
         {
@@ -627,7 +547,6 @@ namespace
     }
 }
 
-
 #if defined(_WIN32)
 #include <io.h>
 #else
@@ -636,7 +555,6 @@ namespace
 
 namespace
 {
-    /// True when stdout is NOT a console -- a pipe, a file, a CI log.
     bool StdoutIsPiped()
     {
 #if defined(_WIN32)
@@ -649,9 +567,6 @@ namespace
 
 int main(int argc, char** argv)
 {
-    // Unbuffered when stdout is NOT a terminal. A pipe makes the C runtime buffer in
-    // 4K blocks, so a GUI or a CI log reading this sees nothing for minutes and then
-    // the whole run at once -- which reads as a hang, not as buffering.
     if (StdoutIsPiped())
     {
         std::setvbuf(stdout, nullptr, _IONBF, 0);
@@ -662,7 +577,7 @@ int main(int argc, char** argv)
     if (!ParseArgs(argc, argv, opt))
     {
         Usage();
-        return opt.help ? 0 : 2;   // asking is not an error
+        return opt.help ? 0 : 2;
     }
 
     opt.src = ExtractorConsole::ToUnixPath(opt.src);
@@ -681,7 +596,6 @@ int main(int argc, char** argv)
     g_started = std::chrono::steady_clock::now();
     g_console.Start(opt.src, opt.dest, "1.12.1");
 
-    // On a terminal the menu is the front door; without one there is nobody to ask.
     if (!opt.named && !opt.noMenu && g_console.Active())
     {
         ExtractorConsole::Choice choice;
@@ -710,15 +624,9 @@ int main(int argc, char** argv)
     }
     else if (!opt.named)
     {
-        // Bare invocation is "do the whole job", vessels included -- leaving trans out
-        // of this was how 02 shipped a default bake that produced no ship decks.
         opt.dbc = opt.tiles = opt.goModels = opt.vessels = opt.nav = true;
     }
 
-    // THE SAME REFUSAL THE MENU MAKES, for the command line. "mangos-extractor nav"
-    // with no tiles on disk parses fine, runs, and writes nothing -- a successful run
-    // that produced an empty navmesh. An earlier bake counts: what is checked is whether
-    // the input will exist, not whether it was named on this command line.
     {
         const auto baked = [&](const char* dir)
         {
@@ -746,7 +654,6 @@ int main(int argc, char** argv)
         }
     }
 
-    // After the menu, because the menu may have changed --src under us.
     if (opt.locale.empty())
     {
         opt.locale = DetectLocale(opt.src);
@@ -764,7 +671,6 @@ int main(int argc, char** argv)
 
     const std::string tileDir = opt.dest + "/tiles";
 
-    // Like nav, a vessel map is built from baked data alone, so neither needs a client.
     const auto BakeVessels = [&opt, &tileDir]()
     {
         if (!opt.vessels)
@@ -806,21 +712,16 @@ int main(int argc, char** argv)
     if (opt.dbc)
     {
         g_console.SetStage("dbc");
-        ExtractDbc(mpq, opt.dest + "/dbc", opt.locale);
+        ExtractDbc(mpq, opt.dest + "/dbc");
     }
 
-    // EVERY OTHER LANGUAGE THE CLIENT CARRIES. Only the DBC set is locale-dependent, so
-    // this is the whole of "extract them all": one more archive chain per locale, and its
-    // databases under dbc/<loc>/ -- which is exactly where the server looks for them
-    // (DBCStores builds `dbc_path + locale + "/" + file`). The base dbc/ folder keeps the
-    // primary set, and a translation that is missing a row falls back to it.
     if (opt.dbc && opt.allLocales)
     {
         for (const std::string& loc : FindLocales(opt.src))
         {
             if (loc == opt.locale)
             {
-                continue;                       // already written, at the dbc/ root
+                continue;
             }
 
             StormLibArchive other;
@@ -832,11 +733,10 @@ int main(int argc, char** argv)
             }
 
             g_console.SetLocale(loc);
-            ExtractDbc(other, opt.dest + "/dbc/" + loc, loc);
+            ExtractDbc(other, opt.dest + "/dbc/" + loc);
         }
         g_console.SetLocale(opt.locale);
     }
-
 
     if (!opt.tiles && !opt.goModels)
     {

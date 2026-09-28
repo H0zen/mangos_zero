@@ -30,7 +30,7 @@
 #include "Platform/Define.h"
 
 #define MMAP_MAGIC 0x4d4d4150   // 'MMAP'
-#define MMAP_VERSION 5
+#define MMAP_VERSION 6
 
 struct MmapTileHeader
 {
@@ -43,6 +43,8 @@ struct MmapTileHeader
     MmapTileHeader() : mmapMagic(MMAP_MAGIC), dtVersion(DT_NAVMESH_VERSION),
         mmapVersion(MMAP_VERSION), size(0), usesLiquids(true) {}
 };
+
+static_assert(sizeof(MmapTileHeader) == 20, "MmapTileHeader is the on-disk .mmtile header");
 
 enum NavTerrain
 {

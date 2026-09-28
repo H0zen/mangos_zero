@@ -1,15 +1,29 @@
-#pragma once
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
 
-// Bridges the client MPQ to the server's own DBC reader. The baker carries no DBC
-// parser of its own: it reads the raw WDBC image out of the archive and hands it to
-// DBCFileLoader, driven by the format strings in Server/DBCfmt.h. One parser and one
-// column layout, so the baker cannot drift from the server's view of a .dbc.
-//
-// The server marks columns it does not care about as 'x', and Map.dbc's Directory is
-// one of them -- yet that directory is exactly what the baker needs for tile paths.
-// That is fine: 'x' and 's' are both four bytes wide and neither of the files read
-// here contains a byte field, so every offset DBCFileLoader computes is unchanged and
-// getString reads the column regardless of its format char.
+#pragma once
 
 #include "IMpqArchive.hpp"
 

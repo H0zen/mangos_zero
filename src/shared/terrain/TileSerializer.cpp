@@ -14,7 +14,7 @@ namespace world::terrain
     namespace
     {
         constexpr uint32_t MAGIC = 0x30474E4D;  // "MNG0" in file order
-        constexpr uint32_t VERSION = 1;
+        constexpr uint32_t VERSION = 2;
 
         constexpr uint32_t MAX_MODELS = 1u << 20;
         constexpr uint32_t MAX_INSTANCES = 1u << 22;

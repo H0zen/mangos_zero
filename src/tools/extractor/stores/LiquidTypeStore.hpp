@@ -1,11 +1,29 @@
-#pragma once
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
 
-// LiquidType.dbc -> { id : (category, spellId) }.
-//
-// In 3.3.5a the `Type` column is authoritative and reads 0 = water, 1 = ocean,
-// 2 = magma, 3 = slime. That is NOT the 2.4.3 encoding (0 = magma, 2 = slime,
-// 3 = water, ocean indistinguishable), which is why the 2.4.3 extractors classify
-// rows below 21 by id arithmetic instead. Here the column answers directly.
+#pragma once
 
 #include "MpqDbcLoader.hpp"
 #include "terrain/Terrain.hpp"
@@ -19,16 +37,21 @@ namespace world
 {
     enum class LiquidDbcType : uint32_t
     {
-        Water = 0,
-        Ocean = 1,
-        Magma = 2,
-        Slime = 3
+        Magma = 0,
+        Slime = 2,
+        Water = 3
     };
+
+    constexpr uint32_t LIQUID_ROW_WATER = 1;
+    constexpr uint32_t LIQUID_ROW_OCEAN = 2;
+    constexpr uint32_t LIQUID_ROW_MAGMA = 3;
+    constexpr uint32_t LIQUID_ROW_SLIME = 4;
+    constexpr uint32_t LIQUID_ROW_NAXX_SLIME = 21;
 
     struct LiquidTypeInfo
     {
-        uint32_t type = 0;     ///< the `Type` column; see LiquidDbcType
-        uint32_t spellId = 0;  ///< aura applied while in this liquid
+        uint32_t type = 0;
+        uint32_t spellId = 0;
     };
 
     class LiquidTypeStore
@@ -41,15 +64,19 @@ namespace world
             {
                 return false;
             }
+            if (dbc.GetCols() < COLUMN_COUNT)
+            {
+                return false;
+            }
 
             m_entries.clear();
             for (uint32_t r = 0; r < dbc.GetNumRows(); ++r)
             {
                 DBCFileLoader::Record rec = dbc.getRecord(r);
                 LiquidTypeInfo info;
-                info.type = rec.getUInt(3);
-                info.spellId = rec.getUInt(5);
-                m_entries[rec.getUInt(0)] = info;
+                info.type = rec.getUInt(COLUMN_TYPE);
+                info.spellId = rec.getUInt(COLUMN_SPELL);
+                m_entries[rec.getUInt(COLUMN_ID)] = info;
             }
             return true;
         }
@@ -63,12 +90,14 @@ namespace world
         size_t Size() const { return m_entries.size(); }
 
     private:
+        static constexpr uint32_t COLUMN_ID = 0;
+        static constexpr uint32_t COLUMN_TYPE = 2;
+        static constexpr uint32_t COLUMN_SPELL = 3;
+        static constexpr uint32_t COLUMN_COUNT = 4;
+
         std::unordered_map<uint32_t, LiquidTypeInfo> m_entries;
     };
 
-    // Category of a LiquidType.dbc row. The store is the authority; the fallback table
-    // covers only the canonical rows, for a bake that has no client to hand (a stand-alone
-    // game-object model). Its values are the 3.3.5a file's own, not a guess.
     inline world::terrain::LiquidKind ClassifyLiquid(uint32_t entry,
                                                      const LiquidTypeStore* store)
     {
@@ -84,30 +113,21 @@ namespace world
             {
                 switch (static_cast<LiquidDbcType>(info->type))
                 {
-                    case LiquidDbcType::Water: return LiquidKind::Water;
-                    case LiquidDbcType::Ocean: return LiquidKind::Ocean;
                     case LiquidDbcType::Magma: return LiquidKind::Magma;
                     case LiquidDbcType::Slime: return LiquidKind::Slime;
+                    default:
+                        return entry == LIQUID_ROW_OCEAN ? LiquidKind::Ocean
+                                                         : LiquidKind::Water;
                 }
             }
         }
 
-        if (entry <= 12)
-        {
-            switch ((entry - 1) & 3)
-            {
-                case 0: return LiquidKind::Water;
-                case 1: return LiquidKind::Ocean;
-                case 2: return LiquidKind::Magma;
-                default: return LiquidKind::Slime;
-            }
-        }
         switch (entry)
         {
-            case 13: case 17: case 41: case 61: case 81: return LiquidKind::Water;
-            case 14: case 100: return LiquidKind::Ocean;
-            case 15: case 19: case 121: case 141: return LiquidKind::Magma;
-            case 20: case 21: case 181: return LiquidKind::Slime;
+            case LIQUID_ROW_OCEAN: return LiquidKind::Ocean;
+            case LIQUID_ROW_MAGMA: return LiquidKind::Magma;
+            case LIQUID_ROW_SLIME:
+            case LIQUID_ROW_NAXX_SLIME: return LiquidKind::Slime;
             default: return LiquidKind::Water;
         }
     }

@@ -1,18 +1,29 @@
-#pragma once
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
 
-// Offline navmesh bake: turns the fused terrain+collision tiles into the Detour navmesh
-// the server's MMAP layer loads (mmaps/<map>.mmap + .mmtile).
-//
-// The input is the BAKED TILE, not the client MPQs, so the surface the pathfinder walks
-// is exactly the surface FusedTerrain collides against and the two cannot disagree.
-//
-// Coordinate spaces. WoW is Z-up, Recast is Y-up, and the server converts a world point
-// (x, y, z) -> (y, z, x) (see PathFinder). That is a cyclic permutation, so it preserves
-// orientation and triangle winding -- hence face normals -- carries over untouched.
-//
-// Tile indices. Recast X is world Y, so navmesh tile coordinates are SWAPPED relative to
-// the grid: navTileX = gy, navTileY = gx. That is why the runtime opens
-// mmaps/%04u%02i%02i.mmtile with (mapId, y, x); see MMapManager::loadMap.
+#pragma once
 
 #include <cstdint>
 #include <memory>
@@ -24,36 +35,21 @@ namespace world::terrain { class TerrainTile; }
 
 namespace world::nav
 {
-    // Defaults reproduce the values the server's PathFinder was tuned against.
     struct NavConfig
     {
-        float cellSize = 0.266666f;      ///< voxel size in yards; must divide 533.33333
-        float maxWalkableAngle = 60.0f;  ///< steepest walkable slope, degrees
-        int walkableHeight = 6;          ///< agent height, in cells
-        int walkableClimb = 4;           ///< max step up; keep below walkableHeight
-        int walkableRadius = 2;          ///< agent radius, in cells
-        int subTileSize = 80;            ///< recast sub-tile edge, in cells
-        int threads = 0;                 ///< 0 asks the hardware
-        std::string offMeshFile;         ///< optional offmesh.txt
+        float cellSize = 0.266666f;
+        float maxWalkableAngle = 60.0f;
+        int walkableHeight = 6;
+        int walkableClimb = 4;
+        int walkableRadius = 2;
+        int subTileSize = 80;
+        int threads = 0;
+        std::string offMeshFile;
     };
 
-    // Range of sub-tiles a world-space interval [lo, hi] touches on one axis.
-    //
-    // The bake bins triangles into sub-tiles so each sub-tile rasterises only its own
-    // list rather than the whole tile's. That makes THIS function the thing deciding
-    // what Recast ever sees: a range one too narrow drops geometry and punches a silent
-    // hole in the navmesh, so it must be conservative -- padded by the sub-tile border,
-    // and rounded outwards at both ends. Returning one bin too many costs a bounds test.
-    //
-    // `origin` is the tile's min corner on that axis, `width` a sub-tile's world size,
-    // `pad` the border in world units. Results are clamped to [0, side - 1].
     void SubTileSpan(float lo, float hi, float origin, float width, float pad, int side,
                      int& first, int& last);
 
-    // Inclusive terrain-cell range contributed by one orthogonal neighbour. Tile
-    // indices and height-cell indices both increase toward falling world coordinates,
-    // so the neighbour at gx-1 contributes its final X row, while gx+1 contributes
-    // its first. Diagonal, current-tile and non-adjacent offsets are rejected.
     struct CellRect
     {
         int ixFirst = 0;
@@ -69,27 +65,17 @@ namespace world::nav
     public:
         NavMeshBuilder(std::string tileDir, std::string outDir, NavConfig cfg = {});
 
-        // Live progress WITHIN a map: `done` of `total` tiles started, so the console
-        // header moves tile by tile rather than once per map. Called only from the main
-        // thread, so the callback needs no locking of its own.
         using ProgressFn = void (*)(void* context, uint32_t mapId, const char* mapName,
                                     size_t done, size_t total);
         void SetProgress(ProgressFn fn, void* context);
 
-        // One durable line per finished map (`written` of `total` tiles produced a
-        // navmesh). Unlike ProgressFn this is meant to survive in a piped log, where the
-        // moving header renders nothing.
         using MapDoneFn = void (*)(void* context, uint32_t mapId, const char* mapName,
                                    int written, size_t total);
         void SetMapDone(MapDoneFn fn);
 
-        /// Bakes every map that has tiles, or only `mapFilter` when >= 0.
-        /// Returns the number of .mmtile files written, or -1 on a fatal error.
         int BakeAll(long mapFilter = -1);
 
     private:
-        // `globalWmo`, when set, is a WMO-only map's single shared tile: every grid in
-        // `grids` bakes from it instead of reading a per-grid tile off disk.
         int BakeMap(uint32_t mapId, const std::string& mapName,
                     const std::vector<std::pair<int, int>>& grids,
                     std::shared_ptr<const world::terrain::TerrainTile> globalWmo = nullptr);

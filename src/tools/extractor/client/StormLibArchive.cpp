@@ -1,3 +1,28 @@
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
+
 #include <string>
 #include <vector>
 #include "StormLibArchive.hpp"
@@ -23,20 +48,8 @@ namespace world::terrain
         }
     }
 
-    // Lowest priority first: Read walks the handles in reverse, so the last archive
-    // opened is the first searched. Verified against StormLib's own patch chain
-    // (SFileOpenPatchArchive) over every DBC and WDT plus a sample of ADTs -- 1047
-    // files, byte-identical.
     const std::vector<std::string>& ClientArchives112()
     {
-        // Checked against a real 1.12.1 install: 1.12 ships ONE ARCHIVE PER ASSET KIND
-        // rather than the expansion-stacked set 3.3.5a uses -- there is no common.MPQ, no
-        // expansion.MPQ and no lichking.MPQ, and dbc/terrain/model/wmo are separate files.
-        // Lowest priority first, so the numbered patches come last and win.
-        //
-        // texture, sound, speech, fonts, interface and backup are deliberately absent:
-        // none of them holds a DBC, WDT, ADT, WMO or M2, so opening them would cost
-        // handles and buy nothing. Same reasoning as the 3.3.5a speech archives.
         static const std::vector<std::string> archives = {
             "base.MPQ",  "dbc.MPQ",   "misc.MPQ",   "model.MPQ",
             "terrain.MPQ", "wmo.MPQ",
@@ -47,12 +60,6 @@ namespace world::terrain
 
     const std::vector<std::string>& ClientLocaleArchives112()
     {
-        // Same ordering rule as 3.3.5a: numbered locale patches last, or Map.dbc is read
-        // from an older archive that parses perfectly and is simply missing rows.
-        //
-        // A locale-merged 1.12 install has no Data/<locale> directory at all and every one
-        // of these is simply absent; OpenClientData counts what opened and does not care.
-        // The DBCs are then in the root dbc.MPQ.
         static const std::vector<std::string> archives = {
             "base-{locale}.MPQ",
             "locale-{locale}.MPQ",

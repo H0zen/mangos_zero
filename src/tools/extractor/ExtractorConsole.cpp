@@ -1,3 +1,28 @@
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
+
 #include <string>
 #include "ExtractorConsole.hpp"
 
@@ -7,8 +32,11 @@
 #include <commdlg.h>
 #endif
 
+#include <cerrno>
 #include <chrono>
+#include <climits>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <sstream>
 #include <system_error>
@@ -23,7 +51,6 @@ namespace world::terrain
 
         ConsoleUI& Ui() { return ConsoleUI::Instance(); }
 
-        // Status header slots, so a later call cannot quietly take another's row.
         enum StatusSlot
         {
             SLOT_STAGE = 0,
@@ -55,6 +82,24 @@ namespace world::terrain
         }
     }
 
+    bool ExtractorConsole::ParseNonNegative(const std::string& text, int& value)
+    {
+        if (text.empty())
+        {
+            return false;
+        }
+
+        char* end = nullptr;
+        errno = 0;
+        const long parsed = std::strtol(text.c_str(), &end, 10);
+        if (errno != 0 || *end != '\0' || parsed < 0 || parsed > INT_MAX)
+        {
+            return false;
+        }
+        value = int(parsed);
+        return true;
+    }
+
     std::string ExtractorConsole::ToUnixPath(std::string path)
     {
         for (char& c : path)
@@ -70,8 +115,6 @@ namespace world::terrain
 #if defined(_WIN32)
     bool ExtractorConsole::BrowseForFolder(const std::string& title, std::string& path)
     {
-        // The console owns the alternate screen, but the picker is its own window and
-        // draws nowhere near it, so nothing needs saving and restoring here.
         const HRESULT init = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
         const bool weInitialised = SUCCEEDED(init);
 
@@ -112,9 +155,6 @@ namespace world::terrain
         ofn.lpstrFile = chosen;
         ofn.nMaxFile = sizeof(chosen);
         ofn.lpstrTitle = title.c_str();
-        // NOCHANGEDIR matters: the tool resolves its own defaults relative to where it
-        // was started, and a dialog that silently moves the working directory would
-        // change what those resolve to.
         ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
 
         if (!GetOpenFileNameA(&ofn))
@@ -160,10 +200,6 @@ namespace world::terrain
             return;
         }
 
-        // A console that closes on completion takes the only report of what happened
-        // with it -- including the error, which is when it matters most. Hold until the
-        // reader dismisses it, but only if a menu was ever shown: driven from a script
-        // or a command line, nothing should ever block.
         if (m_interactive)
         {
             Ui().PushLog("Finished. Type q and press enter to close.", Style::STYLE_WARN);
@@ -336,7 +372,6 @@ namespace world::terrain
 
     namespace
     {
-        /// Whether a previous run already produced this component.
         bool AlreadyBaked(const std::string& dir)
         {
             std::error_code ec;
@@ -349,17 +384,9 @@ namespace world::terrain
     {
         if (!m_active)
         {
-            return true;  // no terminal: whatever the command line asked for stands
+            return true;
         }
 
-        // The menu is the documentation. Someone runs this once, on a machine they do
-        // not develop on, and the thing they need to know is not what the words mean but
-        // WHAT DEPENDS ON WHAT -- baking nav without tiles produces nothing and says so
-        // far too late.
-        //
-        // Laid out as a fixed 66-column block and centred in whatever terminal it lands
-        // in, so the columns stay aligned instead of drifting with the window.
-        // Hard left, not centred: a menu is read down its left edge.
         const std::string pad("  ");
 
         auto row = [&](const char* text, Style style)
@@ -461,7 +488,14 @@ namespace world::terrain
             }
             if (cmd.rfind("map ", 0) == 0)
             {
-                out.mapFilter = std::atoi(cmd.c_str() + 4);
+                int mapId = 0;
+                if (!ParseNonNegative(cmd.substr(4), mapId))
+                {
+                    Ui().PushLog("  not a map id: " + cmd.substr(4), Style::STYLE_ERROR);
+                    Draw();
+                    continue;
+                }
+                out.mapFilter = mapId;
                 char buf[64];
                 std::snprintf(buf, sizeof(buf), "  restricted to map %d", out.mapFilter);
                 Ui().PushLog(buf, Style::STYLE_SUCCESS);
@@ -501,12 +535,6 @@ namespace world::terrain
                 continue;
             }
 
-            // "2 4 6" is one answer, not three. The bake order is fixed by dependency
-            // and not by the order they were typed, so this only collects flags.
-            //
-            // A rejected answer must leave nothing behind, or "6" then "4 6" would bake
-            // the flags of both attempts. The paths and the map filter are not part of
-            // the answer, so they survive the reset.
             const int keptFilter = out.mapFilter;
             const std::string keptSrc = out.src;
             const std::string keptDest = out.dest;
@@ -542,7 +570,7 @@ namespace world::terrain
                     Ui().PushLog("  nothing chosen -- type a number, or q to leave",
                                  Style::STYLE_WARN);
                 }
-                out = Choice();          // a rejected answer leaves nothing behind
+                out = Choice();
                 out.mapFilter = keptFilter;
                 out.src = keptSrc;
                 out.dest = keptDest;
@@ -550,10 +578,6 @@ namespace world::terrain
                 continue;
             }
 
-            // REFUSE AN IMPOSSIBLE ORDER RATHER THAN BAKE HALF OF IT. nav reads tiles and
-            // tiles read gomodels, so asking for the later one alone produces an empty
-            // result that looks like a successful run. A previous bake counts: what is
-            // being checked is whether the input will EXIST, not whether it was ticked.
             struct Need { bool wanted; bool feeds; const char* who; const char* needs;
                           const char* dir; };
             const Need needs[] = {
