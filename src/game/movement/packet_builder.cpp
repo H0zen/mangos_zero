@@ -51,6 +51,9 @@
 #include "MoveSpline.h"
 #include "WorldPacket.h"
 
+#include <cmath>
+#include <vector>
+
 namespace Movement
 {
 
@@ -120,42 +123,72 @@ namespace Movement
         data << move_spline.Duration();
     }
 
-    /**
-     * @brief Writes a linear path to a ByteBuffer.
-     * @param spline The spline containing the path points.
-     * @param data The ByteBuffer to write the data to.
-     */
-    void WriteLinearPath(const Spline<int32>& spline, ByteBuffer& data)
+    namespace
     {
-        Movement::SplineBase::ControlArray const& pathPoint = spline.getPoints();
-        const uint32 first = spline.first();
-        const uint32 last = spline.last();
-        const Vector3 destination = pathPoint[last];
+        constexpr float PACKED_OFFSET_STEP = 0.25f;
+        constexpr float CREATE_GUARD_DISTANCE = 1.0f;
 
-        data << uint32(last - first);
-        data << destination;
-
-        for (uint32 i = first + 1; i < last; ++i)
+        Vector3 AsClientDecodes(const Vector3& destination, const Vector3& point)
         {
-            const Vector3 offset = destination - pathPoint[i];
-            data.appendPackXYZ(offset.x, offset.y, offset.z);
+            const Vector3 offset = destination - point;
+            const Vector3 packed(std::trunc(offset.x / PACKED_OFFSET_STEP),
+                                 std::trunc(offset.y / PACKED_OFFSET_STEP),
+                                 std::trunc(offset.z / PACKED_OFFSET_STEP));
+            return destination - packed * PACKED_OFFSET_STEP;
+        }
+
+        bool IsDistinct(const Vector3& from, const Vector3& to)
+        {
+            return (to - from).length() >= PACKED_OFFSET_STEP;
+        }
+
+        Vector3 CreateGuardPoint(const Vector3& start, const Vector3& next)
+        {
+            const Vector3 heading(next.x - start.x, next.y - start.y, 0.0f);
+            if (heading.isZero())
+            {
+                return start;
+            }
+            return start - heading.direction() * CREATE_GUARD_DISTANCE;
+        }
+
+        void WriteCreatePath(const Spline<int32>& spline, ByteBuffer& data)
+        {
+            const Vector3& start = spline.getPoint(spline.first());
+            const Vector3& end = spline.getPoint(spline.last());
+            const uint32 realCount = spline.last() - spline.first() + 1;
+
+            data << uint32(realCount + 2);
+            data << CreateGuardPoint(start, spline.getPoint(spline.first() + 1));
+            data.append<Vector3>(&start, realCount);
+            data << end;
+            data << end;
         }
     }
 
-    Vector3 CreateGuardPoint(Movement::SplineBase::ControlArray const& path)
+    void WriteLinearPath(const Spline<int32>& spline, ByteBuffer& data)
     {
-        const Vector3& start = path[0];
-        Vector3 back(start.x - path[1].x, start.y - path[1].y, 0.0f);
-        const float length = back.length();
-        if (length < 0.001f)
+        SplineBase::ControlArray const& points = spline.getPoints();
+        const Vector3& destination = points[spline.last()];
+
+        std::vector<Vector3> offsets;
+        Vector3 previous = points[spline.first()];
+        for (int32 i = spline.first() + 1; i < spline.last(); ++i)
         {
-            back = Vector3(1.0f, 0.0f, 0.0f);
+            const Vector3 decoded = AsClientDecodes(destination, points[i]);
+            if (IsDistinct(previous, decoded) && IsDistinct(decoded, destination))
+            {
+                offsets.push_back(destination - points[i]);
+                previous = decoded;
+            }
         }
-        else
+
+        data << uint32(offsets.size() + 1);
+        data << destination;
+        for (const Vector3& offset : offsets)
         {
-            back /= length;
+            data.appendPackXYZ(offset.x, offset.y, offset.z);
         }
-        return Vector3(start.x + back.x, start.y + back.y, start.z);
     }
 
     /**
@@ -219,10 +252,9 @@ namespace Movement
     void PacketBuilder::WriteCreate(const MoveSpline& move_spline, ByteBuffer& data)
     {
         MoveSplineFlag splineFlags = move_spline.splineflags;
-        const uint32 clientStateBits =
-            MoveSplineFlag::Done | MoveSplineFlag::Unknown3 | MoveSplineFlag::Unknown31;
+        const uint32 clientCreateFlags = MoveSplineFlag::Mask_Final_Facing | MoveSplineFlag::Flying;
 
-        data << uint32(splineFlags.raw() & ~clientStateBits);
+        data << uint32(splineFlags.raw() & clientCreateFlags);
 
         if (splineFlags.final_point)
         {
@@ -241,18 +273,6 @@ namespace Movement
         data << move_spline.Duration();
         data << move_spline.GetId();
 
-        Movement::SplineBase::ControlArray const& path = move_spline.getPath();
-        const uint32 nodes = uint32(path.size());
-        if (splineFlags.isSmooth())
-        {
-            data << nodes;
-        }
-        else
-        {
-            data << uint32(nodes + 1);
-            data << CreateGuardPoint(path);
-        }
-        data.append<Vector3>(&path[0], nodes);
-        data << (move_spline.isCyclic() ? Vector3::zero() : move_spline.FinalDestination());
+        WriteCreatePath(move_spline.spline, data);
     }
 }

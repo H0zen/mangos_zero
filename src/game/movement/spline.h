@@ -202,10 +202,9 @@ namespace Movement
             typedef void (SplineBase::*InitMethtod)(const Vector3*, index_type, bool, index_type);
             static InitMethtod initializers[ModesEnd]; /**< Array of initialization methods */
 
-            /**
-             * @brief Uninitialized spline handler.
-             */
-            void UninitializedSpline() const { MANGOS_ASSERT(false);}
+            void UninitializedEvaluate(index_type, float, Vector3&) const { MANGOS_ASSERT(false); }
+            float UninitializedSegLength(index_type) const { MANGOS_ASSERT(false); return 0.0f; }
+            void UninitializedInit(const Vector3*, index_type, bool, index_type) { MANGOS_ASSERT(false); }
 
         public:
 
