@@ -1,12 +1,29 @@
-#pragma once
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
 
-// One 3.3.5a .adt tile, parsed into the grids the height engine wants. The V9/V8
-// layout and the tile-local indexing match the reference map-extractor exactly, so
-// TerrainTile::TerrainHeight indexes them correctly: the FIRST index is derived from
-// the MCNK IndexY field and is what a world-X query resolves against.
-//
-// Liquid is reported as raw LiquidType.dbc row ids. Classifying a row into
-// water/ocean/magma/slime needs the DBC and is deliberately not done here.
+#pragma once
 
 #include "ChunkReaders.hpp"
 
@@ -19,8 +36,8 @@ namespace world::terrain
 {
     constexpr int ADT_CHUNKS = 16;
     constexpr int ADT_CELLS_PER_CHUNK = 8;
-    constexpr int ADT_GRID = ADT_CHUNKS * ADT_CELLS_PER_CHUNK;  // 128
-    constexpr int ADT_V9 = ADT_GRID + 1;                        // 129
+    constexpr int ADT_GRID = ADT_CHUNKS * ADT_CELLS_PER_CHUNK;
+    constexpr int ADT_V9 = ADT_GRID + 1;
 
     struct AdtData
     {
@@ -35,8 +52,8 @@ namespace world::terrain
         std::vector<float> liquidHeight;
         std::vector<uint8_t> liquidShow;
         std::vector<uint16_t> liquidEntry;
-        std::vector<uint8_t> liquidDark;     ///< MCLQ per-cell dark-water bit
-        std::vector<uint8_t> liquidNoLight;  ///< MH2O layer shipped no light map
+        std::vector<uint8_t> liquidDark;
+        std::vector<uint8_t> liquidNoLight;
 
         std::vector<std::string> wmoNames;
         std::vector<std::string> m2Names;
@@ -44,8 +61,6 @@ namespace world::terrain
         std::vector<Placement> m2Placements;
     };
 
-    // Returns false only on a structurally broken file; a valid-but-empty tile yields
-    // hasTerrain = false with no placements.
     bool ParseAdt(const uint8_t* data, size_t size, AdtData& out);
 
     inline bool ParseAdt(const std::vector<uint8_t>& bytes, AdtData& out)

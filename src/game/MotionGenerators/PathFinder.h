@@ -27,6 +27,7 @@
 #define MANGOS_PATH_FINDER_H
 
 #include <algorithm>
+#include <shared_mutex>
 #include "DetourNavMesh.h"
 #include "DetourNavMeshQuery.h"
 
@@ -182,6 +183,7 @@ class PathFinder
         const Unit* const       m_sourceUnit;       // The unit that is moving
         const dtNavMesh*        m_navMesh;          // The navigation mesh
         const dtNavMeshQuery*   m_navMeshQuery;     // The navigation mesh query used to find the path
+        std::shared_mutex*      m_meshLock;
 
         dtQueryFilter m_filter;                     // Use a single filter for all movements, update it when needed
 

@@ -1,3 +1,28 @@
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
+
 #include "AdtParser.hpp"
 
 namespace world::terrain
@@ -8,8 +33,6 @@ namespace world::terrain
 
         constexpr int CELL = ADT_CELLS_PER_CHUNK;
 
-        // MCNK header field offsets, relative to the byte after the chunk's tag+size.
-        // Identical in 2.4.3 and 3.3.5a.
         constexpr size_t MCNK_FLAGS = 0x00;
         constexpr size_t MCNK_INDEX_X = 0x04;
         constexpr size_t MCNK_INDEX_Y = 0x08;
@@ -20,7 +43,10 @@ namespace world::terrain
         constexpr size_t MCNK_SIZE_MCLQ = 0x64;
         constexpr size_t MCNK_POS_Z = 0x70;
 
-        constexpr uint32_t MCNK_FLAG_RIVER = 1u << 2;
+        constexpr uint32_t MCNK_HEADER_SIZE = 0x80;
+        constexpr uint64_t MCVT_BYTES = 145 * 4;
+        constexpr uint64_t MCLQ_BYTES = 8 + 81 * 8 + 64;
+
         constexpr uint32_t MCNK_FLAG_OCEAN = 1u << 3;
         constexpr uint32_t MCNK_FLAG_MAGMA = 1u << 4;
         constexpr uint32_t MCNK_FLAG_SLIME = 1u << 5;
@@ -43,6 +69,11 @@ namespace world::terrain
 
         void ReadMcnk(const uint8_t* mcnk, uint32_t mcnkSize, AdtData& out)
         {
+            if (mcnkSize < MCNK_HEADER_SIZE)
+            {
+                return;
+            }
+
             const uint8_t* h = mcnk + 8;
             const uint32_t flags = RdU32(h + MCNK_FLAGS);
             const uint32_t ix = RdU32(h + MCNK_INDEX_X);
@@ -56,14 +87,13 @@ namespace world::terrain
             const uint32_t offsMclq = RdU32(h + MCNK_OFS_MCLQ);
             const uint32_t sizeMclq = RdU32(h + MCNK_SIZE_MCLQ);
             const float baseZ = RdF32(h + MCNK_POS_Z);
-            const uint32_t span = mcnkSize + 8;
+            const uint64_t span = uint64_t(mcnkSize) + 8;
 
             out.holes[iy * ADT_CHUNKS + ix] = static_cast<uint16_t>(RdU32(h + MCNK_HOLES) & 0xFFFF);
             out.areaIds[iy * ADT_CHUNKS + ix] = static_cast<uint16_t>(RdU32(h + MCNK_AREA_ID) & 0xFFFF);
 
-            if (offsMcvt && offsMcvt + 8 + 145 * 4 <= span)
+            if (offsMcvt && uint64_t(offsMcvt) + 8 + MCVT_BYTES <= span)
             {
-                // MCVT is 145 floats: 9 V9 corners then 8 V8 centres, per row.
                 const uint8_t* hm = mcnk + offsMcvt + 8;
                 for (int y = 0; y <= CELL; ++y)
                 {
@@ -85,11 +115,7 @@ namespace world::terrain
                 }
             }
 
-            // MCLQ is the pre-WotLK liquid chunk and is absent from 3.3.5a client data;
-            // it is read only so an older or hand-made tile is not silently dry. MH2O,
-            // parsed after every MCNK, overrides whatever this writes.
-            constexpr uint32_t MCLQ_BYTES = 8 + 81 * 8 + 64;
-            if (!offsMclq || sizeMclq <= 8 || offsMclq + 8 + MCLQ_BYTES > span)
+            if (!offsMclq || sizeMclq <= 8 || uint64_t(offsMclq) + 8 + MCLQ_BYTES > span)
             {
                 return;
             }
@@ -101,8 +127,6 @@ namespace world::terrain
             EnsureLiquid(out);
             out.hasLiquid = true;
 
-            // In the MCLQ era the MCNK flags *are* the type; the DBC is not involved.
-            // Dropping the slime case makes Undercity sludge report as swimmable water.
             uint16_t entry = 1;
             if (flags & MCNK_FLAG_SLIME)
             {
@@ -115,10 +139,6 @@ namespace world::terrain
             else if (flags & MCNK_FLAG_OCEAN)
             {
                 entry = 2;
-            }
-            else if (!(flags & MCNK_FLAG_RIVER))
-            {
-                entry = 1;
             }
 
             for (int y = 0; y <= CELL; ++y)
@@ -149,9 +169,6 @@ namespace world::terrain
             }
         }
 
-        // MH2O: 256 SMLiquidChunk headers, one per MCNK in IndexY-major order, followed
-        // by the instances they point at. Every offset inside is relative to the byte
-        // after the chunk tag+size, never to the file.
         void ReadMh2o(const uint8_t* body, uint32_t bodySize, AdtData& out)
         {
             constexpr uint32_t CHUNK_HDR = 12;
@@ -195,9 +212,6 @@ namespace world::terrain
                             continue;
                         }
 
-                        // Vertex format 2 is depth-only and carries no heights; 1 and 3
-                        // replace the depth map with texture coordinates, which is the
-                        // "no light map" the reference reads dark water from.
                         const bool hasHeights = (lvf != 2);
                         const bool noLight = (lvf == 1 || lvf == 3 || !offsVerts);
                         const uint32_t corners = uint32_t(w + 1) * uint32_t(hgt + 1);

@@ -1,7 +1,29 @@
-#pragma once
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
 
-// WMO root and group files, parsed to plain data: the collidable faces and the
-// interior liquid surface. No acceleration structure is built here.
+#pragma once
 
 #include "terrain/Geometry.hpp"
 
@@ -17,9 +39,9 @@ namespace world::terrain
         uint32_t tilesX = 0;
         uint32_t tilesY = 0;
         Vec3 corner{};
-        std::vector<float> heights;  ///< (tilesX+1)*(tilesY+1)
-        std::vector<uint8_t> flags;  ///< tilesX*tilesY, low nibble 15 = dry
-        uint16_t entry = 0;          ///< LiquidType.dbc row id
+        std::vector<float> heights;
+        std::vector<uint8_t> flags;
+        uint16_t entry = 0;
     };
 
     struct WmoGroupData
@@ -57,13 +79,9 @@ namespace world::terrain
 
     bool ParseWmoRoot(const uint8_t* data, size_t size, WmoRootData& out);
 
-    // rootFlags is WmoRootData::flags; its bit 0x4 decides whether MOGP.groupLiquid is
-    // already a LiquidType.dbc row id. Returns false when the group carries neither
-    // collidable geometry nor liquid.
     bool ParseWmoGroup(const uint8_t* data, size_t size, uint32_t rootFlags,
                        WmoGroupData& out);
 
-    // "X.wmo" -> "X_003.wmo"
     std::string WmoGroupPath(const std::string& root, uint32_t index);
 
     inline bool ParseWmoRoot(const std::vector<uint8_t>& b, WmoRootData& out)

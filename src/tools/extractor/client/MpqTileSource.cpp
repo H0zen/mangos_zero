@@ -1,3 +1,28 @@
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -31,8 +56,6 @@ namespace world::terrain
             return out;
         }
 
-        // Placement into the same world frame the terrain uses. The 180 degrees added to
-        // the Z euler is the diag(-1,-1,1) axis flip, which is exactly a half-turn.
         Transform PlacementTransform(const Placement& p)
         {
             Transform xf;
@@ -43,7 +66,6 @@ namespace world::terrain
             return xf;
         }
 
-        // A WDT global WMO's MODF is already in world coordinates, so no re-centring.
         Transform GlobalWmoTransform(const Placement& p)
         {
             Transform xf;
@@ -54,11 +76,6 @@ namespace world::terrain
             return xf;
         }
 
-        // MODD's quaternion is authored against the M2's RAW model space, but M2Parser
-        // stores hull vertices Y-negated. The rotation acting on the STORED vertices is
-        // therefore R(quat) * diag(1,-1,1). Skip that and every doodad comes out mirrored
-        // about its own Y axis -- which still overlaps its bounding box, so it looks
-        // plausible and quietly puts the collision in the wrong place.
         Transform WmoDoodadTransform(const Transform& wmoXf, const WmoDoodad& d)
         {
             Mat3 r = Mat3::fromQuat(d.quat[0], d.quat[1], d.quat[2], d.quat[3]);
@@ -134,31 +151,36 @@ namespace world::terrain
             return;
         }
 
-        // The placement names the one furnishing set that exists in the world; baking
-        // every set would stack alternative furniture in the same room.
-        const uint32_t setIdx = (p.doodadSet < root->sets.size()) ? p.doodadSet : 0u;
-        const WmoDoodadSet& set = root->sets[setIdx];
-
-        const uint64_t end = uint64_t(set.start) + set.count;
-        for (uint64_t i = set.start; i < end && i < root->doodads.size(); ++i)
+        const auto attachSet = [&](const WmoDoodadSet& set)
         {
-            const WmoDoodad& d = root->doodads[size_t(i)];
-            if (d.name.empty())
+            const uint64_t end = uint64_t(set.start) + set.count;
+            for (uint64_t i = set.start; i < end && i < root->doodads.size(); ++i)
             {
-                continue;
-            }
-            auto model = m_m2.Load(d.name);
-            if (!model || model->Empty())
-            {
-                continue;
-            }
+                const WmoDoodad& d = root->doodads[size_t(i)];
+                if (d.name.empty())
+                {
+                    continue;
+                }
+                auto model = m_m2.Load(d.name);
+                if (!model || model->Empty())
+                {
+                    continue;
+                }
 
-            StaticInstance inst;
-            inst.xf = WmoDoodadTransform(wmoXf, d);
-            inst.model = model;
-            inst.worldBounds = WorldBoundsOf(model->Bounds(), inst.xf);
-            inst.adtId = p.nameSet;
-            tile.instances.push_back(std::move(inst));
+                StaticInstance inst;
+                inst.xf = WmoDoodadTransform(wmoXf, d);
+                inst.model = model;
+                inst.worldBounds = WorldBoundsOf(model->Bounds(), inst.xf);
+                inst.adtId = p.nameSet;
+                tile.instances.push_back(std::move(inst));
+            }
+        };
+
+        constexpr uint32_t DEFAULT_GLOBAL_SET = 0;
+        attachSet(root->sets[DEFAULT_GLOBAL_SET]);
+        if (p.doodadSet != DEFAULT_GLOBAL_SET && p.doodadSet < root->sets.size())
+        {
+            attachSet(root->sets[p.doodadSet]);
         }
     }
 
@@ -209,8 +231,6 @@ namespace world::terrain
                 const LiquidKind kind =
                     world::ClassifyLiquid(tile->liquidEntry[i], m_liquidTypes);
                 tile->liquidKind[i] = uint8_t(kind);
-                // Dark water is the MCLQ per-cell bit, or an ocean layer that shipped no
-                // light map -- the rule the reference extractor has always used.
                 tile->liquidDeep[i] =
                     (adt.liquidDark[i] ||
                      (kind == LiquidKind::Ocean && adt.liquidNoLight[i]))
@@ -293,7 +313,6 @@ namespace world::terrain
         inst.adtId = wdt->globalWmoPlacement->nameSet;
         tile->instances.push_back(std::move(inst));
 
-        // A dungeon IS one big WMO, so all of its furniture is doodads.
         AttachWmoDoodads(*wdt->globalWmoPlacement, wdt->globalWmoName, xf, *tile);
 
         m_globalWmoCache[mapId] = tile;

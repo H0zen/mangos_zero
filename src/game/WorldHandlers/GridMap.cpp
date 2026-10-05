@@ -82,6 +82,9 @@ namespace
     const uint32 LIQUID_OUTLAND_OCEAN_ROW = 15;
     const uint32 LIQUID_FIRST_OVERRIDABLE_ROW = 21;
 
+    const uint32 MOGP_FLAG_EXTERIOR = 0x8;
+    const uint32 MOGP_FLAG_MOUNT_ALLOWED = 0x8000;
+
     // MAP_LIQUID_TYPE_* is one bit per family in the order water, ocean, magma, slime.
     // 1.12 has no SoundBank column -- that arrives in 3.3.5a -- so the family comes from
     // LiquidType.dbc's Type, which uses a DIFFERENT encoding: 0 magma, 2 slime, 3 water.
@@ -121,7 +124,7 @@ namespace
         // at 0x00100000 -- so the WMO's group flags are the only authority here.
         (void)atEntry;
 
-        bool outdoor = (mogpFlags & 0x8) != 0;
+        bool outdoor = (mogpFlags & (MOGP_FLAG_EXTERIOR | MOGP_FLAG_MOUNT_ALLOWED)) != 0;
         if (wmoEntry)
         {
             if (wmoEntry->Flags & 4)

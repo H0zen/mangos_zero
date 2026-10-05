@@ -23,17 +23,6 @@
  * and lore are copyrighted by Blizzard Entertainment, Inc.
  */
 
-// A window in front of mangos-extractor, for people who do not live in a terminal.
-//
-// IT DRIVES THE TOOL THROUGH ITS COMMAND LINE and reads its stdout -- it does not link
-// the baker, include its headers or know a thing about MPQs. The command line IS the
-// extractor's public interface; going around it would couple a dialog to the internals
-// of a baker, and the two would then have to move together forever.
-//
-// So this file is allowed to be Windows-only and ugly. It builds its controls in code
-// rather than from a resource script, because one .cpp with no .rc is one fewer thing
-// that can disagree with itself.
-
 #include <windows.h>
 #include <commctrl.h>
 #include <commdlg.h>
@@ -46,15 +35,12 @@
 #include <string>
 #include <vector>
 
-// Visual styles. Without this the process binds to comctl32 version 5 and every
-// control keeps its 1998 look, whatever InitCommonControlsEx says.
 #if defined(_MSC_VER)
 #pragma comment(linker, "/manifestdependency:\"type='win32' "                       \
                         "name='Microsoft.Windows.Common-Controls' "                  \
                         "version='6.0.0.0' processorArchitecture='*' "               \
                         "publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
-
 
 #ifndef MANGOS_CLIENT_NAME
 #define MANGOS_CLIENT_NAME "unknown client"
@@ -77,8 +63,8 @@ namespace
         ID_LOG, ID_PROGRESS, ID_STATUS
     };
 
-    const UINT WM_APP_LINE = WM_APP + 1;   ///< wParam: heap-allocated std::string*
-    const UINT WM_APP_DONE = WM_APP + 2;   ///< wParam: child exit code
+    const UINT WM_APP_LINE = WM_APP + 1;
+    const UINT WM_APP_DONE = WM_APP + 2;
 
     HWND g_main = nullptr;
     HWND g_log = nullptr;
@@ -108,7 +94,6 @@ namespace
         return nullptr;
     }
 
-    /// The shell's own dialog font. DEFAULT_GUI_FONT is MS Sans Serif and looks it.
     HFONT UiFont()
     {
         static HFONT font = nullptr;
@@ -211,8 +196,6 @@ namespace
         ofn.lpstrFile = chosen;
         ofn.nMaxFile = sizeof(chosen);
         ofn.lpstrTitle = title;
-        // NOCHANGEDIR: the child resolves its own defaults against the working
-        // directory, so a dialog must not move it out from under them.
         ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
 
         if (!GetOpenFileNameA(&ofn))
@@ -234,11 +217,25 @@ namespace
 
     std::string Quote(const std::string& s)
     {
-        return "\"" + s + "\"";
+        std::string out = "\"";
+        size_t backslashes = 0;
+        for (char c : s)
+        {
+            if (c == '\\')
+            {
+                ++backslashes;
+                continue;
+            }
+            const size_t escapes = (c == '"') ? backslashes * 2 + 1 : backslashes;
+            out.append(escapes, '\\');
+            out.push_back(c);
+            backslashes = 0;
+        }
+        out.append(backslashes * 2, '\\');
+        out.push_back('"');
+        return out;
     }
 
-    /// The languages a client actually carries, by the same test the baker uses: a folder
-    /// is a locale only if it holds the archive named after it.
     std::vector<std::string> FindLocales(const std::string& dataDir)
     {
         std::vector<std::string> found;
@@ -273,8 +270,6 @@ namespace
         return found;
     }
 
-    /// Refill the language list from whatever the client box currently points at. Called
-    /// on every edit of it, so browsing to another client re-reads rather than going stale.
     void RefreshLocales()
     {
         HWND box = Find(ID_LOCALE);
@@ -301,10 +296,6 @@ namespace
         SendMessageA(box, CB_SETCURSEL, WPARAM(pick), 0);
     }
 
-    /// snprintf, NOT wsprintf. wsprintf understands no 64-bit length modifier at all:
-    /// given "%llum" it consumed the conversion and printed the literal tail, so a nine
-    /// second run reported "Took 1um 1us". It has no way to report that it did not
-    /// understand the format, which is why the output looked like a unit and not an error.
     std::string Clock(const SYSTEMTIME& t)
     {
         char buf[16];
@@ -332,7 +323,6 @@ namespace
         return buf;
     }
 
-    /// The command line, exactly as a person would have typed it.
     std::string BuildCommand()
     {
         std::string cmd = Quote(ExeDir() + "\\mangos-extractor.exe");
@@ -361,10 +351,8 @@ namespace
         if (!dest.empty())    { cmd += " --dest " + Quote(dest); }
         if (!vessels.empty()) { cmd += " --vessels " + Quote(vessels); }
         if (!offmesh.empty()) { cmd += " --offmesh " + Quote(offmesh); }
-        if (!map.empty())     { cmd += " --map " + map; }
+        if (!map.empty())     { cmd += " --map " + Quote(map); }
 
-        // "all" is the extractor's own word for every language on the disc; a named
-        // one pins it; "(detect)" sends nothing and lets the baker choose.
         const std::string locale = GetText(ID_LOCALE);
         if (Checked(ID_CHK_ALLLOC))
         {
@@ -372,7 +360,7 @@ namespace
         }
         else if (!locale.empty() && locale != "(detect)")
         {
-            cmd += " --locale " + locale;
+            cmd += " --locale " + Quote(locale);
         }
 
         cmd += " --no-menu";
@@ -480,9 +468,6 @@ namespace
                 EnableWindow(h, !busy);
             }
         }
-        // Stopping a marquee leaves its last block painted, so the bar is hidden
-        // outright rather than merely stilled -- and the style is cleared with it,
-        // because a marquee bar ignores PBM_SETPOS and would bring that block back.
         if (busy)
         {
             const LONG_PTR style = GetWindowLongPtrA(g_progress, GWL_STYLE);
@@ -503,9 +488,6 @@ namespace
                                       : "Idle.");
     }
 
-
-    /// Ask Windows to shut down, the way a scheduled task would: a delay long enough to
-    /// abort by hand, and the privilege it needs, which a process does not hold by default.
     void ShutdownPc()
     {
         HANDLE token = nullptr;
@@ -580,17 +562,12 @@ namespace
         }
     }
 
-
-    /* ------------------------------------------------------------------ header badge */
-
-    const int kBandH   = 92;    ///< the header band, above everything else
-    const int kBadge   = 68;    ///< the logo, square, drawn inside it
+    const int kBandH   = 92;
+    const int kBadge   = 68;
     const int kMargin  = 14;
 
     IPicture* g_badge = nullptr;
 
-    /// Decode the embedded JPEG once. A JPEG cannot be a BITMAP resource, so it ships as
-    /// raw bytes and OleLoadPicture does the decoding -- no image library is linked.
     IPicture* Badge()
     {
         static bool tried = false;
@@ -631,7 +608,7 @@ namespace
                 OleLoadPicture(stream, LONG(size), FALSE, IID_IPicture,
                                reinterpret_cast<void**>(&g_badge));
                 stream->Release();
-                return g_badge;      // the stream owns `mem` now
+                return g_badge;
             }
         }
 
@@ -643,13 +620,10 @@ namespace
     {
         RECT band{0, 0, client.right, kBandH};
 
-        // A band a shade off the dialog face, so the form below reads as the working area.
         HBRUSH back = CreateSolidBrush(GetSysColor(COLOR_WINDOW));
         FillRect(dc, &band, back);
         DeleteObject(back);
 
-        // The rule that closes it. One pixel, the 3D shadow colour: enough to separate,
-        // not enough to draw attention.
         HPEN rule = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DSHADOW));
         HGDIOBJ oldPen = SelectObject(dc, rule);
         MoveToEx(dc, 0, kBandH - 1, nullptr);
@@ -666,7 +640,6 @@ namespace
             pic->get_Width(&cx);
             pic->get_Height(&cy);
 
-            // Keep it square-true whatever the source is: fit the longer side to the box.
             int dw = kBadge, dh = kBadge;
             if (cx > 0 && cy > 0)
             {
@@ -704,14 +677,9 @@ namespace
         HGDIOBJ oldFont = SelectObject(dc, title);
         SetTextColor(dc, GetSysColor(COLOR_WINDOWTEXT));
 
-        // Measured, not counted by hand. The literals used to carry their own lengths as
-        // magic numbers, so editing the text silently truncated it or ran off the end.
         const char* heading = "MaNGOS client baker";
         TextOutA(dc, tx, by + 6, heading, int(std::strlen(heading)));
 
-        // WHICH CLIENT THIS BUILD BAKES. One baker cannot read two expansions -- the DBC
-        // layouts and the archive set both differ -- so the version is not decoration, it
-        // is the first thing that has to match the folder in the box below.
         SelectObject(dc, base);
         SetTextColor(dc, GetSysColor(COLOR_WINDOWTEXT));
         const char* clientName = MANGOS_CLIENT_NAME;
@@ -763,7 +731,6 @@ namespace
         Add(w, "EDIT", "", WS_BORDER | WS_TABSTOP | ES_NUMBER, editX, y, 80, 24, ID_MAP);
 
         Add(w, "STATIC", "Language", SS_LEFT, editX + 100, y + 4, 70, 20, 0);
-        // Tall on purpose: a combo's height is its DROPPED height, not the box you see.
         Add(w, "COMBOBOX", "", WS_TABSTOP | WS_VSCROLL | CBS_DROPDOWNLIST,
             editX + 172, y, 110, 240, ID_LOCALE);
         Add(w, "BUTTON", "All languages", WS_TABSTOP | BS_AUTOCHECKBOX,
@@ -805,8 +772,6 @@ namespace
                     14, y, btnX + btnW - 14, 220, ID_LOG);
         y += 230;
 
-        // The gap left of the buttons, which was empty: when a nav bake runs for six
-        // hours unattended, what it says is the only record of how long it took.
         Add(w, "STATIC", "", SS_LEFT, 14, y + 8, btnX + btnW - 220, 20, ID_TIMES);
 
         Add(w, "BUTTON", "Start", WS_TABSTOP | BS_DEFPUSHBUTTON,
@@ -819,8 +784,6 @@ namespace
         SetWindowTextA(Find(ID_SRC), (ExeDir() + "\\Data").c_str());
         SetWindowTextA(Find(ID_DEST), (ExeDir() + "\\extracted_data").c_str());
 
-        // Both ship beside the exe and both are what the extractor would default to
-        // anyway. Showing them beats an empty box that looks like something is missing.
         SetWindowTextA(Find(ID_VESSELS), (ExeDir() + "\\vessels.txt").c_str());
         SetWindowTextA(Find(ID_OFFMESH), (ExeDir() + "\\offmesh.txt").c_str());
 
@@ -879,9 +842,6 @@ namespace
             SetWindowTextA(Find(ID_TIMES), span.c_str());
             AppendLog(span);
 
-            // ASKED FOR, AND STILL ASKED AGAIN. A six-hour bake ends while nobody is
-            // watching, so the countdown is what a person who walked back in gets to
-            // cancel -- and a failed run never triggers it at all.
             if (code == 0 && Checked(ID_CHK_SHUTDOWN))
             {
                 AppendLog("-- shutting down in 60 seconds; run `shutdown /a` to stop it --");
@@ -990,8 +950,6 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE, LPSTR, int show)
     wc.lpfnWndProc = WndProc;
     wc.hInstance = inst;
     wc.hCursor = LoadCursorA(nullptr, IDC_ARROW);
-    // Resource 1, the icon Explorer already draws for this exe. Leaving it null
-    // is what put the generic white page in the title bar and the task switcher.
     wc.hIcon = LoadIconA(inst, MAKEINTRESOURCEA(1));
     wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wc.lpszClassName = "MangosExtractorGui";

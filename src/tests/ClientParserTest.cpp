@@ -656,7 +656,7 @@ TEST(WmoGroupKeepsDetailFacesThatAlsoCollide)
     CHECK_EQ(g.tris.size(), size_t(2));
 }
 
-TEST(WmoGroupLiquidUsesWotlkRows)
+TEST(WmoGroupLiquidUsesClassicRows)
 {
     struct Expect
     {
@@ -664,14 +664,12 @@ TEST(WmoGroupLiquidUsesWotlkRows)
         uint32_t mogpFlags;
         uint16_t entry;
     };
-    // Legacy codes 0..3 are water/ocean/magma/slime; 3.3.5a's rows for them are
-    // 13/14/19/20, not the 1..4 that 2.4.3 uses.
     const Expect cases[] = {
-        {0, 0, 13},
-        {0, 0x80000, 14},
-        {1, 0, 14},
-        {2, 0, 19},
-        {3, 0, 20},
+        {0, 0, 1},
+        {0, 0x80000, 2},
+        {1, 0, 2},
+        {2, 0, 3},
+        {3, 0, 4},
     };
 
     for (const Expect& e : cases)
@@ -711,7 +709,7 @@ TEST(WmoGroupLiquidFallsBackToTileNibble)
     WmoGroupData g;
     REQUIRE(ParseWmoGroup(group.b, 0, g));
     REQUIRE(g.hasLiquid);
-    CHECK_EQ(g.liquid.entry, uint16_t(19));
+    CHECK_EQ(g.liquid.entry, uint16_t(3));
 }
 
 TEST(WmoGroupWithoutGeometryOrLiquidIsRejected)

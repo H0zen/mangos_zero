@@ -59,10 +59,13 @@ Motion::IPathQuery* MotionDriver::Query(Unit const& owner)
 
     // A leg never spans two frames: if the mover boarded (or left) a transport since
     // the last leg, the old router speaks the wrong coordinate system.
-    if (!m_query || m_queryFrame != frame.Kind())
+    if (!m_query || m_queryFrame != frame.Kind() || m_queryMapId != owner.GetMapId() ||
+        m_queryInstanceId != owner.GetInstanceId())
     {
         m_query = frame.CreatePathQuery(owner);
         m_queryFrame = frame.Kind();
+        m_queryMapId = owner.GetMapId();
+        m_queryInstanceId = owner.GetInstanceId();
     }
 
     return m_query.get();

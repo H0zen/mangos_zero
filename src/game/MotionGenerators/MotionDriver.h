@@ -100,6 +100,8 @@ class MotionDriver
 
         std::unique_ptr<Motion::IPathQuery> m_query;
         Motion::FrameKind m_queryFrame = Motion::FrameKind::World;
+        uint32 m_queryMapId = 0;
+        uint32 m_queryInstanceId = 0;
 
         /// The goal of the leg we last laid, so the drift test can tell when a tracked
         /// destination has moved far enough to be worth re-routing.

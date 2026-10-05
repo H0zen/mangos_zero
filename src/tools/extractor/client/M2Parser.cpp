@@ -1,3 +1,28 @@
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * MaNGOS is a full featured server for World of Warcraft, supporting
+ * the following clients: 1.12.x, 2.4.3, 3.3.5a, 4.3.4a and 5.4.8
+ *
+ * Copyright (C) 2005-2026 MaNGOS <https://www.getmangos.eu>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * World of Warcraft, and all World of Warcraft or Warcraft art, images,
+ * and lore are copyrighted by Blizzard Entertainment, Inc.
+ */
+
 #include <string>
 #include "M2Parser.hpp"
 #include "ChunkReaders.hpp"
@@ -11,10 +36,6 @@ namespace world::terrain
     {
         using namespace world::terrain::internal;
 
-        // The MD20 header shrank twice on the way to 3.3.5a: version 264 dropped both
-        // playable_animation_lookup (8 bytes) and ofsViews (4), moving the bounding
-        // block from 236 to 216. Reading a 3.3.5a model at the 2.4.3 offset yields
-        // plausible-looking counts and a hull made of garbage, with no error anywhere.
         constexpr size_t BOUND_BLOCK_WOTLK = 216;
         constexpr size_t BOUND_BLOCK_LEGACY = 236;
         constexpr uint32_t M2_VERSION_WOTLK = 264;
@@ -78,8 +99,6 @@ namespace world::terrain
         for (uint32_t v = 0; v < nVerts; ++v)
         {
             const uint8_t* p = data + ofsVerts + v * 12;
-            // Negating Y is the net of the reference extractor's fixCoordSystem plus its
-            // y/z swap, and lands these vertices in the same model space a WMO uses.
             out.verts.push_back({RdF32(p + 0), -RdF32(p + 4), RdF32(p + 8)});
         }
 
